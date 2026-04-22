@@ -27,6 +27,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=35"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with tags",
       "organization": null,
@@ -82,6 +83,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=34"
       },
+      "media_type": "video",
       "mode": "interpolation",
       "name": "task with frame step and gt job",
       "organization": 2,
@@ -137,6 +139,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=33"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with honeypots",
       "organization": 2,
@@ -184,6 +187,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=32"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with gt job",
       "organization": 2,
@@ -231,6 +235,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=31"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "sandbox task with consensus",
       "organization": null,
@@ -286,6 +291,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=30"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with consensus and honeypots",
       "organization": 2,
@@ -341,6 +347,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=29"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with honeypots",
       "organization": 2,
@@ -388,6 +395,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=28"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task 1",
       "organization": 2,
@@ -449,6 +457,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=27"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task assigned to maintainer",
       "organization": 2,
@@ -510,6 +519,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=26"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task assigned to owner",
       "organization": 2,
@@ -565,6 +575,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=25"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task-validation",
       "organization": null,
@@ -620,6 +631,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=24"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task_train",
       "organization": null,
@@ -675,6 +687,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=23"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with several jobs and ground truth job",
       "organization": null,
@@ -722,6 +735,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=22"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task3_with_gt_job",
       "organization": 2,
@@ -769,6 +783,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=21"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with several jobs",
       "organization": null,
@@ -824,6 +839,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=20"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task in project with attributes",
       "organization": null,
@@ -879,6 +895,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=19"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with attributes",
       "organization": null,
@@ -934,6 +951,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=18"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task in project7",
       "organization": 2,
@@ -995,6 +1013,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=17"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task_3_org2",
       "organization": 2,
@@ -1042,6 +1061,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=15"
       },
+      "media_type": "video",
       "mode": "interpolation",
       "name": "task with video data",
       "organization": null,
@@ -1097,6 +1117,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=14"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1 in project5",
       "organization": 2,
@@ -1158,6 +1179,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=13"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1_in_project4",
       "organization": 2,
@@ -1199,6 +1221,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=12"
       },
+      "media_type": null,
       "mode": "",
       "name": "task_without_data",
       "organization": null,
@@ -1251,6 +1274,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=11"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1_in_project2",
       "organization": 2,
@@ -1312,6 +1336,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=9"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1_in_project1",
       "organization": null,
@@ -1365,6 +1390,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=8"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1",
       "organization": null,
@@ -1418,6 +1444,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=7"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task_2_org2",
       "organization": 2,
@@ -1455,7 +1482,6 @@
       "dimension": "3d",
       "guide_id": null,
       "id": 6,
-      "image_quality": 70,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1465,6 +1491,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=6"
       },
+      "media_type": "point_cloud",
       "mode": "annotation",
       "name": "task3",
       "organization": null,
@@ -1518,6 +1545,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=5"
       },
+      "media_type": "video",
       "mode": "interpolation",
       "name": "task2",
       "organization": null,
@@ -1571,6 +1599,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=2"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task2",
       "organization": 1,

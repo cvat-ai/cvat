@@ -4563,6 +4563,7 @@
     "status": "annotation",
     "data": 2,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 1,
     "source_storage": null,
@@ -4592,6 +4593,7 @@
     "status": "annotation",
     "data": 5,
     "dimension": "2d",
+    "media_type": "video",
     "subset": "",
     "organization": null,
     "source_storage": null,
@@ -4619,6 +4621,7 @@
     "status": "annotation",
     "data": 6,
     "dimension": "3d",
+    "media_type": "point_cloud",
     "subset": "",
     "organization": null,
     "source_storage": null,
@@ -4648,6 +4651,7 @@
     "status": "annotation",
     "data": 7,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": null,
@@ -4677,6 +4681,7 @@
     "status": "annotation",
     "data": 8,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": null,
     "source_storage": null,
@@ -4706,6 +4711,7 @@
     "status": "annotation",
     "data": 9,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": null,
     "source_storage": null,
@@ -4735,6 +4741,7 @@
     "status": "annotation",
     "data": 11,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "Train",
     "organization": 2,
     "source_storage": 4,
@@ -4762,6 +4769,7 @@
     "status": "annotation",
     "data": null,
     "dimension": "2d",
+    "media_type": null,
     "subset": "",
     "organization": null,
     "source_storage": null,
@@ -4791,6 +4799,7 @@
     "status": "annotation",
     "data": 12,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": null,
@@ -4818,6 +4827,7 @@
     "status": "annotation",
     "data": 13,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": 7,
@@ -4845,6 +4855,7 @@
     "status": "annotation",
     "data": 14,
     "dimension": "2d",
+    "media_type": "video",
     "subset": "",
     "organization": null,
     "source_storage": 15,
@@ -4874,6 +4885,7 @@
     "status": "annotation",
     "data": 16,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": null,
@@ -4901,6 +4913,7 @@
     "status": "annotation",
     "data": 17,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": 23,
@@ -4928,6 +4941,7 @@
     "status": "annotation",
     "data": 18,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": null,
     "source_storage": 25,
@@ -4955,6 +4969,7 @@
     "status": "annotation",
     "data": 19,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": null,
     "source_storage": 29,
@@ -4982,6 +4997,7 @@
     "status": "annotation",
     "data": 20,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": null,
     "source_storage": 33,
@@ -5009,6 +5025,7 @@
     "status": "validation",
     "data": 21,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "Train",
     "organization": 2,
     "source_storage": null,
@@ -5036,6 +5053,7 @@
     "status": "completed",
     "data": 22,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": null,
     "source_storage": null,
@@ -5063,6 +5081,7 @@
     "status": "annotation",
     "data": 23,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "Train",
     "organization": null,
     "source_storage": 37,
@@ -5090,6 +5109,7 @@
     "status": "annotation",
     "data": 24,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "Validation",
     "organization": null,
     "source_storage": 39,
@@ -5119,6 +5139,7 @@
     "status": "annotation",
     "data": 25,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": 45,
@@ -5148,6 +5169,7 @@
     "status": "annotation",
     "data": 26,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": 47,
@@ -5175,6 +5197,7 @@
     "status": "annotation",
     "data": 27,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": 49,
@@ -5202,6 +5225,7 @@
     "status": "annotation",
     "data": 28,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": null,
@@ -5229,6 +5253,7 @@
     "status": "annotation",
     "data": 29,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": 51,
@@ -5256,6 +5281,7 @@
     "status": "annotation",
     "data": 30,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": null,
     "source_storage": 53,
@@ -5283,6 +5309,7 @@
     "status": "annotation",
     "data": 31,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": null,
@@ -5310,6 +5337,7 @@
     "status": "annotation",
     "data": 32,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": 2,
     "source_storage": null,
@@ -5337,6 +5365,7 @@
     "status": "annotation",
     "data": 33,
     "dimension": "2d",
+    "media_type": "video",
     "subset": "",
     "organization": 2,
     "source_storage": 55,
@@ -5364,6 +5393,7 @@
     "status": "annotation",
     "data": 34,
     "dimension": "2d",
+    "media_type": "image",
     "subset": "",
     "organization": null,
     "source_storage": 59,
@@ -17933,7 +17963,8 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -17943,7 +17974,8 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -17953,7 +17985,8 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -17963,7 +17996,8 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -17973,7 +18007,8 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -17983,7 +18018,8 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -17993,7 +18029,8 @@
     "report": 2,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18003,7 +18040,8 @@
     "report": 2,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18013,7 +18051,8 @@
     "report": 2,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18023,7 +18062,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18033,7 +18073,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18043,7 +18084,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18053,7 +18095,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18063,7 +18106,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18073,7 +18117,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18083,7 +18128,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18093,7 +18139,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18103,7 +18150,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18113,7 +18161,8 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18123,7 +18172,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18133,7 +18183,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18143,7 +18194,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18153,7 +18205,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_direction",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18163,7 +18216,8 @@
     "report": 2,
     "frame": 0,
     "type": "covered_annotation",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18173,7 +18227,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_attributes",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18183,7 +18238,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18193,7 +18249,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18203,7 +18260,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18213,7 +18271,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18223,7 +18282,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18233,7 +18293,8 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18243,7 +18304,8 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18253,7 +18315,8 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18263,7 +18326,8 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18273,7 +18337,8 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18283,7 +18348,8 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18293,7 +18359,8 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18303,7 +18370,8 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18313,7 +18381,8 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18323,7 +18392,8 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18333,7 +18403,8 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18343,7 +18414,8 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18353,7 +18425,8 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18363,7 +18436,8 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18373,7 +18447,8 @@
     "report": 4,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18383,7 +18458,8 @@
     "report": 4,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18393,7 +18469,8 @@
     "report": 4,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18403,7 +18480,8 @@
     "report": 4,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18413,7 +18491,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18423,7 +18502,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18433,7 +18513,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18443,7 +18524,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18453,7 +18535,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18463,7 +18546,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18473,7 +18557,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18483,7 +18568,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18493,7 +18579,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18503,7 +18590,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18513,7 +18601,8 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18523,7 +18612,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18533,7 +18623,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18543,7 +18634,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18553,7 +18645,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_direction",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18563,7 +18656,8 @@
     "report": 4,
     "frame": 0,
     "type": "covered_annotation",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18573,7 +18667,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_attributes",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18583,7 +18678,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18593,7 +18689,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18603,7 +18700,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18613,7 +18711,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18623,7 +18722,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18633,7 +18733,8 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18643,7 +18744,8 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18653,7 +18755,8 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18663,7 +18766,8 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18673,7 +18777,8 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18683,7 +18788,8 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18693,7 +18799,8 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18703,7 +18810,8 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18713,7 +18821,8 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18723,7 +18832,8 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18733,7 +18843,8 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18743,7 +18854,8 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18753,7 +18865,8 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18763,7 +18876,8 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18773,7 +18887,8 @@
     "report": 6,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18783,7 +18898,8 @@
     "report": 6,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18793,7 +18909,8 @@
     "report": 6,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18803,7 +18920,8 @@
     "report": 6,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18813,7 +18931,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18823,7 +18942,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18833,7 +18953,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18843,7 +18964,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18853,7 +18975,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18863,7 +18986,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18873,7 +18997,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18883,7 +19008,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18893,7 +19019,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18903,7 +19030,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18913,7 +19041,8 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18923,7 +19052,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18933,7 +19063,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18943,7 +19074,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -18953,7 +19085,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_direction",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18963,7 +19096,8 @@
     "report": 6,
     "frame": 0,
     "type": "covered_annotation",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18973,7 +19107,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_attributes",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18983,7 +19118,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -18993,7 +19129,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19003,7 +19140,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19013,7 +19151,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19023,7 +19162,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19033,7 +19173,8 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19043,7 +19184,8 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19053,7 +19195,8 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19063,7 +19206,8 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19073,7 +19217,8 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19083,7 +19228,8 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19093,7 +19239,8 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19103,7 +19250,8 @@
     "report": 9,
     "frame": 5,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19113,7 +19261,8 @@
     "report": 10,
     "frame": 4,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19123,7 +19272,8 @@
     "report": 10,
     "frame": 4,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19133,7 +19283,8 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19143,7 +19294,8 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19153,7 +19305,8 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19163,7 +19316,8 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19173,7 +19327,8 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19183,7 +19338,8 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19193,7 +19349,8 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19203,7 +19360,8 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19213,7 +19371,8 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19223,7 +19382,8 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19233,7 +19393,8 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19243,7 +19404,8 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19253,7 +19415,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19263,7 +19426,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19273,7 +19437,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19283,7 +19448,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19293,7 +19459,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19303,7 +19470,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19313,7 +19481,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19323,7 +19492,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19333,7 +19503,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19343,7 +19514,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19353,7 +19525,8 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19363,7 +19536,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19373,7 +19547,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19383,7 +19558,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19393,7 +19569,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_direction",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19403,7 +19580,8 @@
     "report": 12,
     "frame": 0,
     "type": "covered_annotation",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19413,7 +19591,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_attributes",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19423,7 +19602,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19433,7 +19613,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19443,7 +19624,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19453,7 +19635,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19463,7 +19646,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19473,7 +19657,8 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19483,7 +19668,8 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19493,7 +19679,8 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19503,7 +19690,8 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19513,7 +19701,8 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19523,7 +19712,8 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19533,7 +19723,8 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19543,7 +19734,8 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19553,7 +19745,8 @@
     "report": 14,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19563,7 +19756,8 @@
     "report": 14,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19573,7 +19767,8 @@
     "report": 14,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19583,7 +19778,8 @@
     "report": 14,
     "frame": 3,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19593,7 +19789,8 @@
     "report": 16,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19603,7 +19800,8 @@
     "report": 16,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19613,7 +19811,8 @@
     "report": 16,
     "frame": 2,
     "type": "low_overlap",
-    "severity": "warning"
+    "severity": "warning",
+    "attributes": ""
   }
 },
 {
@@ -19623,7 +19822,8 @@
     "report": 17,
     "frame": 6,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19633,7 +19833,8 @@
     "report": 17,
     "frame": 6,
     "type": "missing_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
@@ -19643,7 +19844,8 @@
     "report": 17,
     "frame": 5,
     "type": "extra_annotation",
-    "severity": "error"
+    "severity": "error",
+    "attributes": ""
   }
 },
 {
