@@ -171,8 +171,7 @@ context('Snap tool feature.', () => {
             });
 
             afterEach(() => {
-                // cy.removeAnnotations();
-                cy.saveJob();
+                cy.removeAnnotations();
 
                 // Deactivate snap to contour.
                 toggleSnapTool('contour', false);
@@ -326,8 +325,7 @@ context('Snap tool feature.', () => {
         });
 
         afterEach(() => {
-            // cy.removeAnnotations();
-            cy.saveJob();
+            cy.removeAnnotations();
             toggleSnapTool('point', false);
             rectanglePointsGlobal = null;
         });
@@ -394,7 +392,7 @@ context('Snap tool feature.', () => {
             });
         });
 
-        it.skip('Snapping works when the first snapped point is on another shape', () => {
+        it('Snapping works when the first snapped point is on another shape', () => {
             // TODO: attach issue when fix is ready
             const rectCorners = getRectCorners(createRectangleShape2Points);
             const createPolygonShapeSnappedSide = {
