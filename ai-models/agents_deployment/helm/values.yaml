@@ -24,7 +24,7 @@ agent:
   cvat_access_token: ""
   # Visibility of the function in CVAT. Can be "public" or "private". If not specified, it will default to "private".
   # Private functions are visible to you and your organization (if specified), while public functions are visible to all users in CVAT instance.
-  visibility: "private"
+  function_visibility: "private"
 
   ### Model configuration
 
