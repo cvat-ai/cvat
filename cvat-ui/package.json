@@ -6,8 +6,6 @@
   "scripts": {
     "build": "webpack --config ./webpack.config.js",
     "start": "webpack serve --env API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
-    "type-check": "tsc --noEmit",
-    "type-check:watch": "yarn run type-check --watch",
     "lint": "eslint './src/**/*.{ts,tsx}'",
     "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"
   },
@@ -29,7 +27,6 @@
     "@types/react-color": "^3.0.5",
     "@types/react-dom": "18.2.19",
     "@types/react-grid-layout": "^1.3.2",
-    "@types/react-redux": "^7.1.18",
     "@types/react-router": "^5.1.16",
     "@types/react-router-dom": "^5.1.9",
     "@types/redux-logger": "^3.0.9",

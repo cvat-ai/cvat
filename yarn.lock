@@ -2924,7 +2924,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/hoist-non-react-statics@npm:^3.3.0, @types/hoist-non-react-statics@npm:^3.3.1":
+"@types/hoist-non-react-statics@npm:^3.3.1":
   version: 3.3.5
   resolution: "@types/hoist-non-react-statics@npm:3.3.5"
   dependencies:
@@ -3160,18 +3160,6 @@ __metadata:
   dependencies:
     "@types/react": "npm:*"
   checksum: 10c0/abd2a1dda9625c753ff2571a10b69740b2fb9ed1d3141755d54d5814cc12a9701c7c5cd78e8797e945486b441303b82543be71043a32d6a988b57a14237f93c6
-  languageName: node
-  linkType: hard
-
-"@types/react-redux@npm:^7.1.18":
-  version: 7.1.33
-  resolution: "@types/react-redux@npm:7.1.33"
-  dependencies:
-    "@types/hoist-non-react-statics": "npm:^3.3.0"
-    "@types/react": "npm:*"
-    hoist-non-react-statics: "npm:^3.3.0"
-    redux: "npm:^4.0.0"
-  checksum: 10c0/e17a2fea00c6ab5f22868e927b4da7b7cf8dc7c85102638fa0f87e12ae0ec13335d9b3bf75098b3316dd8d2a18c99fe08bed22daa989a13f3710c4530f7b979e
   languageName: node
   linkType: hard
 
@@ -5798,7 +5786,6 @@ __metadata:
     "@types/react-color": "npm:^3.0.5"
     "@types/react-dom": "npm:18.2.19"
     "@types/react-grid-layout": "npm:^1.3.2"
-    "@types/react-redux": "npm:^7.1.18"
     "@types/react-router": "npm:^5.1.16"
     "@types/react-router-dom": "npm:^5.1.9"
     "@types/redux-logger": "npm:^3.0.9"
@@ -14533,7 +14520,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"redux@npm:^4.0.0, redux@npm:^4.1.1, redux@npm:^4.2.1":
+"redux@npm:^4.1.1, redux@npm:^4.2.1":
   version: 4.2.1
   resolution: "redux@npm:4.2.1"
   dependencies:

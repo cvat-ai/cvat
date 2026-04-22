@@ -7,7 +7,8 @@ import './styles.scss';
 import React, {
     useState, useEffect, useCallback, useRef,
 } from 'react';
-import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
