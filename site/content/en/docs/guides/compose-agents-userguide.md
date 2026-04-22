@@ -90,15 +90,15 @@ docker compose up
 Now the image specified in the `.env` file will be pulled (if it is not already available locally):
 
 
-![SAM2 agent image download](images/sam2-agent-download-image.png)
+![SAM2 agent image download](images/sam2-agent-download-image.webp)
 
 And then the container will be started:
 
-![SAM2 agent compose console logs](images/sam2-agent-compose-console-logs.png)
+![SAM2 agent compose console logs](images/sam2-agent-compose-console-logs.webp)
 
 So now you can go to CVAT UI and check that the model is registered:
 
-![SAM2 agent model in UI](images/sam2-agent-model-ui.png)
+![SAM2 agent model in UI](images/sam2-agent-model-ui.webp)
 
 Now lets test and track something to ensure that the agent is working properly.
 
@@ -114,13 +114,13 @@ So in this example I will do the following:
 
 In console you will be able to see logs from the agent, that will indicate that the task is being processed:
 
-![Agent processing task logs](images/sam2-agent-processing-task-logs.png)
+![Agent processing task logs](images/sam2-agent-processing-task-logs.webp)
 
 After that you can move forward through frames and see that the polygon is being tracked:
 
-![Tracking result on frames](images/sam2-agent-result.png)
+![Tracking result on frames](images/sam2-agent-result.webp)
 
-![Tracking confirmation](images/img.png)
+![Tracking confirmation](images/img.webp)
 
 ## How to clean up after running CVAT agent with Docker Compose
 
@@ -134,7 +134,7 @@ To deregister the function from CVAT, you should run the following command in th
 docker compose run --rm cvat-function-deregister
 ```
 
-![Deregistering the function](images/sam2-agent-deregister.png)
+![Deregistering the function](images/sam2-agent-deregister.webp)
 
 ## Troubleshooting common issues with Docker Compose deployment
 
