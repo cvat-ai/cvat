@@ -1725,6 +1725,8 @@ def create_thread(
     if not (is_data_in_cloud and is_backup_restore):
         TaskFrameProvider(db_task=db_task).get_preview()
 
+    _move_to_backing_cs_if_configured(db_data)
+
 
 def _create_static_chunks(
     db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: Path
@@ -1879,3 +1881,16 @@ def _create_static_chunks(
                     save_chunks(executor, db_segment, chunk_idx, chunk_frame_ids)
 
                 progress_updater.update_progress(segment_idx / len(db_segments))
+
+
+def _move_to_backing_cs_if_configured(db_data):
+    backing_cs_id = settings.DEFAULT_BACKING_CS_ID
+    if backing_cs_id is not None and db_data.supports_backing_cs():
+        try:
+            backing_cs = models.CloudStorage.objects.get(pk=backing_cs_id)
+        except models.CloudStorage.DoesNotExist:
+            slogger.glob.warning(
+                f"Cloud storage #{backing_cs_id} (configured as default backing CS) does not exist"
+            )
+        else:
+            db_data.move_to_backing_cs(backing_cs)
