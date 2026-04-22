@@ -5,9 +5,9 @@ from django.db import migrations, models
 def fill_task_media_type(apps, schema_editor):
     Task = apps.get_model("engine", "Task")
 
-    Task.objects.filter(media_type="", dimension__iexact="3d").update(media_type="point_cloud")
-    Task.objects.filter(media_type="", mode__iexact="interpolation").update(media_type="video")
-    Task.objects.filter(media_type="", mode__iexact="annotation").update(media_type="image")
+    Task.objects.filter(media_type__isnull=True, dimension="3d").update(media_type="point_cloud")
+    Task.objects.filter(media_type__isnull=True, mode="interpolation").update(media_type="video")
+    Task.objects.filter(media_type__isnull=True, mode="annotation").update(media_type="image")
 
 
 class Migration(migrations.Migration):
