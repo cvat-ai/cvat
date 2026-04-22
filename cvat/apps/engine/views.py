@@ -1530,6 +1530,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                             )
                         )
                     )
+                case None:
+                    pass # noop, nothing to load
                 case _ as media_type:
                     assert False, f"Unknown media type '{media_type}'"
 

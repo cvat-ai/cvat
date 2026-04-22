@@ -1314,20 +1314,32 @@ class TestTaskBackups:
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode and not t["validation_mode"]
+        )["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_honeypot_task(self, tasks):
-        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        task_id = next(
+            t for t in tasks if t["dimension"] == "2d" if t["validation_mode"] == "gt_pool"
+        )["id"]
         self._test_can_export_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup_for_simple_gt_job_task(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode and t["validation_mode"] == "gt")["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode and t["validation_mode"] == "gt"
+        )["id"]
         self._test_can_export_backup(task_id)
 
     def test_cannot_export_backup_for_task_without_data(self, tasks):
@@ -1337,6 +1349,10 @@ class TestTaskBackups:
             self._test_can_export_backup(task_id)
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
+
+    def test_can_export_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_mounted_share(self):
@@ -1410,20 +1426,34 @@ class TestTaskBackups:
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode if not t["validation_mode"])["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode
+            if not t["validation_mode"]
+        )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_with_simple_gt_job_task(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode if t["validation_mode"] == "gt")["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode
+            if t["validation_mode"] == "gt"
+        )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_honeypot_task(self, tasks):
-        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        task_id = next(
+            t for t in tasks if t["dimension"] == "2d" if t["validation_mode"] == "gt_pool"
+        )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
@@ -1444,6 +1474,7 @@ class TestTaskBackups:
         gt_job = next(
             j
             for j in jobs
+            if j["dimension"] == "2d"
             if j["type"] == "ground_truth"
             if job_has_annotations(j["id"])
             if tasks[j["task_id"]]["validation_mode"] == "gt"
@@ -1452,6 +1483,10 @@ class TestTaskBackups:
         task = tasks[gt_job["task_id"]]
 
         self._test_can_restore_task_from_backup(task["id"])
+
+    def test_can_import_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
 
     def _test_can_restore_task_from_backup(self, task_id: int, lightweight_backup: bool = False):
         old_task = self.client.tasks.retrieve(task_id)
@@ -3171,6 +3206,39 @@ class TestImportTaskAnnotations:
             updated_annotations = json.loads(
                 api_client.tasks_api.retrieve_annotations(task["id"])[1].data
             )
+
+        assert (
+            compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}
+        )
+
+    def test_can_import_audio_tsv(self, tasks):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["media_type"] == "audio" and t.get("validation_mode") != "gt_pool"
+        )
+
+        format_name = "Generic TSV 1.0"
+
+        original_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
+
+        dataset_file = io.BytesIO(
+            export_dataset(
+                self.client.api_client.tasks_api,
+                id=task["id"],
+                format=format_name,
+                save_images=False,
+            )
+        )
+
+        self.client.tasks.retrieve(task["id"]).import_annotations(format_name, dataset_file)
+
+        updated_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
 
         assert (
             compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}
