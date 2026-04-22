@@ -38,9 +38,6 @@ class Command(BaseCommand):
     def _handle_one_task(self, task: Task, backing_cs: CloudStorage) -> bool:
         data = task.require_data()
 
-        if not data.supports_backing_cs():
-            raise CommandError(f"Task #{task.id} does not support backing cloud storage")
-
         if data.local_storage_backing_cs_id == backing_cs.id:
             self.stdout.write(
                 self.style.WARNING(
@@ -54,6 +51,9 @@ class Command(BaseCommand):
                 f"Task #{task.id} already has a backing cloud storage"
                 f" (#{data.local_storage_backing_cs_id})"
             )
+
+        if not data.supports_backing_cs():
+            raise CommandError(f"Task #{task.id} does not support backing cloud storage")
 
         data.move_to_backing_cs(backing_cs)
         return True

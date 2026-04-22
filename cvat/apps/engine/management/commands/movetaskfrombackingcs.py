@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from cvat.apps.engine.models import Task
 
@@ -26,9 +26,6 @@ class Command(BaseCommand):
 
     def _handle_one_task(self, task: Task) -> bool:
         data = task.require_data()
-
-        if not data.supports_backing_cs():
-            raise CommandError(f"Task #{task.id} does not support backing cloud storage")
 
         if not data.local_storage_backing_cs_id:
             self.stdout.write(
