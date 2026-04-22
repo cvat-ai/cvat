@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
 import { LabelType, ObjectType, ShapeType } from 'cvat-core-wrapper';

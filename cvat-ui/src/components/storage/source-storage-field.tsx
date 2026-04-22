@@ -4,8 +4,7 @@
 
 import './styles.scss';
 import React from 'react';
-import { StorageData } from 'cvat-core-wrapper';
-import { StorageLocation } from 'reducers';
+import { StorageData, StorageLocation } from 'cvat-core-wrapper';
 import StorageWithSwitchField from './storage-with-switch-field';
 
 export interface Props {

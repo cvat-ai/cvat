@@ -21,8 +21,6 @@ interface StateToProps {
     visible: boolean;
     collecting: boolean;
     data: any;
-    jobStatus: string;
-    savingJobStatus: boolean;
     bugTracker: string | null;
     startFrame: number;
     stopFrame: number;
@@ -39,14 +37,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             statistics: { visible, collecting, data },
             job: {
-                saving: savingJobStatus,
                 instance: {
                     bugTracker,
                     startFrame,
                     stopFrame,
                     assignee,
                     dimension,
-                    status: jobStatus,
                 },
             },
         },
@@ -56,8 +52,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         visible,
         collecting,
         data,
-        jobStatus,
-        savingJobStatus,
         bugTracker,
         startFrame,
         stopFrame,
