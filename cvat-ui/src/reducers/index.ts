@@ -11,8 +11,9 @@ import {
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken,
-    Membership, AnnotationFormats,
+    Membership, AnnotationFormats, CloudStorage,
 } from 'cvat-core-wrapper';
+
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
@@ -235,8 +236,6 @@ interface CloudStorageStatus {
     status: string | null;
 }
 
-export type CloudStorage = any;
-
 export interface CloudStoragesState {
     initialized: boolean;
     fetching: boolean;
@@ -307,7 +306,7 @@ export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
-export type CallbackReturnType = Promise<void | { preventJobStatusChange: boolean }>;
+export type CallbackReturnType = Promise<undefined | { preventJobStatusChange: boolean }>;
 
 export interface PluginComponent {
     component: any;
@@ -447,7 +446,7 @@ export interface PluginsState {
 }
 
 export interface AboutState {
-    server: AboutData;
+    server: AboutData | null;
     packageVersion: {
         ui: string;
     };

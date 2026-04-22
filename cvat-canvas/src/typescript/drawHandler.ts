@@ -579,6 +579,30 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private drawPolyshape(): void {
         let size = this.drawData.shapeType === 'cuboid' ? 4 : this.drawData.numberOfPoints;
+        const snapToPoint = (pointIndex: number): void => {
+            if (
+                !this.configuration.snapToPoint ||
+                this.isCtrlKeyDown() ||
+                !['polygon', 'polyline'].includes(this.drawData.shapeType) ||
+                !this.getDrawnStates
+            ) {
+                return;
+            }
+
+            const pointsArray = (this.drawInstance as any).array().valueOf();
+            if (!pointsArray.length || pointIndex < 0 || pointIndex >= pointsArray.length) {
+                return;
+            }
+
+            applySnapToShapePoint(
+                this.drawInstance,
+                pointIndex,
+                this.getDrawnStates(),
+                this.geometry.offset,
+                this.configuration.snapRadius / this.geometry.scale,
+                this.drawData.redraw,
+            );
+        };
 
         const sizeDecrement = (): void => {
             if (--size === 0) {
@@ -589,32 +613,14 @@ export class DrawHandlerImpl implements DrawHandler {
             }
         };
 
-        this.drawInstance.on('drawstart', sizeDecrement);
+        this.drawInstance.on('drawstart', () => {
+            sizeDecrement();
+            snapToPoint(0);
+        });
         this.drawInstance.on('drawpoint', sizeDecrement);
         this.drawInstance.on('drawupdate', (): void => {
             this.transform(this.geometry);
-
-            if (this.configuration.snapToPoint &&
-                !this.isCtrlKeyDown() &&
-                ['polygon', 'polyline'].includes(this.drawData.shapeType) &&
-                this.getDrawnStates) {
-                const pointsArray = (this.drawInstance as any).array().valueOf();
-
-                if (pointsArray.length > 0) {
-                    const lastIndex = pointsArray.length - 1;
-                    const snapRadius = this.configuration.snapRadius / this.geometry.scale;
-                    const drawnStates = this.getDrawnStates();
-
-                    applySnapToShapePoint(
-                        this.drawInstance,
-                        lastIndex,
-                        drawnStates,
-                        this.geometry.offset,
-                        snapRadius,
-                        this.drawData.redraw,
-                    );
-                }
-            }
+            snapToPoint((this.drawInstance as any).array().valueOf().length - 1);
         });
         this.drawInstance.on('undopoint', (): number => size++);
 

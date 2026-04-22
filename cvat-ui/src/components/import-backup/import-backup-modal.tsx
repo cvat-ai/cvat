@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -15,6 +15,7 @@ import { InboxOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { importActions, importBackupAsync } from 'actions/import-actions';
 import SourceStorageField from 'components/storage/source-storage-field';
+import { shallowEqual } from 'utils/redux';
 import Input from 'antd/lib/input/Input';
 
 import { Storage, StorageData, StorageLocation } from 'cvat-core-wrapper';
@@ -135,7 +136,13 @@ function ImportBackupModal(): JSX.Element {
                 cloudStorageId: values.sourceStorage?.cloudStorageId,
             });
 
-            dispatch(importBackupAsync(instanceType, sourceStorage, file || (values.fileName) as string));
+            dispatch(
+                importBackupAsync(
+                    instanceType as 'project' | 'task',
+                    sourceStorage,
+                    file || (values.fileName) as string,
+                ),
+            );
 
             Notification.info({
                 message: `The ${instanceType} creating from the backup has been started`,

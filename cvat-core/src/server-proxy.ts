@@ -1968,7 +1968,7 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
     }
 }
 
-async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
+async function getCloudStorageContent(id: number, path?: string, nextToken?: string, manifestPath?: string):
 Promise<{ content: SerializedRemoteFile[], next: string | null }> {
     const { backendAPI } = config;
 
