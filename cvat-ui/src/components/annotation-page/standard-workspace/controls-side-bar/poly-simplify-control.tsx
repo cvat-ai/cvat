@@ -15,6 +15,7 @@ import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
+import { useIsMounted } from 'utils/hooks';
 import { MAX_ACCURACY } from './approximation-accuracy';
 
 interface Props {
@@ -33,6 +34,7 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
     } = props;
 
     const originalPointsRef = useRef<number[]>(objectState.points ? [...objectState.points] : []);
+    const isMounted = useIsMounted();
 
     const getSimplifiedPoints = useCallback((): number[] => {
         const closed = objectState.shapeType === ShapeType.POLYGON;
@@ -54,15 +56,34 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
         onUpdatePreview(simplifiedPoints);
     }, [getSimplifiedPoints, onUpdatePreview]);
 
+    const ensureInitialized = useCallback(async (): Promise<void> => {
+        if (!openCVWrapper.isInitialized) {
+            const hide = message.loading('Initializing contour utilities..', 0);
+            try {
+                await openCVWrapper.initialize(() => {
+                    hide();
+                });
+            } finally {
+                hide();
+            }
+        }
+    }, []);
+
     const debouncedUpdatePreview = useRef(debounce(
         (updateFn: () => Promise<void>) => updateFn(),
         100,
     )).current;
 
-    const handleApply = useCallback((): void => {
+    const handleApply = useCallback(async (): Promise<void> => {
         debouncedUpdatePreview.cancel();
+        await ensureInitialized();
+
+        if (!isMounted()) {
+            return;
+        }
+
         onApply(getSimplifiedPoints());
-    }, [debouncedUpdatePreview, getSimplifiedPoints, onApply]);
+    }, [debouncedUpdatePreview, ensureInitialized, getSimplifiedPoints, isMounted, onApply]);
 
     const handleCancel = useCallback((): void => {
         debouncedUpdatePreview.cancel();
@@ -88,18 +109,15 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
 
     useEffect(() => {
         const initializeAndPreview = async (): Promise<void> => {
-            if (!openCVWrapper.isInitialized) {
-                const hide = message.loading('Initializing contour utilities..', 0);
-                await openCVWrapper.initialize(() => {
-                    hide();
-                });
-            }
+            await ensureInitialized();
 
-            updatePreview();
+            if (isMounted()) {
+                updatePreview();
+            }
         };
 
         initializeAndPreview();
-    }, []);
+    }, [ensureInitialized, isMounted, updatePreview]);
 
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown, true);
@@ -115,7 +133,7 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
 
     useEffect(() => () => {
         debouncedUpdatePreview.cancel();
-    }, []);
+    }, [debouncedUpdatePreview]);
 
     const target = window.document.getElementsByClassName('cvat-canvas-container')[0];
 
