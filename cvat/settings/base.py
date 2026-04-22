@@ -456,6 +456,7 @@ EVENTS_LOCAL_DB_ROOT = BASE_DIR / "events"
 EVENTS_LOCAL_DB_ROOT.mkdir(parents=True, exist_ok=True)
 _events_local_db_slot_lock_fd = None
 
+
 def _resolve_events_local_db_filename(template: str) -> str:
     global _events_local_db_slot_lock_fd
 
@@ -488,6 +489,7 @@ def _resolve_events_local_db_filename(template: str) -> str:
         return template.format(worker=worker)
     except (KeyError, ValueError, IndexError):
         return template
+
 
 events_local_db_filename = _resolve_events_local_db_filename(
     os.getenv("CVAT_EVENTS_LOCAL_DB_FILENAME", "events.db")
