@@ -814,6 +814,14 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     consensus_replicas = models.IntegerField(default=0)
     "Per job consensus replica count"
 
+    total_jobs_count: MaybeUndefined[int]
+    "Can be defined by the fetching queryset"
+
+    completed_jobs_count: MaybeUndefined[int]
+    "Can be defined by the fetching queryset"
+
+    validation_jobs_count: MaybeUndefined[int]
+    "Can be defined by the fetching queryset"
 
     # Extend default permission model
     class Meta:
@@ -842,20 +850,6 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     def require_data(self) -> Data:
         assert self.data is not None
         return self.data
-
-    @cached_property
-    def completed_jobs_count(self) -> int | None:
-        # Requires this field to be defined externally,
-        # e.g. by calling Task.objects.with_job_summary,
-        # to avoid unexpected DB queries on access.
-        return None
-
-    @cached_property
-    def validation_jobs_count(self) -> int | None:
-        # Requires this field to be defined externally,
-        # e.g. by calling Task.objects.with_job_summary,
-        # to avoid unexpected DB queries on access.
-        return None
 
     @cached_property
     def gt_job(self) -> Job | None:
