@@ -163,7 +163,9 @@ def _generate_segment_params(
 
         overlap = db_task.overlap
         if overlap is None:
-            if db_task.media_type == models.MediaType.VIDEO:
+            if data_size <= segment_size:
+                overlap = 0
+            elif db_task.media_type == models.MediaType.VIDEO:
                 overlap = 5
             elif db_task.media_type == models.MediaType.AUDIO:
                 overlap = 10000
