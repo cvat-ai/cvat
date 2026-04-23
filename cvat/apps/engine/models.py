@@ -573,7 +573,7 @@ class Data(models.Model):
         return (
             self.storage == StorageChoice.LOCAL
             and self.storage_method == StorageMethodChoice.CACHE
-            and not hasattr(self, "video")
+            and self.images.exists()
         )
 
     def move_to_backing_cs(self, backing_cs: CloudStorage) -> None:
@@ -586,7 +586,6 @@ class Data(models.Model):
         assert cloud_storage_instance
 
         upload_dir = self.get_upload_dirname()
-        assert (upload_dir / self.MANIFEST_FILENAME).is_file()
 
         rel_paths_to_move = self.get_all_media_rel_paths()
 
@@ -613,7 +612,6 @@ class Data(models.Model):
         transaction.on_commit(clear_original_files, robust=True)
 
     def move_from_backing_cs(self) -> None:
-        assert self.supports_backing_cs()
         assert self.local_storage_backing_cs_id
 
         cloud_storage_instance = self.get_cloud_storage_instance()

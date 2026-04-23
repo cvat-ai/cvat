@@ -15,7 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Model
 from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
-from django.dispatch import Signal, receiver
+from django.dispatch import receiver
 
 from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
 from cvat.apps.engine.serializers import BasicUserSerializer
@@ -35,9 +35,6 @@ from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 
 WEBHOOK_TIMEOUT = 10
 RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
-
-signal_redelivery = Signal()
-signal_ping = Signal()
 
 
 def send_webhook(webhook, payload, redelivery=False):
@@ -330,13 +327,11 @@ def post_delete_resource_event(sender, instance, **kwargs):
     )
 
 
-@receiver(signal_redelivery)
-def redelivery(sender, data=None, **kwargs):
-    add_to_queue(sender.get_object(), data, redelivery=True)
+def redeliver(webhook, data):
+    add_to_queue(webhook, data, redelivery=True)
 
 
-@receiver(signal_ping)
-def ping(sender, serializer, **kwargs):
+def ping(serializer):
     data = {"event": "ping", "webhook": serializer.data, "sender": get_sender(serializer.instance)}
     delivery = send_webhook(serializer.instance, data, redelivery=False)
     return delivery

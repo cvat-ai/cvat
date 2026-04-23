@@ -7,7 +7,7 @@ source "$(dirname "$0")/check_env.sh"
 
 # Functions from check_env.sh that we'd like to run in this script.
 common_env
-resolve_model_id
+resolve_model_params
 resolve_cuda
 
 # This block is for docker compose only. Helm uses CM that is injected as env var.
@@ -28,8 +28,6 @@ fi
 # This should be in sync with Dockerfile. We prefer to keep both scripts in the same folder (/app by default)
 FUNCTION_FILE_PATH="func.py"
 
-# You may replace this with your function name.
-echo "Running YOUR_FUNCTION_NAME_HERE function agent for FUNCTION_ID: $FUNCTION_ID with MODEL_ID: $MODEL_ID..."
-
-#NB! for some functions it is `model_id` and for some `model`
-exec cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID" "${USE_CUDA_ARGS[@]}"
+echo "Running your function agent for FUNCTION_ID: $FUNCTION_ID with MODEL: $MODEL..."
+# $MODEL_CONFIG_PARAMS should be unquoted to be passed as separate arguments to cvat-cli.
+exec cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" $MODEL_CONFIG_PARAMS "${USE_CUDA_ARGS[@]}"

@@ -336,7 +336,7 @@ export default class Collection {
                     keyframes[object.frame + 1].outside = true;
                     keyframes[object.frame + 1].frame++;
                     keyframes[object.frame + 1].attributes = [];
-                    (keyframes[object.frame + 1].elements || []).forEach((el) => {
+                    ((keyframes[object.frame + 1] as any).elements || []).forEach((el) => {
                         el.outside = keyframes[object.frame + 1].outside;
                         el.frame = keyframes[object.frame + 1].frame;
                     });
@@ -1196,19 +1196,21 @@ export default class Collection {
         // Add constructed objects to a collection
         // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
-        const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+        const importedArray = ([] as (Tag | Track | Shape)[])
+            .concat(imported.tags, imported.tracks, imported.shapes);
         const additionalUndo = [];
         const additionalRedo = [];
         const additionalClientIDs = [];
         let globalEmptyMaskOccurred = false;
         for (const object of importedArray) {
-            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels.enabled) {
+            if (object instanceof MaskShape && config.removeUnderlyingMaskPixels.enabled) {
                 const {
                     clientIDs,
                     emptyMaskOccurred,
                     undo: undoWithUnderlyingPixels,
                     redo: redoWithUnderlyingPixels,
-                } = (object as MaskShape).removeUnderlyingPixels(object.frame);
+                } = object.removeUnderlyingPixels(object.frame);
+
                 additionalUndo.push(undoWithUnderlyingPixels);
                 additionalRedo.push(redoWithUnderlyingPixels);
                 additionalClientIDs.push(clientIDs);

@@ -147,7 +147,7 @@ cvat:
         extraArgs: []
     replicas: 1
     image: cvat/server
-    tag: v2.62.0
+    tag: v2.63.0
     imagePullPolicy: Always
     permissionFix:
       enabled: true
@@ -175,7 +175,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.62.0
+    tag: v2.63.0
     imagePullPolicy: Always
     labels: {}
     #  test: test
@@ -286,7 +286,7 @@ cvat:
       name: cvat-kvrocks-secret
       password: cvat_kvrocks
     image: apache/kvrocks
-    tag: 2.12.1
+    tag: 2.15.0
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test

@@ -84,7 +84,7 @@ class OrganizationViewSet(
     ordering_fields = list(filter_fields)
     ordering = "-id"
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    iam_organization_field = None
+    iam_supports_organization_params = False
     iam_permission_class = OrganizationPermission
 
     def get_queryset(self):
@@ -153,7 +153,7 @@ class MembershipViewSet(
     simple_filters = list(search_fields)
     ordering_fields = list(filter_fields)
     lookup_fields = {"user": "user__username"}
-    iam_organization_field = "organization"
+    iam_supports_organization_params = True
     iam_permission_class = MembershipPermission
 
     def get_serializer_class(self):
@@ -246,7 +246,7 @@ class InvitationViewSet(
 ):
     queryset = Invitation.objects.all()
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    iam_organization_field = "membership__organization"
+    iam_supports_organization_params = True
     iam_permission_class = InvitationPermission
 
     search_fields = ("owner",)

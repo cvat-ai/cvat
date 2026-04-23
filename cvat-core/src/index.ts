@@ -67,7 +67,9 @@ export default interface CVATCore {
     };
     server: {
         about: () => Promise<AboutData>;
-        share: (dir: string) => Promise<{
+        share: (
+            ...args: Parameters<typeof serverProxy.server.share>
+        ) => Promise<{
             mimeType: string;
             name: string;
             type: enums.ShareFileType;
@@ -76,7 +78,7 @@ export default interface CVATCore {
         userAgreements: typeof serverProxy.server.userAgreements,
         register: (
             ...args: Parameters<typeof serverProxy.server.register>
-        ) => Promise<User>;
+        ) => ReturnType<typeof serverProxy.server.register>;
         login: typeof serverProxy.server.login;
         logout: typeof serverProxy.server.logout;
         changePassword: typeof serverProxy.server.changePassword;

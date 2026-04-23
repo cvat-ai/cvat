@@ -6,7 +6,7 @@
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    connect, shallowEqual, useDispatch, useSelector,
+    connect, useDispatch, useSelector,
 } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
@@ -22,6 +22,7 @@ import Tooltip from 'antd/lib/tooltip';
 import TargetStorageField from 'components/storage/target-storage-field';
 import CVATMarkdown from 'components/common/cvat-markdown';
 import NameTemplateTooltip from 'components/common/cvat-name-template-tooltip';
+import { shallowEqual } from 'utils/redux';
 import { CombinedState } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
