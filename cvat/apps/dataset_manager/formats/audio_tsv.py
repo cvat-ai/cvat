@@ -10,7 +10,7 @@ from datetime import timedelta
 
 from cvat.apps.dataset_manager.bindings import CommonData
 from cvat.apps.dataset_manager.formats.registry import exporter, importer
-from cvat.apps.engine.models import DimensionType
+from cvat.apps.engine.models import DimensionType, SourceType
 from cvat.apps.engine.utils import take_by
 
 
@@ -89,7 +89,7 @@ def _import(src_file, temp_dir, instance_data: CommonData, load_data_callback=No
                 stop=parse_time(row.pop("stop")),
                 label=row.pop("label"),
                 group=int(row.pop("group", 0)),
-                source="file",
+                source=SourceType.FILE.value,
                 attributes=[CommonData.Attribute(name=k, value=v) for k, v in row.items()],
             )
             instance_data.add_interval(interval)

@@ -277,9 +277,9 @@ class CommonData(InstanceLabelData):
         start: timedelta
         stop: timedelta
         label: int
-        group: int
-        source: str
         attributes: Sequence[CommonData.Attribute]
+        group: int = 0
+        source: str | None = None
         id: int | None = None
         score: float = 1.0
 
