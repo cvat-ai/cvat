@@ -39,6 +39,7 @@ import { toClipboard } from 'utils/to-clipboard';
 interface OwnProps {
     clientID: number;
     objectStates: ObjectState[];
+    allowSimplifyLifecycle?: boolean;
 }
 
 interface StateToProps {
@@ -198,11 +199,12 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Readonly<Props>): void {
         const {
-            objectState, simplifyState, defaultApproxPolyAccuracy,
+            objectState, simplifyState, defaultApproxPolyAccuracy, allowSimplifyLifecycle = true,
         } = this.props;
         const { simplifyMode } = this.state;
 
         if (
+            allowSimplifyLifecycle &&
             !simplifyMode &&
             simplifyState.objectState &&
             simplifyState.objectState.clientID === objectState.clientID &&
@@ -222,11 +224,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     public componentWillUnmount(): void {
         const {
-            objectState, jobInstance, switchSimplifyVisibility, updateState,
+            objectState, jobInstance, switchSimplifyVisibility, updateState, allowSimplifyLifecycle = true,
         } = this.props;
         const { simplifyMode, originalPoints } = this.state;
 
-        if (simplifyMode) {
+        if (allowSimplifyLifecycle && simplifyMode) {
             if (originalPoints) {
                 objectState.points = originalPoints;
                 updateState(objectState);
@@ -304,6 +306,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 originalPoints,
             });
         }
+    };
+
+    private requestSimplification = (): void => {
+        const { objectState, switchSimplifyVisibility } = this.props;
+        switchSimplifyVisibility(objectState.clientID as number);
     };
 
     private applySimplification = async (simplifiedPoints: number[]): Promise<void> => {
@@ -597,7 +604,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     changeLabel={this.changeLabel}
                     edit={this.edit}
                     slice={this.slice}
-                    simplify={this.simplify}
+                    simplify={this.requestSimplification}
                     resetCuboidPerspective={this.resetCuboidPerspective}
                     runAnnotationAction={this.runAnnotationAction}
                 />
