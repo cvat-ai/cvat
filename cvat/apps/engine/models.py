@@ -1396,9 +1396,9 @@ class Annotation(models.Model):
     job = models.ForeignKey(Job, on_delete=models.DO_NOTHING)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
-    group = models.PositiveIntegerField(null=True)
+    group = models.PositiveIntegerField(default=0)
     source = models.CharField(max_length=16, choices=SourceType.choices(),
-        default=str(SourceType.MANUAL), null=True)
+        default=SourceType.MANUAL)
 
     class Meta:
         abstract = True

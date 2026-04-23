@@ -8649,6 +8649,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -8676,6 +8677,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -8726,6 +8728,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -8786,6 +8789,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -8825,6 +8829,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -8861,6 +8866,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -10895,6 +10901,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -10951,6 +10958,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -10986,6 +10994,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -11018,6 +11027,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
