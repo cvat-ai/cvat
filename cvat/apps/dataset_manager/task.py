@@ -537,6 +537,17 @@ class JobAnnotation:
                 )
             )
 
+        if data.intervals:
+            task_start = db_data.start_frame
+            task_stop = db_data.stop_frame
+            for interval in data.intervals:
+                if not data.is_interval_inside(interval, task_start, task_stop):
+                    raise ValidationError(
+                        f"Interval cannot be outside the task boundaries"
+                        f"[{task_start}, {task_stop}], got "
+                        f"[{interval['start']}, {interval['stop']}]"
+                    )
+
         return data
 
     def _delete_job_labeledimages(self, ids__UNSAFE: list[int]) -> None:
