@@ -925,13 +925,23 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
-            # with_job_summary() is optimized in the serializer
+            # with_job_summary() is optimized in the TaskReadListSerializer
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
         elif self.action == 'validation_layout':
             queryset = Task.objects.select_related('data', 'data__validation_layout')
-        else:
-            queryset = queryset.with_job_summary()
+        elif self.action not in ('metadata', 'annotations'):
+            queryset = queryset.select_related(
+                'data',
+            )
+
+            if self.action in ('create', 'retrieve', 'update', 'partial_update'):
+                queryset = queryset.select_related(
+                    'target_storage',
+                    'source_storage',
+                    'annotation_guide',
+                )
+                queryset = queryset.with_job_summary()
 
         return queryset
 
@@ -1790,9 +1800,23 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
-            # with_* optimized in JobReadListSerializer
-        else:
-            queryset = queryset.with_issue_counts().with_child_jobs_counts()
+
+            queryset = queryset.prefetch_related(
+                "segment__task__source_storage",
+                "segment__task__target_storage",
+            )
+            # with_issue_counts() is optimized in JobReadListSerializer
+        elif self.action not in ('annotations', 'metadata'):
+            queryset = queryset.select_related(
+                'segment__task__data',
+            )
+
+            if self.action in ('create', 'retrieve', 'update', 'partial_update'):
+                queryset = queryset.select_related(
+                    'segment__task__annotation_guide',
+                    'segment__task__project__annotation_guide',
+                )
+                queryset = queryset.with_issue_counts()
 
         return queryset
 

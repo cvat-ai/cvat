@@ -179,9 +179,9 @@ class _CollectionSummarySerializer(serializers.Serializer):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
-    count = serializers.IntegerField(source='total_jobs_count', default=0)
-    completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
-    validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
+    count = serializers.IntegerField(source='total_jobs_count')
+    completed = serializers.IntegerField(source='completed_jobs_count')
+    validation = serializers.IntegerField(source='validation_jobs_count')
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
