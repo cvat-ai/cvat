@@ -65,7 +65,7 @@ services:
 
   cvat_redis_ondisk:
     container_name: cvat_redis_ondisk
-    image: apache/kvrocks:2.12.1
+    image: apache/kvrocks:2.15.0
     restart: always
     # The kvrocks image a) has a healthcheck command, and b) has a root process
     # that doesn't reap children, so it's susceptible to the problem described here:
