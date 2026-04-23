@@ -1070,7 +1070,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         except models.TaskGroundTruthJobsLimitError as ex:
             raise serializers.ValidationError(ex.message) from ex
 
-        if validated_data.get("assignee_id"):
+        if job_params.get("assignee_id"):
             job.assignee_updated_date = job.updated_date
             job.save(update_fields=["assignee_updated_date"])
 
