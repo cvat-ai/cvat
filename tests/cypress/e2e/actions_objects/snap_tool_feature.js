@@ -393,7 +393,7 @@ context('Snap tool feature.', () => {
         });
 
         it('Snapping works when the first snapped point is on another shape', () => {
-            // TODO: attach issue when fix is ready
+            allure.issue('https://github.com/cvat-ai/cvat/pull/10509', 'Snap to initial point');
             const rectCorners = getRectCorners(createRectangleShape2Points);
             const createPolygonShapeSnappedSide = {
                 pointsMap: [
