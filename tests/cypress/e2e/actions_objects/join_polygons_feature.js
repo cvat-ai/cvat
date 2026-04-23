@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) 2026 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,25 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
         const dx = point.x + vector.a;
         const dy = point.y + vector.b;
         return { x: dx, y: dy };
+    }
+    /**
+     * Joins multiple polygon shapes together
+     * @param {{id: string, position?: Cypress.PositionType}[]} shapes
+     * @returns {void}
+     */
+    function joinShapes(shapes) {
+        cy.get('.cvat-join-control').should('exist').and('be.visible').click();
+        cy.get('.cvat-join-control').should('have.class', 'cvat-active-canvas-control');
+        for (const shape of shapes) {
+            cy.get(shape.objectId).click(shape.position); // non-overlapping shape parts
+        }
+        cy.realPress('j');
+    }
+
+    function checkMergeSuccess() {
+        cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
+        cy.get('#cvat_canvas_shape_1').should('not.exist');
+        cy.get('#cvat_canvas_shape_2').should('not.exist');
     }
 
     const firstPolygonPoints = {
@@ -63,28 +82,25 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
     afterEach(() => {
         cy.removeAnnotations();
     });
+
     it('Join overlapping polygons', () => {
         cy.createPolygon(overlapPolygonPoints);
-        cy.get('.cvat-join-control').should('exist').and('be.visible').click();
-        cy.get('.cvat-join-control').should('have.class', 'cvat-active-canvas-control');
-        cy.get('#cvat_canvas_shape_1').click('top'); // non-overlapping shape parts
-        cy.get('#cvat_canvas_shape_2').click('bottom');
-        cy.get('.cvat-join-control').should('exist').and('be.visible').click();
-        cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
-        cy.get('#cvat_canvas_shape_1').should('not.exist');
-        cy.get('#cvat_canvas_shape_2').should('not.exist');
+        joinShapes([
+            // non-overlapping shape parts
+            { objectId: '#cvat_canvas_shape_1', position: 'top' },
+            { objectId: '#cvat_canvas_shape_2', position: 'bottom' },
+        ]);
+        checkMergeSuccess();
     });
 
     it('Join nested polygons', () => {
         cy.createPolygon(includedPolygonPoints);
         getShapeCoord('polygon', '#cvat_canvas_shape_1').invoke('toSorted').then((coords1) => {
-            cy.get('.cvat-join-control').should('exist').and('be.visible').click();
-            cy.get('#cvat_canvas_shape_2').click('center');
-            cy.get('#cvat_canvas_shape_1').click('bottom');
-            cy.get('.cvat-join-control').should('exist').and('be.visible').click();
-            cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
-            cy.get('#cvat_canvas_shape_1').should('not.exist');
-            cy.get('#cvat_canvas_shape_2').should('not.exist');
+            joinShapes([
+                { objectId: '#cvat_canvas_shape_2', position: 'center' },
+                { objectId: '#cvat_canvas_shape_1', position: 'bottom' },
+            ]);
+            checkMergeSuccess();
             getShapeCoord('polygon', '#cvat_canvas_shape_3').invoke('toSorted')
                 .should('deep.equal', coords1);
         });
@@ -94,10 +110,10 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
         cy.createPolygon(disjointedPolygonPoints);
         getShapeCoord('polygon', '#cvat_canvas_shape_1').invoke('toSorted').then((coords1) => {
             getShapeCoord('polygon', '#cvat_canvas_shape_2').invoke('toSorted').then((coords2) => {
-                cy.get('.cvat-join-control').click();
-                cy.get('#cvat_canvas_shape_2').click();
-                cy.get('#cvat_canvas_shape_1').click();
-                cy.get('.cvat-join-control').click();
+                joinShapes([
+                    { objectId: '#cvat_canvas_shape_2' },
+                    { objectId: '#cvat_canvas_shape_1' },
+                ]);
                 cy.get('.cvat-notification-warning-canvas')
                     .should('exist').and('be.visible')
                     .and('contain', 'Merge resulted in 2 separate polygons.');
@@ -120,10 +136,10 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
             return false;
         });
         cy.createPolygon(selfIntersectingPolygonPoints);
-        cy.get('.cvat-join-control').click();
-        cy.get('#cvat_canvas_shape_1').click('top');
-        cy.get('#cvat_canvas_shape_2').click('right');
-        cy.get('.cvat-join-control').click();
+        joinShapes([
+            { objectId: '#cvat_canvas_shape_1', position: 'top' },
+            { objectId: '#cvat_canvas_shape_2', position: 'right' },
+        ]);
         cy.get('.cvat-notification-notice-canvas-error-occurred')
             .should('exist').and('be.visible');
         cy.closeNotification('.cvat-notification-notice-canvas-error-occurred');
