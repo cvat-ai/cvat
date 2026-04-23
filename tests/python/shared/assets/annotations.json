@@ -9054,7 +9054,7 @@
               "value": ""
             }
           ],
-          "group": null,
+          "group": 0,
           "id": 1,
           "label_id": 94,
           "score": 1.0,
@@ -9073,7 +9073,7 @@
               "value": ""
             }
           ],
-          "group": null,
+          "group": 0,
           "id": 2,
           "label_id": 94,
           "score": 1.0,
@@ -9100,7 +9100,7 @@
               "value": ""
             }
           ],
-          "group": null,
+          "group": 0,
           "id": 3,
           "label_id": 94,
           "score": 1.0,
@@ -9119,7 +9119,7 @@
               "value": ""
             }
           ],
-          "group": null,
+          "group": 0,
           "id": 4,
           "label_id": 94,
           "score": 1.0,
@@ -14064,7 +14064,7 @@
               "value": ""
             }
           ],
-          "group": null,
+          "group": 0,
           "id": 1,
           "label_id": 94,
           "score": 1.0,
@@ -14083,7 +14083,7 @@
               "value": ""
             }
           ],
-          "group": null,
+          "group": 0,
           "id": 2,
           "label_id": 94,
           "score": 1.0,
