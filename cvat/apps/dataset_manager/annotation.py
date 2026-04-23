@@ -173,7 +173,7 @@ class AnnotationIR:
         return track
 
     @staticmethod
-    def _is_interval_inside(interval: dict[str, Any], start: int, stop: int) -> bool:
+    def is_interval_inside(interval: dict[str, Any], start: int, stop: int) -> bool:
         return interval["start"] >= start and interval["stop"] <= stop
 
     def slice(self, start, stop):
@@ -196,7 +196,7 @@ class AnnotationIR:
 
         if self.intervals:
             for interval in self.intervals:
-                if not self._is_interval_inside(interval, start, stop):
+                if not self.is_interval_inside(interval, start, stop):
                     raise Exception(
                         f"Interval {interval.id} cannot be sliced to the [{start}, {stop}] range"
                     )
