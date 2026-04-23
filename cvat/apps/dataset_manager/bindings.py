@@ -519,7 +519,7 @@ class CommonData(InstanceLabelData):
 
     def _export_labeled_interval(self, interval: dict[str, Any]) -> LabeledInterval:
         def frame_to_timestamp(frame: int) -> timedelta:
-            return timedelta(milliseconds=frame / 1000)
+            return timedelta(milliseconds=frame)
 
         return CommonData.LabeledInterval(
             id=interval["id"],
