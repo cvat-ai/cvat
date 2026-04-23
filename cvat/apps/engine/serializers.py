@@ -3210,8 +3210,10 @@ class ImageAnnotationSerializer(serializers.Serializer):
 class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     label_id = serializers.IntegerField(min_value=0)
-    group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
-    source = serializers.CharField(default='manual')
+    group = serializers.IntegerField(min_value=0, default=0, allow_null=True)
+    source = serializers.ChoiceField(
+        choices=models.SourceType.choices(), default=models.SourceType.MANUAL
+    )
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3222,6 +3224,9 @@ class AnnotationSerializer(serializers.Serializer):
         if value is None:
             raise serializers.ValidationError("must be present and not null")
         return value
+
+    def validate_group(self, value):
+        return value or 0 # backward compatibility for API
 
     @cached_property
     def validate_id(self):
