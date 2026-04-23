@@ -1012,7 +1012,7 @@ class AudioReader(IMediaReader):
                 raise RuntimeError("Can not determine duration of the audio file")
 
         if self.stop is not None:
-            duration = min(duration, self.stop / self.FRAME_RATE)
+            duration = min(duration, (self.stop + 1) / self.FRAME_RATE)
 
         if self.start:
             duration = max(0, duration - self.start / self.FRAME_RATE)
