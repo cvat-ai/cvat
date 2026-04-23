@@ -1013,7 +1013,7 @@ class TestGetTaskDataset:
         default_subset_name,
         subset_path_template,
     ):
-        tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
+        tasks = filter_tasks(exclude_target_storage__location="cloud_storage", dimension="2d")
         group_key_func = itemgetter("subset")
         subsets_and_tasks = [
             (subset, next(group))
@@ -1717,7 +1717,7 @@ class TestTaskBackups:
         assert restored_task_json["id"] != task_json["id"]
         assert restored_task_json["data"] != task_json["data"]
         assert restored_task_json["organization"] is None
-        assert restored_task_json["data_compressed_chunk_type"] in ["imageset", "video"]
+        assert restored_task_json["data_compressed_chunk_type"] in ["imageset", "video", "audio_mp3"]
         if task_json["jobs"]["count"] == 1:
             assert restored_task_json["overlap"] == 0
         else:
@@ -3376,7 +3376,10 @@ class TestImportTaskAnnotations:
             )
         )
 
-        self.client.tasks.retrieve(task["id"]).import_annotations(format_name, dataset_file)
+        with TemporaryDirectory() as temp_dir:
+            annotation_file = Path(temp_dir) / "annotations.tsv"
+            annotation_file.write_bytes(dataset_file.getvalue())
+            self.client.tasks.retrieve(task["id"]).import_annotations(format_name, annotation_file)
 
         updated_annotations = json.loads(
             self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
