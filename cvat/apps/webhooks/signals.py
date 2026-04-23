@@ -22,7 +22,7 @@ from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.events.handlers import (
     get_instance_diff,
     get_request,
-    get_serializer,
+    get_cleaned_up_serializer,
     get_user,
     organization_id,
     project_id,
@@ -210,7 +210,7 @@ def pre_save_resource_event(sender, instance, **kwargs):
     if created:
         instance._webhooks_old_data = None
     else:
-        old_serializer = get_serializer(instance=old_instance)
+        old_serializer = get_cleaned_up_serializer(instance=old_instance)
         instance._webhooks_old_data = old_serializer.data
 
 
@@ -241,7 +241,7 @@ def post_save_resource_event(sender, instance, created: bool, raw: bool, **kwarg
     event_type = event_name("create" if created else "update", resource_name)
     only_one_event_type = not isinstance(selected_webhooks, dict)
 
-    serializer = get_serializer(instance=instance)
+    serializer = get_cleaned_up_serializer(instance=instance)
 
     data = {
         resource_name: serializer.data,
@@ -290,7 +290,7 @@ def pre_delete_resource_event(sender, instance, **kwargs):
     if resource_name in ["project", "organization"]:
         related_webhooks = select_webhooks(instance, event_name("delete", resource_name))
 
-    serializer = get_serializer(instance=deepcopy(instance))
+    serializer = get_cleaned_up_serializer(instance=deepcopy(instance))
     instance._deleted_object = dict(serializer.data)
     instance._related_webhooks = related_webhooks
 
