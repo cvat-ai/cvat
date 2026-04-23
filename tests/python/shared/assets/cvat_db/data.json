@@ -16551,7 +16551,7 @@
   "fields": {
     "job": 65,
     "label": 94,
-    "group": null,
+    "group": 0,
     "source": "manual",
     "score": 1.0,
     "start": 0,
@@ -16564,7 +16564,7 @@
   "fields": {
     "job": 65,
     "label": 94,
-    "group": null,
+    "group": 0,
     "source": "manual",
     "score": 1.0,
     "start": 0,
@@ -16577,7 +16577,7 @@
   "fields": {
     "job": 66,
     "label": 94,
-    "group": null,
+    "group": 0,
     "source": "manual",
     "score": 1.0,
     "start": 0,
@@ -16590,7 +16590,7 @@
   "fields": {
     "job": 66,
     "label": 94,
-    "group": null,
+    "group": 0,
     "source": "manual",
     "score": 1.0,
     "start": 0,
