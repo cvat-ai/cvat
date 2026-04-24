@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ARG USE_GPU=false
 ARG TARGETARCH
-ADD --chmod=+x https://dl.k8s.io/release/v1.34.0/bin/linux/${TARGETARCH}/kubectl /usr/local/bin/
 
 RUN groupadd --gid 1000 agent && \
     useradd --uid 1000 --gid 1000 --create-home agent
@@ -30,6 +29,9 @@ COPY --chmod=755 ai-models/agents_deployment/sam2/function_registration.sh .
 COPY --chmod=755 ai-models/agents_deployment/sam2/function_deregistration.sh .
 COPY --chmod=755 ai-models/agents_deployment/sam2/check_env.sh .
 COPY --chmod=755 ai-models/agents_deployment/sam2/entrypoint.sh .
+
+#v1.34.5 fixes CVE-2025-68121
+ADD --chmod=+x https://dl.k8s.io/release/v1.34.6/bin/linux/${TARGETARCH}/kubectl /usr/local/bin/
 
 USER agent
 

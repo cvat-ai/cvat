@@ -994,6 +994,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 ));
         } else {
             objects = objectsToConstruct
+                .filter(({ rle }) => rle.length >= 6) // minimal RLE length for a valid shape
                 .map(({ rle }) => (
                     new core.classes.ObjectState({
                         shapeType: ShapeType.MASK,
@@ -1025,6 +1026,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private receivePointsFromMask(mask: Int32Array): [number, number][] {
         if (!openCVWrapper.isInitialized) {
             throw new Error('OpenCV was not initialized');
+        }
+
+        if (mask.length < 6) {
+            // minimal non-empty RLE is 6 points
+            return [];
         }
 
         const polygons = openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });

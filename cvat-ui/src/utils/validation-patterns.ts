@@ -5,8 +5,8 @@
 
 const validationPatterns = {
     validatePasswordLength: {
-        pattern: /(?=.{8,})/,
-        message: 'Password must have at least 8 characters',
+        pattern: /^(?=.{8,256}$)/,
+        message: 'Password must be between 8 and 256 characters',
     },
 
     passwordContainsNumericCharacters: {

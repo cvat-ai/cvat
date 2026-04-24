@@ -331,10 +331,10 @@ export class MasksHandlerImpl implements MasksHandler {
             this.canvas.add(this.brushMarker);
         }
         const rle = imageDataToRLE(imageData);
-        const emptyMask = rle.length < 2;
+        const isEmptyMask = rle.length < 2;
         this.tool.onBlockUpdated({
-            eraser: emptyMask,
-            'polygon-minus': emptyMask,
+            eraser: isEmptyMask,
+            'polygon-minus': isEmptyMask,
         });
     }
 

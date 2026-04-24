@@ -70,21 +70,6 @@ class TestPostTaskData:
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with defined start and stop frames",
-            "labels": [
-                {
-                    "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [
-                        {
-                            "name": "a",
-                            "mutable": True,
-                            "input_type": "number",
-                            "default_value": "5",
-                            "values": ["4", "5", "6"],
-                        }
-                    ],
-                }
-            ],
         }
 
         task_data = {
@@ -104,7 +89,6 @@ class TestPostTaskData:
     def test_default_overlap_for_small_segment_size(self):
         task_spec = {
             "name": f"test {self._USERNAME} with default overlap and small segment_size",
-            "labels": [{"name": "car"}],
             "segment_size": 5,
         }
 
@@ -142,7 +126,6 @@ class TestPostTaskData:
     def test_task_segmentation(self, size, expected_segments):
         task_spec = {
             "name": f"test {self._USERNAME} to check segmentation into jobs",
-            "labels": [{"name": "car"}],
             "segment_size": 3,
             "overlap": 1,
         }
@@ -166,11 +149,6 @@ class TestPostTaskData:
     def test_can_create_task_with_exif_rotated_images(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated images",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         image_files = ["images/exif_rotated/left.jpg", "images/exif_rotated/right.jpg"]
@@ -210,11 +188,6 @@ class TestPostTaskData:
 
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with big images",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         # We need a big file to reproduce the problem
@@ -251,11 +224,6 @@ class TestPostTaskData:
     def test_can_create_task_with_exif_rotated_tif_image(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated tif image",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         image_files = ["images/exif_rotated/tif_left.tif"]
@@ -289,11 +257,6 @@ class TestPostTaskData:
     def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a custom sorting method",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         image_files = generate_image_files(15)
@@ -317,11 +280,6 @@ class TestPostTaskData:
     def test_can_create_task_with_video_without_keyframes(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a video without keyframes",
-            "labels": [
-                {
-                    "name": "label1",
-                }
-            ],
         }
 
         task_data = {
@@ -339,11 +297,6 @@ class TestPostTaskData:
     def test_can_create_task_with_sorting_method_predefined(self, data_source):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a custom sorting method",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         if data_source == "client_files":
@@ -801,11 +754,6 @@ class TestPostTaskData:
 
         task_spec = {
             "name": f"Task with files from foreign cloud storage {storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         data_spec = {
@@ -919,11 +867,6 @@ class TestPostTaskData:
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         data_spec = {
@@ -1072,7 +1015,6 @@ class TestPostTaskData:
     def test_can_specify_file_job_mapping(self):
         task_spec = {
             "name": f"test file-job mapping",
-            "labels": [{"name": "car"}],
         }
 
         files = generate_image_files(7)
@@ -1247,7 +1189,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": fxt_test_name,
-            "labels": [{"name": "a"}],
             "segment_size": base_segment_size,
         }
 
@@ -1344,7 +1285,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": fxt_test_name,
-            "labels": [{"name": "a"}],
             "segment_size": base_segment_size,
         }
 
@@ -1443,7 +1383,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": request.node.name,
-            "labels": [{"name": "a"}],
             "segment_size": segment_size,
         }
 
@@ -1564,7 +1503,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": request.node.name,
-            "labels": [{"name": "a"}],
             "segment_size": segment_size,
         }
 
@@ -1721,7 +1659,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": request.node.name,
-            "labels": [{"name": "a"}],
             "segment_size": segment_size,
             "consensus_replicas": replication,
         }

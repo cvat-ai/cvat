@@ -30,17 +30,6 @@ resolve_org_slug() {
     fi
 }
 
-# This example is for SAM2 function.
-# For your function it will be different.
-resolve_model_id() {
-    if [ -z "$MODEL_ID" ]; then
-        echo "Warning: MODEL_ID environment variable not found. Default is facebook/sam2.1-hiera-tiny"
-        MODEL_ID="facebook/sam2.1-hiera-tiny"
-    else
-        echo "Using MODEL_ID: $MODEL_ID"
-    fi
-}
-
 resolve_cuda() {
     if [ "$USE_CUDA" = "true" ]; then
         echo "Using CUDA! Please ensure that you are using proper image with CUDA support"
@@ -50,8 +39,52 @@ resolve_cuda() {
     fi
 }
 
+resolve_model_params() {
+    if [ -z "$MODEL_CONFIG_PARAMS" ]; then
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable not found. Default model will be used: facebook/detr-resnet-50"
+        MODEL_CONFIG_PARAMS="-p model=facebook/detr-resnet-50"
+        MODEL="-p task=str:object-detection -p model=str:facebook/detr-resnet-50"
+    elif result=$(echo "$MODEL_CONFIG_PARAMS" | grep -oP 'model=str:\K[^ ]+'); then
+        echo "Extracted MODEL from MODEL_CONFIG_PARAMS: $result"
+        MODEL="$result"
+    else
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable is set but model param is malformed. Your config will be discarded. Default values will be used."
+        echo "MODEL_CONFIG_PARAMS should contain model in format -p model=str:your_model_name"
+        echo "Following params will be used for cvat-cli: -p task=str:object-detection -p model=str:facebook/detr-resnet-50"
+        MODEL_CONFIG_PARAMS="-p task=str:object-detection -p model=str:facebook/detr-resnet-50"
+        MODEL="facebook/detr-resnet-50"
+    fi
+}
+
+resolve_function_name() {
+    if [ -z "$FUNCTION_NAME" ]; then
+        echo "Warning: FUNCTION_NAME environment variable not found. Default is TRANSFORMERS"
+        FUNCTION_NAME="TRANSFORMERS"
+    else
+        echo "Using FUNCTION_NAME: $FUNCTION_NAME"
+    fi
+}
+
+resolve_visibility() {
+    if [ -z "$FUNCTION_VISIBILITY" ]; then
+        echo "Warning: FUNCTION_VISIBILITY environment variable not found. Default is private"
+        VISIBILITY_ARGS=(--visibility private)
+        echo "This function will be visible to you and ORG members if ORG_SLUG is set, but not to other users of this CVAT instance."
+    else
+        if [ "$FUNCTION_VISIBILITY" = "public" ]; then
+            echo "This function will be visible to all users of this CVAT instance."
+            VISIBILITY_ARGS=(--visibility "$FUNCTION_VISIBILITY")
+        else
+            echo "FUNCTION_VISIBILITY must be private or public. Defaulting to private visibility."
+            echo "This function will be visible to you and ORG members if ORG_SLUG is set, but not to other users of this CVAT instance."
+            VISIBILITY_ARGS=(--visibility private)
+        fi
+    fi
+}
+
 common_env() {
     validate_access_token
     resolve_base_url
     resolve_org_slug
+    resolve_visibility
 }

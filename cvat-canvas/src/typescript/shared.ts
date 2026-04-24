@@ -390,7 +390,7 @@ export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
 }
 
 export function imageDataToDataURL(
-    imageBitmap: Uint8ClampedArray<ArrayBuffer>,
+    imageBitmap: Uint8ClampedArray,
     width: number,
     height: number,
     handleResult: (dataURL: string) => void,
@@ -430,8 +430,8 @@ export function RLEToImageData(
     g: number,
     b: number,
     encoded: ArrayLike<number>,
-): Uint8ClampedArray<ArrayBuffer> {
-    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray<ArrayBuffer> {
+): Uint8ClampedArray {
+    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray {
         const decoded = new Uint8ClampedArray(width * height * 4).fill(0);
         const { length } = rle;
         let decodedIdx = 0;
@@ -708,7 +708,15 @@ function extractSnapPointsFromState(drawnState: DrawnState): Readonly<number[]> 
         result = drawnState.points;
     } else if (drawnState.shapeType === 'rectangle') {
         const [xtl, ytl, xbr, ybr] = drawnState.points;
-        result = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
+        const corners = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
+
+        if (drawnState.rotation && drawnState.rotation !== 0) {
+            const cx = (xtl + xbr) / 2;
+            const cy = (ytl + ybr) / 2;
+            result = rotate2DPoints(cx, cy, drawnState.rotation, corners);
+        } else {
+            result = corners;
+        }
     } else {
         result = [];
     }

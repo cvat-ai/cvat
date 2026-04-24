@@ -1,0 +1,22 @@
+services:
+  cvat-function-register:
+    volumes:
+      - cache:/home/agent/.cache/huggingface
+    environment:
+      HF_HUB_OFFLINE: 1
+  cvat-agent:
+    volumes:
+      - cache:/home/agent/.cache/huggingface
+    environment:
+        HF_HUB_OFFLINE: 1
+  cvat-function-deregister:
+    volumes:
+      - cache:/home/agent/.cache/huggingface
+
+volumes:
+  cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${USER_DATA_ABSOLUTE_PATH}
