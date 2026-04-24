@@ -826,7 +826,10 @@ class JobReadSerializer(serializers.ModelSerializer):
     organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
     data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
-    mode = serializers.ReadOnlyField(source='segment.task.mode')
+    mode = serializers.CharField(
+        source='segment.task.mode',
+        allow_blank=True, required=False, read_only=True
+    )
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
@@ -2511,6 +2514,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     organization_id = serializers.IntegerField(required=False, read_only=True, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
+    mode = serializers.CharField(allow_blank=True, required=False, read_only=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')

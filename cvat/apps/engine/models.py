@@ -820,6 +820,12 @@ class TaskQuerySet(models.QuerySet):
             }
         )
 
+
+class TaskMode(TextChoices):
+    ANNOTATION = "annotation"
+    INTERPOLATION = "interpolation"
+
+
 class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
@@ -827,7 +833,7 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
     name = SafeCharField(max_length=256)
-    mode = models.CharField(max_length=32)
+    mode = models.CharField(max_length=32, choices=TaskMode.choices, default="", blank=True)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
 

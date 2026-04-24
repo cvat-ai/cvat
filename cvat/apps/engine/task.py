@@ -158,7 +158,7 @@ def _generate_segment_params(
             (
                 db_task.overlap
                 if db_task.overlap is not None
-                else 5 if db_task.mode == "interpolation" else 0
+                else 5 if db_task.mode == models.TaskMode.INTERPOLATION else 0
             ),
             segment_size // 2,
         )
@@ -679,10 +679,10 @@ def _allocate_honeypots(
             )
         )
     else:
-        if db_task.mode != "annotation":
+        if db_task.mode != models.TaskMode.ANNOTATION:
             raise ValidationError(
                 f"validation mode '{models.ValidationMode.GT_POOL}' can only be used "
-                "with 'annotation' mode tasks"
+                f"with '{models.TaskMode.ANNOTATION}' mode tasks"
             )
 
         # 1. select pool frames
@@ -1239,7 +1239,7 @@ def create_thread(
         else:
             manifest = ImageManifestManager(db_data.get_manifest_path())
 
-    if job_file_mapping is not None and task_mode != "annotation":
+    if job_file_mapping is not None and task_mode != models.TaskMode.ANNOTATION:
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if data["server_files"]:
@@ -1487,11 +1487,13 @@ def create_thread(
     db_task.mode = task_mode
     db_data.compressed_chunk_type = (
         models.DataChoice.VIDEO
-        if task_mode == "interpolation" and not data["use_zip_chunks"]
+        if task_mode == models.TaskMode.INTERPOLATION and not data["use_zip_chunks"]
         else models.DataChoice.IMAGESET
     )
     db_data.original_chunk_type = (
-        models.DataChoice.VIDEO if task_mode == "interpolation" else models.DataChoice.IMAGESET
+        models.DataChoice.VIDEO
+        if task_mode == models.TaskMode.INTERPOLATION
+        else models.DataChoice.IMAGESET
     )
 
     # calculate chunk size if it isn't specified
@@ -1657,7 +1659,7 @@ def create_thread(
                     )
                 )
 
-    if db_task.mode == "annotation":
+    if db_task.mode == models.TaskMode.ANNOTATION:
         job_file_mapping, images = _allocate_honeypots(
             db_task,
             validation_params,

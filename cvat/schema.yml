@@ -5176,6 +5176,9 @@ paths:
         description: A simple equality filter for the mode field
         schema:
           type: string
+          enum:
+          - annotation
+          - interpolation
       - name: name
         in: query
         description: A simple equality filter for the name field
