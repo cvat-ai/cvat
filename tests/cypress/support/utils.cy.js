@@ -40,3 +40,39 @@ export function checkAutoborderPointsCount(expectedCount) {
             });
     }
 }
+
+/**
+ * Draw a shape by clicking through an array of points
+ * using cy.trigger events
+ * @param {Array<{x: number, y: number}>} points - Array of points to trigger
+ */
+export function drawWithTriggers(pointsMap) {
+    pointsMap.forEach((p) => {
+        cy.get('.cvat-canvas-container').trigger('mousemove', ...[p.x, p.y]);
+        cy.get('.cvat-canvas-container').trigger('mousedown', ...[p.x, p.y], { button: 0 });
+    });
+}
+
+/**
+ * Draw a shape by clicking through an array of points
+ * using cy.click
+ * @param {Array<{x: number, y: number}>} points - Array of points to click
+ */
+export function drawWithClicks(pointsMap) {
+    pointsMap.forEach((element) => {
+        cy.get('.cvat-canvas-container').click(element.x, element.y);
+    });
+}
+
+export function getShapeCoord(type, objectId) {
+    const arrToPush = [];
+    if (type === 'rect') {
+        cy.get(objectId).invoke('attr', 'x').then((x) => arrToPush.push(+x));
+        cy.get(objectId).invoke('attr', 'y').then((y) => arrToPush.push(+y));
+        cy.get(objectId).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
+        cy.get(objectId).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
+    } else {
+        cy.get(objectId).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
+    }
+    return cy.wrap(arrToPush);
+}

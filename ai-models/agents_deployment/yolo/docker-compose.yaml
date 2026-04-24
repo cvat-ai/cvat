@@ -12,6 +12,7 @@ services:
       ORG_SLUG:
       FUNCTION_NAME:
       HF_TOKEN:
+      VISIBILITY:
 
   cvat-agent:
     image: ${IMAGE_URL}

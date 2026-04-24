@@ -6,9 +6,7 @@ import './styles.scss';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { createStore } from 'redux';
-import {
-    Provider, shallowEqual, useDispatch, useSelector,
-} from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { createRoot } from 'react-dom/client';
 import Button from 'antd/lib/button';
 import { Col, Row } from 'antd/lib/grid';
@@ -22,7 +20,7 @@ import InputNumber from 'antd/lib/input-number';
 import Switch from 'antd/lib/switch';
 
 import config from 'config';
-import { createAction, ActionUnion } from 'utils/redux';
+import { createAction, ActionUnion, shallowEqual } from 'utils/redux';
 import { getCVATStore } from 'cvat-store';
 import {
     BaseCollectionAction, BaseAction, Job, getCore,

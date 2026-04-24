@@ -16,6 +16,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.63.0'></a>
+## \[2.63.0\] - 2026-04-23
+
+### Added
+
+- CI for agent images + fixed CVE 2025-69720(68121)
+  (<https://github.com/cvat-ai/cvat/pull/10423>)
+
+- \[CLI\] The `function create-native` command now allows creating functions
+  with public visibility
+  (<https://github.com/cvat-ai/cvat/pull/10459>)
+
+- The `movetasktobackingcs` and `movetasktobackingcs` commands can now load
+  a list of tasks to migrate from a file
+  (<https://github.com/cvat-ai/cvat/pull/10504>)
+
+- The `movetasktobackingcs` and `movetasktobackingcs` commands now print
+  statistics about the transfer
+  (<https://github.com/cvat-ai/cvat/pull/10504>)
+
+### Changed
+
+- When importing track annotations from a dataset,
+  the last visible shape of every interval will now include
+  2 keyframes - the last visible shape and the outside shape.
+  If the annotations were originally created in CVAT, the "keyframe" property
+  can be slightly different from the original annotations after importing.
+  (<https://github.com/cvat-ai/cvat/pull/10409>)
+
+- CVAT now verifies that the filters defined in Rego policy files
+  call `add_organization_filter` when the corresponding object belongs
+  to an organization
+  (<https://github.com/cvat-ai/cvat/pull/10400>)
+
+- The `movetasktobackingcs` and `movetasktobackingcs` no longer exit with a
+  failure status when the given task already has the expected backing CS
+  (<https://github.com/cvat-ai/cvat/pull/10504>)
+
+- Updated Kvrocks to 2.15.0
+  (<https://github.com/cvat-ai/cvat/pull/10515>)
+
+### Removed
+
+- Log output to the `/home/django/logs/supervisord.log.*` files has been disabled, leaving only stdout output
+  (<https://github.com/cvat-ai/cvat/pull/10437>)
+
+### Fixed
+
+- Added missing hover tooltips for annotation job page left toolbar controls
+  (<https://github.com/cvat-ai/cvat/pull/10379>)
+
+- Fixed issue text scaling when zooming into an annotation via double-click
+  (<https://github.com/cvat-ai/cvat/pull/10403>)
+
+- Imported tracks can be interpolated incorrectly
+  (<https://github.com/cvat-ai/cvat/pull/10409>)
+
+- Added background to skeleton point state item elements for better visibility and readability on the canvas
+  (<https://github.com/cvat-ai/cvat/pull/10430>)
+
+- Annotation `score` is not preserved in backups
+  (<https://github.com/cvat-ai/cvat/pull/10445>)
+- Invalid date of `annotations.json` in backups
+  (<https://github.com/cvat-ai/cvat/pull/10445>)
+
+- Snap to point was not working with rotated bounding boxes
+  (<https://github.com/cvat-ai/cvat/pull/10448>)
+
+- Snap to contour is not working with rotated bounding boxes
+  (<https://github.com/cvat-ai/cvat/pull/10457>)
+
+- New passwords are now limited to 8 to 256 characters across registration,
+  password change, and password reset flows
+  (<https://github.com/cvat-ai/cvat/pull/10460>)
+
+- Tasks without manifests can now use backing cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10504>)
+
+- First drawn point was not snapping in `snap to point` feature
+  (<https://github.com/cvat-ai/cvat/pull/10509>)
+
+- Prevented half-created tasks from being moved to backing cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10513>)
+
 <a id='changelog-2.62.0'></a>
 ## \[2.62.0\] - 2026-04-02
 

@@ -60,6 +60,8 @@ Common environment variables
   value: {{ include "agent.fullname" . }}-config
 - name: ORG_SLUG
   value: {{ .Values.agent.org_slug | quote }}
+- name: FUNCTION_VISIBILITY
+  value: {{ .Values.agent.function_visibility | default "private" | quote }}
 {{- end }}
 
 {{/*
