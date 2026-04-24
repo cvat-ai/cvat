@@ -4622,7 +4622,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -4643,7 +4643,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -4664,7 +4664,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -4685,7 +4685,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -4706,7 +4706,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -4727,7 +4727,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -4748,7 +4748,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         }
@@ -5266,7 +5266,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -5292,7 +5292,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -5318,7 +5318,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -5344,7 +5344,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -5370,7 +5370,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -5402,7 +5402,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "polygon",
           "z_order": 0
         }
@@ -8212,7 +8212,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -8238,7 +8238,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -8264,7 +8264,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         }
@@ -8715,7 +8715,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -8736,7 +8736,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -8757,7 +8757,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -8778,7 +8778,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         }
@@ -8904,7 +8904,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -8925,7 +8925,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -8946,7 +8946,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         }
@@ -12479,7 +12479,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -12505,7 +12505,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -12531,7 +12531,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -12557,7 +12557,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -12583,7 +12583,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -12615,7 +12615,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "polygon",
           "z_order": 0
         }
@@ -13472,7 +13472,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -13498,7 +13498,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -13524,7 +13524,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         }
@@ -13811,7 +13811,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -13832,7 +13832,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         },
@@ -13853,7 +13853,7 @@
           ],
           "rotation": 0.0,
           "score": 1.0,
-          "source": "Ground truth",
+          "source": "manual",
           "type": "rectangle",
           "z_order": 0
         }
