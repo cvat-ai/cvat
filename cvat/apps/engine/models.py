@@ -503,7 +503,7 @@ class Data(models.Model):
         elif chunk_type == DataChoice.IMAGESET:
             ext = 'zip'
         else:
-            ext = 'list'
+            assert False, f"Unexpected chunk type '{chunk_type}'"
 
         return 'segment_{}-{}.{}'.format(segment_id, chunk_number, ext)
 
