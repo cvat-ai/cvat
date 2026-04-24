@@ -887,7 +887,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif self.action not in ('metadata', 'annotations'):
             queryset = queryset.select_related('data')
 
-            if self.action in ('create', 'retrieve', 'update', 'partial_update'):
+            if self.action in ('create', 'retrieve', 'update', 'partial_update', 'destroy'):
                 queryset = queryset.select_related(
                     'target_storage',
                     'source_storage',
@@ -1708,7 +1708,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         elif self.action not in ('annotations', 'metadata'):
             queryset = queryset.select_related('segment__task__data')
 
-            if self.action in ('create', 'retrieve', 'update', 'partial_update'):
+            if self.action in ('create', 'retrieve', 'update', 'partial_update', 'destroy'):
                 queryset = queryset.select_related(
                     'segment__task__annotation_guide',
                     'segment__task__project__annotation_guide',
