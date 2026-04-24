@@ -3276,7 +3276,7 @@ class AnnotationSerializer(serializers.Serializer):
     frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
-    source = serializers.CharField(default='manual')
+    source = serializers.CharField(default=models.SourceType.MANUAL)
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3286,6 +3286,21 @@ class AnnotationSerializer(serializers.Serializer):
     def _validate_id_present(self, value):
         if value is None:
             raise serializers.ValidationError("must be present and not null")
+        return value
+
+    def validate_source(self, value):
+        try:
+            models.SourceType(value)
+        except ValueError:
+            # TODO: change the field type to ChoiceField,
+            # when SDK can compare string enum values without explicit .value access
+            raise serializers.ValidationError(
+                "must be one of {}, got '{}'".format(
+                    format_list([f"'{v[0]}'" for v in models.SourceType.choices()]),
+                    value
+                )
+            )
+
         return value
 
     @cached_property
