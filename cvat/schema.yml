@@ -8476,7 +8476,6 @@ components:
       properties:
         count:
           type: integer
-          default: 0
         completed:
           type: integer
           nullable: true
@@ -8489,6 +8488,7 @@ components:
           readOnly: true
       required:
       - completed
+      - count
       - validation
     Label:
       type: object

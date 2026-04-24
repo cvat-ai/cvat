@@ -179,7 +179,7 @@ class _CollectionSummarySerializer(serializers.Serializer):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
-    count = serializers.IntegerField(source='total_jobs_count', default=0)
+    count = serializers.IntegerField(source='total_jobs_count')
     completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
     validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
