@@ -453,7 +453,7 @@ class Data(models.Model):
         null=True, default=None)
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         null=True, default=None)
-    audio_chunks: MaybeUndefined[models.manager.RelatedManager[AudioChunkInfo]]
+    audio_chunks: models.manager.RelatedManager[AudioChunkInfo]
 
     # Storage descriptors
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
