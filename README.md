@@ -61,6 +61,88 @@ The functionality is **opt-in**: include `docker-compose.sso.yml` in the
 compose chain (or run `./sso.sh up`) and SSO is active; omit the overlay
 and the stack runs the upstream local username/password flow unchanged.
 
+### How it works (the concept)
+
+The pattern is an **authenticating reverse proxy + trusted-header
+identity** model. CVAT's auth code is unchanged; instead, all browser
+traffic is routed through an OIDC-aware proxy that does the Keycloak dance
+on behalf of the user, and Django is told to trust an HTTP header for
+identity.
+
+```
+              Browser
+                │
+                ▼   HTTPS, accepts self-signed cert
+        ┌────────────────────┐
+        │      Traefik       │   public reverse proxy, TLS termination
+        └─┬───────┬────────┬─┘   routes by path & header
+          │       │        │
+   /oauth2/*      │        │
+          │  /api/* with   │  /api/*  + everything else (SPA)
+          │  Authorization │  (no Authorization header)
+          ▼  header        ▼        ▼
+    ┌─────────┐     ┌─────────────┐ │
+    │oauth2-  │     │ cvat_server │ │  (priority router bypasses
+    │proxy    │     │ (Django)    │ │   forwardAuth, so cvat-cli /
+    │ /oauth2/│     │ Token auth  │ │   cvat-sdk / webhooks keep
+    │  endpts │     └─────────────┘ │   working with API tokens)
+    └─────────┘                     │
+                                    ▼
+                           ┌──────────────────┐
+                           │  forwardAuth     │  Traefik calls
+                           │  /oauth2/auth    │  oauth2-proxy to
+                           └────────┬─────────┘  validate cookie
+                                    │ 200 + X-Auth-Request-Email
+                                    ▼
+                           ┌──────────────────┐
+                           │  oauth2-proxy    │  also a reverse
+                           │  ──► cvat_ui SPA │  proxy for the SPA;
+                           │  ──► cvat_server │  if no cookie, 302s
+                           │      (via fwd)   │  the browser to
+                           └──────────────────┘  /oauth2/start →
+                                                 Keycloak (OIDC)
+```
+
+The actors:
+
+1. **Traefik** is the only thing exposed publicly. It terminates TLS,
+   routes by host/path/header, and applies middlewares.
+2. **oauth2-proxy** is the OIDC client. It does the
+   `authorization_code` flow with Keycloak, sets a signed session cookie
+   on the CVAT domain, and exposes two surfaces:
+   - **Reverse-proxy mode** for the SPA: requests to `/` go *through*
+     oauth2-proxy to `cvat_ui`. If there's no valid cookie, oauth2-proxy
+     itself returns a 302 to `/oauth2/start` → Keycloak.
+   - **forwardAuth mode** for the API: Traefik consults oauth2-proxy at
+     `/oauth2/auth` for every `/api/*` request. On success oauth2-proxy
+     returns 200 plus `X-Auth-Request-Email` / `-User` / `-Groups`
+     headers, which Traefik forwards to `cvat_server`.
+3. **Keycloak** is the OpenID Provider. It owns user accounts, runs the
+   login UI, issues ID/access tokens, and handles the end_session
+   endpoint that powers single sign-out.
+4. **cvat_server** trusts the `X-Auth-Request-Email` header thanks to
+   the `cvat.settings.sso` overlay, which adds Django's
+   `RemoteUserBackend` to `AUTHENTICATION_BACKENDS` and a thin
+   `OIDCRemoteUserMiddleware` that maps the header to `request.user`.
+   Django auto-creates a user record with `username = email` on first
+   sight.
+
+Why this pattern instead of the alternatives:
+
+- *Patching CVAT's auth code* (the way Enterprise does it) means
+  carrying a fork of `cvat/apps/iam` and the cvat-ui login screen
+  forever — every upstream change becomes a merge headache.
+- *RemoteUserBackend in front of plain CVAT* (this fork's choice) is
+  zero-touch on the auth flow. The settings overlay is ~15 lines and
+  the rest is wiring in compose / Traefik / oauth2-proxy. Upgrading
+  CVAT means pulling upstream and the SSO layer keeps working.
+- *Header-based bypass for token auth* keeps the SDK / CLI / webhook
+  ergonomics intact — there is no flag day where existing automation
+  needs to be reworked to a different auth flow.
+
+The result: full OIDC SSO on the open-source build, no fork of auth
+code, opt-in via a single compose overlay.
+
 ### What you get
 
 | Step | Screenshot |
