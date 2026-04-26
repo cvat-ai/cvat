@@ -7,9 +7,20 @@ from datetime import timedelta
 from typing import Any, Protocol
 
 from django.conf import settings
+from django.contrib.auth.middleware import PersistentRemoteUserMiddleware
 from django.http import HttpRequest, HttpResponse
 from django.utils.functional import SimpleLazyObject
 from rest_framework.exceptions import NotFound, ValidationError
+
+
+class OIDCRemoteUserMiddleware(PersistentRemoteUserMiddleware):
+    """Reads the email forwarded by oauth2-proxy / Traefik forwardAuth.
+
+    Activated by `cvat.settings.sso`. The header name matches what
+    `--set-xauthrequest=true` produces in oauth2-proxy.
+    """
+
+    header = "HTTP_X_AUTH_REQUEST_EMAIL"
 
 
 class WithIAMContext(Protocol):

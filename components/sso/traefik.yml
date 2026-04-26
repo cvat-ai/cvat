@@ -1,0 +1,38 @@
+# Traefik dynamic config for the Keycloak SSO overlay.
+# Mounted into the traefik container at /etc/traefik/rules/sso.yml by
+# docker-compose.sso.yml. Equivalent declarations in docker labels were not
+# being picked up reliably for the `errors` middleware, so we use the file
+# provider here for the SSO-specific bits.
+
+http:
+  middlewares:
+    # ForwardAuth checks the request's oauth2-proxy session cookie. On
+    # success it returns 200 plus the X-Auth-Request-* headers that get
+    # forwarded to cvat_server; on miss it returns 401.
+    cvat-sso-auth:
+      forwardAuth:
+        address: http://oauth2-proxy:4180/oauth2/auth
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-Auth-Request-User
+          - X-Auth-Request-Email
+          - X-Auth-Request-Groups
+          - X-Auth-Request-Preferred-Username
+          - Authorization
+
+    # Catch the SPA's post-logout landing page (/auth/login) and turn it
+    # into a full SSO logout chain: clear the oauth2-proxy cookie, then
+    # land at Keycloak's end_session endpoint, which destroys its session
+    # and redirects back to /. The next visit triggers a fresh OIDC flow.
+    cvat-sso-logout:
+      redirectRegex:
+        regex: ^https?://([^/]+)/auth/login.*$
+        replacement: |-
+          https://${1}/oauth2/sign_out?rd=http%3A%2F%2F192.168.32.249%3A8081%2Frealms%2Fplayground%2Fprotocol%2Fopenid-connect%2Flogout%3Fpost_logout_redirect_uri%3Dhttps%253A%252F%252F192.168.32.249%252F%26client_id%3Dcvat
+        permanent: false
+
+  services:
+    oauth2-proxy:
+      loadBalancer:
+        servers:
+          - url: http://oauth2-proxy:4180

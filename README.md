@@ -9,6 +9,7 @@ identical to upstream and tracks the `develop` branch.
 | [DICOM support](#dicom-dcm-support) | Native ingestion of `.dcm` files, JPEG transfer syntax decoding, and YBR → RGB color correction. |
 | [CVDLINK branding](#cvdlink-branding) | Logo, favicon, and product-name swaps; original CVAT assets kept alongside. |
 | [Local HTTPS](#local-https-for-self-hosted-deployment) | Self-hosted TLS using locally-issued certs from `certs/` instead of Let's Encrypt. |
+| [Keycloak SSO](#keycloak-sso-via-oauth2-proxy) | OpenID Connect single sign-on for the open-source build, layered in via oauth2-proxy + Traefik forwardAuth. |
 
 ## DICOM (`.dcm`) support
 
@@ -45,6 +46,161 @@ artwork can still be referenced if needed.
 behind a locally-issued TLS certificate instead of Let's Encrypt. The
 `certs/` directory is the expected mount point for `cert.pem` / `key.pem`
 and is gitignored — certificates are never committed to the repository.
+
+## Keycloak SSO via oauth2-proxy
+
+Upstream CVAT's OpenID Connect SSO (the `auth_config.yml` flow described
+on the [upstream docs](https://docs.cvat.ai/docs/account_management/sso/))
+ships only with CVAT Enterprise. To get equivalent functionality on the
+open-source build, this fork adds an OIDC layer **in front of** CVAT — no
+fork of the auth code — using `oauth2-proxy` plus a Traefik `forwardAuth`
+middleware. Django auto-provisions the user from a trusted email header on
+first sign-in.
+
+The functionality is **opt-in**: include `docker-compose.sso.yml` in the
+compose chain (or run `./sso.sh up`) and SSO is active; omit the overlay
+and the stack runs the upstream local username/password flow unchanged.
+
+### What you get
+
+| Step | Screenshot |
+| --- | --- |
+| Browser hits `https://<cvat-host>/`, gets bounced to Keycloak | ![Keycloak login](docs/sso/01-keycloak-login.png) |
+| After successful Keycloak login, lands directly on the CVAT dashboard, auto-provisioned by email | ![CVAT dashboard](docs/sso/02-cvat-dashboard.png) |
+| Logging out from CVAT redirects through Keycloak's end_session endpoint (one click confirmation in Keycloak 26+) | ![Keycloak logout](docs/sso/03-keycloak-logout-confirm.png) |
+| After confirming, both Django session, oauth2-proxy cookie, and Keycloak session are cleared — next visit requires fresh auth | ![After logout](docs/sso/04-after-logout.png) |
+
+### Files added or modified for SSO
+
+| Path | Why |
+| --- | --- |
+| `cvat/settings/sso.py` (new) | Django settings overlay. Imports `production`, registers `OIDCRemoteUserMiddleware` after `AuthenticationMiddleware`, prepends `RemoteUserBackend`, sets `SECURE_PROXY_SSL_HEADER` / `USE_X_FORWARDED_HOST`. |
+| `cvat/apps/iam/middleware.py` (modified) | Adds `OIDCRemoteUserMiddleware`, a thin subclass of Django's `PersistentRemoteUserMiddleware` that reads `HTTP_X_AUTH_REQUEST_EMAIL` instead of the default `REMOTE_USER`. |
+| `docker-compose.sso.yml` (new) | Compose overlay. Adds an `oauth2-proxy` sidecar, points `cvat_ui` at it as a reverse proxy, attaches Traefik `forwardAuth` to API routers, adds a header-based bypass (`Authorization: Token\|Basic\|Bearer`) so `cvat-cli` / `cvat-sdk` / webhooks keep working, exposes the health endpoint without auth, and bind-mounts `sso.py` plus the modified middleware on `cvat_server` and every `cvat_worker_*`. |
+| `components/sso/traefik.yml` (new) | Traefik file-provider config defining the `cvat-sso-auth` (forwardAuth), `cvat-sso-logout` (redirectRegex on `/auth/login*` → SSO logout chain), and the `oauth2-proxy@file` service. The label-based equivalent did not load reliably for `errors`/`redirectRegex`, so the file provider is the source of truth. |
+| `.env.sso.example` (new) | Documented template for `CVAT_HOST`, Keycloak issuer / client id / secret, cookie secret, redirect URL, audience claim override, optional URL overrides for dev Keycloaks whose `KC_HOSTNAME` doesn't match the public URL. |
+| `.env.sso` (gitignored) | Your real values. Created from the template; never committed. |
+| `.gitignore` | Force-included `.env.sso.example` (the broader `/.*env*` rule had hidden it). |
+| `sso.sh` (new) | Convenience wrapper: `./sso.sh up`, `./sso.sh down`, `./sso.sh logs`. Equivalent to a long `docker compose -f ... -f docker-compose.sso.yml ...` invocation. |
+| `site/content/en/docs/administration/community/advanced/sso-keycloak.md` (new) | Operator-facing doc with the same content as this section, picked up by the Hugo site build. |
+| `docs/sso/*.png` (new) | The screenshots above. |
+
+No code in `cvat/apps/engine`, `cvat-ui`, or any other part of upstream CVAT's
+auth flow is modified — the SSO layer sits entirely in front of and around
+the existing app.
+
+### Setup
+
+#### 1. Configure Keycloak
+
+In the Keycloak admin console (under your realm):
+
+1. Create an **OpenID Connect** client.
+   - *Client ID:* whatever you want (e.g. `cvat`) — this is what you'll
+     put in `SSO_CLIENT_ID`.
+   - *Client authentication:* **On** (confidential).
+   - *Standard flow:* on. Direct access grants: off.
+2. In the client's *Settings* tab:
+   - *Valid Redirect URIs:* `https://<cvat-host>/oauth2/callback`
+   - *Valid post logout redirect URIs:* `https://<cvat-host>/*`
+   - *Web origins:* `+`
+3. *Credentials* tab → copy the **Client secret** for `SSO_CLIENT_SECRET`.
+4. *(Recommended)* Set Keycloak's `KC_HOSTNAME` to the URL clients
+   actually reach Keycloak at (e.g. `http://192.168.32.249:8081`). If
+   Keycloak advertises a hostname users can't reach, browser cookies
+   won't survive the form POST and you'll see "Cookie not found".
+
+#### 2. Configure CVAT
+
+```bash
+cp .env.sso.example .env.sso
+$EDITOR .env.sso        # CVAT_HOST, Keycloak issuer + client id/secret, cookie secret
+```
+
+Generate a fresh cookie signing key:
+
+```bash
+openssl rand -hex 16    # 32 alphanumeric chars — paste into SSO_COOKIE_SECRET
+```
+
+#### 3. Bring it up
+
+Easiest:
+
+```bash
+./sso.sh up
+./sso.sh logs           # tail oauth2-proxy + cvat_server + traefik
+```
+
+Or the equivalent `docker compose` invocation:
+
+```bash
+docker compose --env-file .env.sso \
+  -f docker-compose.yml \
+  -f docker-compose.https.yml \
+  -f docker-compose.sso.yml \
+  up -d
+```
+
+#### 4. Make yourself a CVAT admin (first user only)
+
+`RemoteUserBackend` provisions everyone as a regular `user`. To promote
+yourself to CVAT admin after first sign-in:
+
+```bash
+docker compose -p cvat exec cvat_server python manage.py shell -c "\
+from django.contrib.auth import get_user_model; \
+from django.contrib.auth.models import Group; \
+u = get_user_model().objects.get(username='you@example.com'); \
+u.is_staff = u.is_superuser = True; u.save(); \
+u.groups.add(Group.objects.get(name='admin'))"
+```
+
+### Turning SSO off
+
+Just don't include `docker-compose.sso.yml` in your compose command (or
+don't run `./sso.sh`). The stack reverts to upstream local auth without
+any further changes:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+```
+
+### CLI / SDK access
+
+`cvat-cli`, `cvat-sdk`, and any service hitting `/api/*` with an
+`Authorization: Token …` (or `Basic` / `Bearer`) header is matched by a
+higher-priority Traefik router and routed straight to `cvat_server`,
+bypassing oauth2-proxy. Issue a token the usual way and use it as you
+always would:
+
+```bash
+curl -X POST -d 'username=you@example.com&password=...' \
+  https://<cvat-host>/api/auth/login           # returns { "key": "..." }
+curl -H "Authorization: Token <key>" \
+  https://<cvat-host>/api/jobs                 # works unchanged
+```
+
+The local Django password flow only works for users who *also* have a
+local password set. SSO-provisioned users have no password by default.
+
+### Caveats
+
+- The CVAT in-app login page is shadowed by oauth2-proxy. Browser users
+  always go through Keycloak; `/auth/login` is intercepted by a Traefik
+  redirect to start a full RP-initiated logout chain.
+- Group → CVAT-role mapping is not automatic. Promote admins manually
+  (see step 4 above). The `X-Auth-Request-Groups` header is already
+  forwarded to Django, so a future signal handler reading it is a small
+  follow-up — see `cvat/apps/iam/signals.py` for the LDAP-equivalent
+  pattern.
+- Keycloak 26+ requires user confirmation on the logout page unless
+  `id_token_hint` is supplied. oauth2-proxy doesn't surface ID tokens to
+  the browser by default, so users see a one-click "Logout?" prompt.
+- The OIDC cookie is signed locally by oauth2-proxy. Logging out of
+  Keycloak directly does not immediately invalidate that cookie — set a
+  short `OAUTH2_PROXY_COOKIE_REFRESH` if that matters in your threat
+  model.
 
 ---
 
