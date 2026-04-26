@@ -1,3 +1,53 @@
+# CVDLINK fork — changes from upstream CVAT
+
+This is a customized build of CVAT maintained as the CVDLINK fork. The notes
+below summarize what differs from upstream `cvat-ai/cvat`. Everything else is
+identical to upstream and tracks the `develop` branch.
+
+| Section | What it covers |
+| --- | --- |
+| [DICOM support](#dicom-dcm-support) | Native ingestion of `.dcm` files, JPEG transfer syntax decoding, and YBR → RGB color correction. |
+| [CVDLINK branding](#cvdlink-branding) | Logo, favicon, and product-name swaps; original CVAT assets kept alongside. |
+| [Local HTTPS](#local-https-for-self-hosted-deployment) | Self-hosted TLS using locally-issued certs from `certs/` instead of Let's Encrypt. |
+
+## DICOM (`.dcm`) support
+
+Upstream CVAT does not natively ingest DICOM files. This fork adds:
+
+- A DICOM media extractor in `cvat/apps/engine/media_extractors.py` and a
+  matching format module in `cvat/apps/dataset_manager/formats/dicom.py`,
+  registered through `formats/registry.py`.
+- `application/dicom` registered in `cvat/apps/engine/media.mimetypes` so
+  uploaded `.dcm` files are recognized and routed to the DICOM extractor.
+- Decoding of transfer syntax `1.2.840.10008.1.2.4.*` (JPEG-family) and
+  correct YBR → RGB color conversion, so DICOMs that arrive in YBR_FULL /
+  YBR_FULL_422 render with accurate colors instead of green-tinted output.
+- An upload-page hint in the task creation UI explaining the DICOM input
+  format expectations (`cvat-ui/src/utils/files.ts`,
+  `create-task-content.tsx`).
+- `pydicom` added to `cvat/requirements/base.in` / `base.txt`.
+
+## CVDLINK branding
+
+The CVAT logos and favicons are replaced with CVDLINK assets in:
+
+- `cvat/apps/engine/static/` (logo)
+- `cvat-ui/dist/favicon.ico`
+- `site/assets/icons/` and `site/static/favicons/`
+- The product name string in `cvat/settings/base.py`
+
+Original CVAT assets are preserved alongside as `*_cvat.*` so the upstream
+artwork can still be referenced if needed.
+
+## Local HTTPS for self-hosted deployment
+
+`docker-compose.https.yml` and `tls.yml` are tweaked so the stack can run
+behind a locally-issued TLS certificate instead of Let's Encrypt. The
+`certs/` directory is the expected mount point for `cert.pem` / `key.pem`
+and is gitignored — certificates are never committed to the repository.
+
+---
+
 <p align="center">
   <img src="/site/content/en/images/cvat-readme-gif.gif" alt="CVAT Platform" width="100%" max-width="800px">
 </p>
