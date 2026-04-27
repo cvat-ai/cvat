@@ -7,7 +7,6 @@ def fix_default_task_dimension(apps, schema_editor):
     Task.objects.filter(data_id__isnull=True).update(dimension="")
 
 
-
 def restore_default_task_dimension(apps, schema_editor):
     Task = apps.get_model("engine", "Task")
 
@@ -20,7 +19,6 @@ def infer_task_media_type(apps, schema_editor):
     Task.objects.filter(media_type="", dimension="3d").update(media_type="point_cloud")
     Task.objects.filter(media_type="", mode="interpolation").update(media_type="video")
     Task.objects.filter(media_type="", mode="annotation").update(media_type="image")
-
 
 
 class Migration(migrations.Migration):
@@ -48,5 +46,5 @@ class Migration(migrations.Migration):
                 max_length=32,
             ),
         ),
-        migrations.RunPython(infer_task_media_type, migrations.RunPython.noop)
+        migrations.RunPython(infer_task_media_type, migrations.RunPython.noop),
     ]
