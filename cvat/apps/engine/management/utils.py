@@ -47,10 +47,9 @@ def move_multiple_tasks(
     time_before_all = time.perf_counter()
     for task_id in task_ids:
         try:
+            time_before = time.perf_counter()
             try:
-                time_before = time.perf_counter()
                 task = Task.objects.get(id=task_id)
-                time_after = time.perf_counter()
             except Task.DoesNotExist as ex:
                 raise CommandError(f"Task #{task_id} does not exist") from ex
 
@@ -59,6 +58,7 @@ def move_multiple_tasks(
                 raise CommandError(f"Task #{task_id} has no attached data")
 
             action_was_taken = move_one(task)
+            time_after = time.perf_counter()
         except Exception:
             failed += 1
             command.stderr.write(command.style.ERROR(f"Task #{task_id}: failure"))
