@@ -128,7 +128,6 @@ class StateChoice(str, Enum):
 class DataChoice(str, Enum):
     VIDEO = 'video'
     IMAGESET = 'imageset'
-    LIST = 'list'
 
     @classmethod
     def choices(cls):
@@ -504,7 +503,7 @@ class Data(models.Model):
         elif chunk_type == DataChoice.IMAGESET:
             ext = 'zip'
         else:
-            ext = 'list'
+            assert False, f"Unexpected chunk type '{chunk_type}'"
 
         return 'segment_{}-{}.{}'.format(segment_id, chunk_number, ext)
 

@@ -7247,12 +7247,10 @@ components:
       enum:
       - video
       - imageset
-      - list
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
-        * `list` - LIST
     ClientEvents:
       type: object
       properties:
