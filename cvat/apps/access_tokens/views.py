@@ -67,7 +67,7 @@ class AccessTokensViewSet(
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
-    iam_organization_field = None
+    iam_supports_organization_params = False
     iam_permission_class = AccessTokenPermission
 
     def get_serializer_class(self):

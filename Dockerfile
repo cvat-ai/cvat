@@ -80,12 +80,14 @@ RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
 
 ARG CVAT_CONFIGURATION="production"
 
+# https://github.com/SAML-Toolkits/python3-saml#note
+# Building from source is recommended for lxml and xmlsec to avoid libxml2 version conflicts
 RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps --no-binary lxml,xmlsec \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.25.7 AS build-smokescreen
+FROM golang:1.26.2 AS build-smokescreen
 
 RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
 RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen

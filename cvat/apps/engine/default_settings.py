@@ -110,3 +110,13 @@ DEFAULT_DB_BULK_CREATE_BATCH_SIZE = int(os.getenv("CVAT_DEFAULT_DB_BULK_CREATE_B
 DEFAULT_DB_ANNO_CHUNK_SIZE = int(os.getenv("CVAT_DEFAULT_DB_ANNO_CHUNK_SIZE", 2000))
 
 MAX_JOBS_PER_TASK = int(os.getenv("CVAT_MAX_JOBS_PER_TASK", 5_000))
+
+DEFAULT_BACKING_CS_ID = os.getenv("CVAT_DEFAULT_BACKING_CS_ID")
+"""
+ID of the default backing cloud storage for local tasks.
+If not set or blank, tasks will be stored on the filesystem.
+"""
+if DEFAULT_BACKING_CS_ID:
+    DEFAULT_BACKING_CS_ID = int(DEFAULT_BACKING_CS_ID)
+else:
+    DEFAULT_BACKING_CS_ID = None

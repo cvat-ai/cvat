@@ -43,14 +43,16 @@ interface Props {
     onCancel: () => void;
 }
 
+type InputRef = React.ComponentRef<typeof Input>;
+
 export default class LabelForm extends React.Component<Props> {
     private formRef: RefObject<FormInstance>;
-    private inputNameRef: RefObject<Input>;
+    private inputNameRef: RefObject<InputRef>;
 
     constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
-        this.inputNameRef = React.createRef<Input>();
+        this.inputNameRef = React.createRef<InputRef>();
     }
 
     private focus = (): void => {

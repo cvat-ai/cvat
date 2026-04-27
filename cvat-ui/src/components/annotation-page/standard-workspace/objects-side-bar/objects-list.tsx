@@ -100,6 +100,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                 <ObjectItemContainer
                                     objectStates={objectStates}
                                     clientID={id}
+                                    allowSimplifyLifecycle
                                 />
                             </React.Fragment>
                         );

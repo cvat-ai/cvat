@@ -142,7 +142,6 @@ class RulesView(views.APIView):
     serializer_class = None
     permission_classes = [AllowAny]
     authentication_classes = []
-    iam_organization_field = None
 
     @_etag(lambda request: get_opa_bundle()[1])
     def get(self, request):

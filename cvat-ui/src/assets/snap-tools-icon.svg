@@ -1,0 +1,13 @@
+<!-- Snap Tools Icon - Classic horseshoe magnet rotated 45° -->
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g transform="rotate(45 12 12) translate(6 4)">
+    <!-- Classic U-shaped magnet - 22 units wide, centered at 12 -->
+    <path d="M1 0H5V13C5 16.866 8.13401 20 12 20C15.866 20 19 16.866 19 13V0H23V13C23 19.6274 17.6274 25 12 25C5.37258 25 1 19.6274 1 13V0Z" fill="currentColor"/>
+    
+    <!-- North pole cap - white with black border, positioned on left arm, longer -->
+    <rect x="1" y="-2" width="4" height="4" rx="0.5" fill="white" stroke="black" stroke-width="0.5"/>
+    
+    <!-- South pole cap - white with black border, positioned on right arm, longer -->
+    <rect x="19" y="-2" width="4" height="4" rx="0.5" fill="white" stroke="black" stroke-width="0.5"/>
+  </g>
+</svg>

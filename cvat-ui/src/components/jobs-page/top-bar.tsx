@@ -14,6 +14,7 @@ import {
     defaultVisibility,
     ResourceSelectionInfo,
 } from 'components/resource-sorting-filtering';
+import JobsCSVExportButton from './jobs-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -38,7 +39,7 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     return (
-        <Row className='cvat-jobs-page-top-bar' justify='center' align='middle'>
+        <Row className='cvat-jobs-page-top-bar cvat-resource-top-bar-wrapper' justify='center' align='middle'>
             <Col {...dimensions}>
                 <div>
                     <div>
@@ -79,6 +80,7 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
                             )}
                             onApplyFilter={onApplyFilter}
                         />
+                        <JobsCSVExportButton query={query} />
                     </div>
                 </div>
             </Col>

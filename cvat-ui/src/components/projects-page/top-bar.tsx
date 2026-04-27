@@ -22,6 +22,7 @@ import {
 } from 'components/resource-sorting-filtering';
 
 import dimensions from 'utils/dimensions';
+import ProjectsCSVExportButton from './projects-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './projects-filter-configuration';
@@ -57,7 +58,7 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
     const history = useHistory();
 
     return (
-        <Row className='cvat-projects-page-top-bar' justify='center' align='middle'>
+        <Row className='cvat-projects-page-top-bar cvat-resource-top-bar-wrapper' justify='center' align='middle'>
             <Col {...dimensions}>
                 <div className='cvat-projects-page-filters-wrapper'>
                     <div>
@@ -98,6 +99,7 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
                             )}
                             onApplyFilter={onApplyFilter}
                         />
+                        <ProjectsCSVExportButton query={query} />
                     </div>
                 </div>
                 <div>

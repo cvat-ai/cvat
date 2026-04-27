@@ -44,4 +44,5 @@ function SplitControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(SplitControl, { displayName: 'SplitControl' });
 export default React.memo(SplitControl);

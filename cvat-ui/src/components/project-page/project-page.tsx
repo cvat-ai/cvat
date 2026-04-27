@@ -7,7 +7,8 @@ import './styles.scss';
 import React, {
     useCallback, useEffect, useRef, useState,
 } from 'react';
-import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
@@ -38,6 +39,7 @@ import BulkWrapper, { BulkSelectProps } from 'components/bulk-wrapper';
 
 import { useResourceQuery } from 'utils/hooks';
 import { selectionActions } from 'actions/selection-actions';
+import TasksCSVExportButton from 'components/tasks-page/tasks-csv-export-button';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -325,6 +327,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         }));
                                     }}
                                 />
+                                <TasksCSVExportButton query={{ ...tasksQuery, projectId: id }} />
                             </div>
                         </div>
                         <Popover

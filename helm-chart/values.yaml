@@ -151,6 +151,12 @@ cvat:
     imagePullPolicy: Always
     permissionFix:
       enabled: true
+      image: busybox
+      tag: 1.36.1
+      imagePullPolicy: IfNotPresent
+      # commandOverride: []
+      paths:
+        - /home/django
     service:
       annotations: {}
       spec:
@@ -280,7 +286,7 @@ cvat:
       name: cvat-kvrocks-secret
       password: cvat_kvrocks
     image: apache/kvrocks
-    tag: 2.12.1
+    tag: 2.15.0
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test

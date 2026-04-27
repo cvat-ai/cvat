@@ -200,8 +200,8 @@
         "location": "local"
       },
       "task_subsets": [
-        "Validation",
-        "Train"
+        "Train",
+        "Validation"
       ],
       "tasks": {
         "count": 2,

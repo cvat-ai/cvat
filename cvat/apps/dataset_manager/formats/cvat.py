@@ -41,7 +41,7 @@ from cvat.apps.dataset_manager.bindings import (
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameOutputType, make_frame_provider
-from cvat.apps.engine.models import FrameQuality
+from cvat.apps.engine.models import FrameQuality, TaskMode
 
 from .registry import dm_env, exporter, importer
 
@@ -496,7 +496,7 @@ class CvatExtractor(DatasetBase):
         )
 
         common_attrs = ["occluded"]
-        if "interpolation" in (t["mode"] for t in tasks_info.values()):
+        if TaskMode.INTERPOLATION in (t["mode"] for t in tasks_info.values()):
             common_attrs.append("keyframe")
             common_attrs.append("outside")
             common_attrs.append("track_id")
@@ -1569,7 +1569,7 @@ def dump_media_files(
     frame_provider = make_frame_provider(instance_data.db_instance)
 
     ext = ""
-    if instance_data.meta[instance_data.META_FIELD]["mode"] == "interpolation":
+    if instance_data.meta[instance_data.META_FIELD]["mode"] == TaskMode.INTERPOLATION:
         ext = frame_provider.VIDEO_FRAME_EXT
 
     frames = frame_provider.iterate_frames(

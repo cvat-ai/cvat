@@ -16,7 +16,9 @@ import { LabelType } from 'cvat-core-wrapper';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
-import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
+import ControlVisibilityObserver, {
+    ExtraControlsControl, ContainerHeightContext,
+} from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
 import MoveControl, { Props as MoveControlProps } from './move-control';
@@ -24,6 +26,7 @@ import FitControl, { Props as FitControlProps } from './fit-control';
 import ResizeControl, { Props as ResizeControlProps } from './resize-control';
 import ToolsControl from './tools-control';
 import OpenCVControl from './opencv-control';
+import SnapToolsControl from './snap-tools-control';
 import DrawRectangleControl, { Props as DrawRectangleControlProps } from './draw-rectangle-control';
 import DrawPolygonControl, { Props as DrawPolygonControlProps } from './draw-polygon-control';
 import DrawPolylineControl, { Props as DrawPolylineControlProps } from './draw-polyline-control';
@@ -119,27 +122,28 @@ registerComponentShortcuts(componentShortcuts);
 
 // We use the observer to see if these controls are in the scopeport
 // They automatically put to extra if not
-const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
-const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
-const ObservedRotateControl = ControlVisibilityObserver<RotateControlProps>(RotateControl);
-const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl);
-const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(ResizeControl);
-const ObservedToolsControl = ControlVisibilityObserver(ToolsControl);
-const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl);
-const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleControlProps>(DrawRectangleControl);
-const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl);
-const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl);
-const ObservedDrawPointsControl = ControlVisibilityObserver<DrawPointsControlProps>(DrawPointsControl);
-const ObservedDrawEllipseControl = ControlVisibilityObserver<DrawEllipseControlProps>(DrawEllipseControl);
-const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
-const ObservedDrawMaskControl = ControlVisibilityObserver<DrawMaskControlProps>(DrawMaskControl);
-const ObservedDrawSkeletonControl = ControlVisibilityObserver<DrawSkeletonControlProps>(DrawSkeletonControl);
-const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
-const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
-const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
-const ObservedJoinControl = ControlVisibilityObserver<JoinControlProps>(JoinControl);
-const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
-const ObservedSliceControl = ControlVisibilityObserver<SliceControlProps>(SliceControl);
+const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl, 'CursorControl');
+const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl, 'MoveControl');
+const ObservedRotateControl = ControlVisibilityObserver<RotateControlProps>(RotateControl, 'RotateControl');
+const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl, 'FitControl');
+const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(ResizeControl, 'ResizeControl');
+const ObservedToolsControl = ControlVisibilityObserver(ToolsControl, 'ToolsControl');
+const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl, 'OpenCVControl');
+const ObservedSnapToolsControl = ControlVisibilityObserver(SnapToolsControl, 'SnapToolsControl');
+const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleControlProps>(DrawRectangleControl, 'DrawRectangleControl');
+const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl, 'DrawPolygonControl');
+const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl, 'DrawPolylineControl');
+const ObservedDrawPointsControl = ControlVisibilityObserver<DrawPointsControlProps>(DrawPointsControl, 'DrawPointsControl');
+const ObservedDrawEllipseControl = ControlVisibilityObserver<DrawEllipseControlProps>(DrawEllipseControl, 'DrawEllipseControl');
+const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl, 'DrawCuboidControl');
+const ObservedDrawMaskControl = ControlVisibilityObserver<DrawMaskControlProps>(DrawMaskControl, 'DrawMaskControl');
+const ObservedDrawSkeletonControl = ControlVisibilityObserver<DrawSkeletonControlProps>(DrawSkeletonControl, 'DrawSkeletonControl');
+const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl, 'SetupTagControl');
+const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl, 'MergeControl');
+const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl, 'GroupControl');
+const ObservedJoinControl = ControlVisibilityObserver<JoinControlProps>(JoinControl, 'JoinControl');
+const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl, 'SplitControl');
+const ObservedSliceControl = ControlVisibilityObserver<SliceControlProps>(SliceControl, 'SliceControl');
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
@@ -179,11 +183,31 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         tagControlVisible = tagControlVisible || label.type === LabelType.TAG;
     });
 
-    const preventDefault = (event: KeyboardEvent | undefined): void => {
-        if (event) {
-            event.preventDefault();
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const containerHeightRef = React.useRef<number>(Number.MAX_SAFE_INTEGER);
+    const [containerHeight, setContainerHeight] = React.useState(Number.MAX_SAFE_INTEGER);
+
+    React.useEffect(() => {
+        const update = (): void => {
+            if (containerRef.current) {
+                if (containerHeightRef.current !== containerRef.current.offsetHeight) {
+                    containerHeightRef.current = containerRef.current.offsetHeight;
+                    setContainerHeight(containerRef.current.offsetHeight);
+                }
+            }
+        };
+
+        update();
+        if (containerRef.current) {
+            const observer = new ResizeObserver(update);
+            observer.observe(containerRef.current);
+            return () => {
+                observer.disconnect();
+            };
         }
-    };
+
+        return () => {};
+    }, []);
 
     const dynamicMergeIconProps =
         activeControl === ActiveControl.MERGE ?
@@ -239,19 +263,19 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
 
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
         CLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
+            event?.preventDefault();
             rotateFrame(Rotation.CLOCKWISE90);
         },
         ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
+            event?.preventDefault();
             rotateFrame(Rotation.ANTICLOCKWISE90);
         },
         SWITCH_GROUP_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
-            if (event) event.preventDefault();
+            event?.preventDefault();
             dynamicGroupIconProps.onClick();
         },
         RESET_GROUP_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
-            if (event) event.preventDefault();
+            event?.preventDefault();
             const grouping = activeControl === ActiveControl.GROUP;
             if (!grouping) {
                 return;
@@ -261,17 +285,17 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             updateActiveControl(ActiveControl.CURSOR);
         },
         SWITCH_MERGE_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
-            if (event) event.preventDefault();
+            event?.preventDefault();
             dynamicMergeIconProps.onClick();
         },
         SWITCH_SPLIT_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
+            event?.preventDefault();
             dynamicTrackIconProps.onClick();
         },
     };
 
     const handleDrawMode = (event: KeyboardEvent | undefined, action: 'draw' | 'redraw'): void => {
-        preventDefault(event);
+        event?.preventDefault();
         const drawing = [
             ActiveControl.DRAW_POINTS,
             ActiveControl.DRAW_POLYGON,
@@ -318,7 +342,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         handlers = {
             ...handlers,
             PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
+                event?.preventDefault();
                 canvasInstance.cancel();
                 pasteShape();
             },
@@ -332,139 +356,145 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     }
 
     return (
-        <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
-            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
-            <ObservedCursorControl
-                cursorShortkey={normalizedKeyMap.CANCEL}
-                canvasInstance={canvasInstance}
-                activeControl={activeControl}
-            />
-            <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
-            <ObservedRotateControl
-                anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS}
-                clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION_STANDARD_CONTROLS}
-                rotateFrame={rotateFrame}
-            />
+        <ContainerHeightContext.Provider value={containerHeight}>
+            <Layout.Sider ref={containerRef} className='cvat-canvas-controls-sidebar' theme='light' width={44}>
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+                <ObservedCursorControl
+                    cursorShortkey={normalizedKeyMap.CANCEL}
+                    canvasInstance={canvasInstance}
+                    activeControl={activeControl}
+                />
+                <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
+                <ObservedRotateControl
+                    anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS}
+                    clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION_STANDARD_CONTROLS}
+                    rotateFrame={rotateFrame}
+                />
 
-            <hr />
+                <hr />
 
-            <ObservedFitControl canvasInstance={canvasInstance} />
-            <ObservedResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
+                <ObservedFitControl canvasInstance={canvasInstance} />
+                <ObservedResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
-            <hr />
-            <ObservedToolsControl />
-            <ObservedOpenCVControl />
-            {
-                rectangleControlVisible && (
-                    <ObservedDrawRectangleControl
-                        canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
-                        disabled={controlsDisabled}
-                    />
-                )
-            }
-            {
-                polygonControlVisible && (
-                    <ObservedDrawPolygonControl
-                        canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
-                        disabled={controlsDisabled}
-                    />
-                )
-            }
-            {
-                polylineControlVisible && (
-                    <ObservedDrawPolylineControl
-                        canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_POLYLINE}
-                        disabled={controlsDisabled}
-                    />
-                )
-            }
-            {
-                pointsControlVisible && (
-                    <ObservedDrawPointsControl
-                        canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_POINTS}
-                        disabled={controlsDisabled}
-                    />
-                )
-            }
-            {
-                ellipseControlVisible && (
-                    <ObservedDrawEllipseControl
-                        canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_ELLIPSE}
-                        disabled={controlsDisabled}
-                    />
-                )
-            }
-            {
-                cuboidControlVisible && (
-                    <ObservedDrawCuboidControl
-                        canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
-                        disabled={controlsDisabled}
-                    />
-                )
-            }
-            {
-                maskControlVisible && (
-                    <ObservedDrawMaskControl
-                        canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_MASK}
-                        disabled={controlsDisabled}
-                    />
-                )
-            }
-            {
-                skeletonControlVisible && (
-                    <ObservedDrawSkeletonControl
-                        canvasInstance={canvasInstance}
-                        isDrawing={activeControl === ActiveControl.DRAW_SKELETON}
-                        disabled={controlsDisabled}
-                    />
-                )
-            }
-            {
-                tagControlVisible && (
-                    <ObservedSetupTagControl
-                        canvasInstance={canvasInstance}
-                        disabled={controlsDisabled}
-                    />
-                )
-            }
-            <hr />
+                <hr />
 
-            <ObservedMergeControl
-                canvasInstance={canvasInstance}
-                dynamicIconProps={dynamicMergeIconProps}
-                disabled={controlsDisabled}
-            />
-            <ObservedGroupControl
-                canvasInstance={canvasInstance}
-                dynamicIconProps={dynamicGroupIconProps}
-                disabled={controlsDisabled}
-            />
-            <ObservedSplitControl
-                canvasInstance={canvasInstance}
-                dynamicIconProps={dynamicTrackIconProps}
-                disabled={controlsDisabled}
-            />
-            <ObservedJoinControl
-                updateActiveControl={updateActiveControl}
-                canvasInstance={canvasInstance}
-                activeControl={activeControl}
-                disabled={controlsDisabled}
-            />
-            <ObservedSliceControl
-                updateActiveControl={updateActiveControl}
-                canvasInstance={canvasInstance}
-                activeControl={activeControl}
-                disabled={controlsDisabled}
-            />
+                <ObservedToolsControl />
+                <ObservedOpenCVControl />
+                {
+                    rectangleControlVisible && (
+                        <ObservedDrawRectangleControl
+                            canvasInstance={canvasInstance}
+                            isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
+                            disabled={controlsDisabled}
+                        />
+                    )
+                }
+                {
+                    polygonControlVisible && (
+                        <ObservedDrawPolygonControl
+                            canvasInstance={canvasInstance}
+                            isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
+                            disabled={controlsDisabled}
+                        />
+                    )
+                }
+                {
+                    polylineControlVisible && (
+                        <ObservedDrawPolylineControl
+                            canvasInstance={canvasInstance}
+                            isDrawing={activeControl === ActiveControl.DRAW_POLYLINE}
+                            disabled={controlsDisabled}
+                        />
+                    )
+                }
+                {
+                    pointsControlVisible && (
+                        <ObservedDrawPointsControl
+                            canvasInstance={canvasInstance}
+                            isDrawing={activeControl === ActiveControl.DRAW_POINTS}
+                            disabled={controlsDisabled}
+                        />
+                    )
+                }
+                {
+                    ellipseControlVisible && (
+                        <ObservedDrawEllipseControl
+                            canvasInstance={canvasInstance}
+                            isDrawing={activeControl === ActiveControl.DRAW_ELLIPSE}
+                            disabled={controlsDisabled}
+                        />
+                    )
+                }
+                {
+                    cuboidControlVisible && (
+                        <ObservedDrawCuboidControl
+                            canvasInstance={canvasInstance}
+                            isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
+                            disabled={controlsDisabled}
+                        />
+                    )
+                }
+                {
+                    maskControlVisible && (
+                        <ObservedDrawMaskControl
+                            canvasInstance={canvasInstance}
+                            isDrawing={activeControl === ActiveControl.DRAW_MASK}
+                            disabled={controlsDisabled}
+                        />
+                    )
+                }
+                {
+                    skeletonControlVisible && (
+                        <ObservedDrawSkeletonControl
+                            canvasInstance={canvasInstance}
+                            isDrawing={activeControl === ActiveControl.DRAW_SKELETON}
+                            disabled={controlsDisabled}
+                        />
+                    )
+                }
+                {
+                    tagControlVisible && (
+                        <ObservedSetupTagControl
+                            canvasInstance={canvasInstance}
+                            disabled={controlsDisabled}
+                        />
+                    )
+                }
 
-            <ExtraControlsControl />
-        </Layout.Sider>
+                <ObservedSnapToolsControl />
+
+                <hr />
+
+                <ObservedMergeControl
+                    canvasInstance={canvasInstance}
+                    dynamicIconProps={dynamicMergeIconProps}
+                    disabled={controlsDisabled}
+                />
+                <ObservedGroupControl
+                    canvasInstance={canvasInstance}
+                    dynamicIconProps={dynamicGroupIconProps}
+                    disabled={controlsDisabled}
+                />
+                <ObservedSplitControl
+                    canvasInstance={canvasInstance}
+                    dynamicIconProps={dynamicTrackIconProps}
+                    disabled={controlsDisabled}
+                />
+                <ObservedJoinControl
+                    updateActiveControl={updateActiveControl}
+                    canvasInstance={canvasInstance}
+                    activeControl={activeControl}
+                    disabled={controlsDisabled}
+                />
+                <ObservedSliceControl
+                    updateActiveControl={updateActiveControl}
+                    canvasInstance={canvasInstance}
+                    activeControl={activeControl}
+                    disabled={controlsDisabled}
+                />
+
+                <ExtraControlsControl />
+            </Layout.Sider>
+        </ContainerHeightContext.Provider>
     );
 }
