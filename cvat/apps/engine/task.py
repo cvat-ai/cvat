@@ -1206,7 +1206,7 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
             assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
 
 
-def _create_video_dataset_descriptors(
+def _collect_video_dataset_descriptors(
     extractor: VideoReader,
     video_path: Path,
     *,
@@ -1303,8 +1303,37 @@ def _create_video_dataset_descriptors(
     return video, video_length, manifest
 
 
-def _create_image_dataset_descriptors(
-    extractor: "ImageListReader",
+def _create_video_task_media_descriptors(
+    db_task: models.Task,
+    data: dict[str, Any],
+    *,
+    extractor: IMediaReader,
+    media: dict[str, Any],
+    upload_dir: Path,
+    manifest_file: str | None,
+    update_status: Callable[[str], None],
+) -> tuple[models.Video, VideoManifestManager]:
+    db_data = db_task.require_data()
+
+    video, video_length, manifest = _collect_video_dataset_descriptors(
+        extractor=extractor,
+        video_path=upload_dir / media["video"][0],
+        upload_dir=upload_dir,
+        db_data=db_data,
+        data=data,
+        manifest_file=manifest_file,
+        manifest_frame_alignment=db_data.chunk_size,
+        update_status=update_status,
+    )
+    db_data.size = video_length
+
+    video.save()
+
+    return video, manifest
+
+
+def _collect_image_dataset_descriptors(
+    extractor: ImageListReader,
     *,
     db_task: models.Task,
     upload_dir: Path,
@@ -1364,6 +1393,66 @@ def _create_image_dataset_descriptors(
         )
 
     return images, manifest
+
+
+def _create_image_task_media_descriptors(
+    db_task: models.Task,
+    *,
+    is_backup_restore: bool,
+    validation_params: dict[str, Any],
+    upload_dir: Path,
+    is_data_in_cloud: bool,
+    extractor: IMediaReader,
+    related_images: dict[str, Sequence[dict[str, Any]]],
+    job_file_mapping: JobFileMapping | None,
+) -> tuple[list[models.Image], ImageManifestManager, JobFileMapping | None]:
+    db_data = db_task.require_data()
+
+    images, manifest = _collect_image_dataset_descriptors(
+        extractor=extractor,
+        related_images=related_images,
+        upload_dir=upload_dir,
+        db_task=db_task,
+        is_data_in_cloud=is_data_in_cloud,
+    )
+    db_data.size = len(images)
+
+    job_file_mapping, images = _allocate_honeypots(
+        db_task,
+        validation_params,
+        images=images,
+        manifest=manifest,
+        job_file_mapping=job_file_mapping,
+        is_backup_restore=is_backup_restore,
+    )
+
+    images = bulk_create(models.Image, images)
+
+    db_related_files = [
+        models.RelatedFile(
+            data=db_data,
+            path=related_file_path,
+        )
+        for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
+    ]
+
+    db_related_files = bulk_create(models.RelatedFile, db_related_files)
+    db_related_files_by_path = {rf.path: rf for rf in db_related_files}
+
+    ThroughModel = models.RelatedFile.images.through
+    bulk_create(
+        ThroughModel,
+        (
+            ThroughModel(
+                relatedfile_id=db_related_files_by_path[related_file_path].id,
+                image_id=image.id,
+            )
+            for image in images
+            for related_file_path in related_images.get(image.path, [])
+        ),
+    )
+
+    return images, manifest, job_file_mapping
 
 
 @transaction.atomic
@@ -1754,67 +1843,30 @@ def create_thread(
 
     # Create task media descriptors from the metadata collected
     images = None
-    if db_task.media_type == models.MediaType.VIDEO:
-        video, video_length, _ = _create_video_dataset_descriptors(
-            extractor=extractor,
-            video_path=upload_dir / media["video"][0],
-            upload_dir=upload_dir,
-            db_data=db_data,
-            data=data,
-            manifest_file=manifest_file,
-            manifest_frame_alignment=db_data.chunk_size,
-            update_status=update_status,
-        )
-        db_data.size = video_length
-    elif db_task.media_type in [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
-        images, manifest = _create_image_dataset_descriptors(
-            extractor=extractor,
-            related_images=related_images,
-            upload_dir=upload_dir,
-            db_task=db_task,
-            is_data_in_cloud=is_data_in_cloud,
-        )
-        db_data.size = len(images)
-    else:
-        assert False, f"Unexpected media type {db_task.media_type}"
-
-    if db_task.media_type in [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
-        job_file_mapping, images = _allocate_honeypots(
-            db_task,
-            validation_params,
-            images=images,
-            manifest=manifest,
-            job_file_mapping=job_file_mapping,
-            is_backup_restore=is_backup_restore,
-        )
-
-        images = bulk_create(models.Image, images)
-
-        db_related_files = [
-            models.RelatedFile(
-                data=db_data,
-                path=related_file_path,
+    match db_task.media_type:
+        case models.MediaType.VIDEO:
+            _create_video_task_media_descriptors(
+                db_task,
+                data,
+                extractor=extractor,
+                media=media,
+                upload_dir=upload_dir,
+                manifest_file=manifest_file,
+                update_status=update_status,
             )
-            for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
-        ]
-        db_related_files = bulk_create(models.RelatedFile, db_related_files)
-        db_related_files_by_path = {rf.path: rf for rf in db_related_files}
-
-        ThroughModel = models.RelatedFile.images.through
-        bulk_create(
-            ThroughModel,
-            (
-                ThroughModel(
-                    relatedfile_id=db_related_files_by_path[related_file_path].id, image_id=image.id
-                )
-                for image in images
-                for related_file_path in related_images.get(image.path, [])
-            ),
-        )
-    elif db_task.media_type == models.MediaType.VIDEO:
-        video.save()
-    else:
-        assert False, f"Unexpected media type {db_task.media_type}"
+        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+            images, _, job_file_mapping = _create_image_task_media_descriptors(
+                db_task,
+                extractor=extractor,
+                related_images=related_images,
+                validation_params=validation_params,
+                job_file_mapping=job_file_mapping,
+                upload_dir=upload_dir,
+                is_backup_restore=is_backup_restore,
+                is_data_in_cloud=is_data_in_cloud,
+            )
+        case _ as media_type:
+            assert False, f"Unexpected media type '{media_type}'"
 
     # validate stop_frame
     if db_data.stop_frame == 0:
