@@ -90,9 +90,10 @@ The easiest way to deploy SAM2 with pre-built images from Docker Hub.
    cd cvat/ai-models/agents_deployment/sam2
    ```
 
-1. Create or update the `.env` file with your configuration. For GPU deployment, set `IMAGE_URL=cvat/sam2_agent:latest_GPU`
-   and `COMPOSE_PROFILES=gpu`. For CPU-only deployment, set `IMAGE_URL=cvat/sam2_agent:latest`
-   and `COMPOSE_PROFILES=cpu`. Configure the remaining required variables (CVAT_BASE_URL, CVAT_ACCESS_TOKEN, FUNCTION_NAME, etc.)
+1. Create or update the `.env` file with your configuration.
+For GPU deployment, set `IMAGE_URL=cvat/sam2_agent:latest_GPU` and `COMPOSE_PROFILES=gpu`.
+For CPU-only deployment, set `IMAGE_URL=cvat/sam2_agent:latest` and `COMPOSE_PROFILES=cpu`.
+Configure the remaining required variables (CVAT_BASE_URL, CVAT_ACCESS_TOKEN, FUNCTION_NAME, etc.)
    following the [Docker Compose agent guide](/docs/guides/compose-agents-userguide/).
 
 1. Start the agent:
