@@ -38,6 +38,7 @@ from cvat.apps.engine.media_extractors import (
     Mpeg4CompressedChunkWriter,
     RandomAccessIterator,
     ValidateDimension,
+    VideoReader,
     ZipChunkWriter,
     ZipCompressedChunkWriter,
     get_mime,
@@ -232,7 +233,7 @@ def _create_segments_and_jobs(
     db_task.save()
 
 
-def _count_files(data):
+def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
     share_root = settings.SHARE_ROOT
     server_files = []
 
@@ -299,7 +300,7 @@ def _find_manifest_files(data):
     return manifest_files
 
 
-def _validate_data(counter, manifest_files=None):
+def _validate_data(counter: dict[str, list[str]], *, manifest_files: list[str] = None):
     unique_entries = 0
     multiple_entries = 0
     for media_type, media_config in MEDIA_TYPES.items():
@@ -424,7 +425,7 @@ def _validate_manifest(
     root_dir: Path,
     *,
     is_in_cloud: bool,
-    db_cloud_storage: Any | None,
+    db_cloud_storage: models.CloudStorage | None,
     is_backup_restore: bool,
 ) -> str | None:
     if not manifests:
@@ -650,7 +651,7 @@ def _find_and_filter_related_images(
     regular_images, related_images = find_related_images(
         extractor.absolute_source_paths,
         # backward compatibility
-        is_scene_path=(lambda p: not "related_images" in p.parts),
+        is_scene_path=(lambda p: "related_images" not in p.parts),
     )
 
     # extractor.filter() uses absolute paths, so we pass them
@@ -1023,21 +1024,12 @@ def _filter_cloud_storage_files(
     data: dict[str, Any],
     *,
     job_file_mapping: JobFileMapping | None,
-    manifest_file: str | None,
-) -> tuple[ImageManifestManager | None, str | None]:
+    cloud_storage_manifest_prefix: str | None,
+    cloud_storage_manifest: ImageManifestManager | None,
+) -> None:
     cloud_storage_instance = db_storage_to_storage_instance(cloud_storage)
 
-    cloud_storage_manifest = None
-    cloud_storage_manifest_prefix = None
-    if manifest_file:
-        cloud_storage_manifest = ImageManifestManager(
-            cloud_storage.get_storage_dirname() / manifest_file,
-            cloud_storage.get_storage_dirname(),
-        )
-        cloud_storage_manifest.set_index()
-        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
-
-    if manifest_file and not data["server_files"] and not data["filename_pattern"]:
+    if cloud_storage_manifest and not data["server_files"] and not data["filename_pattern"]:
         # only manifest file was specified in server files by the user
         data["filename_pattern"] = "*"
 
@@ -1046,7 +1038,7 @@ def _filter_cloud_storage_files(
         copy_of_server_files = data["server_files"].copy()
         copy_of_dirs = dirs.copy()
         additional_files = []
-        if manifest_file:
+        if cloud_storage_manifest:
             for directory in dirs:
                 if cloud_storage_manifest_prefix:
                     # cloud_storage_manifest_prefix is a dirname of manifest,
@@ -1104,7 +1096,7 @@ def _filter_cloud_storage_files(
     if data["filename_pattern"]:
         additional_files = []
 
-        if not manifest_file:
+        if not cloud_storage_manifest:
             # NOTE: we cannot list files with specified pattern on the providers page,
             # because they don't provide such function
             dirs = []
@@ -1151,8 +1143,6 @@ def _filter_cloud_storage_files(
             filtered_files.append(f)
 
         data["server_files"] = filtered_files
-
-    return cloud_storage_manifest, cloud_storage_manifest_prefix
 
 
 def _detect_media_type_and_dimension(
@@ -1216,6 +1206,166 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
             assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
 
 
+def _create_video_dataset_descriptors(
+    extractor: VideoReader,
+    video_path: Path,
+    *,
+    db_data: models.Data,
+    data: dict[str, Any],
+    manifest_file: str | None,
+    manifest_frame_alignment: int,
+    upload_dir: Path,
+    update_status: Callable[[str], None],
+) -> tuple[models.Video, int, VideoManifestManager]:
+    if manifest_file:
+        try:
+            update_status("Validating the input manifest file")
+
+            manifest = VideoManifestValidator(
+                source_path=video_path,
+                manifest_path=db_data.get_manifest_path(),
+            )
+            manifest.init_index()
+            manifest.validate_seek_key_frames()
+
+            if not len(manifest):
+                raise ValidationError("No key frames found in the manifest")
+
+        except Exception as ex:
+            manifest.remove()
+            manifest = None
+
+            if isinstance(ex, (ValidationError, AssertionError)):
+                base_msg = f"Invalid manifest file was uploaded: {ex}"
+            else:
+                base_msg = "Failed to parse the uploaded manifest file"
+                slogger.glob.warning(ex, exc_info=True)
+
+            update_status(base_msg)
+    else:
+        manifest = None
+
+    if not manifest:
+        try:
+            update_status("Preparing a manifest file")
+
+            # TODO: maybe generate manifest in a temp directory
+            manifest = VideoManifestManager(db_data.get_manifest_path())
+            manifest.link(
+                media_file=video_path,
+                chunk_size=manifest_frame_alignment,  # TODO: try to remove
+                force=True,
+            )
+            manifest.create()
+
+            update_status("A manifest has been created")
+
+        except Exception as ex:
+            manifest.remove()
+            manifest = None
+
+            if isinstance(ex, AssertionError):
+                base_msg = f": {ex}"
+            else:
+                base_msg = ""
+                slogger.glob.warning(ex, exc_info=True)
+
+            update_status(
+                f"Failed to create manifest for the uploaded video{base_msg}. "
+                "A manifest will not be used in this task"
+            )
+
+    if manifest:
+        video_frame_count = manifest.video_length
+        video_frame_size = manifest.video_resolution
+    else:
+        video_frame_count = extractor.get_frame_count()
+        video_frame_size = extractor.get_image_size(0)
+
+    video_length = len(
+        range(
+            db_data.start_frame,
+            min(
+                data["stop_frame"] + 1 if data["stop_frame"] else video_frame_count,
+                video_frame_count,
+            ),
+            db_data.get_frame_step(),
+        )
+    )
+
+    video = models.Video(
+        data=db_data,
+        path=video_path.relative_to(upload_dir).as_posix(),
+        width=video_frame_size[0],
+        height=video_frame_size[1],
+    )
+
+    return video, video_length, manifest
+
+
+def _create_image_dataset_descriptors(
+    extractor: "ImageListReader",
+    *,
+    db_task: models.Task,
+    upload_dir: Path,
+    is_data_in_cloud: bool,
+    related_images: dict[str, list[str]],
+) -> tuple[list[models.Image], ImageManifestManager]:
+    db_data = db_task.require_data()
+
+    manifest = ImageManifestManager(db_data.get_manifest_path())
+    if not manifest.exists:
+        # TODO: Try to avoid adding manifest entries for images that are not in
+        # extractor.frame_range. In addition to less processing here, it would also allow
+        # us to avoid downloading such images from cloud storage (when using static chunks),
+        # or copying them from the attached share (when using copy_data).
+        manifest.link(
+            sources=extractor.absolute_source_paths,
+            meta={k: {"related_images": related_images[k]} for k in related_images},
+            data_dir=upload_dir,
+            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+        )
+        manifest.create()
+    else:
+        manifest.init_index()
+
+    images: list[models.Image] = []
+    for frame_id in extractor.frame_range:
+        image_path = extractor.get_path(frame_id)
+        image_size = None
+
+        if manifest:
+            image_info = manifest[frame_id]
+
+            # check mapping
+            if not image_path.as_posix().endswith(f"{image_info['name']}{image_info['extension']}"):
+                raise ValidationError("Incorrect file mapping to manifest content")
+
+            if image_info.get("width") is not None and image_info.get("height") is not None:
+                image_size = (image_info["width"], image_info["height"])
+            elif is_data_in_cloud:
+                raise ValidationError(
+                    "Can't find image '{}' width or height info in the manifest".format(
+                        f"{image_info['name']}{image_info['extension']}"
+                    )
+                )
+
+        if not image_size:
+            image_size = extractor.get_image_size(frame_id)
+
+        images.append(
+            models.Image(
+                data=db_data,
+                path=os.path.relpath(image_path, upload_dir),
+                frame=frame_id,
+                width=image_size[0],
+                height=image_size[1],
+            )
+        )
+
+    return images, manifest
+
+
 @transaction.atomic
 def create_thread(
     db_task: int | models.Task,
@@ -1274,6 +1424,41 @@ def create_thread(
     else:
         assert False, f"Unknown file storage {db_data.storage}"
 
+    manifest_file = _validate_manifest(
+        manifest_files,
+        manifest_root,
+        is_in_cloud=is_data_in_cloud,
+        db_cloud_storage=db_data.cloud_storage if is_data_in_cloud else None,
+        is_backup_restore=is_backup_restore,
+    )
+
+    if is_data_in_cloud and not is_backup_restore:
+        cloud_storage_manifest: ImageManifestManager | None = None
+        cloud_storage_manifest_prefix: str | None = None
+        if manifest_file:
+            cloud_storage_manifest = ImageManifestManager(
+                db_data.cloud_storage.get_storage_dirname() / manifest_file,
+                db_data.cloud_storage.get_storage_dirname(),
+            )
+            cloud_storage_manifest.set_index()
+            cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+
+        _filter_cloud_storage_files(
+            db_data.cloud_storage,
+            data,
+            job_file_mapping=job_file_mapping,
+            cloud_storage_manifest=cloud_storage_manifest,
+            cloud_storage_manifest_prefix=cloud_storage_manifest_prefix,
+        )
+
+    # count and validate uploaded files
+    media = _count_files(data)
+    media, task_mode = _validate_data(media, manifest_files=manifest_files)
+    is_media_sorted = False
+
+    if job_file_mapping is not None and task_mode != models.TaskMode.ANNOTATION:
+        raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
+
     if (
         db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
         and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
@@ -1284,27 +1469,6 @@ def create_thread(
         and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
     ):
         db_data.storage_method = models.StorageMethodChoice.CACHE
-
-    manifest_file = _validate_manifest(
-        manifest_files,
-        manifest_root,
-        is_in_cloud=is_data_in_cloud,
-        db_cloud_storage=db_data.cloud_storage if is_data_in_cloud else None,
-        is_backup_restore=is_backup_restore,
-    )
-
-    if is_data_in_cloud and not is_backup_restore:
-        cloud_storage_manifest, cloud_storage_manifest_prefix = _filter_cloud_storage_files(
-            db_data.cloud_storage,
-            data,
-            job_file_mapping=job_file_mapping,
-            manifest_file=manifest_file,
-        )
-
-    # count and validate uploaded files
-    media = _count_files(data)
-    media, task_mode = _validate_data(media, manifest_files)
-    is_media_sorted = False
 
     manifest = None
     if is_data_in_cloud:
@@ -1329,9 +1493,6 @@ def create_thread(
                 db_data.storage = models.StorageChoice.LOCAL
         else:
             manifest = ImageManifestManager(db_data.get_manifest_path())
-
-    if job_file_mapping is not None and task_mode != models.TaskMode.ANNOTATION:
-        raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if data["server_files"]:
         if db_data.storage == models.StorageChoice.LOCAL and not db_data.cloud_storage:
@@ -1591,148 +1752,33 @@ def create_thread(
         else:
             db_data.chunk_size = 36
 
-    # Create task frames from the metadata collected
-    video_path: str = ""
-    video_frame_size: tuple[int, int] = (0, 0)
+    # Create task media descriptors from the metadata collected
+    images = None
+    if db_task.media_type == models.MediaType.VIDEO:
+        video, video_length, _ = _create_video_dataset_descriptors(
+            extractor=extractor,
+            video_path=upload_dir / media["video"][0],
+            upload_dir=upload_dir,
+            db_data=db_data,
+            data=data,
+            manifest_file=manifest_file,
+            manifest_frame_alignment=db_data.chunk_size,
+            update_status=update_status,
+        )
+        db_data.size = video_length
+    elif db_task.media_type in [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
+        images, manifest = _create_image_dataset_descriptors(
+            extractor=extractor,
+            related_images=related_images,
+            upload_dir=upload_dir,
+            db_task=db_task,
+            is_data_in_cloud=is_data_in_cloud,
+        )
+        db_data.size = len(images)
+    else:
+        assert False, f"Unexpected media type {db_task.media_type}"
 
-    images: list[models.Image] = []
-
-    for media_type, media_files in media.items():
-        if not media_files:
-            continue
-
-        if task_mode == MEDIA_TYPES["video"]["mode"]:
-            if manifest_file:
-                try:
-                    update_status("Validating the input manifest file")
-
-                    manifest = VideoManifestValidator(
-                        source_path=upload_dir / media_files[0],
-                        manifest_path=db_data.get_manifest_path(),
-                    )
-                    manifest.init_index()
-                    manifest.validate_seek_key_frames()
-
-                    if not len(manifest):
-                        raise ValidationError("No key frames found in the manifest")
-
-                except Exception as ex:
-                    manifest.remove()
-                    manifest = None
-
-                    if isinstance(ex, (ValidationError, AssertionError)):
-                        base_msg = f"Invalid manifest file was uploaded: {ex}"
-                    else:
-                        base_msg = "Failed to parse the uploaded manifest file"
-                        slogger.glob.warning(ex, exc_info=True)
-
-                    update_status(base_msg)
-            else:
-                manifest = None
-
-            if not manifest:
-                try:
-                    update_status("Preparing a manifest file")
-
-                    # TODO: maybe generate manifest in a temp directory
-                    manifest = VideoManifestManager(db_data.get_manifest_path())
-                    manifest.link(
-                        media_file=Path(upload_dir, media_files[0]),
-                        chunk_size=db_data.chunk_size,  # TODO: why it's needed here?
-                        force=True,
-                    )
-                    manifest.create()
-
-                    update_status("A manifest has been created")
-
-                except Exception as ex:
-                    manifest.remove()
-                    manifest = None
-
-                    if isinstance(ex, AssertionError):
-                        base_msg = f": {ex}"
-                    else:
-                        base_msg = ""
-                        slogger.glob.warning(ex, exc_info=True)
-
-                    update_status(
-                        f"Failed to create manifest for the uploaded video{base_msg}. "
-                        "A manifest will not be used in this task"
-                    )
-
-            if manifest:
-                video_frame_count = manifest.video_length
-                video_frame_size = manifest.video_resolution
-            else:
-                video_frame_count = extractor.get_frame_count()
-                video_frame_size = extractor.get_image_size(0)
-
-            db_data.size = len(
-                range(
-                    db_data.start_frame,
-                    min(
-                        data["stop_frame"] + 1 if data["stop_frame"] else video_frame_count,
-                        video_frame_count,
-                    ),
-                    db_data.get_frame_step(),
-                )
-            )
-            video_path = os.path.join(upload_dir, media_files[0])
-        else:  # images, archive, pdf
-            db_data.size = len(extractor)
-
-            manifest = ImageManifestManager(db_data.get_manifest_path())
-            if not manifest.exists:
-                # TODO: Try to avoid adding manifest entries for images that are not in
-                # extractor.frame_range. In addition to less processing here, it would also allow
-                # us to avoid downloading such images from cloud storage (when using static chunks),
-                # or copying them from the attached share (when using copy_data).
-                manifest.link(
-                    sources=extractor.absolute_source_paths,
-                    meta={k: {"related_images": related_images[k]} for k in related_images},
-                    data_dir=upload_dir,
-                    DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-                )
-                manifest.create()
-            else:
-                manifest.init_index()
-
-            for frame_id in extractor.frame_range:
-                image_path = extractor.get_path(frame_id)
-                image_size = None
-
-                if manifest:
-                    image_info = manifest[frame_id]
-
-                    # check mapping
-                    if not image_path.as_posix().endswith(
-                        f"{image_info['name']}{image_info['extension']}"
-                    ):
-                        raise ValidationError("Incorrect file mapping to manifest content")
-
-                    if image_info.get("width") is not None and image_info.get("height") is not None:
-                        image_size = (image_info["width"], image_info["height"])
-                    elif is_data_in_cloud:
-                        raise ValidationError(
-                            "Can't find image '{}' width or height info in the manifest".format(
-                                f"{image_info['name']}{image_info['extension']}"
-                            )
-                        )
-
-                if not image_size:
-                    image_size = extractor.get_image_size(frame_id)
-
-                images.append(
-                    models.Image(
-                        data=db_data,
-                        path=os.path.relpath(image_path, upload_dir),
-                        frame=frame_id,
-                        width=image_size[0],
-                        height=image_size[1],
-                    )
-                )
-
-    if db_task.mode == models.TaskMode.ANNOTATION:
+    if db_task.media_type in [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
         job_file_mapping, images = _allocate_honeypots(
             db_task,
             validation_params,
@@ -1765,13 +1811,10 @@ def create_thread(
                 for related_file_path in related_images.get(image.path, [])
             ),
         )
+    elif db_task.media_type == models.MediaType.VIDEO:
+        video.save()
     else:
-        models.Video.objects.create(
-            data=db_data,
-            path=os.path.relpath(video_path, upload_dir),
-            width=video_frame_size[0],
-            height=video_frame_size[1],
-        )
+        assert False, f"Unexpected media type {db_task.media_type}"
 
     # validate stop_frame
     if db_data.stop_frame == 0:
@@ -1781,7 +1824,13 @@ def create_thread(
             db_data.stop_frame, db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
         )
 
-    slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
+    slogger.glob.info(
+        "Saved media for Data #{}: media type {}, {} frames".format(
+            db_data.id,
+            db_task.media_type,
+            db_data.size,
+        )
+    )
 
     _create_segments_and_jobs(
         db_task, job_file_mapping=job_file_mapping, update_status_callback=update_status
