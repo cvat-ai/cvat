@@ -1449,10 +1449,8 @@ def create_thread(
 
     assert not db_task.media_type
     db_task.media_type = detected_media_type
-
-    # TODO: fully inferable from the media type, remove?
-    db_task.dimension = detected_dimension  # backward compatibility
-    db_task.mode = task_mode  # backward compatibility
+    db_task.dimension = detected_dimension
+    db_task.mode = task_mode
 
     if db_task.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
