@@ -826,10 +826,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
     data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
-    mode = serializers.CharField(
-        source='segment.task.mode',
-        allow_blank=True, required=False, read_only=True
-    )
+    mode = serializers.CharField(source='segment.task.mode', required=False, read_only=True)
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
