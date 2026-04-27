@@ -2519,7 +2519,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     # We're using CharField to produce simple strings instead of enums in the generated SDK.
     # SDK enums require explicit .value calls to access the string representation.
     # TODO: move to ChoicesField when SDK supports seamless transition from string to enum
-    dimension = serializers.CharField(allow_blank=True, required=False)
+    dimension = serializers.CharField(allow_blank=True, required=False, read_only=True)
     mode = serializers.CharField(allow_blank=True, required=False, read_only=True)
 
     target_storage = StorageSerializer(required=False, allow_null=True)
@@ -2880,7 +2880,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
-    dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
+    dimension = serializers.CharField(required=False, allow_null=True, read_only=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     tasks = TasksSummarySerializer(models.Task, url_filter_key='project_id')
@@ -2903,7 +2903,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
         task_dimension = next(
             (task.dimension for task in instance.tasks.all() if task.dimension),
-            None
+            None # backward compatibility; TODO: migrate to "" for consistency with tasks
         )
         response['task_subsets'] = list(task_subsets)
         response['dimension'] = task_dimension
