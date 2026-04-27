@@ -6,9 +6,12 @@
     "configurations": [
 
         {
-            "name": "docker: attach server",
+            "name": "Docker: Backend Server",
             "type": "debugpy",
             "request": "attach",
+            "presentation": {
+                "hidden": true
+            },
             "connect": {
                 "host": "127.0.0.1",
                 "port": 9090
@@ -26,9 +29,12 @@
             "justMyCode": false,
         },
         {
-            "name": "docker: attach worker annotation",
+            "name": "Docker: Worker Annotation",
             "type": "debugpy",
             "request": "attach",
+            "presentation": {
+                "hidden": true
+            },
             "connect": {
                 "host": "127.0.0.1",
                 "port": 9091
@@ -46,9 +52,12 @@
             "justMyCode": false,
         },
         {
-            "name": "docker: attach worker export",
+            "name": "Docker: Worker Export",
             "type": "debugpy",
             "request": "attach",
+            "presentation": {
+                "hidden": true
+            },
             "connect": {
                 "host": "127.0.0.1",
                 "port": 9092
@@ -66,9 +75,12 @@
             "justMyCode": false,
         },
         {
-            "name": "docker: attach worker import",
+            "name": "Docker: Worker Import",
             "type": "debugpy",
             "request": "attach",
+            "presentation": {
+                "hidden": true
+            },
             "connect": {
                 "host": "127.0.0.1",
                 "port": 9093
@@ -86,9 +98,12 @@
             "justMyCode": false,
         },
         {
-            "name": "docker: attach worker quality reports",
+            "name": "Docker: Worker Quality Reports",
             "type": "debugpy",
             "request": "attach",
+            "presentation": {
+                "hidden": true
+            },
             "connect": {
                 "host": "127.0.0.1",
                 "port": 9094
@@ -105,10 +120,12 @@
             ],
             "justMyCode": false,
         },
-        {
-            "name": "docker: attach worker consensus",
+            "name": "Docker: Worker Consensus",
             "type": "debugpy",
             "request": "attach",
+            "presentation": {
+                "hidden": true
+            },
             "connect": {
                 "host": "127.0.0.1",
                 "port": 9096
@@ -126,19 +143,66 @@
             "justMyCode": false,
         },
         {
+            "name": "Docker: Worker Webhooks",
+            "type": "debugpy",
+            "request": "attach",
+            "presentation": {
+                "hidden": true
+            },
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 9097
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/home/django/"
+                },
+                {
+                    "localRoot": "${workspaceFolder}/.env",
+                    "remoteRoot": "/opt/venv",
+                }
+            ],
+            "justMyCode": false,
+        },
+        {
+            "name": "Docker: Worker Chunks",
+            "type": "debugpy",
+            "request": "attach",
+            "presentation": {
+                "hidden": true
+            },
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 9095
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/home/django/"
+                },
+                {
+                    "localRoot": "${workspaceFolder}/.env",
+                    "remoteRoot": "/opt/venv",
+                }
+            ],
+            "justMyCode": false,
+        },
+        {
             "type": "pwa-chrome",
             "request": "launch",
-            "preLaunchTask": "npm: start - cvat-ui",
-            "name": "ui.js: debug",
+            "preLaunchTask": "docker: up ui",
+            "name": "Docker: Frontend",
+            "presentation": {
+                "group": "Docker",
+                "order": 1
+            },
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/cvat-ui",
             "sourceMaps": true,
             "sourceMapPathOverrides": {
-                "webpack://cvat/./*": "${workspaceFolder}/cvat-core/*",
-                "webpack:///./*": "${webRoot}/*",
-                "webpack:///src/*": "${webRoot}/*",
-                "webpack:///*": "*",
-                "webpack:///./~/*": "${webRoot}/node_modules/*"
+                "webpack://cvat-ui/./*": "${workspaceFolder}/cvat-ui/*",
+                "webpack://cvat-ui/../*": "${workspaceFolder}/*"
             },
             "smartStep": true,
         },
@@ -569,16 +633,22 @@
             ]
         },
         {
-            "name": "docker: attach backend debug",
+            "name": "Docker: Backend",
             "preLaunchTask": "docker: up workers",
             "stopAll": true,
+            "presentation": {
+                "group": "Docker",
+                "order": 2
+            },
             "configurations": [
-                "docker: attach server",
-                "docker: attach worker annotation",
-                "docker: attach worker export",
-                "docker: attach worker import",
-                "docker: attach worker quality reports",
-                "docker: attach worker consensus",
+                "Docker: Backend Server",
+                "Docker: Worker Annotation",
+                "Docker: Worker Export",
+                "Docker: Worker Import",
+                "Docker: Worker Quality Reports",
+                "Docker: Worker Consensus",
+                "Docker: Worker Webhooks",
+                "Docker: Worker Chunks",
             ]
         }
     ]

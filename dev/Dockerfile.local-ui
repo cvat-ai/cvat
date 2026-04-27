@@ -1,0 +1,29 @@
+FROM node:22-slim
+
+ENV TERM=xterm \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    COREPACK_HOME=/opt/corepack \
+    COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
+        build-essential \
+        git \
+        libcairo2-dev \
+        libgif-dev \
+        libjpeg-dev \
+        libpango1.0-dev \
+        librsvg2-dev \
+        pkg-config \
+        python3 \
+        && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY package.json /tmp/cvat-package.json
+
+RUN corepack enable && \
+    corepack prepare "$(node -p "require('/tmp/cvat-package.json').packageManager")" --activate
+
+RUN mkdir -p /workspace/node_modules /yarn-cache && \
+    chown -R node:node /workspace /yarn-cache /opt/corepack
