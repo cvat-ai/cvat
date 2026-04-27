@@ -1,0 +1,222 @@
+# Copyright (C) CVDLINK fork
+#
+# SPDX-License-Identifier: MIT
+#
+# Compose overlay that fronts CVAT with oauth2-proxy + Keycloak (OIDC).
+#
+# Usage:
+#   cp .env.sso.example .env.sso
+#   # edit .env.sso with your Keycloak issuer / client id / client secret
+#   docker compose --env-file .env.sso \
+#     -f docker-compose.yml \
+#     -f docker-compose.https.yml \
+#     -f docker-compose.sso.yml up -d
+#
+# Stack auth flow:
+#   * Browser hits Traefik on the CVAT host.
+#   * The `cvat-sso-auth` forwardAuth middleware asks oauth2-proxy whether
+#     the request has a valid session cookie. If not, the user is redirected
+#     through Keycloak (`/oauth2/start`). Once authenticated, subsequent
+#     requests carry an oauth2-proxy cookie and forwardAuth returns 200 plus
+#     `X-Auth-Request-Email`, `X-Auth-Request-User`, `X-Auth-Request-Groups`.
+#   * Traefik forwards those headers to cvat_server, where the SSO settings
+#     overlay (`cvat.settings.sso`) auto-provisions the Django user and
+#     starts a session.
+#
+# CLI / SDK compatibility:
+#   The `cvat-api-token` router below catches `/api/*` requests that already
+#   carry an `Authorization: Token …` (or Basic) header and routes them
+#   directly to cvat_server, bypassing oauth2-proxy. That keeps cvat-cli /
+#   cvat-sdk working with API tokens.
+
+services:
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: cvat_oauth2_proxy
+    restart: always
+    depends_on:
+      - traefik
+    environment:
+      OAUTH2_PROXY_PROVIDER: keycloak-oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: ${SSO_OIDC_ISSUER_URL:?Set SSO_OIDC_ISSUER_URL in .env.sso}
+      OAUTH2_PROXY_CLIENT_ID: ${SSO_CLIENT_ID:?Set SSO_CLIENT_ID in .env.sso}
+      OAUTH2_PROXY_CLIENT_SECRET: ${SSO_CLIENT_SECRET:?Set SSO_CLIENT_SECRET in .env.sso}
+      OAUTH2_PROXY_COOKIE_SECRET: ${SSO_COOKIE_SECRET:?Set SSO_COOKIE_SECRET (32-byte base64) in .env.sso}
+      OAUTH2_PROXY_REDIRECT_URL: ${SSO_REDIRECT_URL:?Set SSO_REDIRECT_URL in .env.sso}
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_EMAIL_DOMAINS: ${SSO_EMAIL_DOMAINS:-*}
+      OAUTH2_PROXY_COOKIE_DOMAINS: ${CVAT_HOST:-localhost}
+      # Whitelist the CVAT host (for post-sign-out rd back to /) plus the
+      # Keycloak host:port (so /oauth2/sign_out?rd=<keycloak end_session>
+      # is allowed for full RP-initiated logout).
+      OAUTH2_PROXY_WHITELIST_DOMAINS: ${CVAT_HOST:-localhost},${SSO_LOGOUT_WHITELIST_EXTRA:-}
+      OAUTH2_PROXY_COOKIE_SECURE: ${SSO_COOKIE_SECURE:-true}
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_PASS_USER_HEADERS: "true"
+      OAUTH2_PROXY_PASS_ACCESS_TOKEN: "false"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+      # Surface Keycloak group / role claims as X-Auth-Request-Groups so
+      # downstream code can map them to CVAT roles when desired.
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: ${SSO_GROUPS_CLAIM:-groups}
+      OAUTH2_PROXY_SCOPE: ${SSO_SCOPE:-openid email profile}
+      # Run as a reverse proxy so it can return 302 to Keycloak on missing
+      # session cookies (Traefik's `errors` middleware copies the body and
+      # Location header but preserves the original 401 status code, which
+      # browsers don't follow). The SPA (cvat_ui) is the upstream.
+      OAUTH2_PROXY_UPSTREAMS: http://cvat_ui:8000
+      # Keycloak omits `aud` from ID tokens when the authorized party (`azp`)
+      # equals the client ID, leaving oauth2-proxy with nothing to validate
+      # against. Tell it to use `azp` instead. (Cleaner alternative: add an
+      # Audience mapper to the Keycloak client.)
+      OAUTH2_PROXY_OIDC_AUDIENCE_CLAIMS: ${SSO_AUDIENCE_CLAIMS:-aud}
+      # Optional URL overrides — used when the Keycloak realm advertises
+      # a hostname that isn't reachable from inside the oauth2-proxy
+      # container (e.g. `localhost:8081` from a dev Keycloak). Leaving any
+      # of these blank falls back to whatever the OIDC discovery doc says.
+      OAUTH2_PROXY_LOGIN_URL: ${SSO_LOGIN_URL:-}
+      OAUTH2_PROXY_REDEEM_URL: ${SSO_REDEEM_URL:-}
+      OAUTH2_PROXY_OIDC_JWKS_URL: ${SSO_JWKS_URL:-}
+      OAUTH2_PROXY_INSECURE_OIDC_SKIP_ISSUER_VERIFICATION: ${SSO_SKIP_ISSUER_VERIFICATION:-false}
+      # When all four URL overrides are supplied, skip OIDC discovery so the
+      # overrides actually take effect. (For OIDC providers, oauth2-proxy
+      # otherwise re-reads the URLs from the discovery document.)
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: ${SSO_SKIP_OIDC_DISCOVERY:-false}
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: cvat
+      traefik.http.services.oauth2-proxy.loadbalancer.server.port: "4180"
+
+      # Public path users get redirected to during the OIDC dance.
+      traefik.http.routers.oauth2-proxy.rule: >-
+        Host(`${CVAT_HOST:-localhost}`) && PathPrefix(`/oauth2/`)
+      # `websecure` so this matches the entrypoint the rest of the stack
+      # is bound to under `docker-compose.https.yml`. SSO overlay assumes
+      # HTTPS termination.
+      traefik.http.routers.oauth2-proxy.entrypoints: websecure
+      traefik.http.routers.oauth2-proxy.tls: "true"
+      traefik.http.routers.oauth2-proxy.service: oauth2-proxy
+      # Higher than `cvat` (~50 default) and `cvat-ui` (~25 default) so /oauth2/*
+      # is served by oauth2-proxy directly and doesn't loop through forwardAuth.
+      traefik.http.routers.oauth2-proxy.priority: "300"
+
+      # The `cvat-sso-auth` (forwardAuth) and `cvat-sso-signin` (errors)
+      # middlewares, plus the Traefik service definition for oauth2-proxy,
+      # live in `components/sso/traefik.yml` (mounted via the file provider
+      # under the traefik service below).
+    networks:
+      - cvat
+
+  cvat_server:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.sso
+    labels:
+      # Existing `cvat` router (declared in docker-compose.yml) keeps its
+      # `/api/`, `/admin`, `/django-rq`, `/static/` rule. We attach the SSO
+      # middleware to it so SPA-issued (cookie-only) API calls go through
+      # oauth2-proxy and pick up the trusted email header.
+      # API routes still use forwardAuth: when the SPA calls /api/* the
+      # browser already has the oauth2-proxy cookie (set during the SPA
+      # load), so forwardAuth succeeds and X-Auth-Request-Email reaches
+      # Django for RemoteUser provisioning. cvat-sso-signin not needed
+      # here — by the time API calls happen, the user is authenticated.
+      traefik.http.routers.cvat.middlewares: cvat-sso-auth@file
+
+      # Higher-priority router that catches API requests already carrying
+      # an Authorization header (Token / Basic). These bypass oauth2-proxy
+      # entirely so cvat-cli, cvat-sdk and webhooks continue to work.
+      traefik.http.routers.cvat-api-token.rule: >-
+        Host(`${CVAT_HOST:-localhost}`) &&
+        PathPrefix(`/api/`) &&
+        HeaderRegexp(`Authorization`, `(?i)(Token|Basic|Bearer) .+`)
+      traefik.http.routers.cvat-api-token.entrypoints: websecure
+      traefik.http.routers.cvat-api-token.tls: "true"
+      traefik.http.routers.cvat-api-token.priority: "200"
+      traefik.http.routers.cvat-api-token.service: cvat
+
+      # Health endpoint must remain reachable without auth for liveness probes.
+      traefik.http.routers.cvat-health.rule: >-
+        Host(`${CVAT_HOST:-localhost}`) && PathPrefix(`/api/server/health`)
+      traefik.http.routers.cvat-health.entrypoints: websecure
+      traefik.http.routers.cvat-health.tls: "true"
+      traefik.http.routers.cvat-health.priority: "210"
+      traefik.http.routers.cvat-health.service: cvat
+    volumes:
+      - ./cvat/settings/sso.py:/home/django/cvat/settings/sso.py:ro
+      - ./cvat/apps/iam/middleware.py:/home/django/cvat/apps/iam/middleware.py:ro
+
+  cvat_ui:
+    labels:
+      # Send the SPA host rule through oauth2-proxy as a reverse proxy.
+      # oauth2-proxy proxies authenticated requests to its configured
+      # upstream (cvat_ui). On unauthenticated requests it returns 302 to
+      # /oauth2/start, which then 302s to Keycloak.
+      traefik.http.routers.cvat-ui.service: oauth2-proxy@file
+      # `cvat-sso-logout` (file provider) intercepts /auth/login* — the
+      # page the SPA redirects to after CVAT's local logout — and turns it
+      # into a full RP-initiated SSO logout. Non-matching paths flow through
+      # to oauth2-proxy normally because redirectRegex only fires on match.
+      traefik.http.routers.cvat-ui.middlewares: cvat-sso-logout@file
+
+  traefik:
+    volumes:
+      - ./components/sso/traefik.yml:/etc/traefik/rules/sso.yml:ro
+
+  # Worker containers don't serve HTTP, but they share the Django
+  # codebase. Pointing them at the SSO settings module keeps Celery /
+  # RQ tasks consuming the same configuration.
+  cvat_worker_utils:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.sso
+    volumes:
+      - ./cvat/settings/sso.py:/home/django/cvat/settings/sso.py:ro
+      - ./cvat/apps/iam/middleware.py:/home/django/cvat/apps/iam/middleware.py:ro
+
+  cvat_worker_import:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.sso
+    volumes:
+      - ./cvat/settings/sso.py:/home/django/cvat/settings/sso.py:ro
+      - ./cvat/apps/iam/middleware.py:/home/django/cvat/apps/iam/middleware.py:ro
+
+  cvat_worker_export:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.sso
+    volumes:
+      - ./cvat/settings/sso.py:/home/django/cvat/settings/sso.py:ro
+      - ./cvat/apps/iam/middleware.py:/home/django/cvat/apps/iam/middleware.py:ro
+
+  cvat_worker_annotation:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.sso
+    volumes:
+      - ./cvat/settings/sso.py:/home/django/cvat/settings/sso.py:ro
+      - ./cvat/apps/iam/middleware.py:/home/django/cvat/apps/iam/middleware.py:ro
+
+  cvat_worker_webhooks:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.sso
+    volumes:
+      - ./cvat/settings/sso.py:/home/django/cvat/settings/sso.py:ro
+      - ./cvat/apps/iam/middleware.py:/home/django/cvat/apps/iam/middleware.py:ro
+
+  cvat_worker_quality_reports:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.sso
+    volumes:
+      - ./cvat/settings/sso.py:/home/django/cvat/settings/sso.py:ro
+      - ./cvat/apps/iam/middleware.py:/home/django/cvat/apps/iam/middleware.py:ro
+
+  cvat_worker_chunks:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.sso
+    volumes:
+      - ./cvat/settings/sso.py:/home/django/cvat/settings/sso.py:ro
+      - ./cvat/apps/iam/middleware.py:/home/django/cvat/apps/iam/middleware.py:ro
+
+  cvat_worker_consensus:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.sso
+    volumes:
+      - ./cvat/settings/sso.py:/home/django/cvat/settings/sso.py:ro
+      - ./cvat/apps/iam/middleware.py:/home/django/cvat/apps/iam/middleware.py:ro

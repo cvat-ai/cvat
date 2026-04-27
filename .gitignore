@@ -51,6 +51,8 @@ yarn-error.log*
 node_modules
 /*env*/
 /.*env*
+# Keep documented env templates (no secrets). Real `.env.sso` stays ignored.
+!/.env.sso.example
 perfkit.egg-info/
 
 # Ignore all js dists
