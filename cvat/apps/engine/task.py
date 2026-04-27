@@ -1190,7 +1190,7 @@ def _validate_project_dimension(
 ):
     # TODO: fix the race condition between concurrent task creations
     project_dimension = next(
-        db_project.tasks.exclude(dimension="").values_list("dimension", flat=True)[:1], ""
+        iter(db_project.tasks.exclude(dimension="").values_list("dimension", flat=True)[:1]), ""
     )
 
     if project_dimension and project_dimension != detected_dimension:
