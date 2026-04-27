@@ -821,12 +821,17 @@ class JobReadSerializer(serializers.ModelSerializer):
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     frame_count = serializers.ReadOnlyField(source="segment.frame_count")
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
+
+    # We're using CharField to produce simple strings instead of enums in the generated SDK.
+    # SDK enums require explicit .value calls to access the string representation.
+    # TODO: move to ChoicesField when SDK supports seamless transition from string to enum
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
+    mode = serializers.CharField(source='segment.task.mode', required=False, read_only=True)
+
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
     data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
-    mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
@@ -2510,7 +2515,13 @@ class TaskReadSerializer(serializers.ModelSerializer):
     project_name = serializers.SerializerMethodField()
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     organization_id = serializers.IntegerField(required=False, read_only=True, allow_null=True)
+
+    # We're using CharField to produce simple strings instead of enums in the generated SDK.
+    # SDK enums require explicit .value calls to access the string representation.
+    # TODO: move to ChoicesField when SDK supports seamless transition from string to enum
     dimension = serializers.CharField(allow_blank=True, required=False)
+    mode = serializers.CharField(allow_blank=True, required=False, read_only=True)
+
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
