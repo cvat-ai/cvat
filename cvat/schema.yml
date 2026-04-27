@@ -8269,7 +8269,12 @@ components:
         dimension:
           type: string
           readOnly: true
-          maxLength: 2
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         bug_tracker:
           type: string
           readOnly: true
@@ -8286,9 +8291,6 @@ components:
         state:
           allOf:
           - $ref: '#/components/schemas/OperationStatus'
-          readOnly: true
-        mode:
-          type: string
           readOnly: true
         frame_count:
           type: integer
@@ -10150,7 +10152,6 @@ components:
           type: string
           readOnly: true
           nullable: true
-          maxLength: 16
         organization:
           type: integer
           readOnly: true
@@ -11166,9 +11167,6 @@ components:
           type: string
           nullable: true
           readOnly: true
-        mode:
-          type: string
-          readOnly: true
         owner:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -11236,6 +11234,13 @@ components:
           readOnly: true
         dimension:
           type: string
+          readOnly: true
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         subset:
           type: string
           readOnly: true
