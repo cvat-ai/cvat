@@ -90,9 +90,9 @@ The easiest way to deploy SAM2 with pre-built images from Docker Hub.
    cd cvat/ai-models/agents_deployment/sam2
    ```
 
-1. Create or update the `.env` file with your configuration. Set `IMAGE_URL=cvat/sam2_agent:latest_GPU`
-   and `COMPOSE_PROFILES=gpu` for GPU or `IMAGE_URL=cvat/sam2_agent:latest` for CPU-only deployment.
-   Configure the remaining required variables (CVAT_BASE_URL, CVAT_ACCESS_TOKEN, FUNCTION_NAME, etc.)
+1. Create or update the `.env` file with your configuration. For GPU deployment, set `IMAGE_URL=cvat/sam2_agent:latest-gpu`
+   and `COMPOSE_PROFILES=gpu`. For CPU-only deployment, set `IMAGE_URL=cvat/sam2_agent:latest`
+   and `COMPOSE_PROFILES=cpu`. Configure the remaining required variables (CVAT_BASE_URL, CVAT_ACCESS_TOKEN, FUNCTION_NAME, etc.)
    following the [Docker Compose agent guide](/docs/guides/compose-agents-userguide/).
 
 1. Start the agent:
@@ -100,12 +100,13 @@ The easiest way to deploy SAM2 with pre-built images from Docker Hub.
    docker compose up
    ```
 
-1. Verify the agent is running in the CVAT interface. You should see "AI Tracker: SAM2" in the annotation actions list.
+1. Verify the agent is running in the CVAT interface.
+You should see "<FUNCTION_NAME>" in the list on `/models` page and in the annotation actions list.
 
 1. To stop and clean up:
    ```sh
-   # Stop the agent
-   docker compose down
+   # Stop the agent and remove volumes
+   docker compose down -v
 
    # Deregister the function from CVAT
    docker compose run --rm cvat-function-deregister
@@ -135,7 +136,6 @@ If the agent stops, active tracking operations will fail and need to be restarte
 
 - **AI Agent SAM2 Tracker**: Requires CVAT version 2.42.0 or later
 - **Classic SAM2 Tracker**: Available in all Enterprise versions
-- **Python**: Version 3.10 or later for AI agent setup
 - **GPU Support**: Optional but recommended for both implementations
 
 ## Usage
