@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.62.1
+  version: 2.63.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -5176,6 +5176,9 @@ paths:
         description: A simple equality filter for the mode field
         schema:
           type: string
+          enum:
+          - annotation
+          - interpolation
       - name: name
         in: query
         description: A simple equality filter for the name field
@@ -7244,12 +7247,10 @@ components:
       enum:
       - video
       - imageset
-      - list
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
-        * `list` - LIST
     ClientEvents:
       type: object
       properties:

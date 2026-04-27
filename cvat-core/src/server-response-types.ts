@@ -570,6 +570,7 @@ export interface SerializedRequest {
         task_id: number | null;
         project_id: number | null;
         function_id: string | null;
+        lightweight?: boolean | null;
     };
     progress?: number;
     result_url?: string;

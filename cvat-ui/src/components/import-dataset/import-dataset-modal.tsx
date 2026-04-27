@@ -67,7 +67,7 @@ interface State {
     file: File | null;
     selectedLoader: any;
     useDefaultSettings: boolean;
-    defaultStorageLocation: string;
+    defaultStorageLocation: StorageLocation | null;
     defaultStorageCloudId?: number;
     helpMessage: string;
     selectedSourceStorageLocation: StorageLocation;
@@ -104,7 +104,7 @@ export const reducerActions = {
     setUseDefaultSettings: (useDefaultSettings: boolean) => (
         createAction(ReducerActionType.SET_USE_DEFAULT_SETTINGS, { useDefaultSettings })
     ),
-    setDefaultStorageLocation: (defaultStorageLocation: string) => (
+    setDefaultStorageLocation: (defaultStorageLocation: StorageLocation | null) => (
         createAction(ReducerActionType.SET_DEFAULT_STORAGE_LOCATION, { defaultStorageLocation })
     ),
     setDefaultStorageCloudId: (defaultStorageCloudId?: number) => (

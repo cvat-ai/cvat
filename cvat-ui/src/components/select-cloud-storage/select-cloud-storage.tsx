@@ -8,17 +8,16 @@ import notification from 'antd/lib/notification';
 import AutoComplete from 'antd/lib/auto-complete';
 import Input from 'antd/lib/input';
 import { debounce } from 'lodash';
-import { CloudStorage } from 'reducers';
 import { AzureProvider, GoogleCloudProvider, S3Provider } from 'icons';
 import { ProviderType } from 'utils/enums';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, CloudStorage } from 'cvat-core-wrapper';
 
 export interface Props {
     searchPhrase: string;
     cloudStorage: CloudStorage | null;
     name?: string[];
     setSearchPhrase: (searchPhrase: string) => void;
-    onSelectCloudStorage: (cloudStorageId: number | null) => void;
+    onSelectCloudStorage: (cloudStorage: CloudStorage | null) => void;
     label?: JSX.Element;
 }
 
