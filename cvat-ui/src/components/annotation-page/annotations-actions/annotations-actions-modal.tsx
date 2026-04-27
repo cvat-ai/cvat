@@ -18,6 +18,8 @@ import Modal from 'antd/lib/modal';
 import Alert from 'antd/lib/alert';
 import InputNumber from 'antd/lib/input-number';
 import Switch from 'antd/lib/switch';
+import Table from 'antd/lib/table';
+import QuestionCircleOutlined from '@ant-design/icons/lib/icons/QuestionCircleOutlined';
 
 import config from 'config';
 import { createAction, ActionUnion, shallowEqual } from 'utils/redux';
@@ -29,6 +31,7 @@ import {
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
 import { clamp } from 'utils/math';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 const core = getCore();
 
@@ -240,7 +243,9 @@ const componentStorage = createStore(reducer, {
     targetObjectState: null,
 });
 
-function ActionParameterComponent(props: ActionParameterProps & { onChange: (value: string) => void }): JSX.Element {
+function ActionParameterComponent(props: ActionParameterProps & {
+    onChange: (value: string) => void;
+}): JSX.Element {
     const {
         defaultValue, type, values, onChange,
     } = props;
@@ -248,6 +253,7 @@ function ActionParameterComponent(props: ActionParameterProps & { onChange: (val
 
     const job = store.getState().annotation.job.instance as Job;
     const computedDefaultValue = typeof defaultValue === 'function' ? defaultValue({ instance: job }) : defaultValue;
+
     const [value, setValue] = useState(computedDefaultValue);
     useEffect(() => {
         onChange(value);
@@ -517,23 +523,66 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                 <hr />
                             </Col>
                             {Object.entries(activeAction.parameters)
-                                .map(([name, { defaultValue, type, values }], idx) => (
-                                    <Col
-                                        key={`${activeAction.name}_${idx}`}
-                                        span={24}
-                                        className='cvat-action-runner-action-parameter'
-                                    >
-                                        <Text>{name}</Text>
-                                        <ActionParameterComponent
-                                            onChange={(value: string) => {
-                                                dispatch(reducerActions.updateActionParameter(name, value));
-                                            }}
-                                            defaultValue={actionParameters[activeAction.name]?.[name] ?? defaultValue}
-                                            type={type}
-                                            values={values}
-                                        />
-                                    </Col>
-                                ))}
+                                .map(([name, {
+                                    defaultValue, type, values, tooltip,
+                                }], idx) => {
+                                    const renderTooltip = (): React.ReactNode | string | null => {
+                                        if (!tooltip) return null;
+
+                                        const { type: tooltipType, content } = tooltip;
+
+                                        if (typeof tooltipType === 'string' && typeof content === 'string') {
+                                            return content;
+                                        }
+
+                                        if (tooltipType === 'table' && typeof content === 'object') {
+                                            return (
+                                                <div className='cvat-annotation-actions-tooltip-table'>
+                                                    <Table
+                                                        rowKey='key'
+                                                        dataSource={content.data}
+                                                        columns={content.columns}
+                                                        size='small'
+                                                        pagination={false}
+                                                    />
+                                                </div>
+                                            );
+                                        }
+
+                                        return null;
+                                    };
+
+                                    return (
+                                        <Col
+                                            key={`${activeAction.name}_${idx}`}
+                                            span={24}
+                                            className='cvat-action-runner-action-parameter'
+                                        >
+                                            {tooltip ? (
+                                                <CVATTooltip
+                                                    title={renderTooltip()}
+                                                    overlayStyle={{ maxWidth: 500 }}
+                                                >
+                                                    <Text>{name}</Text>
+                                                    {' '}
+                                                    <QuestionCircleOutlined />
+                                                </CVATTooltip>
+                                            ) : (
+                                                <Text>{name}</Text>
+                                            )}
+                                            <ActionParameterComponent
+                                                onChange={(value: string) => {
+                                                    dispatch(reducerActions.updateActionParameter(name, value));
+                                                }}
+                                                defaultValue={
+                                                    actionParameters[activeAction.name]?.[name] ?? defaultValue
+                                                }
+                                                type={type}
+                                                values={values}
+                                            />
+                                        </Col>
+                                    );
+                                })}
                         </Row>
                     </Col>
                 ) : null}

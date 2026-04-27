@@ -7993,6 +7993,23 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
             self.assertEqual(local_path(image_rel_path).read_bytes(), image_bytes)
             self.assertFalse(self.mock_aws.file_exists(cloud_key(image_rel_path)))
 
+    def test_creation_with_default_backing_cs(self):
+        with (
+            self.captureOnCommitCallbacks(execute=True),
+            self.settings(DEFAULT_BACKING_CS_ID=self.cloud_storage_id),
+        ):
+            task = self._create_local_task()
+
+        task_id = task["id"]
+
+        data = Data.objects.get(task__id=task_id)
+
+        self.assertEqual(data.local_storage_backing_cs_id, self.cloud_storage_id)
+
+        image_path = self._IMAGE_PATHS[0]
+        self.assertFalse((data.get_upload_dirname() / image_path).exists())
+        self.assertTrue(self.mock_aws.file_exists(f"data/{data.id}/raw/{image_path}"))
+
     def test_deletion_with_backing_cs(self):
         task = self._create_local_task()
         task_id = task["id"]
@@ -8046,6 +8063,20 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
                 call_command("movetasktobackingcs", f"@{task_ids_path}", str(self.cloud_storage_id))
 
         # The command fails due to an invalid task ID, but the valid task should still be moved.
+        data = Data.objects.get(task__id=task_id)
+        assert data.local_storage_backing_cs_id == self.cloud_storage_id
+
+    def test_move_to_backing_cs_with_cli_default(self):
+        task = self._create_local_task()
+        task_id = task["id"]
+
+        with self.settings(DEFAULT_BACKING_CS_ID=None):
+            with self.assertRaises(CommandError):
+                call_command("movetasktobackingcs", str(task_id))
+
+        with self.settings(DEFAULT_BACKING_CS_ID=self.cloud_storage_id):
+            call_command("movetasktobackingcs", str(task_id))
+
         data = Data.objects.get(task__id=task_id)
         assert data.local_storage_backing_cs_id == self.cloud_storage_id
 
