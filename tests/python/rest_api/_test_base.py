@@ -412,13 +412,13 @@ class TestTasksBase:
             )
         ],
     )
-    def fxt_cloud_bin_task(
+    def fxt_cloud_bin_pointcloud_task(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
     ) -> tuple[ITaskSpec, int]:
         cloud_storage = cloud_storages[cloud_storage_id]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
 
-        server_files = ["000002.bin"]
+        server_files = ["bin_pointcloud/000002.bin"]
 
         bin_files = []
         for filename in server_files:
@@ -853,6 +853,7 @@ class TestTasksBase:
     ]
 
     _tests_with_cloud_storage_cases = [
+        fixture_ref("fxt_cloud_bin_pointcloud_task"),
         fixture_ref("fxt_cloud_images_task_with_honeypots_and_changed_real_frames"),
         fixture_ref("fxt_cloud_images_task_with_related_images"),
     ]
@@ -871,6 +872,7 @@ class TestTasksBase:
     ]
 
     _3d_task_cases = [
+        fixture_ref("fxt_cloud_bin_pointcloud_task"),
         fixture_ref("fxt_cloud_pcd_task_with_related_images"),
         fixture_ref("fxt_share_pcd_task_with_related_images"),
     ]

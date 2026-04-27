@@ -1880,8 +1880,10 @@ class TestTaskData(TestTasksBase):
                         ),
                     )
 
-    def test_can_get_cloud_bin_task_chunks(self, fxt_cloud_bin_task: tuple[ITaskSpec, int]):
-        _, task_id = fxt_cloud_bin_task
+    def test_can_get_cloud_bin_pointcloud_task_chunks(
+        self, fxt_cloud_bin_pointcloud_task: tuple[ITaskSpec, int]
+    ):
+        _, task_id = fxt_cloud_bin_pointcloud_task
 
         with make_api_client(self._USERNAME) as api_client:
             task, _ = api_client.tasks_api.retrieve(task_id)
