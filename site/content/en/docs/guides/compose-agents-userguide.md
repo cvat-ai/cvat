@@ -62,6 +62,9 @@ cd cvat/ai-models/agents_deployment/sam2
 In this folder you will find all necessary files to either build your own images based on the provided Dockerfile or
 to use already build images that are available on our [Dockerhub](https://hub.docker.com/r/cvat/sam2_agent/tags).
 
+
+### Environment configuration
+
 To configure Docker Compose you need to provide the following information in the `.env` file:
 
 CVAT_BASE_URL - URL of the CVAT instance where you want to deploy your agent. Defaults to <https://app.cvat.ai>

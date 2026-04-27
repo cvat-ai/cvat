@@ -93,8 +93,8 @@ The easiest way to deploy SAM2 with pre-built images from Docker Hub.
 1. Create or update the `.env` file with your configuration.
 For GPU deployment, set `IMAGE_URL=cvat/sam2_agent:latest_GPU` and `COMPOSE_PROFILES=gpu`.
 For CPU-only deployment, set `IMAGE_URL=cvat/sam2_agent:latest` and `COMPOSE_PROFILES=cpu`.
-Configure the remaining required variables (CVAT_BASE_URL, CVAT_ACCESS_TOKEN, FUNCTION_NAME, etc.)
-   following the [Docker Compose agent guide](/docs/guides/compose-agents-userguide/).
+Configure the remaining required variables (`CVAT_BASE_URL`, `CVAT_ACCESS_TOKEN`, `FUNCTION_NAME`, etc.)
+following the [corresponding](/docs/guides/compose-agents-userguide/#environment-configuration).
 
 1. Start the agent:
    ```sh
@@ -102,16 +102,17 @@ Configure the remaining required variables (CVAT_BASE_URL, CVAT_ACCESS_TOKEN, FU
    ```
 
 1. Verify the agent is running in the CVAT interface.
-You should see a new function model named "<FUNCTION_NAME>" in the list on the `/models` page
+You should see a new function model named `<FUNCTION_NAME>` in the list on the `/models` page
 and in the annotation actions list.
 
 1. To stop and clean up:
    ```sh
+   # Deregister the function from CVAT (must be called before volume removed)
+   # Alternatively, you can always remove the function from CVAT interface
+   docker compose run --rm cvat-function-deregister
+
    # Stop the agent and remove volumes
    docker compose down -v
-
-   # Deregister the function from CVAT
-   docker compose run --rm cvat-function-deregister
    ```
 
 For detailed configuration options and troubleshooting, see the [Docker Compose agent guide](/docs/guides/compose-agents-userguide/).
