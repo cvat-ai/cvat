@@ -1484,7 +1484,7 @@ def create_thread(
     assert not db_task.media_type
     db_task.media_type = detected_media_type
 
-    # TODO: fully inferrable from the media type, remove?
+    # TODO: fully inferable from the media type, remove?
     db_task.dimension = detected_dimension  # backward compatibility
     db_task.mode = task_mode  # backward compatibility
 
