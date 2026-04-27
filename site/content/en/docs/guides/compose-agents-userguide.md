@@ -77,7 +77,8 @@ built with CUDA support.
 
 MODEL_CONFIG_PARAMS - Parameters to pass to the adapter function. Differs for each model.
 Refer to the model documentation.
-Also, some explanatory example could be found in `cvat/ai-models/agents_deployment/transformers/.env`
+Also, some explanatory example could be found in
+ `cvat/ai-models/agents_deployment/transformers/.env`
 
 ## How to run CVAT agent with Docker Compose
 
