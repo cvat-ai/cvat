@@ -102,7 +102,8 @@ Configure the remaining required variables (CVAT_BASE_URL, CVAT_ACCESS_TOKEN, FU
    ```
 
 1. Verify the agent is running in the CVAT interface.
-You should see "<FUNCTION_NAME>" in the list on `/models` page and in the annotation actions list.
+You should see a new function model named "<FUNCTION_NAME>" in the list on the `/models` page
+and in the annotation actions list.
 
 1. To stop and clean up:
    ```sh
