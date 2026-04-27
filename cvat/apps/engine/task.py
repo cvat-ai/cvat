@@ -1391,13 +1391,20 @@ def create_thread(
         validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
 
     if (
+        # TODO: fix the race condition between several tasks
         db_task.project is not None
-        and db_task.project.tasks.count() > 1
-        and db_task.project.tasks.first().dimension != validate_dimension.dimension
+        and (project_dimension := next(
+            db_task.project.tasks
+            .exclude(pk=db_task.pk)
+            .exclude(dimension="")
+            .values_list("dimension", flat=True)[:1],
+            ""
+        ))
+        and project_dimension != validate_dimension.dimension
     ):
         raise ValidationError(
             f"Dimension ({validate_dimension.dimension}) of the task must be the "
-            f"same as other tasks in project ({db_task.project.tasks.first().dimension})"
+            f"same as other tasks in project ({project_dimension})"
         )
 
     db_task.dimension = validate_dimension.dimension
