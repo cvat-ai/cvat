@@ -3,29 +3,6 @@
 from django.db import migrations, models
 
 
-def validate_task_mode(apps, schema_editor):
-    Task = apps.get_model("engine", "Task")
-
-    ALLOWED_MODES = ("", "annotation", "interpolation")
-
-    invalid_rows = (
-        Task.objects.exclude(mode__in=ALLOWED_MODES)
-        .order_by("-id")
-        .values_list("id", flat=True)[:10]
-    )
-
-    if invalid_rows:
-        raise Exception(
-            "Some '{}' table rows have unexpected 'mode' column values. Allowed modes: {}. "
-            "Please review the related tasks and remove them, if possible. "
-            "Example Task ids: {}".format(
-                Task._meta.db_table,
-                ", ".join(f"'{v}'" for v in ALLOWED_MODES),
-                ", ".join(f"{v}" for v in invalid_rows),
-            )
-        )
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -33,7 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(validate_task_mode, migrations.RunPython.noop),
         migrations.AlterField(
             model_name="task",
             name="mode",
