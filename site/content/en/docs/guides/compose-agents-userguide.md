@@ -77,7 +77,8 @@ AGENTS_COUNT - Number of agent replicas to run. Depends on the model.
 
 ORG_SLUG - Your org slug. This is important if you want to share your function across the organization.
 
-COMPOSE_PROFILES - whether to use cpu or gpu to run your agent. To use GPU, set this to "gpu". Requires Linux + NVIDIA GPU + NVIDIA driver + NVIDIA Container Toolkit + GPU docker image
+COMPOSE_PROFILES - whether to use cpu or gpu to run your agent. To use GPU, set this to "gpu".
+Requires Linux + NVIDIA GPU + NVIDIA driver + NVIDIA Container Toolkit + GPU docker image
 
 MODEL_CONFIG_PARAMS - Parameters to pass to the adapter function. Differs for each model.
 Refer to the model documentation.
