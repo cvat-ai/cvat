@@ -4,17 +4,17 @@ from django.db import migrations, models
 def fix_default_task_dimension(apps, schema_editor):
     Task = apps.get_model("engine", "Task")
 
-    Task.objects.filter(
-        models.Q(data_id__isnull=True) | models.Q(data__size=0)
-    ).update(dimension="")
+    Task.objects.filter(models.Q(data_id__isnull=True) | models.Q(data__size=0)).update(
+        dimension=""
+    )
 
 
 def restore_default_task_dimension(apps, schema_editor):
     Task = apps.get_model("engine", "Task")
 
-    Task.objects.filter(
-        models.Q(data_id__isnull=True) | models.Q(data__size=0)
-    ).update(dimension="2d")
+    Task.objects.filter(models.Q(data_id__isnull=True) | models.Q(data__size=0)).update(
+        dimension="2d"
+    )
 
 
 def infer_task_media_type(apps, schema_editor):
