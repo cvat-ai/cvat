@@ -29,7 +29,7 @@ def validate_task_mode(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("engine", "0098_data_local_storage_backing_cs"),
+        ("engine", "0099_remove_chunk_type_list"),
     ]
 
     operations = [
