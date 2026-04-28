@@ -6,7 +6,6 @@
 
 import { taskName, labelName } from '../../support/const';
 import { getShapeCoord } from '../../support/utils.cy';
-import { prettify } from '../../support/utils';
 
 context('Simplify polygons feature', { scrollBehavior: false }, () => {
     const polygonCenter = { x: 510, y: 324 };
