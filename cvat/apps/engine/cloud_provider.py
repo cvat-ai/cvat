@@ -619,12 +619,6 @@ class S3CloudStorage(AbstractCloudStorage):
         # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
         # the regular resource/client retain their standard retry behavior for normal
         # storage operations.
-        status_config = Config(
-            proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
-            connect_timeout=2,
-            read_timeout=5,
-            retries={"total_max_attempts": 1, "mode": "standard"},
-        )
         self._s3 = session.resource(
             "s3",
             endpoint_url=endpoint_url,
@@ -639,7 +633,16 @@ class S3CloudStorage(AbstractCloudStorage):
                 ),
             ),
         )
-        self._status_client = session.client("s3", endpoint_url=endpoint_url, config=status_config)
+        self._status_client = session.client(
+            "s3",
+            endpoint_url=endpoint_url,
+            config=Config(
+                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+                connect_timeout=2,
+                read_timeout=5,
+                retries={"total_max_attempts": 1, "mode": "standard"},
+            ),
+        )
 
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
