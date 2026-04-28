@@ -11,7 +11,7 @@
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
-                "port": 9090
+                "port": 19090
             },
             "pathMappings": [
                 {
@@ -31,7 +31,7 @@
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
-                "port": 9091
+                "port": 19091
             },
             "pathMappings": [
                 {
@@ -51,7 +51,7 @@
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
-                "port": 9092
+                "port": 19092
             },
             "pathMappings": [
                 {
@@ -71,7 +71,7 @@
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
-                "port": 9093
+                "port": 19093
             },
             "pathMappings": [
                 {
@@ -91,7 +91,7 @@
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
-                "port": 9094
+                "port": 19094
             },
             "pathMappings": [
                 {
@@ -111,7 +111,7 @@
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
-                "port": 9096
+                "port": 19096
             },
             "pathMappings": [
                 {
@@ -128,9 +128,9 @@
         {
             "type": "pwa-chrome",
             "request": "launch",
-            "preLaunchTask": "npm: start - cvat-ui",
+            "preLaunchTask": "webpack: start - cvat-ui audio",
             "name": "ui.js: debug",
-            "url": "http://localhost:3000",
+            "url": "http://localhost:13000",
             "webRoot": "${workspaceFolder}/cvat-ui",
             "sourceMaps": true,
             "sourceMapPathOverrides": {
@@ -165,17 +165,16 @@
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/manage.py",
+            "envFile": "${workspaceFolder}/.vscode/launch.audio.env",
             "env": {
                 "CVAT_SERVERLESS": "1",
                 "ALLOWED_HOSTS": "*",
-                "DJANGO_LOG_SERVER_HOST": "localhost",
-                "DJANGO_LOG_SERVER_PORT": "8282",
             },
             "args": [
                 "runserver",
                 "--noreload",
                 "--insecure",
-                "127.0.0.1:7000"
+                "127.0.0.1:17000"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
@@ -185,7 +184,7 @@
             "name": "server: chrome",
             "type": "pwa-chrome",
             "request": "launch",
-            "url": "http://localhost:7000/",
+            "url": "http://localhost:17000/",
             "disableNetworkCache": true,
             "trace": true,
             "showAsyncStacks": true,
@@ -202,6 +201,7 @@
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/manage.py",
+            "envFile": "${workspaceFolder}/.vscode/launch.audio.env",
             "args": [
                 "rqworker",
                 "--worker-class=cvat.rqworker.SimpleWorker",
@@ -219,10 +219,6 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {
-                "DJANGO_LOG_SERVER_HOST": "localhost",
-                "DJANGO_LOG_SERVER_PORT": "8282"
-            },
             "console": "internalConsole"
         },
         {
@@ -233,15 +229,12 @@
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/rqscheduler.py",
+            "envFile": "${workspaceFolder}/.vscode/launch.audio.env",
             "django": true,
             "cwd": "${workspaceFolder}",
             "args": [
                 "-i", "1"
             ],
-            "env": {
-                "DJANGO_LOG_SERVER_HOST": "localhost",
-                "DJANGO_LOG_SERVER_PORT": "8282"
-            },
             "console": "internalConsole"
         },
         {
@@ -252,12 +245,12 @@
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/manage.py",
+            "envFile": "${workspaceFolder}/.vscode/launch.audio.env",
             "args": [
                 "migrate"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {},
             "console": "internalConsole"
         },
         {
@@ -268,12 +261,12 @@
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/manage.py",
+            "envFile": "${workspaceFolder}/.vscode/launch.audio.env",
             "args": [
                 "syncperiodicjobs"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {},
             "console": "internalConsole"
         },
         {
@@ -284,6 +277,7 @@
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/manage.py",
+            "envFile": "${workspaceFolder}/.vscode/launch.audio.env",
             "args": [
                 "test",
                 "--settings",
@@ -293,7 +287,6 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {},
             "console": "internalConsole"
         },
         {
@@ -304,6 +297,7 @@
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
+            "envFile": "${workspaceFolder}/.vscode/launch.audio.env",
             "args": [
                 "--verbose",
                 "--no-cov", // vscode debugger might not work otherwise

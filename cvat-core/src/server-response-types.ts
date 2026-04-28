@@ -275,6 +275,7 @@ export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 export interface SerializedQualitySettingsData {
     id?: number;
     task_id?: number;
+    project_id?: number;
     target_metric?: string;
     target_metric_threshold?: number;
     max_validations_per_job?: number;
@@ -299,7 +300,7 @@ export interface SerializedQualitySettingsData {
 }
 
 export interface SerializedTranscriptionRequirement {
-    attribute_id: number | null;
+    attribute_id: number;
     metric: 'wer' | 'cer';
     acceptance_threshold: number;
 }
@@ -341,10 +342,12 @@ export type QualityReportsFilter = Camelized<APIQualityReportsFilter>;
 export interface SerializedQualityReportData {
     id?: number;
     parent_id?: number;
+    project_id?: number;
     task_id?: number;
     job_id?: number;
     target: string;
     created_date?: string;
+    target_last_updated?: string;
     gt_last_updated?: string;
     assignee?: SerializedUser | null;
     summary?: {

@@ -6,11 +6,11 @@
 #
 
 services:
-  cvat_db:
+  cvat_db_audio:
     ports:
-      - '127.0.0.1:5432:5432'
+      - '127.0.0.1:15432:5432'
 
-  cvat_server:
+  cvat_server_audio:
     build:
       context: .
       args:
@@ -28,9 +28,9 @@ services:
       CVAT_DEBUG_WAIT: '${CVAT_DEBUG_WAIT_CLIENT:-no}'
       COVERAGE_PROCESS_START:
     ports:
-      - '127.0.0.1:9090:9090'
+      - '127.0.0.1:19090:9090'
 
-  cvat_worker_export:
+  cvat_worker_export_audio:
     environment:
       # For debugging, make sure to set 1 process
       # Due to the supervisord specifics, the extra processes will fail and
@@ -40,9 +40,9 @@ services:
       CVAT_DEBUG_PORT: '9092'
       COVERAGE_PROCESS_START:
     ports:
-      - '9092:9092'
+      - '127.0.0.1:19092:9092'
 
-  cvat_worker_import:
+  cvat_worker_import_audio:
     environment:
       # For debugging, make sure to set 1 process
       # Due to the supervisord specifics, the extra processes will fail and
@@ -52,9 +52,9 @@ services:
       CVAT_DEBUG_PORT: '9093'
       COVERAGE_PROCESS_START:
     ports:
-      - '127.0.0.1:9093:9093'
+      - '127.0.0.1:19093:9093'
 
-  cvat_worker_quality_reports:
+  cvat_worker_quality_reports_audio:
     environment:
       # For debugging, make sure to set 1 process
       # Due to the supervisord specifics, the extra processes will fail and
@@ -64,9 +64,9 @@ services:
       CVAT_DEBUG_PORT: '9094'
       COVERAGE_PROCESS_START:
     ports:
-      - '127.0.0.1:9094:9094'
+      - '127.0.0.1:19094:9094'
 
-  cvat_worker_consensus:
+  cvat_worker_consensus_audio:
     environment:
       # For debugging, make sure to set 1 process
       # Due to the supervisord specifics, the extra processes will fail and
@@ -76,9 +76,9 @@ services:
       CVAT_DEBUG_PORT: '9096'
       COVERAGE_PROCESS_START:
     ports:
-      - '127.0.0.1:9096:9096'
+      - '127.0.0.1:19096:9096'
 
-  cvat_worker_annotation:
+  cvat_worker_annotation_audio:
     environment:
       # For debugging, make sure to set 1 process
       # Due to the supervisord specifics, the extra processes will fail and
@@ -88,9 +88,9 @@ services:
       CVAT_DEBUG_PORT: '9091'
       COVERAGE_PROCESS_START:
     ports:
-      - '127.0.0.1:9091:9091'
+      - '127.0.0.1:19091:9091'
 
-  cvat_ui:
+  cvat_ui_audio:
     build:
       context: .
       args:
@@ -100,22 +100,34 @@ services:
         socks_proxy:
       dockerfile: Dockerfile.ui
 
-  cvat_clickhouse:
+  cvat_clickhouse_audio:
     ports:
-      - '127.0.0.1:8123:8123'
+      - '127.0.0.1:18123:8123'
 
-  cvat_opa:
+  cvat_opa_audio:
     ports:
-      - '127.0.0.1:8181:8181'
+      - '127.0.0.1:18181:8181'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - run
+      - --server
+      - --addr=:8181
+      - --log-level=error
+      - --set=services.cvat.url=http://host.docker.internal:17000
+      - --set=bundles.cvat.service=cvat
+      - --set=bundles.cvat.resource=/api/auth/rules
+      - --set=bundles.cvat.polling.min_delay_seconds=5
+      - --set=bundles.cvat.polling.max_delay_seconds=15
 
-  cvat_redis_inmem:
+  cvat_redis_inmem_audio:
     ports:
-      - '127.0.0.1:6379:6379'
+      - '127.0.0.1:16379:6379'
 
-  cvat_redis_ondisk:
+  cvat_redis_ondisk_audio:
     ports:
-      - '127.0.0.1:6666:6666'
+      - '127.0.0.1:16666:6666'
 
-  cvat_vector:
+  cvat_vector_audio:
     ports:
-      - '127.0.0.1:8282:8282'
+      - '127.0.0.1:18282:8282'

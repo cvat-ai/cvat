@@ -13,13 +13,13 @@ import ZoomControl, { Props as ZoomControlProps } from './zoom-control';
 import SpeedControl, { Props as SpeedControlProps } from './speed-control';
 import VolumeControl, { Props as VolumeControlProps } from './volume-control';
 
-const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(AudioCursorControl);
-const ObservedCreateRegionControl = ControlVisibilityObserver<CreateRegionControlProps>(CreateRegionControl);
-const ObservedEditRegionControl = ControlVisibilityObserver<EditRegionControlProps>(EditRegionControl);
-const ObservedLoopControl = ControlVisibilityObserver<LoopControlProps>(LoopControl);
-const ObservedZoomControl = ControlVisibilityObserver<ZoomControlProps>(ZoomControl);
-const ObservedSpeedControl = ControlVisibilityObserver<SpeedControlProps>(SpeedControl);
-const ObservedVolumeControl = ControlVisibilityObserver<VolumeControlProps>(VolumeControl);
+const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(AudioCursorControl, 'audioCursorControl');
+const ObservedCreateRegionControl = ControlVisibilityObserver<CreateRegionControlProps>(CreateRegionControl, 'audioCreateRegionControl');
+const ObservedEditRegionControl = ControlVisibilityObserver<EditRegionControlProps>(EditRegionControl, 'audioEditRegionControl');
+const ObservedLoopControl = ControlVisibilityObserver<LoopControlProps>(LoopControl, 'audioLoopControl');
+const ObservedZoomControl = ControlVisibilityObserver<ZoomControlProps>(ZoomControl, 'audioZoomControl');
+const ObservedSpeedControl = ControlVisibilityObserver<SpeedControlProps>(SpeedControl, 'audioSpeedControl');
+const ObservedVolumeControl = ControlVisibilityObserver<VolumeControlProps>(VolumeControl, 'audioVolumeControl');
 
 export interface Props {
     activeControl: ActiveControl;

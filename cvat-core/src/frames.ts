@@ -129,6 +129,8 @@ export class FramesMetaData {
 
     constructor(initialData: Omit<SerializedFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> }) {
         const data: typeof initialData = {
+            dimension: undefined,
+            media_type: undefined,
             chunk_size: undefined,
             chapters: [],
             deleted_frames: {},
