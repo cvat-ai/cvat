@@ -447,11 +447,23 @@ class HeaderFirstDownloader(ABC):
             buff.write(chunk)
 
             partial_contents = buff.getvalue()
+            if len(partial_contents) < header_size:
+                # This means that the entire file is smaller than the current header_size.
+                # It doesn't matter whether the header can be parsed,
+                # since there's no more data to download anyway.
+                return MemNamedOpenable(partial_contents, key)
+
             if self.try_parse_header(key, partial_contents):
                 return MemNamedOpenable(partial_contents, key)
 
             if i + 1 < len(headers_to_try):
                 self.log_header_miss(key=key, header_size=header_size)
+
+            # If the full size is exactly equal to header_size,
+            # the next download_range_of_bytes call will have start_byte equal to the file size,
+            # and the request will fail (since an HTTP range can't be empty).
+            # To prevent this, force the range to be non-empty by redownloading the last byte.
+            buff.seek(-1, os.SEEK_CUR)
 
         full_contents = self.client.download_fileobj(key)
         self.log_header_miss(key=key, header_size=header_size, full_contents=full_contents)
