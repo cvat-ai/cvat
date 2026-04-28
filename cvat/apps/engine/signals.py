@@ -189,9 +189,7 @@ def _parse_cache_key(item_key: str) -> dict | None:
         }
 
     # Try to match context images chunk key pattern
-    context_images_pattern = re.compile(
-        r"^context_images_(?P<data_id>\d+)_(?P<frame_number>\d+)$"
-    )
+    context_images_pattern = re.compile(r"^context_images_(?P<data_id>\d+)_(?P<frame_number>\d+)$")
     match = context_images_pattern.match(item_key)
     if match:
         return {
