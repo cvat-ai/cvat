@@ -9,7 +9,9 @@
 
 import { keyCodeN } from './const';
 import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
-import { checkAutoborderPointsCount, drawWithTriggers, drawWithClicks } from './utils.cy';
+import {
+    checkAutoborderPointsCount, drawWithTriggers, drawWithClicks, drawWithShiftHover,
+} from './utils.cy';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -694,7 +696,11 @@ Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = n
     }
     if (drawMethod === 'trigger') {
         drawWithTriggers(createPolygonParams.pointsMap);
-    } else if (drawMethod === 'click') { drawWithClicks(createPolygonParams.pointsMap); }
+    } else if (drawMethod === 'shiftHover') {
+        drawWithShiftHover(createPolygonParams.pointsMap);
+    } else if (drawMethod === 'click') {
+        drawWithClicks(createPolygonParams.pointsMap);
+    }
 
     if (createPolygonParams.finishWithButton) {
         cy.contains('span', 'Done').click();

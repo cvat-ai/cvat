@@ -44,7 +44,7 @@ export function checkAutoborderPointsCount(expectedCount) {
 /**
  * Draw a shape by clicking through an array of points
  * using cy.trigger events
- * @param {Array<{x: number, y: number}>} points - Array of points to trigger
+ * @param {Array<{x: number, y: number}>} pointsMap - Array of points to trigger
  */
 export function drawWithTriggers(pointsMap) {
     pointsMap.forEach((p) => {
@@ -56,11 +56,26 @@ export function drawWithTriggers(pointsMap) {
 /**
  * Draw a shape by clicking through an array of points
  * using cy.click
- * @param {Array<{x: number, y: number}>} points - Array of points to click
+ * @param {Array<{x: number, y: number}>} pointsMap - Array of points to click
  */
 export function drawWithClicks(pointsMap) {
     pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
+    });
+}
+
+/**
+ * Draw a shape by clicking through an array of points
+ * using cy.click
+ * @param {Array<{x: number, y: number}>} pointsMap - Array of points to click
+ */
+export function drawWithShiftHover(pointsMap) {
+    const [firstPoint, ...points] = pointsMap;
+
+    cy.get('.cvat-canvas-container').click(firstPoint.x, firstPoint.y);
+
+    points.forEach((point) => {
+        cy.get('.cvat-canvas-container').trigger('mousemove', point.x, point.y, { shiftKey: true });
     });
 }
 

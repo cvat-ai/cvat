@@ -6,6 +6,7 @@
 
 import { taskName, labelName } from '../../support/const';
 import { getShapeCoord } from '../../support/utils.cy';
+import { prettify } from '../../support/utils';
 
 context('Simplify polygons feature', { scrollBehavior: false }, () => {
     const polygonCenter = { x: 510, y: 324 };
@@ -42,6 +43,12 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         { x: 326, y: 225 },
     ];
     const polygonPointsCount = detailedPolygonPoints.length;
+    const createDetailedPolygon = {
+        type: 'Shape',
+        labelName,
+        pointsMap: detailedPolygonPoints,
+        numberOfPoints: null,
+    };
 
     function parsePolygonPoints(rawPoints) {
         return rawPoints
@@ -50,75 +57,71 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
     }
 
     function shoelaceArea(points) {
+        // Gauss's shoelace formula to find area of a polygon by its points only
+
         if (points.length < 3) {
             return 0;
         }
-
         const signedArea = points.reduce((acc, point, index) => {
             const next = points[(index + 1) % points.length];
             return acc + point[0] * next[1] - next[0] * point[1];
         }, 0);
-
         return Math.abs(signedArea) / 2;
     }
 
-    function isPointInsidePolygon(point, polygon) {
-        let inside = false;
-        const [x, y] = point;
-
-        for (let index = 0, previousIndex = polygon.length - 1; index < polygon.length; previousIndex = index++) {
-            const [xi, yi] = polygon[index];
-            const [xj, yj] = polygon[previousIndex];
-            const intersects = ((yi > y) !== (yj > y)) &&
-                x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-
-            if (intersects) {
-                inside = !inside;
-            }
-        }
-
-        return inside;
-    }
-
-    function getBoundingBox(polygons) {
-        const points = polygons.flat();
-        return {
-            minX: Math.floor(Math.min(...points.map(([x]) => x))),
-            maxX: Math.ceil(Math.max(...points.map(([x]) => x))),
-            minY: Math.floor(Math.min(...points.map(([, y]) => y))),
-            maxY: Math.ceil(Math.max(...points.map(([, y]) => y))),
-        };
-    }
-
     function getSampledIoU(firstPolygon, secondPolygon) {
+        const getBoundingBox = (polygons) => {
+            const points = polygons.flat();
+            return {
+                minX: Math.floor(Math.min(...points.map(([x]) => x))),
+                maxX: Math.ceil(Math.max(...points.map(([x]) => x))),
+                minY: Math.floor(Math.min(...points.map(([, y]) => y))),
+                maxY: Math.ceil(Math.max(...points.map(([, y]) => y))),
+            };
+        };
+        const isPointInsidePolygon = (point, polygon) => {
+            // Solve a linear equation by casting a ray
+
+            let inside = false;
+            const { x, y } = point;
+            for (let index = 0, previousIndex = polygon.length - 1; index < polygon.length; previousIndex = index++) {
+                const [xi, yi] = polygon[index];
+                const [xj, yj] = polygon[previousIndex];
+                const intersects = (
+                    ((yi > y) !== (yj > y)) &&
+                    (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)
+                );
+                if (intersects) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        };
+
         const step = 2;
         const {
             minX, maxX, minY, maxY,
         } = getBoundingBox([firstPolygon, secondPolygon]);
         let intersectionCount = 0;
         let unionCount = 0;
-
         for (let y = minY; y <= maxY; y += step) {
             for (let x = minX; x <= maxX; x += step) {
-                const point = [x + step / 2, y + step / 2];
+                const point = { x: x + step / 2, y: y + step / 2 };
                 const inFirst = isPointInsidePolygon(point, firstPolygon);
                 const inSecond = isPointInsidePolygon(point, secondPolygon);
-
                 if (inFirst || inSecond) {
                     unionCount++;
                 }
-
                 if (inFirst && inSecond) {
                     intersectionCount++;
                 }
             }
         }
-
         return intersectionCount / unionCount;
     }
 
     function getPolygonPoints(objectId) {
-        return getShapeCoord('polygon', objectId).then((points) => parsePolygonPoints(points));
+        return getShapeCoord('polygon', `#cvat_canvas_shape_${objectId}`).then(parsePolygonPoints);
     }
 
     function getPolygonMetrics(referenceObjectId, simplifiedObjectId) {
@@ -147,8 +150,17 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
     }
 
     function logPolygonMetrics(message, metrics) {
-        cy.log(`${message}: points=${metrics.pointsCount}, iou=${metrics.iou.toFixed(4)}, ` +
-            `referenceArea=${metrics.referenceArea.toFixed(1)}, simplifiedArea=${metrics.simplifiedArea.toFixed(1)}`);
+        const {
+            pointsCount, referenceArea, simplifiedArea, iou,
+        } = metrics;
+        const logEntry = {
+            message,
+            points: pointsCount,
+            iou: iou.toFixed(4),
+            referenceArea: referenceArea.toFixed(1),
+            simplifiedArea: simplifiedArea.toFixed(1),
+        };
+        cy.task('log', logEntry);
     }
 
     function setSimplifyAccuracy(value) {
@@ -170,7 +182,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         cy.get(`#cvat_canvas_shape_${expectedObjectId}`).should('exist').and('be.visible');
     }
 
-    function simplifyPolygon(objectId, accuracy) {
+    function simplifyPolygon({ objectId, accuracy }) {
         cy.interactAnnotationObjectMenu(`#cvat-objects-sidebar-state-item-${objectId}`, 'Simplify');
         cy.get('.cvat-approx-poly-threshold-wrapper').should('exist').and('be.visible');
         setSimplifyAccuracy(accuracy);
@@ -178,101 +190,45 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         cy.get('.cvat-approx-poly-threshold-wrapper').should('not.exist');
     }
 
-    function drawDetailedPolygonWithMouse() {
-        cy.interactControlButton('draw-polygon');
-        cy.switchLabel(labelName, 'draw-polygon');
-        cy.get('.cvat-draw-polygon-popover').within(() => {
-            cy.contains('button', 'Shape').click();
-        });
-
-        cy.get('body').trigger('keydown', {
-            key: 'Shift',
-            code: 'ShiftLeft',
-            keyCode: 16,
-            shiftKey: true,
-        });
-
-        detailedPolygonPoints.forEach((point) => {
-            cy.get('.cvat-canvas-container').click(point.x, point.y, { shiftKey: true });
-        });
-
-        cy.get('body').trigger('keyup', {
-            key: 'Shift',
-            code: 'ShiftLeft',
-            keyCode: 16,
-        });
-        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: 78, code: 'KeyN' });
-        cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: 78, code: 'KeyN' });
-        cy.checkPopoverHidden('draw-polygon');
-        cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-    }
-
-    function cancelSimplifyIfOpen() {
-        cy.get('body').then(($body) => {
-            if ($body.find('.cvat-approx-poly-threshold-wrapper').length) {
-                cy.get('.cvat-approx-poly-threshold-wrapper .ant-btn')
-                    .not('.ant-btn-primary')
-                    .click({ force: true });
-                cy.get('.cvat-approx-poly-threshold-wrapper').should('not.exist');
-            }
-        });
-    }
-
-    function removeAnnotationsIfPossible() {
-        cy.get('body').then(($body) => {
-            if (!$body.find('.cvat_canvas_shape').length) {
-                return;
-            }
-
-            cy.contains('.cvat-annotation-header-button', 'Menu').click({ force: true });
-            cy.get('.cvat-annotation-menu').within(() => {
-                cy.contains('Remove annotations').click({ force: true });
-            });
-            cy.get('.cvat-modal-confirm-remove-annotation').within(() => {
-                cy.contains('button', 'Remove').click({ force: true });
-            });
-        });
-    }
-
-    beforeEach(() => {
+    before(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
-        drawDetailedPolygonWithMouse();
+        cy.createPolygon(createDetailedPolygon, null, 'shiftHover');
     });
 
-    afterEach(() => {
-        cancelSimplifyIfOpen();
-        removeAnnotationsIfPossible();
+    after(() => {
+        cy.realPress('Escape');
+        cy.removeAnnotations();
     });
 
-    it('Calculates higher IoU when Simplify preserves more polygon detail', () => {
-        getPolygonStats('#cvat_canvas_shape_1').then((baselineStats) => {
+    it("IoU grows as 'Simplify' preserves more polygon detail", () => {
+        getPolygonStats(1).then((baselineStats) => {
             expect(baselineStats.pointsCount).to.be.at.least(polygonPointsCount);
             expect(baselineStats.area).to.be.greaterThan(0);
 
             makeAlignedCopy(2);
 
-            getPolygonMetrics('#cvat_canvas_shape_1', '#cvat_canvas_shape_2').then((metrics) => {
+            getPolygonMetrics(1, 2).then((metrics) => {
                 logPolygonMetrics('Copied polygon', metrics);
-                expect(metrics.referencePointsCount).to.be.equal(baselineStats.pointsCount);
+                expect(metrics.referencePointsCount).to.equal(baselineStats.pointsCount);
                 expect(metrics.pointsCount).to.be.equal(baselineStats.pointsCount);
                 expect(metrics.iou).to.be.greaterThan(0.99);
                 expect(metrics.referenceArea).to.be.closeTo(baselineStats.area, 1);
                 expect(metrics.simplifiedArea).to.be.closeTo(baselineStats.area, 1);
             });
 
-            simplifyPolygon(2, 0);
-            getPolygonMetrics('#cvat_canvas_shape_1', '#cvat_canvas_shape_2').then((aggressiveMetrics) => {
+            simplifyPolygon({ objectId: 2, accuracy: 0 });
+            getPolygonMetrics(1, 2).then((aggressiveMetrics) => {
                 logPolygonMetrics('Aggressively simplified polygon', aggressiveMetrics);
-                expect(aggressiveMetrics.referencePointsCount).to.be.equal(baselineStats.pointsCount);
+                expect(aggressiveMetrics.referencePointsCount).to.equal(baselineStats.pointsCount);
                 expect(aggressiveMetrics.pointsCount).to.be.lessThan(baselineStats.pointsCount);
                 expect(aggressiveMetrics.iou).to.be.lessThan(0.95);
 
                 makeAlignedCopy(3);
-                simplifyPolygon(3, 13);
-                getPolygonMetrics('#cvat_canvas_shape_1', '#cvat_canvas_shape_3').then((accurateMetrics) => {
+                simplifyPolygon({ objectId: 3, accuracy: 13 });
+                getPolygonMetrics(1, 3).then((accurateMetrics) => {
                     logPolygonMetrics('High-accuracy simplified polygon', accurateMetrics);
-                    expect(accurateMetrics.referencePointsCount).to.be.equal(baselineStats.pointsCount);
+                    expect(accurateMetrics.referencePointsCount).to.equal(baselineStats.pointsCount);
                     expect(accurateMetrics.pointsCount).to.be.greaterThan(aggressiveMetrics.pointsCount);
                     expect(accurateMetrics.pointsCount).to.be.at.least(polygonPointsCount);
                     expect(accurateMetrics.iou).to.be.greaterThan(aggressiveMetrics.iou);
@@ -280,8 +236,8 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                 });
             });
 
-            getPolygonStats('#cvat_canvas_shape_1').then((originalStats) => {
-                expect(originalStats.pointsCount).to.be.equal(baselineStats.pointsCount);
+            getPolygonStats(1).then((originalStats) => {
+                expect(originalStats.pointsCount).to.equal(baselineStats.pointsCount);
                 expect(originalStats.area).to.be.closeTo(baselineStats.area, 1);
             });
         });
