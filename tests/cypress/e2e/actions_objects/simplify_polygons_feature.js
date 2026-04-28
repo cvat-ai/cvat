@@ -193,6 +193,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createPolygon(createDetailedPolygon, null, 'shiftHover');
+        // TODO: add different color labels to aid visual confirmation
     });
 
     after(() => {
