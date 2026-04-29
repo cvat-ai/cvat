@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from itertools import product
 from pathlib import Path, PurePosixPath
 
 import pytest
@@ -170,7 +169,7 @@ class TestAudioTasks:
         with pytest.raises(exceptions.ApiException) as capture:
             self.client.jobs.api.create(
                 job_write_request=models.JobWriteRequest(type="ground_truth", task_id=task.id)
-            )[0]
+            )
 
         assert "can only be added in 2d tasks" in str(capture.value)
 
