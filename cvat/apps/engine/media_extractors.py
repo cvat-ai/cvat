@@ -29,7 +29,6 @@ import av.codec
 import av.container
 import av.video.stream
 import numpy as np
-import PIL.Image
 from natsort import os_sorted
 from PIL import Image, ImageFile, ImageOps
 from pyunpack import Archive
@@ -1032,7 +1031,7 @@ class AudioReader(IMediaReader):
 
         return self._frame_count
 
-    def get_preview_image(self) -> PIL.Image.Image | None:
+    def get_preview_image(self) -> Image.Image | None:
         with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
             if not container.streams.video:
                 return None
@@ -1108,6 +1107,10 @@ class IChunkWriter(ABC):
         buf.seek(0)
 
         return buf
+
+    @abstractmethod
+    def save_as_chunk(self, images, chunk_path):
+        pass
 
 
 class ZipChunkWriter(IChunkWriter):

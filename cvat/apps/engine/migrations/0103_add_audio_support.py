@@ -26,6 +26,21 @@ class Migration(migrations.Migration):
                 max_length=2,
             ),
         ),
+        migrations.AlterField(
+            model_name="task",
+            name="media_type",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("image", "Image"),
+                    ("video", "Video"),
+                    ("point_cloud", "Point Cloud"),
+                    ("audio", "Audio"),
+                ],
+                default="",
+                max_length=32,
+            ),
+        ),
         migrations.CreateModel(
             name="Audio",
             fields=[
