@@ -26,9 +26,9 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
+    ComparisonReportRequirementsSummary,
     ComparisonReportRequirementSummary,
     ComparisonReportSummary,
-    ComparisonReportTargetsSummary,
     ConfusionMatrix,
     deduplicate_annotation_conflicts,
 )
@@ -179,16 +179,16 @@ def build_requirement_report(
             annotation_components=annotation_components,
             tasks=None,
             jobs=None,
-            targets=None,
+            requirements=None,
         ),
         frame_results=deepcopy(frame_results) if include_frame_results else None,
     )
 
 
-def build_targets_summary(
+def build_requirements_summary(
     requirements: list[Any],
     group_reports: dict[str, ComparisonReportRequirementSummary],
-) -> ComparisonReportTargetsSummary:
+) -> ComparisonReportRequirementsSummary:
     enabled_requirements = [
         requirement
         for requirement in requirements
@@ -210,7 +210,7 @@ def build_targets_summary(
         if actual_score is not None and required_score <= actual_score:
             completed_count += 1
 
-    return ComparisonReportTargetsSummary(
+    return ComparisonReportRequirementsSummary(
         total=len(requirements),
         enabled=len(enabled_requirements),
         completed=completed_count,
@@ -1364,7 +1364,7 @@ class DatasetQualityEstimator:
             )
             for requirement in self._requirements
         }
-        target_stats = build_targets_summary(self._requirements, group_reports)
+        requirement_stats = build_requirements_summary(self._requirements, group_reports)
         conflicts_by_severity = Counter(c.severity for c in conflicts)
         return ComparisonReport(
             parameters=self.DEFAULT_SETTINGS,
@@ -1379,7 +1379,7 @@ class DatasetQualityEstimator:
                 annotation_components=total_annotation_components,
                 tasks=None,
                 jobs=None,
-                targets=target_stats,
+                requirements=requirement_stats,
             ),
             frame_results=all_frame_results,
             groups=group_reports,

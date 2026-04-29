@@ -43,7 +43,7 @@ from cvat.apps.quality_control.models import AnnotationConflictSeverity
 from cvat.apps.quality_control.quality_handlers import (
     DatasetQualityEstimator,
     build_requirement_report,
-    build_targets_summary,
+    build_requirements_summary,
     merge_frame_summaries,
 )
 from cvat.apps.quality_control.quality_reports import JobDataProvider, QualitySettingsManager
@@ -333,7 +333,7 @@ class TaskQualityCalculator:
                 annotation_components=task_ann_components_summary,
                 tasks=None,
                 jobs=job_stats,
-                targets=build_targets_summary(target_requirements, requirement_groups),
+                requirements=build_requirements_summary(target_requirements, requirement_groups),
             ),
             frame_results=task_frame_results,
             groups=requirement_groups,
@@ -671,7 +671,7 @@ class ProjectQualityCalculator:
                     annotation_components=project_group_components[group_name],
                     tasks=None,
                     jobs=None,
-                    targets=None,
+                    requirements=None,
                 ),
                 frame_results=None,
             )
@@ -706,7 +706,9 @@ class ProjectQualityCalculator:
                 annotation_components=project_ann_components_summary,
                 tasks=task_stats,
                 jobs=job_stats,
-                targets=build_targets_summary(target_requirements, requirement_groups),
+                requirements=build_requirements_summary(
+                    target_requirements, requirement_groups
+                ),
             ),
             frame_results=None,  # this is too detailed for a project report
             groups=requirement_groups,

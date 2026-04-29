@@ -75,7 +75,7 @@ class QualityReportJobsSummarySerializer(serializers.Serializer):
     )
 
 
-class QualityReportTargetsSummarySerializer(serializers.Serializer):
+class QualityReportRequirementsSummarySerializer(serializers.Serializer):
     total = serializers.IntegerField()
     enabled = serializers.IntegerField()
     completed = serializers.IntegerField()
@@ -117,13 +117,13 @@ class QualityReportSummarySerializer(serializers.Serializer):
     jobs = QualityReportJobsSummarySerializer(
         required=False, help_text="Included only in task and project reports"
     )
-    targets = QualityReportTargetsSummarySerializer(required=False)
+    requirements = QualityReportRequirementsSummarySerializer(required=False)
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
         # Old reports may miss "tasks" and "jobs", new reports may miss "frame_*" fields
-        for optional_field in ("tasks", "jobs", "targets", "frame_count", "frame_share"):
+        for optional_field in ("tasks", "jobs", "requirements", "frame_count", "frame_share"):
             if representation.get(optional_field) is None:
                 representation.pop(optional_field, None)
 

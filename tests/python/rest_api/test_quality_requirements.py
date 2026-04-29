@@ -1164,7 +1164,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert conflicts[0]["severity"] == "error"
         assert conflicts[0]["attribute_names"] == ["size"]
 
-    def test_task_report_data_contains_groups_and_targets(
+    def test_task_report_data_contains_groups_and_requirements(
         self, admin_user, find_sandbox_task_without_gt
     ):
         task, _ = find_sandbox_task_without_gt(True)
@@ -1199,6 +1199,11 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        assert report["summary"]["requirements"] == {
+            "total": 2,
+            "enabled": 1,
+            "completed": 1,
+        }
 
         with make_api_client(admin_user) as api_client:
             _, response = api_client.quality_api.retrieve_report_data(
@@ -1210,7 +1215,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert "groups" in report_data
         assert enabled_requirement_name in report_data["groups"]
         assert disabled_requirement_name in report_data["groups"]
-        assert report_data["comparison_summary"]["targets"] == {
+        assert report_data["comparison_summary"]["requirements"] == {
             "total": 2,
             "enabled": 1,
             "completed": 1,

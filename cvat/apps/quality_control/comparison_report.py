@@ -734,13 +734,13 @@ class ComparisonReportJobStats(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
-class ComparisonReportTargetsSummary(ReportNode):
+class ComparisonReportRequirementsSummary(ReportNode):
     total: int
     enabled: int
     completed: int
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportTargetsSummary:
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementsSummary:
         return cls(
             total=d.get("total", 0),
             enabled=d.get("enabled", 0),
@@ -748,7 +748,7 @@ class ComparisonReportTargetsSummary(ReportNode):
         )
 
     @classmethod
-    def create_empty(cls) -> ComparisonReportTargetsSummary:
+    def create_empty(cls) -> ComparisonReportRequirementsSummary:
         return cls(total=0, enabled=0, completed=0)
 
 
@@ -767,7 +767,7 @@ class ComparisonReportSummary(ReportNode):
 
     tasks: ComparisonReportTaskStats | None
     jobs: ComparisonReportJobStats | None
-    targets: ComparisonReportTargetsSummary | None = None
+    requirements: ComparisonReportRequirementsSummary | None = None
 
     @property
     def frame_share(self) -> float:
@@ -807,6 +807,10 @@ class ComparisonReportSummary(ReportNode):
             frame_count = d.get("frame_count", len(d.get("frames", [])))
             total_frames = math.ceil(frame_count / (frame_share or 1))
 
+        requirements = d.get("requirements")
+        if requirements is None:
+            requirements = d.get("targets")
+
         return cls(
             frames=d["frames"] if "frames" in d else None,
             total_frames=total_frames,
@@ -823,9 +827,9 @@ class ComparisonReportSummary(ReportNode):
             ),
             tasks=ComparisonReportTaskStats.from_dict(d["tasks"]) if d.get("tasks") else None,
             jobs=ComparisonReportJobStats.from_dict(d["jobs"]) if d.get("jobs") else None,
-            targets=(
-                ComparisonReportTargetsSummary.from_dict(d["targets"])
-                if d.get("targets") is not None
+            requirements=(
+                ComparisonReportRequirementsSummary.from_dict(requirements)
+                if requirements is not None
                 else None
             ),
         )
