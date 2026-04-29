@@ -301,6 +301,9 @@ class QualitySettings(TimestampedModel):
 
         return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())
 
+    def to_dict(self):
+        return model_to_dict(self)
+
 
 class QualityRequirementAnnotationType(models.TextChoices):
     TAG = "tag"

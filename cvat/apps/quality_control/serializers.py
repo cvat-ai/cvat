@@ -320,9 +320,29 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         if annotation_type is None and self.instance is not None:
             annotation_type = self.instance.annotation_type
 
+        parent_annotation_type = None
+        parent_requirement = self.initial_data.get("parent_requirement")
+        if parent_requirement is None and self.instance is not None and getattr(self.instance, "parent", None):
+            parent_requirement = self.instance.parent
+
+        if hasattr(parent_requirement, "annotation_type"):
+            parent_annotation_type = parent_requirement.annotation_type
+        elif parent_requirement:
+            try:
+                parent_annotation_type = models.QualityRequirement.objects.only(
+                    "annotation_type"
+                ).get(pk=parent_requirement).annotation_type
+            except (
+                models.QualityRequirement.DoesNotExist,
+                TypeError,
+                ValueError,
+            ):
+                parent_annotation_type = None
+
         RequirementJsonLogicFilter.validate_expression(
             value,
             annotation_type=annotation_type,
+            parent_annotation_type=parent_annotation_type,
         )
         return value
 

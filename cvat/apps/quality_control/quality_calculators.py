@@ -80,6 +80,7 @@ class TaskQualityCalculator:
             if not gt_job_id:
                 return None
 
+            quality_params = self.get_quality_params(task)
             quality_settings = QualitySettingsManager().get_task_settings(task)
 
             all_job_ids: set[int] = set(
@@ -155,7 +156,7 @@ class TaskQualityCalculator:
 
         task_comparison_report = self._compute_task_report(
             job_comparison_reports,
-            settings=quality_settings,
+            parameters=quality_params,
             requirements=quality_requirements,
             all_job_ids=all_job_ids,
         )
@@ -213,7 +214,7 @@ class TaskQualityCalculator:
     def _compute_task_report(
         self,
         job_reports: dict[int, ComparisonReport],
-        settings: models.QualitySettings,
+        parameters: ComparisonParameters,
         requirements: list[models.QualityRequirement],
         *,
         all_job_ids: set[int],
@@ -319,7 +320,7 @@ class TaskQualityCalculator:
         ]
         conflicts_by_severity = Counter(c.severity for c in task_conflicts)
         task_report_data = ComparisonReport(
-            parameters=ComparisonParameters(),  # TODO: return settings
+            parameters=parameters,
             comparison_summary=ComparisonReportSummary(
                 frame_count=task_validation_frames_count,
                 total_frames=task_total_frames,

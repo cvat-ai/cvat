@@ -15,8 +15,18 @@ from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.quality_control import models
 
 
+def _with_replaced_prefix(
+    lookup_fields: dict[str, str], *, source_prefix: str, target_prefix: str
+) -> dict[str, str]:
+    return {
+        key.replace(source_prefix, target_prefix, 1): value.replace(source_prefix, target_prefix, 1)
+        for key, value in lookup_fields.items()
+    }
+
+
 class RequirementJsonLogicFilter(JsonLogicFilter):
     nested_attribute_separator = "."
+    PARENT_SKELETON_CONTEXT_KEY = "__parent_skeleton_context__"
 
     class DotDict(dict):
         """recursive dot.notation access to dictionary attributes"""
@@ -47,6 +57,8 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         "value",
     )
 
+    _INTERNAL_ATTRIBUTE_FIELDS = frozenset({PARENT_SKELETON_CONTEXT_KEY})
+
     _SHAPE_LOOKUP_FIELDS = {
         **{f"shape.{name}": f"shape.{name}" for name in _SHAPE_FILTER_FIELDS},
         **{
@@ -61,12 +73,22 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         },
     }
 
+    _SKELETON_LOOKUP_FIELDS = {
+        "shape.skeleton": "shape.skeleton",
+        **_with_replaced_prefix(
+            _SHAPE_LOOKUP_FIELDS,
+            source_prefix="shape",
+            target_prefix="shape.skeleton",
+        ),
+    }
+
     _ATTRIBUTE_LOOKUP_FIELDS = {
         f"attribute.{name}": f"attribute.{name}" for name in _ATTRIBUTE_FILTER_FIELDS
     }
 
     _LOOKUP_FIELDS = {
         **_SHAPE_LOOKUP_FIELDS,
+        **_SKELETON_LOOKUP_FIELDS,
         **_ATTRIBUTE_LOOKUP_FIELDS,
     }
 
@@ -91,22 +113,49 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         )
 
     @classmethod
-    def get_supported_terms(cls, *, annotation_type: str | None = None) -> list[str]:
-        if annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE:
-            return sorted(cls._LOOKUP_FIELDS)
-
+    def get_supported_terms(
+        cls,
+        *,
+        annotation_type: str | None = None,
+        parent_annotation_type: str | None = None,
+    ) -> list[str]:
         if annotation_type is None:
             return sorted(cls._LOOKUP_FIELDS)
 
-        return sorted(set(cls._LOOKUP_FIELDS) - set(cls._ATTRIBUTE_LOOKUP_FIELDS))
+        supported_terms = dict(cls._LOOKUP_FIELDS)
+
+        if annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE:
+            for term in cls._ATTRIBUTE_LOOKUP_FIELDS:
+                supported_terms.pop(term, None)
+
+        supports_skeleton_lookup = annotation_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT or (
+            annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
+            and parent_annotation_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+        )
+        if not supports_skeleton_lookup:
+            for term in cls._SKELETON_LOOKUP_FIELDS:
+                supported_terms.pop(term, None)
+
+        return sorted(supported_terms)
 
     @classmethod
-    def validate_expression(cls, expression: str, *, annotation_type: str | None = None) -> None:
+    def validate_expression(
+        cls,
+        expression: str,
+        *,
+        annotation_type: str | None = None,
+        parent_annotation_type: str | None = None,
+    ) -> None:
         filter_expression = (expression or "").strip()
         if not filter_expression:
             return
 
-        allowed_terms = set(cls.get_supported_terms(annotation_type=annotation_type))
+        allowed_terms = set(
+            cls.get_supported_terms(
+                annotation_type=annotation_type,
+                parent_annotation_type=parent_annotation_type,
+            )
+        )
         cls._parse_and_validate_query(filter_expression, allowed_terms=allowed_terms)
 
     @classmethod
@@ -367,9 +416,14 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         return width * height
 
     def _build_ann_attributes_context(self, ann_attrs: dict[str, Any]) -> dict[str, Any]:
+        public_attrs = {
+            name: value
+            for name, value in ann_attrs.items()
+            if name not in self._INTERNAL_ATTRIBUTE_FIELDS
+        }
         return {
-            "name": list(ann_attrs.keys()),
-            "value": list(ann_attrs.values()),
+            "name": list(public_attrs.keys()),
+            "value": list(public_attrs.values()),
         }
 
     def _build_shape_context(
@@ -380,6 +434,7 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         include_track: bool,
     ) -> dict[str, Any]:
         track_id = ann_attrs.get("track_id")
+        parent_skeleton_context = ann_attrs.get(self.PARENT_SKELETON_CONTEXT_KEY)
         context = {
             "label": self._get_label_name(ann),
             "type": self._dm_type_to_requirement_type(ann.type),
@@ -392,6 +447,9 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
             "attribute": self._build_ann_attributes_context(ann_attrs),
         }
 
+        if parent_skeleton_context is not None:
+            context["skeleton"] = parent_skeleton_context
+
         if include_track:
             context["track_ref"] = track_id
             context["track"] = (
@@ -402,10 +460,13 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
 
         return context
 
-    def _build_shape_filter_context(self, ann: dm.Annotation) -> dict[str, Any]:
+    def build_shape_context_for_annotation(self, ann: dm.Annotation) -> dict[str, Any]:
         ann_attrs = dict(getattr(ann, "attributes", {}) or {})
+        return self._build_shape_context(ann, ann_attrs=ann_attrs, include_track=True)
+
+    def _build_shape_filter_context(self, ann: dm.Annotation) -> dict[str, Any]:
         return {
-            "shape": self._build_shape_context(ann, ann_attrs=ann_attrs, include_track=True),
+            "shape": self.build_shape_context_for_annotation(ann),
         }
 
     def _build_attribute_filter_context(

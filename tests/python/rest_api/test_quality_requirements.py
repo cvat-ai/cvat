@@ -523,25 +523,39 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "last quality requirement" in json.dumps(response.json()).lower()
 
-    # TODO: Add parent skeleton information to the model
-    def test_create_requirement_rejects_unimplemented_filter_terms(
+    def test_create_attribute_requirement_accepts_skeleton_parent_filter_terms(
         self, admin_user, find_sandbox_task_without_gt
     ):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
 
-        _, response = self._create_requirement(
+        parent_requirement, response = self._create_requirement(
             admin_user,
             self._build_requirement_payload(
-                f"unsupported-filter-{task['id']}",
+                f"skeleton-parent-{task['id']}",
                 settings_id=settings["id"],
                 annotation_type="skeleton_keypoint",
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        created_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"skeleton-attribute-filter-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="attribute",
+                parent_requirement=parent_requirement["id"],
                 filter_expression=json.dumps({"==": [{"var": "shape.skeleton.label"}, "person"]}),
             ),
         )
 
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert "shape.skeleton.label" in json.dumps(response.json())
+        assert response.status_code == HTTPStatus.CREATED
+        assert created_requirement["annotation_type"] == "attribute"
+        assert created_requirement["parent_requirement"] == parent_requirement["id"]
+        assert created_requirement["filter"] == json.dumps(
+            {"==": [{"var": "shape.skeleton.label"}, "person"]}
+        )
 
     def test_create_requirement_rejects_attribute_root_terms_for_shape_requirements(
         self, admin_user, find_sandbox_task_without_gt

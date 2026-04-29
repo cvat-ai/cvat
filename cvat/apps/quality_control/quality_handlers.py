@@ -399,7 +399,11 @@ class RequirementHandler(ABC):
         label_id_idx_map = {}
         label_names = []
         for label_id, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]):
-            if not label.parent:
+            if self.requirement.annotation_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT:
+                if label.parent:
+                    label_id_idx_map[label_id] = len(label_names)
+                    label_names.append(f"{label.parent}.{label.name}")
+            elif not label.parent:
                 label_id_idx_map[label_id] = len(label_names)
                 label_names.append(label.name)
 
@@ -409,6 +413,43 @@ class RequirementHandler(ABC):
         confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
 
         return label_names, confusion_matrix, label_id_idx_map
+
+    def _prepare_item_for_requirement(self, item: dm.DatasetItem) -> dm.DatasetItem:
+        if self.requirement.annotation_type != models.QualityRequirementAnnotationType.SKELETON_KEYPOINT:
+            return item
+
+        flattened_annotations: list[dm.Annotation] = []
+        for ann in item.annotations:
+            if ann.type != dm.AnnotationType.skeleton:
+                continue
+
+            parent_skeleton_context = self._filter.build_shape_context_for_annotation(ann)
+            parent_attrs = dict(getattr(ann, "attributes", {}) or {})
+            for element in ann.elements:
+                element_attrs = dict(getattr(element, "attributes", {}) or {})
+                if "source" not in element_attrs and "source" in parent_attrs:
+                    element_attrs["source"] = parent_attrs["source"]
+                if "track_id" not in element_attrs and "track_id" in parent_attrs:
+                    element_attrs["track_id"] = parent_attrs["track_id"]
+                if "keyframe" not in element_attrs and "keyframe" in parent_attrs:
+                    element_attrs["keyframe"] = parent_attrs["keyframe"]
+
+                visibility = list(getattr(element, "visibility", []) or [])
+                if visibility:
+                    element_visibility = visibility[0]
+                    element_attrs.setdefault(
+                        "outside", element_visibility == dm.Points.Visibility.absent
+                    )
+                    element_attrs.setdefault(
+                        "occluded", element_visibility == dm.Points.Visibility.hidden
+                    )
+
+                element_attrs[RequirementJsonLogicFilter.PARENT_SKELETON_CONTEXT_KEY] = (
+                    parent_skeleton_context
+                )
+                flattened_annotations.append(element.wrap(attributes=element_attrs))
+
+        return item.wrap(annotations=flattened_annotations)
 
     def _compute_annotations_summary(
         self, confusion_matrix: np.ndarray, confusion_matrix_labels: list[str]
@@ -647,6 +688,8 @@ class ShapeRequirementHandler(RequirementHandler):
     ) -> RequirementFrameResult:
         conflicts = []
         frame_id = self.context.frame_id
+        gt_item = self._prepare_item_for_requirement(gt_item)
+        ds_item = self._prepare_item_for_requirement(ds_item)
         gt_item = self._filter.filter_item(gt_item)
         ds_item = self._filter.filter_item(ds_item)
 
