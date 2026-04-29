@@ -3288,7 +3288,7 @@ class AnnotationSerializer(serializers.Serializer):
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(
         min_value=0, default=0,
-        allow_null=True # backward compatibility
+        allow_null=True # backward compatibility; TODO: disallow on the DB level
     )
     source = serializers.CharField(default=models.SourceType.MANUAL)
 
@@ -3303,7 +3303,7 @@ class AnnotationSerializer(serializers.Serializer):
         return value
 
     def validate_group(self, value):
-        return value or 0 # backward compatibility
+        return value or 0 # backward compatibility; TODO: disallow on the DB level
 
     @cached_property
     def validate_id(self):
@@ -3421,7 +3421,15 @@ class LabeledShapeSerializer(SubLabeledShapeSerializer):
         return attrs
 
 def _convert_annotation(obj, keys):
-    return OrderedDict([(key, obj[key]) for key in keys])
+    d = OrderedDict([(key, obj[key]) for key in keys])
+
+    if "group" in d:
+        # TODO: disallow null on the DB level,
+        # when there are other changes to the annotation tables
+        # https://github.com/cvat-ai/cvat/pull/10522
+        d["group"] = d["group"] or 0
+
+    return d
 
 def _convert_attributes(attr_set):
     attr_keys = ['spec_id', 'value']
