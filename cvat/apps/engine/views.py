@@ -623,6 +623,9 @@ class _TaskDataGetter(_DataGetter):
         super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
         self._db_task = db_task
 
+        if db_task.media_type == models.MediaType.AUDIO:
+            raise ValidationError("Media retrieval is not available in audio tasks")
+
     def _get_frame_provider(self) -> TaskFrameProvider:
         return TaskFrameProvider(self._db_task)
 
@@ -667,6 +670,9 @@ class _JobDataGetter(_DataGetter):
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
 
         self._db_job = db_job
+
+        if db_job.segment.task.media_type == models.MediaType.AUDIO:
+            raise ValidationError("Media retrieval is not available in audio tasks")
 
     def _get_frame_provider(self) -> JobFrameProvider:
         return JobFrameProvider(self._db_job)
@@ -1469,25 +1475,50 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ).get(pk=pk)
 
         if request.method == 'PATCH':
+            if db_task.media_type == models.MediaType.AUDIO:
+                # TODO: introduce support for frame deletion when there's more information
+                # on use cases. Should probably work with ranges.
+                raise ValidationError("Audio metadata cannot be edited")
+
             serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
             serializer.is_valid(raise_exception=True)
             db_task.data = serializer.save()
 
-        if hasattr(db_task.data, 'video'):
-            media = [db_task.data.video]
-            chapters = get_video_chapters(db_task.data.get_manifest_path())
-        else:
-            media = list(db_task.data.images.all())
+        db_data = db_task.data
+        if db_data is None:
+            return ValidationError("Data is not uploaded for the task yet")
+
+        if hasattr(db_data, 'audio'):
+            media = [db_data.audio]
             chapters = None
 
-        frame_meta = [{
-            'width': item.width,
-            'height': item.height,
-            'name': item.path,
-            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
-        } for item in media]
+            def serialize_media_item(item: models.Audio) -> dict[str, Any]:
+                return {}
+        else:
+            if hasattr(db_data, 'video'):
+                media = [db_data.video]
+                chapters = get_video_chapters(db_data.get_manifest_path())
+            else:
+                media = list(db_data.images.all())
+                chapters = None
 
-        db_data = db_task.data
+            def serialize_media_item(item: models.Video | models.Image) -> dict[str, Any]:
+                return {
+                    'width': item.width,
+                    'height': item.height,
+                }
+
+        frame_meta = [
+            {
+                'name': item.path,
+                'related_files': (
+                    item.related_files.count() if hasattr(item, 'related_files') else 0
+                ),
+                **serialize_media_item(item),
+            }
+            for item in media
+        ]
+
         db_data.frames = frame_meta
         db_data.chunks_updated_date = db_task.get_chunks_updated_date()
         db_data.chapters = chapters
@@ -1970,13 +2001,18 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         ).get(pk=pk)
 
         if request.method == 'PATCH':
+            if db_job.segment.task.media_type is models.MediaType.AUDIO:
+                # TODO: introduce support for frame deletion when there's more information
+                # on use cases. Should probably work with ranges.
+                raise ValidationError("Audio metadata cannot be edited")
+
             serializer = JobDataMetaWriteSerializer(instance=db_job, data=request.data)
             serializer.is_valid(raise_exception=True)
             db_job = serializer.save()
 
         db_segment = db_job.segment
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
         start_frame = db_segment.start_frame
         stop_frame = db_segment.stop_frame
         frame_step = db_data.get_frame_step()
@@ -1984,35 +2020,19 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
         segment_frame_set = db_segment.frame_set
 
-        if hasattr(db_data, 'video'):
-            media = [db_data.video]
-            chapters = get_video_chapters(
-                db_task.data.get_manifest_path(),
-                segment=(data_start_frame, data_stop_frame)
-            )
-        else:
-            media = [
-                # Insert placeholders if frames are skipped
-                # TODO: remove placeholders, UI supports chunks without placeholders already
-                # after https://github.com/cvat-ai/cvat/pull/8272
-                f if f.frame in segment_frame_set else SimpleNamespace(
-                    path=f'placeholder.jpg', width=f.width, height=f.height
-                )
-                for f in db_data.images.all()
-                if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
-            ]
-            chapters = None
-
         deleted_frames = set(db_data.deleted_frames)
         if db_job.type == models.JobType.GROUND_TRUTH:
             deleted_frames.update(db_data.validation_layout.disabled_frames)
 
         # Keep only frames from the job segment
-        task_frame_provider = TaskFrameProvider(db_task)
-        segment_rel_frame_set = set(
-            map(task_frame_provider.get_rel_frame_number, db_segment.frame_set)
-        )
-        db_data.deleted_frames = sorted(deleted_frames.intersection(segment_rel_frame_set))
+        if hasattr(db_data, 'audio'):
+            assert not deleted_frames
+        else:
+            task_media_provider = TaskFrameProvider(db_task)
+            segment_rel_frame_set = set(
+                map(task_media_provider.get_rel_frame_number, db_segment.frame_set)
+            )
+            db_data.deleted_frames = sorted(deleted_frames.intersection(segment_rel_frame_set))
 
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
@@ -2020,12 +2040,48 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_data.included_frames = db_segment.frames or None
         db_data.chunks_updated_date = db_segment.chunks_updated_date
 
-        frame_meta = [{
-            'width': item.width,
-            'height': item.height,
-            'name': item.path,
-            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
-        } for item in media]
+        if hasattr(db_data, 'audio'):
+            media = [db_data.audio]
+            chapters = None
+
+            def serialize_media_item(item: models.Audio) -> dict[str, Any]:
+                return {}
+        else:
+            if hasattr(db_data, 'video'):
+                media = [db_data.video]
+                chapters = get_video_chapters(
+                    db_task.data.get_manifest_path(),
+                    segment=(data_start_frame, data_stop_frame)
+                )
+            else:
+                media = [
+                    # Insert placeholders if frames are skipped
+                    # TODO: remove placeholders, UI supports chunks without placeholders already
+                    # after https://github.com/cvat-ai/cvat/pull/8272
+                    f if f.frame in segment_frame_set else SimpleNamespace(
+                        path='placeholder.jpg', width=f.width, height=f.height
+                    )
+                    for f in db_data.images.all()
+                    if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
+                ]
+                chapters = None
+
+            def serialize_media_item(item: models.Video | models.Image) -> dict[str, Any]:
+                return {
+                    'width': item.width,
+                    'height': item.height,
+                }
+
+        frame_meta = [
+            {
+                'name': item.path,
+                'related_files': (
+                    item.related_files.count() if hasattr(item, 'related_files') else 0
+                ),
+                **serialize_media_item(item),
+            }
+            for item in media
+        ]
 
         db_data.frames = frame_meta
         db_data.chapters = chapters

@@ -831,8 +831,14 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
-    data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
-    data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
+    data_original_chunk_type = serializers.ChoiceField(
+        source='segment.task.data.original_chunk_type', choices=models.DataChoice.choices(),
+        allow_blank=False, read_only=True,
+    )
+    data_compressed_chunk_type = serializers.ChoiceField(
+        source='segment.task.data.compressed_chunk_type', choices=models.DataChoice.choices(),
+        allow_blank=False, read_only=True,
+    )
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
@@ -845,7 +851,9 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'task_id', 'task_name', 'project_id', 'project_name', 'assignee', 'guide_id',
+        fields = (
+            'url', 'id', 'task_id', 'task_name', 'project_id', 'project_name',
+            'assignee', 'guide_id',
             'dimension', 'mode', 'media_type',
             'bug_tracker', 'status', 'stage', 'state', 'frame_count',
             'start_frame', 'stop_frame',
@@ -897,6 +905,10 @@ class JobReadSerializer(serializers.ModelSerializer):
 
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+
+        if instance.segment.task.media_type == models.MediaType.AUDIO:
+            data.pop("data_compressed_chunk_type", None)
+            data.pop("data_original_chunk_type", None)
 
         if 'replicas_count' in self.fields:
             data['replicas_count'] = getattr(instance, "child_jobs__count", 0)
@@ -2234,8 +2246,9 @@ class DataSerializer(serializers.ModelSerializer):
     https://docs.cvat.ai/docs/manual/basics/create-annotation-task/#advanced-configuration
     """
 
-    image_quality = serializers.IntegerField(min_value=0, max_value=100,
-        help_text="Image quality to use during annotation")
+    image_quality = serializers.IntegerField(min_value=0, max_value=100, required=False,
+        help_text="Image quality to use during annotation, required for image and video-based tasks"
+        )
     use_zip_chunks = serializers.BooleanField(default=False,
         help_text=textwrap.dedent("""\
             When true, video chunks will be represented as zip archives with decoded video frames.
@@ -2505,8 +2518,10 @@ class TaskReadListSerializer(serializers.ListSerializer):
 @extend_schema_serializer(deprecate_fields=["organization"])
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
-    data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
-    data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
+    data_compressed_chunk_type = serializers.ChoiceField(source='data.compressed_chunk_type',
+        choices=models.DataChoice.choices(), required=False, allow_blank=False, read_only=True)
+    data_original_chunk_type = serializers.ChoiceField(source='data.original_chunk_type',
+        choices=models.DataChoice.choices(), required=False, allow_blank=False, read_only=True)
     data_cloud_storage_id = serializers.ReadOnlyField(source='data.cloud_storage_id', required=False)
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
@@ -2581,6 +2596,15 @@ class TaskReadSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['consensus_enabled'] = self.get_consensus_enabled(instance)
+
+        if instance.media_type not in (models.MediaType.IMAGE, models.MediaType.VIDEO):
+            representation.pop("image_quality", None)
+
+        if not instance.media_type or instance.media_type == models.MediaType.AUDIO:
+            representation.pop("data_compressed_chunk_type", None)
+            representation.pop("data_original_chunk_type", None)
+            representation.pop("data_chunk_size", None)
+
         return representation
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransferableMixin):
@@ -3065,8 +3089,8 @@ class AboutSerializer(serializers.Serializer):
     subtitle = serializers.CharField(max_length=1024)
 
 class FrameMetaSerializer(serializers.Serializer):
-    width = serializers.IntegerField()
-    height = serializers.IntegerField()
+    width = serializers.IntegerField(required=False)
+    height = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
     related_files = serializers.IntegerField()
 
@@ -3093,7 +3117,7 @@ class PluginsSerializer(serializers.Serializer):
 class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
     chapters = ChapterSerializer(many=True, allow_null=True, required=False)
-    image_quality = serializers.IntegerField(min_value=0, max_value=100)
+    image_quality = serializers.IntegerField(min_value=0, max_value=100, required=False)
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
     included_frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0), allow_null=True, required=False,
@@ -3133,6 +3157,14 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
                 """)
             },
         }
+
+    def to_representation(self, instance):
+        serialized = super().to_representation(instance)
+
+        if hasattr(instance, 'audio'):
+            serialized.pop('image_quality', None) # not relevant for audio
+
+        return serialized
 
 class DataMetaWriteSerializer(serializers.ModelSerializer):
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False)
