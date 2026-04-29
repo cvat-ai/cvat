@@ -221,6 +221,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                 key={contextMenuClientID}
                 clientID={contextMenuClientID}
                 objectStates={objectStates}
+                allowSimplifyLifecycle={false}
             />
         </div>,
         window.document.body,

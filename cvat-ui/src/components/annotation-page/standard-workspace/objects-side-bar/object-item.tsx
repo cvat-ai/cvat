@@ -47,6 +47,7 @@ interface Props {
     runAnnotationAction(): void;
     edit(): void;
     slice(): void;
+    simplify(): void;
 }
 
 function ObjectItemComponent(props: Props): JSX.Element {
@@ -81,6 +82,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         runAnnotationAction,
         edit,
         slice,
+        simplify,
         jobInstance,
     } = props;
 
@@ -144,6 +146,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
                     slice={slice}
+                    simplify={simplify}
                     runAnnotationAction={runAnnotationAction}
                 />
                 <ObjectButtonsContainer clientID={clientID} />

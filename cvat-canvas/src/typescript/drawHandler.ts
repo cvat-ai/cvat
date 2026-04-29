@@ -674,7 +674,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
             const targetPoints = readPointsFromShape((e.target as any as { instance: SVG.Shape }).instance);
-            const { shapeType, redraw: clientID } = this.drawData;
+            const { shapeType, redraw: clientID, simplifyPoly } = this.drawData;
             const { points, box } = shapeType === 'cuboid' ?
                 this.getFinalCuboidCoordinates(targetPoints) :
                 this.getFinalPolyshapeCoordinates(targetPoints, true);
@@ -693,7 +693,9 @@ export class DrawHandlerImpl implements DrawHandler {
                     return;
                 }
 
-                this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
+                this.onDrawDone({
+                    clientID, shapeType, points, simplifyPoly,
+                }, Date.now() - this.startTimestamp);
             } else {
                 this.onDrawDone(null);
             }

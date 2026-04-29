@@ -33,7 +33,7 @@ from PIL import Image, ImageFile, ImageOps
 from pyunpack import Archive
 from rest_framework.exceptions import ValidationError
 
-from cvat.apps.engine.models import DimensionType, SortingMethod
+from cvat.apps.engine.models import DimensionType, SortingMethod, TaskMode
 from cvat.apps.engine.utils import rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
@@ -1173,37 +1173,37 @@ MEDIA_TYPES = {
     "image": {
         "has_mime_type": _is_image,
         "extractor": ImageListReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": False,
     },
     "video": {
         "has_mime_type": _is_video,
         "extractor": VideoReader,
-        "mode": "interpolation",
+        "mode": TaskMode.INTERPOLATION,
         "unique": True,
     },
     "archive": {
         "has_mime_type": _is_archive,
         "extractor": ArchiveReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": True,
     },
     "directory": {
         "has_mime_type": _is_dir,
         "extractor": DirectoryReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": False,
     },
     "pdf": {
         "has_mime_type": _is_pdf,
         "extractor": PdfReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": True,
     },
     "zip": {
         "has_mime_type": _is_zip,
         "extractor": ZipReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": True,
     },
 }

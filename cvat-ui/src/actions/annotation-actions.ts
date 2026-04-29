@@ -137,6 +137,7 @@ export enum AnnotationActionTypes {
     PROPAGATE_OBJECT_SUCCESS = 'PROPAGATE_OBJECT_SUCCESS',
     PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED',
     SWITCH_PROPAGATE_VISIBILITY = 'SWITCH_PROPAGATE_VISIBILITY',
+    SWITCH_SIMPLIFY_VISIBILITY = 'SWITCH_SIMPLIFY_VISIBILITY',
     SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
     SWITCH_SHOWING_FILTERS = 'SWITCH_SHOWING_FILTERS',
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
@@ -177,6 +178,11 @@ export enum AnnotationActionTypes {
     UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
     HIGHLIGHT_CONFLICT = 'HIGHLIGHT_CONFCLICT',
     HOVERED_CHAPTER = 'HOVERED_CHAPTER',
+}
+
+export enum AnnotationSource {
+    DRAW_SIMPLIFIED_POLY = 'draw_simplified_poly',
+    OTHER = 'other',
 }
 
 export function setHoveredChapter(id: number | null): AnyAction {
@@ -364,7 +370,7 @@ export function fetchAnnotationsAsync(): ThunkAction {
             const finalStates = workspace === Workspace.REVIEW ?
                 wrapStatesForReviewMode(states) : states;
 
-            dispatch({
+            await dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
                     states: finalStates,
@@ -505,6 +511,18 @@ export function switchPropagateVisibility(visible: boolean): AnyAction {
     };
 }
 
+export function switchSimplifyVisibility(clientID: number | null): AnyAction {
+    const state = getStore().getState();
+    const objectState = clientID !== null ?
+        state.annotation.annotations.states.find((s: ObjectState) => s.clientID === clientID) || null :
+        null;
+    const originalPoints = objectState?.points ? [...objectState.points] : null;
+    return {
+        type: AnnotationActionTypes.SWITCH_SIMPLIFY_VISIBILITY,
+        payload: { objectState, originalPoints },
+    };
+}
+
 export function propagateObjectAsync(from: number, to: number): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const state = getState();
@@ -606,14 +624,23 @@ export function activateObject(
     activatedStateID: number | null,
     activatedElementID: number | null,
     activatedAttributeID: number | null,
-): AnyAction {
-    return {
-        type: AnnotationActionTypes.ACTIVATE_OBJECT,
-        payload: {
-            activatedStateID,
-            activatedElementID,
-            activatedAttributeID,
-        },
+): ThunkAction<void> {
+    return (dispatch: ThunkDispatch, getState: () => CombinedState): void => {
+        const state = getState();
+        const lockedClientID = state.annotation.simplify.objectState?.clientID ?? null;
+
+        if (lockedClientID !== null && activatedStateID !== lockedClientID) {
+            return;
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.ACTIVATE_OBJECT,
+            payload: {
+                activatedStateID,
+                activatedElementID,
+                activatedAttributeID,
+            },
+        });
     };
 }
 
@@ -1161,6 +1188,7 @@ export function rememberObject(createParams: {
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
     activeCuboidDrawingMethod?: CuboidDrawingMethod;
+    activeSimplifyPoly?: boolean;
 }, updateCurrentControl = true): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_OBJECT,
@@ -1244,12 +1272,20 @@ export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
     };
 }
 
-export function createAnnotationsAsync(statesToCreate: any[]): ThunkAction {
+export function createAnnotationsAsync(
+    statesToCreate: ObjectState[],
+    source: AnnotationSource = AnnotationSource.OTHER,
+): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
-            await jobInstance.annotations.put(statesToCreate);
-            dispatch(fetchAnnotationsAsync());
+            const clientIds = await jobInstance.annotations.put(statesToCreate);
+            await dispatch(fetchAnnotationsAsync());
+
+            if (source === AnnotationSource.DRAW_SIMPLIFIED_POLY && statesToCreate.length === 1) {
+                const [clientId] = clientIds;
+                dispatch(switchSimplifyVisibility(clientId));
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
@@ -1546,6 +1582,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 activeNumOfPoints,
                 activeRectDrawingMethod,
                 activeCuboidDrawingMethod,
+                activeSimplifyPoly,
             },
         } = getStore().getState().annotation;
 
@@ -1594,6 +1631,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 dispatch(createAnnotationsAsync([objectState]));
             }
         } else if (canvasInstance) {
+            const effectiveSimplifyPoly = typeof activeNumOfPoints !== 'undefined' ? false : activeSimplifyPoly;
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
@@ -1602,6 +1640,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(activeShapeType),
                 skeletonSVG: activeShapeType === ShapeType.SKELETON ? activeLabel.structure!.svg : undefined,
+                simplifyPoly: effectiveSimplifyPoly,
             });
         }
     };
