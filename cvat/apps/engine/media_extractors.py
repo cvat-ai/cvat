@@ -14,11 +14,12 @@ import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from contextlib import ExitStack, closing
+from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
+from contextlib import ExitStack, closing, contextmanager
 from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
+from functools import cached_property
 from pathlib import Path, PurePath
 from random import shuffle
 from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
@@ -28,6 +29,7 @@ import av.codec
 import av.container
 import av.video.stream
 import numpy as np
+import PIL.Image
 from natsort import os_sorted
 from PIL import Image, ImageFile, ImageOps
 from pyunpack import Archive
@@ -250,14 +252,15 @@ class IMediaReader(ABC):
     """
 
     VideoFrame: TypeAlias = tuple[av.VideoFrame, None]
+    AudioFrame: TypeAlias = tuple[av.AudioFrame, None]
 
     def __init__(
         self,
         *,
+        dimension: DimensionType,
         start: int = 0,
         stop: int | None = None,
         step: int = 1,
-        dimension: DimensionType = DimensionType.DIM_2D,
     ):
         self._step = step
 
@@ -270,11 +273,7 @@ class IMediaReader(ABC):
         self._dimension = dimension
 
     @abstractmethod
-    def __iter__(self) -> Iterator[ImageFrame] | Iterator[VideoFrame]:
-        pass
-
-    @abstractmethod
-    def get_image_size(self, i) -> tuple[int, int]:
+    def __iter__(self) -> Iterator[ImageFrame] | Iterator[VideoFrame] | Iterator[AudioFrame]:
         pass
 
     @property
@@ -290,7 +289,13 @@ class IMediaReader(ABC):
         return self._step
 
 
-class ImageListReader(IMediaReader):
+class IImageReader(IMediaReader):
+    @abstractmethod
+    def get_image_size(self, i) -> tuple[int, int]:
+        pass
+
+
+class ImageListReader(IImageReader):
     def __init__(
         self,
         source_paths: list[Path],
@@ -591,7 +596,6 @@ class VideoReader(IMediaReader):
         step: int = 1,
         start: int = 0,
         stop: int | None = None,
-        dimension: DimensionType = DimensionType.DIM_2D,
         *,
         allow_threading: bool = False,
     ):
@@ -599,7 +603,7 @@ class VideoReader(IMediaReader):
             step=step,
             start=start,
             stop=stop,
-            dimension=dimension,
+            dimension=DimensionType.DIM_2D,
         )
 
         (source_path,) = source_paths
@@ -799,6 +803,253 @@ class VideoReaderWithManifest:
                     return
 
 
+class AudioReader(IMediaReader):
+    """
+    Frames are specified with 1 millisecond precision.
+    """
+
+    FRAME_RATE: ClassVar[int] = 1000
+
+    def __init__(
+        self,
+        source_paths: Sequence[Openable | io.BytesIO],
+        start: int = 0,
+        stop: int | None = None,
+        *,
+        allow_threading: bool = False,
+    ):
+        super().__init__(
+            step=1,
+            start=start,
+            stop=stop if stop is not None else stop,
+            dimension=DimensionType.DIM_1D,
+        )
+
+        (source_path,) = source_paths
+        if isinstance(source_path, io.BytesIO):
+            self._source_path = MemOpenable(source_path.read())
+        else:
+            self._source_path = source_path
+
+        self._frame_count = None
+
+        self.allow_threading = allow_threading
+
+    def timestamp_to_sample(self, timestamp_ms: float) -> int:
+        return round(
+            (timestamp_ms / self.FRAME_RATE)
+            * self._stream_time_base.denominator
+            / self._stream_time_base.numerator
+        )
+
+    def _filter_audio_frame(
+        self, frame: av.AudioFrame, *, start: int | None = None, stop: int | None = None
+    ) -> Sequence[av.AudioFrame]:
+        if start is None:
+            start = self._start
+
+        if stop is None:
+            stop = self._stop
+
+        if start is None and stop is None:
+            return (frame,)
+
+        frame_start = frame.pts
+        frame_end = frame.pts + frame.duration
+
+        filter_start = self.timestamp_to_sample(start)
+        filter_start += self._stream_start  # adjust the filter to the stream beginning
+
+        if stop is not None:
+            filter_end = self.timestamp_to_sample(stop) + 1
+            filter_end += self._stream_start  # adjust the filter to the stream beginning
+        else:
+            filter_end = frame_end
+
+        if filter_start <= frame_start and frame_end <= filter_end:
+            return (frame,)
+
+        # Clamp the filter to the frame range
+        filter_start = max(filter_start, frame_start)
+        filter_end = max(filter_start, min(filter_end, frame_end))
+
+        if frame_end <= filter_start or filter_end <= frame_start:
+            return []
+
+        outer_l = min(filter_start, frame_start)
+        outer_r = max(filter_end, frame_end)
+        union = outer_r - outer_l
+
+        inner_l = max(filter_start, frame_start)
+        inner_r = min(filter_end, frame_end)
+        intersection = max(0, inner_r - inner_l)
+
+        if intersection == union:
+            return [frame]
+
+        # Frames can be of arbitrary size, depending on the format. We need to take
+        # only the included samples from the frame.
+        sample_duration = frame.duration // frame.samples
+        start_sample = (inner_l - frame_start) // sample_duration
+        end_sample = (inner_r - frame_start) // sample_duration
+
+        # https://www.ffmpeg.org/doxygen/2.8/group__lavu__sampfmts.html#gaf9a51ca15301871723577c730b5865c5
+        # convert to a known planar (a separate array for each channel) format
+        resampler = av.AudioResampler("fltp")
+        converted_frames = resampler.resample(frame)
+        assert len(converted_frames) == 1
+
+        converted_frame = converted_frames[0]
+        converted_frame = av.AudioFrame.from_ndarray(
+            converted_frame.to_ndarray()[:, start_sample:end_sample],
+            format=converted_frame.format,
+            layout=converted_frame.layout,
+        )
+        converted_frame.pts = inner_l
+        converted_frame.duration = inner_r - inner_l
+        converted_frame.time_base = frame.time_base
+        converted_frame.sample_rate = frame.sample_rate
+
+        resampler = av.AudioResampler(frame.format, layout=frame.layout, rate=frame.rate)
+        converted_frames = resampler.resample(converted_frame)
+        assert len(converted_frames) == 1
+        converted_frame = converted_frames[0]
+
+        return [converted_frame]
+
+    def __iter__(self) -> Iterable[IMediaReader.AudioFrame]:
+        yield from self.read_frames()
+
+    def read_frames(
+        self, *, start: int | None = None, stop: int | None = None
+    ) -> Iterable[IMediaReader.AudioFrame]:
+        """
+        Returns audio frames. Each frame contains a number of samples,
+        depending on the sampling rate.
+
+        Warning: these "frames" are not the same as "position" frames.
+        Their precise number is determined by the file format and encoding parameters, and
+        can be obtained via the get_frame_count() method.
+        """
+
+        is_custom_range = start is not None or stop is not None
+
+        if start is None:
+            start = self._start
+        elif self._start is not None:
+            start = max(start, self._start)
+
+        if stop is None:
+            stop = self._stop
+        elif self._stop is not None:
+            stop = min(stop, self._stop)
+
+        with self._open_stream() as (container, stream):
+            if start:
+                container.seek(int(self.timestamp_to_sample(start)), stream=stream)
+
+            stop_sample = None
+            if stop is not None:
+                stop_sample = self.timestamp_to_sample(stop)
+
+            frame_idx = -1
+            for frame in container.decode(stream):
+                if stop_sample is not None and stop_sample <= frame.pts + frame.duration:
+                    break
+
+                for frame in self._filter_audio_frame(frame, start=start, stop=stop):
+                    frame: av.AudioFrame
+                    yield (frame, None)
+                    frame_idx += 1
+
+            if not is_custom_range and self._frame_count is None:
+                self._frame_count = frame_idx + 1
+
+    @contextmanager
+    def _open_stream(
+        self,
+    ) -> Generator[tuple[av.container.InputContainer, av.AudioStream], None, None]:
+        with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
+            stream = container.streams.audio[0]
+
+            if self.allow_threading:
+                stream.thread_type = "AUTO"
+            else:
+                stream.thread_type = "NONE"
+
+            yield container, stream
+
+    @cached_property
+    def _stream_start(self) -> int:
+        with self._open_stream() as (_, stream):
+            return stream.start_time or 0
+
+    @cached_property
+    def _stream_time_base(self) -> Fraction:
+        with self._open_stream() as (_, stream):
+            tb = stream.time_base
+            assert tb
+            return tb
+
+    @cached_property
+    def sampling_rate(self) -> int:
+        with self._open_stream() as (_, stream):
+            return stream.sample_rate
+
+    @cached_property
+    def duration(self) -> float:
+        "Returns the duration in seconds"
+
+        with self._open_stream() as (_, stream):
+            if stream.duration and stream.time_base:
+                duration = (stream.duration - (stream.start_time or 0)) * stream.time_base
+            elif duration_str := stream.metadata.get("DURATION", None):
+                # may have a DURATION in format like "01:16:45.935000000"
+                h, m, s = duration_str.split(":")
+                duration = 60 * 60 * float(h) + 60 * float(m) + float(s)
+            else:
+                raise RuntimeError("Can not determine duration of the audio file")
+
+        if self.stop is not None:
+            duration = min(duration, (self.stop + 1) / self.FRAME_RATE)
+
+        if self.start:
+            duration = max(0, duration - self.start / self.FRAME_RATE)
+
+        return duration
+
+    @property
+    def length(self) -> int:
+        "Returns the number of frames that can be used for navigation (e.g. start, stop)"
+        return int(round(self.duration, 3) * self.FRAME_RATE)
+
+    def get_frame_count(self) -> int:
+        "Returns the number of output frames"
+
+        if self._frame_count is None:
+            for _ in self:
+                pass
+
+        return self._frame_count
+
+    def get_preview_image(self) -> PIL.Image.Image | None:
+        with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
+            if not container.streams.video:
+                return None
+
+            frame = None
+            for frame in VideoReader([self._source_path]):
+                break
+
+            if frame is not None:
+                return frame[0].to_image()
+
+    @cached_property
+    def format_name(self) -> str:
+        with self._open_stream() as (_, stream):
+            return stream.codec.canonical_name
+
+
 class IChunkWriter(ABC):
     CHUNK_MIME_TYPE: ClassVar[str]
 
@@ -857,10 +1108,6 @@ class IChunkWriter(ABC):
         buf.seek(0)
 
         return buf
-
-    @abstractmethod
-    def save_as_chunk(self, images, chunk_path):
-        pass
 
 
 class ZipChunkWriter(IChunkWriter):
@@ -1136,6 +1383,11 @@ def _is_video(path):
     return mime[0] is not None and mime[0].startswith("video")
 
 
+def _is_audio(path):
+    mime = mimetypes.guess_type(path)
+    return mime[0] is not None and mime[0].startswith("audio")
+
+
 def _is_image(path):
     mime = mimetypes.guess_type(path)
     # Exclude vector graphic images because Pillow cannot work with them
@@ -1179,6 +1431,12 @@ MEDIA_TYPES = {
     "video": {
         "has_mime_type": _is_video,
         "extractor": VideoReader,
+        "mode": TaskMode.INTERPOLATION,
+        "unique": True,
+    },
+    "audio": {
+        "has_mime_type": _is_audio,
+        "extractor": AudioReader,
         "mode": TaskMode.INTERPOLATION,
         "unique": True,
     },

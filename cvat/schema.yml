@@ -2145,8 +2145,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -5162,8 +5163,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -7564,7 +7566,6 @@ components:
       - chunks_updated_date
       - deleted_frames
       - frames
-      - image_quality
     DataRequest:
       type: object
       description: |-
@@ -7581,7 +7582,8 @@ components:
           type: integer
           maximum: 100
           minimum: 0
-          description: Image quality to use during annotation
+          description: Image quality to use during annotation, required for image
+            and video-based tasks
         start_frame:
           type: integer
           maximum: 2147483647
@@ -7737,8 +7739,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ValidationParamsRequest'
           nullable: true
-      required:
-      - image_quality
     DataResponse:
       oneOf:
       - $ref: '#/components/schemas/RqId'
@@ -8008,10 +8008,8 @@ components:
           type: boolean
           readOnly: true
       required:
-      - height
       - name
       - related_files
-      - width
     FrameSelectionMethod:
       enum:
       - random_uniform
