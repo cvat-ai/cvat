@@ -1510,6 +1510,7 @@
       "dimension": "3d",
       "guide_id": null,
       "id": 6,
+      "image_quality": 70,
       "jobs": {
         "completed": 0,
         "count": 1,

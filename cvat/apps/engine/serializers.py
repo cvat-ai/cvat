@@ -2611,7 +2611,11 @@ class TaskReadSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         representation['consensus_enabled'] = self.get_consensus_enabled(instance)
 
-        if instance.media_type not in (models.MediaType.IMAGE, models.MediaType.VIDEO):
+        if instance.media_type not in (
+            models.MediaType.IMAGE, models.MediaType.VIDEO,
+            # TODO: deprecated for 3d, remove later
+            models.MediaType.POINT_CLOUD,
+        ):
             representation.pop("image_quality", None)
 
         if not instance.media_type or instance.media_type == models.MediaType.AUDIO:
@@ -3176,6 +3180,7 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         serialized = super().to_representation(instance)
 
         if hasattr(instance, 'audio'):
+            # TODO: deprecated for 3d, remove later
             serialized.pop('image_quality', None) # not relevant for audio
 
         return serialized
