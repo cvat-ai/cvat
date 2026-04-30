@@ -24,7 +24,12 @@ from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
-from botocore.exceptions import ClientError, EndpointConnectionError
+from botocore.exceptions import (
+    ClientError,
+    ConnectTimeoutError,
+    EndpointConnectionError,
+    ReadTimeoutError,
+)
 from botocore.handlers import disable_signing
 from django.conf import settings
 from google.api_core.exceptions import RetryError
@@ -621,6 +626,11 @@ class S3CloudStorage(AbstractCloudStorage):
                 kwargs[key] = arg_v
 
         session = boto3.Session(**kwargs)
+        # Status checks are part of the control plane, not the data-transfer path, so
+        # Bucket status probes should fail fast when the endpoint is unreachable or
+        # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
+        # the regular resource/client retain their standard retry behavior for normal
+        # storage operations.
         self._s3 = session.resource(
             "s3",
             endpoint_url=endpoint_url,
@@ -635,10 +645,21 @@ class S3CloudStorage(AbstractCloudStorage):
                 ),
             ),
         )
+        self._status_client = session.client(
+            "s3",
+            endpoint_url=endpoint_url,
+            config=Config(
+                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+                connect_timeout=2,
+                read_timeout=5,
+                retries={"total_max_attempts": 1, "mode": "standard"},
+            ),
+        )
 
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
             self._s3.meta.client.meta.events.register("choose-signer.s3.*", disable_signing)
+            self._status_client.meta.events.register("choose-signer.s3.*", disable_signing)
 
         self._client = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
@@ -653,9 +674,12 @@ class S3CloudStorage(AbstractCloudStorage):
         return self._bucket.name
 
     def _head(self):
-        return self._client.head_bucket(Bucket=self.name)
+        # Bucket status checks use the dedicated fast-fail client.
+        return self._status_client.head_bucket(Bucket=self.name)
 
     def _head_file(self, key: str, /):
+        # File metadata reads stay on the regular client so they retain standard retry
+        # behavior on slower S3-compatible backends.
         return self._client.head_object(Bucket=self.name, Key=key)
 
     def get_status(self):
@@ -670,7 +694,9 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
-        except EndpointConnectionError:
+        # Handle transport-level reachability failures separately from ClientError-
+        # based 403/404 responses.
+        except (ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError):
             slogger.glob.warning(
                 f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available",
                 exc_info=True,
@@ -687,6 +713,14 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        # Handle transport-level reachability failures separately from ClientError-
+        # based 403/404 responses.
+        except (ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError):
+            slogger.glob.warning(
+                f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name}/{key} not available",
+                exc_info=True,
+            )
+            return Status.NOT_FOUND
 
     @validate_file_status
     @validate_bucket_status
