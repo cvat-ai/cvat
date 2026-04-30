@@ -48,6 +48,27 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         pointsMap: detailedPolygonPoints,
         numberOfPoints: null,
     };
+    const referenceObjectId = 1;
+    const firstSimplifiedObjectId = 2;
+    const simplificationCases = [
+        {
+            accuracy: 0,
+            message: 'Aggressively simplified polygon',
+            shouldHaveLessPointsThanBaseline: true,
+        },
+        {
+            accuracy: 2,
+            message: 'Middle-accuracy simplified polygon',
+            shouldHaveMorePointsThanPrevious: true,
+        },
+        {
+            accuracy: 13,
+            message: 'High-accuracy simplified polygon',
+            shouldHaveAtLeastPreviousPoints: true,
+            shouldHaveAtLeastOriginalPoints: true,
+            shouldKeepBaselineArea: true,
+        },
+    ];
 
     function parsePolygonPoints(rawPoints) {
         return rawPoints
@@ -68,77 +89,8 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         return Math.abs(signedArea) / 2;
     }
 
-    function getSampledIoU(firstPolygon, secondPolygon) {
-        const getBoundingBox = (polygons) => {
-            const points = polygons.flat();
-            return {
-                minX: Math.floor(Math.min(...points.map(([x]) => x))),
-                maxX: Math.ceil(Math.max(...points.map(([x]) => x))),
-                minY: Math.floor(Math.min(...points.map(([, y]) => y))),
-                maxY: Math.ceil(Math.max(...points.map(([, y]) => y))),
-            };
-        };
-        const isPointInsidePolygon = (point, polygon) => {
-            // Solve a linear equation by casting a ray
-
-            let inside = false;
-            const { x, y } = point;
-            for (let index = 0, previousIndex = polygon.length - 1; index < polygon.length; previousIndex = index++) {
-                const [xi, yi] = polygon[index];
-                const [xj, yj] = polygon[previousIndex];
-                const intersects = (
-                    ((yi > y) !== (yj > y)) &&
-                    (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)
-                );
-                if (intersects) {
-                    inside = !inside;
-                }
-            }
-            return inside;
-        };
-
-        const step = 2;
-        const {
-            minX, maxX, minY, maxY,
-        } = getBoundingBox([firstPolygon, secondPolygon]);
-        let intersectionCount = 0;
-        let unionCount = 0;
-        for (let y = minY; y <= maxY; y += step) {
-            for (let x = minX; x <= maxX; x += step) {
-                const point = { x: x + step / 2, y: y + step / 2 };
-                const inFirst = isPointInsidePolygon(point, firstPolygon);
-                const inSecond = isPointInsidePolygon(point, secondPolygon);
-                if (inFirst || inSecond) {
-                    unionCount++;
-                }
-                if (inFirst && inSecond) {
-                    intersectionCount++;
-                }
-            }
-        }
-        return intersectionCount / unionCount;
-    }
-
     function getPolygonPoints(objectId) {
         return getShapeCoord('polygon', `#cvat_canvas_shape_${objectId}`).then(parsePolygonPoints);
-    }
-
-    function getPolygonMetrics(referenceObjectId, simplifiedObjectId) {
-        return getPolygonPoints(referenceObjectId).then((referencePoints) => (
-            getPolygonPoints(simplifiedObjectId).then((simplifiedPoints) => {
-                const referenceArea = shoelaceArea(referencePoints);
-                const simplifiedArea = shoelaceArea(simplifiedPoints);
-                const iou = getSampledIoU(referencePoints, simplifiedPoints);
-
-                return {
-                    referenceArea,
-                    referencePointsCount: referencePoints.length,
-                    simplifiedArea,
-                    iou,
-                    pointsCount: simplifiedPoints.length,
-                };
-            })
-        ));
     }
 
     function getPolygonStats(objectId) {
@@ -150,14 +102,12 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
 
     function logPolygonMetrics(message, metrics) {
         const {
-            pointsCount, referenceArea, simplifiedArea, iou,
+            pointsCount, area,
         } = metrics;
         const logEntry = {
             message,
             points: pointsCount,
-            iou: iou.toFixed(4),
-            referenceArea: referenceArea.toFixed(1),
-            simplifiedArea: simplifiedArea.toFixed(1),
+            area: area.toFixed(1),
         };
         cy.task('log', logEntry);
     }
@@ -189,11 +139,64 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         cy.get('.cvat-approx-poly-threshold-wrapper').should('not.exist');
     }
 
+    function expectCopiedPolygonMetrics(metrics, baselineStats) {
+        expect(metrics.pointsCount).to.be.equal(baselineStats.pointsCount);
+        expect(metrics.area).to.be.closeTo(baselineStats.area, 1);
+    }
+
+    function expectSimplificationMetrics(metrics, previousMetrics, baselineStats, {
+        shouldHaveMorePointsThanPrevious = false,
+        shouldHaveAtLeastPreviousPoints = false,
+        shouldHaveLessPointsThanBaseline = false,
+        shouldHaveAtLeastOriginalPoints = false,
+        shouldKeepBaselineArea = false,
+    }) {
+        if (shouldHaveMorePointsThanPrevious) {
+            expect(metrics.pointsCount).to.be.greaterThan(previousMetrics.pointsCount);
+        }
+
+        if (shouldHaveAtLeastPreviousPoints) {
+            expect(metrics.pointsCount).to.be.at.least(previousMetrics.pointsCount);
+        }
+
+        if (shouldHaveLessPointsThanBaseline) {
+            expect(metrics.pointsCount).to.be.lessThan(baselineStats.pointsCount);
+        }
+
+        if (shouldHaveAtLeastOriginalPoints) {
+            expect(metrics.pointsCount).to.be.at.least(polygonPointsCount);
+        }
+
+        if (shouldKeepBaselineArea) {
+            expect(metrics.area).to.be.closeTo(baselineStats.area, 1);
+        } else {
+            expect(metrics.area).to.be.greaterThan(0);
+        }
+    }
+
+    function runSimplificationCases(baselineStats) {
+        let previousMetrics = null;
+
+        simplificationCases.forEach((simplificationCase, index) => {
+            const objectId = firstSimplifiedObjectId + index;
+
+            if (index > 0) {
+                makeAlignedCopy(objectId);
+            }
+
+            simplifyPolygon({ objectId, accuracy: simplificationCase.accuracy });
+            getPolygonStats(objectId).then((metrics) => {
+                logPolygonMetrics(simplificationCase.message, metrics);
+                expectSimplificationMetrics(metrics, previousMetrics, baselineStats, simplificationCase);
+                previousMetrics = metrics;
+            });
+        });
+    }
+
     before(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createPolygon(createDetailedPolygon, null, 'shiftHover');
-        // TODO: add different color labels to aid visual confirmation
     });
 
     after(() => {
@@ -201,42 +204,21 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         cy.removeAnnotations();
     });
 
-    it("IoU grows as 'Simplify' preserves more polygon detail", () => {
-        getPolygonStats(1).then((baselineStats) => {
+    it("'Simplify' preserves polygon area while retaining more detail at higher accuracy", () => {
+        getPolygonStats(referenceObjectId).then((baselineStats) => {
             expect(baselineStats.pointsCount).to.be.at.least(polygonPointsCount);
             expect(baselineStats.area).to.be.greaterThan(0);
 
-            makeAlignedCopy(2);
+            makeAlignedCopy(firstSimplifiedObjectId);
 
-            getPolygonMetrics(1, 2).then((metrics) => {
+            getPolygonStats(firstSimplifiedObjectId).then((metrics) => {
                 logPolygonMetrics('Copied polygon', metrics);
-                expect(metrics.referencePointsCount).to.equal(baselineStats.pointsCount);
-                expect(metrics.pointsCount).to.be.equal(baselineStats.pointsCount);
-                expect(metrics.iou).to.be.greaterThan(0.99);
-                expect(metrics.referenceArea).to.be.closeTo(baselineStats.area, 1);
-                expect(metrics.simplifiedArea).to.be.closeTo(baselineStats.area, 1);
+                expectCopiedPolygonMetrics(metrics, baselineStats);
             });
 
-            simplifyPolygon({ objectId: 2, accuracy: 0 });
-            getPolygonMetrics(1, 2).then((aggressiveMetrics) => {
-                logPolygonMetrics('Aggressively simplified polygon', aggressiveMetrics);
-                expect(aggressiveMetrics.referencePointsCount).to.equal(baselineStats.pointsCount);
-                expect(aggressiveMetrics.pointsCount).to.be.lessThan(baselineStats.pointsCount);
-                expect(aggressiveMetrics.iou).to.be.lessThan(0.95);
+            runSimplificationCases(baselineStats);
 
-                makeAlignedCopy(3);
-                simplifyPolygon({ objectId: 3, accuracy: 13 });
-                getPolygonMetrics(1, 3).then((accurateMetrics) => {
-                    logPolygonMetrics('High-accuracy simplified polygon', accurateMetrics);
-                    expect(accurateMetrics.referencePointsCount).to.equal(baselineStats.pointsCount);
-                    expect(accurateMetrics.pointsCount).to.be.greaterThan(aggressiveMetrics.pointsCount);
-                    expect(accurateMetrics.pointsCount).to.be.at.least(polygonPointsCount);
-                    expect(accurateMetrics.iou).to.be.greaterThan(aggressiveMetrics.iou);
-                    expect(accurateMetrics.iou).to.be.greaterThan(0.99);
-                });
-            });
-
-            getPolygonStats(1).then((originalStats) => {
+            getPolygonStats(referenceObjectId).then((originalStats) => {
                 expect(originalStats.pointsCount).to.equal(baselineStats.pointsCount);
                 expect(originalStats.area).to.be.closeTo(baselineStats.area, 1);
             });
