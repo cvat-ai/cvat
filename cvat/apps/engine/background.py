@@ -104,6 +104,7 @@ class DatasetExporter(AbstractExporter):
                 ),
                 "",
             )
+            == MediaType.AUDIO
             or isinstance(self.db_instance, Job)
             and self.db_instance.segment.task.media_type == MediaType.AUDIO
         ):
@@ -232,6 +233,7 @@ class BackupExporter(AbstractExporter):
                 ),
                 "",
             )
+            == MediaType.AUDIO
             or isinstance(self.db_instance, Job)
             and self.db_instance.segment.task.media_type == MediaType.AUDIO
         ):
@@ -501,6 +503,7 @@ class DatasetImporter(ResourceImporter):
                 ),
                 "",
             )
+            == MediaType.AUDIO
             or isinstance(self.db_instance, Job)
             and self.db_instance.segment.task.media_type == MediaType.AUDIO
         ):

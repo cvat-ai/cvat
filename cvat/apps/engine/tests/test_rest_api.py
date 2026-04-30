@@ -61,6 +61,7 @@ from cvat.apps.engine.models import (
     DimensionType,
     Job,
     Label,
+    MediaType,
     Project,
     Segment,
     SortingMethod,
@@ -209,6 +210,7 @@ def create_dummy_db_tasks(obj, project=None):
         "image_quality": 75,
         "size": 100,
         "project": project,
+        "media_type": MediaType.IMAGE,
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -221,6 +223,7 @@ def create_dummy_db_tasks(obj, project=None):
         "image_quality": 50,
         "size": 200,
         "project": project,
+        "media_type": MediaType.IMAGE,
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -234,6 +237,7 @@ def create_dummy_db_tasks(obj, project=None):
         "image_quality": 75,
         "size": 100,
         "project": project,
+        "media_type": MediaType.POINT_CLOUD,
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -246,6 +250,7 @@ def create_dummy_db_tasks(obj, project=None):
         "image_quality": 95,
         "size": 50,
         "project": project,
+        "media_type": MediaType.VIDEO,
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -2321,7 +2326,8 @@ class TaskGetAPITestCase(ApiTestBase):
         self.assertEqual(response_assignee, assignee)
         self.assertEqual(response.data["overlap"], db_task.overlap)
         self.assertEqual(response.data["segment_size"], db_task.segment_size)
-        self.assertEqual(response.data["image_quality"], db_task.data.image_quality)
+        if db_task.data.size:
+            self.assertEqual(response.data["image_quality"], db_task.data.image_quality)
         self.assertEqual(response.data["status"], db_task.status)
         self.assertListEqual(
             [label.name for label in db_task.label_set.all()],
