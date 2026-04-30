@@ -1194,6 +1194,7 @@ def create_thread(
                 data["remote_files"], upload_dir, update_status_callback=update_status
             )
         except _FailedToDownloadFileError as e:
+            slogger.glob.exception("Failed to download remote files")
             raise ValidationError(str(e)) from e
 
     # find and validate manifest file
