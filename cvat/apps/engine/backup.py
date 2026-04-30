@@ -19,7 +19,7 @@ from enum import Enum
 from logging import Logger
 from pathlib import Path, PurePath
 from typing import Any, ClassVar
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 
 import rapidjson
 from django.conf import settings
@@ -50,7 +50,7 @@ from cvat.apps.dataset_manager.views import (
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import DataChoice, StorageChoice
+from cvat.apps.engine.models import DataChoice, StorageChoice, TaskMode
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -286,6 +286,7 @@ class _TaskBackupBase(_BackupBase):
             "attributes",
             "shapes",
             "elements",
+            "score",
         }
 
         def _update_attribute(attribute, label):
@@ -655,7 +656,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return serialized_jobs
 
         def serialize_segment_file_names(db_segment: models.Segment):
-            if self._db_task.mode == "annotation":
+            if self._db_task.mode == TaskMode.ANNOTATION:
                 files: Iterable[models.Image] = self._db_data.images.order_by("frame").all()
                 return {"files": [files[f].path for f in sorted(db_segment.frame_set)]}
             else:
@@ -752,7 +753,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME)
-        with zip_object.open(target_annotations_file, "w") as f:
+        with zip_object.open(
+            # without this, the file will have the default timestamp (1980-01-01)
+            ZipInfo(target_annotations_file, date_time=timezone.now().timetuple()),
+            "w",
+        ) as f:
             rapidjson.dump(annotations, f)
 
     def _export_task(self, zip_obj: ZipFile, target_dir: str) -> None:
@@ -772,9 +777,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
 
 class _ImporterBase:
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @staticmethod
     def _read_version(manifest):
         version = manifest.pop("version")

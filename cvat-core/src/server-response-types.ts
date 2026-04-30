@@ -8,7 +8,7 @@ import {
     ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
-    DataStorageLocation,
+    DataStorageLocation, RQStatus,
 } from './enums';
 import { Camelized, CamelizedV2 } from './type-utils';
 
@@ -570,6 +570,7 @@ export interface SerializedRequest {
         task_id: number | null;
         project_id: number | null;
         function_id: string | null;
+        lightweight?: boolean | null;
     };
     progress?: number;
     result_url?: string;
@@ -579,6 +580,20 @@ export interface SerializedRequest {
     finished_date?: string;
     expiry_date?: string;
     owner: any;
+}
+
+export interface SerializedFunctionRequest {
+    id: string;
+    status: RQStatus;
+    enqueued: string;
+    started: string | null;
+    ended: string | null;
+    exc_info: string;
+    progress: number | null;
+    function: {
+        id: number | string;
+        task: number;
+    };
 }
 
 export interface SerializedJobValidationLayout {

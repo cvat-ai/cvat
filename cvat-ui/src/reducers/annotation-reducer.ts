@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
@@ -111,6 +112,7 @@ const defaultState: AnnotationState = {
         activeShapeType: ShapeType.RECTANGLE,
         activeLabelID: null,
         activeObjectType: ObjectType.SHAPE,
+        activeInteractorParameters: {},
     },
     editing: {
         objectState: null,
@@ -154,6 +156,10 @@ const defaultState: AnnotationState = {
     },
     propagate: {
         visible: false,
+    },
+    simplify: {
+        objectState: null,
+        originalPoints: null,
     },
     colors: [],
     sidebarCollapsed: false,
@@ -796,6 +802,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SWITCH_SIMPLIFY_VISIBILITY: {
+            const { objectState, originalPoints } = action.payload;
+            return {
+                ...state,
+                simplify: {
+                    objectState,
+                    originalPoints,
+                },
+            };
+        }
         case AnnotationActionTypes.SWITCH_SHOWING_STATISTICS: {
             const { visible } = action.payload;
 
@@ -1031,7 +1047,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 drawing: {
                     ...state.drawing,
                     activeInteractor,
-                    activeInteractorParameters,
+                    activeInteractorParameters: _.cloneDeep(activeInteractorParameters),
                     activeLabelID,
                 },
                 canvas: {

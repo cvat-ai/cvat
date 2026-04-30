@@ -78,6 +78,11 @@ If you need to rebuild your CVAT images add `--rebuild` option:
 pytest ./tests/python --rebuild
 ```
 
+If you need to persist data volumes across test sessions add `--keep-data` option
+```bash
+pytest ./tests/python --start-services --keep-data
+```
+
 If you want to get a code coverage report, use special option for it:
 ```bash
 COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --rebuild --cov --cov-report xml

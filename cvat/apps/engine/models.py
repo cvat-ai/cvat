@@ -128,7 +128,6 @@ class StateChoice(str, Enum):
 class DataChoice(str, Enum):
     VIDEO = 'video'
     IMAGESET = 'imageset'
-    LIST = 'list'
 
     @classmethod
     def choices(cls):
@@ -504,7 +503,7 @@ class Data(models.Model):
         elif chunk_type == DataChoice.IMAGESET:
             ext = 'zip'
         else:
-            ext = 'list'
+            assert False, f"Unexpected chunk type '{chunk_type}'"
 
         return 'segment_{}-{}.{}'.format(segment_id, chunk_number, ext)
 
@@ -573,7 +572,7 @@ class Data(models.Model):
         return (
             self.storage == StorageChoice.LOCAL
             and self.storage_method == StorageMethodChoice.CACHE
-            and not hasattr(self, "video")
+            and self.images.exists()
         )
 
     def move_to_backing_cs(self, backing_cs: CloudStorage) -> None:
@@ -586,7 +585,6 @@ class Data(models.Model):
         assert cloud_storage_instance
 
         upload_dir = self.get_upload_dirname()
-        assert (upload_dir / self.MANIFEST_FILENAME).is_file()
 
         rel_paths_to_move = self.get_all_media_rel_paths()
 
@@ -613,7 +611,6 @@ class Data(models.Model):
         transaction.on_commit(clear_original_files, robust=True)
 
     def move_from_backing_cs(self) -> None:
-        assert self.supports_backing_cs()
         assert self.local_storage_backing_cs_id
 
         cloud_storage_instance = self.get_cloud_storage_instance()
@@ -822,6 +819,12 @@ class TaskQuerySet(models.QuerySet):
             }
         )
 
+
+class TaskMode(TextChoices):
+    ANNOTATION = "annotation"
+    INTERPOLATION = "interpolation"
+
+
 class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
@@ -829,7 +832,7 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
     name = SafeCharField(max_length=256)
-    mode = models.CharField(max_length=32)
+    mode = models.CharField(max_length=32, choices=TaskMode.choices, default="", blank=True)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
 

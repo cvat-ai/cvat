@@ -33,6 +33,7 @@ const defaultState: SettingsState = {
         autoSaveInterval: 15 * 60 * 1000,
         focusedObjectPadding: 50,
         automaticBordering: false,
+        snapToPoint: false,
         adaptiveZoom: true,
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
@@ -342,6 +343,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     automaticBordering: action.payload.automaticBordering,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SNAP_TO_POINT: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    snapToPoint: action.payload.snapToPoint,
                 },
             };
         }

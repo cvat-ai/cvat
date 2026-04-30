@@ -697,7 +697,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         return (
             <Row className='cvat-skeleton-configurator'>
                 <GlobalHotKeys
-                    keyMap={subKeyMap(componentShortcuts, keyMap)}
+                    keyMap={subKeyMap(componentShortcuts, keyMap as any)}
                     handlers={handlers}
                 />
                 { svgRef.current && contextMenuVisible && contextMenuElement !== null ? (

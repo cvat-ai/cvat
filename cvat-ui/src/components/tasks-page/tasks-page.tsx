@@ -6,7 +6,8 @@
 import _ from 'lodash';
 
 import './styles.scss';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import React, { useCallback } from 'react';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';

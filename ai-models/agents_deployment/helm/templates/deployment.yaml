@@ -14,6 +14,18 @@ spec:
       labels:
         {{- include "agent.selectorLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.agent.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agent.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agent.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
       {{- include "agent.podSecurityContext" . | nindent 8 }}
       containers:
@@ -28,11 +40,19 @@ spec:
                 name: {{ include "agent.fullname" . }}-config
           env:
             {{- include "agent.commonEnv" . | nindent 12 }}
+            {{- include "agent.modelParamsOverride" . | nindent 12 }}
             - name: USE_CUDA
               value: {{ .Values.agent.use_cuda | default "false" | quote }}
             {{- range .Values.agent.envVars }}
             - name: {{ .name }}
               value: {{ .value | quote }}
             {{- end }}
-          resources:
-            {{- toYaml .Values.agent.resources | nindent 12 }}
+            {{- include "agent.resources" . | nindent 10 }}
+          {{- if .Values.agent.extraVolumeMounts }}
+          volumeMounts:
+          {{- toYaml .Values.agent.extraVolumeMounts | nindent 12 }}
+          {{- end }}
+      {{- if .Values.agent.extraVolumes }}
+      volumes:
+      {{- toYaml .Values.agent.extraVolumes | nindent 8 }}
+      {{- end }}

@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
+import * as martinez from 'martinez-polygon-clipping';
+import { LRUCache } from 'lru-cache';
 import consts from './consts';
 
 export interface ShapeSizeElement {
@@ -60,7 +62,7 @@ export interface DrawnState {
 
 // Translate point array from the canvas coordinate system
 // to the coordinate system of a client
-export function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
+export function translateFromSVG(svg: SVGSVGElement, points: ArrayLike<number>): number[] {
     const output = [];
     const transformationMatrix = svg.getScreenCTM() as DOMMatrix;
     let pt = svg.createSVGPoint();
@@ -76,7 +78,7 @@ export function translateFromSVG(svg: SVGSVGElement, points: number[]): number[]
 
 // Translate point array from the coordinate system of a client
 // to the canvas coordinate system
-export function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
+export function translateToSVG(svg: SVGSVGElement, points: ArrayLike<number>): number[] {
     const output = [];
     const transformationMatrix = (svg.getScreenCTM() as DOMMatrix).inverse();
     let pt = svg.createSVGPoint();
@@ -154,7 +156,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
     return shapeSize;
 }
 
-export function rotate2DPoints(cx: number, cy: number, angle: number, points: number[]): number[] {
+export function rotate2DPoints(cx: number, cy: number, angle: number, points: ArrayLike<number>): number[] {
     const rad = (Math.PI / 180) * angle;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
@@ -228,19 +230,17 @@ export function readPointsFromShape(shape: SVG.Shape): number[] {
     return pointsToNumberArray(points);
 }
 
-export function stringifyPoints(points: number[]): string;
+export function stringifyPoints(points: ArrayLike<number>): string;
 export function stringifyPoints(points: Point[]): string;
-export function stringifyPoints(points: (Point | number)[]): string {
+export function stringifyPoints(points: Point[] | ArrayLike<number>): string {
     if (typeof points[0] === 'number') {
-        return points.reduce((acc: string, val: number, idx: number): string => {
-            if (idx % 2) {
-                return `${acc},${val}`;
-            }
-
-            return `${acc} ${val}`.trim();
-        }, '');
+        const tmp = [];
+        for (let i = 0; i < points.length; i += 2) {
+            tmp.push(`${points[i]},${points[i + 1]}`);
+        }
+        return tmp.join(' ');
     }
-    return points.map((point: Point): string => `${point.x},${point.y}`).join(' ');
+    return (points as Point[]).map((point: Point): string => `${point.x},${point.y}`).join(' ');
 }
 
 export function clamp(x: number, min: number, max: number): number {
@@ -257,15 +257,23 @@ export function vectorLength(vector: Vector2D): number {
     return Math.sqrt(sqrI + sqrJ);
 }
 
-export function translateToCanvas(offset: number, points: number[]): number[] {
-    return points.map((coord: number): number => coord + offset);
+export function translateToCanvas(offset: number, points: ArrayLike<number>): number[] {
+    const result: number[] = [];
+    for (let i = 0; i < points.length; i++) {
+        result.push(points[i] + offset);
+    }
+    return result;
 }
 
-export function translateFromCanvas(offset: number, points: number[]): number[] {
-    return points.map((coord: number): number => coord - offset);
+export function translateFromCanvas(offset: number, points: ArrayLike<number>): number[] {
+    const result: number[] = [];
+    for (let i = 0; i < points.length; i++) {
+        result.push(points[i] - offset);
+    }
+    return result;
 }
 
-export function computeWrappingBox(points: number[], margin = 0): Box & BBox {
+export function computeWrappingBox(points: ArrayLike<number>, margin = 0): Box & BBox {
     let xtl = Number.MAX_SAFE_INTEGER;
     let ytl = Number.MAX_SAFE_INTEGER;
     let xbr = Number.MIN_SAFE_INTEGER;
@@ -385,25 +393,19 @@ export function imageDataToDataURL(
     imageBitmap: Uint8ClampedArray,
     width: number,
     height: number,
-    handleResult: (dataURL: string) => Promise<void>,
+    handleResult: (dataURL: string) => void,
 ): void {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-
+    const canvas = new OffscreenCanvas(width, height);
     canvas.getContext('2d').putImageData(
         new ImageData(imageBitmap, width, height), 0, 0,
     );
-
-    canvas.toBlob((blob) => {
+    canvas.convertToBlob({ type: 'image/png' }).then((blob) => {
         const dataURL = URL.createObjectURL(blob);
-        handleResult(dataURL).finally(() => {
-            URL.revokeObjectURL(dataURL);
-        });
-    }, 'image/png');
+        handleResult(dataURL);
+    });
 }
 
-export function zipChannels(imageData: Uint8ClampedArray): number[] {
+export function imageDataToRLE(imageData: Uint8ClampedArray): number[] {
     const rle = [];
 
     let prev = 0;
@@ -423,8 +425,13 @@ export function zipChannels(imageData: Uint8ClampedArray): number[] {
     return rle;
 }
 
-export function expandChannels(r: number, g: number, b: number, encoded: number[]): Uint8ClampedArray {
-    function rle2Mask(rle: number[], width: number, height: number): Uint8ClampedArray {
+export function RLEToImageData(
+    r: number,
+    g: number,
+    b: number,
+    encoded: ArrayLike<number>,
+): Uint8ClampedArray {
+    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray {
         const decoded = new Uint8ClampedArray(width * height * 4).fill(0);
         const { length } = rle;
         let decodedIdx = 0;
@@ -433,6 +440,7 @@ export function expandChannels(r: number, g: number, b: number, encoded: number[
 
         while (i < length - 4) {
             let count = rle[i];
+
             while (count > 0) {
                 decoded[decodedIdx + 0] = r;
                 decoded[decodedIdx + 1] = g;
@@ -448,7 +456,10 @@ export function expandChannels(r: number, g: number, b: number, encoded: number[
         return decoded;
     }
 
-    const [left, top, right, bottom] = encoded.slice(-4);
+    const left = encoded[encoded.length - 4];
+    const top = encoded[encoded.length - 3];
+    const right = encoded[encoded.length - 2];
+    const bottom = encoded[encoded.length - 1];
     return rle2Mask(encoded, right - left + 1, bottom - top + 1);
 }
 
@@ -563,5 +574,226 @@ export function toReversed<T>(array: Array<T>): Array<T> {
     }, []);
 }
 
+export function validateUnionResult(result: martinez.Geometry): void {
+    // martinez.union result format (MultiPolygon):
+    // [
+    //   [ // first polygon
+    //     [[x, y], ...],  // exterior ring
+    //     [[x, y], ...],  // hole 1 (if exists)
+    //   ],
+    //   [ // second polygon (if disjoint)
+    //     [[x, y], ...],
+    //   ]
+    // ]
+
+    // Check for holes in any polygon (not supported by CVAT)
+    for (const polygon of result) {
+        if (polygon.length > 1) {
+            throw new Error(
+                'Cannot join these polygons: the operation would create a shape with holes, ' +
+                'which is not supported by CVAT. Please select different polygons or use the mask tool.',
+            );
+        }
+    }
+}
+
+export function processPolygonUnionResult(result: martinez.Geometry): { shapeType: string; points: number[] }[] {
+    const results: { shapeType: string; points: number[] }[] = [];
+
+    for (const polygon of result) {
+        const exterior = polygon[0] as martinez.Ring;
+
+        // Convert to flat CVAT array format (remove closing point)
+        const exteriorPoints: number[] = [];
+        for (let i = 0; i < exterior.length - 1; i += 1) {
+            exteriorPoints.push(exterior[i][0], exterior[i][1]);
+        }
+
+        results.push({
+            shapeType: 'polygon',
+            points: exteriorPoints,
+        });
+    }
+
+    return results;
+}
+
+export function isPolygonSelfIntersecting(points: number[]): boolean {
+    if (points.length < 6) {
+        // Need at least 3 points (6 coordinates) for a polygon
+        return false;
+    }
+
+    const segments: Segment[] = [];
+    for (let i = 0; i < points.length - 2; i += 2) {
+        segments.push([
+            [points[i], points[i + 1]],
+            [points[i + 2], points[i + 3]],
+        ]);
+    }
+    // Close the polygon: last point to first point
+    segments.push([
+        [points[points.length - 2], points[points.length - 1]],
+        [points[0], points[1]],
+    ]);
+
+    // Check each segment against all non-adjacent segments
+    for (let i = 0; i < segments.length; i += 1) {
+        for (let j = i + 2; j < segments.length; j += 1) {
+            // Skip adjacent segments and the closing edge against the first edge
+            if (i === 0 && j === segments.length - 1) {
+                continue;
+            }
+
+            const intersection = findIntersection(segments[i], segments[j]);
+            if (intersection !== null) {
+                const [x, y] = intersection;
+                if (!Number.isNaN(x) && !Number.isNaN(y)) {
+                    const seg1Start = segments[i][0];
+                    const seg1End = segments[i][1];
+                    const seg2Start = segments[j][0];
+                    const seg2End = segments[j][1];
+
+                    const EPSILON = 1e-6;
+                    const isAtEndpoint = (
+                        (Math.abs(x - seg1Start[0]) < EPSILON && Math.abs(y - seg1Start[1]) < EPSILON) ||
+                        (Math.abs(x - seg1End[0]) < EPSILON && Math.abs(y - seg1End[1]) < EPSILON) ||
+                        (Math.abs(x - seg2Start[0]) < EPSILON && Math.abs(y - seg2Start[1]) < EPSILON) ||
+                        (Math.abs(x - seg2End[0]) < EPSILON && Math.abs(y - seg2End[1]) < EPSILON)
+                    );
+
+                    if (!isAtEndpoint) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 export type Segment = [[number, number], [number, number]];
 export type PropType<T, Prop extends keyof T> = T[Prop];
+
+interface SnapPoint {
+    x: number;
+    y: number;
+    clientID: number;
+}
+
+const snapPointsCache = new LRUCache<string, Readonly<number[]>>({
+    max: 2000,
+    updateAgeOnGet: true,
+    updateAgeOnHas: true,
+});
+
+function extractSnapPointsFromState(drawnState: DrawnState): Readonly<number[]> {
+    if (!drawnState.points) {
+        return [];
+    }
+
+    if (!['polygon', 'polyline', 'points', 'rectangle'].includes(drawnState.shapeType)) {
+        return [];
+    }
+
+    const cacheKey = `${drawnState.clientID}-${drawnState.updated}`;
+    const cached = snapPointsCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    let result: Readonly<number[]>;
+    if (drawnState.shapeType === 'polygon' || drawnState.shapeType === 'polyline' || drawnState.shapeType === 'points') {
+        result = drawnState.points;
+    } else if (drawnState.shapeType === 'rectangle') {
+        const [xtl, ytl, xbr, ybr] = drawnState.points;
+        const corners = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
+
+        if (drawnState.rotation && drawnState.rotation !== 0) {
+            const cx = (xtl + xbr) / 2;
+            const cy = (ytl + ybr) / 2;
+            result = rotate2DPoints(cx, cy, drawnState.rotation, corners);
+        } else {
+            result = corners;
+        }
+    } else {
+        result = [];
+    }
+
+    snapPointsCache.set(cacheKey, result);
+
+    return result;
+}
+
+function findNearestSnapPoint(
+    x: number,
+    y: number,
+    allStates: Record<number, DrawnState>,
+    offset: number,
+    snapRadius: number,
+    excludeClientID: number | null = null,
+): SnapPoint | null {
+    const imageX = x - offset;
+    const imageY = y - offset;
+
+    let nearestPoint: SnapPoint | null = null;
+    let minDistance = snapRadius;
+
+    for (const clientIDStr of Object.keys(allStates)) {
+        const clientID = +clientIDStr;
+
+        if (clientID === excludeClientID) {
+            continue;
+        }
+
+        const drawnState = allStates[clientID];
+        const points = extractSnapPointsFromState(drawnState);
+
+        for (let i = 0; i < points.length; i += 2) {
+            const px = points[i];
+            const py = points[i + 1];
+
+            const dx = imageX - px;
+            const dy = imageY - py;
+            const distance = Math.hypot(dx, dy);
+
+            if (distance <= minDistance) {
+                minDistance = distance;
+                nearestPoint = { x: px + offset, y: py + offset, clientID };
+            }
+        }
+    }
+
+    return nearestPoint;
+}
+
+export function applySnapToShapePoint(
+    shape: SVG.Polygon | SVG.PolyLine,
+    pointIndex: number,
+    allStates: Record<number, DrawnState>,
+    offset: number,
+    snapRadius: number,
+    excludeClientID: number | null = null,
+): void {
+    const pointsArray: number[][] = (shape as any).array().valueOf();
+    if (pointIndex < 0 || pointIndex >= pointsArray.length) {
+        return;
+    }
+
+    const [currentX, currentY] = pointsArray[pointIndex];
+
+    const snapTarget = findNearestSnapPoint(
+        currentX,
+        currentY,
+        allStates,
+        offset,
+        snapRadius,
+        excludeClientID,
+    );
+
+    if (snapTarget) {
+        pointsArray[pointIndex] = [snapTarget.x, snapTarget.y];
+        shape.plot(pointsArray);
+    }
+}
