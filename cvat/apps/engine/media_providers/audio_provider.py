@@ -24,6 +24,7 @@ from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     AudioReader,
     IChunkWriter,
@@ -41,6 +42,8 @@ from cvat.apps.engine.utils import take_by
 from utils.dataset_manifest.utils import MemOpenable
 
 _T = TypeVar("_T")
+
+slogger = ServerLogManager(__name__)
 
 
 @dataclass
@@ -233,7 +236,12 @@ class TaskAudioProvider(IAudioProvider):
         except models.AudioChunkInfo.DoesNotExist:
             chunk_info = models.AudioChunkInfo(data=db_data, audio=db_data.audio, key=chunk_key)
             chunk_info_created = True
-            padding = PaddingType.auto
+
+            # TODO: use padding = PaddingType.auto, when its performance is good enough.
+            # Currently, it can work quite a while for big files. PyAV encoding works ~3x slower
+            # than pure ffmpeg calls, which makes the situation even worse.
+            # For now, just use a constant padding big enough for most cases.
+            padding = (0, 500)
         else:
             chunk_info_created = False
             padding = (chunk_info.left_padding, chunk_info.right_padding)
@@ -244,7 +252,6 @@ class TaskAudioProvider(IAudioProvider):
         chunk_data, padding = create_audio_chunk(db_data, reader, quality=quality, padding=padding)
 
         if chunk_info_created:
-            # TODO: handle possible existing value
             chunk_info.left_padding = padding[0]
             chunk_info.right_padding = padding[1]
             chunk_info.content_offset = padding[2]
@@ -697,6 +704,7 @@ def create_audio_chunk(
             payload_reader=payload_reader,
             writer=writer,
             step=500,
+            max_left_padding=0,
         )
     else:
         left_padding, right_padding = padding or (0, 0)
@@ -793,6 +801,8 @@ def find_best_padding(
     def check_padding(
         left_padding: int, right_padding: int
     ) -> tuple[float | None, int | None, tuple[np.ndarray, np.ndarray, int, int, int] | None]:
+        slogger.glob.info(f"checking padding ({left_padding}, {right_padding})")
+
         result_file = BytesIO()
 
         chunk_payload_frames = list(
@@ -859,7 +869,7 @@ def find_best_padding(
         right_padding += step
 
     # Find the minimal left padding to preserve all the payload
-    left_padding = min_left_padding
+    left_padding = min_left_padding + step
     while left_padding < max_left_padding + 1:
         match = check_padding(left_padding, best_right_padding)
         result_table[(left_padding, best_right_padding)] = match
