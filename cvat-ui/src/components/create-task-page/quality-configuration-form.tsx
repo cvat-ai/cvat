@@ -44,27 +44,21 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     }
 
     public submit(): Promise<void> {
-        const { onSubmit, audio, initialValues } = this.props;
+        const { onSubmit } = this.props;
         if (this.formRef.current) {
-            return this.formRef.current.validateFields().then((values: QualityConfiguration) => {
-                const filled: QualityConfiguration = audio && values.validationMode === ValidationMode.GT ? {
+            return this.formRef.current.validateFields().then((values: QualityConfiguration) => (
+                onSubmit({
                     ...values,
-                    frameSelectionMethod: initialValues.frameSelectionMethod,
-                    validationFramesPercent: initialValues.validationFramesPercent,
-                    validationFramesPerJobPercent: initialValues.validationFramesPerJobPercent,
-                } : values;
-                return onSubmit({
-                    ...filled,
-                    frameSelectionMethod: filled.validationMode === ValidationMode.HONEYPOTS ?
-                        FrameSelectionMethod.RANDOM : filled.frameSelectionMethod,
-                    ...(typeof filled.validationFramesPercent === 'number' ? {
-                        validationFramesPercent: filled.validationFramesPercent / 100,
+                    frameSelectionMethod: values.validationMode === ValidationMode.HONEYPOTS ?
+                        FrameSelectionMethod.RANDOM : values.frameSelectionMethod,
+                    ...(typeof values.validationFramesPercent === 'number' ? {
+                        validationFramesPercent: values.validationFramesPercent / 100,
                     } : {}),
-                    ...(typeof filled.validationFramesPerJobPercent === 'number' ? {
-                        validationFramesPerJobPercent: filled.validationFramesPerJobPercent / 100,
+                    ...(typeof values.validationFramesPerJobPercent === 'number' ? {
+                        validationFramesPerJobPercent: values.validationFramesPerJobPercent / 100,
                     } : {}),
-                });
-            });
+                })
+            ));
         }
 
         return Promise.reject(new Error('Quality form ref is empty'));
@@ -192,12 +186,10 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
         } = this.props;
 
         let paramsBlock: JSX.Element | null = null;
-        if (!audio) {
-            if (validationMode === ValidationMode.GT) {
-                paramsBlock = this.gtParamsBlock();
-            } else if (validationMode === ValidationMode.HONEYPOTS) {
-                paramsBlock = this.honeypotsParamsBlock();
-            }
+        if (validationMode === ValidationMode.GT) {
+            paramsBlock = this.gtParamsBlock();
+        } else if (!audio && validationMode === ValidationMode.HONEYPOTS) {
+            paramsBlock = this.honeypotsParamsBlock();
         }
 
         return (

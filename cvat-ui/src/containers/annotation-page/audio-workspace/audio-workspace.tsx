@@ -6,6 +6,8 @@ import { CombinedState } from 'reducers';
 function mapStateToProps(state: CombinedState) {
     return {
         waveformReady: state.annotation.audioPlayer.waveformReady,
+        audioLoading: state.annotation.audioPlayer.audioLoading,
+        audioError: state.annotation.audioPlayer.audioError,
     };
 }
 

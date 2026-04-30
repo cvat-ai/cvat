@@ -8,16 +8,26 @@ import ObjectSideBarComponent from 'components/annotation-page/standard-workspac
 import AudioRegionsListContainer from 'containers/annotation-page/audio-workspace/audio-regions-list';
 import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 
+import AudioControlsSidebarSkeleton from './skeleton/audio-controls-sidebar-skeleton';
+import AudioRegionsListSkeleton from './skeleton/audio-regions-list-skeleton';
+
 export interface AudioWorkspaceProps {
     waveformReady: boolean;
+    audioLoading: boolean;
+    audioError: string | null;
 }
 
-export default function AudioWorkspaceComponent({ waveformReady }: AudioWorkspaceProps): JSX.Element {
+export default function AudioWorkspaceComponent(props: AudioWorkspaceProps): JSX.Element {
+    const { waveformReady, audioLoading, audioError } = props;
+    const showSkeleton = !audioError && (audioLoading || !waveformReady);
+
     return (
         <Layout hasSider className='cvat-audio-workspace'>
-            {waveformReady && <ControlsSideBarContainer />}
+            {showSkeleton ? <AudioControlsSidebarSkeleton /> : <ControlsSideBarContainer />}
             <AudioCanvasWrapperContainer />
-            <ObjectSideBarComponent objectsList={<AudioRegionsListContainer />} />
+            <ObjectSideBarComponent
+                objectsList={showSkeleton ? <AudioRegionsListSkeleton /> : <AudioRegionsListContainer />}
+            />
             <RemoveConfirmComponent />
         </Layout>
     );

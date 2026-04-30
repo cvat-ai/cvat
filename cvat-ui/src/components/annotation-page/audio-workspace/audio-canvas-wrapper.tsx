@@ -3,12 +3,12 @@ import React, {
 } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import WavesurferPlayer from '@wavesurfer/react';
-import Spin from 'antd/lib/spin';
 
 import { ActiveControl, AudioRegion, ColorBy } from 'reducers';
 import { Attribute, Label } from 'cvat-core-wrapper';
 
 import AudioRegionDetails from './audio-region-details';
+import AudioCanvasSkeleton from './skeleton/audio-canvas-skeleton';
 import { useAudioWaveform } from './hooks/use-audio-waveform';
 import { useAudioPlaybackSync } from './hooks/use-audio-playback-sync';
 import { useAudioRegions } from './hooks/use-audio-regions';
@@ -177,9 +177,7 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
     if (audioLoading) {
         return (
             <div className='cvat-audio-canvas-wrapper' ref={wrapperRef}>
-                <div className='cvat-audio-placeholder'>
-                    <Spin size='large' className='cvat-spinner' />
-                </div>
+                <AudioCanvasSkeleton />
             </div>
         );
     }
@@ -210,11 +208,7 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
 
     return (
         <div className='cvat-audio-canvas-wrapper' ref={wrapperRef}>
-            {!waveformReady && (
-                <div className='cvat-audio-placeholder'>
-                    <Spin size='large' className='cvat-spinner' />
-                </div>
-            )}
+            {!waveformReady && <AudioCanvasSkeleton />}
             <div className='cvat-audio-waveform-wrapper' style={!waveformReady ? { visibility: 'hidden', height: 0, overflow: 'hidden' } : undefined}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', overflow: 'hidden' }}>
                     <WavesurferPlayer
