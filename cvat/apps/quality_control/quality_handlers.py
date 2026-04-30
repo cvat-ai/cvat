@@ -399,7 +399,10 @@ class RequirementHandler(ABC):
         label_id_idx_map = {}
         label_names = []
         for label_id, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]):
-            if self.requirement.annotation_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT:
+            if (
+                self.requirement.annotation_type
+                == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+            ):
                 if label.parent:
                     label_id_idx_map[label_id] = len(label_names)
                     label_names.append(f"{label.parent}.{label.name}")
@@ -415,7 +418,10 @@ class RequirementHandler(ABC):
         return label_names, confusion_matrix, label_id_idx_map
 
     def _prepare_item_for_requirement(self, item: dm.DatasetItem) -> dm.DatasetItem:
-        if self.requirement.annotation_type != models.QualityRequirementAnnotationType.SKELETON_KEYPOINT:
+        if (
+            self.requirement.annotation_type
+            != models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+        ):
             return item
 
         flattened_annotations: list[dm.Annotation] = []

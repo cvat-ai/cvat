@@ -322,16 +322,22 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         parent_annotation_type = None
         parent_requirement = self.initial_data.get("parent_requirement")
-        if parent_requirement is None and self.instance is not None and getattr(self.instance, "parent", None):
+        if (
+            parent_requirement is None
+            and self.instance is not None
+            and getattr(self.instance, "parent", None)
+        ):
             parent_requirement = self.instance.parent
 
         if hasattr(parent_requirement, "annotation_type"):
             parent_annotation_type = parent_requirement.annotation_type
         elif parent_requirement:
             try:
-                parent_annotation_type = models.QualityRequirement.objects.only(
-                    "annotation_type"
-                ).get(pk=parent_requirement).annotation_type
+                parent_annotation_type = (
+                    models.QualityRequirement.objects.only("annotation_type")
+                    .get(pk=parent_requirement)
+                    .annotation_type
+                )
             except (
                 models.QualityRequirement.DoesNotExist,
                 TypeError,
@@ -351,10 +357,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             unexpected_fields = set(data) - set(self.fields)
             if unexpected_fields:
                 raise serializers.ValidationError(
-                    {
-                        field_name: ["Unexpected field."]
-                        for field_name in sorted(unexpected_fields)
-                    }
+                    {field_name: ["Unexpected field."] for field_name in sorted(unexpected_fields)}
                 )
 
         return super().to_internal_value(data)

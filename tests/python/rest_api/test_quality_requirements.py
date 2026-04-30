@@ -688,9 +688,7 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
         "ellipse",
     }
 
-    def test_new_task_gets_disabled_default_requirements_for_all_supported_types(
-        self, admin_user
-    ):
+    def test_new_task_gets_disabled_default_requirements_for_all_supported_types(self, admin_user):
         task_id, _ = create_task(
             admin_user,
             spec={
@@ -1234,9 +1232,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         }
         parameters = report_data["groups"][enabled_requirement_name]["parameters"]
         assert parameters["metric"] == "accuracy"
-        assert (
-            parameters["required_score"] == 0.0
-        )
+        assert parameters["required_score"] == 0.0
         assert parameters["point_size"] == 0.25
         assert parameters["match_orientation"] is False
         assert parameters["match_attributes"] is False

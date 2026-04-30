@@ -128,9 +128,13 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
             for term in cls._ATTRIBUTE_LOOKUP_FIELDS:
                 supported_terms.pop(term, None)
 
-        supports_skeleton_lookup = annotation_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT or (
-            annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
-            and parent_annotation_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+        supports_skeleton_lookup = (
+            annotation_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+            or (
+                annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
+                and parent_annotation_type
+                == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+            )
         )
         if not supports_skeleton_lookup:
             for term in cls._SKELETON_LOOKUP_FIELDS:

@@ -706,9 +706,7 @@ class ProjectQualityCalculator:
                 annotation_components=project_ann_components_summary,
                 tasks=task_stats,
                 jobs=job_stats,
-                requirements=build_requirements_summary(
-                    target_requirements, requirement_groups
-                ),
+                requirements=build_requirements_summary(target_requirements, requirement_groups),
             ),
             frame_results=None,  # this is too detailed for a project report
             groups=requirement_groups,
