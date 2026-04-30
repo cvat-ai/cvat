@@ -18,8 +18,8 @@ export interface Props {
 
 const componentShortcuts = {
     EDIT_AUDIO_REGION: {
-        name: 'Edit audio region',
-        description: 'Enable audio region editing mode — drag or resize existing regions',
+        name: 'Edit audio interval',
+        description: 'Enable audio interval editing mode — drag or resize existing intervals',
         sequences: ['e'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
@@ -52,7 +52,7 @@ function EditRegionControl(props: Props): JSX.Element {
                 keyMap={subKeyMap(componentShortcuts, keyMap)}
                 handlers={handlers}
             />
-            <CVATTooltip title={`Edit region ${editRegionShortkey}`} placement='right'>
+            <CVATTooltip title={`Edit interval ${editRegionShortkey}`} placement='right'>
                 <Icon
                     component={AudioEditRegionIcon}
                     className={

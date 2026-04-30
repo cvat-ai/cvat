@@ -37,6 +37,7 @@ export enum AttributeType {
 interface Props {
     label: LabelOptColor | null;
     labelNames: string[];
+    hideLabelType?: boolean;
     onSubmit: (label: LabelOptColor) => void;
     onSkeletonSubmit?: () => SkeletonConfiguration | null;
     resetSkeleton?: () => void;
@@ -659,7 +660,7 @@ export default class LabelForm extends React.Component<Props> {
     }
 
     public render(): JSX.Element {
-        const { label, onSkeletonSubmit } = this.props;
+        const { label, onSkeletonSubmit, hideLabelType } = this.props;
         const isSkeleton = !!onSkeletonSubmit;
 
         return (
@@ -683,7 +684,9 @@ export default class LabelForm extends React.Component<Props> {
             >
                 <Row justify='start' align='top'>
                     <Col span={8}>{this.renderLabelNameInput()}</Col>
-                    <Col span={3} offset={1}>{this.renderLabelTypeInput()}</Col>
+                    {!hideLabelType && (
+                        <Col span={3} offset={1}>{this.renderLabelTypeInput()}</Col>
+                    )}
                     <Col span={3} offset={1}>
                         {this.renderChangeColorButton()}
                     </Col>

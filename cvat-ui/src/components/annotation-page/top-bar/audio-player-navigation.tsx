@@ -6,6 +6,7 @@ import { Workspace } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     BackJumpIcon, FirstIcon, ForwardJumpIcon, LastIcon,
@@ -27,31 +28,31 @@ const componentShortcuts = {
         name: 'Play/Pause audio',
         description: 'Play or pause audio playback',
         sequences: ['space'],
-        scope: ShortcutScope.ANNOTATION_PAGE,
+        scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_BACKWARD: {
         name: 'Audio backward',
         description: 'Rewind audio by 5 seconds',
         sequences: ['left'],
-        scope: ShortcutScope.ANNOTATION_PAGE,
+        scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_FORWARD: {
         name: 'Audio forward',
         description: 'Forward audio by 5 seconds',
         sequences: ['right'],
-        scope: ShortcutScope.ANNOTATION_PAGE,
+        scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_FAST_BACKWARD: {
         name: 'Audio fast backward',
         description: 'Rewind audio by 30 seconds',
         sequences: ['alt+left'],
-        scope: ShortcutScope.ANNOTATION_PAGE,
+        scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_FAST_FORWARD: {
         name: 'Audio fast forward',
         description: 'Forward audio by 30 seconds',
         sequences: ['alt+right'],
-        scope: ShortcutScope.ANNOTATION_PAGE,
+        scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
 };
 
@@ -152,7 +153,7 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
 
     return (
         <>
-            <GlobalHotKeys keyMap={keyMap} handlers={hotkeyHandlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={hotkeyHandlers} />
             <Row align='middle' justify='center' style={{ gap: '15px', width: '100%' }}>
                 <Col>
                     <div style={{ display: 'flex', gap: 8 }}>

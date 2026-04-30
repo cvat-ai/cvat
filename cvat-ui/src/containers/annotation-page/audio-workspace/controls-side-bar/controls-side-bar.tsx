@@ -2,6 +2,7 @@ import { connect } from 'react-redux';
 import { Dispatch } from 'redux';
 
 import ControlsSideBarComponent from 'components/annotation-page/audio-workspace/controls-side-bar/controls-side-bar';
+import { computeMaxZoom } from 'components/annotation-page/audio-workspace/utils/zoom-bounds';
 import { ActiveControl, CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import {
@@ -17,6 +18,7 @@ interface StateToProps {
     activeControl: ActiveControl;
     normalizedKeyMap: Record<string, string>;
     zoom: number;
+    maxZoom: number;
     volume: number;
     loop: boolean;
     playbackRate: number;
@@ -37,7 +39,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { activeControl },
-            audioPlayer: { zoom, volume, loop, playbackRate },
+            audioPlayer: {
+                zoom, volume, loop, playbackRate, duration,
+            },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -46,6 +50,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeControl,
         normalizedKeyMap,
         zoom,
+        maxZoom: computeMaxZoom(duration),
         volume,
         loop,
         playbackRate,

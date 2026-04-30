@@ -20,8 +20,9 @@ import {
 } from '@ant-design/icons/lib/icons';
 import { DurationIcon, FramesIcon } from 'icons';
 import {
-    Job, JobStage, JobState, JobType, Task, User,
+    Job, JobStage, JobState, JobType, Task, User, DimensionType,
 } from 'cvat-core-wrapper';
+import { formatTimeShort } from 'utils/format-audio-time';
 import { useIsMounted, useContextMenuClick } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -127,6 +128,10 @@ function JobItem(props: Readonly<Props>): JSX.Element {
     }
     const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
+    const isAudioTask = task.dimension === DimensionType.DIMENSION_1D;
+    const audioJobDuration = isAudioTask ? formatTimeShort(job.frameCount / 1000) : '';
+    const audioJobRange = isAudioTask ?
+        `${formatTimeShort(job.startFrame / 1000)} – ${formatTimeShort(job.stopFrame / 1000)}` : '';
     const jobName = `Job #${job.id}`;
 
     let tag = null;
@@ -252,9 +257,11 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                             <Row>
                                 <Col>
                                     <BorderOutlined />
-                                    <Text>Frame count: </Text>
+                                    <Text>{isAudioTask ? 'Duration: ' : 'Frame count: '}</Text>
                                     <Text type='secondary' className='cvat-job-item-frames'>
-                                        {`${job.frameCount} (${frameCountPercentRepresentation}%)`}
+                                        {isAudioTask ?
+                                            `${audioJobDuration} (${frameCountPercentRepresentation}%)` :
+                                            `${job.frameCount} (${frameCountPercentRepresentation}%)`}
                                     </Text>
                                 </Col>
                             </Row>
@@ -262,9 +269,11 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                                 <Row>
                                     <Col>
                                         <Icon component={FramesIcon} />
-                                        <Text>Frame range: </Text>
+                                        <Text>{isAudioTask ? 'Time range: ' : 'Frame range: '}</Text>
                                         <Text type='secondary' className='cvat-job-item-frame-range'>
-                                            {`${job.startFrame}-${job.stopFrame}`}
+                                            {isAudioTask ?
+                                                audioJobRange :
+                                                `${job.startFrame}-${job.stopFrame}`}
                                         </Text>
                                     </Col>
                                 </Row>

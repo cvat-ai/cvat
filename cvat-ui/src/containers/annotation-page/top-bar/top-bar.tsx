@@ -90,6 +90,7 @@ interface DispatchToProps {
     switchShowSearchPallet(visible: boolean): void;
     onSaveAnnotation(): void;
     showStatistics(sessionInstance: Job): void;
+    openStatistics(): void;
     showFilters(): void;
     undo(): void;
     redo(): void;
@@ -233,6 +234,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         showStatistics(sessionInstance: Job): void {
             dispatch(collectStatisticsAsync(sessionInstance));
+            dispatch(showStatisticsAction(true));
+        },
+        openStatistics(): void {
             dispatch(showStatisticsAction(true));
         },
         showFilters(): void {
@@ -436,7 +440,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     };
 
     private showStatistics = (): void => {
-        const { jobInstance, showStatistics } = this.props;
+        const {
+            jobInstance, showStatistics, openStatistics, workspace,
+        } = this.props;
+        if (workspace === Workspace.AUDIO) {
+            openStatistics();
+            return;
+        }
         showStatistics(jobInstance);
     };
 

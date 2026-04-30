@@ -12,7 +12,7 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { AudioRegion } from 'reducers';
 import { Label, Attribute } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
-import { formatTimeLong } from 'utils/format-audio-time';
+import { formatTimeShort } from 'utils/format-audio-time';
 
 interface AudioRegionDetailsProps {
     region: AudioRegion;
@@ -220,7 +220,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
                 </div>
                 <div className='cvat-audio-region-details-header-right'>
                     <span className='cvat-audio-region-details-time-range'>
-                        {`${formatTimeLong(region.start)} \u2013 ${formatTimeLong(region.end)}`}
+                        {`${formatTimeShort(region.start)} \u2013 ${formatTimeShort(region.end)}`}
                     </span>
                     <Button
                         type='text'
@@ -254,9 +254,6 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
                                 <div className='cvat-audio-region-attr-header'>
                                     <span className='cvat-audio-region-attr-name'>
                                         {attribute.name}
-                                    </span>
-                                    <span className='cvat-audio-region-attr-type'>
-                                        {attribute.inputType}
                                     </span>
                                 </div>
                             ),

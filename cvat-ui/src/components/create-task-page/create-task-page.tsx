@@ -26,13 +26,19 @@ export default function CreateTaskPage(props: Props): JSX.Element {
         projectId = +(params.get('projectId') as string);
     }
     const many = params.get('many') === 'true';
+    const audio = params.get('audio') === 'true';
     const handleCreate: typeof onCreate = (...onCreateParams) => onCreate(...onCreateParams);
 
     return (
         <Row justify='center' align='top' className='cvat-create-work-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
-                <Text className='cvat-title'>Create a new task</Text>
-                <CreateTaskContent projectId={projectId} onCreate={handleCreate} many={many} />
+                <Text className='cvat-title'>{audio ? 'Create a new audio task' : 'Create a new task'}</Text>
+                <CreateTaskContent
+                    projectId={projectId}
+                    onCreate={handleCreate}
+                    many={many}
+                    audio={audio}
+                />
             </Col>
         </Row>
     );

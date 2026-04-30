@@ -23,6 +23,7 @@ interface Props {
     initialValues: QualityConfiguration;
     frameSelectionMethod: FrameSelectionMethod;
     validationMode: ValidationMode;
+    audio?: boolean;
     onSubmit(values: QualityConfiguration): Promise<void>;
     onChangeFrameSelectionMethod: (method: FrameSelectionMethod) => void;
     onChangeValidationMode: (method: ValidationMode) => void;
@@ -43,20 +44,27 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     }
 
     public submit(): Promise<void> {
-        const { onSubmit } = this.props;
+        const { onSubmit, audio, initialValues } = this.props;
         if (this.formRef.current) {
-            return this.formRef.current.validateFields().then((values: QualityConfiguration) => onSubmit({
-                ...values,
-                frameSelectionMethod: values.validationMode === ValidationMode.HONEYPOTS ?
-                    FrameSelectionMethod.RANDOM : values.frameSelectionMethod,
-                ...(typeof values.validationFramesPercent === 'number' ? {
-                    validationFramesPercent: values.validationFramesPercent / 100,
-                } : {}),
-                ...(typeof values.validationFramesPerJobPercent === 'number' ? {
-                    validationFramesPerJobPercent: values.validationFramesPerJobPercent / 100,
-                } : {}),
-            }),
-            );
+            return this.formRef.current.validateFields().then((values: QualityConfiguration) => {
+                const filled: QualityConfiguration = audio && values.validationMode === ValidationMode.GT ? {
+                    ...values,
+                    frameSelectionMethod: initialValues.frameSelectionMethod,
+                    validationFramesPercent: initialValues.validationFramesPercent,
+                    validationFramesPerJobPercent: initialValues.validationFramesPerJobPercent,
+                } : values;
+                return onSubmit({
+                    ...filled,
+                    frameSelectionMethod: filled.validationMode === ValidationMode.HONEYPOTS ?
+                        FrameSelectionMethod.RANDOM : filled.frameSelectionMethod,
+                    ...(typeof filled.validationFramesPercent === 'number' ? {
+                        validationFramesPercent: filled.validationFramesPercent / 100,
+                    } : {}),
+                    ...(typeof filled.validationFramesPerJobPercent === 'number' ? {
+                        validationFramesPerJobPercent: filled.validationFramesPerJobPercent / 100,
+                    } : {}),
+                });
+            });
         }
 
         return Promise.reject(new Error('Quality form ref is empty'));
@@ -179,13 +187,17 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     }
 
     public render(): JSX.Element {
-        const { initialValues, validationMode, onChangeValidationMode } = this.props;
+        const {
+            initialValues, validationMode, audio, onChangeValidationMode,
+        } = this.props;
 
         let paramsBlock: JSX.Element | null = null;
-        if (validationMode === ValidationMode.GT) {
-            paramsBlock = this.gtParamsBlock();
-        } else if (validationMode === ValidationMode.HONEYPOTS) {
-            paramsBlock = this.honeypotsParamsBlock();
+        if (!audio) {
+            if (validationMode === ValidationMode.GT) {
+                paramsBlock = this.gtParamsBlock();
+            } else if (validationMode === ValidationMode.HONEYPOTS) {
+                paramsBlock = this.honeypotsParamsBlock();
+            }
         }
 
         return (
@@ -211,9 +223,11 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                         <Radio.Button value={ValidationMode.GT} key={ValidationMode.GT}>
                             Ground Truth
                         </Radio.Button>
-                        <Radio.Button value={ValidationMode.HONEYPOTS} key={ValidationMode.HONEYPOTS}>
-                            Honeypots
-                        </Radio.Button>
+                        {!audio && (
+                            <Radio.Button value={ValidationMode.HONEYPOTS} key={ValidationMode.HONEYPOTS}>
+                                Honeypots
+                            </Radio.Button>
+                        )}
                     </Radio.Group>
                 </Form.Item>
                 { paramsBlock }

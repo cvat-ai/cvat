@@ -16,9 +16,12 @@ import Alert from 'antd/lib/alert';
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 import { getCore, Storage, StorageLocation } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
+import AudioLabelsEditor from 'components/labels-editor/audio-labels-editor';
 import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
 import { RemoteFile } from 'components/file-manager/remote-browser';
-import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
+import {
+    getFileContentType, getContentTypeRemoteFile, getFileNameFromPath, isAudioFile, isAudioPath,
+} from 'utils/files';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import { formFieldsError } from 'utils/validation';
@@ -54,6 +57,7 @@ interface Props {
     onCreate: (data: CreateTaskData, onProgress?: (status: string, progress?: number) => void) => Promise<any>;
     projectId: number | null;
     many: boolean;
+    audio?: boolean;
 }
 
 type State = CreateTaskData & {
@@ -111,7 +115,18 @@ const defaultState: State = {
 const UploadFileErrorMessages = {
     one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file or multiple images. ',
     multi: 'Wrong list of files. You can upload one or more videos. ',
+    nonAudio: 'Wrong list of files. Only audio files are allowed for an audio task. ',
 };
+
+function localFilesHaveNonAudio(files: File[]): boolean {
+    const meaningful = files.filter((f) => !f.name.endsWith('.jsonl'));
+    return meaningful.some((f) => !isAudioFile(f));
+}
+
+function pathsHaveNonAudio(paths: string[]): boolean {
+    const meaningful = paths.filter((p) => !p.endsWith('.jsonl'));
+    return meaningful.some((p) => !isAudioPath(p));
+}
 
 function receiveExtensions(files: RemoteFile[]): string[] {
     const fileTypes = files.filter((file: RemoteFile) => file.name.includes('.'))
@@ -323,13 +338,16 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleUploadLocalFiles = (uploadedFiles: File[]): void => {
-        const { many } = this.props;
+        const { many, audio } = this.props;
         const { files } = this.state;
 
         let uploadFileErrorMessage = '';
 
         const excludedManifests = uploadedFiles.filter((x: File) => !x.name.endsWith('.jsonl'));
-        if (!many && excludedManifests.length > 1) {
+        if (audio) {
+            uploadFileErrorMessage = localFilesHaveNonAudio(excludedManifests) ?
+                UploadFileErrorMessages.nonAudio : '';
+        } else if (!many && excludedManifests.length > 1) {
             uploadFileErrorMessage = excludedManifests.every((it) => (
                 getFileContentType(it) === SupportedShareTypes.IMAGE
             )) ? '' : UploadFileErrorMessages.one;
@@ -354,7 +372,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleUploadRemoteFiles = (urls: string[]): void => {
-        const { many } = this.props;
+        const { many, audio } = this.props;
 
         const { files } = this.state;
         const { length } = urls;
@@ -362,7 +380,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         let uploadFileErrorMessage = '';
 
         try {
-            if (!many && length > 1) {
+            if (audio) {
+                uploadFileErrorMessage = pathsHaveNonAudio(urls) ?
+                    UploadFileErrorMessages.nonAudio : '';
+            } else if (!many && length > 1) {
                 let index = 0;
                 while (index < length) {
                     const isImageFile = getContentTypeRemoteFile(urls[index]) === 'image';
@@ -403,16 +424,23 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private handleUploadShareFiles = (shareFiles: RemoteFile[]): void => {
         const { files } = this.state;
-        const { many } = this.props;
-        const uploadFileErrorMessage = validateRemoteFiles(shareFiles, many);
+        const { many, audio } = this.props;
         const filteredFiles = filterFiles(shareFiles, many);
+        const keys = filteredFiles.map((it) => it.key);
+        let uploadFileErrorMessage: string;
+        if (audio) {
+            uploadFileErrorMessage = pathsHaveNonAudio(keys) ?
+                UploadFileErrorMessages.nonAudio : '';
+        } else {
+            uploadFileErrorMessage = validateRemoteFiles(shareFiles, many);
+        }
         this.setState({ uploadFileErrorMessage });
 
         if (!uploadFileErrorMessage) {
             this.setState({
                 files: {
                     ...files,
-                    share: filteredFiles.map((it) => it.key),
+                    share: keys,
                 },
             });
         }
@@ -420,16 +448,23 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private handleUploadCloudStorageFiles = (cloudStorageFiles: RemoteFile[]): void => {
         const { files } = this.state;
-        const { many } = this.props;
-        const uploadFileErrorMessage = validateRemoteFiles(cloudStorageFiles, many);
+        const { many, audio } = this.props;
         const filteredFiles = filterFiles(cloudStorageFiles, many);
+        const keys = filteredFiles.map((it) => it.key);
+        let uploadFileErrorMessage: string;
+        if (audio) {
+            uploadFileErrorMessage = pathsHaveNonAudio(keys) ?
+                UploadFileErrorMessages.nonAudio : '';
+        } else {
+            uploadFileErrorMessage = validateRemoteFiles(cloudStorageFiles, many);
+        }
         this.setState({ uploadFileErrorMessage });
 
         if (!uploadFileErrorMessage) {
             this.setState({
                 files: {
                     ...files,
-                    cloudStorage: filteredFiles.map((it) => it.key),
+                    cloudStorage: keys,
                 },
             });
         }
@@ -829,6 +864,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private renderLabelsBlock(): JSX.Element {
         const { projectId, labels } = this.state;
+        const { audio } = this.props;
 
         if (projectId) {
             return (
@@ -843,10 +879,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             );
         }
 
+        const Editor = audio ? AudioLabelsEditor : LabelsEditor;
         return (
             <Col span={24}>
                 <Text className='cvat-text-color'>Labels</Text>
-                <LabelsEditor
+                <Editor
                     labels={labels}
                     onSubmit={(newLabels): void => {
                         this.setState({
@@ -895,6 +932,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private renderAdvancedBlock(): JSX.Element {
         const { activeFileManagerTab, projectId } = this.state;
+        const { audio } = this.props;
 
         const {
             advanced: {
@@ -919,6 +957,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                             <AdvancedConfigurationForm
                                 activeFileManagerTab={activeFileManagerTab}
                                 ref={this.advancedConfigurationComponent}
+                                audio={audio}
                                 onSubmit={this.handleSubmitAdvancedConfiguration}
                                 projectId={projectId}
                                 useProjectSourceStorage={useProjectSourceStorage}
@@ -944,6 +983,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private renderQualityBlock(): JSX.Element {
         const { quality: { frameSelectionMethod, validationMode } } = this.state;
+        const { audio } = this.props;
 
         return (
             <Col span={24}>
@@ -955,6 +995,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         children: (
                             <QualityConfigurationForm
                                 ref={this.qualityConfigurationComponent}
+                                audio={audio}
                                 initialValues={defaultState.quality}
                                 onSubmit={this.handleSubmitQualityConfiguration}
                                 frameSelectionMethod={frameSelectionMethod}

@@ -67,7 +67,7 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
         (entity as Job | Task).dimension === DimensionType.DIMENSION_1D;
 
     useEffect(() => {
-        if (inView && !hasFetched && preview === undefined && !isAudio) {
+        if (inView && !hasFetched && preview === undefined) {
             setHasFetched(true);
 
             if (!entity) {
@@ -93,14 +93,6 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
         }
     }, [entity]);
 
-    if (isAudio) {
-        return (
-            <div className={emptyPreviewClassName || ''} onClick={onClick} aria-hidden>
-                <SoundOutlined />
-            </div>
-        );
-    }
-
     if (!preview || preview?.fetching) {
         return (
             <div ref={ref} className={loadingClassName || ''} aria-hidden>
@@ -112,7 +104,7 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
     if (preview.initialized && !preview.preview) {
         return (
             <div className={emptyPreviewClassName || ''} onClick={onClick} aria-hidden>
-                <PictureOutlined />
+                {isAudio ? <SoundOutlined /> : <PictureOutlined />}
             </div>
         );
     }

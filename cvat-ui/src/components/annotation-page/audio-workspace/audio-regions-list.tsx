@@ -11,9 +11,11 @@ import { Label } from 'cvat-core-wrapper';
 import { toClipboard } from 'utils/to-clipboard';
 import { formatTimeShort } from 'utils/format-audio-time';
 import { hexToRgbComponents } from 'utils/hex-color';
+import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { getRegionItemColor } from './audio-region-colors';
 import AudioRegionItemMenu from './audio-region-item-menu';
 import AudioRegionsListHeader, { AudioRegionsOrdering } from './audio-regions-list-header';
+import { setPlayOnceRegionId } from './utils/play-once-region';
 
 type RegionPatch =
     | Partial<AudioRegion>
@@ -67,11 +69,13 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
 
     const isHidden = !!region.hidden;
     const isLocked = !!region.locked;
+    const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
     const handleMouseEnter = useCallback(() => onSetHoveredRegion(region.id), [onSetHoveredRegion, region.id]);
     const handleMouseLeave = useCallback(() => onSetHoveredRegion(null), [onSetHoveredRegion]);
     const handleClick = useCallback(() => onSetActiveRegion(region.id), [onSetActiveRegion, region.id]);
     const handleDoubleClick = useCallback(() => {
+        setPlayOnceRegionId(region.id);
         onSetActiveRegion(region.id);
         onSetCurrentTime(Math.max(0, region.start));
         onSwitchPlay(true);
@@ -92,8 +96,6 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
         serverID: region.serverId,
         locked: isLocked,
         colorBy,
-        currentColor: region.color ?? '',
-        onChangeColor: (color: string) => onUpdateRegion(region.id, { color }),
         onCreateURL: () => {
             if (region.serverId) {
                 const { origin, pathname } = window.location;
@@ -102,19 +104,12 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
             }
         },
         onCopy: () => onCopyRegion(region.id),
-        onToBackground: () => onUpdateRegion(region.id, (_r, regions) => ({
-            zOrder: Math.min(...regions.map((r) => r.zOrder)) - 1,
-        })),
-        onToForeground: () => onUpdateRegion(region.id, (_r, regions) => ({
-            zOrder: Math.max(...regions.map((r) => r.zOrder)) + 1,
-        })),
-        onToOneLayerBackward: () => onUpdateRegion(region.id, (r) => ({ zOrder: r.zOrder - 1 })),
-        onToOneLayerForward: () => onUpdateRegion(region.id, (r) => ({ zOrder: r.zOrder + 1 })),
+        onChangeColorClick: () => setColorPickerVisible(true),
         onRemove: () => onDeleteRegion(region.id),
     }), [
-        region.id, region.serverId, region.color,
+        region.id, region.serverId,
         isLocked, colorBy,
-        onUpdateRegion, onCopyRegion, onDeleteRegion,
+        onCopyRegion, onDeleteRegion,
     ]);
 
     return (
@@ -173,22 +168,41 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
                 >
                     {isHidden ? <EyeInvisibleFilled /> : <EyeOutlined />}
                 </span>
-                <Dropdown
-                    destroyPopupOnHide
-                    placement='bottomRight'
-                    trigger={['click']}
-                    menu={menu}
-                >
-                    <span
-                        role='button'
-                        tabIndex={0}
-                        className='cvat-audio-region-item-action-btn'
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
+                {colorPickerVisible ? (
+                    <ColorPicker
+                        visible
+                        value={region.color ?? ''}
+                        onVisibleChange={setColorPickerVisible}
+                        onChange={(color: string) => onUpdateRegion(region.id, { color })}
                     >
-                        <MoreOutlined />
-                    </span>
-                </Dropdown>
+                        <span
+                            role='button'
+                            tabIndex={0}
+                            className='cvat-audio-region-item-action-btn'
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                        >
+                            <MoreOutlined />
+                        </span>
+                    </ColorPicker>
+                ) : (
+                    <Dropdown
+                        destroyPopupOnHide
+                        placement='bottomRight'
+                        trigger={['click']}
+                        menu={menu}
+                    >
+                        <span
+                            role='button'
+                            tabIndex={0}
+                            className='cvat-audio-region-item-action-btn'
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                        >
+                            <MoreOutlined />
+                        </span>
+                    </Dropdown>
+                )}
             </div>
         </div>
     );
@@ -289,7 +303,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
                 {header}
                 <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description='No regions created'
+                    description='No intervals created'
                     className='cvat-audio-regions-list-empty'
                 />
             </div>

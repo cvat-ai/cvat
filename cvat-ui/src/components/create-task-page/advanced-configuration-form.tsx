@@ -87,6 +87,7 @@ interface Props {
     activeFileManagerTab: string;
     sourceStorageLocation: StorageLocation;
     targetStorageLocation: StorageLocation;
+    audio?: boolean;
 }
 
 function validateURL(_: RuleObject, value: string): Promise<void> {
@@ -454,7 +455,35 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { activeFileManagerTab } = this.props;
+        const { activeFileManagerTab, audio } = this.props;
+        if (audio) {
+            return (
+                <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
+                    <Row justify='start'>
+                        <Col span={7}>{this.renderStartFrame()}</Col>
+                        <Col span={7} offset={1}>
+                            {this.renderStopFrame()}
+                        </Col>
+                    </Row>
+                    <Row justify='start'>
+                        <Col span={7}>
+                            {this.renderConsensusReplicas()}
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col span={24}>{this.renderBugTracker()}</Col>
+                    </Row>
+                    <Row justify='space-between'>
+                        <Col span={11}>
+                            {this.renderSourceStorage()}
+                        </Col>
+                        <Col span={11} offset={1}>
+                            {this.renderTargetStorage()}
+                        </Col>
+                    </Row>
+                </Form>
+            );
+        }
         return (
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
                 <Row>

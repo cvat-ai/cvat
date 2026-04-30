@@ -20,6 +20,7 @@ import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-wo
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
 import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
+import AudioStatisticsModalComponent from 'components/annotation-page/top-bar/audio-statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import AudioWorkspaceContainer from 'containers/annotation-page/audio-workspace/audio-workspace';
 import { Workspace } from 'reducers';
@@ -159,7 +160,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 {workspace === Workspace.AUDIO && <AudioWorkspaceContainer />}
             </Layout.Content>
             <FiltersModalComponent />
-            <StatisticsModalComponent />
+            {workspace === Workspace.AUDIO ? (
+                <AudioStatisticsModalComponent />
+            ) : (
+                <StatisticsModalComponent />
+            )}
             <SearchFramesModal />
         </Layout>
     );

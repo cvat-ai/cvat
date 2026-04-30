@@ -13,6 +13,7 @@ import {
     setAudioRegions,
     setAudioActiveRegion,
     setAudioHoveredRegion,
+    setAudioZoom,
     updateAudioRegionAttribute,
     setWaveformReady,
     updateActiveControl,
@@ -48,6 +49,7 @@ interface DispatchToProps {
     onSetRegions(regions: AudioRegion[]): void;
     onSetActiveRegion(regionId: string | null): void;
     onSetHoveredRegion(regionId: string | null): void;
+    onSetZoom(zoom: number): void;
     onUpdateRegionAttribute(regionId: string, attrID: number, value: string): void;
     onWaveformReady(ready: boolean): void;
     onUpdateActiveControl(activeControl: ActiveControl): void;
@@ -98,6 +100,9 @@ function mapDispatchToProps(dispatch: Dispatch): DispatchToProps {
         },
         onSetHoveredRegion(regionId: string | null): void {
             dispatch(setAudioHoveredRegion(regionId));
+        },
+        onSetZoom(zoom: number): void {
+            dispatch(setAudioZoom(zoom));
         },
         onUpdateRegionAttribute(regionId: string, attrID: number, value: string): void {
             dispatch(updateAudioRegionAttribute(regionId, attrID, value));

@@ -56,7 +56,9 @@
         }
     }
 
-    .cvat-task-details:has(.cvat-constructor-viewer-new-item) {
+    .cvat-task-details:has(.cvat-constructor-viewer-new-item),
+    .cvat-task-details:has(.cvat-label-constructor-creator),
+    .cvat-task-details:has(.cvat-label-constructor-updater) {
         .cvat-task-item-preview {
             max-height: $grid-unit-size * 40;
         }

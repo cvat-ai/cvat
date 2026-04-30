@@ -25,6 +25,7 @@ export interface Props {
     activeControl: ActiveControl;
     normalizedKeyMap: Record<string, string>;
     zoom: number;
+    maxZoom: number;
     volume: number;
     loop: boolean;
     playbackRate: number;
@@ -43,6 +44,7 @@ export default function AudioControlsSideBarComponent(props: Props): JSX.Element
         activeControl,
         normalizedKeyMap,
         zoom,
+        maxZoom,
         volume,
         loop,
         playbackRate,
@@ -83,6 +85,7 @@ export default function AudioControlsSideBarComponent(props: Props): JSX.Element
             />
             <ObservedZoomControl
                 zoom={zoom}
+                maxZoom={maxZoom}
                 onZoomChange={onZoomChange}
             />
             <ObservedVolumeControl

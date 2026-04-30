@@ -101,11 +101,15 @@
 .cvat-opencv-control,
 .cvat-snap-tools-control,
 .cvat-audio-create-region-control,
-.cvat-audio-edit-region-control {
+.cvat-audio-edit-region-control,
+.cvat-audio-loop-control {
     border-radius: $border-radius-base;
     transition: $annotation-view-control-transition;
     transform: scale(0.65);
     padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover:not(.cvat-disabled-canvas-control) {
         background: $header-color;

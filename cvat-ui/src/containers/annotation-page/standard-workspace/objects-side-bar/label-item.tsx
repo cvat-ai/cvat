@@ -5,11 +5,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { updateAnnotationsAsync } from 'actions/annotation-actions';
+import { setAudioRegions, updateAnnotationsAsync } from 'actions/annotation-actions';
 
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
-import { CombinedState } from 'reducers';
-import { ObjectType } from 'cvat-core-wrapper';
+import { AudioRegion, CombinedState } from 'reducers';
+import { DimensionType, ObjectType } from 'cvat-core-wrapper';
 
 interface OwnProps {
     labelID: number;
@@ -20,18 +20,22 @@ interface StateToProps {
     labelName: string;
     labelColor: string;
     objectStates: any[];
+    audioRegions: AudioRegion[];
+    isAudio: boolean;
     jobInstance: any;
     frameNumber: number;
 }
 
 interface DispatchToProps {
     updateAnnotations(states: any[]): void;
+    setAudioRegions(regions: AudioRegion[]): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             annotations: { states: objectStates },
+            audioPlayer: { regions: audioRegions },
             job: { labels, instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
@@ -40,12 +44,15 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     } = state;
 
     const [label] = labels.filter((_label: any) => _label.id === own.labelID);
+    const isAudio = !!jobInstance && jobInstance.dimension === DimensionType.DIMENSION_1D;
 
     return {
         label,
         labelColor: label.color,
         labelName: label.name,
         objectStates,
+        audioRegions,
+        isAudio,
         jobInstance,
         frameNumber,
     };
@@ -56,13 +63,18 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateAnnotations(states: any[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
+        setAudioRegions(regions: AudioRegion[]): void {
+            dispatch(setAudioRegions(regions));
+        },
     };
 }
 
 type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     objectStates: any[];
+    audioRegions: AudioRegion[];
     ownObjectStates: any[];
+    ownAudioRegions: AudioRegion[];
     visible: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
@@ -73,7 +85,9 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             objectStates: [],
+            audioRegions: [],
             ownObjectStates: [],
+            ownAudioRegions: [],
             visible: true,
             statesHidden: false,
             statesLocked: false,
@@ -81,6 +95,26 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
     }
 
     static getDerivedStateFromProps(props: Readonly<Props>, state: State): State | null {
+        if (props.isAudio) {
+            if (props.audioRegions === state.audioRegions) {
+                return null;
+            }
+            const ownAudioRegions = props.audioRegions.filter(
+                (region) => region.labelId === props.labelID,
+            );
+            const visible = !!ownAudioRegions.length;
+            const statesLocked = visible && ownAudioRegions.every((region) => !!region.locked);
+            const statesHidden = visible && ownAudioRegions.every((region) => !!region.hidden);
+            return {
+                ...state,
+                audioRegions: props.audioRegions,
+                ownAudioRegions,
+                visible,
+                statesHidden,
+                statesLocked,
+            };
+        }
+
         if (props.objectStates === state.objectStates) {
             return null;
         }
@@ -127,9 +161,19 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
     };
 
     private switchHidden(value: boolean): void {
-        const { updateAnnotations } = this.props;
-        const { ownObjectStates } = this.state;
+        const {
+            isAudio, updateAnnotations, setAudioRegions: dispatchSetAudioRegions, audioRegions, labelID,
+        } = this.props;
 
+        if (isAudio) {
+            const next = audioRegions.map((region) => (
+                region.labelId === labelID ? { ...region, hidden: value } : region
+            ));
+            dispatchSetAudioRegions(next);
+            return;
+        }
+
+        const { ownObjectStates } = this.state;
         if (ownObjectStates.length) {
             // false alarm
             // eslint-disable-next-line
@@ -138,9 +182,19 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
     }
 
     private switchLock(value: boolean): void {
-        const { updateAnnotations } = this.props;
-        const { ownObjectStates } = this.state;
+        const {
+            isAudio, updateAnnotations, setAudioRegions: dispatchSetAudioRegions, audioRegions, labelID,
+        } = this.props;
 
+        if (isAudio) {
+            const next = audioRegions.map((region) => (
+                region.labelId === labelID ? { ...region, locked: value } : region
+            ));
+            dispatchSetAudioRegions(next);
+            return;
+        }
+
+        const { ownObjectStates } = this.state;
         if (ownObjectStates.length) {
             // false alarm
             // eslint-disable-next-line

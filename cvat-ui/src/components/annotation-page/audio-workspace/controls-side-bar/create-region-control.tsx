@@ -27,9 +27,9 @@ export interface Props {
 
 const componentShortcuts = {
     CREATE_AUDIO_REGION: {
-        name: 'Create audio region',
-        description: 'Enable audio region creation mode — drag on waveform to create a region',
-        sequences: ['c'],
+        name: 'Create audio interval',
+        description: 'Enable audio interval creation mode — drag on waveform to create an interval',
+        sequences: ['n'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
 };
@@ -46,8 +46,10 @@ function CreateRegionControl(props: Props): JSX.Element {
     const [selectedLabelId, setSelectedLabelId] = useState<number | null>(activeLabelId ?? (labels.length ? labels[0].id ?? null : null));
 
     const isActive = activeControl === ActiveControl.AUDIO_REGION_CREATE;
+    const noLabels = labels.length === 0;
 
     const startCreation = (): void => {
+        if (noLabels) return;
         if (selectedLabelId !== null) {
             onSetActiveLabel(selectedLabelId);
         }
@@ -56,8 +58,12 @@ function CreateRegionControl(props: Props): JSX.Element {
     };
 
     const handler = (): void => {
-        if (isActive) {
-            updateActiveControl(ActiveControl.CURSOR);
+        if (noLabels) return;
+        if (popoverOpen) {
+            setPopoverOpen(false);
+            if (isActive) {
+                updateActiveControl(ActiveControl.CURSOR);
+            }
         } else {
             setPopoverOpen(true);
         }
@@ -74,7 +80,7 @@ function CreateRegionControl(props: Props): JSX.Element {
         <div className='cvat-audio-create-region-popover-content'>
             <Row justify='start'>
                 <Col>
-                    <Text className='cvat-text-color' strong>Create audio region</Text>
+                    <Text className='cvat-text-color' strong>Create audio interval</Text>
                 </Col>
             </Row>
             <Row justify='start'>
@@ -112,19 +118,27 @@ function CreateRegionControl(props: Props): JSX.Element {
                 overlayClassName='cvat-audio-create-region-popover'
                 trigger='click'
                 placement='right'
-                open={popoverOpen}
+                open={popoverOpen && !noLabels}
                 onOpenChange={(visible) => {
                     if (!visible) setPopoverOpen(false);
                 }}
                 content={popoverContent}
             >
-                <CVATTooltip title={`Create region ${createRegionShortkey}`} placement='right'>
+                <CVATTooltip
+                    title={
+                        noLabels ?
+                            'Add a label to the task to create intervals' :
+                            `Create interval ${createRegionShortkey}`
+                    }
+                    placement='right'
+                >
                     <Icon
                         component={AudioCreateRegionIcon}
                         className={
-                            isActive ?
+                            (isActive ?
                                 'cvat-active-canvas-control cvat-audio-create-region-control' :
-                                'cvat-audio-create-region-control'
+                                'cvat-audio-create-region-control') +
+                            (noLabels ? ' cvat-audio-create-region-control--disabled' : '')
                         }
                         onClick={handler}
                     />

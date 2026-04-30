@@ -12,13 +12,14 @@ import SkeletonConfigurator from './skeleton-configurator';
 interface Props {
     label: LabelOptColor;
     labelNames: string[];
+    hideLabelType?: boolean;
     onUpdate: (label: LabelOptColor) => void;
     onCancel: () => void;
 }
 
 function ConstructorUpdater(props: Props): JSX.Element {
     const {
-        label, labelNames, onUpdate, onCancel,
+        label, labelNames, hideLabelType, onUpdate, onCancel,
     } = props;
     const { type } = label;
     const skeletonConfiguratorRef = useRef<SkeletonConfigurator>(null);
@@ -42,6 +43,7 @@ function ConstructorUpdater(props: Props): JSX.Element {
             <LabelForm
                 label={label}
                 labelNames={labelNames}
+                hideLabelType={hideLabelType}
                 onSubmit={onUpdate}
                 resetSkeleton={type === LabelType.SKELETON ? resetSkeleton : undefined}
                 onSkeletonSubmit={type === LabelType.SKELETON ? onSkeletonSubmit : undefined}

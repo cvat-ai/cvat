@@ -12,6 +12,7 @@ import AudioRegionDetails from './audio-region-details';
 import { useAudioWaveform } from './hooks/use-audio-waveform';
 import { useAudioPlaybackSync } from './hooks/use-audio-playback-sync';
 import { useAudioRegions } from './hooks/use-audio-regions';
+import { ZOOM_MIN, computeMaxZoom } from './utils/zoom-bounds';
 
 export interface AudioCanvasWrapperProps {
     isPlaying: boolean;
@@ -40,10 +41,13 @@ export interface AudioCanvasWrapperProps {
     onSetRegions(regions: AudioRegion[]): void;
     onSetActiveRegion(regionId: string | null): void;
     onSetHoveredRegion(regionId: string | null): void;
+    onSetZoom(zoom: number): void;
     onUpdateRegionAttribute(regionId: string, attrID: number, value: string): void;
     onWaveformReady(ready: boolean): void;
     onUpdateActiveControl(activeControl: ActiveControl): void;
 }
+
+const ZOOM_STEP_FACTOR = 1.2;
 
 function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
     const {
@@ -52,12 +56,47 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
         audioUrl, audioLoading, audioError, waveformReady,
         labels, activeLabelId, colorBy, opacity, selectedOpacity,
         onSwitchPlay, onSetCurrentTime, onSetDuration,
-        onSetRegions, onSetActiveRegion, onSetHoveredRegion,
+        onSetRegions, onSetActiveRegion, onSetHoveredRegion, onSetZoom,
         onUpdateRegionAttribute, onWaveformReady, onUpdateActiveControl,
     } = props;
 
     const [wavesurfer, setWavesurfer] = useState<WaveSurfer | null>(null);
     const prevAudioUrlRef = useRef<string | null>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const zoomRef = useRef(zoom);
+    const maxZoom = computeMaxZoom(duration);
+    const maxZoomRef = useRef(maxZoom);
+
+    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+    useEffect(() => { maxZoomRef.current = maxZoom; }, [maxZoom]);
+
+    useEffect(() => {
+        if (zoom > maxZoom) onSetZoom(maxZoom);
+    }, [maxZoom]);
+
+    useEffect(() => {
+        const el = wrapperRef.current;
+        if (!el) return undefined;
+        const onWheel = (e: WheelEvent): void => {
+            if (!e.ctrlKey && !e.metaKey) return;
+            e.preventDefault();
+            const zoomingIn = e.deltaY < 0;
+            const factor = zoomingIn ? ZOOM_STEP_FACTOR : 1 / ZOOM_STEP_FACTOR;
+            const target = zoomRef.current * factor;
+            let next = zoomingIn ? Math.ceil(target) : Math.floor(target);
+            if (next === zoomRef.current) {
+                next = zoomRef.current + (zoomingIn ? 1 : -1);
+            }
+            next = Math.max(ZOOM_MIN, Math.min(maxZoomRef.current, next));
+            if (next !== zoomRef.current) {
+                onSetZoom(next);
+            }
+        };
+        el.addEventListener('wheel', onWheel, { passive: false });
+        return () => {
+            el.removeEventListener('wheel', onWheel);
+        };
+    }, [onSetZoom]);
 
     const { plugins, regionsPluginRef } = useAudioWaveform(wavesurfer, zoom);
 
@@ -131,14 +170,13 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
                 ...r,
                 labelId,
                 attributes: defaultAttrs,
-                color: label?.color,
             } : r)),
         );
     }, [activeRegion, labels, regions, onSetRegions]);
 
     if (audioLoading) {
         return (
-            <div className='cvat-audio-canvas-wrapper'>
+            <div className='cvat-audio-canvas-wrapper' ref={wrapperRef}>
                 <div className='cvat-audio-placeholder'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>
@@ -148,7 +186,7 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
 
     if (audioError) {
         return (
-            <div className='cvat-audio-canvas-wrapper'>
+            <div className='cvat-audio-canvas-wrapper' ref={wrapperRef}>
                 <div className='cvat-audio-placeholder'>
                     <p className='cvat-audio-placeholder-text'>
                         {`Failed to load audio: ${audioError}`}
@@ -160,7 +198,7 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
 
     if (!audioUrl) {
         return (
-            <div className='cvat-audio-canvas-wrapper'>
+            <div className='cvat-audio-canvas-wrapper' ref={wrapperRef}>
                 <div className='cvat-audio-placeholder'>
                     <p className='cvat-audio-placeholder-text'>
                         No audio data available for this job.
@@ -171,7 +209,7 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
     }
 
     return (
-        <div className='cvat-audio-canvas-wrapper'>
+        <div className='cvat-audio-canvas-wrapper' ref={wrapperRef}>
             {!waveformReady && (
                 <div className='cvat-audio-placeholder'>
                     <Spin size='large' className='cvat-spinner' />

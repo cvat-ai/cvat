@@ -64,6 +64,11 @@
         background-color: #f3f4f6;
         border-top: 1px solid #e5e7eb;
         padding: 0;
+
+        #minimap {
+            min-height: 50px;
+            width: 100%;
+        }
     }
 }
 

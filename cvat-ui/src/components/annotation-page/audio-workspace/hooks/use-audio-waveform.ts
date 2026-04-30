@@ -61,5 +61,35 @@ export function useAudioWaveform(
         overlay.style.opacity = zoom > 1 ? '1' : '0';
     }, [zoom]);
 
+    useEffect(() => {
+        if (!wavesurfer) return undefined;
+        const minimap = minimapPluginRef.current;
+        const overlay = (minimap as unknown as { overlay?: HTMLElement } | null)?.overlay;
+        const scrollContainer = wavesurfer.getWrapper()?.parentElement;
+        if (!overlay || !scrollContainer) return undefined;
+
+        overlay.style.transition = 'none';
+
+        const sync = (): void => {
+            const totalWidth = scrollContainer.scrollWidth;
+            const visibleWidth = scrollContainer.clientWidth;
+            if (totalWidth <= 0) return;
+            const startPct = scrollContainer.scrollLeft / totalWidth;
+            const widthPct = Math.min(1, visibleWidth / totalWidth);
+            overlay.style.left = `${startPct * 100}%`;
+            overlay.style.width = `${widthPct * 100}%`;
+        };
+
+        sync();
+        scrollContainer.addEventListener('scroll', sync, { passive: true });
+        const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(sync) : null;
+        ro?.observe(scrollContainer);
+
+        return () => {
+            scrollContainer.removeEventListener('scroll', sync);
+            ro?.disconnect();
+        };
+    }, [wavesurfer, zoom]);
+
     return { plugins, regionsPluginRef, minimapPluginRef };
 }

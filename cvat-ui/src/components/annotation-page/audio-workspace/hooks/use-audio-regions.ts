@@ -12,9 +12,37 @@ import { applyAudioControlMode, DragSelectionCleanup } from '../utils/apply-audi
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
 import { createAudioRegion } from '../utils/create-audio-region';
 import { getAudioRegionColor, getRegionItemColor } from '../audio-region-colors';
+import { getPlayOnceRegionId, setPlayOnceRegionId } from '../utils/play-once-region';
 
 const ACTIVE_BORDER_FALLBACK = '#6366F1';
 const ACTIVE_Z_OFFSET = 10000;
+
+// Wavesurfer's drag handler clamps the new start/end independently, so a drag past
+// an edge shrinks the region instead of stopping it. Re-clamp the delta itself when
+// no side is given (i.e. whole-region drag) so length is preserved at the boundary.
+function clampRegionDragToBounds(region: Region): void {
+    /* eslint-disable @typescript-eslint/no-explicit-any, no-underscore-dangle */
+    const r = region as any;
+    const original = r._onUpdate.bind(r) as (
+        dx: number, side?: 'start' | 'end', startTime?: number,
+    ) => void;
+    r._onUpdate = (deltaPx: number, side?: 'start' | 'end', startTime?: number): void => {
+        if (side) {
+            original(deltaPx, side, startTime);
+            return;
+        }
+        const width = r.element?.parentElement?.getBoundingClientRect().width ?? 0;
+        const total = r.totalDuration as number;
+        if (!width || !total) {
+            original(deltaPx, side, startTime);
+            return;
+        }
+        const deltaSec = (deltaPx / width) * total;
+        const clampedSec = Math.max(-region.start, Math.min(total - region.end, deltaSec));
+        original((clampedSec / total) * width, side, startTime);
+    };
+    /* eslint-enable @typescript-eslint/no-explicit-any, no-underscore-dangle */
+}
 
 interface Params {
     regionsPluginRef: React.MutableRefObject<RegionsPlugin | null>;
@@ -62,15 +90,13 @@ export function useAudioRegions(params: Params): Result {
     const silentRemoveIdsRef = useRef<Set<string>>(new Set());
     const wiredRegionIdsRef = useRef<Set<string>>(new Set());
 
-    const regionPlaybackStartRef = useRef<number | null>(null);
-    const regionPlaybackEndRef = useRef<number | null>(null);
-
     const activeControlRef = useRef(activeControl);
     const regionsRef = useRef(regions);
     const activeRegionIdRef = useRef(activeRegionId);
     const activeLabelIdRef = useRef(activeLabelId);
     const labelsRef = useRef(labels);
     const loopRef = useRef(loop);
+    const wavesurferRef = useRef<WaveSurfer | null>(wavesurfer);
     const onSetRegionsRef = useRef(onSetRegions);
     const onSetActiveRegionRef = useRef(onSetActiveRegion);
     const onSetHoveredRegionRef = useRef(onSetHoveredRegion);
@@ -78,14 +104,36 @@ export function useAudioRegions(params: Params): Result {
 
     useEffect(() => { activeControlRef.current = activeControl; }, [activeControl]);
     useEffect(() => { regionsRef.current = regions; }, [regions]);
-    useEffect(() => { activeRegionIdRef.current = activeRegionId; }, [activeRegionId]);
+    useEffect(() => {
+        if (getPlayOnceRegionId() && getPlayOnceRegionId() !== activeRegionId) {
+            setPlayOnceRegionId(null);
+        }
+        activeRegionIdRef.current = activeRegionId;
+    }, [activeRegionId]);
     useEffect(() => { activeLabelIdRef.current = activeLabelId; }, [activeLabelId]);
     useEffect(() => { labelsRef.current = labels; }, [labels]);
     useEffect(() => { loopRef.current = loop; }, [loop]);
+    useEffect(() => { wavesurferRef.current = wavesurfer; }, [wavesurfer]);
     useEffect(() => { onSetRegionsRef.current = onSetRegions; }, [onSetRegions]);
     useEffect(() => { onSetActiveRegionRef.current = onSetActiveRegion; }, [onSetActiveRegion]);
     useEffect(() => { onSetHoveredRegionRef.current = onSetHoveredRegion; }, [onSetHoveredRegion]);
     useEffect(() => { onUpdateActiveControlRef.current = onUpdateActiveControl; }, [onUpdateActiveControl]);
+
+    const computeClickTime = useCallback((e: MouseEvent): number | null => {
+        const ws = wavesurferRef.current;
+        if (!ws) return null;
+        const wrapper = ws.getWrapper();
+        const scrollContainer = wrapper?.parentElement;
+        if (!scrollContainer) return null;
+        const duration = ws.getDuration();
+        if (!duration) return null;
+        const rect = scrollContainer.getBoundingClientRect();
+        const totalWidth = scrollContainer.scrollWidth || rect.width;
+        if (totalWidth <= 0) return null;
+        const xWithinScroll = (e.clientX - rect.left) + ws.getScroll();
+        const clamped = Math.max(0, Math.min(totalWidth, xWithinScroll));
+        return (clamped / totalWidth) * duration;
+    }, []);
 
     const wireRegionHoverEvents = useCallback((region: Region): void => {
         if (wiredRegionIdsRef.current.has(region.id)) return;
@@ -101,6 +149,7 @@ export function useAudioRegions(params: Params): Result {
 
         plugin.on('region-created', (region: Region) => {
             wireRegionHoverEvents(region);
+            clampRegionDragToBounds(region);
             const prev = regionsRef.current;
             const exists = prev.find((r) => r.id === region.id);
 
@@ -116,7 +165,6 @@ export function useAudioRegions(params: Params): Result {
             }
 
             onSetActiveRegionRef.current(region.id);
-            onUpdateActiveControlRef.current(ActiveControl.CURSOR);
         });
 
         plugin.on('region-updated', (region: Region) => {
@@ -144,43 +192,47 @@ export function useAudioRegions(params: Params): Result {
                 e.preventDefault();
             }
 
-            regionPlaybackStartRef.current = null;
-            regionPlaybackEndRef.current = null;
+            const isCursor = activeControlRef.current === ActiveControl.CURSOR;
+            const isDoubleClick = !!(e && e.detail >= 2);
+            const clickTime = e ? computeClickTime(e) : null;
 
-            if (activeControlRef.current === ActiveControl.CURSOR) {
-                if (e && e.ctrlKey) {
-                    const clickTime = (region.start + region.end) / 2;
-                    const overlapping = regionsRef.current
-                        .filter((r) => (
-                            !r.hidden && r.start <= clickTime && r.end >= clickTime
-                        ))
-                        .sort((a, b) => a.zOrder - b.zOrder);
-
+            if (isCursor) {
+                let pickedId = region.id;
+                if (clickTime !== null) {
+                    const overlapping = regionsRef.current.filter((r) => (
+                        !r.hidden && r.start <= clickTime && r.end >= clickTime
+                    ));
                     if (overlapping.length > 1) {
-                        const currentIdx = overlapping.findIndex(
-                            (r) => r.id === activeRegionIdRef.current,
+                        const distance = (r: { start: number; end: number }): number => (
+                            Math.min(Math.abs(clickTime - r.start), Math.abs(clickTime - r.end))
                         );
-                        const nextIdx = (currentIdx + 1) % overlapping.length;
-                        onSetActiveRegionRef.current(overlapping[nextIdx].id);
-                    } else {
-                        onSetActiveRegionRef.current(region.id);
+                        pickedId = overlapping.reduce((best, r) => (
+                            distance(r) < distance(best) ? r : best
+                        )).id;
                     }
-                } else {
-                    onSetActiveRegionRef.current(region.id);
                 }
+                onSetActiveRegionRef.current(pickedId);
             }
 
-            if (e && e.detail >= 2) {
+            if (isDoubleClick) {
                 const safeStart = Math.max(0, region.start || 0);
+                setPlayOnceRegionId(region.id);
                 onSetCurrentTime(safeStart);
+                const ws = wavesurferRef.current;
+                if (ws) ws.setTime(safeStart);
                 onSwitchPlay(true);
-                regionPlaybackStartRef.current = safeStart;
-                regionPlaybackEndRef.current = region.end ?? null;
+                return;
+            }
+
+            if (isCursor && clickTime !== null) {
+                onSetCurrentTime(clickTime);
+                const ws = wavesurferRef.current;
+                if (ws) ws.setTime(clickTime);
             }
         });
 
         regionsHandlersInitializedRef.current = true;
-    }, [wireRegionHoverEvents, onSetCurrentTime, onSwitchPlay]);
+    }, [wireRegionHoverEvents, onSetCurrentTime, onSwitchPlay, computeClickTime]);
 
     const handleReady = useCallback((ws: WaveSurfer): void => {
         onSetDuration(ws.getDuration());
@@ -197,29 +249,72 @@ export function useAudioRegions(params: Params): Result {
     }, [activeControl, onSetDuration, onWaveformReady, onWavesurferReady, regionsPluginRef, registerRegionHandlers]);
 
     const handleFinish = useCallback((): void => {
+        if (loopRef.current && activeRegionIdRef.current && wavesurfer) {
+            const activeRegion = regionsRef.current.find((r) => r.id === activeRegionIdRef.current);
+            if (activeRegion) {
+                wavesurfer.setTime(Math.max(0, activeRegion.start));
+                wavesurfer.play();
+                return;
+            }
+        }
         onSwitchPlay(false);
         onSetCurrentTime(0);
-    }, [onSwitchPlay, onSetCurrentTime]);
+    }, [onSwitchPlay, onSetCurrentTime, wavesurfer]);
 
     const handleTimeupdate = useCallback((ws: WaveSurfer): void => {
         const time = ws.getCurrentTime();
         lastWsTimeRef.current = time;
         onSetCurrentTime(time);
-        if (regionPlaybackEndRef.current !== null && time >= regionPlaybackEndRef.current) {
-            if (loopRef.current && regionPlaybackStartRef.current !== null) {
-                ws.setTime(regionPlaybackStartRef.current);
-            } else {
-                ws.pause();
-                onSwitchPlay(false);
-                regionPlaybackEndRef.current = null;
-                regionPlaybackStartRef.current = null;
-            }
+
+        const activeId = activeRegionIdRef.current;
+        if (!activeId) return;
+        const activeRegion = regionsRef.current.find((r) => r.id === activeId);
+        if (!activeRegion) return;
+        if (time < activeRegion.end) return;
+
+        if (loopRef.current) {
+            ws.setTime(Math.max(0, activeRegion.start));
+            return;
+        }
+
+        if (getPlayOnceRegionId() === activeId) {
+            ws.pause();
+            onSwitchPlay(false);
+            setPlayOnceRegionId(null);
         }
     }, [lastWsTimeRef, onSetCurrentTime, onSwitchPlay]);
 
     useEffect(() => {
         applyAudioControlMode(activeControl, regionsPluginRef.current, dragSelectionCleanupRef, regions);
     }, [activeControl, regions, regionsPluginRef]);
+
+    useEffect(() => {
+        if (!wavesurfer || !activeRegionId) return;
+        const region = regions.find((r) => r.id === activeRegionId);
+        if (!region) return;
+
+        const duration = wavesurfer.getDuration();
+        if (!duration) return;
+
+        const scrollContainer = wavesurfer.getWrapper().parentElement;
+        if (!scrollContainer) return;
+        const totalWidth = scrollContainer.scrollWidth;
+        const visibleWidth = wavesurfer.getWidth();
+        if (totalWidth <= visibleWidth) return;
+
+        const startPx = (region.start / duration) * totalWidth;
+        const endPx = (region.end / duration) * totalWidth;
+        const currentScroll = wavesurfer.getScroll();
+        const inView = startPx >= currentScroll && endPx <= currentScroll + visibleWidth;
+        if (inView) return;
+
+        const midPx = (startPx + endPx) / 2;
+        const targetScroll = Math.max(
+            0,
+            Math.min(totalWidth - visibleWidth, midPx - visibleWidth / 2),
+        );
+        wavesurfer.setScroll(targetScroll);
+    }, [activeRegionId, wavesurfer]);
 
     useEffect(() => {
         const plugin = regionsPluginRef.current;

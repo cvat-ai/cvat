@@ -15,7 +15,7 @@ import notification from 'antd/lib/notification';
 import { getInferenceStatusAsync } from 'actions/models-actions';
 import { updateJobAsync, jobsActions } from 'actions/jobs-actions';
 import {
-    getCore, Task, Job, FramesMetaData,
+    getCore, Task, Job, FramesMetaData, DimensionType,
 } from 'cvat-core-wrapper';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
@@ -26,6 +26,7 @@ import { CombinedState } from 'reducers';
 import { updateTaskAsync, updateTaskMetadataAsync } from 'actions/tasks-actions';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
+import AudioDetailsComponent from './audio-details';
 import { getCloudStorageById } from './cloud-storage-editor';
 
 const core = getCore();
@@ -125,6 +126,9 @@ function TaskPageComponent(): JSX.Element {
         dispatch(updateJobAsync(job, data));
     };
 
+    const isAudioTask = taskInstance.dimension === DimensionType.DIMENSION_1D;
+    const Details = isAudioTask ? AudioDetailsComponent : DetailsComponent;
+
     return (
         <div className='cvat-task-page'>
             { isTaskUpdating ? <CVATLoadingSpinner size='large' /> : null }
@@ -135,7 +139,7 @@ function TaskPageComponent(): JSX.Element {
             >
                 <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} onUpdateTask={onUpdateTask} />
-                    <DetailsComponent
+                    <Details
                         task={taskInstance}
                         onUpdateTask={onUpdateTask}
                         taskMeta={taskMeta}
