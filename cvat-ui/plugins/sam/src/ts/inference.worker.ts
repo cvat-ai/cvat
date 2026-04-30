@@ -91,7 +91,10 @@ if ((self as any).importScripts) {
                     results.masks.getData(),
                     results.low_res_masks.getData(),
                 ])
-            )).then(([xtl, ytl, xbr, ybr, mask, lowResMask]) => {
+            )).then((
+                [xtl, ytl, xbr, ybr, mask, lowResMask]:
+                [Int32Array, Int32Array, Int32Array, Int32Array, Float32Array, Float32Array],
+            ) => {
                 postMessage({
                     action: WorkerAction.DECODE,
                     payload: [{

@@ -492,13 +492,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const { healthIinitialized, backendIsHealthy } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
-        let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized;
+        let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized && aboutInitialized;
         readyForRender = readyForRender && (notRegisteredUserInitialized ||
             (
                 userInitialized &&
                 formatsInitialized &&
                 pluginsInitialized &&
-                aboutInitialized &&
                 organizationInitialized &&
                 modelsInitialized
             )

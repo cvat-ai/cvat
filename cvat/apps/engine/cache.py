@@ -70,6 +70,26 @@ class CacheTooLargeDataError(Exception):
     pass
 
 
+class ChunkCreationError(Exception):
+    pass
+
+
+def _build_chunk_job_failure_exception(
+    rq_job: rq.job.Job, job_meta: RQMetaWithFailureInfo
+) -> Exception:
+    exc_type = job_meta.exc_type or ChunkCreationError
+    exc_args = job_meta.exc_args or ("Cannot create chunk",)
+
+    try:
+        return exc_type(*exc_args)
+    except TypeError:
+        exc_name = exc_type.__name__
+        details = job_meta.formatted_exception or repr(exc_args)
+        return ChunkCreationError(
+            f"Chunk job {rq_job.id} failed with {exc_name}: {details.strip()}"
+        )
+
+
 def enqueue_create_chunk_job(
     queue: rq.Queue,
     rq_job_id: str,
@@ -110,9 +130,7 @@ def wait_for_rq_job(rq_job: rq.job.Job):
         elif job_status in ("failed",):
             rq_job.get_meta()  # refresh from Redis
             job_meta = RQMetaWithFailureInfo.for_job(rq_job)
-            exc_type = job_meta.exc_type or Exception
-            exc_args = job_meta.exc_args or ("Cannot create chunk",)
-            raise exc_type(*exc_args)
+            raise _build_chunk_job_failure_exception(rq_job, job_meta)
 
         time.sleep(settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL)
         retries -= 1
@@ -592,7 +610,7 @@ class MediaCache:
         db_data = db_task.require_data()
         manifest_path = db_data.get_manifest_path()
 
-        def requested_db_images():
+        def requested_db_images() -> Iterator[str]:
             # TODO: find a way to use prefetched results, if provided
             db_images = (
                 db_data.images.order_by("frame")
@@ -624,48 +642,43 @@ class MediaCache:
                 media = []
                 if db_data.local_storage_backing_cs_id:
                     for frame_path in requested_db_images():
-                        storage_filename = frame_path
-                        fs_filename = tmp_dir / storage_filename
+                        abs_frame_path = tmp_dir / frame_path
 
-                        files_to_download.append((storage_filename, fs_filename))
+                        files_to_download.append((frame_path, abs_frame_path))
                         checksums.append(None)
-                        media.append((fs_filename, os.fspath(fs_filename)))
+                        media.append((abs_frame_path, os.fspath(abs_frame_path)))
 
                 else:
                     assert manifest_path.is_file()
                     reader = ImageReaderWithManifest(manifest_path)
                     for item in reader.iterate_frames(frame_ids):
-                        task_filename = f"{item['name']}{item['extension']}"
-                        storage_filename = item.get("meta", {}).get("original_name", task_filename)
-                        fs_filename = tmp_dir / task_filename
+                        frame_path = item.get("meta", {}).get(
+                            "original_name", f"{item['name']}{item['extension']}"
+                        )
+                        abs_frame_path = tmp_dir / frame_path
 
-                        files_to_download.append((storage_filename, fs_filename))
+                        files_to_download.append((frame_path, abs_frame_path))
                         checksums.append(item.get("checksum", None))
-                        media.append((fs_filename, os.fspath(fs_filename)))
+                        media.append((abs_frame_path, os.fspath(abs_frame_path)))
 
                 storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
-                for (storage_filename, _), checksum, media_item in zip(
-                    files_to_download, checksums, media
-                ):
-                    if checksum and not md5_hash(media_item[1]) == checksum:
+                for checksum, media_item in zip(checksums, media):
+                    frame_path = media_item[1]
+                    if checksum and not md5_hash(frame_path) == checksum:
                         slogger.task[db_task.id].warning(
-                            "Hash sums of files {} do not match".format(media_item[1])
+                            "Hash sums of files {} do not match".format(frame_path)
                         )
 
                     if db_task.dimension == models.DimensionType.DIM_3D and (
-                        storage_filename.endswith(".bin")
+                        frame_path.endswith(".bin")
                     ):
-                        media_item = (
-                            ValidateDimension().convert_bin_to_pcd(
-                                media_item[0],
-                                delete_source=(
-                                    False
-                                    # one file can be used several times for honeypots
-                                ),
-                            ),
-                            *media_item[1:],
+                        frame_path = ValidateDimension().convert_bin_to_pcd(
+                            frame_path,
+                            # one file can be used several times for honeypots
+                            delete_source=False,
                         )
+                        media_item = (frame_path, frame_path)
 
                     if db_task.dimension == models.DimensionType.DIM_2D and decode:
                         media_item = load_image(media_item)
@@ -877,7 +890,7 @@ class MediaCache:
         task_frame_provider = make_frame_provider(db_task)
 
         use_cached_data = False
-        if db_task.mode != "interpolation":
+        if db_task.mode != models.TaskMode.INTERPOLATION:
             required_frame_set = set(frame_ids)
             available_chunks = []
             for db_segment in db_task.segment_set.filter(type=models.SegmentType.RANGE).all():

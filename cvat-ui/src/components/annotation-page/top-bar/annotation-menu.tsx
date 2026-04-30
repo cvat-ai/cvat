@@ -248,7 +248,7 @@ function AnnotationMenuComponent(): JSX.Element {
         }),
     );
 
-    const sortedMenuItems = menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
+    const sortedMenuItems = [...menuItems].sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
     const finalMenuItems = sortedMenuItems.map((menuItem) => menuItem[0]);
 
     return (

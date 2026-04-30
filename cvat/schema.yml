@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.62.1
+  version: 2.64.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -5176,6 +5176,9 @@ paths:
         description: A simple equality filter for the mode field
         schema:
           type: string
+          enum:
+          - annotation
+          - interpolation
       - name: name
         in: query
         description: A simple equality filter for the name field
@@ -7244,12 +7247,10 @@ components:
       enum:
       - video
       - imageset
-      - list
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
-        * `list` - LIST
     ClientEvents:
       type: object
       properties:
@@ -9457,16 +9458,18 @@ components:
       properties:
         old_password:
           type: string
+          writeOnly: true
           minLength: 1
-          maxLength: 128
         new_password1:
           type: string
-          minLength: 1
-          maxLength: 128
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
         new_password2:
           type: string
-          minLength: 1
-          maxLength: 128
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
       required:
       - new_password1
       - new_password2
@@ -9477,12 +9480,14 @@ components:
       properties:
         new_password1:
           type: string
-          minLength: 1
-          maxLength: 128
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
         new_password2:
           type: string
-          minLength: 1
-          maxLength: 128
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
         uid:
           type: string
           minLength: 1
@@ -10621,11 +10626,13 @@ components:
         password1:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
+          maxLength: 256
         password2:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
+          maxLength: 256
         first_name:
           type: string
           minLength: 1

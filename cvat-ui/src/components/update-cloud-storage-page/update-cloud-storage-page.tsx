@@ -4,7 +4,8 @@
 
 import './styles.scss';
 import React, { useEffect, useState } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { useParams } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';

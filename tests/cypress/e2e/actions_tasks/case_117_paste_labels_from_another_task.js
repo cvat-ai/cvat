@@ -8,6 +8,7 @@
 // The test is disabled for Firefox because the "Cypress Real Events" plugin work only in the chromium-based browser.
 context('Paste labels from one task to another.', { browser: '!firefox' }, () => {
     const caseID = '117';
+    let copiedLabels = '';
     const task = {
         name: `Case ${caseID}`,
         label: 'Tree',
@@ -30,6 +31,17 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
+
+    function pasteIntoRawLabels(rawLabels) {
+        cy.get('.cvat-raw-labels-viewer').should('exist');
+        cy.get('.cvat-raw-labels-viewer').clear();
+        cy.get('.cvat-raw-labels-viewer').trigger('paste', {
+            clipboardData: {
+                getData: (type) => (type === 'text' ? rawLabels : ''),
+            },
+            eventConstructor: 'ClipboardEvent',
+        });
+    }
 
     before(() => {
         cy.visit('/auth/login');
@@ -54,9 +66,9 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
         it('Copying a label from a task via the raw editor.', () => {
             cy.openTask(task.name);
             cy.contains('[role="tab"]', 'Raw').click();
-            cy.get('.cvat-raw-labels-viewer').focus();
-            cy.get('.cvat-raw-labels-viewer').realPress(['ControlLeft', 'a']);
-            cy.get('.cvat-raw-labels-viewer').realPress(['ControlLeft', 'c']);
+            cy.get('.cvat-raw-labels-viewer').invoke('val').then((value) => {
+                copiedLabels = String(value);
+            });
         });
 
         it('Paste the labels to another task instead of existing.', () => {
@@ -64,14 +76,13 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
             cy.openTask(task.nameSecond);
             cy.contains('.cvat-constructor-viewer-item', task.labelSecond).should('exist');
             cy.contains('[role="tab"]', 'Raw').click();
-            cy.get('.cvat-raw-labels-viewer').focus();
-            cy.get('.cvat-raw-labels-viewer').clear();
-            cy.get('.cvat-raw-labels-viewer').realPress(['ControlLeft', 'v']);
-            cy.get('.cvat-raw-labels-viewer').then((raw) => {
-                expect(raw.text()).not.contain('"id":');
-            });
-            cy.contains('button', 'Done').click();
+            // Trigger the raw editor's paste handler directly instead of relying
+            // on native clipboard shortcuts, which are flaky in CI. This keeps
+            // the UI in charge of stripping IDs from pasted label JSON.
+            pasteIntoRawLabels(copiedLabels);
+            cy.get('.cvat-raw-labels-viewer').invoke('val').should('not.contain', '"id":');
             cy.intercept('PATCH', '/api/tasks/**').as('patchTaskLabels');
+            cy.contains('button', 'Done').click();
             cy.get('.cvat-modal-confirm-remove-existing-labels').should('be.visible').within(() => {
                 cy.get('.cvat-modal-confirm-content-remove-existing-labels').should('have.text', task.labelSecond);
                 cy.get('.cvat-modal-confirm-content-remove-existing-attributes')

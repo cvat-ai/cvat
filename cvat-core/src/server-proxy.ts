@@ -241,7 +241,7 @@ function prepareData(details) {
                 data.append(`${key}[${idx}]`, element);
             });
         } else {
-            data.set(key, value);
+            (data as any).set(key, value);
         }
     }
     return data;
@@ -424,7 +424,7 @@ async function register(
     lastName: string,
     email: string,
     password: string,
-    confirmations: Record<string, string>,
+    confirmations: { name: string; value: boolean; }[],
 ): Promise<SerializedRegister> {
     let response = null;
     try {
@@ -552,7 +552,7 @@ async function authenticated(): Promise<boolean> {
     return true;
 }
 
-async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedRequest>> {
+async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedApiToken>> {
     const { backendAPI } = config;
 
     let response = null;
@@ -768,7 +768,7 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
     return response.data.results;
 }
 
-async function saveProject(id: number, projectData: Partial<SerializedProject>): Promise<SerializedProject> {
+async function saveProject(id: number, projectData: Record<string, unknown>): Promise<SerializedProject> {
     const { backendAPI } = config;
 
     let response = null;
@@ -840,7 +840,7 @@ async function getTasks(
     return response.data.results;
 }
 
-async function saveTask(id: number, taskData: Partial<SerializedTask>): Promise<SerializedTask> {
+async function saveTask(id: number, taskData: Record<string, unknown>): Promise<SerializedTask> {
     const { backendAPI } = config;
 
     let response = null;
@@ -881,7 +881,10 @@ async function mergeConsensusJobs(id: number, instanceType: string): Promise<str
                 if (status === 202) {
                     resolve(rqID);
                 } else {
-                    reject(generateError(response));
+                    reject(new ServerError(
+                        response.statusText || 'Unexpected response while merging consensus jobs',
+                        response.status,
+                    ));
                 }
             } catch (errorData) {
                 reject(generateError(errorData));
@@ -1156,7 +1159,7 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
 
     try {
         if (isCloudStorage) {
-            params.filename = file;
+            params.filename = file as string;
             response = await Axios.post(url,
                 new FormData(),
                 {
@@ -1221,7 +1224,7 @@ async function createTask(
                 taskData.append(`${key}[${idx}]`, element);
             });
         } else if (typeof value !== 'object') {
-            taskData.set(key, value);
+            (taskData as any).set(key, value);
         }
     }
 
@@ -1275,7 +1278,7 @@ async function createTask(
                 headers: { 'Upload-Multiple': true },
             });
             for (let i = 0; i < fileBulks[currentChunkNumber].files.length; i++) {
-                taskData.delete(`client_files[${i}]`);
+                (taskData as any).delete(`client_files[${i}]`);
             }
             totalSentSize += fileBulks[currentChunkNumber].size;
             currentChunkNumber++;
@@ -1382,14 +1385,14 @@ async function getIssues(filter) {
                 ...organization,
             });
 
-            const issuesById = response.results.reduce((acc, val: { id: number }) => {
+            const issuesById = response.results.reduce((acc, val) => {
                 acc[val.id] = val;
                 return acc;
             }, {});
 
             const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
-                acc[val.issue] = acc[val.issue] || [];
-                acc[val.issue].push(val);
+                acc[(val as any).issue] = acc[(val as any).issue] ?? [];
+                acc[(val as any).issue].push(val);
                 return acc;
             }, {});
 
@@ -1464,7 +1467,8 @@ async function deleteIssue(issueID: number): Promise<void> {
     }
 }
 
-async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+type JobWritePayload = Partial<Omit<SerializedJob, 'assignee'> & { assignee: number | null }>;
+async function saveJob(id: number, jobData: JobWritePayload): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1477,7 +1481,7 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
     return response.data;
 }
 
-async function createJob(jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+async function createJob(jobData: JobWritePayload): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1522,7 +1526,7 @@ const validationLayout = (instance: 'tasks' | 'jobs') => async (
     }
 };
 
-async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]> {
+async function getUsers(filter: Record<string, unknown> = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1964,7 +1968,7 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
     }
 }
 
-async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
+async function getCloudStorageContent(id: number, path?: string, nextToken?: string, manifestPath?: string):
 Promise<{ content: SerializedRemoteFile[], next: string | null }> {
     const { backendAPI } = config;
 

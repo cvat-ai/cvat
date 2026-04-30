@@ -26,9 +26,12 @@ interface Props {
     onSave: () => void;
 }
 
-const FilteringComponent = ResourceFilterHOC(
+const FilteringComponentBase = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity,
 );
+const FilteringComponent = FilteringComponentBase as React.ComponentType<
+Omit<React.ComponentProps<typeof FilteringComponentBase>, 'value' | 'onApplyFilter'>
+>;
 
 export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element | null {
     const { form, settings, disabled } = props;

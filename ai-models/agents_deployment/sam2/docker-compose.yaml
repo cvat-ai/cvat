@@ -11,6 +11,8 @@ services:
       MODEL_CONFIG_PARAMS:
       ORG_SLUG:
       FUNCTION_NAME:
+      HF_TOKEN:
+      VISIBILITY:
 
   cvat-agent:
     image: ${IMAGE_URL}
@@ -28,6 +30,7 @@ services:
       MODEL_CONFIG_PARAMS:
       ORG_SLUG:
       USE_CUDA: "false"
+      HF_TOKEN:
 
   cvat-agent-gpu:
     extends: cvat-agent
