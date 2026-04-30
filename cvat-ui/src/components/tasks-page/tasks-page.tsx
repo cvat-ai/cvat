@@ -7,8 +7,7 @@ import _ from 'lodash';
 
 import './styles.scss';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
-import React, { useEffect, useState, useCallback } from 'react';
-import { useHistory } from 'react-router';
+import React, { useCallback } from 'react';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
@@ -18,7 +17,7 @@ import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { anySearch } from 'utils/any-search';
-import { useResourceQuery } from 'utils/hooks';
+import { useResourceQuery, usePageQuerySync } from 'utils/hooks';
 import { selectionActions } from 'actions/selection-actions';
 
 import TopBar from './top-bar';
@@ -36,8 +35,6 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
     const { query, fetching, importing, count, bulkFetching } = props;
 
     const dispatch = useDispatch();
-    const history = useHistory();
-    const [isMounted, setIsMounted] = useState(false);
 
     const { currentTasks, deletedTasks, selectedCount } = useSelector(
         (state: CombinedState) => ({
@@ -59,37 +56,19 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
 
     const updatedQuery = useResourceQuery<TasksQuery>(query);
 
-    useEffect(() => {
-        dispatch(getTasksAsync({ ...updatedQuery }));
-        setIsMounted(true);
-    }, []);
-
-    useEffect(() => {
-        if (isMounted && !_.isEqual(query, updatedQuery)) {
-            dispatch(getTasksAsync({ ...updatedQuery }));
-        }
-    }, [updatedQuery, query, isMounted]);
-
-    const setQuery = useCallback(
-        (nextQuery: TasksQuery) => {
-            if (isMounted) {
-                const nextSearch = updateHistoryFromQuery(nextQuery);
-
-                if (nextSearch === (history.location.search || '')) return;
-
-                if (
-                    updatedQuery.filter === nextQuery.filter &&
-                    updatedQuery.sort === nextQuery.sort &&
-                    updatedQuery.search === nextQuery.search
-                ) {
-                    history.replace({ search: nextSearch });
-                } else {
-                    history.push({ ...history.location, search: nextSearch });
-                }
-            }
+    const { isMounted, setQuery } = usePageQuerySync({
+        query,
+        updatedQuery,
+        onFetch: (fetchQuery: TasksQuery) => {
+            dispatch(getTasksAsync({ ...fetchQuery }));
         },
-        [history.location, updatedQuery, isMounted],
-    );
+        updateHistoryFromQuery,
+        getFilterSortSearch: (q: TasksQuery) => ({
+            filter: q.filter,
+            sort: q.sort,
+            search: q.search,
+        }),
+    });
 
     const isAnySearch = anySearch<TasksQuery>(query);
 

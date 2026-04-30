@@ -4,10 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
-import {
-    useRef, useEffect, useState, useCallback,
-    useLayoutEffect, EffectCallback, DependencyList,
-} from 'react';
+import { useRef, useEffect, useState, useCallback, useLayoutEffect, EffectCallback, DependencyList } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory, useLocation, useParams } from 'react-router';
 import { CombinedState, PluginComponent, InstanceType } from 'reducers';
@@ -45,18 +42,23 @@ export type Plugin = {
 
 export function usePlugins(
     getState: (state: CombinedState) => PluginComponent[],
-    props: object = {}, state: object = {},
+    props: object = {},
+    state: object = {},
 ): Plugin[] {
     const components = useSelector(getState);
     const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
-    const mappedComponents = filteredComponents
-        .map(({ component, data }): {
+    const mappedComponents = filteredComponents.map(
+        ({
+            component,
+            data,
+        }): {
             component: CallableFunction;
             weight: number;
         } => ({
             component,
             weight: data.weight,
-        }));
+        }),
+    );
     const ref = useRef<Plugin[]>(mappedComponents);
 
     if (!_.isEqual(ref.current, mappedComponents)) {
@@ -85,9 +87,7 @@ export interface ICardHeightHOC {
 }
 
 export function useCardHeightHOC(params: ICardHeightHOC): () => string {
-    const {
-        numberOfRows, minHeight, paddings, containerClassName, siblingClassNames,
-    } = params;
+    const { numberOfRows, minHeight, paddings, containerClassName, siblingClassNames } = params;
 
     return (): string => {
         const [height, setHeight] = useState('auto');
@@ -140,16 +140,19 @@ export function useResetShortcutsOnUnmount(componentShortcuts: Record<string, Ke
         keyMapRef.current = keyMap;
     }, [keyMap]);
 
-    useEffect(() => () => {
-        const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: KeyMap, [key, value]) => {
-            acc[key] = {
-                ...value,
-                sequences: keyMapRef.current[key]?.sequences ?? [],
-            };
-            return acc;
-        }, {});
-        registerComponentShortcuts(revertedShortcuts);
-    }, []);
+    useEffect(
+        () => () => {
+            const revertedShortcuts = Object.entries(componentShortcuts).reduce((acc: KeyMap, [key, value]) => {
+                acc[key] = {
+                    ...value,
+                    sequences: keyMapRef.current[key]?.sequences ?? [],
+                };
+                return acc;
+            }, {});
+            registerComponentShortcuts(revertedShortcuts);
+        },
+        [],
+    );
 }
 
 export function usePageSizeData(ref: any): any {
@@ -197,9 +200,9 @@ export function useInstanceType(): InstanceType {
 
 export function useInstanceId(type: InstanceType): number {
     const params = useParams<{
-        pid?: string,
-        jid?: string,
-        tid?: string,
+        pid?: string;
+        jid?: string;
+        tid?: string;
     }>();
 
     if (type === InstanceType.PROJECT) return +(params.pid as string);
@@ -225,16 +228,24 @@ export function useDropdownEditField(): DropdownEditField {
         setDropdownOpen(false);
     }, []);
 
-    const onOpenChange = useCallback((open: boolean, { source }: {
-        source: 'trigger' | 'menu';
-    }) => {
-        if (source === 'trigger') {
-            setDropdownOpen(open);
-        }
-        if (!open && editField) {
-            stopEditField();
-        }
-    }, [editField, stopEditField]);
+    const onOpenChange = useCallback(
+        (
+            open: boolean,
+            {
+                source,
+            }: {
+                source: 'trigger' | 'menu';
+            },
+        ) => {
+            if (source === 'trigger') {
+                setDropdownOpen(open);
+            }
+            if (!open && editField) {
+                stopEditField();
+            }
+        },
+        [editField, stopEditField],
+    );
 
     const onMenuClick = useCallback(({ key }: { key: string }) => {
         if (!key.startsWith('edit') && !key.endsWith('selector')) {
@@ -257,16 +268,14 @@ interface ResourceQueryDefaultParams {
     pageSize?: number;
 }
 
-export function useResourceQuery<QueryType extends {
-    page: number;
-    pageSize: number;
-    filter?: string;
-}>(query: QueryType, defaultParams: ResourceQueryDefaultParams = {}): QueryType {
-    const {
-        page = 1,
-        pageSize = 10,
-        filter = null,
-    } = defaultParams;
+export function useResourceQuery<
+    QueryType extends {
+        page: number;
+        pageSize: number;
+        filter?: string;
+    },
+>(query: QueryType, defaultParams: ResourceQueryDefaultParams = {}): QueryType {
+    const { page = 1, pageSize = 10, filter = null } = defaultParams;
 
     const history = useHistory();
 
@@ -310,16 +319,89 @@ export function useContextMenuClick<T extends HTMLElement = HTMLElement>(
         }
     }, []);
 
-    const shouldPreventContextMenu = useCallback((target: EventTarget | null): boolean => {
-        if (!target || !(target instanceof Element)) return false;
-        return preventSelectors.some((selector) => target.closest(selector) !== null);
-    }, [preventSelectors]);
+    const shouldPreventContextMenu = useCallback(
+        (target: EventTarget | null): boolean => {
+            if (!target || !(target instanceof Element)) return false;
+            return preventSelectors.some((selector) => target.closest(selector) !== null);
+        },
+        [preventSelectors],
+    );
 
-    const handleContextMenuCapture = useCallback((e: React.MouseEvent) => {
-        if (shouldPreventContextMenu(e.target)) {
-            e.stopPropagation();
-        }
-    }, [shouldPreventContextMenu]);
+    const handleContextMenuCapture = useCallback(
+        (e: React.MouseEvent) => {
+            if (shouldPreventContextMenu(e.target)) {
+                e.stopPropagation();
+            }
+        },
+        [shouldPreventContextMenu],
+    );
 
     return { itemRef, handleContextMenuClick, handleContextMenuCapture };
+}
+
+export interface UsePageQuerySyncParams<QueryType> {
+    query: QueryType;
+    updatedQuery: QueryType;
+    onFetch: (query: QueryType) => void;
+    updateHistoryFromQuery: (query: QueryType) => string;
+    getFilterSortSearch?: (query: QueryType) => {
+        filter?: string | null;
+        sort?: string | null;
+        search?: string | null;
+    };
+}
+
+export function usePageQuerySync<QueryType extends { page: number; pageSize: number }>({
+    query,
+    updatedQuery,
+    onFetch,
+    updateHistoryFromQuery,
+    getFilterSortSearch,
+}: UsePageQuerySyncParams<QueryType>): {
+    isMounted: boolean;
+    setQuery: (nextQuery: QueryType) => void;
+} {
+    const history = useHistory();
+    const [isMounted, setIsMountedState] = useState(false);
+    const isMountedRef = useRef(false);
+
+    useEffect(() => {
+        // Initial fetch on mount
+        onFetch({ ...updatedQuery });
+        isMountedRef.current = true;
+        setIsMountedState(true);
+    }, []);
+
+    useEffect(() => {
+        // Fetch when query changes (but not on initial mount)
+        if (isMountedRef.current && !_.isEqual(query, updatedQuery)) {
+            onFetch({ ...updatedQuery });
+        }
+    }, [updatedQuery, query]);
+
+    const setQuery = useCallback(
+        (nextQuery: QueryType) => {
+            if (isMountedRef.current) {
+                const nextSearch = updateHistoryFromQuery(nextQuery);
+
+                // Don't update history if search string hasn't changed
+                if (nextSearch === (history.location.search || '')) return;
+
+                // Check if only page changed (for pagination)
+                const queryInfo = getFilterSortSearch ? getFilterSortSearch(nextQuery) : nextQuery;
+                const updatedQueryInfo = getFilterSortSearch ? getFilterSortSearch(updatedQuery) : updatedQuery;
+
+                if (_.isEqual(queryInfo, updatedQueryInfo)) {
+                    // Only pagination changed, use replace
+                    history.replace({ search: nextSearch });
+                } else {
+                    // Filter/sort/search changed, use push
+                    history.push({ ...history.location, search: nextSearch });
+                }
+            }
+        },
+        [history.location, updatedQuery, updateHistoryFromQuery, getFilterSortSearch],
+    );
+
+    return { isMounted, setQuery };
 }
