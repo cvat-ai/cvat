@@ -2,22 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Iterable
-
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from cvat.apps.engine.models import Label, LabelType, Project, Task
+from cvat.apps.engine.models import Label, Project, Task
 from cvat.apps.quality_control.models import (
     QualityRequirement,
     QualityRequirementAnnotationType,
     QualitySettings,
 )
 
-_DEFAULT_REQUIREMENT_TYPE_ORDER = (
+# Attribute requirements are not standalone: they need an explicit parent shape requirement.
+_DEFAULT_REQUIREMENT_ANNOTATION_TYPES = (
     QualityRequirementAnnotationType.TAG,
     QualityRequirementAnnotationType.RECTANGLE,
     QualityRequirementAnnotationType.SKELETON,
+    QualityRequirementAnnotationType.SKELETON_KEYPOINT,
     QualityRequirementAnnotationType.POINTS,
     QualityRequirementAnnotationType.POLYLINE,
     QualityRequirementAnnotationType.MASK,
@@ -25,48 +25,15 @@ _DEFAULT_REQUIREMENT_TYPE_ORDER = (
     QualityRequirementAnnotationType.ELLIPSE,
 )
 
-_LABEL_TYPE_TO_REQUIREMENT_TYPES = {
-    LabelType.TAG: (QualityRequirementAnnotationType.TAG,),
-    LabelType.RECTANGLE: (QualityRequirementAnnotationType.RECTANGLE,),
-    LabelType.SKELETON: (QualityRequirementAnnotationType.SKELETON,),
-    LabelType.POINTS: (QualityRequirementAnnotationType.POINTS,),
-    LabelType.POLYLINE: (QualityRequirementAnnotationType.POLYLINE,),
-    LabelType.MASK: (QualityRequirementAnnotationType.MASK,),
-    LabelType.POLYGON: (QualityRequirementAnnotationType.POLYGON,),
-    LabelType.ELLIPSE: (QualityRequirementAnnotationType.ELLIPSE,),
-    LabelType.CUBOID: (),
-    # "any" labels can be used with all top-level annotation types supported by quality requirements.
-    LabelType.ANY: _DEFAULT_REQUIREMENT_TYPE_ORDER,
-}
-
-
-def _collect_default_requirement_types(labels: Iterable[Label]) -> list[str]:
-    available_types = set()
-    for label in labels:
-        if label.parent_id is not None:
-            continue
-
-        available_types.update(_LABEL_TYPE_TO_REQUIREMENT_TYPES.get(LabelType(label.type), ()))
-
-    return [
-        annotation_type
-        for annotation_type in _DEFAULT_REQUIREMENT_TYPE_ORDER
-        if annotation_type in available_types
-    ]
-
 
 def _ensure_default_requirements_for_task(task: Task) -> None:
     quality_settings, _ = QualitySettings.objects.get_or_create(task_id=task.id)
-    required_annotation_types = _collect_default_requirement_types(task.get_labels())
-    if not required_annotation_types:
-        return
-
     existing_annotation_types = set(
         quality_settings.requirements.values_list("annotation_type", flat=True)
     )
     new_annotation_types = [
         annotation_type
-        for annotation_type in required_annotation_types
+        for annotation_type in _DEFAULT_REQUIREMENT_ANNOTATION_TYPES
         if annotation_type not in existing_annotation_types
     ]
 

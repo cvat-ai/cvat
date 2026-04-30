@@ -676,7 +676,21 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
-    def test_new_task_gets_disabled_default_requirements_from_task_labels(self, admin_user):
+    _default_standalone_annotation_types = {
+        "tag",
+        "rectangle",
+        "skeleton",
+        "skeleton_keypoint",
+        "points",
+        "polyline",
+        "mask",
+        "polygon",
+        "ellipse",
+    }
+
+    def test_new_task_gets_disabled_default_requirements_for_all_supported_types(
+        self, admin_user
+    ):
         task_id, _ = create_task(
             admin_user,
             spec={
@@ -696,17 +710,16 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
         settings = self._get_task_settings(admin_user, task_id=task_id)
         requirements = settings["requirements"]
 
-        assert {requirement["annotation_type"] for requirement in requirements} == {
-            "rectangle",
-            "tag",
-        }
+        assert {
+            requirement["annotation_type"] for requirement in requirements
+        } == self._default_standalone_annotation_types
         assert {requirement["name"] for requirement in requirements} == {
-            "default:rectangle",
-            "default:tag",
+            f"default:{annotation_type}"
+            for annotation_type in self._default_standalone_annotation_types
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
 
-    def test_new_project_task_gets_disabled_default_requirements_from_project_labels(
+    def test_new_project_task_gets_disabled_default_requirements_for_all_supported_types(
         self, admin_user
     ):
         with make_api_client(admin_user) as api_client:
@@ -736,13 +749,12 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
         settings = self._get_task_settings(admin_user, task_id=task_id)
         requirements = settings["requirements"]
 
-        assert {requirement["annotation_type"] for requirement in requirements} == {
-            "rectangle",
-            "skeleton",
-        }
+        assert {
+            requirement["annotation_type"] for requirement in requirements
+        } == self._default_standalone_annotation_types
         assert {requirement["name"] for requirement in requirements} == {
-            "default:rectangle",
-            "default:skeleton",
+            f"default:{annotation_type}"
+            for annotation_type in self._default_standalone_annotation_types
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
 
