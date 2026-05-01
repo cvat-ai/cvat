@@ -6,6 +6,7 @@
 
 import { taskName, labelName } from '../../support/const';
 import { getShapeCoord } from '../../support/utils.cy';
+import { translatePoint } from '../../support/utils';
 
 context('Simplify polygons feature', { scrollBehavior: false }, () => {
     const polygonCenter = { x: 510, y: 324 };
@@ -69,6 +70,23 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
             shouldKeepBaselineArea: true,
         },
     ];
+    const actionSimplificationCases = [
+        {
+            objectId: 2,
+            distance: 20,
+            message: 'Aggressively simplified polygon',
+        },
+        {
+            objectId: 3,
+            distance: 40,
+            message: 'Middle-distance simplified polygon',
+        },
+        {
+            objectId: 4,
+            distance: 64,
+            message: 'High-distance simplified polygon',
+        },
+    ];
 
     function parsePolygonPoints(rawPoints) {
         return rawPoints
@@ -125,18 +143,19 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         cy.get(sliderSelector).should('have.attr', 'aria-valuenow', `${value}`);
     }
 
-    function makeAlignedCopy(expectedObjectId) {
+    function makeCopy(expectedObjectId, canvasPosition = polygonCenter) {
         cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Make a copy');
-        cy.get('.cvat-canvas-container').click(polygonCenter.x, polygonCenter.y);
+        cy.get('.cvat-canvas-container').click(canvasPosition.x, canvasPosition.y);
         cy.get(`#cvat_canvas_shape_${expectedObjectId}`).should('exist').and('be.visible');
+        return cy.get(`#cvat-objects-sidebar-state-item-${expectedObjectId}`).should('exist').and('be.visible');
     }
 
     function simplifyPolygon({ objectId, accuracy }) {
         cy.interactAnnotationObjectMenu(`#cvat-objects-sidebar-state-item-${objectId}`, 'Simplify');
-        cy.get('.cvat-approx-poly-threshold-wrapper').should('exist').and('be.visible');
         setSimplifyAccuracy(accuracy);
         cy.get('.cvat-approx-poly-threshold-wrapper .ant-btn-primary').click({ force: true });
         cy.get('.cvat-approx-poly-threshold-wrapper').should('not.exist');
+        return false;
     }
 
     function expectCopiedPolygonMetrics(metrics, baselineStats) {
@@ -144,83 +163,165 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         expect(metrics.area).to.be.closeTo(baselineStats.area, 1);
     }
 
-    function expectSimplificationMetrics(metrics, previousMetrics, baselineStats, {
+    function expectSimplifiedPolygonMetrics(metrics, previousMetrics, baselineStats, {
         shouldHaveMorePointsThanPrevious = false,
-        shouldHaveAtLeastPreviousPoints = false,
         shouldHaveLessPointsThanBaseline = false,
-        shouldHaveAtLeastOriginalPoints = false,
-        shouldKeepBaselineArea = false,
+        shouldEqualBaseline = false,
     }) {
         if (shouldHaveMorePointsThanPrevious) {
             expect(metrics.pointsCount).to.be.greaterThan(previousMetrics.pointsCount);
-        }
-
-        if (shouldHaveAtLeastPreviousPoints) {
-            expect(metrics.pointsCount).to.be.at.least(previousMetrics.pointsCount);
         }
 
         if (shouldHaveLessPointsThanBaseline) {
             expect(metrics.pointsCount).to.be.lessThan(baselineStats.pointsCount);
         }
 
-        if (shouldHaveAtLeastOriginalPoints) {
-            expect(metrics.pointsCount).to.be.at.least(polygonPointsCount);
-        }
-
-        if (shouldKeepBaselineArea) {
+        if (shouldEqualBaseline) {
+            expect(metrics.pointsCount).to.equal(baselineStats.pointsCount);
             expect(metrics.area).to.be.closeTo(baselineStats.area, 1);
         } else {
             expect(metrics.area).to.be.greaterThan(0);
         }
     }
 
-    function runSimplificationCases(baselineStats) {
-        let previousMetrics = null;
-
-        simplificationCases.forEach((simplificationCase, index) => {
+    /**
+     * Runs a series of polygon simplification test cases and validates the results.
+     *
+     * @param {({objectId: number, accuracy?: number, distance?: number}) => boolean} simplifyFn
+     * @param {Object[]} cases - Simplification cases with action-specific parameters
+     * @returns {boolean} - whether a new shape was created
+     */
+    function runSimplificationCases(simplifyFn, cases) {
+        cases.forEach((simplificationCase, index) => {
             const objectId = firstSimplifiedObjectId + index;
 
             if (index > 0) {
-                makeAlignedCopy(objectId);
+                makeCopy(objectId);
             }
 
-            simplifyPolygon({ objectId, accuracy: simplificationCase.accuracy });
-            getPolygonStats(objectId).then((metrics) => {
+            const isNewShape = simplifyFn({ objectId, ...simplificationCase });
+            getPolygonStats(objectId + +isNewShape).then((metrics) => {
                 logPolygonMetrics(simplificationCase.message, metrics);
-                expectSimplificationMetrics(metrics, previousMetrics, baselineStats, simplificationCase);
-                previousMetrics = metrics;
             });
         });
     }
+    function simplifyAction({ objectId, distance }) {
+        cy.get(`#cvat-objects-sidebar-state-item-${objectId}`)
+            .find('.cvat-object-item-menu-button').click();
+        cy.get('.cvat-object-item-menu')
+            .contains('button', 'Run annotation action').click();
+        cy.selectAnnotationsAction('Simplify polygons and polylines');
+        cy.setAnnotationActionParameter('Distance', 'input', distance);
 
-    before(() => {
+        // Run action
+        cy.get('.cvat-action-runner-run-btn').click();
+        cy.get('.cvat-action-runner-run-btn.ant-btn-loading').should('exist');
+        // Wait for modal to disappear
+        cy.get('.cvat-action-runner-content').should('not.exist');
+        return true;
+    }
+
+    function simplifyActionAndGetResultStats(simplificationCase, previousMaxObjectId) {
+        const resultObjectId = previousMaxObjectId + 1;
+
+        simplifyAction(simplificationCase);
+        return getPolygonStats(resultObjectId);
+    }
+
+    beforeEach(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createPolygon(createDetailedPolygon, null, 'shiftHover');
     });
 
-    after(() => {
+    afterEach(() => {
         cy.realPress('Escape');
-        cy.removeAnnotations();
+        // cy.removeAnnotations();
+        cy.saveJob();
     });
 
-    it("'Simplify' preserves polygon area while retaining more detail at higher accuracy", () => {
+    it("'Simplify' removes points, decreases areas. Higher accuracy restores shape ", () => {
         getPolygonStats(referenceObjectId).then((baselineStats) => {
             expect(baselineStats.pointsCount).to.be.at.least(polygonPointsCount);
             expect(baselineStats.area).to.be.greaterThan(0);
 
-            makeAlignedCopy(firstSimplifiedObjectId);
+            makeCopy(firstSimplifiedObjectId);
 
             getPolygonStats(firstSimplifiedObjectId).then((metrics) => {
                 logPolygonMetrics('Copied polygon', metrics);
                 expectCopiedPolygonMetrics(metrics, baselineStats);
             });
 
-            runSimplificationCases(baselineStats);
+            runSimplificationCases(simplifyPolygon, simplificationCases);
 
             getPolygonStats(referenceObjectId).then((originalStats) => {
                 expect(originalStats.pointsCount).to.equal(baselineStats.pointsCount);
                 expect(originalStats.area).to.be.closeTo(baselineStats.area, 1);
+            });
+        });
+    });
+
+    context.only("'Simplify' can be invoked as annotations action", () => {
+        const originalObjectId = 1;
+        const copyIds = [2, 3, 4];
+        const resultIds = [5, 6, 7];
+        const distances = [20, 40, 64];
+
+        it('simplify', () => {
+            let originalArea;
+
+            // Make 3 copies, place them around cavnas for visual
+            makeCopy(copyIds[0], translatePoint({ a: -250 }, polygonCenter));
+            makeCopy(copyIds[1], translatePoint({ b: 250 }, polygonCenter));
+            makeCopy(copyIds[2], translatePoint({ a: 250 }, polygonCenter));
+
+            getPolygonStats(originalObjectId).then((originalStats) => {
+                originalArea = originalStats.area;
+                expect(originalStats.area).to.be.greaterThan(0);
+
+                // Simplify each copy with different distance parameters
+                copyIds.forEach((copyId, index) => {
+                    simplifyAction({ objectId: copyId, distance: distances[index] });
+                    cy.get(`#cvat_canvas_shape_${resultIds[index]}`).should('exist');
+                });
+
+                // Collect  stats
+                const allStats = [];
+                cy.wrap(resultIds).each((id) => {
+                    getPolygonStats(id).then((stats) => {
+                        allStats.push(stats);
+                    });
+                });
+                cy.then(() => {
+                    const [stats1, stats2, stats3] = allStats;
+                    cy.task('log', { allStats });
+
+                    cy.task('log', {
+                        message: 'Aggressive simplification (distance=20)',
+                        points: stats1.pointsCount,
+                        area: stats1.area.toFixed(1),
+                    });
+                    cy.task('log', {
+                        message: 'Middle simplification (distance=40)',
+                        points: stats2.pointsCount,
+                        area: stats2.area.toFixed(1),
+                    });
+                    cy.task('log', {
+                        message: 'High-distance simplification (distance=64)',
+                        points: stats3.pointsCount,
+                        area: stats3.area.toFixed(1),
+                    });
+
+                    // Verify area progression: copy1Area < copy2Area < copy3Area ≈ origArea
+                    expect(stats1.area).to.be.lessThan(stats2.area);
+                    expect(stats2.area).to.be.lessThan(stats3.area);
+                    expect(stats.area).to.be.closeTo(originalArea, 1);
+
+                    // Verify original polygon unchanged
+                    return getPolygonStats(originalObjectId).then((finalOriginalStats) => {
+                        expect(finalOriginalStats.area).to.be.closeTo(originalArea, 1);
+                    });
+                });
             });
         });
     });

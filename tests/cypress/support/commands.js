@@ -1759,7 +1759,7 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
 });
 
 Cypress.Commands.add('hideTooltips', () => {
-    cy.wait(500); // wait while tooltips are opened
+    cy.wait(500); // FIXME: wait while tooltips are opened
 
     cy.document().then((doc) => {
         const tooltips = Array.from(doc.querySelectorAll('.ant-tooltip'));
@@ -1808,8 +1808,7 @@ Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
 });
 
 Cypress.Commands.add('clickSaveAnnotationView', () => {
-    cy.get('button').contains('Save').click();
-    cy.get('button').contains('Save').trigger('mouseout');
+    cy.get('.cvat-annotation-header-save-button').should('exist').and('be.visible').click();
 });
 
 Cypress.Commands.add('makeCustomImage', (directory, fileName,
