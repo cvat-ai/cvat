@@ -70,23 +70,6 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
             shouldKeepBaselineArea: true,
         },
     ];
-    const actionSimplificationCases = [
-        {
-            objectId: 2,
-            distance: 20,
-            message: 'Aggressively simplified polygon',
-        },
-        {
-            objectId: 3,
-            distance: 40,
-            message: 'Middle-distance simplified polygon',
-        },
-        {
-            objectId: 4,
-            distance: 64,
-            message: 'High-distance simplified polygon',
-        },
-    ];
 
     function parsePolygonPoints(rawPoints) {
         return rawPoints
@@ -163,27 +146,6 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         expect(metrics.area).to.be.closeTo(baselineStats.area, 1);
     }
 
-    function expectSimplifiedPolygonMetrics(metrics, previousMetrics, baselineStats, {
-        shouldHaveMorePointsThanPrevious = false,
-        shouldHaveLessPointsThanBaseline = false,
-        shouldEqualBaseline = false,
-    }) {
-        if (shouldHaveMorePointsThanPrevious) {
-            expect(metrics.pointsCount).to.be.greaterThan(previousMetrics.pointsCount);
-        }
-
-        if (shouldHaveLessPointsThanBaseline) {
-            expect(metrics.pointsCount).to.be.lessThan(baselineStats.pointsCount);
-        }
-
-        if (shouldEqualBaseline) {
-            expect(metrics.pointsCount).to.equal(baselineStats.pointsCount);
-            expect(metrics.area).to.be.closeTo(baselineStats.area, 1);
-        } else {
-            expect(metrics.area).to.be.greaterThan(0);
-        }
-    }
-
     /**
      * Runs a series of polygon simplification test cases and validates the results.
      *
@@ -221,13 +183,6 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         return true;
     }
 
-    function simplifyActionAndGetResultStats(simplificationCase, previousMaxObjectId) {
-        const resultObjectId = previousMaxObjectId + 1;
-
-        simplifyAction(simplificationCase);
-        return getPolygonStats(resultObjectId);
-    }
-
     beforeEach(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
@@ -236,8 +191,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
 
     afterEach(() => {
         cy.realPress('Escape');
-        // cy.removeAnnotations();
-        cy.saveJob();
+        cy.removeAnnotations();
     });
 
     it("'Simplify' removes points, decreases areas. Higher accuracy restores shape ", () => {
@@ -315,7 +269,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                     // Verify area progression: copy1Area < copy2Area < copy3Area ≈ origArea
                     expect(stats1.area).to.be.lessThan(stats2.area);
                     expect(stats2.area).to.be.lessThan(stats3.area);
-                    expect(stats.area).to.be.closeTo(originalArea, 1);
+                    expect(stats1.area).to.be.closeTo(originalArea, 1);
 
                     // Verify original polygon unchanged
                     return getPolygonStats(originalObjectId).then((finalOriginalStats) => {
