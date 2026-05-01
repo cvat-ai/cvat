@@ -212,6 +212,10 @@
         // opacity 0.53 in sidebar to keep the same look as before on sidebar
         background-color: rgba(var(--state-item-background), 0.53);
     }
+
+    .cvat-objects-sidebar-state-item-elements {
+        background-color: rgba(var(--state-item-background), 0);
+    }
 }
 
 .cvat-objects-sidebar-z-layer-mark {
@@ -440,26 +444,53 @@
 .cvat-approx-poly-threshold-wrapper {
     @extend .cvat-workspace-settings-approx-poly-threshold;
 
-    width: $grid-unit-size * 32;
+    width: $grid-unit-size * 44;
     position: absolute;
     background: $background-color-2;
-    top: 8px;
+    top: $grid-unit-size;
     left: 50%;
     border-radius: $border-radius-base;
     border: 1px solid $border-color-1;
     z-index: 100;
-    padding: $grid-unit-size * 0.5 $grid-unit-size * 2 $grid-unit-size * 0.5 $grid-unit-size * 0.5;
+    padding: $grid-unit-size * 0.5 $grid-unit-size;
+
+    .ant-slider {
+        height: $grid-unit-size * 2;
+    }
 
     .ant-slider-mark {
         position: static;
         margin-top: 4px;
         pointer-events: none;
     }
+
+    > span {
+        font-size: 10px;
+        position: absolute;
+        bottom: -4px;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+}
+
+.cvat-actions-slider-wrapper {
+    position: relative;
+    left: 0;
+    margin-bottom: $grid-unit-size;
+}
+
+.cvat-interactor-threshold-wrapper {
+    @extend .cvat-approx-poly-threshold-wrapper;
+
+    .cvat-approx-poly-threshold-wrapper + & {
+        top: $grid-unit-size * 5;
+    }
 }
 
 .cvat-objects-sidebar-state-item-elements {
     padding: $grid-unit-size * 0.5;
     border: 1px solid rgba($color: white, $alpha: 0%);
+    background-color: rgba(var(--state-item-background), 1);
 }
 
 .cvat-objects-sidebar-state-item-elements.cvat-objects-sidebar-state-active-element {

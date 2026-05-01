@@ -43,14 +43,16 @@ interface Props {
     onCancel: () => void;
 }
 
+type InputRef = React.ComponentRef<typeof Input>;
+
 export default class LabelForm extends React.Component<Props> {
     private formRef: RefObject<FormInstance>;
-    private inputNameRef: RefObject<Input>;
+    private inputNameRef: RefObject<InputRef>;
 
     constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
-        this.inputNameRef = React.createRef<Input>();
+        this.inputNameRef = React.createRef<InputRef>();
     }
 
     private focus = (): void => {
@@ -320,8 +322,8 @@ export default class LabelForm extends React.Component<Props> {
                     name={[key, 'values']}
                 >
                     <Select className='cvat-attribute-values-input'>
-                        <Select.Option value='false'>False</Select.Option>
-                        <Select.Option value='true'>True</Select.Option>
+                        <Select.Option value='false'>false</Select.Option>
+                        <Select.Option value='true'>true</Select.Option>
                     </Select>
                 </Form.Item>
             </CVATTooltip>

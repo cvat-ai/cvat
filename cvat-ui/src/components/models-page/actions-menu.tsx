@@ -9,7 +9,8 @@ import { MLModel } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { MenuProps } from 'antd/lib/menu';
-import { shallowEqual, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 
 interface ModelActionsProps {
     model: MLModel;

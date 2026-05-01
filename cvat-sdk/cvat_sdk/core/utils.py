@@ -65,6 +65,6 @@ def atomic_writer(
         with tmp_file:
             yield tmp_file
         os.replace(tmp_path, path)
-    except:
+    except BaseException:
         os.unlink(tmp_path)
         raise

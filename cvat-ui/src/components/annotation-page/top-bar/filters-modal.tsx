@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import {
     Builder,
     Config,

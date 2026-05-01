@@ -77,7 +77,7 @@ context('Some parts of the Redux state (issues) is not reset after changing a ta
                 cy.viewport(viewportWidth + 50, viewportHeight + 50);
                 cy.wrap(waitForResize()).then(() => {
                     cy.get('.cvat_canvas_issue_region').should('exist');
-                    cy.viewport(viewportHeight, viewportWidth);
+                    cy.viewport(viewportWidth, viewportHeight);
                 });
             });
             cy.createIssueFromControlButton(createIssuePoint); // Issue 2633

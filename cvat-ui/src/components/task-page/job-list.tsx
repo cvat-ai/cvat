@@ -23,6 +23,7 @@ import {
 import { useResourceQuery } from 'utils/hooks';
 import BulkWrapper from 'components/bulk-wrapper';
 import { selectionActions } from 'actions/selection-actions';
+import JobsCSVExportButton from 'components/jobs-page/jobs-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -126,7 +127,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
 
     return (
         <>
-            <div className='cvat-jobs-list-filters-wrapper'>
+            <div className='cvat-jobs-list-wrapper'>
                 <Row>
                     <Col>
                         <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
@@ -134,36 +135,39 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                     </Col>
                 </Row>
                 <Row>
-                    <SortingComponent
-                        visible={visibility.sorting}
-                        onVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, sorting: visible })
-                        )}
-                        defaultFields={query.sort?.split(',') || ['-ID']}
-                        sortingFields={['ID', 'Assignee', 'State', 'Stage']}
-                        onApplySorting={(sort: string | null) => {
-                            setQuery({
-                                ...query,
-                                sort,
-                            });
-                        }}
-                    />
-                    <FilteringComponent
-                        value={query.filter}
-                        predefinedVisible={visibility.predefined}
-                        builderVisible={visibility.builder}
-                        recentVisible={visibility.recent}
-                        onPredefinedVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, predefined: visible })
-                        )}
-                        onBuilderVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, builder: visible })
-                        )}
-                        onRecentVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
-                        )}
-                        onApplyFilter={onApplyFilter}
-                    />
+                    <div className='cvat-jobs-list-filters-wrapper'>
+                        <SortingComponent
+                            visible={visibility.sorting}
+                            onVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, sorting: visible })
+                            )}
+                            defaultFields={query.sort?.split(',') || ['-ID']}
+                            sortingFields={['ID', 'Assignee', 'State', 'Stage']}
+                            onApplySorting={(sort: string | null) => {
+                                setQuery({
+                                    ...query,
+                                    sort,
+                                });
+                            }}
+                        />
+                        <FilteringComponent
+                            value={query.filter}
+                            predefinedVisible={visibility.predefined}
+                            builderVisible={visibility.builder}
+                            recentVisible={visibility.recent}
+                            onPredefinedVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, predefined: visible })
+                            )}
+                            onBuilderVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, builder: visible })
+                            )}
+                            onRecentVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
+                            )}
+                            onApplyFilter={onApplyFilter}
+                        />
+                        <JobsCSVExportButton predefinedData={filteredJobs} />
+                    </div>
                     <div className='cvat-job-add-wrapper'>
                         <Button onClick={onCreateJob} type='primary' className='cvat-create-job' icon={<PlusOutlined />} />
                     </div>

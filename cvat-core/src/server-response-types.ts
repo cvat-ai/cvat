@@ -8,7 +8,7 @@ import {
     ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
-    DataStorageLocation,
+    DataStorageLocation, RQStatus,
 } from './enums';
 import { Camelized, CamelizedV2 } from './type-utils';
 
@@ -126,6 +126,7 @@ export interface SerializedTask {
     overlap: number | null;
     owner: SerializedUser;
     project_id: number | null;
+    project_name: string | null;
     guide_id: number | null;
     segment_size: number;
     size: number;
@@ -149,6 +150,7 @@ export interface SerializedJob {
     labels: { count: number; url: string };
     mode: TaskMode;
     project_id: number | null;
+    project_name: string | null;
     guide_id: number | null;
     stage: JobStage;
     state: JobState;
@@ -157,6 +159,7 @@ export interface SerializedJob {
     start_frame: number;
     stop_frame: number;
     task_id: number;
+    task_name: string;
     updated_date: string;
     created_date: string;
     url: string;
@@ -567,6 +570,7 @@ export interface SerializedRequest {
         task_id: number | null;
         project_id: number | null;
         function_id: string | null;
+        lightweight?: boolean | null;
     };
     progress?: number;
     result_url?: string;
@@ -576,6 +580,20 @@ export interface SerializedRequest {
     finished_date?: string;
     expiry_date?: string;
     owner: any;
+}
+
+export interface SerializedFunctionRequest {
+    id: string;
+    status: RQStatus;
+    enqueued: string;
+    started: string | null;
+    ended: string | null;
+    exc_info: string;
+    progress: number | null;
+    function: {
+        id: number | string;
+        task: number;
+    };
 }
 
 export interface SerializedJobValidationLayout {

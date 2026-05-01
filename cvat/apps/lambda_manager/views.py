@@ -476,6 +476,9 @@ class LambdaFunction:
                     "obj_bbox": data.get("obj_bbox", None),
                 }
             )
+            text_prompts = data.get("text_prompts", None)
+            if text_prompts:
+                payload["text_prompts"] = text_prompts
         elif self.kind == FunctionKind.REID:
             payload.update(
                 {
@@ -1243,7 +1246,7 @@ def return_response(success_code=status.HTTP_200_OK):
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = "[a-zA-Z0-9_.-]+"
     lookup_field = "func_id"
-    iam_organization_field = None
+    iam_supports_organization_params = False
     iam_permission_class = LambdaPermission
     serializer_class = None
 
@@ -1369,7 +1372,7 @@ class FunctionViewSet(viewsets.ViewSet):
     ),
 )
 class RequestViewSet(viewsets.ViewSet):
-    iam_organization_field = None
+    iam_supports_organization_params = False
     iam_permission_class = LambdaPermission
     serializer_class = None
 

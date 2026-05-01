@@ -13,7 +13,11 @@ import {
     HighlightSeverity as _HighlightSeverity,
 } from 'cvat-canvas/src/typescript/canvas';
 
-export function convertShapesForInteractor(shapes: InteractionResult[], type: 'points' | 'rectangle', button: number): number[][] {
+export function convertShapesForInteractor(
+    shapes: InteractionResult[],
+    shapeType: 'points' | 'rectangle',
+    type: 'positive' | 'negative',
+): number[][] {
     const reducer = (acc: number[][], _: number, index: number, array: number[]): number[][] => {
         if (!(index % 2)) {
             // 0, 2, 4
@@ -23,7 +27,7 @@ export function convertShapesForInteractor(shapes: InteractionResult[], type: 'p
     };
 
     return shapes
-        .filter((shape: InteractionResult): boolean => shape.button === button && shape.shapeType === type)
+        .filter((shape: InteractionResult): boolean => shape.type === type && shape.shapeType === shapeType)
         .map((shape: InteractionResult): number[] => shape.points)
         .flat()
         .reduce(reducer, []);

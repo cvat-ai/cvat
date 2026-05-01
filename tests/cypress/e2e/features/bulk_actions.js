@@ -183,12 +183,16 @@ context('Bulk actions in UI', () => {
                 .find('.ant-modal-header')
                 .should('have.text', `Export ${numberOfObjects} jobs as datasets`);
             cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
-
-            cy.get('.cvat-notification-notice-export-job-start')
-                .should('be.visible');
-            cy.closeNotification('.cvat-notification-notice-export-job-start');
-
-            cy.closeNotification('.cvat-notification-notice-export-job-finished', numberOfObjects);
+            cy.get('.cvat-header-requests-button').click();
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.get('.cvat-requests-list').should('be.visible');
+            cy.get('.cvat-requests-card')
+                .should('have.length.at.least', numberOfObjects)
+                .then(($cards) => {
+                    cy.wrap($cards.slice(0, numberOfObjects)).each((card) => {
+                        cy.wrap(card).find('.cvat-request-item-progress-success').should('exist');
+                    });
+                });
         });
     });
 
@@ -212,6 +216,9 @@ context('Bulk actions in UI', () => {
             cy.contains('Delete selected')
                 .should('be.visible')
                 .click();
+            // Bulk delete sends one request per selected task. Use the first
+            // response to confirm the delete flow started, then wait for the
+            // second task deletion as well.
             cy.wait('@deleteTask').then(() => {
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
             });

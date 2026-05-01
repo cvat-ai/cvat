@@ -40,6 +40,7 @@
         "username": "admin1"
       },
       "project_id": 18,
+      "project_name": "project with tags",
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -95,6 +96,7 @@
         "username": "user2"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 10,
       "size": 20,
       "source_storage": {
@@ -150,6 +152,7 @@
         "username": "user2"
       },
       "project_id": 17,
+      "project_name": "project 4",
       "segment_size": 0,
       "size": 10,
       "source_storage": null,
@@ -197,6 +200,7 @@
         "username": "user2"
       },
       "project_id": 17,
+      "project_name": "project 4",
       "segment_size": 4,
       "size": 4,
       "source_storage": null,
@@ -244,6 +248,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 3,
       "size": 3,
       "source_storage": {
@@ -299,6 +304,7 @@
         "username": "user2"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 0,
       "size": 10,
       "source_storage": {
@@ -354,6 +360,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 0,
       "size": 29,
       "source_storage": null,
@@ -401,6 +408,7 @@
         "username": "user4"
       },
       "project_id": 10,
+      "project_name": "project 6",
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -462,6 +470,7 @@
         "username": "user3"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -523,6 +532,7 @@
         "username": "user3"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -578,6 +588,7 @@
         "username": "admin1"
       },
       "project_id": 14,
+      "project_name": "project with subsets",
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -633,6 +644,7 @@
         "username": "admin1"
       },
       "project_id": 14,
+      "project_name": "project with subsets",
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -688,6 +700,7 @@
         "username": "admin2"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 5,
       "size": 11,
       "source_storage": null,
@@ -735,6 +748,7 @@
         "username": "user2"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 11,
       "size": 11,
       "source_storage": null,
@@ -782,6 +796,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 6,
       "size": 10,
       "source_storage": {
@@ -837,6 +852,7 @@
         "username": "admin1"
       },
       "project_id": 12,
+      "project_name": "project with attributes",
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -892,6 +908,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -947,6 +964,7 @@
         "username": "admin1"
       },
       "project_id": 11,
+      "project_name": "project7",
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -1008,6 +1026,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 5,
       "size": 5,
       "source_storage": null,
@@ -1055,6 +1074,7 @@
         "username": "admin1"
       },
       "project_id": 8,
+      "project_name": "project with video data",
       "segment_size": 25,
       "size": 25,
       "source_storage": {
@@ -1110,6 +1130,7 @@
         "username": "admin1"
       },
       "project_id": 5,
+      "project_name": "project5",
       "segment_size": 8,
       "size": 8,
       "source_storage": {
@@ -1171,6 +1192,7 @@
         "username": "admin1"
       },
       "project_id": 4,
+      "project_name": "project4",
       "segment_size": 5,
       "size": 5,
       "source_storage": null,
@@ -1187,6 +1209,7 @@
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-03-14T13:24:05.852000Z",
+      "data": null,
       "dimension": "2d",
       "guide_id": null,
       "id": 12,
@@ -1212,6 +1235,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 0,
       "source_storage": null,
       "status": "annotation",
@@ -1264,6 +1288,7 @@
         "username": "user7"
       },
       "project_id": 2,
+      "project_name": "project2",
       "segment_size": 11,
       "size": 11,
       "source_storage": {
@@ -1325,6 +1350,7 @@
         "username": "user7"
       },
       "project_id": 1,
+      "project_name": "project1",
       "segment_size": 5,
       "size": 20,
       "source_storage": null,
@@ -1378,6 +1404,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 14,
       "size": 14,
       "source_storage": null,
@@ -1431,6 +1458,7 @@
         "username": "user8"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 11,
       "size": 11,
       "source_storage": null,
@@ -1478,6 +1506,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 1,
       "size": 1,
       "source_storage": null,
@@ -1531,6 +1560,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 25,
       "size": 25,
       "source_storage": null,
@@ -1584,6 +1614,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 23,
       "size": 23,
       "source_storage": null,

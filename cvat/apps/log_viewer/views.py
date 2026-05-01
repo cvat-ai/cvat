@@ -15,6 +15,7 @@ from cvat.apps.log_viewer.permissions import LogViewerPermission
 @extend_schema(exclude=True)
 class LogViewerAccessViewSet(viewsets.ViewSet):
     serializer_class = None
+    iam_supports_organization_params = False
     iam_permission_class = LogViewerPermission
 
     def list(self, request):

@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Modal from 'antd/lib/modal';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';

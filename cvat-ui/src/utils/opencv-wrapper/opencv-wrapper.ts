@@ -4,131 +4,157 @@
 // SPDX-License-Identifier: MIT
 
 import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
-import waitFor from 'utils/wait-for';
 import config from 'config';
-import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
-import TrackerMImplementation from './tracker-mil';
-import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
-import { OpenCVTracker } from './opencv-interfaces';
 import TrackerMILAction from './annotations-actions/tracker-mil';
 
 const core = getCore();
 
-export interface Segmentation {
-    intelligentScissorsFactory: () => IntelligentScissors;
-}
+type OpenCVInterface = ReturnType<typeof core.opencv.createOpenCVInterface>;
+export type IntelligentScissors = ReturnType<OpenCVInterface['segmentation']['intelligentScissorsFactory']>;
 
-export interface MatSpace {
-    fromData: (width: number, height: number, type: MatType, data: number[]) => any;
-}
-
-export interface MatVectorSpace {
-    empty: () => any;
-}
-
-export interface Contours {
-    convexHull: (src: any) => number[];
-    findContours: (src: any, findLongest: boolean) => number[][];
-    approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[][];
-}
-
-export interface ImgProc {
-    hist: () => HistogramEqualization;
-}
-
-export interface Tracking {
-    trackerMIL: OpenCVTracker;
-}
-
-export enum MatType {
-    CV_8UC1,
-    CV_8UC3,
-    CV_8UC4,
-}
+type OpenCVTrackingWrapper = OpenCVInterface['tracking'] & {
+    trackerMIL: {
+        model: () => ReturnType<OpenCVInterface['tracking']['trackerMIL']['model']>,
+        name: string,
+        description: string,
+        kind: string,
+    }
+};
+export type OpenCVTracker = OpenCVTrackingWrapper['trackerMIL'];
 
 export class OpenCVWrapper {
     private initialized: boolean;
-    private cv: any;
     private onProgress: ((percent: number) => void) | null;
     private injectionProcess: Promise<void> | null;
+    private cvInterface: OpenCVInterface | null;
 
     public constructor() {
         this.initialized = false;
-        this.cv = null;
         this.onProgress = null;
         this.injectionProcess = null;
+        this.cvInterface = null;
     }
 
-    private checkInitialization(): void {
-        if (!this.initialized) {
-            throw new Error('Need to initialize OpenCV first');
+    private getCVInterface(): OpenCVInterface {
+        if (!this.cvInterface) {
+            throw new Error('OpenCV is not initialized. Please call initialize() method first.');
         }
+        return this.cvInterface;
     }
 
     private async inject(): Promise<void> {
-        const response = await fetch(config.OPENCV_PATH);
-        if (response.status !== 200) {
-            throw new Error(`Response status ${response.status}. ${response.statusText}`);
+        let cacheStore: Cache | null = null;
+        try {
+            const CACHE_NAME = 'cached_assets';
+            cacheStore = 'caches' in window ? await caches?.open(CACHE_NAME) : null;
+        } catch (_) {
+            // cache not available, do nothing
         }
 
-        const contentLength = response.headers.get('Content-Length');
-        const { body } = response;
+        let response = await cacheStore?.match(config.OPENCV_PATH);
+        const fromCache = !!response;
 
-        if (body === null) {
-            throw new Error('Response body is null, but necessary');
-        }
+        if (!response) {
+            response = await fetch(config.OPENCV_PATH);
 
-        const decoder = new TextDecoder('utf-8');
-        const reader = (body as ReadableStream<Uint8Array>).getReader();
-        let received = false;
-        let receivedLength = 0;
-        let decodedScript = '';
-
-        while (!received) {
-            // await in the loop is necessary here
-            // eslint-disable-next-line
-            const { done, value } = await reader.read();
-            received = done;
-
-            if (value instanceof Uint8Array) {
-                decodedScript += decoder.decode(value);
-                receivedLength += value.length;
-                // Cypress workaround: content-length is always zero in cypress, it is done optional here
-                // Just progress bar will be disabled
-                const percentage = contentLength ? (receivedLength * 100) / +(contentLength as string) : 0;
-                if (this.onProgress) this.onProgress(+percentage.toFixed(0));
+            if (!response.ok) {
+                throw new Error(`Could not fetch data from the server: ${response.status} ${response.statusText}`);
             }
         }
 
-        let runtimeInitialized = false;
-        (window as any).Module = {
-            onRuntimeInitialized: () => {
-                runtimeInitialized = true;
+        let bytes: Uint8Array;
+        if (fromCache) {
+            bytes = new Uint8Array(await response.arrayBuffer());
+            this.onProgress?.(100);
+        } else {
+            const contentLengthHeader = response.headers.get('Content-Length');
+            const contentLength = contentLengthHeader ? Number(contentLengthHeader) : 0;
+            let received = false;
+            let receivedLength = 0;
+
+            if (response.body === null) {
+                throw new Error('Unexpected response body');
+            }
+
+            const reader = response.body.getReader();
+            const chunks: Uint8Array[] = [];
+            while (!received) {
+                const { done, value } = await reader.read();
+                received = done;
+
+                if (value instanceof Uint8Array) {
+                    chunks.push(value);
+                    receivedLength += value.length;
+
+                    // Cypress workaround: content-length is always zero in cypress, it is done optional here
+                    // Just progress bar will be disabled
+                    const percentage = contentLength ? (receivedLength * 100) / contentLength : 0;
+                    this.onProgress?.(+percentage.toFixed(0));
+                }
+            }
+
+            let offset = 0;
+            bytes = new Uint8Array(receivedLength);
+            for (const chunk of chunks) {
+                bytes.set(chunk, offset);
+                offset += chunk.length;
+            }
+
+            if (cacheStore) {
+                try {
+                    // content may be gzip-encoded, but we store decoded version
+                    // so, need to remove irrelevant headers
+                    const headers = new Headers(response.headers);
+                    headers.delete('Content-Encoding');
+                    headers.delete('Content-Length');
+                    headers.set('Content-Length', bytes.length.toString());
+                    const cachedResponse = new Response(bytes.slice(), { headers });
+                    await cacheStore.put(config.OPENCV_PATH, cachedResponse);
+                } catch (_) {
+                    // could not write to cache, but ok, do nothing
+                }
+            }
+        }
+
+        const decodedScript = new TextDecoder('utf-8').decode(bytes!);
+        await new Promise<void>((resolve, reject) => {
+            (window as any).Module = {
+                onRuntimeInitialized: () => {
+                    delete (window as any).Module;
+                    resolve();
+                },
+            };
+
+            try {
+                // Inject OpenCV to DOM
+                // eslint-disable-next-line @typescript-eslint/no-implied-eval
+                const OpenCVConstructor = new Function(decodedScript);
+                OpenCVConstructor();
+            } catch (error: unknown) {
                 delete (window as any).Module;
-            },
-        };
-        // Inject opencv to DOM
-        // eslint-disable-next-line @typescript-eslint/no-implied-eval
-        const OpenCVConstructor = new Function(decodedScript);
-        OpenCVConstructor();
-        this.cv = (window as any).cv;
-        await waitFor(2, () => runtimeInitialized);
+                reject(new Error(`Initialization error: ${error instanceof Error ? error.message : 'unknown'}`));
+            }
+        });
+
+        this.cvInterface = core.opencv.createOpenCVInterface((window as any).cv);
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {
-        this.onProgress = onProgress;
-
-        if (!this.injectionProcess) {
-            this.injectionProcess = this.inject();
+        if (this.initialized) {
+            return;
         }
-        await this.injectionProcess;
 
-        this.injectionProcess = null;
+        this.onProgress = onProgress;
+        this.injectionProcess = this.injectionProcess ?? this.inject();
+
+        try {
+            await this.injectionProcess;
+        } finally {
+            this.onProgress = null;
+            this.injectionProcess = null;
+        }
+
         this.initialized = true;
-    }
-
-    public removeProgressCallback(): void {
-        this.onProgress = null;
     }
 
     public get isInitialized(): boolean {
@@ -139,188 +165,91 @@ export class OpenCVWrapper {
         return !!this.injectionProcess;
     }
 
-    public get mat(): MatSpace {
-        const { cv } = this;
-        return {
-            fromData: (width: number, height: number, type: MatType, data: number[]) => {
-                this.checkInitialization();
-                const typeToCVType = {
-                    [MatType.CV_8UC1]: cv.CV_8UC1,
-                    [MatType.CV_8UC3]: cv.CV_8UC3,
-                    [MatType.CV_8UC4]: cv.CV_8UC4,
-                };
-
-                const mat = cv.matFromArray(height, width, typeToCVType[type], data);
-                return mat;
-            },
-        };
+    public get mat(): OpenCVInterface['mat'] {
+        return this.getCVInterface().mat;
     }
 
-    public get matVector(): MatVectorSpace {
-        const { cv } = this;
-        return {
-            empty: () => {
-                this.checkInitialization();
-                return new cv.MatVector();
-            },
-        };
+    public get matVector(): OpenCVInterface['matVector'] {
+        return this.getCVInterface().matVector;
     }
 
-    public get contours(): Contours {
-        const { cv } = this;
-        return {
-            convexHull: (contours: number[][]): number[] => {
-                this.checkInitialization();
-
-                const points = contours.flat();
-                const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
-                const output = new cv.Mat();
-                try {
-                    cv.convexHull(input, output, false, true);
-                    return Array.from(output.data32S);
-                } finally {
-                    output.delete();
-                    input.delete();
-                }
-            },
-            findContours: (src: any, findLongest: boolean): number[][] => {
-                this.checkInitialization();
-
-                const contours = this.matVector.empty();
-                const hierarchy = new cv.Mat();
-                const expanded = new cv.Mat();
-                const kernel = cv.Mat.ones(2, 2, cv.CV_8U);
-                const anchor = new cv.Point(-1, -1);
-                const jsContours: number[][] = [];
-                try {
-                    cv.copyMakeBorder(src, expanded, 1, 1, 1, 1, cv.BORDER_CONSTANT);
-                    // morpth transform to get better contour including all the pixels
-                    cv.dilate(
-                        expanded,
-                        expanded,
-                        kernel,
-                        anchor,
-                        1,
-                        cv.BORDER_CONSTANT,
-                        cv.morphologyDefaultBorderValue(),
-                    );
-                    cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
-                    for (let i = 0; i < contours.size(); i++) {
-                        const contour = contours.get(i);
-                        // subtract offset we created when copied source image
-                        jsContours.push(Array.from(contour.data32S as number[]).map((el) => el - 1));
-                        contour.delete();
-                    }
-                } finally {
-                    kernel.delete();
-                    expanded.delete();
-                    hierarchy.delete();
-                    contours.delete();
-                }
-
-                if (findLongest) {
-                    return [jsContours.sort((arr1, arr2) => arr2.length - arr1.length)[0]];
-                }
-
-                return jsContours;
-            },
-            approxPoly: (points: number[] | number[][], threshold: number, closed = true): number[][] => {
-                this.checkInitialization();
-
-                const isArrayOfArrays = Array.isArray(points[0]);
-                if (points.length < 3) {
-                    // one pair of coordinates [x, y], approximation not possible
-                    return (isArrayOfArrays ? points : [points]) as number[][];
-                }
-                const rows = isArrayOfArrays ? points.length : points.length / 2;
-                const cols = 2;
-
-                const approx = new cv.Mat();
-                const contour = cv.matFromArray(rows, cols, cv.CV_32FC1, points.flat());
-                try {
-                    cv.approxPolyDP(contour, approx, threshold, closed); // approx output type is CV_32F
-                    const result = [];
-                    for (let row = 0; row < approx.rows; row++) {
-                        result.push([approx.floatAt(row, 0), approx.floatAt(row, 1)]);
-                    }
-                    return result;
-                } finally {
-                    approx.delete();
-                    contour.delete();
-                }
-            },
-        };
+    public get contours(): OpenCVInterface['contours'] {
+        return this.getCVInterface().contours;
     }
 
-    public getContoursFromState = async (state: ObjectState): Promise<number[][]> => {
-        const points = state.points as number[];
+    public get enums(): OpenCVInterface['enums'] {
+        return this.getCVInterface().enums;
+    }
+
+    public getContoursFromStateSync = (
+        state: { points: Int32Array; shapeType: ShapeType },
+    ): [number, number][][] => {
         if (state.shapeType === ShapeType.MASK) {
-            if (!this.isInitialized) {
-                try {
-                    await this.initialize(() => {});
-                } catch (error: any) {
-                    throw new Error('Could not initialize OpenCV');
-                }
-            }
-
-            const [left, top, right, bottom] = points.slice(-4);
+            const { length } = state.points;
+            const left = state.points[length - 4];
+            const top = state.points[length - 3];
+            const right = state.points[length - 2];
+            const bottom = state.points[length - 1];
             const width = right - left + 1;
             const height = bottom - top + 1;
 
-            const mask = core.utils.rle2Mask(points.slice(0, -4), width, height);
-            const src = this.mat.fromData(width, height, MatType.CV_8UC1, mask);
+            const mask = core.utils.rle2Mask(state.points.subarray(0, -4), width, height);
+            const src = this.mat.fromData(width, height, this.enums.MatType.CV_8UC1, mask);
 
             try {
-                const contours = this.contours.findContours(src, false);
+                const contours = this.contours.findContours(src);
                 if (contours.length) {
-                    return contours.map((contour) => contour.map((val, idx) => {
-                        if (idx % 2) {
-                            return val + top;
-                        }
-                        return val + left;
-                    }));
+                    return contours.map((contour) => contour.map((val) => (
+                        [val[0] + left, val[1] + top]
+                    )));
                 }
                 throw new Error('Empty contour received from state');
             } finally {
                 src.delete();
             }
-        } else if (state.shapeType === ShapeType.POLYGON) {
-            return [points];
         }
 
         throw new Error(`Not implemented getContour for ${state.shapeType}`);
     };
 
-    public getContourFromState = async (state: ObjectState): Promise<number[]> => {
-        const contours = await this.getContoursFromState(state);
+    public getContoursFromState = async (
+        state: { points: Int32Array; shapeType: ShapeType },
+    ): Promise<[number, number][][]> => {
+        if (!this.isInitialized) {
+            try {
+                await this.initialize(() => {});
+            } catch (error: any) {
+                throw new Error('Could not initialize OpenCV');
+            }
+        }
+
+        return this.getContoursFromStateSync(state);
+    };
+
+    public getContourFromState = async (state: ObjectState): Promise<[number, number][]> => {
+        const contours = await this.getContoursFromState({
+            points: Int32Array.from(state.points!),
+            shapeType: state.shapeType,
+        });
         return contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
     };
 
-    public get segmentation(): Segmentation {
-        return {
-            intelligentScissorsFactory: () => {
-                this.checkInitialization();
-                return new IntelligentScissorsImplementation(this.cv);
-            },
-        };
+    public get segmentation(): OpenCVInterface['segmentation'] {
+        return this.getCVInterface().segmentation;
     }
 
-    public get imgproc(): ImgProc {
-        return {
-            hist: () => {
-                this.checkInitialization();
-                return new HistogramEqualizationImplementation(this.cv);
-            },
-        };
+    public get imgproc(): OpenCVInterface['imgproc'] {
+        return this.getCVInterface().imgproc;
     }
 
-    public get tracking(): Tracking {
+    public get utils(): OpenCVInterface['utils'] {
+        return this.getCVInterface().utils;
+    }
+
+    public get tracking(): OpenCVTrackingWrapper {
         return {
             trackerMIL: {
-                model: () => {
-                    this.checkInitialization();
-                    return new TrackerMImplementation(this.cv);
-                },
+                model: () => this.getCVInterface().tracking.trackerMIL.model(),
                 name: 'TrackerMIL',
                 description: 'Lightweight client-side algorithm, useful to track simple objects',
                 kind: 'opencv_tracker_mil',

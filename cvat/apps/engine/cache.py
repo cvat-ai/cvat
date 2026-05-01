@@ -36,7 +36,6 @@ from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
-from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     IChunkWriter,
@@ -69,6 +68,26 @@ _CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
 
 class CacheTooLargeDataError(Exception):
     pass
+
+
+class ChunkCreationError(Exception):
+    pass
+
+
+def _build_chunk_job_failure_exception(
+    rq_job: rq.job.Job, job_meta: RQMetaWithFailureInfo
+) -> Exception:
+    exc_type = job_meta.exc_type or ChunkCreationError
+    exc_args = job_meta.exc_args or ("Cannot create chunk",)
+
+    try:
+        return exc_type(*exc_args)
+    except TypeError:
+        exc_name = exc_type.__name__
+        details = job_meta.formatted_exception or repr(exc_args)
+        return ChunkCreationError(
+            f"Chunk job {rq_job.id} failed with {exc_name}: {details.strip()}"
+        )
 
 
 def enqueue_create_chunk_job(
@@ -111,9 +130,7 @@ def wait_for_rq_job(rq_job: rq.job.Job):
         elif job_status in ("failed",):
             rq_job.get_meta()  # refresh from Redis
             job_meta = RQMetaWithFailureInfo.for_job(rq_job)
-            exc_type = job_meta.exc_type or Exception
-            exc_args = job_meta.exc_args or ("Cannot create chunk",)
-            raise exc_type(*exc_args)
+            raise _build_chunk_job_failure_exception(rq_job, job_meta)
 
         time.sleep(settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL)
         retries -= 1
@@ -593,51 +610,75 @@ class MediaCache:
         db_data = db_task.require_data()
         manifest_path = db_data.get_manifest_path()
 
-        if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
-            reader = ImageReaderWithManifest(manifest_path)
-            with ExitStack() as es:
-                db_cloud_storage = db_data.cloud_storage
-                if not db_cloud_storage:
-                    raise CloudStorageMissingError("Task is no longer connected to cloud storage")
-                storage_client = db_storage_to_storage_instance(db_cloud_storage)
+        def requested_db_images() -> Iterator[str]:
+            # TODO: find a way to use prefetched results, if provided
+            db_images = (
+                db_data.images.order_by("frame")
+                .filter(frame__gte=frame_ids[0], frame__lte=frame_ids[-1])
+                .values_list("frame", "path")
+            )
 
+            requested_frame_iter = iter(frame_ids)
+            next_requested_frame_id = next(requested_frame_iter, None)
+            if next_requested_frame_id is None:
+                return
+
+            for frame_id, frame_path in db_images:
+                if frame_id == next_requested_frame_id:
+                    yield frame_path
+                    next_requested_frame_id = next(requested_frame_iter, None)
+
+                    if next_requested_frame_id is None:
+                        return
+
+            assert False, f"frame #{next_requested_frame_id} is missing from DB"
+
+        if storage_client := db_data.get_cloud_storage_instance():
+            with ExitStack() as es:
                 tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
                 # (storage filename, output filename)
                 files_to_download: list[tuple[str, PurePath]] = []
                 checksums = []
                 media = []
-                for item in reader.iterate_frames(frame_ids):
-                    task_filename = f"{item['name']}{item['extension']}"
-                    storage_filename = item.get("meta", {}).get("original_name", task_filename)
-                    fs_filename = tmp_dir / task_filename
-                    files_to_download.append((storage_filename, fs_filename))
+                if db_data.local_storage_backing_cs_id:
+                    for frame_path in requested_db_images():
+                        abs_frame_path = tmp_dir / frame_path
 
-                    checksums.append(item.get("checksum", None))
-                    media.append((fs_filename, os.fspath(fs_filename)))
+                        files_to_download.append((frame_path, abs_frame_path))
+                        checksums.append(None)
+                        media.append((abs_frame_path, os.fspath(abs_frame_path)))
+
+                else:
+                    assert manifest_path.is_file()
+                    reader = ImageReaderWithManifest(manifest_path)
+                    for item in reader.iterate_frames(frame_ids):
+                        frame_path = item.get("meta", {}).get(
+                            "original_name", f"{item['name']}{item['extension']}"
+                        )
+                        abs_frame_path = tmp_dir / frame_path
+
+                        files_to_download.append((frame_path, abs_frame_path))
+                        checksums.append(item.get("checksum", None))
+                        media.append((abs_frame_path, os.fspath(abs_frame_path)))
 
                 storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
-                for (storage_filename, _), checksum, media_item in zip(
-                    files_to_download, checksums, media
-                ):
-                    if checksum and not md5_hash(media_item[1]) == checksum:
-                        slogger.cloud_storage[db_cloud_storage.id].warning(
-                            "Hash sums of files {} do not match".format(media_item[1])
+                for checksum, media_item in zip(checksums, media):
+                    frame_path = media_item[1]
+                    if checksum and not md5_hash(frame_path) == checksum:
+                        slogger.task[db_task.id].warning(
+                            "Hash sums of files {} do not match".format(frame_path)
                         )
 
                     if db_task.dimension == models.DimensionType.DIM_3D and (
-                        storage_filename.endswith(".bin")
+                        frame_path.endswith(".bin")
                     ):
-                        media_item = (
-                            ValidateDimension().convert_bin_to_pcd(
-                                media_item[0],
-                                delete_source=(
-                                    False
-                                    # one file can be used several times for honeypots
-                                ),
-                            ),
-                            *media_item[1:],
+                        frame_path = ValidateDimension().convert_bin_to_pcd(
+                            frame_path,
+                            # one file can be used several times for honeypots
+                            delete_source=False,
                         )
+                        media_item = (frame_path, frame_path)
 
                     if db_task.dimension == models.DimensionType.DIM_2D and decode:
                         media_item = load_image(media_item)
@@ -645,32 +686,11 @@ class MediaCache:
                     yield media_item
 
         else:
-            requested_frame_iter = iter(frame_ids)
-            next_requested_frame_id = next(requested_frame_iter, None)
-            if next_requested_frame_id is None:
-                return
-
-            # TODO: find a way to use prefetched results, if provided
-            db_images = (
-                db_data.images.order_by("frame")
-                .filter(frame__gte=frame_ids[0], frame__lte=frame_ids[-1])
-                .values_list("frame", "path")
-                .all()
-            )
-
             raw_data_dir = db_data.get_raw_data_dirname()
             media = []
-            for frame_id, frame_path in db_images:
-                if frame_id == next_requested_frame_id:
-                    source_path = os.path.join(raw_data_dir, frame_path)
-                    media.append((source_path, source_path))
-
-                    next_requested_frame_id = next(requested_frame_iter, None)
-
-                if next_requested_frame_id is None:
-                    break
-
-            assert next_requested_frame_id is None
+            for frame_path in requested_db_images():
+                source_path = os.path.join(raw_data_dir, frame_path)
+                media.append((source_path, source_path))
 
             if db_task.dimension == models.DimensionType.DIM_2D and decode:
                 media = map(load_image, media)
@@ -710,12 +730,7 @@ class MediaCache:
                 for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0])
             ]
 
-            if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
-                db_cloud_storage = db_data.cloud_storage
-                if not db_cloud_storage:
-                    raise CloudStorageMissingError("Task is no longer connected to cloud storage")
-                storage_client = db_storage_to_storage_instance(db_cloud_storage)
-
+            if storage_client := db_data.get_cloud_storage_instance():
                 tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
                 files_to_download: list[PurePath] = []
                 for _, frame_media in media:
@@ -875,7 +890,7 @@ class MediaCache:
         task_frame_provider = make_frame_provider(db_task)
 
         use_cached_data = False
-        if db_task.mode != "interpolation":
+        if db_task.mode != models.TaskMode.INTERPOLATION:
             required_frame_set = set(frame_ids)
             available_chunks = []
             for db_segment in db_task.segment_set.filter(type=models.SegmentType.RANGE).all():
