@@ -1,0 +1,5 @@
+{
+	"watch": ["cypress/support", "cypress/e2e"],
+	"ext": "js",
+	"exec": "npx cypress "
+}
