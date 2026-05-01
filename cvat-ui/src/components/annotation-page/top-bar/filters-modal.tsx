@@ -50,12 +50,20 @@ const getConvertedInputType = (inputType: string): string => {
 
 const adjustName = (name: string): string => name.replace(/\./g, '\u2219');
 
+const getLabelFilterValue = (labelID: number, sublabelID?: number): string => (
+    typeof sublabelID === 'undefined' ? `label:${labelID}` : `sublabel:${labelID}:${sublabelID}`
+);
+
 const addAttributeSubfields = (
     subfields: Record<string, any>,
     key: string,
     displayLabel: string,
     attributes: any[],
 ): void => {
+    if (!attributes.length) {
+        return;
+    }
+
     subfields[key] = {
         type: '!struct',
         label: displayLabel,
@@ -83,15 +91,20 @@ const addAttributeSubfields = (
 const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
     const subfields: Record<string, any> = {};
     labels.forEach((label: any): void => {
-        addAttributeSubfields(subfields, adjustName(label.name), label.name, label.attributes);
+        addAttributeSubfields(
+            subfields,
+            adjustName(getLabelFilterValue(label.id)),
+            label.name,
+            label.attributes,
+        );
 
         // Skeleton sublabels are filterable via the Label dropdown instead,
         // which gives access to all builtin properties (occluded, width, height, rotation, etc.)
         // in addition to user-defined attributes listed below
         if (label.type === 'skeleton' && label.structure?.sublabels) {
             label.structure.sublabels.forEach((sublabel: any): void => {
-                const sublabelKey = adjustName(`${label.name} / ${sublabel.name}`);
                 const sublabelDisplayLabel = `${label.name} / ${sublabel.name}`;
+                const sublabelKey = adjustName(getLabelFilterValue(label.id, sublabel.id));
                 addAttributeSubfields(subfields, sublabelKey, sublabelDisplayLabel, sublabel.attributes);
             });
         }
@@ -125,11 +138,13 @@ function FiltersModalComponent(): JSX.Element {
                     valueSources: ['value'] as 'value'[],
                     fieldSettings: {
                         listValues: labels.reduce((acc: any[], label: any) => {
-                            acc.push({ value: label.name, title: label.name });
+                            acc.push({ value: getLabelFilterValue(label.id), title: label.name });
                             if (label.type === 'skeleton' && label.structure?.sublabels) {
                                 label.structure.sublabels.forEach((sublabel: any) => {
-                                    const sublabelValue = `${label.name} / ${sublabel.name}`;
-                                    acc.push({ value: sublabelValue, title: sublabelValue });
+                                    acc.push({
+                                        value: getLabelFilterValue(label.id, sublabel.id),
+                                        title: `${label.name} / ${sublabel.name}`,
+                                    });
                                 });
                             }
                             return acc;
@@ -221,6 +236,7 @@ function FiltersModalComponent(): JSX.Element {
                     const customProps = {
                         ...omit(_props.customProps, 'showSearch'),
                         dropdownMatchSelectWidth: false,
+                        popupClassName: 'cvat-filters-modal-field-dropdown',
                         treeDefaultExpandAll: false,
                     };
                     return <FieldDropdown {..._props} customProps={customProps} />;
@@ -281,9 +297,10 @@ function FiltersModalComponent(): JSX.Element {
         applyFilters([currentFilter.logic]);
     };
 
-    const isModalConfirmable = (): boolean =>
+    const isModalConfirmable = (): boolean => (
         (QbUtils.queryString(immutableTree, config) || '').trim().length > 0 &&
-        QbUtils.isValidTree(immutableTree, config);
+        QbUtils.isValidTree(immutableTree, config)
+    );
 
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
@@ -374,7 +391,9 @@ function FiltersModalComponent(): JSX.Element {
                     content={menu}
                 >
                     <Button type='text' className='cvat-filters-modal-recently-used-button'>
-                        Recently used <DownOutlined />
+                        Recently used
+                        {' '}
+                        <DownOutlined />
                     </Button>
                 </Popover>
             </div>

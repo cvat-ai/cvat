@@ -568,16 +568,13 @@
     }
 }
 
-// Keep tree select dropdown menus visible when hovering over children
-.ant-select-tree-dropdown {
+.cvat-filters-modal-field-dropdown.ant-select-tree-dropdown {
     .ant-select-tree-treenode {
-        // Ensure parent nodes stay visible when children are hovered
         &:hover {
             background-color: transparent;
         }
     }
 
-    // Keep expanded tree nodes visible
     .ant-select-tree-treenode-switcher-open {
         .ant-select-tree-node-content-wrapper {
             pointer-events: auto;
