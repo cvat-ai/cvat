@@ -6,13 +6,18 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Collection
+from functools import cached_property
 from typing import Any
 
+import attrs
 import datumaro as dm
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.quality_control import models
+
+_PARENT_SKELETON_CONTEXT_KEY = "__parent_skeleton_context__"
+_FILTER_INTERNAL_ATTRIBUTE_FIELDS = frozenset({_PARENT_SKELETON_CONTEXT_KEY})
 
 
 def _with_replaced_prefix(
@@ -24,22 +29,154 @@ def _with_replaced_prefix(
     }
 
 
+def _get_label_name(ann: dm.Annotation, categories: dm.Categories) -> str | None:
+    if getattr(ann, "label", None) is None:
+        return None
+
+    try:
+        label_categories = categories[dm.AnnotationType.label]
+    except KeyError:
+        return None
+
+    return label_categories[ann.label].name
+
+
+def _get_annotation_area(ann: dm.Annotation) -> float | None:
+    if ann.type == dm.AnnotationType.label or not hasattr(ann, "get_bbox"):
+        return None
+
+    _, _, width, height = ann.get_bbox()
+    return width * height
+
+
+def _dm_type_to_requirement_type(ann_type: dm.AnnotationType) -> str:
+    return {
+        dm.AnnotationType.label: models.QualityRequirementAnnotationType.TAG,
+        dm.AnnotationType.bbox: models.QualityRequirementAnnotationType.RECTANGLE,
+        dm.AnnotationType.skeleton: models.QualityRequirementAnnotationType.SKELETON,
+        dm.AnnotationType.points: models.QualityRequirementAnnotationType.POINTS,
+        dm.AnnotationType.polyline: models.QualityRequirementAnnotationType.POLYLINE,
+        dm.AnnotationType.mask: models.QualityRequirementAnnotationType.MASK,
+        dm.AnnotationType.polygon: models.QualityRequirementAnnotationType.POLYGON,
+        dm.AnnotationType.ellipse: models.QualityRequirementAnnotationType.ELLIPSE,
+    }.get(ann_type, str(ann_type))
+
+
+@attrs.define(slots=False)
+class _AnnotationAttributesFilterContext:
+    _attributes: dict[str, Any]
+
+    @cached_property
+    def _public_attributes(self) -> dict[str, Any]:
+        return {
+            name: value
+            for name, value in self._attributes.items()
+            if name not in _FILTER_INTERNAL_ATTRIBUTE_FIELDS
+        }
+
+    @property
+    def name(self) -> list[str]:
+        return list(self._public_attributes.keys())
+
+    @property
+    def value(self) -> list[Any]:
+        return list(self._public_attributes.values())
+
+
+@attrs.define(slots=False)
+class _FilterAttributeContext:
+    name: str
+    value: Any
+
+
+@attrs.define(slots=False)
+class _ShapeFilterContext:
+    _ann: dm.Annotation
+    _categories: dm.Categories
+    _attributes: dict[str, Any]
+    _include_track: bool = True
+
+    @classmethod
+    def from_annotation(
+        cls,
+        ann: dm.Annotation,
+        *,
+        categories: dm.Categories,
+        include_track: bool = True,
+    ) -> "_ShapeFilterContext":
+        return cls(
+            ann,
+            categories,
+            dict(getattr(ann, "attributes", {}) or {}),
+            include_track=include_track,
+        )
+
+    @property
+    def label(self) -> str | None:
+        return _get_label_name(self._ann, self._categories)
+
+    @property
+    def type(self) -> str:
+        return _dm_type_to_requirement_type(self._ann.type)
+
+    @cached_property
+    def area(self) -> float | None:
+        return _get_annotation_area(self._ann)
+
+    @property
+    def source(self) -> Any:
+        return self._attributes.get("source")
+
+    @property
+    def occluded(self) -> Any:
+        return self._attributes.get("occluded")
+
+    @property
+    def track_id(self) -> Any:
+        return self._attributes.get("track_id")
+
+    @property
+    def outside(self) -> Any:
+        return self._attributes.get("outside")
+
+    @property
+    def keyframe(self) -> Any:
+        return self._attributes.get("keyframe")
+
+    @cached_property
+    def attribute(self) -> _AnnotationAttributesFilterContext:
+        return _AnnotationAttributesFilterContext(self._attributes)
+
+    @property
+    def skeleton(self) -> Any:
+        return self._attributes.get(_PARENT_SKELETON_CONTEXT_KEY)
+
+    @property
+    def track_ref(self) -> Any:
+        return self.track_id
+
+    @cached_property
+    def track(self) -> "_ShapeFilterContext | None":
+        if not self._include_track or self.track_id is None:
+            return None
+
+        return self.__class__(
+            self._ann,
+            self._categories,
+            self._attributes,
+            include_track=False,
+        )
+
+
+@attrs.define(slots=False)
+class _FilterContext:
+    shape: _ShapeFilterContext
+    attribute: _FilterAttributeContext | None = None
+
+
 class RequirementJsonLogicFilter(JsonLogicFilter):
     nested_attribute_separator = "."
-    PARENT_SKELETON_CONTEXT_KEY = "__parent_skeleton_context__"
-
-    class DotDict(dict):
-        """recursive dot.notation access to dictionary attributes"""
-
-        __getattr__ = dict.get
-        __setattr__ = dict.__setitem__
-        __delattr__ = dict.__delitem__
-
-        def __init__(self, dct: dict):
-            for key, value in dct.items():
-                if isinstance(value, dict):
-                    value = self.__class__(value)
-                self[key] = value
+    PARENT_SKELETON_CONTEXT_KEY = _PARENT_SKELETON_CONTEXT_KEY
 
     _SHAPE_FILTER_FIELDS = (
         "label",
@@ -57,7 +194,7 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         "value",
     )
 
-    _INTERNAL_ATTRIBUTE_FIELDS = frozenset({PARENT_SKELETON_CONTEXT_KEY})
+    _INTERNAL_ATTRIBUTE_FIELDS = _FILTER_INTERNAL_ATTRIBUTE_FIELDS
 
     _SHAPE_LOOKUP_FIELDS = {
         **{f"shape.{name}": f"shape.{name}" for name in _SHAPE_FILTER_FIELDS},
@@ -281,7 +418,7 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
             attributes=dict(item.attributes or {}),
         )
 
-    def _matches(self, filter_obj: dict[str, Any]) -> bool:
+    def _matches(self, filter_obj: _FilterContext) -> bool:
         if not self._rules:
             return True
 
@@ -294,9 +431,9 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
                 return None
 
             if isinstance(result, dict):
-                result = self.DotDict(result)
-
-            result = getattr(result, attribute, None)
+                result = result.get(attribute)
+            else:
+                result = getattr(result, attribute, None)
 
         if callable(result):
             result = result()
@@ -401,93 +538,16 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
                 f"filter: {op} operation with {args} arguments is not implemented"
             )
 
-    def _get_label_name(self, ann: dm.Annotation) -> str | None:
-        if getattr(ann, "label", None) is None:
-            return None
+    def build_shape_context_for_annotation(self, ann: dm.Annotation) -> _ShapeFilterContext:
+        return _ShapeFilterContext.from_annotation(ann, categories=self._categories)
 
-        try:
-            label_categories = self._categories[dm.AnnotationType.label]
-        except KeyError:
-            return None
-
-        return label_categories[ann.label].name
-
-    def _get_annotation_area(self, ann: dm.Annotation) -> float | None:
-        if ann.type == dm.AnnotationType.label or not hasattr(ann, "get_bbox"):
-            return None
-
-        _, _, width, height = ann.get_bbox()
-        return width * height
-
-    def _build_ann_attributes_context(self, ann_attrs: dict[str, Any]) -> dict[str, Any]:
-        public_attrs = {
-            name: value
-            for name, value in ann_attrs.items()
-            if name not in self._INTERNAL_ATTRIBUTE_FIELDS
-        }
-        return {
-            "name": list(public_attrs.keys()),
-            "value": list(public_attrs.values()),
-        }
-
-    def _build_shape_context(
-        self,
-        ann: dm.Annotation,
-        *,
-        ann_attrs: dict[str, Any],
-        include_track: bool,
-    ) -> dict[str, Any]:
-        track_id = ann_attrs.get("track_id")
-        parent_skeleton_context = ann_attrs.get(self.PARENT_SKELETON_CONTEXT_KEY)
-        context = {
-            "label": self._get_label_name(ann),
-            "type": self._dm_type_to_requirement_type(ann.type),
-            "area": self._get_annotation_area(ann),
-            "source": ann_attrs.get("source"),
-            "occluded": ann_attrs.get("occluded"),
-            "track_id": track_id,
-            "outside": ann_attrs.get("outside"),
-            "keyframe": ann_attrs.get("keyframe"),
-            "attribute": self._build_ann_attributes_context(ann_attrs),
-        }
-
-        if parent_skeleton_context is not None:
-            context["skeleton"] = parent_skeleton_context
-
-        if include_track:
-            context["track_ref"] = track_id
-            context["track"] = (
-                self._build_shape_context(ann, ann_attrs=ann_attrs, include_track=False)
-                if track_id is not None
-                else None
-            )
-
-        return context
-
-    def build_shape_context_for_annotation(self, ann: dm.Annotation) -> dict[str, Any]:
-        ann_attrs = dict(getattr(ann, "attributes", {}) or {})
-        return self._build_shape_context(ann, ann_attrs=ann_attrs, include_track=True)
-
-    def _build_shape_filter_context(self, ann: dm.Annotation) -> dict[str, Any]:
-        return {
-            "shape": self.build_shape_context_for_annotation(ann),
-        }
+    def _build_shape_filter_context(self, ann: dm.Annotation) -> _FilterContext:
+        return _FilterContext(shape=self.build_shape_context_for_annotation(ann))
 
     def _build_attribute_filter_context(
         self, shape_ann: dm.Annotation, attr_name: str, attr_value: Any
-    ) -> dict[str, Any]:
-        context = self._build_shape_filter_context(shape_ann)
-        context["attribute"] = {"name": attr_name, "value": attr_value}
-        return context
-
-    def _dm_type_to_requirement_type(self, ann_type: dm.AnnotationType) -> str:
-        return {
-            dm.AnnotationType.label: models.QualityRequirementAnnotationType.TAG,
-            dm.AnnotationType.bbox: models.QualityRequirementAnnotationType.RECTANGLE,
-            dm.AnnotationType.skeleton: models.QualityRequirementAnnotationType.SKELETON,
-            dm.AnnotationType.points: models.QualityRequirementAnnotationType.POINTS,
-            dm.AnnotationType.polyline: models.QualityRequirementAnnotationType.POLYLINE,
-            dm.AnnotationType.mask: models.QualityRequirementAnnotationType.MASK,
-            dm.AnnotationType.polygon: models.QualityRequirementAnnotationType.POLYGON,
-            dm.AnnotationType.ellipse: models.QualityRequirementAnnotationType.ELLIPSE,
-        }.get(ann_type, str(ann_type))
+    ) -> _FilterContext:
+        return _FilterContext(
+            shape=self.build_shape_context_for_annotation(shape_ann),
+            attribute=_FilterAttributeContext(name=attr_name, value=attr_value),
+        )
