@@ -261,7 +261,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         });
     });
 
-    context.only("'Simplify' can be invoked as annotations action", () => {
+    context("'Simplify' can be invoked as annotations action", () => {
         const originalObjectId = 1;
         const copyIds = [2, 3, 4];
         const resultIds = [5, 6, 7];
