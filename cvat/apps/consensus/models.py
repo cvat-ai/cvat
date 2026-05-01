@@ -15,7 +15,6 @@ DEFAULT_CONSENSUS_IOU_THRESHOLD = fields_dict(ComparisonParameters)["iou_thresho
 
 class ConsensusSettings(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="consensus_settings")
-    quorum = models.FloatField(default=0.5)
     iou_threshold = models.FloatField(default=DEFAULT_CONSENSUS_IOU_THRESHOLD)
 
     @property
