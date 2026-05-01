@@ -184,6 +184,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 "retrieve": Scopes.VIEW,
                 "data": Scopes.VIEW,
                 "confusion": Scopes.VIEW,
+                "confusion_matrix": Scopes.VIEW,
             }[view.action]
         ]
 

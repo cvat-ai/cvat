@@ -1307,3 +1307,19 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             enabled_group_csv = archive.read(group_matrices[enabled_requirement_name]).decode()
             assert "ds \\ gt" in overall_csv
             assert "ds \\ gt" in enabled_group_csv
+
+        response = get_method(
+            admin_user,
+            f"quality/reports/{report['id']}/confusion/matrix",
+            requirement=enabled_requirement_name,
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.headers["Content-Type"].startswith("text/csv")
+        assert response.content.decode() == enabled_group_csv
+
+        response = get_method(
+            admin_user,
+            f"quality/reports/{report['id']}/confusion/matrix",
+            requirement=disabled_requirement_name,
+        )
+        assert response.status_code == HTTPStatus.NOT_FOUND

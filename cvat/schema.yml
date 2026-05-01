@@ -4575,6 +4575,42 @@ paths:
                 format: binary
           description: ZIP archive with the overall and per-requirement confusion
             matrices
+  /api/quality/reports/{id}/confusion/matrix:
+    get:
+      operationId: quality_retrieve_report_requirement_confusion
+      summary: Download a quality report requirement confusion matrix
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality report.
+        required: true
+      - in: query
+        name: requirement
+        schema:
+          type: string
+        description: Quality requirement name in the report
+        required: true
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: CSV confusion matrix for the requested quality requirement
+        '404':
+          description: Requirement confusion matrix was not found
   /api/quality/reports/{id}/data:
     get:
       operationId: quality_retrieve_report_data

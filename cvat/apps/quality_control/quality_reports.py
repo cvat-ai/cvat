@@ -163,6 +163,30 @@ def _serialize_confusion_matrix_csv(confusion_matrix) -> str:
     return output.getvalue()
 
 
+def _has_downloadable_confusion_matrix(confusion_matrix) -> bool:
+    return (
+        confusion_matrix is not None
+        and confusion_matrix.labels is not None
+        and confusion_matrix.rows is not None
+        and bool(confusion_matrix.labels)
+    )
+
+
+def prepare_requirement_confusion_matrix_for_downloading(
+    db_report: models.QualityReport, *, requirement_name: str
+) -> str | None:
+    comparison_report = ComparisonReport.from_json(db_report.get_report_data())
+    group_report = (comparison_report.groups or {}).get(requirement_name)
+    if not group_report:
+        return None
+
+    confusion_matrix = group_report.comparison_summary.annotations.confusion_matrix
+    if not _has_downloadable_confusion_matrix(confusion_matrix):
+        return None
+
+    return _serialize_confusion_matrix_csv(confusion_matrix)
+
+
 def _make_unique_group_archive_path(group_name: str, used_paths: set[str]) -> str:
     base_name = slugify(group_name) or "group"
     archive_path = f"groups/{base_name}.csv"
@@ -194,12 +218,7 @@ def prepare_confusion_matrices_archive_for_downloading(db_report: models.Quality
         name: str,
         confusion_matrix,
     ) -> None:
-        if (
-            confusion_matrix is None
-            or confusion_matrix.labels is None
-            or confusion_matrix.rows is None
-            or not confusion_matrix.labels
-        ):
+        if not _has_downloadable_confusion_matrix(confusion_matrix):
             return
 
         archive.writestr(archive_path, _serialize_confusion_matrix_csv(confusion_matrix))

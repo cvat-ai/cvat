@@ -8,6 +8,7 @@ from datetime import datetime
 from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
+from django.utils.text import slugify
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -17,7 +18,7 @@ from drf_spectacular.utils import (
 )
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rq.job import JobStatus as RqJobStatus
 
@@ -464,6 +465,49 @@ class QualityReportViewSet(
         response = HttpResponse(archive, content_type="application/zip")
         response["Content-Disposition"] = (
             f'attachment; filename="quality-report-{report.id}-confusion.zip"'
+        )
+        return response
+
+    @extend_schema(
+        operation_id="quality_retrieve_report_requirement_confusion",
+        summary="Download a quality report requirement confusion matrix",
+        parameters=[
+            OpenApiParameter(
+                "requirement",
+                type=OpenApiTypes.STR,
+                required=True,
+                description="Quality requirement name in the report",
+            ),
+        ],
+        responses={
+            (200, "text/csv"): OpenApiResponse(
+                response=OpenApiTypes.BINARY,
+                description="CSV confusion matrix for the requested quality requirement",
+            ),
+            "404": OpenApiResponse(description="Requirement confusion matrix was not found"),
+        },
+    )
+    @action(detail=True, methods=["GET"], url_path="confusion/matrix", serializer_class=None)
+    def confusion_matrix(self, request, pk):
+        report = self.get_object()  # check permissions
+        requirement_name = request.query_params.get("requirement")
+        if not requirement_name:
+            raise ValidationError({"requirement": "This query parameter is required."})
+
+        matrix_csv = qc.prepare_requirement_confusion_matrix_for_downloading(
+            report,
+            requirement_name=requirement_name,
+        )
+        if matrix_csv is None:
+            raise NotFound(
+                f"Confusion matrix for quality requirement '{requirement_name}' was not found"
+            )
+
+        filename_requirement = slugify(requirement_name) or "requirement"
+        response = HttpResponse(matrix_csv, content_type="text/csv")
+        response["Content-Disposition"] = (
+            f'attachment; filename="quality-report-{report.id}-'
+            f'{filename_requirement}-confusion.csv"'
         )
         return response
 
