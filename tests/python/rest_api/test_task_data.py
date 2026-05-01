@@ -1880,6 +1880,31 @@ class TestTaskData(TestTasksBase):
                         ),
                     )
 
+    def test_can_get_cloud_bin_pointcloud_task_chunks(
+        self, fxt_cloud_bin_pointcloud_task: tuple[ITaskSpec, int]
+    ):
+        _, task_id = fxt_cloud_bin_pointcloud_task
+
+        with make_api_client(self._USERNAME) as api_client:
+            task, _ = api_client.tasks_api.retrieve(task_id)
+
+            assert task.data_original_chunk_type == "imageset"
+            assert task.data_compressed_chunk_type == "imageset"
+
+            for quality in ["original", "compressed"]:
+                _, response = api_client.tasks_api.retrieve_data(
+                    task_id, type="chunk", quality=quality, number=0, _parse_response=False
+                )
+
+                chunk_file = io.BytesIO(response.data)
+                with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
+                    pcd_bytes = chunk_archive.read("000000.pcd")
+
+                assert b"POINTS 100\n" in pcd_bytes
+                data_marker = b"DATA binary\n"
+                data_start = pcd_bytes.find(data_marker) + len(data_marker)
+                assert len(pcd_bytes) - data_start == 100 * 16
+
     @pytest.mark.timeout(
         # This test has to check all the task chunks availability, it can make many requests
         timeout=300

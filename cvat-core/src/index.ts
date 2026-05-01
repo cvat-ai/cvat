@@ -15,6 +15,7 @@ import * as enums from './enums';
 import config from './config';
 import { mask2Rle, rle2Mask } from './rle-utils';
 import { propagateShapes, validateAttributeValue } from './object-utils';
+import { createOpenCVInterface } from './opencv/opencv-interface';
 import User from './user';
 import Project from './project';
 import { Job, Task } from './session';
@@ -200,6 +201,7 @@ export default interface CVATCore {
         backendAPI: typeof config.backendAPI;
         origin: typeof config.origin;
         uploadChunkSize: typeof config.uploadChunkSize;
+        opencvPath: typeof config.opencvPath;
         removeUnderlyingMaskPixels: {
             enabled: boolean;
             onEmptyMaskOccurrence: () => void | null;
@@ -251,5 +253,8 @@ export default interface CVATCore {
         rle2Mask: typeof rle2Mask;
         propagateShapes: typeof propagateShapes;
         validateAttributeValue: typeof validateAttributeValue;
+    };
+    opencv: {
+        createOpenCVInterface: typeof createOpenCVInterface;
     };
 }
