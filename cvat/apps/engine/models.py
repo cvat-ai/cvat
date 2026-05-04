@@ -633,7 +633,6 @@ class Data(models.Model):
         transaction.on_commit(clear_original_files, robust=True)
 
 
-
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
     path = models.CharField(max_length=1024, default='')
@@ -652,7 +651,6 @@ class Audio(models.Model):
 
     class Meta:
         default_permissions = ()
-
 
 
 class Image(models.Model):
