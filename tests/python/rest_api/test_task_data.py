@@ -20,6 +20,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+from attrs.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -546,6 +547,10 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.timeout(60)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)) is False,
+        reason="requires CVAT_ALLOW_STATIC_CACHE=true on the worker",
+    )
     def test_cannot_create_task_with_cloud_storage_without_cache_when_server_file_is_missing(
         self, cloud_storages
     ):
@@ -585,10 +590,8 @@ class TestPostTaskData:
         manifest_body = (
             '{"version":"1.0"}\n'
             '{"type":"images"}\n'
-            '{"name":"01_present","extension":".png","width":100,"height":50,'
-            '"checksum":"00000000000000000000000000000000"}\n'
-            '{"name":"02_ghost","extension":".png","width":100,"height":50,'
-            '"checksum":"00000000000000000000000000000000"}\n'
+            '{"name":"01_present","extension":".png","width":100,"height":50}\n'
+            '{"name":"02_ghost","extension":".png","width":100,"height":50}\n'
         ).encode()
         s3_client.create_file(filename=f"{prefix}/manifest.jsonl", data=manifest_body)
         request.addfinalizer(partial(s3_client.remove_file, filename=f"{prefix}/manifest.jsonl"))

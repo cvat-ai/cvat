@@ -70,7 +70,7 @@ class TestCreateFromRemote:
 
         self._test_can_create(user, self.task_id, remote_resources)
 
-    def test_remote_files_when_downloading_them_fails(self, find_users):
+    def test_cannot_create_task_when_remote_file_download_fails(self, find_users):
         user = find_users(privilege="admin")[0]["username"]
         url = "http://invalid.invalid/x.png"
 
