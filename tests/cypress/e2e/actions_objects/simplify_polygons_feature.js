@@ -225,9 +225,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
     });
 
     afterEach(() => {
-        // cy.realPress('Escape');
         cy.removeAnnotations();
-        // cy.saveJob();
     });
 
     context('Simplify one polygon', () => {
