@@ -16,6 +16,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.64.0'></a>
+## \[2.64.0\] - 2026-04-29
+
+### Added
+
+- Polygon and polyline simplification to reduce the number of points. Accessible via button
+  in object menu (or shortcut) for single object and via annotation actions for multiple objects
+  (<https://github.com/cvat-ai/cvat/pull/10449>)
+
+- The server can now be configured to store all new eligible tasks on a
+  particular backing cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10514>)
+
+### Removed
+
+- The unused `list` chunk type. This change is not expected to affect anyone.
+  (<https://github.com/cvat-ai/cvat/pull/10524>)
+
+### Fixed
+
+- Fixed chunk retrieval for tasks with point cloud files in the `.bin` format
+  located in cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10523>)
+
+- Fixed creating tasks from `.bin` files in cloud storage that are less
+  than 16384 bytes long
+  (<https://github.com/cvat-ai/cvat/pull/10523>)
+
+- Fixed PCDLoader incorrectly reading intensity values in some point cloud files.
+  (<https://github.com/cvat-ai/cvat/pull/10532>)
+
+- Fixed incorrect reported per-task time in the `movetasktobackingcs` and
+  `movetaskfrombackingcs` commands
+  (<https://github.com/cvat-ai/cvat/pull/10533>)
+
+### Security
+
+- Fixed a cross-site scripting vulnerability in code related to annotation
+  guides
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-m2h7-6xqm-p9v5>)
+
 <a id='changelog-2.63.0'></a>
 ## \[2.63.0\] - 2026-04-23
 

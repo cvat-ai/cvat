@@ -70,13 +70,18 @@ To configure Docker Compose you need to provide the following information in the
 CVAT_BASE_URL - URL of the CVAT instance where you want to deploy your agent. Defaults to <https://app.cvat.ai>
 
 CVAT_ACCESS_TOKEN - Access token to use with cvat-cli to connect to CVAT instance. You can get it in CVAT UI: <https://app.cvat.ai/profile#security>
+
 FUNCTION_NAME - Name of the function to register in CVAT. For example it could be SAM2 or MY_GREAT_MODEL.
+
 IMAGE_URL - URL of the image to use for your agent. You can either build your own image or just
 use the one from our repo: <https://hub.docker.com/r/cvat/>
+
 AGENTS_COUNT - Number of agent replicas to run. Depends on the model.
+
 ORG_SLUG - Your org slug. This is important if you want to share your function across the organization.
-USE_CUDA - Whether to use GPU or not. Please make sure that you are running Docker image that was
-built with CUDA support.
+
+COMPOSE_PROFILES - whether to use cpu or gpu to run your agent. To use GPU, set this to "gpu".
+Requires Linux + NVIDIA GPU + NVIDIA driver + NVIDIA Container Toolkit + GPU docker image
 
 MODEL_CONFIG_PARAMS - Parameters to pass to the adapter function. Differs for each model.
 Refer to the model documentation.
@@ -112,9 +117,9 @@ So in this example I will do the following:
 - Draw a new polygon
 - Run annotation function
 
-![Drawing a new polygon](/images/sam2-agent-polygon.jpeg)
+![Drawing a new polygon](/images/sam2-agent-polygon.webp)
 
-![Running the AI tracker](/images/sam2-agent-ai-tracker.jpeg)
+![Running the AI tracker](/images/sam2-agent-ai-tracker.webp)
 
 In console you will be able to see logs from the agent, that will indicate that the task is being processed:
 
@@ -123,8 +128,6 @@ In console you will be able to see logs from the agent, that will indicate that 
 After that you can move forward through frames and see that the polygon is being tracked:
 
 ![Tracking result on frames](/images/sam2-agent-result.webp)
-
-![Tracking confirmation](/images/img.webp)
 
 ## How to clean up after running CVAT agent with Docker Compose
 
