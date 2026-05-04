@@ -560,7 +560,7 @@ class _DataGetter(metaclass=ABCMeta):
             data = frame_provider.get_frame(self.number, quality=self.quality)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == 'preview':
-            data = frame_provider.get_preview_image()
+            data = frame_provider.get_preview()
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == 'context_image':
             data = frame_provider.get_frame_context_images_chunk(self.number)
