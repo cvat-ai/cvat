@@ -7297,6 +7297,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/AnnotationConflictSeverity'
           readOnly: true
+        attribute_names:
+          type: object
+          readOnly: true
       required:
       - annotation_ids
     AnnotationConflictAnnotationType:
@@ -10218,12 +10221,12 @@ components:
           maximum: 1
           minimum: 0
           description: Used for distinction between matched / unmatched shapes
-        oks_sigma:
+        point_size:
           type: number
           format: double
           maximum: 1
           minimum: 0
-          description: |
+          description: |-
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
             where the checked point is expected to be. For boxes with different width and
@@ -10234,7 +10237,7 @@ components:
           - $ref: '#/components/schemas/QualityPointSizeBase'
           description: |-
             When comparing point annotations (including both separate points and point groups),
-            the OKS sigma parameter defines matching area for each GT point based to the
+            the point size parameter defines matching area for each GT point based to the
             object size. The point size base parameter allows to configure how to determine
             the object size.
             If image_size, the image size is used. Useful if each point
@@ -10263,7 +10266,7 @@ components:
           minimum: 0
           description: |
             Used for distinction between strong / weak (low_overlap) matches
-        compare_line_orientation:
+        match_orientation:
           type: boolean
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
@@ -10274,8 +10277,8 @@ components:
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
-            Only used when the 'compare_line_orientation' parameter is true
-        compare_groups:
+            Only used when the 'match_orientation' parameter is true
+        match_groups:
           type: boolean
           description: Enables or disables annotation group checks
         group_match_threshold:
@@ -10285,7 +10288,7 @@ components:
           minimum: 0
           description: |
             Minimal IoU for groups to be considered matching.
-            Only used when the 'compare_groups' parameter is true
+            Only used when the 'match_groups' parameter is true
         check_covered_annotations:
           type: boolean
           description: |
@@ -10303,7 +10306,7 @@ components:
           type: boolean
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        compare_attributes:
+        match_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
         empty_is_annotated:
@@ -10694,6 +10697,19 @@ components:
       - included
       - not_checkable
       - total
+    QualityReportRequirementsSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        enabled:
+          type: integer
+        completed:
+          type: integer
+      required:
+      - completed
+      - enabled
+      - total
     QualityReportSummary:
       type: object
       properties:
@@ -10746,8 +10762,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/QualityReportJobsSummary'
           description: Included only in task and project reports
-        targets:
-          $ref: '#/components/schemas/QualityReportTargetsSummary'
+        requirements:
+          $ref: '#/components/schemas/QualityReportRequirementsSummary'
       required:
       - accuracy
       - conflict_count
@@ -10773,19 +10789,6 @@ components:
         * `job` - JOB
         * `task` - TASK
         * `project` - PROJECT
-    QualityReportTargetsSummary:
-      type: object
-      properties:
-        total:
-          type: integer
-        enabled:
-          type: integer
-        completed:
-          type: integer
-      required:
-      - completed
-      - enabled
-      - total
     QualityReportTasksSummary:
       type: object
       properties:
@@ -10862,12 +10865,12 @@ components:
           maximum: 1
           minimum: 0
           description: Used for distinction between matched / unmatched shapes
-        oks_sigma:
+        point_size:
           type: number
           format: double
           maximum: 1
           minimum: 0
-          description: |
+          description: |-
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
             where the checked point is expected to be. For boxes with different width and
@@ -10878,7 +10881,7 @@ components:
           - $ref: '#/components/schemas/QualityPointSizeBase'
           description: |-
             When comparing point annotations (including both separate points and point groups),
-            the OKS sigma parameter defines matching area for each GT point based to the
+            the point size parameter defines matching area for each GT point based to the
             object size. The point size base parameter allows to configure how to determine
             the object size.
             If image_size, the image size is used. Useful if each point
@@ -10907,7 +10910,7 @@ components:
           minimum: 0
           description: |
             Used for distinction between strong / weak (low_overlap) matches
-        compare_line_orientation:
+        match_orientation:
           type: boolean
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
@@ -10918,8 +10921,8 @@ components:
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
-            Only used when the 'compare_line_orientation' parameter is true
-        compare_groups:
+            Only used when the 'match_orientation' parameter is true
+        match_groups:
           type: boolean
           description: Enables or disables annotation group checks
         group_match_threshold:
@@ -10929,7 +10932,7 @@ components:
           minimum: 0
           description: |
             Minimal IoU for groups to be considered matching.
-            Only used when the 'compare_groups' parameter is true
+            Only used when the 'match_groups' parameter is true
         check_covered_annotations:
           type: boolean
           description: |
@@ -10947,7 +10950,7 @@ components:
           type: boolean
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        compare_attributes:
+        match_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
         empty_is_annotated:
@@ -11008,12 +11011,12 @@ components:
           maximum: 1
           minimum: 0
           description: Used for distinction between matched / unmatched shapes
-        oks_sigma:
+        point_size:
           type: number
           format: double
           maximum: 1
           minimum: 0
-          description: |
+          description: |-
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
             where the checked point is expected to be. For boxes with different width and
@@ -11024,7 +11027,7 @@ components:
           - $ref: '#/components/schemas/QualityPointSizeBase'
           description: |-
             When comparing point annotations (including both separate points and point groups),
-            the OKS sigma parameter defines matching area for each GT point based to the
+            the point size parameter defines matching area for each GT point based to the
             object size. The point size base parameter allows to configure how to determine
             the object size.
             If image_size, the image size is used. Useful if each point
@@ -11053,7 +11056,7 @@ components:
           minimum: 0
           description: |
             Used for distinction between strong / weak (low_overlap) matches
-        compare_line_orientation:
+        match_orientation:
           type: boolean
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
@@ -11064,8 +11067,8 @@ components:
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
-            Only used when the 'compare_line_orientation' parameter is true
-        compare_groups:
+            Only used when the 'match_orientation' parameter is true
+        match_groups:
           type: boolean
           description: Enables or disables annotation group checks
         group_match_threshold:
@@ -11075,7 +11078,7 @@ components:
           minimum: 0
           description: |
             Minimal IoU for groups to be considered matching.
-            Only used when the 'compare_groups' parameter is true
+            Only used when the 'match_groups' parameter is true
         check_covered_annotations:
           type: boolean
           description: |
@@ -11093,7 +11096,7 @@ components:
           type: boolean
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        compare_attributes:
+        match_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
         empty_is_annotated:
