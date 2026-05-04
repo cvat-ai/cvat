@@ -1479,6 +1479,8 @@ def _create_audio_task_media_descriptors(
     db_data.size = audio_length
     db_data.chunk_size = audio_length  # the UI can't handle chunks yet
 
+    audio.save()
+
     return audio
 
 
