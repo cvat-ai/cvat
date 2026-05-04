@@ -355,13 +355,13 @@ class RequirementHandler(ABC):
         self,
         *,
         frame_id: int,
-        type: AnnotationConflictType,
+        conflict_type: AnnotationConflictType,
         annotation_ids: list[AnnotationId],
         attribute_names: list[str] | None = None,
     ) -> AnnotationConflict:
         return AnnotationConflict(
             frame_id=frame_id,
-            type=type,
+            type=conflict_type,
             annotation_ids=annotation_ids,
             severity=self._get_conflict_severity(),
             attribute_names=sorted(set(attribute_names or [])),
@@ -611,7 +611,7 @@ class TagRequirementHandler(RequirementHandler):
                 conflicts.append(
                     self._make_conflict(
                         frame_id=frame_id,
-                        type=AnnotationConflictType.MISMATCHING_LABEL,
+                        conflict_type=AnnotationConflictType.MISMATCHING_LABEL,
                         annotation_ids=[
                             self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                             self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
@@ -624,7 +624,7 @@ class TagRequirementHandler(RequirementHandler):
             conflicts.append(
                 self._make_conflict(
                     frame_id=frame_id,
-                    type=AnnotationConflictType.MISSING_ANNOTATION,
+                    conflict_type=AnnotationConflictType.MISSING_ANNOTATION,
                     annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
                 )
             )
@@ -634,7 +634,7 @@ class TagRequirementHandler(RequirementHandler):
             conflicts.append(
                 self._make_conflict(
                     frame_id=frame_id,
-                    type=AnnotationConflictType.EXTRA_ANNOTATION,
+                    conflict_type=AnnotationConflictType.EXTRA_ANNOTATION,
                     annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
                 )
             )
@@ -749,7 +749,7 @@ class ShapeRequirementHandler(RequirementHandler):
                 conflicts.append(
                     self._make_conflict(
                         frame_id=frame_id,
-                        type=AnnotationConflictType.LOW_OVERLAP,
+                        conflict_type=AnnotationConflictType.LOW_OVERLAP,
                         annotation_ids=[
                             self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                             self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
@@ -761,7 +761,7 @@ class ShapeRequirementHandler(RequirementHandler):
             conflicts.append(
                 self._make_conflict(
                     frame_id=frame_id,
-                    type=AnnotationConflictType.MISSING_ANNOTATION,
+                    conflict_type=AnnotationConflictType.MISSING_ANNOTATION,
                     annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
                 )
             )
@@ -770,7 +770,7 @@ class ShapeRequirementHandler(RequirementHandler):
             conflicts.append(
                 self._make_conflict(
                     frame_id=frame_id,
-                    type=AnnotationConflictType.EXTRA_ANNOTATION,
+                    conflict_type=AnnotationConflictType.EXTRA_ANNOTATION,
                     annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
                 )
             )
@@ -779,7 +779,7 @@ class ShapeRequirementHandler(RequirementHandler):
             conflicts.append(
                 self._make_conflict(
                     frame_id=frame_id,
-                    type=AnnotationConflictType.MISMATCHING_LABEL,
+                    conflict_type=AnnotationConflictType.MISMATCHING_LABEL,
                     annotation_ids=[
                         self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                         self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
@@ -831,7 +831,7 @@ class ShapeRequirementHandler(RequirementHandler):
                     conflicts.append(
                         self._make_conflict(
                             frame_id=frame_id,
-                            type=AnnotationConflictType.MISMATCHING_DIRECTION,
+                            conflict_type=AnnotationConflictType.MISMATCHING_DIRECTION,
                             annotation_ids=[
                                 self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                                 self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
@@ -846,7 +846,7 @@ class ShapeRequirementHandler(RequirementHandler):
                 conflicts.append(
                     self._make_conflict(
                         frame_id=frame_id,
-                        type=AnnotationConflictType.COVERED_ANNOTATION,
+                        conflict_type=AnnotationConflictType.COVERED_ANNOTATION,
                         annotation_ids=[
                             self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                         ],
@@ -867,7 +867,7 @@ class ShapeRequirementHandler(RequirementHandler):
                     conflicts.append(
                         self._make_conflict(
                             frame_id=frame_id,
-                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                            conflict_type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
                             annotation_ids=[
                                 self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                                 self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
@@ -899,7 +899,7 @@ class ShapeRequirementHandler(RequirementHandler):
                     conflicts.append(
                         self._make_conflict(
                             frame_id=frame_id,
-                            type=AnnotationConflictType.MISMATCHING_GROUPS,
+                            conflict_type=AnnotationConflictType.MISMATCHING_GROUPS,
                             annotation_ids=[
                                 self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                                 self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
@@ -1083,7 +1083,7 @@ class AttributeRequirementHandler(RequirementHandler):
                 conflicts.append(
                     self._make_conflict(
                         frame_id=frame_id,
-                        type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                        conflict_type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
                         annotation_ids=[
                             self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                             self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
