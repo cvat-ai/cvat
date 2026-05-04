@@ -11,35 +11,65 @@ import { translatePoint } from '../../support/utils';
 context('Simplify polygons feature', { scrollBehavior: false }, () => {
     const polygonCenter = { x: 510, y: 324 };
     const detailedPolygonPoints = [
+        // a jagged shape with redundant points
         { x: 340, y: 185 },
+        { x: 360, y: 197.5 },
         { x: 380, y: 210 },
+        { x: 400.5, y: 194 },
         { x: 421, y: 178 },
+        { x: 438, y: 196 },
         { x: 455, y: 214 },
+        { x: 476.5, y: 195 },
         { x: 498, y: 176 },
+        { x: 518, y: 195.5 },
         { x: 538, y: 215 },
+        { x: 558, y: 198.5 },
         { x: 578, y: 182 },
+        { x: 595.5, y: 201 },
         { x: 613, y: 220 },
+        { x: 634, y: 207.5 },
         { x: 655, y: 195 },
+        { x: 645.5, y: 220 },
         { x: 636, y: 245 },
+        { x: 668, y: 257.5 },
         { x: 700, y: 270 },
+        { x: 667.5, y: 281 },
         { x: 635, y: 292 },
+        { x: 665, y: 312 },
         { x: 695, y: 332 },
+        { x: 663, y: 340 },
         { x: 631, y: 348 },
+        { x: 652, y: 375 },
         { x: 673, y: 402 },
+        { x: 642.5, y: 394 },
         { x: 612, y: 386 },
+        { x: 599, y: 423 },
         { x: 586, y: 460 },
+        { x: 567, y: 431 },
         { x: 548, y: 402 },
+        { x: 526.5, y: 437 },
         { x: 505, y: 472 },
+        { x: 487.5, y: 437 },
         { x: 470, y: 402 },
+        { x: 447, y: 429 },
         { x: 424, y: 456 },
+        { x: 413, y: 419 },
         { x: 402, y: 382 },
+        { x: 372, y: 396 },
         { x: 342, y: 410 },
+        { x: 362, y: 379 },
         { x: 382, y: 348 },
+        { x: 351, y: 337 },
         { x: 320, y: 326 },
+        { x: 352, y: 309 },
         { x: 384, y: 292 },
+        { x: 353.5, y: 276 },
         { x: 323, y: 260 },
+        { x: 356.5, y: 253 },
         { x: 390, y: 246 },
+        { x: 375, y: 225.5 },
         { x: 360, y: 205 },
+        { x: 343, y: 215 },
         { x: 326, y: 225 },
     ];
     const polygonPointsCount = detailedPolygonPoints.length;
@@ -70,6 +100,9 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
             shouldKeepBaselineArea: true,
         },
     ];
+    const originalObjectId = 1;
+    const copyIds = [2, 3, 4];
+    const resultIds = [5, 6, 7];
 
     function parsePolygonPoints(rawPoints) {
         return rawPoints
@@ -96,6 +129,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
 
     function getPolygonStats(objectId) {
         return getPolygonPoints(objectId).then((points) => ({
+            objectId,
             area: shoelaceArea(points),
             pointsCount: points.length,
         }));
@@ -103,9 +137,10 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
 
     function logPolygonMetrics(message, metrics) {
         const {
-            pointsCount, area,
+            pointsCount, area, objectId,
         } = metrics;
         const logEntry = {
+            objectId,
             message,
             points: pointsCount,
             area: area.toFixed(1),
@@ -146,14 +181,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         expect(metrics.area).to.be.closeTo(baselineStats.area, 1);
     }
 
-    /**
-     * Runs a series of polygon simplification test cases and validates the results.
-     *
-     * @param {({objectId: number, accuracy?: number, distance?: number}) => boolean} simplifyFn
-     * @param {Object[]} cases - Simplification cases with action-specific parameters
-     * @returns {boolean} - whether a new shape was created
-     */
-    function runSimplificationCases(simplifyFn, cases) {
+    function runSimplificationCases(cases) {
         cases.forEach((simplificationCase, index) => {
             const objectId = firstSimplifiedObjectId + index;
 
@@ -161,64 +189,82 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                 makeCopy(objectId);
             }
 
-            const isNewShape = simplifyFn({ objectId, ...simplificationCase });
+            const isNewShape = simplifyPolygon({ objectId, ...simplificationCase });
             getPolygonStats(objectId + +isNewShape).then((metrics) => {
                 logPolygonMetrics(simplificationCase.message, metrics);
             });
         });
+    }
+    function runSimplifyAction(distance) {
+        cy.selectAnnotationsAction('Simplify polygons and polylines');
+        cy.setAnnotationActionParameter('Distance', 'input', distance);
+        // Run action
+        cy.get('.cvat-action-runner-run-btn').click();
+        cy.get('.cvat-action-runner-run-btn.ant-btn-loading').should('exist');
     }
     function simplifyAction({ objectId, distance }) {
         cy.get(`#cvat-objects-sidebar-state-item-${objectId}`)
             .find('.cvat-object-item-menu-button').click();
         cy.get('.cvat-object-item-menu')
             .contains('button', 'Run annotation action').click();
-        cy.selectAnnotationsAction('Simplify polygons and polylines');
-        cy.setAnnotationActionParameter('Distance', 'input', distance);
 
-        // Run action
-        cy.get('.cvat-action-runner-run-btn').click();
-        cy.get('.cvat-action-runner-run-btn.ant-btn-loading').should('exist');
+        runSimplifyAction(distance);
         // Wait for modal to disappear
         cy.get('.cvat-action-runner-content').should('not.exist');
         return true;
     }
+    function simplifyBulkAction(distance) {
+        cy.openAnnotationsActionsModal();
+        runSimplifyAction(distance);
+        cy.closeAnnotationsActionsModal();
+    }
 
-    beforeEach(() => {
+    before(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
-        cy.createPolygon(createDetailedPolygon, null, 'shiftHover');
     });
 
     afterEach(() => {
-        cy.realPress('Escape');
+        // cy.realPress('Escape');
         cy.removeAnnotations();
+        // cy.saveJob();
     });
 
-    it("'Simplify' removes points, decreases areas. Higher accuracy restores shape ", () => {
-        getPolygonStats(referenceObjectId).then((baselineStats) => {
-            expect(baselineStats.pointsCount).to.be.at.least(polygonPointsCount);
-            expect(baselineStats.area).to.be.greaterThan(0);
+    context('Simplify one polygon', () => {
+        it("'Simplify' removes points, decreases areas. Higher accuracy restores shape", () => {
+            cy.createPolygon(createDetailedPolygon, null, 'shiftHover');
+            makeCopy(firstSimplifiedObjectId, polygonCenter);
+            getPolygonStats(referenceObjectId).then((baselineStats) => {
+                expect(baselineStats.pointsCount).to.be.at.least(polygonPointsCount);
+                expect(baselineStats.area).to.be.greaterThan(0);
 
-            makeCopy(firstSimplifiedObjectId);
+                getPolygonStats(firstSimplifiedObjectId).then((metrics) => {
+                    logPolygonMetrics('Copied polygon', metrics);
+                    expectCopiedPolygonMetrics(metrics, baselineStats);
+                });
 
-            getPolygonStats(firstSimplifiedObjectId).then((metrics) => {
-                logPolygonMetrics('Copied polygon', metrics);
-                expectCopiedPolygonMetrics(metrics, baselineStats);
+                runSimplificationCases(simplificationCases);
+
+                getPolygonStats(referenceObjectId).then((originalStats) => {
+                    expect(originalStats.pointsCount).to.equal(baselineStats.pointsCount);
+                    expect(originalStats.area).to.be.closeTo(baselineStats.area, 1);
+                });
             });
+        });
 
-            runSimplificationCases(simplifyPolygon, simplificationCases);
-
-            getPolygonStats(referenceObjectId).then((originalStats) => {
-                expect(originalStats.pointsCount).to.equal(baselineStats.pointsCount);
-                expect(originalStats.area).to.be.closeTo(baselineStats.area, 1);
-            });
+        it('Auto-simplify when drawing a polygon', () => {
+            cy.createPolygon({ ...createDetailedPolygon, simplify: true }, null, 'shiftHover');
+            cy.get(`#cvat_canvas_shape_${referenceObjectId}`)
+                .should(($shape) => {
+                    // retry until works
+                    const pstr = $shape.attr('points');
+                    const points = parsePolygonPoints([pstr]);
+                    expect(points.length).to.be.lessThan(detailedPolygonPoints.length);
+                });
         });
     });
 
     context("'Simplify' can be invoked as annotations action", () => {
-        const originalObjectId = 1;
-        const copyIds = [2, 3, 4];
-        const resultIds = [5, 6, 7];
         const distances = [20, 40, 64];
         let originalArea;
 
@@ -233,13 +279,13 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                 expect(finalOriginalStats.area).to.be.closeTo(refObjectArea, 1);
             });
         }
-        function checkAreasEqual(refObjectArea, refObjectId, [stats1, stats2, stats3]) {
+        function checkAreasEqual(refObjectId, [stats1, stats2, stats3]) {
             expect(stats1.area).to.be.closeTo(stats2.area, 1, 'area 1 not close to area 2');
             expect(stats2.area).to.be.closeTo(stats3.area, 1, 'area 2 not close to area 3');
             expect(stats3.area).to.be.closeTo(stats1.area, 1, 'area 3 not close to area 1');
 
             return getPolygonStats(refObjectId).then((finalOriginalStats) => {
-                expect(finalOriginalStats.area).to.be.closeTo(refObjectArea, 1, 'ref object is different');
+                expect(finalOriginalStats.area).to.be.closeTo(stats1.area, 1, 'ref object is different from the others');
             });
         }
         function logSimplifyStats(msg, stats, distance, objectId) {
@@ -253,13 +299,14 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         }
 
         beforeEach(() => {
+            cy.createPolygon(createDetailedPolygon, null, 'shiftHover');
             // Make 3 copies, place them around cavnas for visual
             makeCopy(copyIds[0], translatePoint({ a: -200 }, polygonCenter));
             makeCopy(copyIds[1], translatePoint({ b: 200 }, polygonCenter));
             makeCopy(copyIds[2], translatePoint({ a: 200 }, polygonCenter));
         });
 
-        it('Call simplify on each object', () => {
+        it("Call 'simplify' on each object", () => {
             getPolygonStats(originalObjectId).then((originalStats) => {
                 originalArea = originalStats.area;
                 expect(originalStats.area).to.be.greaterThan(0);
@@ -270,7 +317,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                     cy.get(`#cvat_canvas_shape_${resultIds[index]}`).should('exist');
                 });
 
-                // Collect  stats
+                // Collect stats
                 const allStats = [];
                 cy.wrap(resultIds).each((id) => {
                     getPolygonStats(id).then((stats) => {
@@ -288,8 +335,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
             });
         });
         it("Call 'simplify' on all shapes as a bulk action", () => {
-            // const distance = distances[2];
-            const distance = 0;
+            const distance = distances[2];
             const allStats = [];
 
             getPolygonStats(originalObjectId).then((originalStats) => {
@@ -305,7 +351,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                     allStats.forEach((stats, objectId) => {
                         logSimplifyStats('Aggressive simplification', stats, distance, objectId);
                     });
-                    return checkAreasEqual(originalArea, resultIds[0], allStats);
+                    return checkAreasEqual(resultIds[0], allStats);
                 });
             });
         });

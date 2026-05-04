@@ -688,6 +688,12 @@ Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = n
                 cy.get('.ant-input-number-input').clear();
                 cy.get('.ant-input-number-input').type(createPolygonParams.numberOfPoints);
             }
+            if (createPolygonParams.simplify === true) {
+                cy.get('.cvat-draw-shape-popover-simplify-checkbox')
+                    .should('exist').and('be.visible')
+                    .click();
+                cy.get('.cvat-draw-shape-popover-simplify-checkbox.ant-switch-checked').should('exist');
+            }
             cy.contains('button', createPolygonParams.type).click();
         });
     }
