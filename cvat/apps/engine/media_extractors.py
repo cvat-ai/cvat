@@ -21,7 +21,7 @@ from enum import IntEnum
 from fractions import Fraction
 from pathlib import Path, PurePath
 from random import shuffle
-from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
+from typing import ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
 
 import av
 import av.codec
@@ -254,10 +254,10 @@ class IMediaReader(ABC):
     def __init__(
         self,
         *,
+        dimension: DimensionType,
         start: int = 0,
         stop: int | None = None,
         step: int = 1,
-        dimension: DimensionType = DimensionType.DIM_2D,
     ):
         self._step = step
 
@@ -350,8 +350,9 @@ class ImageListReader(IMediaReader):
         if self._dimension == DimensionType.DIM_3D:
             properties = ValidateDimension.get_pcd_properties(Path(self.get_path(i)))
             return int(properties["WIDTH"]), int(properties["HEIGHT"])
-        with Image.open(self._source_paths[i]) as img:
-            return image_size_within_orientation(img)
+        else:
+            with Image.open(self._source_paths[i]) as img:
+                return image_size_within_orientation(img)
 
     def reconcile(
         self, source_paths, step=1, start=0, stop=None, dimension=None, sorting_method=None
@@ -439,7 +440,6 @@ class PdfReader(ImageListReader):
         step=1,
         start=0,
         stop=None,
-        dimension=DimensionType.DIM_2D,
         sorting_method=SortingMethod.LEXICOGRAPHICAL,
         extract_dir=None,
     ):
@@ -475,7 +475,7 @@ class PdfReader(ImageListReader):
             step=step,
             start=start,
             stop=stop,
-            dimension=dimension,
+            dimension=DimensionType.DIM_2D,
             sorting_method=sorting_method,
         )
 
@@ -591,7 +591,6 @@ class VideoReader(IMediaReader):
         step: int = 1,
         start: int = 0,
         stop: int | None = None,
-        dimension: DimensionType = DimensionType.DIM_2D,
         *,
         allow_threading: bool = False,
     ):
@@ -599,7 +598,7 @@ class VideoReader(IMediaReader):
             step=step,
             start=start,
             stop=stop,
-            dimension=dimension,
+            dimension=DimensionType.DIM_2D,
         )
 
         (source_path,) = source_paths
@@ -802,64 +801,8 @@ class VideoReaderWithManifest:
 class IChunkWriter(ABC):
     CHUNK_MIME_TYPE: ClassVar[str]
 
-    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
-        self._image_quality = quality
-        self._dimension = dimension
-
-    @staticmethod
-    def _compress_image(
-        source_image: av.VideoFrame | io.IOBase | Image.Image, quality: int
-    ) -> io.BytesIO:
-        image = None
-        if isinstance(source_image, av.VideoFrame):
-            image = source_image.to_image()
-        elif isinstance(source_image, io.IOBase):
-            image, _ = load_image((source_image, None))
-        elif isinstance(source_image, Image.Image):
-            image = source_image
-
-        assert image is not None
-
-        if has_exif_rotation(image):
-            image = ImageOps.exif_transpose(image)
-
-        # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
-        if image.mode == "I":
-            # Image mode is 32bit integer pixels.
-            # Autoscale pixels by factor 2**8 / im_data.max() to fit into 8bit
-            im_data = np.array(image)
-            im_data = im_data * (2**8 / im_data.max())
-            image = Image.fromarray(im_data.astype(np.int32))
-
-        # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
-        # Summary:
-        # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
-        # Simple Conversion from I;16 to I/RGB/L doesn't work as well.
-        #   Including any Intermediate Conversions doesn't work either. (eg. I;16 to I to L)
-        # Seems like an internal Bug of PIL
-        #     See Issue for further details: https://github.com/python-pillow/Pillow/issues/3011
-        #     Issue was opened 2018, so don't expect any changes soon and work with manual conversions.
-        if image.mode == "I;16":
-            # fmt: off
-            image = np.array(image, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
-            image = image - image.min()              # In case the used range lies in [a, 2^16] with a > 0
-            image = image / image.max() * 255        # Downscale into real numbers of range [0, 255]
-            image = image.astype(np.uint8)           # Floor to integers of range [0, 255]
-            image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
-            image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
-            # fmt: on
-
-        if image.mode != "RGB" and image.mode != "L":
-            image = image.convert("RGB")
-
-        buf = io.BytesIO()
-        image.save(buf, format="JPEG", quality=quality, optimize=True)
-        buf.seek(0)
-
-        return buf
-
     @abstractmethod
-    def save_as_chunk(self, images, chunk_path):
+    def save_as_chunk(self, images, chunk_path: str | io.IOBase):
         pass
 
 
@@ -867,6 +810,9 @@ class ZipChunkWriter(IChunkWriter):
     CHUNK_MIME_TYPE = "application/zip"
     IMAGE_EXT = "jpeg"
     POINT_CLOUD_EXT = "pcd"
+
+    def __init__(self, *, dimension: DimensionType) -> None:
+        self._dimension = dimension
 
     def _write_pcd_file(self, image: str | Path | io.BytesIO) -> tuple[io.BytesIO, str]:
         with ExitStack() as es:
@@ -931,6 +877,62 @@ class ZipChunkWriter(IChunkWriter):
 
 
 class ZipCompressedChunkWriter(ZipChunkWriter):
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
+        super().__init__(dimension=dimension)
+        self._image_quality = quality
+
+    @staticmethod
+    def _compress_image(
+        source_image: av.VideoFrame | io.IOBase | Image.Image, quality: int
+    ) -> io.BytesIO:
+        image = None
+        if isinstance(source_image, av.VideoFrame):
+            image = source_image.to_image()
+        elif isinstance(source_image, io.IOBase):
+            image, _ = load_image((source_image, None))
+        elif isinstance(source_image, Image.Image):
+            image = source_image
+
+        assert image is not None
+
+        if has_exif_rotation(image):
+            image = ImageOps.exif_transpose(image)
+
+        # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
+        if image.mode == "I":
+            # Image mode is 32bit integer pixels.
+            # Autoscale pixels by factor 2**8 / im_data.max() to fit into 8bit
+            im_data = np.array(image)
+            im_data = im_data * (2**8 / im_data.max())
+            image = Image.fromarray(im_data.astype(np.int32))
+
+        # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
+        # Summary:
+        # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
+        # Simple Conversion from I;16 to I/RGB/L doesn't work as well.
+        #   Including any Intermediate Conversions doesn't work either. (eg. I;16 to I to L)
+        # Seems like an internal Bug of PIL
+        #     See Issue for further details: https://github.com/python-pillow/Pillow/issues/3011
+        #     Issue was opened 2018, so don't expect any changes soon and work with manual conversions.
+        if image.mode == "I;16":
+            # fmt: off
+            image = np.array(image, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
+            image = image - image.min()              # In case the used range lies in [a, 2^16] with a > 0
+            image = image / image.max() * 255        # Downscale into real numbers of range [0, 255]
+            image = image.astype(np.uint8)           # Floor to integers of range [0, 255]
+            image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
+            image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
+            # fmt: on
+
+        if image.mode != "RGB" and image.mode != "L":
+            image = image.convert("RGB")
+
+        buf = io.BytesIO()
+        image.save(buf, format="JPEG", quality=quality, optimize=True)
+        buf.seek(0)
+
+        return buf
+
     def save_as_chunk(
         self,
         images: Iterator[tuple[Image.Image | io.IOBase | str, str | None]],
@@ -972,12 +974,9 @@ class Mpeg4ChunkWriter(IChunkWriter):
     FORMAT = "mp4"
     MAX_MBS_PER_FRAME = 36864
 
-    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
-        # translate inversed range [1:100] to [0:51]
-        quality = round(51 * (100 - quality) / 99)
-        super().__init__(quality=quality, dimension=dimension)
-
-        assert self._dimension == DimensionType.DIM_2D
+    def __init__(self, *, quality: int) -> None:
+        # translate inverted range [1:100] to [0:51]
+        self._image_quality = round(51 * (100 - quality) / 99)
 
         self._output_fps = 25
         try:
@@ -1028,11 +1027,9 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
-    FrameDescriptor: TypeAlias = tuple[av.VideoFrame, Any]
-
     def _peek_first_frame(
-        self, frame_iter: Iterator[FrameDescriptor]
-    ) -> tuple[FrameDescriptor | None, Iterator[FrameDescriptor]]:
+        self, frame_iter: Iterator[IMediaReader.VideoFrame]
+    ) -> tuple[IMediaReader.VideoFrame | None, Iterator[IMediaReader.VideoFrame]]:
         "Gets the first frame and returns the same full iterator"
 
         if not hasattr(frame_iter, "__next__"):
@@ -1041,7 +1038,9 @@ class Mpeg4ChunkWriter(IChunkWriter):
         first_frame = next(frame_iter, None)
         return first_frame, itertools.chain((first_frame,), frame_iter)
 
-    def save_as_chunk(self, images: Iterator[FrameDescriptor], chunk_path: str) -> None:
+    def save_as_chunk(
+        self, images: Iterator[IMediaReader.VideoFrame], chunk_path: str | io.IOBase
+    ) -> None:
         first_frame, images = self._peek_first_frame(images)
         if not first_frame:
             raise Exception("no images to save")
@@ -1078,8 +1077,8 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, *, quality, dimension):
-        super().__init__(quality=quality, dimension=dimension)
+    def __init__(self, *, quality: int) -> None:
+        super().__init__(quality=quality)
         if self._codec_name == "libx264":
             self._codec_opts = {
                 "profile": "baseline",
