@@ -842,14 +842,16 @@ class MediaCache:
         frame_ids: Sequence[int],
         *,
         quality: models.FrameQuality,
-        cache: MediaCache,
-        chunk_key: str,
+        cache: MediaCache | None = None,
+        chunk_key: str | None = None,
     ) -> DataWithMime:
         # TODO: refactor all chunk building into another class
 
         match db_task.media_type:
             case models.MediaType.AUDIO:
                 from cvat.apps.engine.media_providers.audio_provider import TaskAudioProvider
+
+                assert cache and chunk_key
 
                 return TaskAudioProvider._build_audio_chunk(
                     db_task=db_task,
