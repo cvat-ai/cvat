@@ -21,6 +21,7 @@ from inspect import isclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, cast
+from urllib.parse import urlparse
 
 import django_rq
 from django.conf import settings
@@ -2361,6 +2362,19 @@ class DataSerializer(serializers.ModelSerializer):
 
                 existing_files.add(filename)
 
+        return value
+
+    def validate_remote_files(self, value: list[dict[str, str]]) -> list[dict[str, str]]:
+        errors: list[str] = []
+        for entry in value:
+            url = entry["file"]
+            parsed = urlparse(url)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                errors.append(
+                    f"{url!r}: remote_files entries must be http(s) URLs."
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
         return value
 
     # pylint: disable=no-self-use
