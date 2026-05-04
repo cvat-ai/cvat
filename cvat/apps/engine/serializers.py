@@ -1517,7 +1517,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         frame_path_map: dict[int, str],
         segment_frame_map: dict[int,int],
     ):
-        from cvat.apps.engine.frame_provider import prepare_chunk
+        from cvat.apps.engine.media_providers.frame_provider import prepare_image_chunk
 
         db_segment = models.Segment.objects.select_related("task").get(pk=db_segment_id)
         initial_chunks_updated_date = db_segment.chunks_updated_date
@@ -1537,7 +1537,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 )
 
         with closing(_iterate_chunk_frames()) as frame_iter:
-            chunk, _ = prepare_chunk(
+            chunk, _ = prepare_image_chunk(
                 frame_iter, quality=quality, db_task=db_task, dump_unchanged=True,
             )
 

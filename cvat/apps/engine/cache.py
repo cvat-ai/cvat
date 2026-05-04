@@ -13,7 +13,7 @@ import tempfile
 import time
 import zipfile
 import zlib
-from collections.abc import Callable, Collection, Generator, Iterator, Sequence
+from collections.abc import Callable, Collection, Generator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
@@ -38,14 +38,10 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
-    IChunkWriter,
     ImageReaderWithManifest,
-    Mpeg4ChunkWriter,
-    Mpeg4CompressedChunkWriter,
     ValidateDimension,
     VideoReader,
     VideoReaderWithManifest,
-    ZipChunkWriter,
     ZipCompressedChunkWriter,
     load_image,
 )
@@ -58,6 +54,7 @@ from cvat.apps.engine.utils import (
     md5_hash,
 )
 from utils.dataset_manifest import ImageManifestManager
+from utils.dataset_manifest.utils import Openable
 
 slogger = ServerLogManager(__name__)
 
@@ -68,6 +65,9 @@ _CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
 
 class CacheTooLargeDataError(Exception):
     pass
+
+
+ASSETS_DIR = Path(__file__).parent / "assets"
 
 
 def enqueue_create_chunk_job(
@@ -586,6 +586,15 @@ class MediaCache:
         )
 
     @staticmethod
+    def read_raw_audio(db_task: models.Task) -> tuple[Openable, str]:
+        db_data = db_task.require_data()
+        assert db_data.storage == models.StorageChoice.LOCAL, db_data.storage
+
+        filename = str(db_data.audio.path)
+        data_dir = db_data.get_raw_data_dirname()
+        return (data_dir / filename, filename)
+
+    @staticmethod
     def read_raw_images(
         db_task: models.Task, frame_ids: Sequence[int], *, decode: bool = True
     ) -> Generator[tuple[PIL.Image.Image | str, str], None, None]:
@@ -816,19 +825,47 @@ class MediaCache:
         db_task = db_segment.task
         db_data = db_task.require_data()
 
-        chunk_size = db_data.chunk_size
-        chunk_frame_ids = list(db_segment.frame_set)[
-            chunk_size * chunk_number : chunk_size * (chunk_number + 1)
-        ]
+        chunk_key = self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
 
-        return self.prepare_custom_range_segment_chunk(db_task, chunk_frame_ids, quality=quality)
+        chunk_size = db_data.chunk_size
+        chunk_start_frame_index = chunk_size * chunk_number
+        chunk_end_frame_index = chunk_size * (chunk_number + 1)
+        chunk_frame_range = db_segment.frame_set[chunk_start_frame_index:chunk_end_frame_index]
+        return self.prepare_custom_range_segment_chunk(
+            db_task, chunk_frame_range, quality=quality, cache=self, chunk_key=chunk_key
+        )
 
     @classmethod
     def prepare_custom_range_segment_chunk(
-        cls, db_task: models.Task, frame_ids: Sequence[int], *, quality: models.FrameQuality
+        cls,
+        db_task: models.Task,
+        frame_ids: Sequence[int],
+        *,
+        quality: models.FrameQuality,
+        cache: MediaCache,
+        chunk_key: str,
     ) -> DataWithMime:
-        with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
-            return prepare_chunk(frame_iter, quality=quality, db_task=db_task)
+        # TODO: refactor all chunk building into another class
+
+        match db_task.media_type:
+            case models.MediaType.AUDIO:
+                from cvat.apps.engine.media_providers.audio_provider import TaskAudioProvider
+
+                return TaskAudioProvider._build_audio_chunk(
+                    db_task=db_task,
+                    chunk_frames=(frame_ids[0], frame_ids[-1]),
+                    quality=quality,
+                    cache=cache,
+                    chunk_key=chunk_key,
+                )
+
+            case models.MediaType.IMAGE | models.MediaType.VIDEO | models.MediaType.POINT_CLOUD:
+                from cvat.apps.engine.media_providers.frame_provider import prepare_image_chunk
+
+                with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
+                    return prepare_image_chunk(frame_iter, quality=quality, db_task=db_task)
+            case _ as media_type:
+                assert False, f"Unknown media type '{media_type}'"
 
     def prepare_masked_range_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
@@ -841,6 +878,7 @@ class MediaCache:
             chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
 
+        assert db_task.media_type != models.MediaType.AUDIO
         return self.prepare_custom_masked_range_segment_chunk(
             db_task, chunk_frame_ids, chunk_number, quality=quality
         )
@@ -872,7 +910,10 @@ class MediaCache:
         # Otherwise we might need to download files.
         # This is not needed for video tasks, as it will reduce performance,
         # because of reading multiple files (chunks)
-        from cvat.apps.engine.frame_provider import FrameOutputType, make_frame_provider
+        from cvat.apps.engine.media_providers.frame_provider import (
+            FrameOutputType,
+            make_frame_provider,
+        )
 
         task_frame_provider = make_frame_provider(db_task)
 
@@ -974,24 +1015,35 @@ class MediaCache:
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)
 
-        if db_segment.task.dimension == models.DimensionType.DIM_3D:
-            # TODO
-            preview = PIL.Image.open(
-                os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg")
-            )
-        else:
-            from cvat.apps.engine.frame_provider import (  # avoid circular import
-                FrameOutputType,
-                make_frame_provider,
-            )
+        match db_segment.task.media_type:
+            case models.MediaType.POINT_CLOUD:
+                preview = PIL.Image.open(ASSETS_DIR / "pcd_default_preview.jpeg")
+            case models.MediaType.AUDIO:
+                from cvat.apps.engine.media_extractors import AudioReader
 
-            task_frame_provider = make_frame_provider(db_segment.task)
-            segment_frame_provider = make_frame_provider(db_segment)
-            preview = segment_frame_provider.get_frame(
-                task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
-                quality=models.FrameQuality.COMPRESSED,
-                out_type=FrameOutputType.PIL,
-            ).data
+                preview = None
+                if db_segment.task.data.audio.has_cover_image:
+                    source_audio = self.read_raw_audio(db_segment.task)[0]
+                    reader = AudioReader([source_audio])
+                    preview = reader.get_preview_image()
+                else:
+                    preview = PIL.Image.open(ASSETS_DIR / "audio_default_preview.png")
+            case models.MediaType.IMAGE | models.MediaType.VIDEO:
+                from cvat.apps.engine.media_providers.frame_provider import (  # avoid circular import
+                    FrameOutputType,
+                    make_frame_provider,
+                )
+
+                task_frame_provider = make_frame_provider(db_segment.task)
+                segment_frame_provider = make_frame_provider(db_segment)
+
+                preview = segment_frame_provider.get_frame(
+                    task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
+                    quality=models.FrameQuality.COMPRESSED,
+                    out_type=FrameOutputType.PIL,
+                ).data
+            case _ as media_type:
+                assert False, f"Unknown media type {media_type}"
 
         return prepare_preview_image(preview)
 
@@ -1073,52 +1125,22 @@ class MediaCache:
 
 def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     PREVIEW_SIZE = (256, 256)
-    PREVIEW_MIME = "image/jpeg"
 
-    image = PIL.ImageOps.exif_transpose(image)
-    image.thumbnail(PREVIEW_SIZE)
-
-    output_buf = io.BytesIO()
-    image.convert("RGB").save(output_buf, format="JPEG")
-    return output_buf, PREVIEW_MIME
-
-
-def prepare_chunk(
-    task_chunk_frames: Iterator[tuple[Any, str]],
-    *,
-    quality: models.FrameQuality,
-    db_task: models.Task,
-    dump_unchanged: bool = False,
-) -> DataWithMime:
-    # TODO: refactor all chunk building into another class
-
-    db_data = db_task.require_data()
-
-    writer_classes: dict[models.FrameQuality, type[IChunkWriter]] = {
-        models.FrameQuality.COMPRESSED: (
-            Mpeg4CompressedChunkWriter
-            if db_data.compressed_chunk_type == models.DataChoice.VIDEO
-            else ZipCompressedChunkWriter
-        ),
-        models.FrameQuality.ORIGINAL: (
-            Mpeg4ChunkWriter
-            if db_data.original_chunk_type == models.DataChoice.VIDEO
-            else ZipChunkWriter
-        ),
+    ALLOWED_FORMATS = {"PNG", "JPEG"}
+    FORMAT_MIME = {
+        "PNG": "image/png",
+        "JPEG": "image/jpeg",
     }
 
-    writer_class = writer_classes[quality]
+    image = PIL.ImageOps.exif_transpose(image)
 
-    image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
+    output_buf = io.BytesIO()
+    if image.format not in ALLOWED_FORMATS or image.size != PREVIEW_SIZE:
+        image.thumbnail(PREVIEW_SIZE)
+        image.save(output_buf, format="PNG")
+        mime = FORMAT_MIME["PNG"]
+    else:
+        image.save(output_buf)
+        mime = FORMAT_MIME[image.format]
 
-    merged_chunk_writer = writer_class(quality=image_quality, dimension=db_task.dimension)
-
-    writer_kwargs = {}
-    if dump_unchanged and isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
-        writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
-
-    buffer = io.BytesIO()
-    merged_chunk_writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
-
-    buffer.seek(0)
-    return buffer, merged_chunk_writer.CHUNK_MIME_TYPE
+    return output_buf, mime

@@ -26,7 +26,6 @@ from django.forms.models import model_to_dict
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
@@ -45,6 +44,8 @@ from cvat.apps.engine.media_extractors import (
     load_image,
     sort,
 )
+from cvat.apps.engine.media_providers.audio_provider import TaskAudioProvider
+from cvat.apps.engine.media_providers.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
@@ -1955,13 +1956,21 @@ def create_thread(
     ):
         _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
-    # Prepare the preview image and save it in the cache
-    if db_task.media_type != models.MediaType.AUDIO and not (
-        is_data_in_cloud and is_backup_restore
-    ):
-        TaskFrameProvider(db_task=db_task).get_preview()
+    if not (is_data_in_cloud and is_backup_restore):
+        _create_task_preview(db_task)
 
     _move_to_backing_cs_if_configured(db_data)
+
+
+def _create_task_preview(db_task: models.Task):
+    # Prepare the preview image and save it in the cache
+    match db_task.media_type:
+        case models.MediaType.AUDIO:
+            TaskAudioProvider(db_task).get_preview_image()
+        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD | models.MediaType.VIDEO:
+            TaskFrameProvider(db_task).get_preview_image()
+        case _ as media_type:
+            assert False, f"Unknown media type '{media_type}'"
 
 
 def _create_static_chunks(

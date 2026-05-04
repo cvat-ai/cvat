@@ -129,6 +129,7 @@ class StateChoice(str, Enum):
 class DataChoice(str, Enum):
     VIDEO = 'video'
     IMAGESET = 'imageset'
+    AUDIO_MP3 = 'audio_mp3'
 
     @classmethod
     def choices(cls):
@@ -444,6 +445,7 @@ class Data(models.Model):
         blank=True, default="")
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         blank=True, default="")
+    audio_chunks: models.manager.RelatedManager[AudioChunkInfo]
 
     # Storage descriptors
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
@@ -648,6 +650,32 @@ class Audio(models.Model):
     path = models.CharField(max_length=1024)
     sampling_rate = models.PositiveIntegerField()
     has_cover_image = models.BooleanField(default=False)
+
+    chunks: MaybeUndefined[models.manager.RelatedManager[AudioChunkInfo]]
+
+    class Meta:
+        default_permissions = ()
+
+
+class AudioChunkInfo(TimestampedModel):
+    key = models.CharField(max_length=128, primary_key=True)
+
+    data = models.ForeignKey(
+        Data,
+        on_delete=models.CASCADE,
+        related_name="audio_chunks",
+        related_query_name="audio_chunk",
+    )
+    audio = models.ForeignKey(
+        Audio,
+        on_delete=models.CASCADE,
+        related_name="chunks",
+        related_query_name="chunk"
+    )
+
+    left_padding = models.PositiveIntegerField(default=0)
+    right_padding = models.PositiveIntegerField(default=0)
+    content_offset = models.PositiveIntegerField(default=0)
 
     class Meta:
         default_permissions = ()
