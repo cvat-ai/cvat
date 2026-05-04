@@ -42,11 +42,10 @@ def _get_label_name(ann: dm.Annotation, categories: dm.Categories) -> str | None
 
 
 def _get_annotation_area(ann: dm.Annotation) -> float | None:
-    if ann.type == dm.AnnotationType.label or not hasattr(ann, "get_bbox"):
+    if ann.type == dm.AnnotationType.label or not hasattr(ann, "get_area"):
         return None
 
-    _, _, width, height = ann.get_bbox()
-    return width * height
+    return ann.get_area()
 
 
 def _dm_type_to_requirement_type(ann_type: dm.AnnotationType) -> str:

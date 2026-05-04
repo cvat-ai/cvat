@@ -49,7 +49,7 @@ class RequirementFrameResult:
 @attrs.define
 class MatchingContext:
     frame_id: int
-    estimator: "DatasetQualityEstimator"
+    estimator: DatasetQualityEstimator
     categories: dm.Categories
     annotation_requirements: dict[int, set]  # ann_id -> set of requirement names
     parent_results: dict[str, RequirementFrameResult] | None = None  # for attribute requirements
