@@ -35,6 +35,12 @@ yarn --immutable
 yarn run coverage
 ```
 
+Set a `VIDEO` environment variable if you need to keep `Cypress`'s video of a test run
+
+```bash
+VIDEO=1 npx cypress --headless --browser chrome --spec cypress/e2e/...
+```
+
 **Running tests**
 
 ```bash

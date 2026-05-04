@@ -105,7 +105,7 @@ module.exports = (on, config) => {
         return launchOptions;
     });
     on('after:spec', (spec, results) => {
-        if (results && results.stats.failures === 0 && results.video) {
+        if (results && results.stats.failures === 0 && results.video && !Cypress.env('VIDEO')) {
             // Cypress can report a video path even when no file remains on disk.
             // Ignore only the missing-file case so successful-spec cleanup stays
             // non-fatal, but still surface any other filesystem error.
