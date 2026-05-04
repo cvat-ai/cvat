@@ -19,6 +19,7 @@ import {
 import { Workspace } from 'reducers';
 
 import MDEditor from '@uiw/react-md-editor';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface Props {
     showStatistics(): void;
@@ -59,6 +60,7 @@ function RightGroup(props: Props): JSX.Element {
                             preview='preview'
                             hideToolbar
                             value={guide.markdown}
+                            previewOptions={{ rehypePlugins: [[rehypeSanitize]] }}
                         />
                     ),
                 });
