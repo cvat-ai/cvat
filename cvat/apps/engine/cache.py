@@ -143,6 +143,11 @@ def _is_run_inside_rq() -> bool:
     return rq.get_current_job() is not None
 
 
+def _get_current_rq_queue_name() -> str | None:
+    current_job = rq.get_current_job()
+    return current_job.origin if current_job else None
+
+
 def _convert_args_for_callback(func_args: list[Any]) -> list[Any]:
     result = []
     for func_arg in func_args:
@@ -257,7 +262,7 @@ class MediaCache:
                     sender=cls,
                     item_key=key,
                     item_data_size=cls._get_cache_item_size(cached_item),
-                    rq_queue=getattr(rq.get_current_job(), "origin", None),
+                    rq_queue=_get_current_rq_queue_name(),
                 )
 
                 if timestamp <= cached_item[3]:
@@ -275,7 +280,7 @@ class MediaCache:
                     sender=cls,
                     item_key=key,
                     item_data_size=item_size,
-                    rq_queue=getattr(rq.get_current_job(), "origin", None),
+                    rq_queue=_get_current_rq_queue_name(),
                 )
 
         return item
@@ -326,7 +331,7 @@ class MediaCache:
         slogger.glob.info(f"Removed the cache keys {format_list(keys)}")
 
     def _get_cache_item(self, key: str) -> _CacheItem | None:
-        rq_queue = getattr(rq.get_current_job(), "origin", None)
+        rq_queue = _get_current_rq_queue_name()
         try:
             item = self._cache().get(key)
         except pickle.UnpicklingError:
