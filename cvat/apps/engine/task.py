@@ -1793,28 +1793,30 @@ def _create_static_chunks(
 
     db_data = db_task.require_data()
 
+    compressed_writer_params = {"quality": db_data.image_quality}
     if db_data.compressed_chunk_type == models.DataChoice.VIDEO:
         compressed_chunk_writer_class = Mpeg4CompressedChunkWriter
     else:
         compressed_chunk_writer_class = ZipCompressedChunkWriter
+        compressed_writer_params["dimension"] = db_task.dimension
 
+    original_writer_params = {}
     if db_data.original_chunk_type == models.DataChoice.VIDEO:
         original_chunk_writer_class = Mpeg4ChunkWriter
 
         # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks,
         # which should be visually lossless or nearly so.
         # A lower value will significantly increase the chunk size with a slight increase of quality.
-        original_quality = 67  # TODO: fix discrepancy in values in different parts of code
+        original_writer_params["quality"] = (
+            # TODO: fix discrepancy in values in different parts of code
+            67
+        )
     else:
         original_chunk_writer_class = ZipChunkWriter
-        original_quality = 100
+        original_writer_params["dimension"] = db_task.dimension
 
-    compressed_chunk_writer = compressed_chunk_writer_class(
-        quality=db_data.image_quality, dimension=db_task.dimension
-    )
-    original_chunk_writer = original_chunk_writer_class(
-        quality=original_quality, dimension=db_task.dimension
-    )
+    compressed_chunk_writer = compressed_chunk_writer_class(**compressed_writer_params)
+    original_chunk_writer = original_chunk_writer_class(**original_writer_params)
 
     db_segments = db_task.segment_set.order_by("start_frame").all()
 
