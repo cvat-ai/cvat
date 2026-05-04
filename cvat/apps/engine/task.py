@@ -1187,8 +1187,8 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
     match db_task.media_type:
         case models.MediaType.AUDIO:
             # Not supported yet
-            db_data.compressed_chunk_type = ""
-            db_data.original_chunk_type = ""
+            db_data.compressed_chunk_type = models.DataChoice.AUDIO_MP3
+            db_data.original_chunk_type = models.DataChoice.AUDIO_MP3
         case models.MediaType.VIDEO:
             db_data.compressed_chunk_type = (
                 models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
