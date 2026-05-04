@@ -3424,9 +3424,7 @@ def _convert_annotation(obj, keys):
     d = OrderedDict([(key, obj[key]) for key in keys])
 
     if "group" in d:
-        # TODO: disallow null on the DB level,
-        # when there are other changes to the annotation tables
-        # https://github.com/cvat-ai/cvat/pull/10522
+        # backward compatibility; TODO: disallow null on the DB level
         d["group"] = d["group"] or 0
 
     return d
