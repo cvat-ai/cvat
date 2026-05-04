@@ -220,15 +220,46 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         const copyIds = [2, 3, 4];
         const resultIds = [5, 6, 7];
         const distances = [20, 40, 64];
+        let originalArea;
 
-        it('simplify', () => {
-            let originalArea;
+        function checkAreaProgression(refObjectArea, refObjectId, [stats1, stats2, stats3]) {
+            // Verify area progression: copy1Area < copy2Area < copy3Area ≈ refArea
+            expect(stats1.area).to.be.lessThan(stats2.area);
+            expect(stats2.area).to.be.lessThan(stats3.area);
+            expect(stats1.area).to.be.closeTo(originalArea, 1);
 
+            // Verify original polygon unchanged
+            return getPolygonStats(refObjectId).then((finalOriginalStats) => {
+                expect(finalOriginalStats.area).to.be.closeTo(refObjectArea, 1);
+            });
+        }
+        function checkAreasEqual(refObjectArea, refObjectId, [stats1, stats2, stats3]) {
+            expect(stats1.area).to.be.closeTo(stats2.area, 1, 'area 1 not close to area 2');
+            expect(stats2.area).to.be.closeTo(stats3.area, 1, 'area 2 not close to area 3');
+            expect(stats3.area).to.be.closeTo(stats1.area, 1, 'area 3 not close to area 1');
+
+            return getPolygonStats(refObjectId).then((finalOriginalStats) => {
+                expect(finalOriginalStats.area).to.be.closeTo(refObjectArea, 1, 'ref object is different');
+            });
+        }
+        function logSimplifyStats(msg, stats, distance, objectId) {
+            const entry = {
+                objectId,
+                message: `${msg} (distance=${distance})`,
+                points: stats.pointsCount,
+                area: stats.area.toFixed(1),
+            };
+            cy.task('log', entry);
+        }
+
+        beforeEach(() => {
             // Make 3 copies, place them around cavnas for visual
-            makeCopy(copyIds[0], translatePoint({ a: -250 }, polygonCenter));
-            makeCopy(copyIds[1], translatePoint({ b: 250 }, polygonCenter));
-            makeCopy(copyIds[2], translatePoint({ a: 250 }, polygonCenter));
+            makeCopy(copyIds[0], translatePoint({ a: -200 }, polygonCenter));
+            makeCopy(copyIds[1], translatePoint({ b: 200 }, polygonCenter));
+            makeCopy(copyIds[2], translatePoint({ a: 200 }, polygonCenter));
+        });
 
+        it('Call simplify on each object', () => {
             getPolygonStats(originalObjectId).then((originalStats) => {
                 originalArea = originalStats.area;
                 expect(originalStats.area).to.be.greaterThan(0);
@@ -248,33 +279,33 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                 });
                 cy.then(() => {
                     const [stats1, stats2, stats3] = allStats;
-                    cy.task('log', { allStats });
+                    logSimplifyStats('Aggressive simplification', stats1, distances[0]);
+                    logSimplifyStats('Middle simplification', stats2, distances[1]);
+                    logSimplifyStats('High-distance simplification', stats3, distances[2]);
 
-                    cy.task('log', {
-                        message: 'Aggressive simplification (distance=20)',
-                        points: stats1.pointsCount,
-                        area: stats1.area.toFixed(1),
-                    });
-                    cy.task('log', {
-                        message: 'Middle simplification (distance=40)',
-                        points: stats2.pointsCount,
-                        area: stats2.area.toFixed(1),
-                    });
-                    cy.task('log', {
-                        message: 'High-distance simplification (distance=64)',
-                        points: stats3.pointsCount,
-                        area: stats3.area.toFixed(1),
-                    });
+                    return checkAreaProgression(originalArea, originalObjectId, allStats);
+                });
+            });
+        });
+        it("Call 'simplify' on all shapes as a bulk action", () => {
+            // const distance = distances[2];
+            const distance = 0;
+            const allStats = [];
 
-                    // Verify area progression: copy1Area < copy2Area < copy3Area ≈ origArea
-                    expect(stats1.area).to.be.lessThan(stats2.area);
-                    expect(stats2.area).to.be.lessThan(stats3.area);
-                    expect(stats1.area).to.be.closeTo(originalArea, 1);
-
-                    // Verify original polygon unchanged
-                    return getPolygonStats(originalObjectId).then((finalOriginalStats) => {
-                        expect(finalOriginalStats.area).to.be.closeTo(originalArea, 1);
+            getPolygonStats(originalObjectId).then((originalStats) => {
+                originalArea = originalStats.area;
+                expect(originalStats.area).to.be.greaterThan(0);
+                simplifyBulkAction(distance);
+                cy.wrap(resultIds).each((id) => {
+                    getPolygonStats(id).then((stats) => {
+                        allStats.push(stats);
                     });
+                });
+                cy.then(() => {
+                    allStats.forEach((stats, objectId) => {
+                        logSimplifyStats('Aggressive simplification', stats, distance, objectId);
+                    });
+                    return checkAreasEqual(originalArea, resultIds[0], allStats);
                 });
             });
         });
