@@ -24,6 +24,7 @@ export interface AudioCanvasWrapperProps {
     playbackRate: number;
     activeControl: ActiveControl;
     regions: AudioRegion[];
+    visibleRegionIds: Set<string>;
     activeRegionId: string | null;
     hoveredRegionId: string | null;
     audioUrl: string | null;
@@ -52,7 +53,7 @@ const ZOOM_STEP_FACTOR = 1.2;
 function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
     const {
         isPlaying, currentTime, duration, zoom, volume, loop, playbackRate,
-        activeControl, regions, activeRegionId, hoveredRegionId,
+        activeControl, regions, visibleRegionIds, activeRegionId, hoveredRegionId,
         audioUrl, audioLoading, audioError, waveformReady,
         labels, activeLabelId, colorBy, opacity, selectedOpacity,
         onSwitchPlay, onSetCurrentTime, onSetDuration,
@@ -110,6 +111,7 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
         lastWsTimeRef,
         activeControl,
         regions,
+        visibleRegionIds,
         activeRegionId,
         hoveredRegionId,
         labels,
@@ -144,12 +146,6 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
 
     const activeRegion = activeRegionId ?
         regions.find((r) => r.id === activeRegionId) : null;
-
-    const deleteActiveRegion = useCallback((): void => {
-        if (!activeRegionId) return;
-        onSetRegions(regions.filter((r) => r.id !== activeRegionId));
-        onSetActiveRegion(null);
-    }, [activeRegionId, regions, onSetRegions, onSetActiveRegion]);
 
     const changeAttribute = useCallback((attrID: number, value: string): void => {
         if (!activeRegionId) return;
@@ -239,7 +235,6 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
                     region={activeRegion}
                     regionIndex={regions.indexOf(activeRegion)}
                     labels={labels}
-                    onDelete={deleteActiveRegion}
                     onChangeLabel={changeLabel}
                     onChangeAttribute={changeAttribute}
                 />

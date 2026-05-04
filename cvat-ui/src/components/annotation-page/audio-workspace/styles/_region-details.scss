@@ -21,23 +21,11 @@
     .cvat-audio-region-details-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        gap: 10px;
         min-height: 48px;
         padding: 8px 16px;
         background-color: #d8d8d8;
         border-bottom: 1px solid #e5e7eb;
-    }
-
-    .cvat-audio-region-details-header-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .cvat-audio-region-details-header-right {
-        display: flex;
-        align-items: center;
-        gap: 8px;
     }
 
     .cvat-audio-region-details-index {
@@ -52,38 +40,43 @@
         font-weight: 700;
         color: #303030;
         padding: 0 6px;
+        flex-shrink: 0;
     }
 
-    .cvat-audio-region-details-start-time {
-        font-size: 13px;
-        font-weight: 500;
-        color: #303030;
+    .cvat-audio-region-details-source {
+        font-size: 11px;
+        text-transform: lowercase;
+        color: rgba(0, 0, 0, 60%);
+        background-color: rgba(0, 0, 0, 6%);
+        border-radius: 4px;
+        padding: 2px 6px;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .cvat-audio-region-details-time-range {
         font-size: 12px;
         color: rgba(0, 0, 0, 45%);
         white-space: nowrap;
+        margin-left: auto;
     }
 
-    .cvat-audio-region-delete-button {
-        font-size: 14px;
+    .cvat-audio-region-details-duration {
+        font-size: 12px;
         color: rgba(0, 0, 0, 45%);
-        transition: color 0.15s ease;
-
-        &:hover:not(:disabled) {
-            color: #ff4d4f;
-        }
+        white-space: nowrap;
     }
 
     .cvat-audio-region-label-trigger {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 10px 16px;
+        gap: 8px;
+        padding: 4px 8px;
         cursor: pointer;
-        border-bottom: 1px solid #f0f0f0;
+        border-radius: 6px;
         transition: background-color 0.15s ease;
+        flex: 0 1 auto;
+        min-width: 0;
 
         &:hover {
             background-color: #f9fafb;
@@ -96,18 +89,21 @@
 
         .cvat-audio-region-label-color {
             display: inline-block;
-            width: 32px;
-            height: 32px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
             flex-shrink: 0;
-            border: 2px solid rgba(0, 0, 0, 6%);
+            border: 1px solid rgba(0, 0, 0, 6%);
         }
 
         .cvat-audio-region-label-trigger-name {
-            flex: 1;
-            font-size: 14px;
+            flex: 0 1 auto;
+            font-size: 13px;
             font-weight: 500;
             color: #303030;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .cvat-audio-region-label-edit-icon {

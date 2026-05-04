@@ -212,6 +212,7 @@ const MemoAudioRegionItem = React.memo(AudioRegionItem);
 
 interface Props {
     regions: AudioRegion[];
+    visibleRegionIds: Set<string>;
     activeRegionId: string | null;
     labels: Label[];
     colorBy: ColorBy;
@@ -231,6 +232,7 @@ interface Props {
 export default function AudioRegionsList(props: Props): JSX.Element {
     const {
         regions,
+        visibleRegionIds,
         activeRegionId,
         labels,
         colorBy,
@@ -249,21 +251,32 @@ export default function AudioRegionsList(props: Props): JSX.Element {
 
     const [ordering, setOrdering] = useState<AudioRegionsOrdering>(AudioRegionsOrdering.INSERTION);
 
-    const allLocked = regions.length > 0 && regions.every((r) => !!r.locked);
-    const allHidden = regions.length > 0 && regions.every((r) => !!r.hidden);
+    const visibleRegions = useMemo(
+        () => regions.filter((r) => visibleRegionIds.has(r.id)),
+        [regions, visibleRegionIds],
+    );
+
+    const allLocked = visibleRegions.length > 0 && visibleRegions.every((r) => !!r.locked);
+    const allHidden = visibleRegions.length > 0 && visibleRegions.every((r) => !!r.hidden);
+
+    // Mass operations target the filtered (visible) subset only, mirroring 2D
+    // behavior where filters constrain which annotations exist for the user.
+    const patchVisible = useCallback((patch: Partial<AudioRegion>): AudioRegion[] => (
+        regions.map((r) => (visibleRegionIds.has(r.id) ? { ...r, ...patch } : r))
+    ), [regions, visibleRegionIds]);
 
     const onLockAll = useCallback(() => {
-        onSetRegions(regions.map((r) => ({ ...r, locked: true })));
-    }, [regions, onSetRegions]);
+        onSetRegions(patchVisible({ locked: true }));
+    }, [patchVisible, onSetRegions]);
     const onUnlockAll = useCallback(() => {
-        onSetRegions(regions.map((r) => ({ ...r, locked: false })));
-    }, [regions, onSetRegions]);
+        onSetRegions(patchVisible({ locked: false }));
+    }, [patchVisible, onSetRegions]);
     const onHideAll = useCallback(() => {
-        onSetRegions(regions.map((r) => ({ ...r, hidden: true })));
-    }, [regions, onSetRegions]);
+        onSetRegions(patchVisible({ hidden: true }));
+    }, [patchVisible, onSetRegions]);
     const onShowAll = useCallback(() => {
-        onSetRegions(regions.map((r) => ({ ...r, hidden: false })));
-    }, [regions, onSetRegions]);
+        onSetRegions(patchVisible({ hidden: false }));
+    }, [patchVisible, onSetRegions]);
 
     const onDeleteRegion = useCallback((regionId: string) => {
         onSetRegions(regions.filter((r) => r.id !== regionId));
@@ -272,8 +285,8 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         }
     }, [regions, activeRegionId, onSetRegions, onSetActiveRegion]);
 
-    const sortedRegions = useMemo(() => sortRegions(regions, ordering, labels),
-        [regions, ordering, labels]);
+    const sortedRegions = useMemo(() => sortRegions(visibleRegions, ordering, labels),
+        [visibleRegions, ordering, labels]);
 
     const indexById = useMemo(() => {
         const map = new Map<string, number>();
@@ -283,7 +296,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
 
     const header = (
         <AudioRegionsListHeader
-            count={regions.length}
+            count={visibleRegions.length}
             ordering={ordering}
             allLocked={allLocked}
             allHidden={allHidden}
@@ -297,13 +310,14 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         />
     );
 
-    if (!regions.length) {
+    if (!visibleRegions.length) {
+        const description = regions.length ? 'No intervals match filters' : 'No intervals created';
         return (
             <div className='cvat-audio-regions-list-wrapper'>
                 {header}
                 <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description='No intervals created'
+                    description={description}
                     className='cvat-audio-regions-list-empty'
                 />
             </div>

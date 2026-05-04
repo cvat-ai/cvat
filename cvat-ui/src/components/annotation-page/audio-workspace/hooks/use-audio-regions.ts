@@ -50,6 +50,7 @@ interface Params {
     lastWsTimeRef: React.MutableRefObject<number>;
     activeControl: ActiveControl;
     regions: AudioRegion[];
+    visibleRegionIds: Set<string>;
     activeRegionId: string | null;
     hoveredRegionId: string | null;
     labels: Label[];
@@ -78,7 +79,7 @@ interface Result {
 export function useAudioRegions(params: Params): Result {
     const {
         regionsPluginRef, wavesurfer, lastWsTimeRef,
-        activeControl, regions, activeRegionId, hoveredRegionId,
+        activeControl, regions, visibleRegionIds, activeRegionId, hoveredRegionId,
         labels, activeLabelId, colorBy, opacity, selectedOpacity, loop,
         onSwitchPlay, onSetCurrentTime, onSetDuration,
         onSetRegions, onSetActiveRegion, onSetHoveredRegion,
@@ -135,6 +136,29 @@ export function useAudioRegions(params: Params): Result {
         return (clamped / totalWidth) * duration;
     }, []);
 
+    const centerViewportOnRegion = useCallback((regionId: string): void => {
+        const ws = wavesurferRef.current;
+        if (!ws) return;
+        const region = regionsRef.current.find((r) => r.id === regionId);
+        if (!region) return;
+        const duration = ws.getDuration();
+        if (!duration) return;
+        const scrollContainer = ws.getWrapper()?.parentElement;
+        if (!scrollContainer) return;
+        const totalWidth = scrollContainer.scrollWidth;
+        const visibleWidth = ws.getWidth();
+        if (totalWidth <= visibleWidth) return;
+
+        const startPx = (region.start / duration) * totalWidth;
+        const endPx = (region.end / duration) * totalWidth;
+        const midPx = (startPx + endPx) / 2;
+        const targetScroll = Math.max(
+            0,
+            Math.min(totalWidth - visibleWidth, midPx - visibleWidth / 2),
+        );
+        ws.setScroll(targetScroll);
+    }, []);
+
     const wireRegionHoverEvents = useCallback((region: Region): void => {
         if (wiredRegionIdsRef.current.has(region.id)) return;
         wiredRegionIdsRef.current.add(region.id);
@@ -154,6 +178,12 @@ export function useAudioRegions(params: Params): Result {
             const exists = prev.find((r) => r.id === region.id);
 
             if (exists) {
+                // Programmatic re-sync of an already-known region (e.g. after load).
+                // Skip the dispatch when start/end are unchanged so we don't flip
+                // hasUnsavedChanges or steal the active region selection.
+                if (exists.start === region.start && exists.end === region.end) {
+                    return;
+                }
                 onSetRegionsRef.current(prev.map((r) => (r.id === region.id ? {
                     ...r,
                     start: region.start,
@@ -194,6 +224,7 @@ export function useAudioRegions(params: Params): Result {
 
             const isCursor = activeControlRef.current === ActiveControl.CURSOR;
             const isDoubleClick = !!(e && e.detail >= 2);
+            const isCtrlClick = !!(e && (e.ctrlKey || e.metaKey));
             const clickTime = e ? computeClickTime(e) : null;
 
             if (isCursor) {
@@ -221,10 +252,13 @@ export function useAudioRegions(params: Params): Result {
                 const ws = wavesurferRef.current;
                 if (ws) ws.setTime(safeStart);
                 onSwitchPlay(true);
+                centerViewportOnRegion(region.id);
                 return;
             }
 
-            if (isCursor && clickTime !== null) {
+            // Ctrl/Cmd + click moves the playback head; bare single click
+            // only changes selection. Mirrors the image editor convention.
+            if (isCtrlClick && isCursor && clickTime !== null) {
                 onSetCurrentTime(clickTime);
                 const ws = wavesurferRef.current;
                 if (ws) ws.setTime(clickTime);
@@ -232,7 +266,7 @@ export function useAudioRegions(params: Params): Result {
         });
 
         regionsHandlersInitializedRef.current = true;
-    }, [wireRegionHoverEvents, onSetCurrentTime, onSwitchPlay, computeClickTime]);
+    }, [wireRegionHoverEvents, onSetCurrentTime, onSwitchPlay, computeClickTime, centerViewportOnRegion]);
 
     const handleReady = useCallback((ws: WaveSurfer): void => {
         onSetDuration(ws.getDuration());
@@ -289,34 +323,6 @@ export function useAudioRegions(params: Params): Result {
     }, [activeControl, regions, regionsPluginRef]);
 
     useEffect(() => {
-        if (!wavesurfer || !activeRegionId) return;
-        const region = regions.find((r) => r.id === activeRegionId);
-        if (!region) return;
-
-        const duration = wavesurfer.getDuration();
-        if (!duration) return;
-
-        const scrollContainer = wavesurfer.getWrapper().parentElement;
-        if (!scrollContainer) return;
-        const totalWidth = scrollContainer.scrollWidth;
-        const visibleWidth = wavesurfer.getWidth();
-        if (totalWidth <= visibleWidth) return;
-
-        const startPx = (region.start / duration) * totalWidth;
-        const endPx = (region.end / duration) * totalWidth;
-        const currentScroll = wavesurfer.getScroll();
-        const inView = startPx >= currentScroll && endPx <= currentScroll + visibleWidth;
-        if (inView) return;
-
-        const midPx = (startPx + endPx) / 2;
-        const targetScroll = Math.max(
-            0,
-            Math.min(totalWidth - visibleWidth, midPx - visibleWidth / 2),
-        );
-        wavesurfer.setScroll(targetScroll);
-    }, [activeRegionId, wavesurfer]);
-
-    useEffect(() => {
         const plugin = regionsPluginRef.current;
         if (!plugin) return;
 
@@ -325,7 +331,7 @@ export function useAudioRegions(params: Params): Result {
 
         wsRegions.forEach((wsRegion: Region) => {
             const reduxRegion = reduxById.get(wsRegion.id);
-            if (reduxRegion?.hidden) {
+            if (reduxRegion?.hidden || (reduxRegion && !visibleRegionIds.has(reduxRegion.id))) {
                 silentRemoveIdsRef.current.add(wsRegion.id);
                 wsRegion.remove();
                 return;
@@ -364,7 +370,7 @@ export function useAudioRegions(params: Params): Result {
             }
         });
     }, [
-        activeRegionId, hoveredRegionId, regions, colorBy, opacity, selectedOpacity,
+        activeRegionId, hoveredRegionId, regions, visibleRegionIds, colorBy, opacity, selectedOpacity,
         labels, activeControl, regionsPluginRef,
     ]);
 
@@ -375,7 +381,7 @@ export function useAudioRegions(params: Params): Result {
         const wsRegions = plugin.getRegions();
 
         regions.forEach((region) => {
-            if (region.hidden) return;
+            if (region.hidden || !visibleRegionIds.has(region.id)) return;
             const wsRegion = wsRegions.find((r: Region) => r.id === region.id);
             if (!wsRegion) {
                 const isEdit = activeControl === ActiveControl.AUDIO_REGION_EDIT;
@@ -395,7 +401,9 @@ export function useAudioRegions(params: Params): Result {
             }
         });
 
-        const reduxIds = new Set(regions.filter((r) => !r.hidden).map((r) => r.id));
+        const reduxIds = new Set(
+            regions.filter((r) => !r.hidden && visibleRegionIds.has(r.id)).map((r) => r.id),
+        );
         wsRegions.forEach((wsRegion: Region) => {
             if (!reduxIds.has(wsRegion.id)) {
                 silentRemoveIdsRef.current.add(wsRegion.id);
@@ -403,7 +411,7 @@ export function useAudioRegions(params: Params): Result {
             }
         });
     }, [
-        regions, wavesurfer, activeControl, colorBy, opacity, selectedOpacity,
+        regions, visibleRegionIds, wavesurfer, activeControl, colorBy, opacity, selectedOpacity,
         labels, activeRegionId, wireRegionHoverEvents, regionsPluginRef,
     ]);
 

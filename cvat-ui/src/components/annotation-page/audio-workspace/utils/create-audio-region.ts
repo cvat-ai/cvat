@@ -5,7 +5,7 @@ import { Attribute, Label } from 'cvat-core-wrapper';
 
 const DEFAULT_REGION_COLOR = '#9CA3AF';
 
-function pickInstanceColor(existingRegions: AudioRegion[]): string {
+export function pickInstanceColor(existingRegions: AudioRegion[]): string {
     const palette = paletteColors as string[];
     if (!palette.length) return DEFAULT_REGION_COLOR;
     return palette[existingRegions.length % palette.length];

@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import AudioRegionsList from 'components/annotation-page/audio-workspace/audio-regions-list';
+import { filterAudioRegions } from 'components/annotation-page/audio-workspace/utils/filter-audio-regions';
 import { AudioRegion, CombinedState } from 'reducers';
 import {
     setAudioActiveRegion,
@@ -69,6 +70,7 @@ registerComponentShortcuts(componentShortcuts);
 
 interface StateToProps {
     regions: AudioRegion[];
+    visibleRegionIds: Set<string>;
     activeRegionId: string | null;
     labels: Label[];
     colorBy: CombinedState['settings']['shapes']['colorBy'];
@@ -93,10 +95,16 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { audioPlayer } = state.annotation;
+    const { labels } = state.annotation.job;
+    const { filters } = state.annotation.annotations;
+    const visibleRegionIds = new Set(
+        filterAudioRegions(audioPlayer.regions, labels, filters).map((r) => r.id),
+    );
     return {
         regions: audioPlayer.regions,
+        visibleRegionIds,
         activeRegionId: audioPlayer.activeRegionId,
-        labels: state.annotation.job.labels,
+        labels,
         colorBy: state.settings.shapes.colorBy,
         keyMap: state.shortcuts.keyMap,
         normalizedKeyMap: state.shortcuts.normalizedKeyMap,
@@ -139,7 +147,7 @@ type Props = StateToProps & DispatchToProps;
 
 function AudioRegionsListContainer(props: Props): JSX.Element {
     const {
-        regions, activeRegionId, labels, colorBy,
+        regions, visibleRegionIds, activeRegionId, labels, colorBy,
         keyMap, normalizedKeyMap,
         onSetActiveRegion, onSetHoveredRegion, onSwitchPlay, onSetCurrentTime,
         onToggleRegionLock, onToggleRegionHidden, onSetRegions, onCopyRegion, onUpdateRegion,
@@ -203,6 +211,7 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <AudioRegionsList
                 regions={regions}
+                visibleRegionIds={visibleRegionIds}
                 activeRegionId={activeRegionId}
                 labels={labels}
                 colorBy={colorBy}

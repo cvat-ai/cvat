@@ -20,6 +20,7 @@ import IssuesListComponent from 'components/annotation-page/standard-workspace/o
 
 interface OwnProps {
     objectsList: JSX.Element;
+    appearanceHidden?: boolean;
 }
 
 interface StateToProps {
@@ -55,7 +56,7 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
 
 function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        sidebarCollapsed, collapseSidebar, objectsList, jobInstance,
+        sidebarCollapsed, collapseSidebar, objectsList, jobInstance, appearanceHidden,
     } = props;
 
     const collapse = (): void => {
@@ -109,7 +110,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                     children: <LabelsList />,
                 }, ...(is2D ? [{ key: 'issues', label: 'Issues', children: <IssuesListComponent /> }] : [])]}
             />
-            {!sidebarCollapsed && <AppearanceBlock />}
+            {!sidebarCollapsed && !appearanceHidden && <AppearanceBlock />}
         </Layout.Sider>
     );
 }

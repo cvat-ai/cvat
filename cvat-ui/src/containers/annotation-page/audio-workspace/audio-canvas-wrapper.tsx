@@ -2,6 +2,7 @@ import { connect } from 'react-redux';
 import { Dispatch } from 'redux';
 
 import AudioCanvasWrapper from 'components/annotation-page/audio-workspace/audio-canvas-wrapper';
+import { filterAudioRegions } from 'components/annotation-page/audio-workspace/utils/filter-audio-regions';
 import {
     ActiveControl, AudioRegion, ColorBy, CombinedState,
 } from 'reducers';
@@ -29,6 +30,7 @@ interface StateToProps {
     playbackRate: number;
     activeControl: CombinedState['annotation']['canvas']['activeControl'];
     regions: AudioRegion[];
+    visibleRegionIds: Set<string>;
     activeRegionId: string | null;
     hoveredRegionId: string | null;
     audioUrl: string | null;
@@ -57,6 +59,11 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { audioPlayer } = state.annotation;
+    const { labels } = state.annotation.job;
+    const { filters } = state.annotation.annotations;
+    const visibleRegionIds = new Set(
+        filterAudioRegions(audioPlayer.regions, labels, filters).map((r) => r.id),
+    );
     return {
         isPlaying: audioPlayer.playing,
         currentTime: audioPlayer.currentTime,
@@ -67,13 +74,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
         playbackRate: audioPlayer.playbackRate,
         activeControl: state.annotation.canvas.activeControl,
         regions: audioPlayer.regions,
+        visibleRegionIds,
         activeRegionId: audioPlayer.activeRegionId,
         hoveredRegionId: audioPlayer.hoveredRegionId,
         audioUrl: audioPlayer.audioUrl,
         audioLoading: audioPlayer.audioLoading,
         audioError: audioPlayer.audioError,
         waveformReady: audioPlayer.waveformReady,
-        labels: state.annotation.job.labels,
+        labels,
         activeLabelId: audioPlayer.activeLabelId,
         colorBy: state.settings.shapes.colorBy,
         opacity: state.settings.shapes.opacity,

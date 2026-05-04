@@ -5,9 +5,8 @@ import Radio from 'antd/lib/radio';
 import Checkbox from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Input from 'antd/lib/input';
-import Button from 'antd/lib/button';
 import Popover from 'antd/lib/popover';
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { EditOutlined } from '@ant-design/icons';
 
 import { AudioRegion } from 'reducers';
 import { Label, Attribute } from 'cvat-core-wrapper';
@@ -18,7 +17,6 @@ interface AudioRegionDetailsProps {
     region: AudioRegion;
     regionIndex: number;
     labels: Label[];
-    onDelete(): void;
     onChangeLabel(labelId: number): void;
     onChangeAttribute(attrID: number, value: string): void;
 }
@@ -190,7 +188,6 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
         region,
         regionIndex,
         labels,
-        onDelete,
         onChangeLabel,
         onChangeAttribute,
     } = props;
@@ -207,47 +204,52 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
 
     const attributes: Attribute[] = activeLabel?.attributes ?? [];
 
+    // Per-region collapse state. Default is fully collapsed; keys are persisted
+    // by region.id so toggling between regions preserves what the user opened.
+    const [expandedByRegion, setExpandedByRegion] = useState<Record<string, string[]>>({});
+    const expandedKeys = expandedByRegion[region.id] ?? [];
+
+    const handleCollapseChange = useCallback((next: string | string[]) => {
+        const arr = Array.isArray(next) ? next : [next];
+        setExpandedByRegion((prev) => ({ ...prev, [region.id]: arr }));
+    }, [region.id]);
+
     return (
         <div className='cvat-audio-region-details'>
             <div className='cvat-audio-region-details-header'>
-                <div className='cvat-audio-region-details-header-left'>
-                    <span className='cvat-audio-region-details-index'>
-                        {regionIndex + 1}
-                    </span>
-                    <span className='cvat-audio-region-details-start-time'>
-                        {formatDuration(duration)}
-                    </span>
-                </div>
-                <div className='cvat-audio-region-details-header-right'>
-                    <span className='cvat-audio-region-details-time-range'>
-                        {`${formatTimeShort(region.start)} \u2013 ${formatTimeShort(region.end)}`}
-                    </span>
-                    <Button
-                        type='text'
-                        icon={<DeleteOutlined />}
-                        className='cvat-audio-region-delete-button'
-                        onClick={onDelete}
-                        disabled={isReadonly}
-                        danger
-                        size='small'
+                <span className='cvat-audio-region-details-index'>
+                    {regionIndex + 1}
+                </span>
+                {labels.length > 0 && (
+                    <LabelSelectorTrigger
+                        labels={labels}
+                        activeLabel={activeLabel}
+                        isReadonly={isReadonly}
+                        onChangeLabel={onChangeLabel}
                     />
-                </div>
+                )}
+                {region.source && (
+                    <span
+                        className='cvat-audio-region-details-source'
+                        title={`Source: ${region.source}`}
+                    >
+                        {region.source}
+                    </span>
+                )}
+                <span className='cvat-audio-region-details-time-range'>
+                    {`${formatTimeShort(region.start)} \u2013 ${formatTimeShort(region.end)}`}
+                </span>
+                <span className='cvat-audio-region-details-duration'>
+                    {`(${formatDuration(duration)})`}
+                </span>
             </div>
-
-            {labels.length > 0 && (
-                <LabelSelectorTrigger
-                    labels={labels}
-                    activeLabel={activeLabel}
-                    isReadonly={isReadonly}
-                    onChangeLabel={onChangeLabel}
-                />
-            )}
 
             <div className='cvat-audio-region-details-content'>
                 {attributes.length > 0 && (
                     <Collapse
                         className='cvat-audio-region-attributes-collapse'
-                        defaultActiveKey={attributes.map((attr: Attribute) => `attr-${attr.id}`)}
+                        activeKey={expandedKeys}
+                        onChange={handleCollapseChange}
                         items={attributes.map((attribute: Attribute) => ({
                             key: `attr-${attribute.id}`,
                             label: (

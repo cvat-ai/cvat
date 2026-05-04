@@ -75,7 +75,9 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
 };
 
 function FiltersModalComponent(): JSX.Element {
-    const { labels, activeFilters, visible, workspace } = useSelector(
+    const {
+        labels, activeFilters, visible, workspace,
+    } = useSelector(
         (state: CombinedState) => ({
             labels: state.annotation.job.labels,
             activeFilters: state.annotation.annotations.filters,
@@ -192,11 +194,42 @@ function FiltersModalComponent(): JSX.Element {
                 type: 'number',
                 fieldSettings: { min: 0 },
             },
+            start: {
+                label: 'Start (ms)',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+            end: {
+                label: 'End (ms)',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+            source: {
+                label: 'Source',
+                type: 'select',
+                fieldSettings: {
+                    listValues: [
+                        { value: 'manual', title: 'manual' },
+                        { value: 'auto', title: 'auto' },
+                        { value: 'consensus', title: 'consensus' },
+                        { value: 'semi-auto', title: 'semi-auto' },
+                        { value: 'file', title: 'file' },
+                    ],
+                },
+            },
         };
 
-        const fields = isAudio
-            ? { ...baseFields, ...audioFields }
-            : { ...baseFields, ...visualFields };
+        // Audio mode does not expose 2D-only fields like score/votes/objectID;
+        // they exist on AudioRegion structure but aren't user-meaningful here.
+        const audioBaseFields = {
+            label: baseFields.label,
+            serverID: baseFields.serverID,
+            attr: baseFields.attr,
+        };
+
+        const fields = isAudio ?
+            { ...audioBaseFields, ...audioFields } :
+            { ...baseFields, ...visualFields };
 
         const initialConfig = {
             ...AntdConfig,

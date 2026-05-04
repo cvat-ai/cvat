@@ -43,7 +43,9 @@ function CreateRegionControl(props: Props): JSX.Element {
     } = props;
     const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
     const [popoverOpen, setPopoverOpen] = useState(false);
-    const [selectedLabelId, setSelectedLabelId] = useState<number | null>(activeLabelId ?? (labels.length ? labels[0].id ?? null : null));
+    const [selectedLabelId, setSelectedLabelId] = useState<number | null>(
+        activeLabelId ?? (labels.length ? labels[0].id ?? null : null),
+    );
 
     const isActive = activeControl === ActiveControl.AUDIO_REGION_CREATE;
     const noLabels = labels.length === 0;
@@ -69,10 +71,30 @@ function CreateRegionControl(props: Props): JSX.Element {
         }
     };
 
+    // Hotkey mirrors image-mode "N": skip the label popup and start
+    // creation immediately with the last selected label. Falls back to
+    // the popup only when no label is available to pre-select.
+    const hotkeyHandler = (): void => {
+        if (noLabels) return;
+        if (isActive) {
+            updateActiveControl(ActiveControl.CURSOR);
+            return;
+        }
+        const labelId = selectedLabelId ?? activeLabelId ?? labels[0]?.id ?? null;
+        if (labelId === null) {
+            setPopoverOpen(true);
+            return;
+        }
+        onSetActiveLabel(labelId);
+        setSelectedLabelId(labelId);
+        updateActiveControl(ActiveControl.AUDIO_REGION_CREATE);
+        setPopoverOpen(false);
+    };
+
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         CREATE_AUDIO_REGION: (event?: KeyboardEvent) => {
             if (event) event.preventDefault();
-            handler();
+            hotkeyHandler();
         },
     };
 

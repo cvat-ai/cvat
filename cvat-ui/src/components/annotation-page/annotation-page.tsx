@@ -10,7 +10,7 @@ import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 
 import './styles.scss';
-import { Job } from 'cvat-core-wrapper';
+import { DimensionType, Job } from 'cvat-core-wrapper';
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
 import SingleShapeWorkspace from 'components/annotation-page/single-shape-workspace/single-shape-workspace';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
@@ -137,7 +137,9 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         }
     }, [job, workspace]);
 
-    if (job === null || !annotationsInitialized) {
+    const isAudioJob = !!job && job.dimension === DimensionType.DIMENSION_1D;
+
+    if (job === null || (!annotationsInitialized && !isAudioJob)) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 

@@ -27,6 +27,7 @@ export default function AudioWorkspaceComponent(props: AudioWorkspaceProps): JSX
             <AudioCanvasWrapperContainer />
             <ObjectSideBarComponent
                 objectsList={showSkeleton ? <AudioRegionsListSkeleton /> : <AudioRegionsListContainer />}
+                appearanceHidden={showSkeleton}
             />
             <RemoveConfirmComponent />
         </Layout>

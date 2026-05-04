@@ -32,6 +32,7 @@ import {
     Rotation,
     Workspace,
 } from 'reducers';
+import { pickInstanceColor } from 'components/annotation-page/audio-workspace/utils/create-audio-region';
 import { switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
 
@@ -408,7 +409,6 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
                 if (!(endSec > startSec)) {
                     return acc;
                 }
-                const label = jobInstance.labels.find((l) => l.id === interval.label_id);
                 acc.push({
                     id: `server-${interval.id}`,
                     start: startSec,
@@ -421,7 +421,7 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
                     serverId: interval.id,
                     source: String(interval.source),
                     group: interval.group,
-                    color: label?.color,
+                    color: pickInstanceColor(acc),
                     zOrder: index,
                     locked: false,
                     hidden: false,
