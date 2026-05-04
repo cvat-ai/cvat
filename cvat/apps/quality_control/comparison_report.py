@@ -734,10 +734,28 @@ class ComparisonReportJobStats(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
+class ComparisonReportRequirementSummaryItem(ReportNode):
+    name: str
+    metric: str
+    score: float | None
+    threshold: float
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementSummaryItem:
+        return cls(
+            name=d["name"],
+            metric=d["metric"],
+            score=d.get("score"),
+            threshold=d["threshold"],
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportRequirementsSummary(ReportNode):
     total: int
     enabled: int
     completed: int
+    items: list[ComparisonReportRequirementSummaryItem] = field(factory=list)
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementsSummary:
@@ -745,11 +763,15 @@ class ComparisonReportRequirementsSummary(ReportNode):
             total=d.get("total", 0),
             enabled=d.get("enabled", 0),
             completed=d.get("completed", 0),
+            items=[
+                ComparisonReportRequirementSummaryItem.from_dict(item)
+                for item in d.get("items", [])
+            ],
         )
 
     @classmethod
     def create_empty(cls) -> ComparisonReportRequirementsSummary:
-        return cls(total=0, enabled=0, completed=0)
+        return cls(total=0, enabled=0, completed=0, items=[])
 
 
 @define(kw_only=True, init=False, slots=False)

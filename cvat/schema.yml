@@ -10706,10 +10706,34 @@ components:
           type: integer
         completed:
           type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityReportRequirementSummaryItem'
       required:
       - completed
       - enabled
+      - items
       - total
+    QualityReportRequirementSummaryItem:
+      type: object
+      properties:
+        name:
+          type: string
+        metric:
+          type: string
+        score:
+          type: number
+          format: double
+          nullable: true
+        threshold:
+          type: number
+          format: double
+      required:
+      - metric
+      - name
+      - score
+      - threshold
     QualityReportSummary:
       type: object
       properties:

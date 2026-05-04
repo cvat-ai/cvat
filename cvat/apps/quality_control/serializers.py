@@ -75,10 +75,18 @@ class QualityReportJobsSummarySerializer(serializers.Serializer):
     )
 
 
+class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    metric = serializers.CharField()
+    score = serializers.FloatField(allow_null=True)
+    threshold = serializers.FloatField()
+
+
 class QualityReportRequirementsSummarySerializer(serializers.Serializer):
     total = serializers.IntegerField()
     enabled = serializers.IntegerField()
     completed = serializers.IntegerField()
+    items = QualityReportRequirementSummaryItemSerializer(many=True)
 
 
 class QualityReportTargetSerializer(serializers.ChoiceField):

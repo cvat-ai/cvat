@@ -1174,14 +1174,22 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert conflicts[0]["severity"] == "error"
         assert conflicts[0]["attribute_names"] == ["size"]
 
-    def test_task_report_data_contains_groups_and_requirements(
-        self, admin_user, find_sandbox_task_without_gt
-    ):
-        task, _ = find_sandbox_task_without_gt(True)
-        settings = self._get_task_settings(admin_user, task_id=task["id"])
+    def test_task_report_data_contains_groups_and_requirements(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "requirements-summary-report",
+                "labels": [{"name": "car", "type": "rectangle"}],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
 
-        enabled_requirement_name = f"report-enabled-{task['id']}"
-        disabled_requirement_name = f"report-disabled-{task['id']}"
+        enabled_requirement_name = f"report-enabled-{task_id}"
+        disabled_requirement_name = f"report-disabled-{task_id}"
         _, response = self._patch_settings(
             admin_user,
             settings["id"],
@@ -1191,7 +1199,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                     self._build_requirement_payload(
                         enabled_requirement_name,
                         enabled=True,
-                        required_score=0.0,
+                        required_score=0.75,
                         point_size=0.25,
                         match_orientation=False,
                         match_attributes=False,
@@ -1207,13 +1215,51 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         )
         assert response.status_code == HTTPStatus.OK
 
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
-        assert report["summary"]["requirements"] == {
+        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
+        car_label = labels_by_name["car"]
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=car_label.id,
+                            points=[0, 0, 10, 10],
+                        )
+                    ]
+                },
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=car_label.id,
+                            points=[0, 0, 10, 10],
+                        )
+                    ]
+                },
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        expected_requirements_summary = {
             "total": 2,
             "enabled": 1,
             "completed": 1,
+            "items": [
+                {
+                    "name": enabled_requirement_name,
+                    "metric": "accuracy",
+                    "score": 1.0,
+                    "threshold": 0.75,
+                }
+            ],
         }
+        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        assert report["summary"]["requirements"] == expected_requirements_summary
 
         with make_api_client(admin_user) as api_client:
             _, response = api_client.quality_api.retrieve_report_data(
@@ -1225,14 +1271,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert "groups" in report_data
         assert enabled_requirement_name in report_data["groups"]
         assert disabled_requirement_name in report_data["groups"]
-        assert report_data["comparison_summary"]["requirements"] == {
-            "total": 2,
-            "enabled": 1,
-            "completed": 1,
-        }
+        assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
         parameters = report_data["groups"][enabled_requirement_name]["parameters"]
         assert parameters["metric"] == "accuracy"
-        assert parameters["required_score"] == 0.0
+        assert parameters["required_score"] == 0.75
         assert parameters["point_size"] == 0.25
         assert parameters["match_orientation"] is False
         assert parameters["match_attributes"] is False
@@ -1244,12 +1286,13 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "compare_groups",
         ):
             assert legacy_field_name not in parameters
-        assert (
-            report_data["groups"][disabled_requirement_name]["comparison_summary"]["annotations"][
-                "total_count"
-            ]
-            == 0
-        )
+        disabled_group = report_data["groups"][disabled_requirement_name]
+        assert disabled_group["parameters"]["enabled"] is False
+        assert disabled_group["parameters"]["metric"] == "accuracy"
+        assert disabled_group["parameters"]["required_score"] == 1.0
+        assert disabled_group["comparison_summary"]["annotations"]["accuracy"] == 1.0
+        assert disabled_group["comparison_summary"]["annotations"]["total_count"] == 1
+        assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
 
     def test_task_report_confusion_endpoint_returns_zip_archive(
         self, admin_user, find_sandbox_task_without_gt
@@ -1301,12 +1344,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                 if matrix["scope"] == "group"
             }
             assert enabled_requirement_name in group_matrices
-            assert disabled_requirement_name not in group_matrices
+            assert disabled_requirement_name in group_matrices
 
             overall_csv = archive.read("overall.csv").decode()
             enabled_group_csv = archive.read(group_matrices[enabled_requirement_name]).decode()
+            disabled_group_csv = archive.read(group_matrices[disabled_requirement_name]).decode()
             assert "ds \\ gt" in overall_csv
             assert "ds \\ gt" in enabled_group_csv
+            assert "ds \\ gt" in disabled_group_csv
 
         response = get_method(
             admin_user,
@@ -1322,4 +1367,6 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             f"quality/reports/{report['id']}/confusion/matrix",
             requirement=disabled_requirement_name,
         )
-        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert response.status_code == HTTPStatus.OK
+        assert response.headers["Content-Type"].startswith("text/csv")
+        assert response.content.decode() == disabled_group_csv

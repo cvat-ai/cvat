@@ -26,6 +26,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
+    ComparisonReportRequirementSummaryItem,
     ComparisonReportRequirementsSummary,
     ComparisonReportRequirementSummary,
     ComparisonReportSummary,
@@ -195,6 +196,7 @@ def build_requirements_summary(
         if _get_requirement_field(requirement, "enabled", default=True)
     ]
     completed_count = 0
+    items: list[ComparisonReportRequirementSummaryItem] = []
 
     for requirement in enabled_requirements:
         group_name = _get_requirement_field(requirement, "name")
@@ -207,6 +209,14 @@ def build_requirements_summary(
             requirement, "target_metric_threshold", "required_score", default=0
         )
         actual_score = getattr(group_report.comparison_summary.annotations, metric, None)
+        items.append(
+            ComparisonReportRequirementSummaryItem(
+                name=group_name,
+                metric=str(metric),
+                score=float(actual_score) if actual_score is not None else None,
+                threshold=float(required_score),
+            )
+        )
         if actual_score is not None and required_score <= actual_score:
             completed_count += 1
 
@@ -214,6 +224,7 @@ def build_requirements_summary(
         total=len(requirements),
         enabled=len(enabled_requirements),
         completed=completed_count,
+        items=items,
     )
 
 
@@ -1254,13 +1265,11 @@ class DatasetQualityEstimator:
             req
             for req in self._requirements
             if req.annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE
-            and req.enabled
         ]
         attribute_reqs = [
             req
             for req in self._requirements
             if req.annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
-            and req.enabled
         ]
 
         per_requirement_results = {}
@@ -1316,7 +1325,16 @@ class DatasetQualityEstimator:
         total_annotation_components = ComparisonReportAnnotationComponentsSummary.create_empty()
         mean_ious = []
 
-        for requirement_metrics in self._results.values():
+        enabled_requirement_names = {
+            requirement.name
+            for requirement in self._requirements
+            if getattr(requirement, "enabled", True)
+        }
+
+        for requirement_name, requirement_metrics in self._results.items():
+            if requirement_name not in enabled_requirement_names:
+                continue
+
             for frame_id, frame_result in requirement_metrics.items():
                 if frame_id not in all_frame_results:
                     all_frame_results[frame_id] = deepcopy(frame_result)
@@ -1361,11 +1379,7 @@ class DatasetQualityEstimator:
         group_reports = {
             requirement.name: build_requirement_report(
                 requirement=requirement,
-                frame_results=(
-                    self._results.get(requirement.name, {})
-                    if getattr(requirement, "enabled", True)
-                    else {}
-                ),
+                frame_results=self._results.get(requirement.name, {}),
                 total_frames=self._get_total_frames(),
             )
             for requirement in self._requirements
