@@ -32,6 +32,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Run tmate
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+
       - name: Verify version consistency
         run: ./dev/update_version.py --verify-current
 
