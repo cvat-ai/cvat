@@ -19,10 +19,8 @@ from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
 from shared.tasks.utils import parse_frame_step
-from shared.utils.config import make_api_client
+from shared.utils.config import SHARE_DIR, make_api_client
 from shared.utils.helpers import generate_image_files, generate_video_file
-
-SHARE_DIR = Path(__file__).parents[2] / "mounted_file_share"
 
 
 def read_share_file(path: str) -> io.BytesIO:
@@ -776,15 +774,15 @@ class TestTasksBase:
         expected: Image.Image, actual: Image.Image, *, must_be_identical: bool = True
     ):
         expected_pixels = np.array(expected)
-        chunk_frame_pixels = np.array(actual)
-        assert expected_pixels.shape == chunk_frame_pixels.shape
+        actual_pixels = np.array(actual)
+        assert expected_pixels.shape == actual_pixels.shape
 
         if not must_be_identical:
             # video chunks can have slightly changed colors, due to codec specifics
             # compressed images can also be distorted
-            assert np.allclose(chunk_frame_pixels, expected_pixels, atol=3)
+            assert np.allclose(actual_pixels, expected_pixels, atol=3)
         else:
-            assert np.array_equal(chunk_frame_pixels, expected_pixels)
+            assert np.array_equal(actual_pixels, expected_pixels)
 
     def _get_job_abs_frame_set(self, job_meta: models.DataMetaRead) -> Sequence[int]:
         if job_meta.included_frames:
