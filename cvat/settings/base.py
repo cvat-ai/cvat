@@ -233,7 +233,7 @@ IAM_DEFAULT_ROLE = "user"
 IAM_ADMIN_ROLE = "admin"
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, "user", "worker"]
-IAM_OPA_HOST = "http://opa_audio:8181"
+IAM_OPA_HOST = "http://opa:8181"
 IAM_OPA_DATA_URL = f"{IAM_OPA_HOST}/v1/data"
 LOGIN_URL = "rest_login"
 LOGIN_REDIRECT_URL = "/"
@@ -669,12 +669,11 @@ SPECTACULAR_SETTINGS = {
         "ShapeType": "cvat.apps.engine.models.ShapeType",
         "OperationStatus": "cvat.apps.engine.models.StateChoice",
         "ChunkType": "cvat.apps.engine.models.DataChoice",
-        "MediaType": "cvat.apps.engine.models.MediaType",
-        "Dimension": "cvat.apps.engine.models.Dimension",
         "StorageMethod": "cvat.apps.engine.models.StorageMethodChoice",
         "JobStatus": "cvat.apps.engine.models.StatusChoice",
         "JobStage": "cvat.apps.engine.models.StageChoice",
         "JobType": "cvat.apps.engine.models.JobType",
+        "TaskMode": "cvat.apps.engine.models.TaskMode",
         "StorageType": "cvat.apps.engine.models.StorageChoice",
         "SortingMethod": "cvat.apps.engine.models.SortingMethod",
         "WebhookType": "cvat.apps.webhooks.models.WebhookTypeChoice",
@@ -689,7 +688,6 @@ SPECTACULAR_SETTINGS = {
         "QualityTargetMetric": "cvat.apps.quality_control.models.QualityTargetMetricType",
         "QualityPointSizeBase": "cvat.apps.quality_control.models.PointSizeBase",
         "QualityReportTarget": "cvat.apps.quality_control.models.QualityReportTarget",
-        "TranscriptionQualityMetric": "cvat.apps.quality_control.models.TranscriptionQualityMetric",
     },
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
     # some libraries (e.g. drf-nested-routers) use "_pk" suffixed path variables.
