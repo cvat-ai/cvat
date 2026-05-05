@@ -84,7 +84,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=34"
       },
-      "media_type": "video",
+      "media_type": "image",
       "mode": "interpolation",
       "name": "task with frame step and gt job",
       "organization": 2,
@@ -1080,7 +1080,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=15"
       },
-      "media_type": "video",
+      "media_type": "image",
       "mode": "interpolation",
       "name": "task with video data",
       "organization": null,
@@ -1575,7 +1575,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=5"
       },
-      "media_type": "video",
+      "media_type": "image",
       "mode": "interpolation",
       "name": "task2",
       "organization": null,

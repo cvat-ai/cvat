@@ -21,8 +21,7 @@ def infer_task_media_type(apps, schema_editor):
     Task = apps.get_model("engine", "Task")
 
     Task.objects.filter(media_type="", dimension="3d").update(media_type="point_cloud")
-    Task.objects.filter(media_type="", mode="interpolation").update(media_type="video")
-    Task.objects.filter(media_type="", mode="annotation").update(media_type="image")
+    Task.objects.filter(media_type="", dimension="2d").update(media_type="image")
 
 
 class Migration(migrations.Migration):
@@ -45,7 +44,7 @@ class Migration(migrations.Migration):
             name="media_type",
             field=models.CharField(
                 blank=True,
-                choices=[("image", "Image"), ("video", "Video"), ("point_cloud", "Point Cloud")],
+                choices=[("image", "Image"), ("point_cloud", "Point Cloud")],
                 default="",
                 max_length=32,
             ),
