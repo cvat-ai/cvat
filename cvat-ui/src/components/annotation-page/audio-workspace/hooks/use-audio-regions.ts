@@ -13,6 +13,7 @@ import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
 import { createAudioRegion } from '../utils/create-audio-region';
 import { getAudioRegionColor, getRegionItemColor } from '../audio-region-colors';
 import { getPlayOnceRegionId, setPlayOnceRegionId } from '../utils/play-once-region';
+import { attachRegionAutoScroll } from '../utils/region-auto-scroll';
 
 const ACTIVE_BORDER_FALLBACK = '#6366F1';
 const ACTIVE_Z_OFFSET = 10000;
@@ -321,6 +322,12 @@ export function useAudioRegions(params: Params): Result {
     useEffect(() => {
         applyAudioControlMode(activeControl, regionsPluginRef.current, dragSelectionCleanupRef, regions);
     }, [activeControl, regions, regionsPluginRef]);
+
+    useEffect(() => {
+        const plugin = regionsPluginRef.current;
+        if (!plugin || !wavesurfer) return undefined;
+        return attachRegionAutoScroll(plugin, () => wavesurferRef.current);
+    }, [wavesurfer, regionsPluginRef]);
 
     useEffect(() => {
         const plugin = regionsPluginRef.current;

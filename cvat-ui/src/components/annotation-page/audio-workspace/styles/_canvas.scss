@@ -58,6 +58,18 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         overflow: hidden;
+
+        // HoverPlugin's `<span part="hover-label">` is `display: block` inside
+        // an absolutely positioned wrapper, so its layout box extends past
+        // `.wrapper`'s right edge near the right side of the waveform. With
+        // wavesurfer's `.wrapper` defaulting to `overflow: visible`, that
+        // overflow leaks to the parent `.scroll` (overflow-x: auto) and a
+        // horizontal scrollbar appears on hover. Clipping the wavesurfer
+        // wrapper traps the overflow there; the actual waveform scrolling
+        // lives on the separate `.scroll` ancestor and is unaffected.
+        *::part(wrapper) {
+            overflow: hidden;
+        }
     }
 
     .cvat-audio-minimap-section {
