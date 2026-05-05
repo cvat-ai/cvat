@@ -1053,6 +1053,10 @@ class AudioReader(IMediaReader):
 class IChunkWriter(ABC):
     CHUNK_MIME_TYPE: ClassVar[str]
 
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
+        self._image_quality = quality
+        self._dimension = dimension
+
     @abstractmethod
     def save_as_chunk(self, images, chunk_path: str | io.IOBase):
         pass
@@ -1063,8 +1067,10 @@ class ZipChunkWriter(IChunkWriter):
     IMAGE_EXT = "jpeg"
     POINT_CLOUD_EXT = "pcd"
 
-    def __init__(self, *, dimension: DimensionType) -> None:
-        self._dimension = dimension
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
+        assert dimension in (DimensionType.DIM_2D, DimensionType.DIM_3D)
+        assert quality == 100
+        super().__init__(quality=quality, dimension=dimension)
 
     def _write_pcd_file(self, image: str | Path | io.BytesIO) -> tuple[io.BytesIO, str]:
         with ExitStack() as es:
@@ -1226,9 +1232,12 @@ class Mpeg4ChunkWriter(IChunkWriter):
     FORMAT = "mp4"
     MAX_MBS_PER_FRAME = 36864
 
-    def __init__(self, *, quality: int) -> None:
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
+        assert dimension == DimensionType.DIM_2D
+
         # translate inversed range [1:100] to [0:51]
-        self._image_quality = round(51 * (100 - quality) / 99)
+        quality = round(51 * (100 - quality) / 99)
+        super().__init__(quality=quality, dimension=dimension)
 
         self._output_fps = 25
         try:
@@ -1279,11 +1288,9 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
-    FrameDescriptor: TypeAlias = tuple[av.VideoFrame, Any]
-
     def _peek_first_frame(
-        self, frame_iter: Iterator[FrameDescriptor]
-    ) -> tuple[FrameDescriptor | None, Iterator[FrameDescriptor]]:
+        self, frame_iter: Iterator[IMediaReader.VideoFrame]
+    ) -> tuple[IMediaReader.VideoFrame | None, Iterator[IMediaReader.VideoFrame]]:
         "Gets the first frame and returns the same full iterator"
 
         if not hasattr(frame_iter, "__next__"):
@@ -1292,7 +1299,11 @@ class Mpeg4ChunkWriter(IChunkWriter):
         first_frame = next(frame_iter, None)
         return first_frame, itertools.chain((first_frame,), frame_iter)
 
-    def save_as_chunk(self, images: Iterator[FrameDescriptor], chunk_path: str | io.IOBase) -> None:
+    def save_as_chunk(
+        self,
+        images: Iterator[IMediaReader.VideoFrame],
+        chunk_path: str | io.IOBase,
+    ) -> None:
         first_frame, images = self._peek_first_frame(images)
         if not first_frame:
             raise Exception("no images to save")
@@ -1329,8 +1340,9 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, *, quality):
-        super().__init__(quality=quality)
+    def __init__(self, *, quality, dimension):
+        super().__init__(quality=quality, dimension=dimension)
+
         if self._codec_name == "libx264":
             self._codec_opts = {
                 "profile": "baseline",

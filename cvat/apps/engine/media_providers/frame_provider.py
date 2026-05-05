@@ -730,21 +730,16 @@ def prepare_image_chunk(
 
     writer_class = writer_classes[quality]
 
-    writer_params = {}
-    if writer_class is not ZipChunkWriter:
-        image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
-        writer_params["quality"] = image_quality
-    if not issubclass(writer_class, Mpeg4ChunkWriter):
-        writer_params["dimension"] = db_task.dimension
+    image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
 
-    writer = writer_class(**writer_params)
+    merged_chunk_writer = writer_class(quality=image_quality, dimension=db_task.dimension)
 
-    chunk_params = {}
-    if dump_unchanged and isinstance(writer, ZipCompressedChunkWriter):
-        chunk_params = dict(compress_frames=False, zip_compress_level=1)
+    writer_kwargs = {}
+    if dump_unchanged and isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
+        writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
 
     buffer = BytesIO()
-    writer.save_as_chunk(task_chunk_frames, buffer, **chunk_params)
+    merged_chunk_writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
 
     buffer.seek(0)
-    return buffer, writer.CHUNK_MIME_TYPE
+    return buffer, merged_chunk_writer.CHUNK_MIME_TYPE
