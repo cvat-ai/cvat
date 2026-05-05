@@ -565,7 +565,6 @@ class _DataGetter(metaclass=ABCMeta):
             )
         elif self.type == 'frame':
             if isinstance(media_provider, IAudioProvider):
-                # TODO: refactor
                 raise ValidationError(
                     "Frame requests are not available for this data",
                     code=status.HTTP_400_BAD_REQUEST,
@@ -578,7 +577,6 @@ class _DataGetter(metaclass=ABCMeta):
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == 'context_image':
             if isinstance(media_provider, IAudioProvider):
-                # TODO: refactor
                 raise ValidationError(
                     "Context image requests are not available for this data",
                     code=status.HTTP_400_BAD_REQUEST,

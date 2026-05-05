@@ -22,7 +22,7 @@ from fractions import Fraction
 from functools import cached_property
 from pathlib import Path, PurePath
 from random import shuffle
-from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
+from typing import ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
 
 import av
 import av.codec
@@ -1068,9 +1068,12 @@ class ZipChunkWriter(IChunkWriter):
     POINT_CLOUD_EXT = "pcd"
 
     def __init__(self, *, quality: int, dimension: DimensionType) -> None:
-        assert dimension in (DimensionType.DIM_2D, DimensionType.DIM_3D)
-        assert quality == 100
         super().__init__(quality=quality, dimension=dimension)
+        self._validate_configuration()
+
+    def _validate_configuration(self):
+        assert self._dimension in (DimensionType.DIM_2D, DimensionType.DIM_3D)
+        assert self._quality == 100
 
     def _write_pcd_file(self, image: str | Path | io.BytesIO) -> tuple[io.BytesIO, str]:
         with ExitStack() as es:
@@ -1135,9 +1138,8 @@ class ZipChunkWriter(IChunkWriter):
 
 
 class ZipCompressedChunkWriter(ZipChunkWriter):
-    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
-        super().__init__(dimension=dimension)
-        self._image_quality = quality
+    def _validate_configuration(self):
+        assert self._dimension in (DimensionType.DIM_2D, DimensionType.DIM_3D)
 
     @staticmethod
     def _compress_image(
@@ -1352,7 +1354,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
                 "flags": "-loop",
             }
 
-    def save_as_chunk(self, images, chunk_path: str | io.IOBase):
+    def save_as_chunk(self, images, chunk_path):
         first_frame, images = self._peek_first_frame(images)
         if not first_frame:
             raise Exception("no images to save")
