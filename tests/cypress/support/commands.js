@@ -1161,7 +1161,7 @@ Cypress.Commands.add('addNewSkeletonLabel', ({ name, points }) => {
 
         cy.get('.cvat-skeleton-configurator-svg').within(() => {
             cy.get('circle').then(($circles) => {
-                expect($circles.length).to.be.equal(5);
+                expect($circles.length).to.be.equal(points.length);
                 $circles.each(function (i) {
                     const circle1 = this;
                     $circles.each(function (j) {

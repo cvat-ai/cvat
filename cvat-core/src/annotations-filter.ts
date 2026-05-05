@@ -13,10 +13,6 @@ function adjustName(name): string {
     return name.replace(/\./g, '\u2219');
 }
 
-function getLabelFilterValue(labelID: number | string, sublabelID?: number | string): string {
-    return typeof sublabelID === 'undefined' ? `label:${labelID}` : `sublabel:${labelID}:${sublabelID}`;
-}
-
 type Dimensions = {
     width: number | null;
     height: number | null;
@@ -83,38 +79,23 @@ function getFilterReferences(filter: object): FilterReferences {
     return references;
 }
 
-function isLabelScopeReferenced(labelName: string, labelValue: string, references: FilterReferences): boolean {
-    if (references.labelValues.has(labelValue) || references.labelValues.has(labelName)) {
+function isLabelScopeReferenced(labelName: string, references: FilterReferences): boolean {
+    if (references.labelValues.has(labelName)) {
         return true;
     }
 
     const adjustedLabelName = adjustName(labelName);
-    const adjustedLabelValue = adjustName(labelValue);
     return [...references.vars].some((varName) => (
-        varName === `attr.${adjustedLabelValue}` ||
-        varName.startsWith(`attr.${adjustedLabelValue}.`) ||
         varName === `attr.${adjustedLabelName}` ||
         varName.startsWith(`attr.${adjustedLabelName}.`)
     ));
 }
 
-function isSublabelReferenced(sublabelName: string, sublabelValue: string, references: FilterReferences): boolean {
-    return isLabelScopeReferenced(sublabelName, sublabelValue, references);
-}
-
 function hasReferencedSublabel(
-    sublabels: { name: string; value: string }[],
+    sublabels: string[],
     references: FilterReferences,
 ): boolean {
-    return sublabels.some(({ name, value }) => (
-        isSublabelReferenced(name, value, references)
-    ));
-}
-
-function usesStableLabelValues(references: FilterReferences): boolean {
-    return [...references.labelValues].some((value) => (
-        /^(label|sublabel):/.test(value)
-    ));
+    return sublabels.some((sublabel) => isLabelScopeReferenced(sublabel, references));
 }
 
 function getDimensions(
@@ -258,22 +239,17 @@ export default class AnnotationsFilter {
         filterReferences: FilterReferences,
     ): ConvertedObjectData[] {
         const objects: ConvertedObjectData[] = [];
-        const useStableLabelValues = usesStableLabelValues(filterReferences);
 
         statesData.forEach((state) => {
             const labelAttributes = buildAttributeMap(state.label.attributes);
-            const labelValue = getLabelFilterValue(state.label.id);
             const hasSublabelScope = state.shapeType === ShapeType.SKELETON && state.elements ?
                 hasReferencedSublabel(
-                    state.elements.map((element) => ({
-                        name: `${state.label.name} / ${element.label.name}`,
-                        value: getLabelFilterValue(state.label.id, element.label.id),
-                    })),
+                    state.elements.map((element) => `${state.label.name} / ${element.label.name}`),
                     filterReferences,
                 ) :
                 false;
             const shouldAddParentEntry = !hasSublabelScope ||
-                isLabelScopeReferenced(state.label.name, labelValue, filterReferences);
+                isLabelScopeReferenced(state.label.name, filterReferences);
 
             let dimensions: Dimensions = { width: null, height: null };
             let rotation: number | null = null;
@@ -299,10 +275,9 @@ export default class AnnotationsFilter {
                     height: dimensions.height,
                     rotation,
                     attr: {
-                        [adjustName(labelValue)]: attributes,
                         [adjustName(state.label.name)]: attributes,
                     },
-                    label: useStableLabelValues ? labelValue : state.label.name,
+                    label: state.label.name,
                     serverID: state.serverID,
                     objectID: state.clientID,
                     type: state.objectType,
@@ -322,19 +297,17 @@ export default class AnnotationsFilter {
                         getDimensions(element.points, elementShape) :
                         { width: null, height: null };
                     const sublabelName = `${state.label.name} / ${element.label.name}`;
-                    const sublabelValue = getLabelFilterValue(state.label.id, element.label.id);
 
-                    if (isSublabelReferenced(sublabelName, sublabelValue, filterReferences)) {
+                    if (isLabelScopeReferenced(sublabelName, filterReferences)) {
                         const attributes = convertAttributes(element.attributes || {}, elementLabelAttributes);
                         objects.push({
                             width: elementDimensions.width,
                             height: elementDimensions.height,
                             rotation: element.rotation ?? null,
                             attr: {
-                                [adjustName(sublabelValue)]: attributes,
                                 [adjustName(sublabelName)]: attributes,
                             },
-                            label: useStableLabelValues ? sublabelValue : sublabelName,
+                            label: sublabelName,
                             serverID: state.serverID,
                             objectID: state.clientID,
                             type: state.objectType,
@@ -357,27 +330,22 @@ export default class AnnotationsFilter {
         filterReferences: FilterReferences,
     ): { shapes: ConvertedObjectData[]; tags: ConvertedObjectData[]; tracks: ConvertedObjectData[] } {
         const { labelByID, attributeByID } = buildLabelMaps(labelsSpec);
-        const useStableLabelValues = usesStableLabelValues(filterReferences);
 
         return {
             shapes: collection.shapes.flatMap((shape) => {
                 const label = labelByID[shape.label_id];
-                const labelValue = getLabelFilterValue(shape.label_id);
                 const points =
                     shape.type === ShapeType.SKELETON ? shape.elements.map((el) => el.points).flat() : shape.points;
                 const dimensions = getDimensions(points, shape.type);
                 const elementLabels = shape.type === ShapeType.SKELETON && shape.elements ?
                     shape.elements.flatMap((element) => {
                         const elementLabelName = labelByID[element.label_id]?.name;
-                        return elementLabelName ? [{
-                            name: `${label.name} / ${elementLabelName}`,
-                            value: getLabelFilterValue(shape.label_id, element.label_id),
-                        }] : [];
+                        return elementLabelName ? [`${label.name} / ${elementLabelName}`] : [];
                     }) :
                     [];
                 const hasSublabelScope = hasReferencedSublabel(elementLabels, filterReferences);
                 const shouldAddParentEntry = !hasSublabelScope ||
-                    isLabelScopeReferenced(label.name, labelValue, filterReferences);
+                    isLabelScopeReferenced(label.name, filterReferences);
                 const attributes = convertAttributes(shape.attributes, attributeByID);
 
                 const mainEntry: ConvertedObjectData = {
@@ -385,10 +353,9 @@ export default class AnnotationsFilter {
                     height: dimensions.height,
                     rotation: getRotation(shape.type, shape.rotation),
                     attr: {
-                        [adjustName(labelValue)]: attributes,
                         [adjustName(label.name)]: attributes,
                     },
-                    label: useStableLabelValues ? labelValue : label.name,
+                    label: label.name,
                     serverID: shape.id ?? null,
                     objectID: shape.clientID ?? null,
                     type: ObjectType.SHAPE,
@@ -408,19 +375,17 @@ export default class AnnotationsFilter {
                             const elementShape = element.type ?? ShapeType.POINTS;
                             const elementDimensions = getDimensions(element.points, elementShape);
                             const sublabelName = `${label.name} / ${elementLabel.name}`;
-                            const sublabelValue = getLabelFilterValue(shape.label_id, element.label_id);
 
-                            if (isSublabelReferenced(sublabelName, sublabelValue, filterReferences)) {
+                            if (isLabelScopeReferenced(sublabelName, filterReferences)) {
                                 const elementAttributes = convertAttributes(element.attributes, attributeByID);
                                 entries.push({
                                     width: elementDimensions.width,
                                     height: elementDimensions.height,
                                     rotation: element.rotation ?? null,
                                     attr: {
-                                        [adjustName(sublabelValue)]: elementAttributes,
                                         [adjustName(sublabelName)]: elementAttributes,
                                     },
-                                    label: useStableLabelValues ? sublabelValue : sublabelName,
+                                    label: sublabelName,
                                     serverID: shape.id ?? null,
                                     objectID: shape.clientID ?? null,
                                     type: ObjectType.SHAPE,
@@ -438,7 +403,6 @@ export default class AnnotationsFilter {
             }),
             tags: collection.tags.map((tag) => {
                 const label = labelByID[tag.label_id];
-                const labelValue = getLabelFilterValue(tag.label_id);
                 const attributes = convertAttributes(tag.attributes, attributeByID);
 
                 return {
@@ -446,10 +410,9 @@ export default class AnnotationsFilter {
                     height: null,
                     rotation: null,
                     attr: {
-                        [adjustName(labelValue)]: attributes,
                         [adjustName(label.name)]: attributes,
                     },
-                    label: useStableLabelValues ? labelValue : label.name,
+                    label: label.name,
                     serverID: tag.id ?? null,
                     objectID: tag.clientID ?? null,
                     type: ObjectType.SHAPE,
@@ -461,19 +424,15 @@ export default class AnnotationsFilter {
             }),
             tracks: collection.tracks.flatMap((track) => {
                 const label = labelByID[track.label_id];
-                const labelValue = getLabelFilterValue(track.label_id);
                 const elementLabels = track.shapes[0]?.type === ShapeType.SKELETON && track.elements ?
                     track.elements.flatMap((element) => {
                         const elementLabelName = labelByID[element.label_id]?.name;
-                        return elementLabelName ? [{
-                            name: `${label.name} / ${elementLabelName}`,
-                            value: getLabelFilterValue(track.label_id, element.label_id),
-                        }] : [];
+                        return elementLabelName ? [`${label.name} / ${elementLabelName}`] : [];
                     }) :
                     [];
                 const hasSublabelScope = hasReferencedSublabel(elementLabels, filterReferences);
                 const shouldAddParentEntry = !hasSublabelScope ||
-                    isLabelScopeReferenced(label.name, labelValue, filterReferences);
+                    isLabelScopeReferenced(label.name, filterReferences);
                 const attributes = convertAttributes(getTrackAttributes(track), attributeByID);
 
                 const mainEntry: ConvertedObjectData = {
@@ -481,10 +440,9 @@ export default class AnnotationsFilter {
                     height: null,
                     rotation: null,
                     attr: {
-                        [adjustName(labelValue)]: attributes,
                         [adjustName(label.name)]: attributes,
                     },
-                    label: useStableLabelValues ? labelValue : label.name,
+                    label: label.name,
                     serverID: track.id ?? null,
                     objectID: track.clientID ?? null,
                     type: ObjectType.TRACK,
@@ -502,19 +460,17 @@ export default class AnnotationsFilter {
                         const elementLabel = labelByID[element.label_id];
                         if (elementLabel) {
                             const sublabelName = `${label.name} / ${elementLabel.name}`;
-                            const sublabelValue = getLabelFilterValue(track.label_id, element.label_id);
 
-                            if (isSublabelReferenced(sublabelName, sublabelValue, filterReferences)) {
+                            if (isLabelScopeReferenced(sublabelName, filterReferences)) {
                                 const elementAttributes = convertAttributes(getTrackAttributes(element), attributeByID);
                                 entries.push({
                                     width: null,
                                     height: null,
                                     rotation: null,
                                     attr: {
-                                        [adjustName(sublabelValue)]: elementAttributes,
                                         [adjustName(sublabelName)]: elementAttributes,
                                     },
-                                    label: useStableLabelValues ? sublabelValue : sublabelName,
+                                    label: sublabelName,
                                     serverID: track.id ?? null,
                                     objectID: track.clientID ?? null,
                                     type: ObjectType.TRACK,

@@ -114,6 +114,8 @@ Cypress.Commands.add(
                         } else if (!valueSource) {
                             if (field === 'ObjectID' || field === 'Width' || field === 'Height' || field === 'Rotation') {
                                 cy.get('[placeholder="Enter number"]').type(`${value}{Enter}`);
+                            } else if (field === 'Occluded' && value === 'true') {
+                                cy.get('.ant-switch').click();
                             } else {
                                 cy.get('[type="search"]').last().type(`${value}{Enter}`);
                             }

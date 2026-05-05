@@ -50,10 +50,6 @@ const getConvertedInputType = (inputType: string): string => {
 
 const adjustName = (name: string): string => name.replace(/\./g, '\u2219');
 
-const getLabelFilterValue = (labelID: number, sublabelID?: number): string => (
-    typeof sublabelID === 'undefined' ? `label:${labelID}` : `sublabel:${labelID}:${sublabelID}`
-);
-
 const addAttributeSubfields = (
     subfields: Record<string, any>,
     key: string,
@@ -93,7 +89,7 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
     labels.forEach((label: any): void => {
         addAttributeSubfields(
             subfields,
-            adjustName(getLabelFilterValue(label.id)),
+            adjustName(label.name),
             label.name,
             label.attributes,
         );
@@ -104,7 +100,7 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
         if (label.type === 'skeleton' && label.structure?.sublabels) {
             label.structure.sublabels.forEach((sublabel: any): void => {
                 const sublabelDisplayLabel = `${label.name} / ${sublabel.name}`;
-                const sublabelKey = adjustName(getLabelFilterValue(label.id, sublabel.id));
+                const sublabelKey = adjustName(sublabelDisplayLabel);
                 addAttributeSubfields(subfields, sublabelKey, sublabelDisplayLabel, sublabel.attributes);
             });
         }
@@ -138,12 +134,13 @@ function FiltersModalComponent(): JSX.Element {
                     valueSources: ['value'] as 'value'[],
                     fieldSettings: {
                         listValues: labels.reduce((acc: any[], label: any) => {
-                            acc.push({ value: getLabelFilterValue(label.id), title: label.name });
+                            acc.push({ value: label.name, title: label.name });
                             if (label.type === 'skeleton' && label.structure?.sublabels) {
                                 label.structure.sublabels.forEach((sublabel: any) => {
+                                    const sublabelName = `${label.name} / ${sublabel.name}`;
                                     acc.push({
-                                        value: getLabelFilterValue(label.id, sublabel.id),
-                                        title: `${label.name} / ${sublabel.name}`,
+                                        value: sublabelName,
+                                        title: sublabelName,
                                     });
                                 });
                             }
