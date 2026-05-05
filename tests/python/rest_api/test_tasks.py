@@ -356,6 +356,7 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
         (
             "assignee",
             "dimension",
+            "media_type",
             "mode",
             "name",
             "owner",
