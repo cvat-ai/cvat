@@ -647,7 +647,13 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         def serialize_task():
             task_serializer = TaskReadSerializer(self._db_task)
             for field in (
-                "url", "owner", "assignee", "jobs", "labels", "source_storage", "target_storage"
+                "url",
+                "owner",
+                "assignee",
+                "jobs",
+                "labels",
+                "source_storage",
+                "target_storage",
             ):
                 task_serializer.fields.pop(field)
 

@@ -1179,7 +1179,7 @@ def prepare_image_chunk(
         image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
         writer_params["quality"] = image_quality
     if not issubclass(writer_class, Mpeg4ChunkWriter):
-        writer_params["dimension"]  = db_task.dimension
+        writer_params["dimension"] = db_task.dimension
 
     writer = writer_class(**writer_params)
 
