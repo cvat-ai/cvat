@@ -44,8 +44,8 @@ from cvat.apps.engine.media_extractors import (
     load_image,
     sort,
 )
-from cvat.apps.engine.media_providers.audio_provider import TaskAudioProvider
-from cvat.apps.engine.media_providers.frame_provider import TaskFrameProvider
+from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector

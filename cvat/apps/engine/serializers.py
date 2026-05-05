@@ -1513,7 +1513,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         frame_path_map: dict[int, str],
         segment_frame_map: dict[int,int],
     ):
-        from cvat.apps.engine.media_providers.frame_provider import prepare_image_chunk
+        from cvat.apps.engine.media_io.frame_provider import prepare_image_chunk
 
         db_segment = models.Segment.objects.select_related("task").get(pk=db_segment_id)
         initial_chunks_updated_date = db_segment.chunks_updated_date

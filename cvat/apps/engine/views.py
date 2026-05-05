@@ -59,13 +59,13 @@ from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
-from cvat.apps.engine.media_providers.audio_provider import (
+from cvat.apps.engine.media_io.audio_provider import (
     AudioDataWithMeta,
     IAudioProvider,
     JobAudioProvider,
     TaskAudioProvider,
 )
-from cvat.apps.engine.media_providers.frame_provider import (
+from cvat.apps.engine.media_io.frame_provider import (
     DataWithMeta,
     IFrameProvider,
     JobFrameProvider,

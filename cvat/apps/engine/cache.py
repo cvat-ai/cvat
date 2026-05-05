@@ -848,7 +848,7 @@ class MediaCache:
 
         match db_task.media_type:
             case models.MediaType.AUDIO:
-                from cvat.apps.engine.media_providers.audio_provider import TaskAudioProvider
+                from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
 
                 assert cache and chunk_key
 
@@ -861,7 +861,7 @@ class MediaCache:
                 )
 
             case models.MediaType.IMAGE | models.MediaType.VIDEO | models.MediaType.POINT_CLOUD:
-                from cvat.apps.engine.media_providers.frame_provider import prepare_image_chunk
+                from cvat.apps.engine.media_io.frame_provider import prepare_image_chunk
 
                 with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
                     return prepare_image_chunk(frame_iter, quality=quality, db_task=db_task)
@@ -911,7 +911,7 @@ class MediaCache:
         # Otherwise we might need to download files.
         # This is not needed for video tasks, as it will reduce performance,
         # because of reading multiple files (chunks)
-        from cvat.apps.engine.media_providers.frame_provider import (
+        from cvat.apps.engine.media_io.frame_provider import (
             FrameOutputType,
             make_frame_provider,
         )
@@ -1030,7 +1030,7 @@ class MediaCache:
                 else:
                     preview = PIL.Image.open(ASSETS_DIR / "audio_default_preview.png")
             case models.MediaType.IMAGE | models.MediaType.VIDEO:
-                from cvat.apps.engine.media_providers.frame_provider import (  # avoid circular import
+                from cvat.apps.engine.media_io.frame_provider import (  # avoid circular import
                     FrameOutputType,
                     make_frame_provider,
                 )

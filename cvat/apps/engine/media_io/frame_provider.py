@@ -33,13 +33,13 @@ from cvat.apps.engine.media_extractors import (
     ZipCompressedChunkWriter,
     ZipReader,
 )
-from cvat.apps.engine.media_providers.media_chunks import (
+from cvat.apps.engine.media_io.media_chunks import (
     BufferChunkLoader,
     ChunkLoader,
     FileChunkLoader,
     ReaderFactory,
 )
-from cvat.apps.engine.media_providers.media_provider import DataWithMeta, IMediaProvider
+from cvat.apps.engine.media_io.media_provider import DataWithMeta, IMediaProvider
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.utils import take_by
 
