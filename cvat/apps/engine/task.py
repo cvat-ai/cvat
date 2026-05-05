@@ -1159,7 +1159,7 @@ def _detect_media_type_and_dimension(
     extractor: IMediaReader, *, source_dir: Path, db_data: models.Data
 ) -> tuple[models.MediaType, models.DimensionType]:
     if isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
-        detected_media_type = models.MediaType.VIDEO
+        detected_media_type = models.MediaType.IMAGE
         detected_dimension = models.DimensionType.DIM_2D
     else:
         validate_dimension = ValidateDimension()
@@ -1203,17 +1203,17 @@ def _validate_project_dimension(
 def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
     db_data = db_task.require_data()
 
-    match db_task.media_type:
-        case models.MediaType.VIDEO:
+    match (db_task.media_type, db_task.mode):
+        case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
             db_data.compressed_chunk_type = (
                 models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
             )
             db_data.original_chunk_type = models.DataChoice.VIDEO
-        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+        case (models.MediaType.IMAGE | models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION):
             db_data.compressed_chunk_type = models.DataChoice.IMAGESET
             db_data.original_chunk_type = models.DataChoice.IMAGESET
-        case _ as media_type:
-            assert False, f"Unexpected media type '{media_type}'"
+        case (media_type, mode):
+            assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
 
 
 @transaction.atomic

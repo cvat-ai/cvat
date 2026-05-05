@@ -827,7 +827,6 @@ class TaskMode(TextChoices):
 
 class MediaType(TextChoices):
     IMAGE = "image"
-    VIDEO = "video"
     POINT_CLOUD = "point_cloud"
 
 
