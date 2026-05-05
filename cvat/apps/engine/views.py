@@ -837,11 +837,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
 ):
-    queryset = Task.objects.select_related(
-        # prefetch for permission checks
-        'assignee',
-        'owner',
-    )
+    queryset = Task.objects
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -879,9 +875,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            queryset = queryset.select_related('assignee', 'owner')
             # with_job_summary() is optimized in the serializer
-        elif self.action == 'preview':
-            queryset = Task.objects.select_related('data')
         elif self.action == 'validation_layout':
             queryset = Task.objects.select_related('data', 'data__validation_layout')
         elif self.action not in ('metadata', 'annotations'):
@@ -892,6 +887,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     'target_storage',
                     'source_storage',
                     'annotation_guide',
+                    'assignee',
+                    'owner',
                 )
                 queryset = queryset.with_job_summary()
 
