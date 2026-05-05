@@ -1672,7 +1672,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 ):
     queryset = Job.objects.select_related(
         # prefetch data for permission checks
-        'assignee',
         'segment__task',
         'segment__task__project',
     )
@@ -1701,12 +1700,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            queryset = queryset.select_related('assignee')
             # with_* optimized in JobReadListSerializer
         elif self.action not in ('annotations', 'metadata'):
             queryset = queryset.select_related('segment__task__data')
 
             if self.action in ('create', 'retrieve', 'update', 'partial_update', 'destroy'):
                 queryset = queryset.select_related(
+                    'assignee',
                     'segment__task__annotation_guide',
                     'segment__task__project__annotation_guide',
                 )
