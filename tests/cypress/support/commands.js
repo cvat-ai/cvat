@@ -10,7 +10,9 @@
 import { keyCodeN } from './const';
 import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
 import {
-    checkAutoborderPointsCount, drawWithTriggers, drawWithClicks, drawWithShiftHover,
+    checkAutoborderPointsCount,
+    drawPolyshape,
+    toggleAutoSimplify,
 } from './utils.cy';
 
 require('cypress-file-upload');
@@ -605,7 +607,7 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
         }
         cy.contains('button', createPointParams.type).click();
     });
-    drawWithClicks(createPointParams.pointsMap);
+    drawPolyshape(createPointParams, 'click');
     if (createPointParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else if (!createPointParams.numberOfPoints) {
@@ -689,10 +691,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = n
                 cy.get('.ant-input-number-input').type(createPolygonParams.numberOfPoints);
             }
             if (createPolygonParams.simplify === true) {
-                cy.get('.cvat-draw-shape-popover-simplify-checkbox')
-                    .should('exist').and('be.visible')
-                    .click();
-                cy.get('.cvat-draw-shape-popover-simplify-checkbox.ant-switch-checked').should('exist');
+                toggleAutoSimplify(true, 'polygon');
             }
             cy.contains('button', createPolygonParams.type).click();
         });
@@ -700,14 +699,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = n
     if (autoborderParams && Number.isInteger(autoborderParams.numberOfAutoborderPoints)) {
         checkAutoborderPointsCount(autoborderParams.numberOfAutoborderPoints);
     }
-    if (drawMethod === 'trigger') {
-        drawWithTriggers(createPolygonParams.pointsMap);
-    } else if (drawMethod === 'shiftHover') {
-        drawWithShiftHover(createPolygonParams.pointsMap);
-    } else if (drawMethod === 'click') {
-        drawWithClicks(createPolygonParams.pointsMap);
-    }
-
+    drawPolyshape(createPolygonParams, drawMethod);
     if (createPolygonParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else if (!createPolygonParams.numberOfPoints) {
@@ -861,7 +853,7 @@ Cypress.Commands.add('updateAttributes', (attributes) => {
     });
 });
 
-Cypress.Commands.add('createPolyline', (createPolylineParams, autoborderParams = null) => {
+Cypress.Commands.add('createPolyline', (createPolylineParams, autoborderParams = null, drawMethod = 'click') => {
     cy.interactControlButton('draw-polyline');
     cy.switchLabel(createPolylineParams.labelName, 'draw-polyline');
     cy.get('.cvat-draw-polyline-popover').within(() => {
@@ -872,12 +864,15 @@ Cypress.Commands.add('createPolyline', (createPolylineParams, autoborderParams =
             cy.get('.ant-input-number-input').clear();
             cy.get('.ant-input-number-input').type(createPolylineParams.numberOfPoints);
         }
+        if (createPolylineParams.simplify === true) {
+            toggleAutoSimplify(true, 'polyline');
+        }
         cy.contains('button', createPolylineParams.type).click();
     });
     if (autoborderParams && autoborderParams.numberOfAutoborderPoints) {
         checkAutoborderPointsCount(autoborderParams.numberOfAutoborderPoints);
     }
-    drawWithClicks(createPolylineParams.pointsMap);
+    drawPolyshape(createPolylineParams, drawMethod);
     if (createPolylineParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else if (!createPolylineParams.numberOfPoints) {

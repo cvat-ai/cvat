@@ -79,6 +79,39 @@ export function drawWithShiftHover(pointsMap) {
     });
 }
 
+/**
+ * Description
+ * @param {any} createPolyshapeParams
+ * @param {'trigger' | 'shiftHover' | 'click'} drawMethod
+ * @returns {any}
+ */
+export function drawPolyshape(createPolyshapeParams, drawMethod) {
+    if (drawMethod === 'trigger') {
+        drawWithTriggers(createPolyshapeParams.pointsMap);
+    } else if (drawMethod === 'shiftHover') {
+        drawWithShiftHover(createPolyshapeParams.pointsMap);
+    } else if (drawMethod === 'click') {
+        drawWithClicks(createPolyshapeParams.pointsMap);
+    }
+}
+
+/**
+ * Description
+ * @param {boolean} expectedState
+ * @param {'polygon' | 'polyline'} shape
+ */
+export function toggleAutoSimplify(expectedState, shape) {
+    cy.get(`.cvat-draw-${shape}-popover .cvat-draw-shape-popover-simplify-checkbox`)
+        .should('exist').and('be.visible')
+        .click();
+    if (expectedState === true) {
+        cy.get('.cvat-draw-shape-popover-simplify-checkbox')
+            .should('have.class', 'ant-switch-checked');
+    } else {
+        cy.get('.cvat-draw-shape-popover-simplify-checkbox').should('not.have.class', 'ant-switch-checked');
+    }
+}
+
 export function getShapeCoord(type, objectId) {
     const arrToPush = [];
     if (type === 'rect') {
