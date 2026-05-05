@@ -65,6 +65,7 @@ slogger = ServerLogManager(__name__)
 
 DataWithMime: TypeAlias = tuple[io.BytesIO, str]
 _CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
+_RQ_JOB_ORIGIN_ATTRIBUTE = "origin"
 
 
 class CacheTooLargeDataError(Exception):
@@ -144,8 +145,7 @@ def _is_run_inside_rq() -> bool:
 
 
 def _get_current_rq_queue_name() -> str | None:
-    current_job = rq.get_current_job()
-    return current_job.origin if current_job else None
+    return getattr(rq.get_current_job(), _RQ_JOB_ORIGIN_ATTRIBUTE, None)
 
 
 def _convert_args_for_callback(func_args: list[Any]) -> list[Any]:
