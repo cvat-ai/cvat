@@ -2034,6 +2034,10 @@ def _create_static_chunks(
 
         fs_original.result()
 
+    assert db_task.media_type in (
+        models.MediaType.IMAGE, models.MediaType.POINT_CLOUD, models.MediaType.VIDEO
+    )
+
     db_data = db_task.require_data()
 
     if db_data.compressed_chunk_type == models.DataChoice.VIDEO:
