@@ -3302,7 +3302,7 @@ class AttributedAnnotationSerializer(serializers.Serializer):
 class ScoredAnnotationSerializer(serializers.Serializer):
     score = serializers.FloatField(min_value=0, max_value=1, default=1)
 
-class ImageAnnotationSerializer(serializers.Serializer):
+class FrameAnnotationSerializer(serializers.Serializer):
     frame = serializers.IntegerField(min_value=0)
 
 class AnnotationSerializer(serializers.Serializer):
@@ -3352,7 +3352,7 @@ class AnnotationSerializer(serializers.Serializer):
         return None
 
 class LabeledImageSerializer(
-    AnnotationSerializer, ImageAnnotationSerializer, AttributedAnnotationSerializer
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
 ):
     pass
 
@@ -3420,7 +3420,7 @@ class ShapeSerializer(serializers.Serializer):
         return attrs
 
 class SubLabeledShapeSerializer(
-    ShapeSerializer, AnnotationSerializer, ImageAnnotationSerializer,
+    ShapeSerializer, AnnotationSerializer, FrameAnnotationSerializer,
     AttributedAnnotationSerializer, ScoredAnnotationSerializer,
 ):
     pass
@@ -3513,7 +3513,7 @@ class TrackedShapeSerializer(ShapeSerializer, AttributedAnnotationSerializer):
     frame = serializers.IntegerField(min_value=0)
 
 class SubLabeledTrackSerializer(
-    AnnotationSerializer, ImageAnnotationSerializer, AttributedAnnotationSerializer
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
 ):
     shapes = TrackedShapeSerializer(many=True, allow_empty=True)
 
