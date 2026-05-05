@@ -21,6 +21,7 @@ from inspect import isclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, cast
+from urllib.parse import urlparse
 
 import django_rq
 from django.conf import settings
@@ -2363,6 +2364,19 @@ class DataSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate_remote_files(self, value: list[dict[str, str]]) -> list[dict[str, str]]:
+        errors: list[str] = []
+        for entry in value:
+            url = entry["file"]
+            parsed = urlparse(url)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                errors.append(
+                    f"{url!r}: remote_files entries must be http(s) URLs."
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        return value
+
     # pylint: disable=no-self-use
     def validate(self, attrs):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
@@ -3286,8 +3300,11 @@ class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
-    group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
-    source = serializers.CharField(default='manual')
+    group = serializers.IntegerField(
+        min_value=0, default=0,
+        allow_null=True # backward compatibility; TODO: disallow on the DB level
+    )
+    source = serializers.CharField(default=models.SourceType.MANUAL)
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3298,6 +3315,9 @@ class AnnotationSerializer(serializers.Serializer):
         if value is None:
             raise serializers.ValidationError("must be present and not null")
         return value
+
+    def validate_group(self, value):
+        return value or 0 # backward compatibility; TODO: disallow on the DB level
 
     @cached_property
     def validate_id(self):
@@ -3415,7 +3435,13 @@ class LabeledShapeSerializer(SubLabeledShapeSerializer):
         return attrs
 
 def _convert_annotation(obj, keys):
-    return OrderedDict([(key, obj[key]) for key in keys])
+    d = OrderedDict([(key, obj[key]) for key in keys])
+
+    if "group" in d:
+        # backward compatibility; TODO: disallow null on the DB level
+        d["group"] = d["group"] or 0
+
+    return d
 
 def _convert_attributes(attr_set):
     attr_keys = ['spec_id', 'value']
