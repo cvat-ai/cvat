@@ -1413,14 +1413,12 @@ class Annotation(models.Model):
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
 class FrameAnnotationMixin(models.Model):
     frame = models.PositiveIntegerField()
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
 class ShapeAnnotationMixin(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
@@ -1432,7 +1430,6 @@ class ShapeAnnotationMixin(models.Model):
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
 
 class ScoredAnnotationMixin(models.Model):
@@ -1440,7 +1437,6 @@ class ScoredAnnotationMixin(models.Model):
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
 
 class LabeledImage(Annotation, FrameAnnotationMixin):
