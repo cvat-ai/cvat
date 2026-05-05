@@ -907,7 +907,7 @@ class MediaCache:
         # Otherwise we might need to download files.
         # This is not needed for video tasks, as it will reduce performance,
         # because of reading multiple files (chunks)
-        from cvat.apps.engine.frame_provider import FrameOutputType, make_frame_provider
+        from cvat.apps.engine.media_io.frame_provider import FrameOutputType, make_frame_provider
 
         task_frame_provider = make_frame_provider(db_task)
 
@@ -1013,7 +1013,7 @@ class MediaCache:
             case models.MediaType.POINT_CLOUD:
                 preview = PIL.Image.open(ASSETS_DIR / "point_cloud_default_preview.png")
             case models.MediaType.IMAGE:
-                from cvat.apps.engine.frame_provider import (  # avoid circular import
+                from cvat.apps.engine.media_io.frame_provider import (  # avoid circular import
                     FrameOutputType,
                     make_frame_provider,
                 )
