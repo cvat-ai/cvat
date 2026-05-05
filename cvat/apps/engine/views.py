@@ -858,11 +858,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'validation_mode': 'data__validation_layout__mode',
     }
     search_fields = (
-        'project_name', 'name', 'owner', 'status', 'assignee',
-        'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode'
+        'project_name', 'name', 'owner', 'assignee',
+        'subset', 'tracker_link',
     )
     filter_fields = list(search_fields) + [
-        'id', 'project_id', 'updated_date', 'status', 'media_type'
+        'id', 'project_id', 'updated_date', 'status',
+        'media_type', 'mode', 'dimension', 'validation_mode'
     ]
     filter_description = textwrap.dedent("""
 
@@ -1672,10 +1673,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
-    search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
+    search_fields = ('task_name', 'project_name', 'assignee')
     filter_fields = list(search_fields) + [
         'id', 'task_id', 'project_id', 'updated_date', 'type', 'parent_job_id',
-        'dimension', 'media_type', "mode",
+        'dimension', 'media_type', "mode", 'state', 'stage',
     ]
     simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
