@@ -9,7 +9,7 @@ import cvat.apps.quality_control.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("engine", "0102_alter_labeledimage_group_alter_labeledimage_source_and_more"),
+        ("engine", "0100_alter_labeledimage_group_alter_labeledimage_source_and_more"),
         ("quality_control", "0011_default_quality_settings_for_old_tasks"),
     ]
 
