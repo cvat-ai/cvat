@@ -3,7 +3,6 @@
 from django.db import migrations, models
 
 
-
 def fill_empty_source_group(apps, schema_editor):
     for model_name in ("LabeledImage", "LabeledShape", "LabeledTrack", "LabeledInterval"):
         model = apps.get_model("engine", model_name)

@@ -2513,6 +2513,15 @@ class DatasetComparator:
 
             for requirement in self.settings.transcription_requirements:
                 attribute_spec = attribute_specs.get(requirement.attribute)
+
+                if (
+                    attribute_spec.id
+                    not in self._gt_data_provider.job_data._attribute_mapping_merged[
+                        gt_ann["label_id"]
+                    ]
+                ):
+                    continue
+
                 if attribute_spec is None or attribute_spec.input_type != AttributeType.TEXT:
                     # Silently ignore, as the settings can be out of sync with labels
                     continue

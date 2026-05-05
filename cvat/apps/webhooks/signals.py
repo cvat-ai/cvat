@@ -20,9 +20,9 @@ from django.dispatch import receiver
 from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.events.handlers import (
+    get_cleaned_up_serializer,
     get_instance_diff,
     get_request,
-    get_cleaned_up_serializer,
     get_user,
     organization_id,
     project_id,

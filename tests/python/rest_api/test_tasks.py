@@ -1717,7 +1717,11 @@ class TestTaskBackups:
         assert restored_task_json["id"] != task_json["id"]
         assert restored_task_json["data"] != task_json["data"]
         assert restored_task_json["organization"] is None
-        assert restored_task_json["data_compressed_chunk_type"] in ["imageset", "video", "audio_mp3"]
+        assert restored_task_json["data_compressed_chunk_type"] in [
+            "imageset",
+            "video",
+            "audio_mp3",
+        ]
         if task_json["jobs"]["count"] == 1:
             assert restored_task_json["overlap"] == 0
         else:
