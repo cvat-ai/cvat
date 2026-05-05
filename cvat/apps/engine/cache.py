@@ -62,12 +62,11 @@ slogger = ServerLogManager(__name__)
 DataWithMime: TypeAlias = tuple[io.BytesIO, str]
 _CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
 
+ASSETS_DIR = Path(__file__).parent / "assets"
+
 
 class CacheTooLargeDataError(Exception):
     pass
-
-
-ASSETS_DIR = Path(__file__).parent / "assets"
 
 
 def enqueue_create_chunk_job(
@@ -1019,7 +1018,7 @@ class MediaCache:
 
         match db_segment.task.media_type:
             case models.MediaType.POINT_CLOUD:
-                preview = PIL.Image.open(ASSETS_DIR / "pcd_default_preview.jpeg")
+                preview = PIL.Image.open(ASSETS_DIR / "pcd_default_preview.png")
             case models.MediaType.AUDIO:
                 from cvat.apps.engine.media_extractors import AudioReader
 
@@ -1137,10 +1136,13 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     image = PIL.ImageOps.exif_transpose(image)
 
     output_buf = io.BytesIO()
-    if image.format not in ALLOWED_FORMATS or image.size != PREVIEW_SIZE:
+
+    if image.size != PREVIEW_SIZE:
         image.thumbnail(PREVIEW_SIZE)
-        image.save(output_buf, format="PNG")
-        mime = FORMAT_MIME["PNG"]
+
+    if image.format not in ALLOWED_FORMATS:
+        image.convert("RGB").save(output_buf, format="JPEG")
+        mime = FORMAT_MIME["JPEG"]
     else:
         image.save(output_buf)
         mime = FORMAT_MIME[image.format]
