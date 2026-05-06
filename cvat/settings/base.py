@@ -454,46 +454,45 @@ EXPORT_CACHE_ROOT.mkdir(parents=True, exist_ok=True)
 
 EVENTS_LOCAL_DB_ROOT = BASE_DIR / "events"
 EVENTS_LOCAL_DB_ROOT.mkdir(parents=True, exist_ok=True)
-_events_local_db_slot_lock_fd = None
 
 
-def _resolve_events_local_db_filename(template: str) -> str:
-    global _events_local_db_slot_lock_fd
-
-    pid = os.getpid()
-    worker = pid
-
-    if "{worker" in template:
-        try:
-            workers = max(1, int(os.getenv("NUMPROCS", "1")))
-        except ValueError:
-            workers = 1
-
-        slot_locks_root = EVENTS_LOCAL_DB_ROOT / ".slots"
-        slot_locks_root.mkdir(parents=True, exist_ok=True)
-
-        for slot in range(workers):
-            lock_file = slot_locks_root / f"worker_{slot:03d}.lock"
-            fd = os.open(lock_file, os.O_RDWR | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
-            try:
-                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                os.close(fd)
-                continue
-
-            _events_local_db_slot_lock_fd = fd
-            worker = slot
-            break
+def _resolve_events_local_db_filename() -> str:
+    worker = 0
 
     try:
-        return template.format(worker=worker)
-    except (KeyError, ValueError, IndexError):
-        return template
+        workers = max(1, int(os.getenv("NUMPROCS", "1")))
+    except ValueError:
+        workers = 1
+
+    slot_locks_root = EVENTS_LOCAL_DB_ROOT / "slots"
+    slot_locks_root.mkdir(parents=True, exist_ok=True)
+
+    for slot in range(workers):
+        lock_file = slot_locks_root / f"worker_{slot:03d}.lock"
+        fd = os.open(lock_file, os.O_RDWR | os.O_CREAT, stat.S_IRUSR | stat.S_IWUSR)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            os.close(fd)
+            continue
+
+        # Keep descriptor reachable for the process lifetime to hold the lock.
+        _resolve_events_local_db_filename._slot_lock_fd = fd
+        worker = slot
+        break
+    else:
+        raise ImproperlyConfigured(
+            f"Failed to allocate events DB worker slot: all {workers} slots are busy"
+        )
+
+    return f"events_{worker:03d}.db"
 
 
-events_local_db_filename = _resolve_events_local_db_filename(
-    os.getenv("CVAT_EVENTS_LOCAL_DB_FILENAME", "events.db")
-)
+if to_bool(os.getenv("CVAT_EVENTS_LOCAL_DB_PER_WORKER", False)):
+    events_local_db_filename = _resolve_events_local_db_filename()
+else:
+    events_local_db_filename = "events.db"
+
 EVENTS_LOCAL_DB_FILE = Path(
     EVENTS_LOCAL_DB_ROOT,
     events_local_db_filename,
