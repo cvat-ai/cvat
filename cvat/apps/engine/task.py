@@ -167,7 +167,10 @@ def _generate_segment_params(
         if overlap is None:
             if data_size <= segment_size:
                 overlap = 0
-            elif db_task.media_type == models.MediaType.VIDEO:
+            elif (
+                db_task.media_type == models.MediaType.IMAGE
+                and db_task.mode == models.TaskMode.INTERPOLATION
+            ):
                 overlap = 5
             elif db_task.media_type == models.MediaType.AUDIO:
                 overlap = 10000
@@ -1919,7 +1922,7 @@ def create_thread(
         else:
             db_data.chunk_size = 36
 
-    if db_task.media_type in [models.MediaType.IMAGE, models.MediaType.VIDEO] and not data.get(
+    if db_task.media_type == models.MediaType.IMAGE and not data.get(
         "image_quality", db_data.image_quality
     ):
         raise ValidationError(

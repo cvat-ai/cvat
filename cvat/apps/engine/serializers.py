@@ -2612,7 +2612,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         representation['consensus_enabled'] = self.get_consensus_enabled(instance)
 
         if instance.media_type not in (
-            models.MediaType.IMAGE, models.MediaType.VIDEO,
+            models.MediaType.IMAGE,
             # TODO: deprecated for 3d, remove later
             models.MediaType.POINT_CLOUD,
         ):

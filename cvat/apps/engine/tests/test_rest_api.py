@@ -250,7 +250,7 @@ def create_dummy_db_tasks(obj, project=None):
         "image_quality": 95,
         "size": 50,
         "project": project,
-        "media_type": MediaType.VIDEO,
+        "media_type": MediaType.IMAGE,
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
