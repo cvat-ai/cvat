@@ -774,6 +774,9 @@ class JobReadListSerializer(serializers.ListSerializer):
             }
 
             # Join the prefetched objects
+            # Keep in mind that the object ids fetched in the earlier queries
+            # might be missing in the later queries because of locks and removals,
+            # so should not be expected to be present and should be checked before access.
             for job in page:
                 job.user_can_view_task = job.segment.task_id in visible_task_ids
 
@@ -2504,6 +2507,9 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 s.id: s for s in models.Storage.objects.filter(id__in=page_storage_ids)
             }
 
+            # Keep in mind that the object ids fetched in the earlier queries
+            # might be missing in the later queries because of locks and removals,
+            # so should not be expected to be present and should be checked before access.
             for task in page:
                 if task.project_id:
                     task.user_can_view_project = task.project_id in visible_projects
