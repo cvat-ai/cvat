@@ -1928,8 +1928,8 @@ def create_thread(
 
     # Create task media descriptors from the metadata collected
     images = None
-    match db_task.media_type:
-        case models.MediaType.VIDEO:
+    match (db_task.media_type, db_task.mode):
+        case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
             _create_video_task_media_descriptors(
                 db_task,
                 data,
@@ -1939,7 +1939,7 @@ def create_thread(
                 manifest_file=manifest_file,
                 update_status=update_status,
             )
-        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+        case (models.MediaType.IMAGE | models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION):
             images, _, job_file_mapping = _create_image_task_media_descriptors(
                 db_task,
                 extractor=extractor,
@@ -1950,15 +1950,15 @@ def create_thread(
                 is_backup_restore=is_backup_restore,
                 is_data_in_cloud=is_data_in_cloud,
             )
-        case models.MediaType.AUDIO:
+        case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
             _create_audio_task_media_descriptors(
                 db_task,
                 media=media,
                 extractor=extractor,
                 upload_dir=upload_dir,
             )
-        case _ as media_type:
-            assert False, f"Unexpected media type '{media_type}'"
+        case (media_type, mode):
+            assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
 
     # validate stop_frame
     if db_data.stop_frame == 0:
