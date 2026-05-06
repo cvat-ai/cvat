@@ -862,7 +862,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode'
     )
     filter_fields = list(search_fields) + [
-        'id', 'project_id', 'updated_date', 'status', 'media_type'
+        'id', 'project_id', 'updated_date', 'media_type'
     ]
     filter_description = textwrap.dedent("""
 

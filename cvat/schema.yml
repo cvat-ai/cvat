@@ -5177,7 +5177,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date', 'status', 'media_type'].
+           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date', 'media_type'].
 
           There are few examples for complex filtering tasks:
 
@@ -5259,7 +5259,7 @@ paths:
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''project_name'', ''name'', ''owner'', ''status'', ''assignee'', ''subset'',
           ''mode'', ''dimension'', ''tracker_link'', ''validation_mode'', ''id'',
-          ''project_id'', ''updated_date'', ''status'', ''media_type'']'
+          ''project_id'', ''updated_date'', ''media_type'']'
         schema:
           type: string
       - name: status
