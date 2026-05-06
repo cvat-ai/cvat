@@ -1422,7 +1422,7 @@ class RequestViewSet(viewsets.ViewSet):
                 code=status.HTTP_400_BAD_REQUEST,
             )
 
-        if task.media_type == MediaType.AUDIO:
+        if Task.objects.get(pk=task).media_type == MediaType.AUDIO:
             raise serializers.ValidationError("Auto-annotation is not available in audio tasks")
 
         gateway = LambdaGateway()
