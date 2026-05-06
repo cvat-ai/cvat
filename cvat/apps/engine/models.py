@@ -128,7 +128,6 @@ class StateChoice(str, Enum):
 class DataChoice(str, Enum):
     VIDEO = 'video'
     IMAGESET = 'imageset'
-    LIST = 'list'
 
     @classmethod
     def choices(cls):
@@ -504,7 +503,7 @@ class Data(models.Model):
         elif chunk_type == DataChoice.IMAGESET:
             ext = 'zip'
         else:
-            ext = 'list'
+            assert False, f"Unexpected chunk type '{chunk_type}'"
 
         return 'segment_{}-{}.{}'.format(segment_id, chunk_number, ext)
 
@@ -573,7 +572,7 @@ class Data(models.Model):
         return (
             self.storage == StorageChoice.LOCAL
             and self.storage_method == StorageMethodChoice.CACHE
-            and not hasattr(self, "video")
+            and self.images.exists()
         )
 
     def move_to_backing_cs(self, backing_cs: CloudStorage) -> None:
@@ -612,7 +611,6 @@ class Data(models.Model):
         transaction.on_commit(clear_original_files, robust=True)
 
     def move_from_backing_cs(self) -> None:
-        assert self.supports_backing_cs()
         assert self.local_storage_backing_cs_id
 
         cloud_storage_instance = self.get_cloud_storage_instance()
@@ -821,6 +819,12 @@ class TaskQuerySet(models.QuerySet):
             }
         )
 
+
+class TaskMode(TextChoices):
+    ANNOTATION = "annotation"
+    INTERPOLATION = "interpolation"
+
+
 class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
@@ -828,7 +832,7 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
     name = SafeCharField(max_length=256)
-    mode = models.CharField(max_length=32)
+    mode = models.CharField(max_length=32, choices=TaskMode.choices, default="", blank=True)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
 
@@ -1397,7 +1401,14 @@ class Annotation(models.Model):
     job = models.ForeignKey(Job, on_delete=models.DO_NOTHING)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
-    group = models.PositiveIntegerField(null=True)
+    group = models.PositiveIntegerField(
+        # null is not used for anything.
+        # TODO: disallow null on the DB level,
+        # when there are other changes to the annotation tables
+        # https://github.com/cvat-ai/cvat/pull/10522.
+        # - it results in a long migration, that's undesirable if done alone.
+        null=True
+    )
     source = models.CharField(max_length=16, choices=SourceType.choices(),
         default=str(SourceType.MANUAL), null=True)
 

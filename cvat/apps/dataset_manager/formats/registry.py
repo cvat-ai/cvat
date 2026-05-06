@@ -5,7 +5,7 @@ from datumaro.components.errors import AnnotationExportError
 from datumaro.components.project import Environment
 
 from cvat.apps.dataset_manager.bindings import CvatExportError
-from cvat.apps.engine.models import DimensionType
+from cvat.apps.engine.models import DimensionType, TaskMode
 
 dm_env = Environment()
 
@@ -71,7 +71,7 @@ EXPORT_FORMATS = {}
 def format_for(export_format, mode):
     format_name = export_format
     if export_format not in EXPORT_FORMATS:
-        if mode == "annotation":
+        if mode == TaskMode.ANNOTATION:
             format_name = "CVAT for images 1.1"
         else:
             format_name = "CVAT for video 1.1"

@@ -19,6 +19,7 @@ from urllib import request as urlrequest
 
 import attrs
 import av
+import requests
 import rq
 from django.conf import settings
 from django.db import transaction
@@ -48,7 +49,11 @@ from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
-from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
+from utils.dataset_manifest import (
+    ImageManifestManager,
+    VideoManifestManager,
+    is_manifest,
+)
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import find_related_images
 
@@ -158,7 +163,7 @@ def _generate_segment_params(
             (
                 db_task.overlap
                 if db_task.overlap is not None
-                else 5 if db_task.mode == "interpolation" else 0
+                else 5 if db_task.mode == models.TaskMode.INTERPOLATION else 0
             ),
             segment_size // 2,
         )
@@ -458,24 +463,43 @@ def _validate_scheme(url):
         )
 
 
+class _FailedToDownloadFileError(Exception):
+    pass
+
+
 def _download_data(
     urls: Iterable[str],
     upload_dir: str,
     *,
     update_status_callback: Callable[[str], None],
-):
+    timeout: tuple[int, int] | None = (10, 60),
+) -> list[str]:
     local_files = {}
 
     with make_requests_session() as session:
         for url in urls:
             name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
             if name in local_files:
-                raise Exception("filename collision: {}".format(name))
+                raise _FailedToDownloadFileError("filename collision: {}".format(name))
+
             _validate_scheme(url)
+
             slogger.glob.info("Downloading: {}".format(url))
+
             update_status_callback("{} is being downloaded..".format(url))
 
-            response = session.get(url, stream=True, proxies=PROXIES_FOR_UNTRUSTED_URLS)
+            try:
+                response = session.get(
+                    url,
+                    stream=True,
+                    proxies=PROXIES_FOR_UNTRUSTED_URLS,
+                    timeout=timeout,
+                )
+            except requests.exceptions.RequestException as e:
+                raise _FailedToDownloadFileError(
+                    f"Failed to download {url}: {e.__class__.__name__}: {e}"
+                ) from e
+
             if response.status_code == 200:
                 response.raw.decode_content = True
                 with open(os.path.join(upload_dir, name), "wb") as output_file:
@@ -490,7 +514,7 @@ def _download_data(
                 elif response.status_code:
                     error_message += f"; HTTP error {response.status_code}"
 
-                raise Exception(error_message)
+                raise _FailedToDownloadFileError(error_message)
 
             local_files[name] = True
 
@@ -574,11 +598,13 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
         content = list(map(_add_prefix, raw_content))
     else:
         sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+
     if not content:
         raise ValidationError(
             "There is no intersection of the files specified"
             "in the request with the contents of the bucket"
         )
+
     sorted_content = (i[1] for i in sorted(zip(sequence, content)))
     manifest.create(sorted_content)
 
@@ -679,10 +705,10 @@ def _allocate_honeypots(
             )
         )
     else:
-        if db_task.mode != "annotation":
+        if db_task.mode != models.TaskMode.ANNOTATION:
             raise ValidationError(
                 f"validation mode '{models.ValidationMode.GT_POOL}' can only be used "
-                "with 'annotation' mode tasks"
+                f"with '{models.TaskMode.ANNOTATION}' mode tasks"
             )
 
         # 1. select pool frames
@@ -1163,9 +1189,13 @@ def create_thread(
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data["remote_files"]:
-        data["remote_files"] = _download_data(
-            data["remote_files"], upload_dir, update_status_callback=update_status
-        )
+        try:
+            data["remote_files"] = _download_data(
+                data["remote_files"], upload_dir, update_status_callback=update_status
+            )
+        except _FailedToDownloadFileError as e:
+            slogger.glob.exception("Failed to download remote files")
+            raise ValidationError(str(e)) from e
 
     # find and validate manifest file
     manifest_files = _find_manifest_files(data)
@@ -1239,7 +1269,7 @@ def create_thread(
         else:
             manifest = ImageManifestManager(db_data.get_manifest_path())
 
-    if job_file_mapping is not None and task_mode != "annotation":
+    if job_file_mapping is not None and task_mode != models.TaskMode.ANNOTATION:
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if data["server_files"]:
@@ -1268,14 +1298,18 @@ def create_thread(
                 if not is_backup_restore:
                     # Define task manifest content based on cloud storage manifest content and uploaded files
                     _create_task_manifest_based_on_cloud_storage_manifest(
-                        sorted_media,
-                        cloud_storage_manifest_prefix,
-                        cloud_storage_manifest,
-                        manifest,
+                        sorted_media=sorted_media,
+                        cloud_storage_manifest_prefix=cloud_storage_manifest_prefix,
+                        cloud_storage_manifest=cloud_storage_manifest,
+                        manifest=manifest,
                     )
             else:  # without manifest file but with use_cache option
                 # Define task manifest content based on list with uploaded files
-                _create_task_manifest_from_cloud_data(db_data.cloud_storage, sorted_media, manifest)
+                _create_task_manifest_from_cloud_data(
+                    db_storage=db_data.cloud_storage,
+                    sorted_media=sorted_media,
+                    manifest=manifest,
+                )
 
     av_scan_paths(upload_dir)
 
@@ -1487,11 +1521,13 @@ def create_thread(
     db_task.mode = task_mode
     db_data.compressed_chunk_type = (
         models.DataChoice.VIDEO
-        if task_mode == "interpolation" and not data["use_zip_chunks"]
+        if task_mode == models.TaskMode.INTERPOLATION and not data["use_zip_chunks"]
         else models.DataChoice.IMAGESET
     )
     db_data.original_chunk_type = (
-        models.DataChoice.VIDEO if task_mode == "interpolation" else models.DataChoice.IMAGESET
+        models.DataChoice.VIDEO
+        if task_mode == models.TaskMode.INTERPOLATION
+        else models.DataChoice.IMAGESET
     )
 
     # calculate chunk size if it isn't specified
@@ -1657,7 +1693,7 @@ def create_thread(
                     )
                 )
 
-    if db_task.mode == "annotation":
+    if db_task.mode == models.TaskMode.ANNOTATION:
         job_file_mapping, images = _allocate_honeypots(
             db_task,
             validation_params,
@@ -1724,6 +1760,8 @@ def create_thread(
     # Prepare the preview image and save it in the cache
     if not (is_data_in_cloud and is_backup_restore):
         TaskFrameProvider(db_task=db_task).get_preview()
+
+    _move_to_backing_cs_if_configured(db_data)
 
 
 def _create_static_chunks(
@@ -1879,3 +1917,16 @@ def _create_static_chunks(
                     save_chunks(executor, db_segment, chunk_idx, chunk_frame_ids)
 
                 progress_updater.update_progress(segment_idx / len(db_segments))
+
+
+def _move_to_backing_cs_if_configured(db_data):
+    backing_cs_id = settings.DEFAULT_BACKING_CS_ID
+    if backing_cs_id is not None and db_data.supports_backing_cs():
+        try:
+            backing_cs = models.CloudStorage.objects.get(pk=backing_cs_id)
+        except models.CloudStorage.DoesNotExist:
+            slogger.glob.warning(
+                f"Cloud storage #{backing_cs_id} (configured as default backing CS) does not exist"
+            )
+        else:
+            db_data.move_to_backing_cs(backing_cs)

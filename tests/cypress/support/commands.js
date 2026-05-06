@@ -7,8 +7,9 @@
 
 /* eslint-disable security/detect-non-literal-regexp */
 
+import { keyCodeN } from './const';
 import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
-import { checkAutoborderPointsCount } from './utils.cy';
+import { checkAutoborderPointsCount, drawWithTriggers, drawWithClicks } from './utils.cy';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -602,13 +603,10 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
         }
         cy.contains('button', createPointParams.type).click();
     });
-    createPointParams.pointsMap.forEach((element) => {
-        cy.get('.cvat-canvas-container').click(element.x, element.y);
-    });
+    drawWithClicks(createPointParams.pointsMap);
     if (createPointParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else if (!createPointParams.numberOfPoints) {
-        const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
             .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
         cy.get('.cvat-canvas-container')
@@ -676,7 +674,7 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
         .trigger('keyup', { keyCode: keyCodeG, code: 'KeyG' });
 });
 
-Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = null) => {
+Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = null, drawMethod = 'click') => {
     if (!createPolygonParams.reDraw) {
         cy.interactControlButton('draw-polygon');
         cy.switchLabel(createPolygonParams.labelName, 'draw-polygon');
@@ -694,13 +692,13 @@ Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = n
     if (autoborderParams && Number.isInteger(autoborderParams.numberOfAutoborderPoints)) {
         checkAutoborderPointsCount(autoborderParams.numberOfAutoborderPoints);
     }
-    createPolygonParams.pointsMap.forEach((element) => {
-        cy.get('.cvat-canvas-container').click(element.x, element.y);
-    });
+    if (drawMethod === 'trigger') {
+        drawWithTriggers(createPolygonParams.pointsMap);
+    } else if (drawMethod === 'click') { drawWithClicks(createPolygonParams.pointsMap); }
+
     if (createPolygonParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else if (!createPolygonParams.numberOfPoints) {
-        const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
             .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
         cy.get('.cvat-canvas-container')
@@ -867,13 +865,10 @@ Cypress.Commands.add('createPolyline', (createPolylineParams, autoborderParams =
     if (autoborderParams && autoborderParams.numberOfAutoborderPoints) {
         checkAutoborderPointsCount(autoborderParams.numberOfAutoborderPoints);
     }
-    createPolylineParams.pointsMap.forEach((element) => {
-        cy.get('.cvat-canvas-container').click(element.x, element.y);
-    });
+    drawWithClicks(createPolylineParams.pointsMap);
     if (createPolylineParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else if (!createPolylineParams.numberOfPoints) {
-        const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
             .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
         cy.get('.cvat-canvas-container')

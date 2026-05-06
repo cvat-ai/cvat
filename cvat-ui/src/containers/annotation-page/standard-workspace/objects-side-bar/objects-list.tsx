@@ -16,6 +16,7 @@ import {
     changeGroupColorAsync,
     copyShape as copyShapeAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
+    switchSimplifyVisibility as switchSimplifyVisibilityAction,
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
     changeHideActiveObjectAsync,
@@ -65,6 +66,7 @@ interface DispatchToProps {
     removeObject: (objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
     switchPropagateVisibility: (visible: boolean) => void;
+    switchSimplifyVisibility: (clientID: number | null) => void;
     changeFrame(frame: number): void;
     changeGroupColor(group: number, color: string): void;
     changeShowGroundTruth(value: boolean): void;
@@ -186,6 +188,12 @@ const componentShortcuts = {
         sequences: ['enter'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    SIMPLIFY_POLYGON: {
+        name: 'Simplify polygon',
+        description: 'Activate simplification mode for the selected polygon or polyline',
+        sequences: [],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -279,6 +287,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         switchPropagateVisibility(visible: boolean): void {
             dispatch(switchPropagateVisibilityAction(visible));
+        },
+        switchSimplifyVisibility(clientID: number | null): void {
+            dispatch(switchSimplifyVisibilityAction(clientID));
         },
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
@@ -462,6 +473,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             removeObject,
             copyShape,
             switchPropagateVisibility,
+            switchSimplifyVisibility,
             changeFrame,
             workspace,
         } = this.props;
@@ -654,6 +666,13 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     if (frame !== null && isAbleToChangeFrame(frame)) {
                         changeFrame(frame);
                     }
+                }
+            },
+            SIMPLIFY_POLYGON: (event?: KeyboardEvent) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
+                    switchSimplifyVisibility(state.clientID);
                 }
             },
         };

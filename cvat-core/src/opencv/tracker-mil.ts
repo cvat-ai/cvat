@@ -3,12 +3,22 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { clamp } from 'utils/math';
-import { TrackerModel, TrackingResult } from './opencv-interfaces';
+import { clamp } from './math-utils';
 
-export type TrackerMIL = TrackerModel;
+interface TrackingResult {
+    updated: boolean;
+    points: number[];
+}
 
-export default class TrackerMILImplementation implements TrackerMIL {
+export interface TrackerMILInterface {
+    name: string;
+    init: (src: ImageData, points: number[]) => void;
+    reinit: (points: number[]) => void;
+    update: (src: ImageData) => TrackingResult;
+    delete: () => void;
+}
+
+export default class TrackerMILImplementation implements TrackerMILInterface {
     public name: string;
     private imageData: ImageData | null;
     private cv: any;
