@@ -49,6 +49,7 @@ interface Params {
     regionsPluginRef: React.MutableRefObject<RegionsPlugin | null>;
     wavesurfer: WaveSurfer | null;
     lastWsTimeRef: React.MutableRefObject<number>;
+    phantomRegionIdsRef: React.MutableRefObject<Set<string>>;
     activeControl: ActiveControl;
     regions: AudioRegion[];
     visibleRegionIds: Set<string>;
@@ -79,7 +80,7 @@ interface Result {
 
 export function useAudioRegions(params: Params): Result {
     const {
-        regionsPluginRef, wavesurfer, lastWsTimeRef,
+        regionsPluginRef, wavesurfer, lastWsTimeRef, phantomRegionIdsRef,
         activeControl, regions, visibleRegionIds, activeRegionId, hoveredRegionId,
         labels, activeLabelId, colorBy, opacity, selectedOpacity, loop,
         onSwitchPlay, onSetCurrentTime, onSetDuration,
@@ -173,6 +174,11 @@ export function useAudioRegions(params: Params): Result {
         if (regionsHandlersInitializedRef.current) return;
 
         plugin.on('region-created', (region: Region) => {
+            if (phantomRegionIdsRef.current.has(region.id)) {
+                // Live-recording phantom: do not dispatch into Redux. The
+                // recording hook owns it until finalize.
+                return;
+            }
             wireRegionHoverEvents(region);
             clampRegionDragToBounds(region);
             const prev = regionsRef.current;
@@ -337,6 +343,7 @@ export function useAudioRegions(params: Params): Result {
         const reduxById = new Map(regions.map((r) => [r.id, r]));
 
         wsRegions.forEach((wsRegion: Region) => {
+            if (phantomRegionIdsRef.current.has(wsRegion.id)) return;
             const reduxRegion = reduxById.get(wsRegion.id);
             if (reduxRegion?.hidden || (reduxRegion && !visibleRegionIds.has(reduxRegion.id))) {
                 silentRemoveIdsRef.current.add(wsRegion.id);
@@ -412,6 +419,7 @@ export function useAudioRegions(params: Params): Result {
             regions.filter((r) => !r.hidden && visibleRegionIds.has(r.id)).map((r) => r.id),
         );
         wsRegions.forEach((wsRegion: Region) => {
+            if (phantomRegionIdsRef.current.has(wsRegion.id)) return;
             if (!reduxIds.has(wsRegion.id)) {
                 silentRemoveIdsRef.current.add(wsRegion.id);
                 wsRegion.remove();

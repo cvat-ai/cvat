@@ -14,6 +14,7 @@ export interface AudioSliderControlProps {
     step: number;
     formatValue(v: number): string;
     className: string;
+    valueBadge?: React.ReactNode;
     onChange(value: number): void;
 }
 
@@ -27,6 +28,7 @@ function AudioSliderControl(props: AudioSliderControlProps): JSX.Element {
         step,
         formatValue,
         className,
+        valueBadge,
         onChange,
     } = props;
 
@@ -60,6 +62,9 @@ function AudioSliderControl(props: AudioSliderControlProps): JSX.Element {
             >
                 <span className={className}>
                     {icon}
+                    {valueBadge !== undefined && (
+                        <span className='cvat-audio-slider-value-badge'>{valueBadge}</span>
+                    )}
                 </span>
             </Popover>
         </CVATTooltip>

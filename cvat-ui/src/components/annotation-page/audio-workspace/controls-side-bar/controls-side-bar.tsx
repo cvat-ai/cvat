@@ -7,6 +7,7 @@ import ControlVisibilityObserver, { ExtraControlsControl } from 'components/anno
 
 import AudioCursorControl, { Props as CursorControlProps } from './cursor-control';
 import CreateRegionControl, { Props as CreateRegionControlProps } from './create-region-control';
+import RecordRegionControl, { Props as RecordRegionControlProps } from './record-region-control';
 import EditRegionControl, { Props as EditRegionControlProps } from './edit-region-control';
 import LoopControl, { Props as LoopControlProps } from './loop-control';
 import ZoomControl, { Props as ZoomControlProps } from './zoom-control';
@@ -15,6 +16,7 @@ import VolumeControl, { Props as VolumeControlProps } from './volume-control';
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(AudioCursorControl, 'audioCursorControl');
 const ObservedCreateRegionControl = ControlVisibilityObserver<CreateRegionControlProps>(CreateRegionControl, 'audioCreateRegionControl');
+const ObservedRecordRegionControl = ControlVisibilityObserver<RecordRegionControlProps>(RecordRegionControl, 'audioRecordRegionControl');
 const ObservedEditRegionControl = ControlVisibilityObserver<EditRegionControlProps>(EditRegionControl, 'audioEditRegionControl');
 const ObservedLoopControl = ControlVisibilityObserver<LoopControlProps>(LoopControl, 'audioLoopControl');
 const ObservedZoomControl = ControlVisibilityObserver<ZoomControlProps>(ZoomControl, 'audioZoomControl');
@@ -68,6 +70,14 @@ export default function AudioControlsSideBarComponent(props: Props): JSX.Element
             <ObservedCreateRegionControl
                 activeControl={activeControl}
                 createRegionShortkey={normalizedKeyMap.CREATE_AUDIO_REGION}
+                labels={labels}
+                activeLabelId={activeLabelId}
+                updateActiveControl={updateActiveControl}
+                onSetActiveLabel={onSetActiveLabel}
+            />
+            <ObservedRecordRegionControl
+                activeControl={activeControl}
+                recordRegionShortkey={normalizedKeyMap.RECORD_AUDIO_REGION}
                 labels={labels}
                 activeLabelId={activeLabelId}
                 updateActiveControl={updateActiveControl}

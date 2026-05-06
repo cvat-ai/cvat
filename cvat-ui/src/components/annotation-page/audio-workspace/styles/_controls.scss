@@ -40,7 +40,8 @@
         }
     }
 
-    .cvat-audio-create-region-control--disabled {
+    .cvat-audio-create-region-control--disabled,
+    .cvat-audio-record-region-control--disabled {
         color: #d9d9d9;
         cursor: not-allowed;
 
@@ -56,5 +57,35 @@
         width: 44px;
         height: 36px;
         cursor: pointer;
+    }
+
+    span.cvat-audio-zoom-control,
+    span.cvat-audio-speed-control,
+    span.cvat-audio-volume-control {
+        &:has(.cvat-audio-slider-value-badge) {
+            flex-direction: column;
+            height: auto;
+            gap: 4px;
+            padding: 6px 0;
+        }
+
+        .cvat-audio-slider-value-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            padding: 1px 6px;
+            font-size: 11px;
+            line-height: 1;
+            color: #595959;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        &:hover .cvat-audio-slider-value-badge {
+            color: #262626;
+            border-color: #bfbfbf;
+        }
     }
 }

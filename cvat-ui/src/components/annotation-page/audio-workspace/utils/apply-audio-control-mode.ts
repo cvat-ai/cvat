@@ -14,6 +14,7 @@ export function applyAudioControlMode(
 
     const isCreate = control === ActiveControl.AUDIO_REGION_CREATE;
     const isEdit = control === ActiveControl.AUDIO_REGION_EDIT;
+    const isRecord = control === ActiveControl.AUDIO_REGION_RECORD;
 
     if (isCreate && !dragSelectionCleanupRef.current) {
         dragSelectionCleanupRef.current = plugin.enableDragSelection({});
@@ -28,7 +29,7 @@ export function applyAudioControlMode(
         const canDrag = isEdit && !isLocked;
         region.setOptions({ drag: canDrag, resize: canDrag });
         if (region.element) {
-            region.element.style.pointerEvents = isCreate ? 'none' : 'all';
+            region.element.style.pointerEvents = isCreate || isRecord ? 'none' : 'all';
         }
     });
 }

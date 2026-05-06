@@ -15,13 +15,14 @@ function SpeedControl(props: Props): JSX.Element {
     return (
         <AudioSliderControl
             icon={<Icon component={AudioSpeedIcon} />}
-            tooltip={`Speed: ${playbackRate.toFixed(2)}x`}
+            tooltip='Speed'
             value={playbackRate}
             min={0.1}
             max={4}
             step={0.1}
             formatValue={(v) => `${v.toFixed(1)}x`}
             className='cvat-audio-speed-control'
+            valueBadge={`${playbackRate.toFixed(1)}x`}
             onChange={onPlaybackRateChange}
         />
     );

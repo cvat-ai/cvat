@@ -12,6 +12,7 @@ import AudioCanvasSkeleton from './skeleton/audio-canvas-skeleton';
 import { useAudioWaveform } from './hooks/use-audio-waveform';
 import { useAudioPlaybackSync } from './hooks/use-audio-playback-sync';
 import { useAudioRegions } from './hooks/use-audio-regions';
+import { useAudioRecording } from './hooks/use-audio-recording';
 import { ZOOM_MIN, computeMaxZoom } from './utils/zoom-bounds';
 
 export interface AudioCanvasWrapperProps {
@@ -67,6 +68,7 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
     const zoomRef = useRef(zoom);
     const maxZoom = computeMaxZoom(duration);
     const maxZoomRef = useRef(maxZoom);
+    const phantomRegionIdsRef = useRef<Set<string>>(new Set());
 
     useEffect(() => { zoomRef.current = zoom; }, [zoom]);
     useEffect(() => { maxZoomRef.current = maxZoom; }, [maxZoom]);
@@ -109,6 +111,7 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
         regionsPluginRef,
         wavesurfer,
         lastWsTimeRef,
+        phantomRegionIdsRef,
         activeControl,
         regions,
         visibleRegionIds,
@@ -129,6 +132,23 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
         onUpdateActiveControl,
         onWaveformReady,
         onWavesurferReady: setWavesurfer,
+    });
+
+    useAudioRecording({
+        regionsPluginRef,
+        wavesurfer,
+        activeControl,
+        isPlaying,
+        regions,
+        labels,
+        activeLabelId,
+        colorBy,
+        opacity,
+        selectedOpacity,
+        phantomRegionIdsRef,
+        onSetRegions,
+        onSetActiveRegion,
+        onUpdateActiveControl,
     });
 
     useEffect(() => {

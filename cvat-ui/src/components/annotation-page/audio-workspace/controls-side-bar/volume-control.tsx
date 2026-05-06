@@ -15,13 +15,14 @@ function VolumeControl(props: Props): JSX.Element {
     return (
         <AudioSliderControl
             icon={<Icon component={AudioVolumeIcon} />}
-            tooltip={`Volume: ${Math.round(volume * 100)}%`}
+            tooltip='Volume'
             value={volume}
             min={0}
             max={1}
             step={0.01}
             formatValue={(v) => `${Math.round(v * 100)}%`}
             className='cvat-audio-volume-control'
+            valueBadge={`${Math.round(volume * 100)}%`}
             onChange={onVolumeChange}
         />
     );
