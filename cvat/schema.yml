@@ -2172,6 +2172,7 @@ paths:
           enum:
           - image
           - point_cloud
+          - audio
       - name: mode
         in: query
         description: A simple equality filter for the mode field
@@ -5197,6 +5198,7 @@ paths:
           enum:
           - image
           - point_cloud
+          - audio
       - name: mode
         in: query
         description: A simple equality filter for the mode field

@@ -1213,7 +1213,7 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
     db_data = db_task.require_data()
 
     match (db_task.media_type, db_task.mode):
-        case (models.MediaType.AUDIO, models.TaskMode.ANNOTATION):
+        case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
             # Not supported yet
             db_data.compressed_chunk_type = ""
             db_data.original_chunk_type = ""
