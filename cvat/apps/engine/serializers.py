@@ -3296,9 +3296,17 @@ class AttributeValSerializer(serializers.Serializer):
         data['value'] = str(data['value'])
         return super().to_internal_value(data)
 
+class AttributedAnnotationSerializer(serializers.Serializer):
+    attributes = AttributeValSerializer(many=True, default=[])
+
+class ScoredAnnotationSerializer(serializers.Serializer):
+    score = serializers.FloatField(min_value=0, max_value=1, default=1)
+
+class FrameAnnotationSerializer(serializers.Serializer):
+    frame = serializers.IntegerField(min_value=0)
+
 class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
-    frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(
         min_value=0, default=0,
@@ -3343,8 +3351,10 @@ class AnnotationSerializer(serializers.Serializer):
 
         return None
 
-class LabeledImageSerializer(AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True, default=[])
+class LabeledImageSerializer(
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
+):
+    pass
 
 class OptimizedFloatListField(serializers.ListField):
     '''Default ListField is extremely slow when try to process long lists of points'''
@@ -3409,9 +3419,11 @@ class ShapeSerializer(serializers.Serializer):
 
         return attrs
 
-class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True, default=[])
-    score = serializers.FloatField(min_value=0, max_value=1, default=1)
+class SubLabeledShapeSerializer(
+    ShapeSerializer, AnnotationSerializer, FrameAnnotationSerializer,
+    AttributedAnnotationSerializer, ScoredAnnotationSerializer,
+):
+    pass
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -3496,14 +3508,14 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
 
         return convert_track(instance)
 
-class TrackedShapeSerializer(ShapeSerializer):
+class TrackedShapeSerializer(ShapeSerializer, AttributedAnnotationSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True, default=[])
 
-class SubLabeledTrackSerializer(AnnotationSerializer):
+class SubLabeledTrackSerializer(
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
+):
     shapes = TrackedShapeSerializer(many=True, allow_empty=True)
-    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)
