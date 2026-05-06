@@ -348,11 +348,11 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         group["frame_results"] = _stringify_frame_results(group["frame_results"])
 
     if task_stats := serialized_data["comparison_summary"].get("tasks", {}):
-        for k in ("all", "custom", "not_configured", "excluded"):
+        for k in ("all", "custom", "not_configured", "excluded", "completed"):
             task_stats[k] = sorted(task_stats[k])
 
     if job_stats := serialized_data["comparison_summary"].get("jobs", {}):
-        for k in ("all", "excluded", "not_checkable"):
+        for k in ("all", "excluded", "not_checkable", "completed"):
             job_stats[k] = sorted(job_stats[k])
 
     # Add the percent representation for better human readability

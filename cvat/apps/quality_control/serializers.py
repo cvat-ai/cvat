@@ -58,6 +58,9 @@ class QualityReportTasksSummarySerializer(serializers.Serializer):
         source="included_count",
         help_text="Included task count = total - custom - non_configured - excluded",
     )
+    completed = serializers.IntegerField(
+        source="completed_count", help_text="Tasks with all enabled requirements met"
+    )
 
 
 class QualityReportJobsSummarySerializer(serializers.Serializer):
@@ -72,6 +75,9 @@ class QualityReportJobsSummarySerializer(serializers.Serializer):
     )
     included = serializers.IntegerField(
         source="included_count", help_text="Included job count = total - excluded"
+    )
+    completed = serializers.IntegerField(
+        source="completed_count", help_text="Jobs with all enabled requirements met"
     )
 
 

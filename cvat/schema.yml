@@ -10692,7 +10692,11 @@ components:
         included:
           type: integer
           description: Included job count = total - excluded
+        completed:
+          type: integer
+          description: Jobs with all enabled requirements met
       required:
+      - completed
       - excluded
       - included
       - not_checkable
@@ -10831,7 +10835,11 @@ components:
         included:
           type: integer
           description: Included task count = total - custom - non_configured - excluded
+        completed:
+          type: integer
+          description: Tasks with all enabled requirements met
       required:
+      - completed
       - custom
       - excluded
       - included

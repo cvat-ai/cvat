@@ -9,6 +9,7 @@ from typing import Any
 from zipfile import ZipFile
 
 import pytest
+from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
 from rest_api.utils import create_task
@@ -92,6 +93,14 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
 
     def _get_task_settings(self, user: str, *, task_id: int, **kwargs) -> dict[str, Any]:
         response = get_method(user, self._settings_endpoint, task_id=task_id, **kwargs)
+        assert response.status_code == HTTPStatus.OK
+
+        results = response.json()["results"]
+        assert len(results) == 1
+        return results[0]
+
+    def _get_project_settings(self, user: str, *, project_id: int, **kwargs) -> dict[str, Any]:
+        response = get_method(user, self._settings_endpoint, project_id=project_id, **kwargs)
         assert response.status_code == HTTPStatus.OK
 
         results = response.json()["results"]
@@ -1293,6 +1302,121 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert disabled_group["comparison_summary"]["annotations"]["accuracy"] == 1.0
         assert disabled_group["comparison_summary"]["annotations"]["total_count"] == 1
         assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
+
+    def test_project_report_summary_counts_completed_jobs_and_tasks(self, admin_user):
+        with make_api_client(admin_user) as api_client:
+            project, response = api_client.projects_api.create(
+                {
+                    "name": "completed-requirements-summary",
+                    "labels": [{"name": "car", "type": "rectangle"}],
+                }
+            )
+            assert response.status == HTTPStatus.CREATED
+
+        project_settings = self._get_project_settings(admin_user, project_id=project.id)
+        requirement_name = f"completed-summary-{project.id}"
+        _, response = self._patch_settings(
+            admin_user,
+            project_settings["id"],
+            {
+                "requirements": [
+                    self._build_requirement_payload(
+                        requirement_name,
+                        enabled=True,
+                        required_score=1.0,
+                    )
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        passed_task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "completed-requirements-passed",
+                "project_id": project.id,
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        failed_task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "completed-requirements-failed",
+                "project_id": project.id,
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+
+        passed_gt_job = self.create_gt_job(admin_user, passed_task_id, complete=False)
+        failed_gt_job = self.create_gt_job(admin_user, failed_task_id, complete=False)
+        passed_car_label = self._get_task_labels_by_name(admin_user, task_id=passed_task_id)["car"]
+        failed_car_label = self._get_task_labels_by_name(admin_user, task_id=failed_task_id)["car"]
+
+        with make_api_client(admin_user) as api_client:
+            passed_shape = self._build_rectangle_shape(
+                frame=0,
+                label_id=passed_car_label.id,
+                points=[0, 0, 10, 10],
+            )
+            api_client.jobs_api.update_annotations(
+                passed_gt_job.id,
+                labeled_data_request={"shapes": [passed_shape]},
+            )
+            api_client.tasks_api.update_annotations(
+                passed_task_id,
+                labeled_data_request={"shapes": [passed_shape]},
+            )
+
+            failed_gt_shape = self._build_rectangle_shape(
+                frame=0,
+                label_id=failed_car_label.id,
+                points=[0, 0, 10, 10],
+            )
+            api_client.jobs_api.update_annotations(
+                failed_gt_job.id,
+                labeled_data_request={"shapes": [failed_gt_shape]},
+            )
+
+        self._complete_job(admin_user, passed_gt_job.id)
+        self._complete_job(admin_user, failed_gt_job.id)
+
+        project_report = self.create_quality_report(user=admin_user, project_id=project.id)
+
+        assert project_report["summary"]["tasks"] == {
+            "total": 2,
+            "custom": 0,
+            "not_configured": 0,
+            "excluded": 0,
+            "included": 2,
+            "completed": 1,
+        }
+        assert project_report["summary"]["jobs"] == {
+            "total": 2,
+            "excluded": 0,
+            "not_checkable": 0,
+            "included": 2,
+            "completed": 1,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            task_reports = get_paginated_collection(
+                api_client.quality_api.list_reports_endpoint,
+                parent_id=project_report["id"],
+                target="task",
+                return_json=True,
+            )
+
+        task_reports_by_task_id = {report["task_id"]: report for report in task_reports}
+        assert task_reports_by_task_id[passed_task_id]["summary"]["jobs"]["completed"] == 1
+        assert task_reports_by_task_id[passed_task_id]["summary"]["requirements"]["completed"] == 1
+        assert task_reports_by_task_id[failed_task_id]["summary"]["jobs"]["completed"] == 0
+        assert task_reports_by_task_id[failed_task_id]["summary"]["requirements"]["completed"] == 0
 
     def test_task_report_confusion_endpoint_returns_zip_archive(
         self, admin_user, find_sandbox_task_without_gt

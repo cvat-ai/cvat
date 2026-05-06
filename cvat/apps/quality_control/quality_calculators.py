@@ -51,6 +51,16 @@ from cvat.apps.quality_control.quality_reports import JobDataProvider, QualitySe
 _DEFAULT_FETCH_CHUNK_SIZE = 1000
 
 
+def _all_enabled_requirements_completed(summary: ComparisonReportSummary) -> bool:
+    requirements = summary.requirements
+    return bool(
+        summary.frame_count
+        and requirements
+        and requirements.enabled
+        and requirements.completed == requirements.enabled
+    )
+
+
 class TaskQualityCalculator:
     # JSON filter lookups
     JOB_FILTER_LOOKUPS = {
@@ -225,6 +235,11 @@ class TaskQualityCalculator:
         job_stats.excluded.update(all_job_ids - job_reports.keys())
         job_stats.not_checkable.update(
             jid for jid, r in job_reports.items() if not r.comparison_summary.frame_count
+        )
+        job_stats.completed.update(
+            jid
+            for jid, r in job_reports.items()
+            if _all_enabled_requirements_completed(r.comparison_summary)
         )
 
         # The task dataset can be different from any jobs' dataset because of frame overlaps
@@ -587,6 +602,11 @@ class ProjectQualityCalculator:
             - task_stats.not_configured
             - task_stats.excluded
         )
+        task_stats.completed.update(
+            task_id
+            for task_id in included_tasks
+            if _all_enabled_requirements_completed(task_reports[task_id].comparison_summary)
+        )
 
         # Accumulate job stats
         job_stats = ComparisonReportJobStats.create_empty()
@@ -598,6 +618,7 @@ class ProjectQualityCalculator:
             job_stats.all.update(task_report_summary.jobs.all)
             job_stats.excluded.update(task_report_summary.jobs.excluded)
             job_stats.not_checkable.update(task_report_summary.jobs.not_checkable)
+            job_stats.completed.update(task_report_summary.jobs.completed)
 
         total_frames = 0
         total_validated_frames = 0

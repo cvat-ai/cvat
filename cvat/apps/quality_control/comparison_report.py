@@ -660,6 +660,7 @@ class ComparisonReportTaskStats(ReportNode):
     custom: set[int]
     not_configured: set[int]
     excluded: set[int]
+    completed: set[int]
 
     @property
     def total_count(self) -> int:
@@ -683,6 +684,10 @@ class ComparisonReportTaskStats(ReportNode):
             self.total_count - self.custom_count - self.not_configured_count - self.excluded_count
         )
 
+    @property
+    def completed_count(self) -> int:
+        return len(self.completed)
+
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportTaskStats:
         return cls(
@@ -690,11 +695,12 @@ class ComparisonReportTaskStats(ReportNode):
             custom=d.get("custom", set()),
             not_configured=d.get("not_configured", set()),
             excluded=d.get("excluded", set()),
+            completed=d.get("completed", set()),
         )
 
     @classmethod
     def create_empty(cls) -> ComparisonReportTaskStats:
-        return cls(all=set(), custom=set(), not_configured=set(), excluded=set())
+        return cls(all=set(), custom=set(), not_configured=set(), excluded=set(), completed=set())
 
 
 @define(kw_only=True, init=False, slots=False)
@@ -702,6 +708,7 @@ class ComparisonReportJobStats(ReportNode):
     all: set[int]
     excluded: set[int]
     not_checkable: set[int]
+    completed: set[int]
 
     @property
     def total_count(self) -> int:
@@ -720,17 +727,22 @@ class ComparisonReportJobStats(ReportNode):
         # not_checkable are included
         return self.total_count - self.excluded_count
 
+    @property
+    def completed_count(self) -> int:
+        return len(self.completed)
+
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportJobStats:
         return cls(
             all=d.get("all", set()),
             excluded=d.get("excluded", set()),
             not_checkable=d.get("not_checkable", set()),
+            completed=d.get("completed", set()),
         )
 
     @classmethod
     def create_empty(cls) -> ComparisonReportJobStats:
-        return cls(all=set(), excluded=set(), not_checkable=set())
+        return cls(all=set(), excluded=set(), not_checkable=set(), completed=set())
 
 
 @define(kw_only=True, init=False, slots=False)
