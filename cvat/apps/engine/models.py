@@ -822,7 +822,10 @@ class TaskQuerySet(models.QuerySet):
 
 class TaskMode(TextChoices):
     ANNOTATION = "annotation"
+    "task is a set of independent MediaType elements"
+
     INTERPOLATION = "interpolation"
+    "task is an ordered sequence of MediaType elements"
 
 
 class MediaType(TextChoices):
