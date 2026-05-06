@@ -172,7 +172,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                         checked={simplifyPoly}
                                         disabled={simplifyDisabled}
                                         onChange={onChangeSimplifyPoly}
-                                        className='cvat-draw-shape-popover-simplify-checkbox'
+                                        className={`cvat-draw-${shapeType}-popover-simplify-switch`}
                                     />
                                 </Col>
                             </Row>
