@@ -2160,7 +2160,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['task_name', 'project_name', 'assignee', 'id', 'task_id', 'project_id', 'updated_date', 'type', 'parent_job_id', 'dimension', 'media_type', 'mode', 'state', 'stage'].
+           Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'parent_job_id', 'project_id', 'project_name', 'stage', 'state', 'task_id', 'task_name', 'type', 'updated_date'].
         schema:
           type: string
       - name: media_type
@@ -2219,17 +2219,17 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''task_name'', ''project_name'',
-          ''assignee'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''project_name'',
+          ''task_name'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''task_name'', ''project_name'', ''assignee'', ''id'', ''task_id'', ''project_id'',
-          ''updated_date'', ''type'', ''parent_job_id'', ''dimension'', ''media_type'',
-          ''mode'', ''state'', ''stage'']'
+          [''assignee'', ''dimension'', ''id'', ''media_type'', ''mode'', ''parent_job_id'',
+          ''project_id'', ''project_name'', ''stage'', ''state'', ''task_id'', ''task_name'',
+          ''type'', ''updated_date'']'
         schema:
           type: string
       - name: stage
@@ -3752,7 +3752,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date'].
+           Available filter_fields: ['assignee', 'id', 'name', 'owner', 'status', 'updated_date'].
         schema:
           type: string
       - name: name
@@ -3790,15 +3790,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'',
-          ''assignee'', ''status'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''name'',
+          ''owner'', ''status'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''assignee'', ''status'', ''id'', ''updated_date'']'
+          [''assignee'', ''id'', ''name'', ''owner'', ''status'', ''updated_date'']'
         schema:
           type: string
       - name: status
@@ -5177,7 +5177,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'assignee', 'subset', 'tracker_link', 'id', 'project_id', 'updated_date', 'status', 'media_type', 'mode', 'dimension', 'validation_mode'].
+           Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'name', 'owner', 'project_id', 'project_name', 'status', 'subset', 'tracker_link', 'updated_date', 'validation_mode'].
 
           There are few examples for complex filtering tasks:
 
@@ -5248,17 +5248,17 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''project_name'', ''name'',
-          ''owner'', ''assignee'', ''subset'', ''tracker_link'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''name'',
+          ''owner'', ''project_name'', ''subset'', ''tracker_link'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''project_name'', ''name'', ''owner'', ''assignee'', ''subset'', ''tracker_link'',
-          ''id'', ''project_id'', ''updated_date'', ''status'', ''media_type'', ''mode'',
-          ''dimension'', ''validation_mode'']'
+          [''assignee'', ''dimension'', ''id'', ''media_type'', ''mode'', ''name'',
+          ''owner'', ''project_id'', ''project_name'', ''status'', ''subset'', ''tracker_link'',
+          ''updated_date'', ''validation_mode'']'
         schema:
           type: string
       - name: status

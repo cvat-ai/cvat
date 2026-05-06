@@ -323,9 +323,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'annotation_guide', 'source_storage', 'target_storage',
     )
 
-    search_fields = ('name', 'owner', 'assignee', 'status')
-    filter_fields = list(search_fields) + ['id', 'updated_date']
-    simple_filters = list(search_fields)
+    search_fields = sorted(('name', 'owner', 'assignee', 'status'))
+    simple_filters = sorted(search_fields)
+    filter_fields = sorted(set(search_fields) | {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
@@ -857,21 +857,19 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'tracker_link': 'bug_tracker',
         'validation_mode': 'data__validation_layout__mode',
     }
-    search_fields = (
-        'project_name', 'name', 'owner', 'assignee',
-        'subset', 'tracker_link',
-    )
-    filter_fields = list(search_fields) + [
-        'id', 'project_id', 'updated_date', 'status',
-        'media_type', 'mode', 'dimension', 'validation_mode'
-    ]
+    search_fields = sorted((
+        'project_name', 'name', 'owner', 'assignee', 'subset', 'tracker_link',
+    ))
+    simple_filters = sorted(set(search_fields) | {
+        'project_id', 'status', 'media_type', 'mode', 'dimension', 'validation_mode'
+    })
+    filter_fields = sorted(set(simple_filters) | {'id', 'updated_date'})
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
             - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}\n
             - Get all completed tasks from 1 project - { "and": [{ "==": [{ "var" : "status" }, "completed"]}, { "==" : [{ "var" : "project_id"}, 1]}]}\n
     """)
-    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_supports_organization_params = True
@@ -1673,12 +1671,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
-    search_fields = ('task_name', 'project_name', 'assignee')
-    filter_fields = list(search_fields) + [
-        'id', 'task_id', 'project_id', 'updated_date', 'type', 'parent_job_id',
+    search_fields = sorted(('task_name', 'project_name', 'assignee'))
+    simple_filters = sorted(set(search_fields) | {
+        'task_id', 'project_id', 'type', 'parent_job_id',
         'dimension', 'media_type', "mode", 'state', 'stage',
-    ]
-    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
+    })
+    filter_fields = sorted(set(simple_filters) | {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
