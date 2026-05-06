@@ -1054,7 +1054,7 @@ class IChunkWriter(ABC):
     CHUNK_MIME_TYPE: ClassVar[str]
 
     def __init__(self, *, quality: int, dimension: DimensionType) -> None:
-        self._image_quality = quality
+        self._quality = quality
         self._dimension = dimension
 
     @abstractmethod
@@ -1206,7 +1206,7 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
                         try:
-                            image_buf = self._compress_image(image, self._image_quality)
+                            image_buf = self._compress_image(image, self._quality)
                         except Exception as ex:
                             if path is None:
                                 raise
@@ -1247,15 +1247,15 @@ class Mpeg4ChunkWriter(IChunkWriter):
             self._codec_name = codec.name
             self._codec_opts = {
                 "profile": "constrained_baseline",
-                "qmin": str(self._image_quality),
-                "qmax": str(self._image_quality),
+                "qmin": str(self._quality),
+                "qmax": str(self._quality),
                 "rc_mode": "buffer",
             }
         except av.codec.codec.UnknownCodecError:
             codec = av.codec.Codec("libx264", "w")
             self._codec_name = codec.name
             self._codec_opts = {
-                "crf": str(self._image_quality),
+                "crf": str(self._quality),
                 "preset": "ultrafast",
             }
 
@@ -1349,7 +1349,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
             self._codec_opts = {
                 "profile": "baseline",
                 "coder": "0",
-                "crf": str(self._image_quality),
+                "crf": str(self._quality),
                 "wpredp": "0",
                 "flags": "-loop",
             }

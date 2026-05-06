@@ -731,15 +731,14 @@ def prepare_image_chunk(
     writer_class = writer_classes[quality]
 
     image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
-
-    merged_chunk_writer = writer_class(quality=image_quality, dimension=db_task.dimension)
+    writer = writer_class(quality=image_quality, dimension=db_task.dimension)
 
     writer_kwargs = {}
-    if dump_unchanged and isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
+    if dump_unchanged and isinstance(writer, ZipCompressedChunkWriter):
         writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
 
     buffer = BytesIO()
-    merged_chunk_writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
+    writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
 
     buffer.seek(0)
-    return buffer, merged_chunk_writer.CHUNK_MIME_TYPE
+    return buffer, writer.CHUNK_MIME_TYPE
