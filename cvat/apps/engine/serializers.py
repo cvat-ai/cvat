@@ -21,6 +21,7 @@ from inspect import isclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, cast
+from urllib.parse import urlparse
 
 import django_rq
 from django.conf import settings
@@ -835,8 +836,9 @@ class JobReadSerializer(serializers.ModelSerializer):
     # We're using CharField to produce simple strings instead of enums in the generated SDK.
     # SDK enums require explicit .value calls to access the string representation.
     # TODO: move to ChoicesField when SDK supports seamless transition from string to enum
-    dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
-    mode = serializers.CharField(source='segment.task.mode', required=False, read_only=True)
+    dimension = serializers.CharField(source='segment.task.dimension', read_only=True)
+    mode = serializers.CharField(source='segment.task.mode', read_only=True)
+    media_type = serializers.CharField(source='segment.task.media_type', read_only=True)
 
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
@@ -855,7 +857,8 @@ class JobReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'task_name', 'project_id', 'project_name', 'assignee', 'guide_id',
-            'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
+            'dimension', 'mode', 'media_type',
+            'bug_tracker', 'status', 'stage', 'state', 'frame_count',
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
@@ -2373,6 +2376,19 @@ class DataSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate_remote_files(self, value: list[dict[str, str]]) -> list[dict[str, str]]:
+        errors: list[str] = []
+        for entry in value:
+            url = entry["file"]
+            parsed = urlparse(url)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                errors.append(
+                    f"{url!r}: remote_files entries must be http(s) URLs."
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        return value
+
     # pylint: disable=no-self-use
     def validate(self, attrs):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
@@ -2557,8 +2573,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
     # We're using CharField to produce simple strings instead of enums in the generated SDK.
     # SDK enums require explicit .value calls to access the string representation.
     # TODO: move to ChoicesField when SDK supports seamless transition from string to enum
-    dimension = serializers.CharField(allow_blank=True, required=False)
+    dimension = serializers.CharField(allow_blank=True, required=False, read_only=True)
     mode = serializers.CharField(allow_blank=True, required=False, read_only=True)
+    media_type = serializers.CharField(allow_blank=True, required=False, read_only=True)
 
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
@@ -2574,10 +2591,11 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'project_name', 'mode', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'project_id', 'project_name', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_original_chunk_type', 'data_compressed_chunk_type',
-            'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data', 'dimension',
+            'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data',
+            'dimension', 'mode', 'media_type',
             'subset', 'organization_id',
             'organization', # deprecated field
             'target_storage', 'source_storage', 'jobs', 'labels',
@@ -2918,7 +2936,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
-    dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
+    dimension = serializers.CharField(required=False, allow_null=True, read_only=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     tasks = TasksSummarySerializer(models.Task, url_filter_key='project_id')
@@ -2941,7 +2959,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
         task_dimension = next(
             (task.dimension for task in instance.tasks.all() if task.dimension),
-            None
+            None # backward compatibility; TODO: migrate to "" for consistency with tasks
         )
         response['task_subsets'] = list(task_subsets)
         response['dimension'] = task_dimension
@@ -3320,12 +3338,23 @@ class AttributeValSerializer(serializers.Serializer):
         data['value'] = str(data['value'])
         return super().to_internal_value(data)
 
+class AttributedAnnotationSerializer(serializers.Serializer):
+    attributes = AttributeValSerializer(many=True, default=[])
+
+class ScoredAnnotationSerializer(serializers.Serializer):
+    score = serializers.FloatField(min_value=0, max_value=1, default=1)
+
+class FrameAnnotationSerializer(serializers.Serializer):
+    frame = serializers.IntegerField(min_value=0)
+
 class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
-    frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
-    group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
-    source = serializers.CharField(default='manual')
+    group = serializers.IntegerField(
+        min_value=0, default=0,
+        allow_null=True # backward compatibility; TODO: disallow on the DB level
+    )
+    source = serializers.CharField(default=models.SourceType.MANUAL)
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3336,6 +3365,9 @@ class AnnotationSerializer(serializers.Serializer):
         if value is None:
             raise serializers.ValidationError("must be present and not null")
         return value
+
+    def validate_group(self, value):
+        return value or 0 # backward compatibility; TODO: disallow on the DB level
 
     @cached_property
     def validate_id(self):
@@ -3361,8 +3393,10 @@ class AnnotationSerializer(serializers.Serializer):
 
         return None
 
-class LabeledImageSerializer(AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True, default=[])
+class LabeledImageSerializer(
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
+):
+    pass
 
 class OptimizedFloatListField(serializers.ListField):
     '''Default ListField is extremely slow when try to process long lists of points'''
@@ -3427,9 +3461,11 @@ class ShapeSerializer(serializers.Serializer):
 
         return attrs
 
-class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True, default=[])
-    score = serializers.FloatField(min_value=0, max_value=1, default=1)
+class SubLabeledShapeSerializer(
+    ShapeSerializer, AnnotationSerializer, FrameAnnotationSerializer,
+    AttributedAnnotationSerializer, ScoredAnnotationSerializer,
+):
+    pass
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -3453,7 +3489,13 @@ class LabeledShapeSerializer(SubLabeledShapeSerializer):
         return attrs
 
 def _convert_annotation(obj, keys):
-    return OrderedDict([(key, obj[key]) for key in keys])
+    d = OrderedDict([(key, obj[key]) for key in keys])
+
+    if "group" in d:
+        # backward compatibility; TODO: disallow null on the DB level
+        d["group"] = d["group"] or 0
+
+    return d
 
 def _convert_attributes(attr_set):
     attr_keys = ['spec_id', 'value']
@@ -3508,14 +3550,14 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
 
         return convert_track(instance)
 
-class TrackedShapeSerializer(ShapeSerializer):
+class TrackedShapeSerializer(ShapeSerializer, AttributedAnnotationSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True, default=[])
 
-class SubLabeledTrackSerializer(AnnotationSerializer):
+class SubLabeledTrackSerializer(
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
+):
     shapes = TrackedShapeSerializer(many=True, allow_empty=True)
-    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)

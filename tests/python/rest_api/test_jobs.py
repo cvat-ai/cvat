@@ -1080,6 +1080,9 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
         "field",
         (
             "assignee",
+            "dimension",
+            "media_type",
+            "mode",
             "state",
             "stage",
             "task_id",

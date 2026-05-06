@@ -850,14 +850,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project_name', 'name', 'owner', 'status', 'assignee',
         'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode'
     )
-    filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
+    filter_fields = list(search_fields) + [
+        'id', 'project_id', 'updated_date', 'media_type'
+    ]
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
             - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}\n
             - Get all completed tasks from 1 project - { "and": [{ "==": [{ "var" : "status" }, "completed"]}, { "==" : [{ "var" : "project_id"}, 1]}]}\n
     """)
-    simple_filters = list(search_fields) + ['project_id']
+    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_supports_organization_params = True
@@ -1680,13 +1682,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     iam_permission_class = JobPermission
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + [
-        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id',
+        'id', 'task_id', 'project_id', 'updated_date', 'type', 'parent_job_id',
+        'dimension', 'media_type', "mode",
     ]
     simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
         'dimension': 'segment__task__dimension',
+        'media_type': 'segment__task__media_type',
+        'mode': 'segment__task__mode',
         'task_id': 'segment__task_id',
         'project_id': 'segment__task__project_id',
         'task_name': 'segment__task__name',
