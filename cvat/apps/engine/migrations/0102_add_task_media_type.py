@@ -27,7 +27,7 @@ def infer_task_media_type(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("engine", "0100_alter_task_mode"),
+        ("engine", "0101_alter_labeledimage_options_and_more"),
     ]
 
     operations = [
