@@ -1455,67 +1455,6 @@ def _create_image_task_media_descriptors(
     return images, manifest, job_file_mapping
 
 
-def _detect_media_type_and_dimension(
-    extractor: IMediaReader, *, source_dir: Path, db_data: models.Data
-) -> tuple[models.MediaType, models.DimensionType]:
-    if isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
-        detected_media_type = models.MediaType.IMAGE
-        detected_dimension = models.DimensionType.DIM_2D
-    else:
-        validate_dimension = ValidateDimension()
-        if db_data.storage == models.StorageChoice.LOCAL or (
-            db_data.storage == models.StorageChoice.SHARE
-            and isinstance(
-                extractor, (MEDIA_TYPES["archive"]["extractor"], MEDIA_TYPES["zip"]["extractor"])
-            )
-        ):
-            validate_dimension.validate(source_dir)
-        else:
-            validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
-
-        detected_dimension = validate_dimension.dimension
-
-        if detected_dimension == models.DimensionType.DIM_2D:
-            detected_media_type = models.MediaType.IMAGE
-        elif detected_dimension == models.DimensionType.DIM_3D:
-            detected_media_type = models.MediaType.POINT_CLOUD
-        else:
-            assert False
-
-    return detected_media_type, detected_dimension
-
-
-def _validate_project_dimension(
-    db_project: models.Project, *, detected_dimension: models.DimensionType
-):
-    # TODO: fix the race condition between concurrent task creations
-    project_dimension = next(
-        iter(db_project.tasks.exclude(dimension="").values_list("dimension", flat=True)[:1]), ""
-    )
-
-    if project_dimension and project_dimension != detected_dimension:
-        raise ValidationError(
-            f"Dimension ({detected_dimension}) of the task must be the "
-            f"same as other tasks in the project ({project_dimension})"
-        )
-
-
-def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
-    db_data = db_task.require_data()
-
-    match (db_task.media_type, db_task.mode):
-        case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
-            db_data.compressed_chunk_type = (
-                models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
-            )
-            db_data.original_chunk_type = models.DataChoice.VIDEO
-        case (models.MediaType.IMAGE | models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION):
-            db_data.compressed_chunk_type = models.DataChoice.IMAGESET
-            db_data.original_chunk_type = models.DataChoice.IMAGESET
-        case (media_type, mode):
-            assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
-
-
 @transaction.atomic
 def create_thread(
     db_task: int | models.Task,

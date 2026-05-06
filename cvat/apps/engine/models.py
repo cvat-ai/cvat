@@ -833,11 +833,6 @@ class MediaType(TextChoices):
     POINT_CLOUD = "point_cloud"
 
 
-class MediaType(TextChoices):
-    IMAGE = "image"
-    POINT_CLOUD = "point_cloud"
-
-
 class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
