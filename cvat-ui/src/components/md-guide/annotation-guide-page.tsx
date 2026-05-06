@@ -13,6 +13,7 @@ import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import MDEditor, { commands } from '@uiw/react-md-editor';
+import rehypeSanitize from 'rehype-sanitize';
 
 import { getCore, AnnotationGuide } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
@@ -166,6 +167,7 @@ function AnnotationGuidePage(): JSX.Element {
                             }
                         }}
                         style={{ whiteSpace: 'pre-wrap' }}
+                        previewOptions={{ rehypePlugins: [[rehypeSanitize]] }}
                     />
                 </div>
                 <Space align='end' className='cvat-guide-page-bottom'>

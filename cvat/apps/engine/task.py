@@ -19,6 +19,7 @@ from urllib import request as urlrequest
 
 import attrs
 import av
+import requests
 import rq
 from django.conf import settings
 from django.db import transaction
@@ -49,7 +50,11 @@ from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
-from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
+from utils.dataset_manifest import (
+    ImageManifestManager,
+    VideoManifestManager,
+    is_manifest,
+)
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import find_related_images
 
@@ -459,24 +464,43 @@ def _validate_scheme(url):
         )
 
 
+class _FailedToDownloadFileError(Exception):
+    pass
+
+
 def _download_data(
     urls: Iterable[str],
     upload_dir: str,
     *,
     update_status_callback: Callable[[str], None],
-):
+    timeout: tuple[int, int] | None = (10, 60),
+) -> list[str]:
     local_files = {}
 
     with make_requests_session() as session:
         for url in urls:
             name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
             if name in local_files:
-                raise Exception("filename collision: {}".format(name))
+                raise _FailedToDownloadFileError("filename collision: {}".format(name))
+
             _validate_scheme(url)
+
             slogger.glob.info("Downloading: {}".format(url))
+
             update_status_callback("{} is being downloaded..".format(url))
 
-            response = session.get(url, stream=True, proxies=PROXIES_FOR_UNTRUSTED_URLS)
+            try:
+                response = session.get(
+                    url,
+                    stream=True,
+                    proxies=PROXIES_FOR_UNTRUSTED_URLS,
+                    timeout=timeout,
+                )
+            except requests.exceptions.RequestException as e:
+                raise _FailedToDownloadFileError(
+                    f"Failed to download {url}: {e.__class__.__name__}: {e}"
+                ) from e
+
             if response.status_code == 200:
                 response.raw.decode_content = True
                 with open(os.path.join(upload_dir, name), "wb") as output_file:
@@ -491,7 +515,7 @@ def _download_data(
                 elif response.status_code:
                     error_message += f"; HTTP error {response.status_code}"
 
-                raise Exception(error_message)
+                raise _FailedToDownloadFileError(error_message)
 
             local_files[name] = True
 
@@ -575,11 +599,13 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
         content = list(map(_add_prefix, raw_content))
     else:
         sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+
     if not content:
         raise ValidationError(
             "There is no intersection of the files specified"
             "in the request with the contents of the bucket"
         )
+
     sorted_content = (i[1] for i in sorted(zip(sequence, content)))
     manifest.create(sorted_content)
 
@@ -1429,6 +1455,67 @@ def _create_image_task_media_descriptors(
     return images, manifest, job_file_mapping
 
 
+def _detect_media_type_and_dimension(
+    extractor: IMediaReader, *, source_dir: Path, db_data: models.Data
+) -> tuple[models.MediaType, models.DimensionType]:
+    if isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
+        detected_media_type = models.MediaType.IMAGE
+        detected_dimension = models.DimensionType.DIM_2D
+    else:
+        validate_dimension = ValidateDimension()
+        if db_data.storage == models.StorageChoice.LOCAL or (
+            db_data.storage == models.StorageChoice.SHARE
+            and isinstance(
+                extractor, (MEDIA_TYPES["archive"]["extractor"], MEDIA_TYPES["zip"]["extractor"])
+            )
+        ):
+            validate_dimension.validate(source_dir)
+        else:
+            validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
+
+        detected_dimension = validate_dimension.dimension
+
+        if detected_dimension == models.DimensionType.DIM_2D:
+            detected_media_type = models.MediaType.IMAGE
+        elif detected_dimension == models.DimensionType.DIM_3D:
+            detected_media_type = models.MediaType.POINT_CLOUD
+        else:
+            assert False
+
+    return detected_media_type, detected_dimension
+
+
+def _validate_project_dimension(
+    db_project: models.Project, *, detected_dimension: models.DimensionType
+):
+    # TODO: fix the race condition between concurrent task creations
+    project_dimension = next(
+        iter(db_project.tasks.exclude(dimension="").values_list("dimension", flat=True)[:1]), ""
+    )
+
+    if project_dimension and project_dimension != detected_dimension:
+        raise ValidationError(
+            f"Dimension ({detected_dimension}) of the task must be the "
+            f"same as other tasks in the project ({project_dimension})"
+        )
+
+
+def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
+    db_data = db_task.require_data()
+
+    match (db_task.media_type, db_task.mode):
+        case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+            db_data.compressed_chunk_type = (
+                models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
+            )
+            db_data.original_chunk_type = models.DataChoice.VIDEO
+        case (models.MediaType.IMAGE | models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION):
+            db_data.compressed_chunk_type = models.DataChoice.IMAGESET
+            db_data.original_chunk_type = models.DataChoice.IMAGESET
+        case (media_type, mode):
+            assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
+
+
 @transaction.atomic
 def create_thread(
     db_task: int | models.Task,
@@ -1463,9 +1550,13 @@ def create_thread(
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data["remote_files"]:
-        data["remote_files"] = _download_data(
-            data["remote_files"], upload_dir, update_status_callback=update_status
-        )
+        try:
+            data["remote_files"] = _download_data(
+                data["remote_files"], upload_dir, update_status_callback=update_status
+            )
+        except _FailedToDownloadFileError as e:
+            slogger.glob.exception("Failed to download remote files")
+            raise ValidationError(str(e)) from e
 
     # find and validate manifest file
     manifest_files = _find_manifest_files(data)
@@ -1579,14 +1670,18 @@ def create_thread(
                 if not is_backup_restore:
                     # Define task manifest content based on cloud storage manifest content and uploaded files
                     _create_task_manifest_based_on_cloud_storage_manifest(
-                        sorted_media,
-                        cloud_storage_manifest_prefix,
-                        cloud_storage_manifest,
-                        manifest,
+                        sorted_media=sorted_media,
+                        cloud_storage_manifest_prefix=cloud_storage_manifest_prefix,
+                        cloud_storage_manifest=cloud_storage_manifest,
+                        manifest=manifest,
                     )
             else:  # without manifest file but with use_cache option
                 # Define task manifest content based on list with uploaded files
-                _create_task_manifest_from_cloud_data(db_data.cloud_storage, sorted_media, manifest)
+                _create_task_manifest_from_cloud_data(
+                    db_storage=db_data.cloud_storage,
+                    sorted_media=sorted_media,
+                    manifest=manifest,
+                )
 
     av_scan_paths(upload_dir)
 
