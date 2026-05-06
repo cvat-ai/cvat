@@ -35,6 +35,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine import models
+from cvat.apps.engine.cache_signals import cache_item_created_signal, cache_item_read_signal
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
@@ -64,6 +65,7 @@ slogger = ServerLogManager(__name__)
 
 DataWithMime: TypeAlias = tuple[io.BytesIO, str]
 _CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
+_RQ_JOB_ORIGIN_ATTRIBUTE = "origin"
 
 
 class CacheTooLargeDataError(Exception):
@@ -140,6 +142,10 @@ def wait_for_rq_job(rq_job: rq.job.Job):
 
 def _is_run_inside_rq() -> bool:
     return rq.get_current_job() is not None
+
+
+def _get_current_rq_queue_name() -> str | None:
+    return getattr(rq.get_current_job(), _RQ_JOB_ORIGIN_ATTRIBUTE, None)
 
 
 def _convert_args_for_callback(func_args: list[Any]) -> list[Any]:
@@ -238,8 +244,6 @@ class MediaCache:
         create_callback: Callback,
         cache_item_ttl: int | None = None,
     ) -> DataWithMime:
-        from cvat.apps.engine.signals import cache_item_created_signal
-
         timestamp = django_tz.now()
         item_data = create_callback()
         item_data_bytes = item_data[0].getvalue()
@@ -253,9 +257,17 @@ class MediaCache:
             key,
         ):
             cached_item = cache.get(key)
-            if cached_item is not None and timestamp <= cached_item[3]:
-                item = cached_item
-            else:
+            if cached_item is not None:
+                cache_item_read_signal.send(
+                    sender=cls,
+                    item_key=key,
+                    item_data_size=cls._get_cache_item_size(cached_item),
+                    rq_queue=_get_current_rq_queue_name(),
+                )
+
+                if timestamp <= cached_item[3]:
+                    item = cached_item
+            if cached_item is None or timestamp > cached_item[3]:
                 item_size = cls._get_cache_item_size(item)
                 if item_size > settings.CVAT_CACHE_ITEM_MAX_SIZE:
                     raise CacheTooLargeDataError(
@@ -268,7 +280,7 @@ class MediaCache:
                     sender=cls,
                     item_key=key,
                     item_data_size=item_size,
-                    rq_queue=getattr(rq.get_current_job(), "origin", None),
+                    rq_queue=_get_current_rq_queue_name(),
                 )
 
         return item
@@ -319,17 +331,25 @@ class MediaCache:
         slogger.glob.info(f"Removed the cache keys {format_list(keys)}")
 
     def _get_cache_item(self, key: str) -> _CacheItem | None:
+        rq_queue = _get_current_rq_queue_name()
         try:
             item = self._cache().get(key)
         except pickle.UnpicklingError:
             slogger.glob.error(f"Unable to get item from cache: key {key}", exc_info=True)
-            item = None
+            return None
 
         if not item:
             return None
 
         item_data = item[0].getbuffer() if isinstance(item[0], io.BytesIO) else item[0]
         item_checksum = item[2] if len(item) == 4 else None
+        cache_item_read_signal.send(
+            sender=self.__class__,
+            item_key=key,
+            item_data_size=self._get_cache_item_size(item),
+            rq_queue=rq_queue,
+        )
+
         if item_checksum != self._get_checksum(item_data):
             slogger.glob.info(f"Cache item {key} checksum mismatch")
             return None
