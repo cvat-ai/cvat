@@ -69,7 +69,7 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     }
 
     private gtParamsBlock(): JSX.Element {
-        const { frameSelectionMethod, onChangeFrameSelectionMethod } = this.props;
+        const { frameSelectionMethod, onChangeFrameSelectionMethod, audio } = this.props;
 
         return (
             <>
@@ -90,7 +90,7 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                 </Col>
 
                 {
-                    frameSelectionMethod === FrameSelectionMethod.RANDOM && (
+                    !audio && frameSelectionMethod === FrameSelectionMethod.RANDOM && (
                         <Col span={7}>
                             <Form.Item
                                 label='Quantity'
@@ -115,7 +115,7 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                     )
                 }
                 {
-                    frameSelectionMethod === FrameSelectionMethod.RANDOM_PER_JOB && (
+                    !audio && frameSelectionMethod === FrameSelectionMethod.RANDOM_PER_JOB && (
                         <Col span={7}>
                             <Form.Item
                                 label='Quantity per job'

@@ -33,6 +33,12 @@ export function useAudioPlaybackSync({
     }, [currentTime, duration, wavesurfer]);
 
     const prevZoomRef = useRef(zoom);
+    // Snapshot latest currentTime/duration so the zoom effect can read them
+    // without listing them as deps (which would re-fire on every playhead tick).
+    const currentTimeRef = useRef(currentTime);
+    const durationRef = useRef(duration);
+    currentTimeRef.current = currentTime;
+    durationRef.current = duration;
 
     useEffect(() => {
         if (!wavesurfer) return;
@@ -43,23 +49,35 @@ export function useAudioPlaybackSync({
 
         const scrollContainer = wavesurfer.getWrapper()?.parentElement as HTMLElement | null;
 
-        // On a zoom drop, hard-reset scrollLeft to 0 BEFORE wavesurfer.zoom()
-        // so its internal lazy canvas renderer draws canvases for offset 0
-        // (the visible area after the wrapper shrinks). Without this, it
-        // draws for the old out-of-bounds scrollLeft → empty viewport.
+        // On a zoom drop the wrapper shrinks. Pre-set scrollLeft to a value
+        // valid under the NEW zoom BEFORE wavesurfer.zoom() so its lazy canvas
+        // renderer draws canvases for the visible viewport (otherwise it
+        // draws for the old out-of-bounds offset → empty viewport). Center on
+        // currentTime so the playhead stays in view instead of snapping to 0.
+        let targetScrollLeft = 0;
         if (scrollContainer && isDrop) {
-            scrollContainer.scrollLeft = 0;
+            const clientWidth = scrollContainer.clientWidth;
+            const dur = durationRef.current;
+            if (dur > 0) {
+                const newTotalWidth = Math.max(clientWidth, dur * zoom);
+                const newMaxScroll = Math.max(0, newTotalWidth - clientWidth);
+                targetScrollLeft = Math.max(
+                    0,
+                    Math.min(newMaxScroll, currentTimeRef.current * zoom - clientWidth / 2),
+                );
+            }
+            scrollContainer.scrollLeft = targetScrollLeft;
         }
 
         wavesurfer.zoom(zoom);
 
         if (!scrollContainer || !isDrop) return;
 
-        // Re-pin scrollLeft to 0 over the next two frames in case
-        // wavesurfer's reRender / browser layout shifts it back.
+        // Re-pin scrollLeft over the next two frames in case wavesurfer's
+        // reRender / browser layout shifts it.
         const pin = (): void => {
-            if (scrollContainer.scrollLeft !== 0) {
-                wavesurfer.setScroll(0);
+            if (Math.abs(scrollContainer.scrollLeft - targetScrollLeft) > 1) {
+                wavesurfer.setScroll(targetScrollLeft);
             }
         };
         pin();

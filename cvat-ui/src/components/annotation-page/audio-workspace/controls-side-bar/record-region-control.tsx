@@ -33,7 +33,7 @@ const componentShortcuts = {
             'First press marks the interval start at the current playback position; ' +
             'pressing again or pausing finalizes the end.'
         ),
-        sequences: ['shift+n'],
+        sequences: ['n'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
 };
