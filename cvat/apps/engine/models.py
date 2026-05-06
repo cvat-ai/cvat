@@ -822,7 +822,15 @@ class TaskQuerySet(models.QuerySet):
 
 class TaskMode(TextChoices):
     ANNOTATION = "annotation"
+    "task is a set of independent MediaType elements"
+
     INTERPOLATION = "interpolation"
+    "task is an ordered sequence of MediaType elements"
+
+
+class MediaType(TextChoices):
+    IMAGE = "image"
+    POINT_CLOUD = "point_cloud"
 
 
 class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
@@ -832,21 +840,26 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
     name = SafeCharField(max_length=256)
-    mode = models.CharField(max_length=32, choices=TaskMode.choices, default="", blank=True)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
-
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
+    status = models.CharField(max_length=32, choices=StatusChoice.choices(),
+                              default=StatusChoice.ANNOTATION)
+
     overlap = models.PositiveIntegerField(null=True)
+
     # Zero means that there are no limits (default)
     # Note that the files can be split into jobs in a custom way in this case
     segment_size = models.PositiveIntegerField(default=0)
-    status = models.CharField(max_length=32, choices=StatusChoice.choices(),
-                              default=StatusChoice.ANNOTATION)
+    segment_set: models.manager.RelatedManager[Segment]
+
     data = models.ForeignKey(
         Data, on_delete=models.CASCADE, null=True, related_name="tasks", related_query_name="task"
     )
-    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
+    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default="", blank=True)
+    mode = models.CharField(max_length=32, choices=TaskMode.choices, default="", blank=True)
+    media_type = models.CharField(max_length=32, choices=MediaType.choices, default="", blank=True)
+
     subset = models.CharField(max_length=64, blank=True, default="")
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
