@@ -649,9 +649,6 @@ class Audio(models.Model):
     sampling_rate = models.PositiveIntegerField()
     has_cover_image = models.BooleanField(default=False)
 
-    class Meta:
-        default_permissions = ()
-
 
 class Image(models.Model):
     data = models.ForeignKey(

@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("engine", "0101_add_task_media_type"),
+        ("engine", "0102_add_task_media_type"),
     ]
 
     operations = [
