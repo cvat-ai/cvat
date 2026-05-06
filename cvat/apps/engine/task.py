@@ -1194,18 +1194,18 @@ def _detect_media_type_and_dimension(
     return detected_media_type, detected_dimension
 
 
-def _validate_project_dimension(
-    db_project: models.Project, *, detected_dimension: models.DimensionType
+def _validate_project_media_type(
+    db_project: models.Project, *, detected_media_type: models.MediaType
 ):
     # TODO: fix the race condition between concurrent task creations
-    project_dimension = next(
-        iter(db_project.tasks.exclude(dimension="").values_list("dimension", flat=True)[:1]), ""
+    project_media_type = next(
+        iter(db_project.tasks.exclude(media_type="").values_list("media_type", flat=True)[:1]), ""
     )
 
-    if project_dimension and project_dimension != detected_dimension:
+    if project_media_type and project_media_type != detected_media_type:
         raise ValidationError(
-            f"Dimension ({detected_dimension}) of the task must be the "
-            f"same as other tasks in the project ({project_dimension})"
+            f"Media type ({detected_media_type}) of the task must be compatible "
+            f"with other tasks in the project ({project_media_type})"
         )
 
 
@@ -1600,10 +1600,10 @@ def create_thread(
 
     # count and validate uploaded files
     media = _count_files(data)
-    media, task_mode = _validate_data(media, manifest_files=manifest_files)
+    media, detected_mode = _validate_data(media, manifest_files=manifest_files)
     is_media_sorted = False
 
-    if job_file_mapping is not None and task_mode != models.TaskMode.ANNOTATION:
+    if job_file_mapping is not None and detected_mode != models.TaskMode.ANNOTATION:
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if (
@@ -1798,12 +1798,12 @@ def create_thread(
     )
 
     if db_task.project_id is not None:
-        _validate_project_dimension(db_task.project, detected_dimension=detected_dimension)
+        _validate_project_media_type(db_task.project, detected_media_type=detected_media_type)
 
     assert not db_task.media_type
     db_task.media_type = detected_media_type
     db_task.dimension = detected_dimension
-    db_task.mode = task_mode
+    db_task.mode = detected_mode
 
     if db_task.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
