@@ -44,12 +44,17 @@ ENV FFMPEG_VERSION=8.0 \
     OPENH264_VERSION=2.6.0
 
 WORKDIR /tmp/openh264
-RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
+RUN curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors --connect-timeout 30 \
+        https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
     tar -zx --strip-components=1 && \
     make -j5 && make install-shared PREFIX=${PREFIX} && make clean
 
 WORKDIR /tmp/ffmpeg
-RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --output - | \
+# Source is fetched from the official FFmpeg GitHub mirror instead of
+# ffmpeg.org because some corporate networks intercept TLS to ffmpeg.org
+# with a MITM proxy whose root CA is not present in the build container.
+RUN curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors --connect-timeout 30 \
+        https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n${FFMPEG_VERSION}.tar.gz --output - | \
     tar -zx --strip-components=1 && \
     ./configure --disable-nonfree --disable-gpl --enable-libopenh264 \
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
