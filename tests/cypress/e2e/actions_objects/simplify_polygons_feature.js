@@ -283,6 +283,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                 cy.interactControlButton('draw-polyline');
                 cy.get('.cvat-polyline-popover').should('not.exist');
             });
+
             it('Auto-simplify when drawing a polyline', () => {
                 cy.createPolyline({ ...createDetailedPolygon }, null, 'shiftHover');
                 checkLessPointsThan(referenceObjectId, detailedPolygonPoints);
@@ -365,6 +366,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                 });
             });
         });
+
         it("Call 'simplify' on all shapes as a bulk action", () => {
             const distance = distances[2];
             const allStats = [];
