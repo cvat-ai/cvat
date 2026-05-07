@@ -478,3 +478,11 @@ g.cvat_canvas_shape_occluded {
 .cvat-canvas-notification-list-shortcuts {
     color: yellow;
 }
+
+.cvat_canvas_cuboid_lens_distorted > polygon,
+.cvat_canvas_cuboid_lens_distorted > line {
+    stroke-opacity: 0;
+    fill-opacity: 0;
+    pointer-events: all;
+}
+

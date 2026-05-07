@@ -432,6 +432,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const [wrapper] = window.document.getElementsByClassName('cvat-canvas-container');
         wrapper.appendChild(canvasInstance.html());
 
+        // Expose the canvas instance and a small helper for setting fisheye lens
+        // calibration from the browser DevTools, e.g.:
+        //   window.cvatSetLensCalibration({ fx: 737.514, fy: 738.114, cx: 1495.5, cy: 1495.5,
+        //     a: 0.110, b: -0.283, c: 0.448, F: 0.6289, imageWidth: 2992, imageHeight: 2992 });
+        //   window.cvatSetLensCalibration(null);  // disable
+        (window as any).cvatCanvasInstance = canvasInstance;
+        (window as any).cvatSetLensCalibration = (params: any): void => {
+            canvasInstance.configure({ lensCalibration: params });
+        };
+
         canvasInstance.configure({
             undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,

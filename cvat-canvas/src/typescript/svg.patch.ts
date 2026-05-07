@@ -12,6 +12,9 @@ import 'svg.draw.js';
 import consts from './consts';
 import { Equation, CuboidModel, Orientation, Edge } from './cuboid';
 import { Point, parsePoints, clamp } from './shared';
+import {
+    FisheyeLens, FisheyeParams, curvedEdgePoints, pointsToPathD, faceToCurvedPathD,
+} from './lensModel';
 
 // Update constructor
 const originalDraw = SVG.Element.prototype.draw;
@@ -210,16 +213,98 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
     create: 'g',
     inherit: SVG.G,
     extend: {
-        constructorMethod(points: string) {
+        constructorMethod(points: string, opts?: { lens?: FisheyeParams | null }) {
             this.cuboidModel = new CuboidModel(parsePoints(points));
             this.setupFaces();
             this.setupEdges();
             this.setupProjections();
             this.hideProjections();
+            this.setupLensOverlay();
 
             this._attr('points', points);
             this.addClass('cvat_canvas_shape_cuboid');
+            if (opts && opts.lens) {
+                this.setLens(opts.lens);
+            }
             return this;
+        },
+
+        setupLensOverlay() {
+            this.lens = null as FisheyeLens | null;
+            // A child <g> that holds the curved overlay rendering. Hidden by
+            // default; shown when a lens is set. Children inherit stroke/fill
+            // from the parent cube group, so they stay color-correct.
+            this.lensOverlay = this.group().addClass('cvat_canvas_cuboid_lens_overlay');
+            this.lensOverlay.attr('pointer-events', 'none');
+            this.lensOverlay.hide();
+
+            // 6 face overlay paths (curved closed outlines, low-opacity fill).
+            this.lensFaceBot = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceTop = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceRight = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceLeft = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceDorsal = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceFront = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+
+            // 12 edge overlay paths (curved strokes, no fill).
+            const edgePath = (): any => this.lensOverlay.path('').attr('fill', 'none');
+            this.lensEdgeFL = edgePath();
+            this.lensEdgeFR = edgePath();
+            this.lensEdgeDR = edgePath();
+            this.lensEdgeDL = edgePath();
+            this.lensEdgeFT = edgePath();
+            this.lensEdgeRT = edgePath();
+            this.lensEdgeLT = edgePath();
+            this.lensEdgeDT = edgePath();
+            this.lensEdgeFB = edgePath();
+            this.lensEdgeRB = edgePath();
+            this.lensEdgeLB = edgePath();
+            this.lensEdgeDB = edgePath();
+        },
+
+        setLens(params: FisheyeParams | null) {
+            if (!params) {
+                this.lens = null;
+                this.lensOverlay.hide();
+                this.removeClass('cvat_canvas_cuboid_lens_distorted');
+                return;
+            }
+            this.lens = new FisheyeLens(params);
+            this.addClass('cvat_canvas_cuboid_lens_distorted');
+            this.lensOverlay.show();
+            this.updateLensOverlay();
+        },
+
+        updateLensOverlay() {
+            if (!this.lens) return;
+            const m = this.cuboidModel as any;
+            const lens = this.lens as FisheyeLens;
+
+            const setEdge = (el: any, e: Edge): void => {
+                el.plot(pointsToPathD(curvedEdgePoints(e.points[0], e.points[1], lens)));
+            };
+            setEdge(this.lensEdgeFL, m.fl);
+            setEdge(this.lensEdgeFR, m.fr);
+            setEdge(this.lensEdgeDR, m.dr);
+            setEdge(this.lensEdgeDL, m.dl);
+            setEdge(this.lensEdgeFT, m.ft);
+            setEdge(this.lensEdgeRT, m.rt);
+            setEdge(this.lensEdgeLT, m.lt);
+            setEdge(this.lensEdgeDT, m.dt);
+            setEdge(this.lensEdgeFB, m.fb);
+            setEdge(this.lensEdgeRB, m.rb);
+            setEdge(this.lensEdgeLB, m.lb);
+            setEdge(this.lensEdgeDB, m.db);
+
+            const setFace = (el: any, corners: Point[]): void => {
+                el.plot(faceToCurvedPathD(corners, lens));
+            };
+            setFace(this.lensFaceBot, m.bot.points);
+            setFace(this.lensFaceTop, m.top.points);
+            setFace(this.lensFaceRight, m.right.points);
+            setFace(this.lensFaceLeft, m.left.points);
+            setFace(this.lensFaceDorsal, m.dorsal.points);
+            setFace(this.lensFaceFront, m.front.points);
         },
 
         setupFaces() {
@@ -1071,6 +1156,9 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.updateEdges();
             this.updateProjections();
             this.updateGrabPoints();
+            if (this.lens) {
+                this.updateLensOverlay();
+            }
         },
 
         updateFaces() {
@@ -1125,8 +1213,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         },
     },
     construct: {
-        cube(points: string) {
-            return this.put(new (SVG as any).Cube()).constructorMethod(points);
+        cube(points: string, opts?: { lens?: FisheyeParams | null }) {
+            return this.put(new (SVG as any).Cube()).constructorMethod(points, opts);
         },
     },
 });

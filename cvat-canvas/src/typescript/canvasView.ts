@@ -2006,6 +2006,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.background.classList.add('cvat_canvas_pixelized');
             }
 
+            const lensChanged = configuration.lensCalibration !== this.configuration.lensCalibration;
+            if (lensChanged) {
+                for (const drawnState of Object.values(this.drawnStates)) {
+                    if (drawnState.shapeType === 'cuboid') {
+                        const shape: any = this.svgShapes[drawnState.clientID];
+                        if (shape && typeof shape.setLens === 'function') {
+                            shape.setLens(configuration.lensCalibration ?? null);
+                        }
+                    }
+                }
+            }
+
             this.configuration = configuration;
             if (withUpdatingShapeViews) {
                 updateShapeViews(Object.values(this.drawnStates));
@@ -3489,7 +3501,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addCuboid(points: string, state: any): any {
         const cube = (this.adoptedContent as any)
-            .cube(points)
+            .cube(points, { lens: this.configuration.lensCalibration ?? null })
             .fill(state.color)
             .attr({
                 clientID: state.clientID,
