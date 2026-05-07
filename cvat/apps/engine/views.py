@@ -1453,25 +1453,37 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_task = self.get_object() #force to call check_object_permissions
 
         def prefetch():
-            data_queryset = (
-                models.Data.objects
-                .select_related("validation_layout", "video")
-                .prefetch_related(
-                    Prefetch(
-                        'images',
-                        queryset=(
-                            models.Image.objects
-                            .prefetch_related('related_files')
-                            .order_by('frame')
-                        )
-                    )
-                )
-            )
+            data_queryset = models.Data.objects.select_related("validation_layout")
+            extra_prefetches = []
+
+            match (db_task.media_type, db_task.mode):
+                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("audio")
+                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("video")
+                case (
+                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                    models.TaskMode.ANNOTATION,
+                ):
+                    # Could also be done via data_qs.prefetch_related(),
+                    # but it results in more requests
+                    extra_prefetches += [
+                        Prefetch(
+                            "data__images",
+                            queryset=models.Image.objects.order_by('frame'),
+                        ),
+                        "data__images__related_files"
+                    ]
+                case ("", ""):
+                    pass # noop, nothing to load
+                case (media_type, mode):
+                    assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
             prefetch_related_objects(
                 [db_task],
                 "segment_set",
-                Prefetch("data", queryset=data_queryset)
+                Prefetch("data", queryset=data_queryset),
+                *extra_prefetches,
             )
 
         prefetch()
@@ -1986,24 +1998,38 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_job = self.get_object() # force call of check_object_permissions()
 
         def prefetch():
-            data_queryset = (
-                models.Data.objects
-                .select_related("validation_layout", "video")
-                .prefetch_related(
-                    Prefetch(
-                        'images',
-                        queryset=(
-                            models.Image.objects
-                            .prefetch_related('related_files')
-                            .order_by('frame')
-                        )
-                    )
-                )
-            )
+            db_task = db_job.segment.task
+
+            data_queryset = models.Data.objects.select_related("validation_layout")
+            extra_prefetches = []
+
+            match (db_task.media_type, db_task.mode):
+                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("audio")
+                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("video")
+                case (
+                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                    models.TaskMode.ANNOTATION,
+                ):
+                    # Could also be done via data_qs.prefetch_related(),
+                    # but it results in more requests
+                    extra_prefetches += [
+                        Prefetch(
+                            "segment__task__data__images",
+                            queryset=models.Image.objects.order_by('frame'),
+                        ),
+                        "segment__task__data__images__related_files"
+                    ]
+                case ("", ""):
+                    pass # noop, nothing to load
+                case (media_type, mode):
+                    assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
             prefetch_related_objects(
                 [db_job],
-                Prefetch("segment__task__data", queryset=data_queryset)
+                Prefetch("segment__task__data", queryset=data_queryset),
+                *extra_prefetches,
             )
 
         prefetch()
