@@ -2301,9 +2301,8 @@ class DatasetComparator:
 
     def _process_intervals(self):
         def range_iou(a: tuple[float, float], b: tuple[float, float]) -> float:
-            int_lb = min(a[1], b[0])
-            int_ub = max(a[0], b[1])
-            int_lb, int_ub = min(int_lb, int_ub), max(int_lb, int_ub)
+            int_lb = max(a[0], b[0])
+            int_ub = min(a[1], b[1])
             intersection = int_ub - int_lb
             if intersection <= 0:
                 return 0
@@ -2326,14 +2325,14 @@ class DatasetComparator:
             return interval_iou(a, b)
 
         def interval_wer(a: dict[str, Any], b: dict[str, Any], *, attr_id: int) -> float:
-            a_value = next(iter(a["attributes"]), lambda attr: attr["spec_id"] == attr_id)["value"]
-            b_value = next(iter(b["attributes"]), lambda attr: attr["spec_id"] == attr_id)["value"]
+            a_value = next(a for a in a["attributes"] if a["spec_id"] == attr_id)["value"]
+            b_value = next(a for a in b["attributes"] if a["spec_id"] == attr_id)["value"]
             return jiwer.wer(a_value, b_value)
 
         def interval_cer(a: dict[str, Any], b: dict[str, Any], *, attr_id: int) -> float:
             # TODO: change to maximum CER over word-aligned matches?
-            a_value = next(iter(a["attributes"]), lambda attr: attr["spec_id"] == attr_id)["value"]
-            b_value = next(iter(b["attributes"]), lambda attr: attr["spec_id"] == attr_id)["value"]
+            a_value = next(a for a in a["attributes"] if a["spec_id"] == attr_id)["value"]
+            b_value = next(a for a in b["attributes"] if a["spec_id"] == attr_id)["value"]
             return jiwer.cer(a_value.split(), b_value.split())
 
         metrics = {
