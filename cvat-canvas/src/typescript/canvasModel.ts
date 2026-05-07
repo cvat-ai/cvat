@@ -76,16 +76,21 @@ export enum ColorBy {
 }
 
 export interface FisheyeLensCalibration {
-    fx: number;
-    fy: number;
-    cx: number;
-    cy: number;
+    // Hugin polynomial radial coefficients. d = 1 - (a+b+c).
     a: number;
     b: number;
     c: number;
-    F: number;
-    imageWidth: number;
-    imageHeight: number;
+    // Horizontal field of view in radians (e.g. 3.1799898972 for a 360 cam).
+    HFOVInRadians: number;
+    // Image aspect ratio (width / height).
+    aspectRatio: number;
+    // Horizontal resolution in pixels.
+    horizontalResolution: number;
+    // Lens model. Currently only "Equidistant" is supported.
+    lensType: 'Equidistant';
+    // Optional principal point overrides; default to image centre.
+    cx?: number;
+    cy?: number;
 }
 
 export interface Configuration {
@@ -1044,11 +1049,20 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.lensCalibration = null;
         } else if (configuration.lensCalibration && typeof configuration.lensCalibration === 'object') {
             const lc = configuration.lensCalibration as unknown as Record<string, unknown>;
-            const requiredKeys = ['fx', 'fy', 'cx', 'cy', 'a', 'b', 'c', 'F', 'imageWidth', 'imageHeight'];
-            const valid = requiredKeys.every(
+            const requiredNumberKeys = ['a', 'b', 'c', 'HFOVInRadians', 'aspectRatio', 'horizontalResolution'];
+            const numbersValid = requiredNumberKeys.every(
                 (k) => typeof lc[k] === 'number' && Number.isFinite(lc[k] as number),
             );
-            if (valid) {
+            const lensTypeValid = lc.lensType === 'Equidistant';
+            const optionalCenterValid = (
+                lc.cx === undefined || (typeof lc.cx === 'number' && Number.isFinite(lc.cx))
+            ) && (
+                lc.cy === undefined || (typeof lc.cy === 'number' && Number.isFinite(lc.cy))
+            );
+            const positiveValid = (lc.aspectRatio as number) > 0
+                && (lc.horizontalResolution as number) > 0
+                && (lc.HFOVInRadians as number) > 0;
+            if (numbersValid && lensTypeValid && optionalCenterValid && positiveValid) {
                 this.data.configuration.lensCalibration = { ...configuration.lensCalibration };
             }
         }

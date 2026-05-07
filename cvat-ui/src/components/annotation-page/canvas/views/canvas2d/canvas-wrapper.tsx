@@ -433,9 +433,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         wrapper.appendChild(canvasInstance.html());
 
         // Expose the canvas instance and a small helper for setting fisheye lens
-        // calibration from the browser DevTools, e.g.:
-        //   window.cvatSetLensCalibration({ fx: 737.514, fy: 738.114, cx: 1495.5, cy: 1495.5,
-        //     a: 0.110, b: -0.283, c: 0.448, F: 0.6289, imageWidth: 2992, imageHeight: 2992 });
+        // calibration from the browser DevTools, using the same parameter set
+        // that miocv / pycv export. Example for the default Cam360 fisheye:
+        //   window.cvatSetLensCalibration({
+        //       a: 0.11, b: -0.283, c: 0.448,
+        //       HFOVInRadians: 3.1799898972,
+        //       aspectRatio: 1.0,
+        //       horizontalResolution: 2992,
+        //       lensType: 'Equidistant',
+        //   });
         //   window.cvatSetLensCalibration(null);  // disable
         (window as any).cvatCanvasInstance = canvasInstance;
         (window as any).cvatSetLensCalibration = (params: any): void => {
