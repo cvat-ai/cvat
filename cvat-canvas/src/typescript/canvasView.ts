@@ -2012,7 +2012,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     if (drawnState.shapeType === 'cuboid') {
                         const shape: any = this.svgShapes[drawnState.clientID];
                         if (shape && typeof shape.setLens === 'function') {
-                            shape.setLens(configuration.lensCalibration ?? null);
+                            shape.setLens(configuration.lensCalibration ?? null, this.geometry.offset);
                         }
                     }
                 }
@@ -3501,7 +3501,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addCuboid(points: string, state: any): any {
         const cube = (this.adoptedContent as any)
-            .cube(points, { lens: this.configuration.lensCalibration ?? null })
+            .cube(points, {
+                lens: this.configuration.lensCalibration ?? null,
+                offset: this.geometry.offset,
+            })
             .fill(state.color)
             .attr({
                 clientID: state.clientID,

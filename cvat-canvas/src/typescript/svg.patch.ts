@@ -213,7 +213,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
     create: 'g',
     inherit: SVG.G,
     extend: {
-        constructorMethod(points: string, opts?: { lens?: FisheyeParams | null }) {
+        constructorMethod(points: string, opts?: { lens?: FisheyeParams | null; offset?: number }) {
             this.cuboidModel = new CuboidModel(parsePoints(points));
             this.setupFaces();
             this.setupEdges();
@@ -224,7 +224,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this._attr('points', points);
             this.addClass('cvat_canvas_shape_cuboid');
             if (opts && opts.lens) {
-                this.setLens(opts.lens);
+                this.setLens(opts.lens, opts.offset ?? 0);
             }
             return this;
         },
@@ -262,14 +262,28 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.lensEdgeDB = edgePath();
         },
 
-        setLens(params: FisheyeParams | null) {
+        setLens(params: FisheyeParams | null, offset = 0) {
+            this.lensParams = params;
+            this.lensOffset = offset;
             if (!params) {
                 this.lens = null;
                 this.lensOverlay.hide();
                 this.removeClass('cvat_canvas_cuboid_lens_distorted');
                 return;
             }
-            this.lens = new FisheyeLens(params);
+            // Cuboid corners live in SVG-canvas coordinates, which are image-pixel
+            // coordinates shifted by `offset`. Bake that shift into the lens'
+            // principal point so the lens consumes/produces SVG-canvas coords
+            // directly. Without this, every interior curve sample is computed
+            // against a wildly off-centre origin and the bow flips direction
+            // near the periphery (see INT-5968).
+            const width = params.horizontalResolution;
+            const height = Math.round(width / params.aspectRatio);
+            this.lens = new FisheyeLens({
+                ...params,
+                cx: (params.cx ?? width / 2) + offset,
+                cy: (params.cy ?? height / 2) + offset,
+            });
             this.addClass('cvat_canvas_cuboid_lens_distorted');
             this.lensOverlay.show();
             this.updateLensOverlay();
@@ -1213,7 +1227,7 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
         },
     },
     construct: {
-        cube(points: string, opts?: { lens?: FisheyeParams | null }) {
+        cube(points: string, opts?: { lens?: FisheyeParams | null; offset?: number }) {
             return this.put(new (SVG as any).Cube()).constructorMethod(points, opts);
         },
     },
