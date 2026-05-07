@@ -389,6 +389,48 @@
     }
 }
 
+.cvat-canvas-lens-calibration-indicator {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: $border-radius-base;
+    background: rgba(82, 196, 26, 92%); // antd green-6
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    border: 1px solid #389e0d; // antd green-7
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 25%);
+    pointer-events: auto;
+    user-select: none;
+}
+
+.cvat-canvas-lens-calibration-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 90%);
+    animation: cvat-lens-calibration-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes cvat-lens-calibration-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.55;
+        transform: scale(0.75);
+    }
+}
+
 .cvat-canvas-image-setups-content {
     background: $background-color-2;
     padding: 8px;

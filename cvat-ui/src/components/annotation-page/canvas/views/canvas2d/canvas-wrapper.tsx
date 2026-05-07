@@ -399,9 +399,33 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 
-class CanvasWrapperComponent extends React.PureComponent<Props> {
+interface State {
+    lensCalibration: any | null;
+}
+
+// Default fisheye lens calibration applied automatically to cuboid shapes so
+// that lens distortion is rendered without requiring a manual DevTools call.
+// Matches the miocv / pycv "Cam360" fisheye preset.
+const DEFAULT_FISHEYE_LENS = {
+    a: 0.11,
+    b: -0.283,
+    c: 0.448,
+    HFOVInRadians: 3.1799898972,
+    aspectRatio: 1.0,
+    horizontalResolution: 2992,
+    lensType: 'Equidistant' as const,
+};
+
+class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
+
+    constructor(props: Props) {
+        super(props);
+        this.state = {
+            lensCalibration: { ...DEFAULT_FISHEYE_LENS },
+        };
+    }
 
     public componentDidMount(): void {
         const {
@@ -446,6 +470,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         (window as any).cvatCanvasInstance = canvasInstance;
         (window as any).cvatSetLensCalibration = (params: any): void => {
             canvasInstance.configure({ lensCalibration: params });
+            // Reflect the new calibration in component state so the UI badge
+            // updates. We mirror the validation that canvasModel performs:
+            // null disables, otherwise we accept the object (canvas-side
+            // validation will silently ignore a malformed payload).
+            const isObject = params && typeof params === 'object';
+            this.setState({ lensCalibration: isObject ? { ...params } : null });
         };
 
         canvasInstance.configure({
@@ -468,6 +498,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textContent,
             resetZoom,
             focusedObjectPadding,
+            lensCalibration: { ...DEFAULT_FISHEYE_LENS },
         });
 
         this.initialSetup();
@@ -1172,6 +1203,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             onExpandObject,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
+        const { lensCalibration } = this.state;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1277,6 +1309,35 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     <div className='cvat-canvas-frame-tags'>
                         <FrameTags />
                     </div>
+                ) : null}
+
+                {lensCalibration ? (
+                    <CVATTooltip
+                        title={(
+                            <div>
+                                <div>Fisheye lens calibration is active.</div>
+                                <div>Cuboid edges are curved through the configured lens model.</div>
+                                <div style={{ marginTop: 4, fontFamily: 'monospace', fontSize: 11 }}>
+                                    {`a=${lensCalibration.a}, `}
+                                    {`b=${lensCalibration.b}, `}
+                                    {`c=${lensCalibration.c}`}
+                                    <br />
+                                    {`HFOV=${lensCalibration.HFOVInRadians} rad`}
+                                    <br />
+                                    {`AR=${lensCalibration.aspectRatio}, `}
+                                    {`W=${lensCalibration.horizontalResolution}px`}
+                                    <br />
+                                    {`type=${lensCalibration.lensType}`}
+                                </div>
+                            </div>
+                        )}
+                        placement='right'
+                    >
+                        <div className='cvat-canvas-lens-calibration-indicator'>
+                            <span className='cvat-canvas-lens-calibration-dot' />
+                            Lens calibration ON
+                        </div>
+                    </CVATTooltip>
                 ) : null}
             </>
         );
