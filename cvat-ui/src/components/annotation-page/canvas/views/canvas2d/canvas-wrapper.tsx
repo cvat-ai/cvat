@@ -422,6 +422,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props);
+        // Initial state uses the Cam360 default so cuboid edges are curved on
+        // first load. componentDidMount() then fetches the task and replaces
+        // this with the persisted calibration if one is configured. The
+        // persisted value is what the export pipeline will emit.
         this.state = {
             lensCalibration: { ...DEFAULT_FISHEYE_LENS },
         };
@@ -468,15 +472,54 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         //   });
         //   window.cvatSetLensCalibration(null);  // disable
         (window as any).cvatCanvasInstance = canvasInstance;
-        (window as any).cvatSetLensCalibration = (params: any): void => {
-            canvasInstance.configure({ lensCalibration: params });
+        (window as any).cvatSetLensCalibration = async (params: any): Promise<void> => {
             // Reflect the new calibration in component state so the UI badge
             // updates. We mirror the validation that canvasModel performs:
             // null disables, otherwise we accept the object (canvas-side
             // validation will silently ignore a malformed payload).
             const isObject = params && typeof params === 'object';
-            this.setState({ lensCalibration: isObject ? { ...params } : null });
+            const next = isObject ? { ...params } : null;
+            canvasInstance.configure({ lensCalibration: next });
+            this.setState({ lensCalibration: next });
+
+            // Persist to the parent task so the next CVAT-XML export carries
+            // it under <meta>/<task>/<lens_calibration>. Failures are logged
+            // but do not block the in-canvas overlay update above.
+            try {
+                const { jobInstance } = this.props;
+                const taskId = jobInstance?.taskId;
+                if (typeof taskId === 'number') {
+                    const [task] = await cvat.tasks.get({ id: taskId });
+                    if (task) {
+                        task.lensCalibration = next;
+                        await task.save();
+                    }
+                }
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.warn('Failed to persist lens calibration to task', error);
+            }
         };
+
+        // Load any persisted task-level calibration so reopening the job
+        // shows the value last saved through the API. Runs in the background
+        // so it doesn't block initial canvas setup.
+        (async () => {
+            try {
+                const { jobInstance } = this.props;
+                const taskId = jobInstance?.taskId;
+                if (typeof taskId !== 'number') return;
+                const [task] = await cvat.tasks.get({ id: taskId });
+                const persisted = task?.lensCalibration ?? null;
+                if (persisted) {
+                    canvasInstance.configure({ lensCalibration: persisted });
+                    this.setState({ lensCalibration: { ...persisted } });
+                }
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.warn('Failed to load lens calibration from task', error);
+            }
+        })();
 
         canvasInstance.configure({
             undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,

@@ -212,6 +212,33 @@ class InstanceLabelData:
             ))
         return exported_attributes
 
+
+def _fisheye_meta_block(lc):
+    """Convert a `Task.lens_calibration` JSON blob (mio-cvat extension) into a
+    serialized dict suitable for `XmlAnnotationWriter.add_meta`. Field names
+    are snake_case to match CVAT XML conventions; the JSON kept on the model
+    uses the camelCase shape of `FisheyeParams` from
+    cvat-canvas/src/typescript/lensModel.ts. Returns `None` when no
+    calibration is configured so the caller can skip the block entirely.
+    """
+    if not lc:
+        return None
+    block = {
+        'lens_type':             str(lc.get('lensType', 'Equidistant')),
+        'a':                     '{:.10g}'.format(float(lc['a'])),
+        'b':                     '{:.10g}'.format(float(lc['b'])),
+        'c':                     '{:.10g}'.format(float(lc['c'])),
+        'hfov_radians':          '{:.10g}'.format(float(lc['HFOVInRadians'])),
+        'aspect_ratio':          '{:.10g}'.format(float(lc['aspectRatio'])),
+        'horizontal_resolution': str(int(lc['horizontalResolution'])),
+    }
+    if lc.get('cx') is not None:
+        block['cx'] = '{:.10g}'.format(float(lc['cx']))
+    if lc.get('cy') is not None:
+        block['cy'] = '{:.10g}'.format(float(lc['cy']))
+    return block
+
+
 class CommonData(InstanceLabelData):
     class Shape(NamedTuple):
         id: int
@@ -849,6 +876,13 @@ class JobData(CommonData):
                 "height": str(self._db_data.video.height)
             }
 
+        # Carry the parent task's fisheye lens calibration into job-level
+        # exports too (mio-cvat extension). See `TaskData.meta_for_task` for
+        # the schema description.
+        lens_meta = _fisheye_meta_block(getattr(self._db_task, 'lens_calibration', None))
+        if lens_meta is not None:
+            self._meta[JobData.META_FIELD]['lens_calibration'] = lens_meta
+
     def _init_frame_info(self):
         super()._init_frame_info()
 
@@ -961,6 +995,16 @@ class TaskData(CommonData):
 
             # Add source to dumped file
             meta["source"] = str(osp.basename(db_task.data.video.path))
+
+        # Fisheye lens calibration (mio-cvat extension). Emitted under
+        # <meta>/<task>/<lens_calibration> so post-processors can recover the
+        # exact intrinsics that were used to draw the curved overlay in
+        # cvat-canvas. Field names are snake_case to match CVAT XML
+        # conventions; the JSON kept on the model uses the camelCase shape of
+        # `FisheyeParams` from cvat-canvas/src/typescript/lensModel.ts.
+        lens_meta = _fisheye_meta_block(getattr(db_task, 'lens_calibration', None))
+        if lens_meta is not None:
+            meta['lens_calibration'] = lens_meta
 
         return meta
 

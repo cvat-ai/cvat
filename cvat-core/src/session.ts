@@ -18,7 +18,7 @@ import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
 import {
-    SerializedCollection, SerializedJob,
+    SerializedCollection, SerializedFisheyeLens, SerializedJob,
     SerializedLabel, SerializedTask,
 } from './server-response-types';
 import AnnotationGuide from './guide';
@@ -819,6 +819,7 @@ export class Task extends Session {
     };
     public readonly jobs: Job[];
     public readonly consensusEnabled: boolean;
+    public lensCalibration: SerializedFisheyeLens | null;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -887,6 +888,7 @@ export class Task extends Session {
             consensus_enabled: undefined,
 
             validation_mode: null,
+            lens_calibration: null,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -1072,6 +1074,18 @@ export class Task extends Session {
                 },
                 consensusEnabled: {
                     get: () => data.consensus_enabled,
+                },
+                lensCalibration: {
+                    get: () => data.lens_calibration ?? null,
+                    set: (value: SerializedFisheyeLens | null) => {
+                        if (value !== null && (typeof value !== 'object' || Array.isArray(value))) {
+                            throw new ArgumentError(
+                                'lensCalibration must be an object or null',
+                            );
+                        }
+                        updateTrigger.update('lensCalibration');
+                        data.lens_calibration = value;
+                    },
                 },
                 labels: {
                     get: () => [...data.labels],

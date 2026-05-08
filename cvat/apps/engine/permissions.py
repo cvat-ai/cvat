@@ -455,6 +455,10 @@ class ProjectPermission(
                         "organization_id": Scopes.UPDATE_ORGANIZATION,
                         "source_storage": Scopes.UPDATE_ASSOCIATED_STORAGE,
                         "target_storage": Scopes.UPDATE_ASSOCIATED_STORAGE,
+                        # mio-cvat extension: fisheye lens calibration is
+                        # task-level metadata, treat it like other
+                        # description-level fields (name, bug_tracker, ...).
+                        "lens_calibration": Scopes.UPDATE_DESC,
                     },
                 )
             )
@@ -770,6 +774,10 @@ class TaskPermission(
                         "organization_id": Scopes.UPDATE_ORGANIZATION,
                         "source_storage": Scopes.UPDATE_ASSOCIATED_STORAGE,
                         "target_storage": Scopes.UPDATE_ASSOCIATED_STORAGE,
+                        # mio-cvat extension: fisheye lens calibration is
+                        # task-level metadata, treat it like other
+                        # description-level fields (name, bug_tracker, ...).
+                        "lens_calibration": Scopes.UPDATE_DESC,
                     },
                 )
             )

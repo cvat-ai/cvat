@@ -137,6 +137,21 @@ export interface SerializedTask {
     updated_date: string;
     url: string;
     consensus_enabled: boolean;
+    // Fisheye lens calibration (mio-cvat extension). `null` when no
+    // calibration has been configured for the task.
+    lens_calibration: SerializedFisheyeLens | null;
+}
+
+export interface SerializedFisheyeLens {
+    a: number;
+    b: number;
+    c: number;
+    HFOVInRadians: number;
+    aspectRatio: number;
+    horizontalResolution: number;
+    lensType: 'Equidistant';
+    cx?: number | null;
+    cy?: number | null;
 }
 
 export interface SerializedJob {
