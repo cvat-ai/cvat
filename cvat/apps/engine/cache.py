@@ -1111,10 +1111,9 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     PREVIEW_SIZE = (256, 256)
 
     ALLOWED_FORMATS = {"PNG", "JPEG"}
-    FORMAT_MIME = {
-        "PNG": "image/png",
-        "JPEG": "image/jpeg",
-    }
+
+    def get_mime(format_name: str) -> str:
+        return PIL.Image.MIME[format_name]
 
     image = PIL.ImageOps.exif_transpose(image)
 
@@ -1125,10 +1124,10 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
 
     if image.format not in ALLOWED_FORMATS:
         image.convert("RGB").save(output_buf, format="JPEG")
-        mime = FORMAT_MIME["JPEG"]
+        mime = get_mime("JPEG")
     else:
         image.save(output_buf)
-        mime = FORMAT_MIME[image.format]
+        mime = get_mime(image.format)
 
     return output_buf, mime
 
