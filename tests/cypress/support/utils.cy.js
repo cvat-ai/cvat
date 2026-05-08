@@ -96,31 +96,31 @@ export function drawPolyshape(createPolyshapeParams, drawMethod) {
 }
 
 /**
- * Description
+ * Toggle auto-simplify switch for a shape
  * @param {boolean} expectedState
  * @param {'polygon' | 'polyline'} shape
  */
 export function toggleAutoSimplify(expectedState, shape) {
-    cy.get(`.cvat-draw-${shape}-popover .cvat-draw-shape-popover-simplify-checkbox`)
+    cy.get(`.cvat-draw-shape-popover .cvat-draw-${shape}-popover-simplify-switch`)
         .should('exist').and('be.visible')
         .click();
     if (expectedState === true) {
-        cy.get('.cvat-draw-shape-popover-simplify-checkbox')
+        cy.get(`.cvat-draw-${shape}-popover-simplify-switch`)
             .should('have.class', 'ant-switch-checked');
     } else {
-        cy.get('.cvat-draw-shape-popover-simplify-checkbox').should('not.have.class', 'ant-switch-checked');
+        cy.get(`.cvat-draw-${shape}-popover-simplify-switch`).should('not.have.class', 'ant-switch-checked');
     }
 }
 
-export function getShapeCoord(type, objectId) {
+export function getShapeCoord(type, objectSelector) {
     const arrToPush = [];
     if (type === 'rect') {
-        cy.get(objectId).invoke('attr', 'x').then((x) => arrToPush.push(+x));
-        cy.get(objectId).invoke('attr', 'y').then((y) => arrToPush.push(+y));
-        cy.get(objectId).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
-        cy.get(objectId).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
+        cy.get(objectSelector).invoke('attr', 'x').then((x) => arrToPush.push(+x));
+        cy.get(objectSelector).invoke('attr', 'y').then((y) => arrToPush.push(+y));
+        cy.get(objectSelector).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
+        cy.get(objectSelector).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
     } else {
-        cy.get(objectId).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
+        cy.get(objectSelector).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
     }
     return cy.wrap(arrToPush);
 }

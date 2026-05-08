@@ -4,6 +4,7 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
 import { taskName, labelName } from '../../support/const';
 import { getShapeCoord, toggleAutoSimplify } from '../../support/utils.cy';
 import { translatePoint } from '../../support/utils';
@@ -263,9 +264,8 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
             });
         });
 
-        context.skip('Auto-simplify', () => {
+        context('Auto-simplify', () => {
             before(() => {
-                // FIXME: there is a bug with incorrect redux state of the toggle
                 cy.interactControlButton('draw-polyline');
                 toggleAutoSimplify(true, 'polyline');
                 cy.interactControlButton('draw-polyline');
@@ -290,6 +290,7 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                 approveSimplify();
             });
             it('Auto-simplify when drawing a polygon', () => {
+                allure.issue('https://github.com/cvat-ai/cvat/pull/10568', 'Auto simplify initialized on first use');
                 cy.createPolygon({ ...createDetailedPolygon }, null, 'shiftHover');
                 checkLessPointsThan(referenceObjectId, detailedPolygonPoints);
                 approveSimplify();
