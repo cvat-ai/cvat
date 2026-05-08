@@ -1877,7 +1877,7 @@ def create_thread(
         )
 
     slogger.glob.info(
-        "Saved media for Data #{}: media type {}, {} frames".format(
+        "Saved media for Data #{}: media type '{}', {} frames".format(
             db_data.id,
             db_task.media_type,
             db_data.size,
