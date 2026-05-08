@@ -1,3 +1,5 @@
 ### Fixed
 
-- Helm deployments now support release-scoped OPA and secret wiring by allowing backend pods to target a configurable OPA host, by making OPA probe paths configurable, and by rendering Redis/Kvrocks secret names per release.
+- Helm deployments now support multiple releases in one namespace by rendering
+  OPA, Redis, and Kvrocks wiring with release-scoped service and secret names
+  (<https://github.com/cvat-ai/cvat/pull/10496>)
