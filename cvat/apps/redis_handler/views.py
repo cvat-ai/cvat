@@ -61,21 +61,26 @@ class RequestViewSet(viewsets.GenericViewSet):
     ordering_fields = ["created_date", "status", "action"]
     ordering = "-created_date"
 
-    filter_fields = [
-        # RQ job fields
-        "status",
-        # derivatives fields (from meta)
-        "project_id",
-        "task_id",
-        "job_id",
-        # derivatives fields (from parsed rq_id)
-        "action",
-        "target",
-        "subresource",
-        "format",
-    ]
+    simple_filters = sorted(
+        [
+            # RQ job fields
+            "status",
+            # derivatives fields (from meta)
+            "project_id",
+            "task_id",
+            "job_id",
+            # derivatives fields (from parsed rq_id)
+            "action",
+            "target",
+            "subresource",
+            "format",
+            # request context
+            "org",
+            "org_id",
+        ]
+    )
 
-    simple_filters = filter_fields + ["org"]
+    filter_fields = list(simple_filters)
 
     lookup_fields = {
         "created_date": "created_at",
@@ -88,6 +93,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         "task_id": "meta.task_id",
         "job_id": "meta.job_id",
         "org": "meta.org_slug",
+        "org_id": "meta.org_id",
     }
 
     SchemaField = namedtuple("SchemaField", ["type", "choices"], defaults=(None,))
@@ -102,6 +108,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         "subresource": SchemaField("string"),
         "format": SchemaField("string"),
         "org": SchemaField("string"),
+        "org_id": SchemaField("integer"),
     }
 
     def get_queryset(self):

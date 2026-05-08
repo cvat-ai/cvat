@@ -128,8 +128,8 @@ class ConsensusSettingsViewSet(
     iam_permission_class = ConsensusSettingPermission
 
     search_fields = []
-    filter_fields = ["id", "task_id"]
     simple_filters = ["task_id"]
+    filter_fields = sorted(set(simple_filters) | {"id"})
     ordering_fields = ["id"]
     ordering = "id"
 

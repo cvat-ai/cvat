@@ -55,15 +55,11 @@ class AccessTokensViewSet(
     queryset = models.AccessToken.objects.none()  # for API schema only
 
     search_fields = ("name",)
-    filter_fields = list(search_fields) + [
-        "id",
-        "created_date",
-        "updated_date",
-        "expiry_date",
-        "last_used_date",
-        "read_only",
-    ]
-    simple_filters = list(search_fields)
+    simple_filters = sorted(set(search_fields) | {"read_only"})
+    filter_fields = sorted(
+        set(simple_filters)
+        | {"id", "created_date", "updated_date", "expiry_date", "last_used_date"}
+    )
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
