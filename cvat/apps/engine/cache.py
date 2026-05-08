@@ -67,6 +67,8 @@ DataWithMime: TypeAlias = tuple[io.BytesIO, str]
 _CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
 _RQ_JOB_ORIGIN_ATTRIBUTE = "origin"
 
+ASSETS_DIR = Path(__file__).parent / "assets"
+
 
 class CacheTooLargeDataError(Exception):
     pass
@@ -1007,24 +1009,25 @@ class MediaCache:
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)
 
-        if db_segment.task.dimension == models.DimensionType.DIM_3D:
-            # TODO
-            preview = PIL.Image.open(
-                os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg")
-            )
-        else:
-            from cvat.apps.engine.frame_provider import (  # avoid circular import
-                FrameOutputType,
-                make_frame_provider,
-            )
+        match db_segment.task.media_type:
+            case models.MediaType.POINT_CLOUD:
+                preview = PIL.Image.open(ASSETS_DIR / "point_cloud_default_preview.png")
+            case models.MediaType.IMAGE:
+                from cvat.apps.engine.frame_provider import (  # avoid circular import
+                    FrameOutputType,
+                    make_frame_provider,
+                )
 
-            task_frame_provider = make_frame_provider(db_segment.task)
-            segment_frame_provider = make_frame_provider(db_segment)
-            preview = segment_frame_provider.get_frame(
-                task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
-                quality=models.FrameQuality.COMPRESSED,
-                out_type=FrameOutputType.PIL,
-            ).data
+                task_frame_provider = make_frame_provider(db_segment.task)
+                segment_frame_provider = make_frame_provider(db_segment)
+
+                preview = segment_frame_provider.get_frame(
+                    task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
+                    quality=models.FrameQuality.COMPRESSED,
+                    out_type=FrameOutputType.PIL,
+                ).data
+            case _ as media_type:
+                assert False, f"Unknown media type {media_type}"
 
         return prepare_preview_image(preview)
 
@@ -1106,14 +1109,27 @@ class MediaCache:
 
 def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     PREVIEW_SIZE = (256, 256)
-    PREVIEW_MIME = "image/jpeg"
+
+    ALLOWED_FORMATS = {"PNG", "JPEG"}
+
+    def get_mime(format_name: str) -> str:
+        return PIL.Image.MIME[format_name]
 
     image = PIL.ImageOps.exif_transpose(image)
-    image.thumbnail(PREVIEW_SIZE)
 
     output_buf = io.BytesIO()
-    image.convert("RGB").save(output_buf, format="JPEG")
-    return output_buf, PREVIEW_MIME
+
+    if image.size != PREVIEW_SIZE:
+        image.thumbnail(PREVIEW_SIZE)
+
+    if image.format not in ALLOWED_FORMATS:
+        image.convert("RGB").save(output_buf, format="JPEG")
+        mime = get_mime("JPEG")
+    else:
+        image.save(output_buf)
+        mime = get_mime(image.format)
+
+    return output_buf, mime
 
 
 def prepare_chunk(
