@@ -246,20 +246,28 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.lensFaceDorsal = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
             this.lensFaceFront = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
 
-            // 12 edge overlay paths (curved strokes, no fill).
-            const edgePath = (): any => this.lensOverlay.path('').attr('fill', 'none');
-            this.lensEdgeFL = edgePath();
-            this.lensEdgeFR = edgePath();
+            // 12 edge overlay paths (curved strokes, no fill). The four
+            // "front" edges are created LAST so they're appended to the SVG
+            // group after the side/back edges; SVG renders later children on
+            // top, which guarantees the grey perspective-face outline paints
+            // over the blue side/back edges at shared corners.
+            const edgePath = (cls?: string): any => {
+                const p = this.lensOverlay.path('').attr('fill', 'none');
+                if (cls) p.addClass(cls);
+                return p;
+            };
             this.lensEdgeDR = edgePath();
             this.lensEdgeDL = edgePath();
-            this.lensEdgeFT = edgePath();
             this.lensEdgeRT = edgePath();
             this.lensEdgeLT = edgePath();
             this.lensEdgeDT = edgePath();
-            this.lensEdgeFB = edgePath();
             this.lensEdgeRB = edgePath();
             this.lensEdgeLB = edgePath();
             this.lensEdgeDB = edgePath();
+            this.lensEdgeFL = edgePath('cvat_canvas_cuboid_front_edge');
+            this.lensEdgeFR = edgePath('cvat_canvas_cuboid_front_edge');
+            this.lensEdgeFT = edgePath('cvat_canvas_cuboid_front_edge');
+            this.lensEdgeFB = edgePath('cvat_canvas_cuboid_front_edge');
         },
 
         setLens(params: FisheyeParams | null, offset = 0) {
@@ -287,6 +295,11 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.addClass('cvat_canvas_cuboid_lens_distorted');
             this.lensOverlay.show();
             this.updateLensOverlay();
+            // Re-apply the grey "perspective face" colouring to the curved
+            // overlay edges; without this, switching lens calibration on after
+            // the cuboid was created would leave the front edges with the
+            // default cuboid stroke colour.
+            this.paintOrientationLines();
         },
 
         updateLensOverlay() {
@@ -1048,6 +1061,21 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.frontLeftEdge.stroke({ color: selectedColor });
             this.frontBotEdge.stroke({ color: selectedColor });
             this.frontRightEdge.stroke({ color: selectedColor });
+
+            // Mirror the orientation colouring on the curved lens overlay so
+            // the perspective face is still highlighted when fisheye distortion
+            // is active (the original straight front edges are hidden via CSS
+            // when the cuboid has the cvat_canvas_cuboid_lens_distorted class).
+            // Also fill the curved front face with the grey colour at low
+            // opacity, mirroring the way the rest of the cuboid is drawn in
+            // its instance/label colour.
+            if (this.lens) {
+                this.lensEdgeFT.stroke({ color: selectedColor });
+                this.lensEdgeFL.stroke({ color: selectedColor });
+                this.lensEdgeFB.stroke({ color: selectedColor });
+                this.lensEdgeFR.stroke({ color: selectedColor });
+                this.lensFaceFront.fill({ color: selectedColor, opacity: 0.5 });
+            }
 
             this.rightTopEdge.stroke({ color: strokeColor });
             this.rightBotEdge.stroke({ color: strokeColor });
