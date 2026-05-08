@@ -1,0 +1,276 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+import json
+import logging
+import os
+import re
+import tempfile
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from urllib.parse import urlencode
+
+import pytest
+
+_LOGGER = logging.getLogger(__name__)
+
+_CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
+_CVAT_DB_DIR = _CVAT_ROOT_DIR / "tests/python/shared/assets/cvat_db"
+_CLICKHOUSE_INIT_SCRIPT = "components/analytics/clickhouse/init.py"
+_DEFAULT_PROJECT_NAME = "test"
+_DEFAULT_INFRA_MODE = "auto"
+_PROJECT_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+_RUNTIME_ROOT_DIR = Path(tempfile.gettempdir()) / "cvat_pytest_infra"
+_RUNS_ROOT_DIR = _RUNTIME_ROOT_DIR / "runs"
+_RUN_CONTEXT_FILE_NAME = "run-context.json"
+
+
+class InfraMode(str, Enum):
+    AUTO = "auto"
+    UP = "up"
+    DOWN = "down"
+    RESTORE_DB = "restore-db"
+    BUILD_IMAGES = "build-images"
+    REUSE = "reuse"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+_INFRA_MODES = tuple(str(mode) for mode in InfraMode)
+
+
+def _validate_project_name(name: str) -> str:
+    if not _PROJECT_NAME_PATTERN.match(name):
+        raise pytest.UsageError(
+            "Invalid project name. Use lowercase letters, digits, '_' or '-', and start with a letter or digit."
+        )
+
+    return name
+
+
+@dataclass(frozen=True)
+class ProjectInfraConfig:
+    project_name: str
+    cvat_root_dir: Path = _CVAT_ROOT_DIR
+    runtime_root_dir: Path = _RUNTIME_ROOT_DIR
+
+    @property
+    def runtime_dir(self) -> Path:
+        return self.runtime_root_dir / self.project_name
+
+    @property
+    def state_file(self) -> Path:
+        return self.runtime_dir / "state.json"
+
+    @property
+    def generated_compose_files(self) -> list[Path]:
+        return [
+            self.runtime_dir / "docker-compose.tests.yml",
+            self.runtime_dir / "docker-compose.dev.yml",
+        ]
+
+    @property
+    def dc_files(self) -> list[Path]:
+        return self.generated_compose_files
+
+    @property
+    def host_http_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("http_port", 8080))
+
+    @property
+    def host_logs_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("logs_port", 8090))
+
+    @property
+    def host_db_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("db_port", 15432))
+
+    @property
+    def host_redis_inmem_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("redis_inmem_port", 16379))
+
+    @property
+    def host_redis_ondisk_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("redis_ondisk_port", 16666))
+
+    @property
+    def host_minio_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("minio_port", 9000))
+
+    @property
+    def host_minio_console_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("minio_console_port", 9001))
+
+    def prefixed_container_name(self, container: str) -> str:
+        return f"{self.project_name}_{container}_1"
+
+    def load_state(self) -> dict | None:
+        if not self.state_file.exists():
+            return None
+        try:
+            with open(self.state_file) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            _LOGGER.warning("Ignoring unreadable runtime state file: %s", self.state_file)
+            return None
+
+    def save_state(self, state: dict) -> None:
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        tmp_state_file = self.state_file.with_suffix(".state.tmp")
+        with open(tmp_state_file, "w") as f:
+            json.dump(state, f, indent=2, sort_keys=True)
+        os.replace(tmp_state_file, self.state_file)
+
+    def delete_state(self) -> None:
+        self.state_file.unlink(missing_ok=True)
+
+    @classmethod
+    def from_config(cls, config, *, cvat_root_dir: Path = _CVAT_ROOT_DIR) -> "ProjectInfraConfig":
+        return cls(
+            project_name=_validate_project_name(config.getoption("--run-prefix")),
+            cvat_root_dir=cvat_root_dir,
+        )
+
+    @classmethod
+    def from_env(cls, *, cvat_root_dir: Path = _CVAT_ROOT_DIR) -> "ProjectInfraConfig":
+        return cls(
+            project_name=os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_PROJECT_NAME),
+            cvat_root_dir=cvat_root_dir,
+        )
+
+
+class RuntimeInfraConfig:
+    _run_id: str | None = None
+    _run_dir: Path | None = None
+
+    @classmethod
+    def initialize(cls, config) -> None:
+        if cls._run_id and cls._run_dir:
+            return
+
+        runs_root_dir = _RUNS_ROOT_DIR
+        runs_root_dir.mkdir(parents=True, exist_ok=True)
+
+        run_prefix = cls.get_run_prefix_from_config(config)
+        base_run_id = f"{run_prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        run_id = base_run_id
+        suffix = 2
+        while (runs_root_dir / run_id).exists():
+            run_id = f"{base_run_id}-{suffix}"
+            suffix += 1
+
+        run_dir = runs_root_dir / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        cls._run_id = run_id
+        cls._run_dir = run_dir
+
+    @classmethod
+    def get_run_id(cls) -> str:
+        if not cls._run_id:
+            raise RuntimeError("RuntimeInfraConfig is not initialized")
+        return cls._run_id
+
+    @classmethod
+    def get_run_dir(cls) -> Path:
+        if cls._run_dir is None:
+            raise RuntimeError("RuntimeInfraConfig is not initialized")
+        return cls._run_dir
+
+    @classmethod
+    def get_runtime_root_dir(cls) -> Path:
+        return _RUNTIME_ROOT_DIR
+
+    @classmethod
+    def get_runs_root_dir(cls) -> Path:
+        return _RUNS_ROOT_DIR
+
+    @classmethod
+    def get_cvat_root_dir(cls) -> Path:
+        return _CVAT_ROOT_DIR
+
+    @classmethod
+    def get_cvat_db_dir(cls) -> Path:
+        return _CVAT_DB_DIR
+
+    @classmethod
+    def get_default_project_name(cls) -> str:
+        return _DEFAULT_PROJECT_NAME
+
+    @classmethod
+    def get_default_infra_mode(cls) -> str:
+        return _DEFAULT_INFRA_MODE
+
+    @classmethod
+    def get_infra_modes(cls) -> tuple[str, ...]:
+        return _INFRA_MODES
+
+    @classmethod
+    def get_clickhouse_init_script(cls) -> str:
+        return _CLICKHOUSE_INIT_SCRIPT
+
+    @classmethod
+    def parse_infra_mode(cls, value: str) -> InfraMode:
+        try:
+            return InfraMode(value)
+        except ValueError as ex:
+            raise pytest.UsageError(
+                f"Unknown infra mode {value!r}. Allowed: {', '.join(_INFRA_MODES)}"
+            ) from ex
+
+    @classmethod
+    def get_server_url(cls, endpoint: str, **kwargs) -> str:
+        query = urlencode(kwargs)
+        return f"{cls.get_base_url()}/{endpoint}" + (f"?{query}" if query else "")
+
+    @classmethod
+    def get_base_url(cls) -> str:
+        return os.environ.get("CVAT_BASE_URL", "http://localhost:8080")
+
+    @classmethod
+    def get_run_prefix_from_config(cls, config) -> str:
+        return _validate_project_name(config.getoption("--run-prefix"))
+
+    @classmethod
+    def get_project_config(
+        cls, project_name_arg: str | None = None, *, cvat_root_dir: Path = _CVAT_ROOT_DIR
+    ) -> ProjectInfraConfig:
+        return ProjectInfraConfig(
+            project_name=project_name_arg
+            or os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_PROJECT_NAME),
+            cvat_root_dir=cvat_root_dir,
+        )
+
+    @classmethod
+    def get_prefixed_container_name(
+        cls, container: str, *, project_name_arg: str | None = None
+    ) -> str:
+        return cls.get_project_config(project_name_arg).prefixed_container_name(container)
+
+    @classmethod
+    def write_context_for_project(cls, project_name_arg: str) -> None:
+        context_file = cls.context_file_for_project(project_name_arg)
+        context_file.parent.mkdir(parents=True, exist_ok=True)
+
+        payload = {
+            "run_id": cls.get_run_id(),
+            "run_dir": str(cls.get_run_dir()),
+        }
+        tmp_file = context_file.with_suffix(context_file.suffix + ".tmp")
+        with open(tmp_file, "w") as f:
+            json.dump(payload, f, indent=2, sort_keys=True)
+        tmp_file.replace(context_file)
+
+    @classmethod
+    def context_file_for_project(cls, project_name_arg: str) -> Path:
+        return cls.get_project_config(project_name_arg).runtime_dir / _RUN_CONTEXT_FILE_NAME

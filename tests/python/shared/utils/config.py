@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+# Generic test request helpers intentionally rely on pytest/runtime-level timeouts.
+# pylint: disable=missing-timeout
+
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -15,6 +18,8 @@ ASSETS_DIR = (ROOT_DIR / "assets").resolve()
 SHARE_DIR = (ROOT_DIR.parents[1] / "mounted_file_share").resolve()
 # Suppress the warning from Bandit about hardcoded passwords
 USER_PASS = "!Q@W#E$R"  # nosec
+ADMIN_USER = "admin1"
+ADMIN_PASS = USER_PASS
 BASE_URL = "http://localhost:8080"
 API_URL = BASE_URL + "/api/"
 

@@ -4,7 +4,6 @@
 
 import logging
 import os
-import sys
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -14,6 +13,7 @@ from time import sleep
 import pytest
 import requests
 import yaml
+from infra.config import RuntimeInfraConfig
 
 from shared.utils.config import ASSETS_DIR, get_server_url
 
@@ -51,59 +51,6 @@ class Container(str, Enum):
     @classmethod
     def covered(cls):
         return [item.value for item in cls if item != cls.DB]
-
-
-def pytest_addoption(parser):
-    group = parser.getgroup("CVAT REST API testing options")
-    group._addoption(
-        "--start-services",
-        action="store_true",
-        help="Start all necessary CVAT containers without running tests. (default: %(default)s)",
-    )
-
-    group._addoption(
-        "--stop-services",
-        action="store_true",
-        help="Stop all testing containers without running tests. (default: %(default)s)",
-    )
-
-    group._addoption(
-        "--rebuild",
-        action="store_true",
-        help="Rebuild CVAT images and then start containers. (default: %(default)s)",
-    )
-
-    group._addoption(
-        "--cleanup",
-        action="store_true",
-        help="Delete files that was create by tests without running tests. (default: %(default)s)",
-    )
-
-    group._addoption(
-        "--dumpdb",
-        action="store_true",
-        help="Update data.json without running tests. (default: %(default)s)",
-    )
-    group._addoption(
-        "--keep-data",
-        action="store_true",
-        help="Do not reset volumes and database. (default: %(default)s)",
-    )
-
-    group._addoption(
-        "--no-services",
-        action="store_true",
-        help=("""Don't start, stop, or seed any containers — assume the user runs
-            the test stack externally"""),
-    )
-
-    group._addoption(
-        "--platform",
-        action="store",
-        default="local",
-        choices=("kube", "local"),
-        help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
-    )
 
 
 def _run(command, capture_output=True):
@@ -147,6 +94,21 @@ def _kube_get_redis_ondisk_pod_name():
     return _kube_get_pod_name("app.kubernetes.io/name=cvat,tier=kvrocks")
 
 
+def _get_optional_bool_option(config, name: str, default: bool = False) -> bool:
+    try:
+        return bool(config.getoption(name))
+    except ValueError:
+        return default
+
+
+def _project_cfg():
+    return RuntimeInfraConfig.get_project_config(cvat_root_dir=CVAT_ROOT_DIR)
+
+
+def _prefixed_container_name(container: str) -> str:
+    return _project_cfg().prefixed_container_name(container)
+
+
 def docker_cp(source, target):
     _run(f"docker container cp {source} {target}")
 
@@ -156,11 +118,13 @@ def kube_cp(source, target):
 
 
 def docker_exec(container, command, capture_output=True):
-    return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
+    return _run(
+        f"docker exec -u root {_prefixed_container_name(container)} {command}", capture_output
+    )
 
 
 def docker_exec_cvat(command: list[str] | str):
-    base = f"docker exec {PREFIX}_cvat_server_1"
+    base = f"docker exec {_prefixed_container_name('cvat_server')}"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
@@ -188,7 +152,7 @@ def kube_exec_cvat_db(command):
 
 
 def docker_exec_clickhouse_db(command):
-    _run(["docker", "exec", f"{PREFIX}_cvat_clickhouse_1"] + command)
+    _run(["docker", "exec", _prefixed_container_name("cvat_clickhouse")] + command)
 
 
 def kube_exec_clickhouse_db(command):
@@ -197,7 +161,7 @@ def kube_exec_clickhouse_db(command):
 
 
 def docker_exec_redis_inmem(command):
-    return _run(["docker", "exec", f"{PREFIX}_cvat_redis_inmem_1"] + command)
+    return _run(["docker", "exec", _prefixed_container_name("cvat_redis_inmem")] + command)
 
 
 def kube_exec_redis_inmem(command):
@@ -206,7 +170,7 @@ def kube_exec_redis_inmem(command):
 
 
 def docker_exec_redis_ondisk(command):
-    _run(["docker", "exec", f"{PREFIX}_cvat_redis_ondisk_1"] + command)
+    _run(["docker", "exec", _prefixed_container_name("cvat_redis_ondisk")] + command)
 
 
 def kube_exec_redis_ondisk(command):
@@ -301,20 +265,17 @@ def running_containers():
 
 
 def dump_db():
-    if "test_cvat_server_1" not in running_containers():
+    if _prefixed_container_name("cvat_server") not in running_containers():
         pytest.exit("CVAT is not running")
-    try:
-        run(  # nosec
-            [
-                sys.executable,
-                str(Path(__file__).resolve().parents[1] / "utils" / "dump_test_db.py"),
-                "--output",
-                str(CVAT_DB_DIR / "data.json"),
-            ],
-            check=True,
-        )
-    except CalledProcessError:
-        pytest.exit("Database dump failed.\n")
+    with open(CVAT_DB_DIR / "data.json", "w") as f:
+        try:
+            run(  # nosec
+                f"docker exec {_prefixed_container_name('cvat_server')} python manage.py dumpdata --indent 2 --natural-foreign --exclude=auth.permission --exclude=contenttypes".split(),
+                stdout=f,
+                check=True,
+            )
+        except CalledProcessError:
+            pytest.exit("Database dump failed.\n")
 
 
 def create_compose_files(container_name_files):
@@ -351,7 +312,7 @@ def wait_for_services(num_secs: int = 300) -> None:
         logger.debug(f"waiting for the server to load ... ({i})")
 
         try:
-            response = requests.get(get_server_url("api/server/health/", format="json"))
+            response = requests.get(get_server_url("api/server/health/", format="json"), timeout=5)
 
             statuses = response.json()
             logger.debug(f"server status: \n{statuses}")
@@ -373,7 +334,7 @@ def wait_for_services(num_secs: int = 300) -> None:
 def docker_restore_data_volumes():
     docker_cp(
         CVAT_DB_DIR / "cvat_data.tar.bz2",
-        f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
+        f"{_prefixed_container_name('cvat_server')}:/tmp/cvat_data.tar.bz2",
     )
     docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
@@ -395,7 +356,7 @@ def docker_compose(dc_files, cvat_root_dir):
     return [
         "docker",
         "compose",
-        f"--project-name={PREFIX}",
+        f"--project-name={_project_cfg().project_name}",
         # use compatibility mode to have fixed names for containers (with underscores)
         # https://github.com/docker/compose#about-update-and-backward-compatibility
         "--compatibility",
@@ -428,10 +389,10 @@ def session_start(
     extra_dc_files=None,
     waiting_time=300,
 ):
-    stop = session.config.getoption("--stop-services")
-    start = session.config.getoption("--start-services")
-    rebuild = session.config.getoption("--rebuild")
-    keep_data = session.config.getoption("--keep-data")
+    stop = _get_optional_bool_option(session.config, "--stop-services")
+    start = _get_optional_bool_option(session.config, "--start-services")
+    rebuild = _get_optional_bool_option(session.config, "--rebuild")
+    keep_data = _get_optional_bool_option(session.config, "--keep-data")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
 
@@ -512,17 +473,17 @@ def local_start(
 
     if not keep_data:
         docker_restore_data_volumes()
-        docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
-        docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
+        docker_cp(
+            cvat_db_dir / "restore.sql", f"{_prefixed_container_name('cvat_db')}:/tmp/restore.sql"
+        )
+        docker_cp(
+            cvat_db_dir / "data.json", f"{_prefixed_container_name('cvat_server')}:/tmp/data.json"
+        )
 
         wait_for_services(waiting_time)
 
         docker_exec_cvat(
-            [
-                "sh",
-                "-c",
-                "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json",
-            ]
+            ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
         )
         docker_exec(
             Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
@@ -546,7 +507,7 @@ def kube_start(cvat_db_dir, keep_data):
     wait_for_services()
 
     kube_exec_cvat(
-        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json"]
+        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
     )
 
     kube_exec_cvat_db(
@@ -556,14 +517,6 @@ def kube_start(cvat_db_dir, keep_data):
             "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql",
         ]
     )
-
-
-def pytest_sessionstart(session: pytest.Session) -> None:
-    session_start(session)
-
-
-def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    session_finish(session)
 
 
 def session_finish(session):
@@ -592,7 +545,7 @@ def collect_code_coverage_from_containers():
         docker_exec(container, "coverage combine", capture_output=False)
         docker_exec(container, "coverage json", capture_output=False)
         docker_cp(
-            f"{PREFIX}_{container}_1:home/django/coverage.json",
+            f"{_prefixed_container_name(container)}:home/django/coverage.json",
             f"coverage_{container}.json",
         )
 
