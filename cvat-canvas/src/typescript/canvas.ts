@@ -54,6 +54,9 @@ interface Canvas {
     isAbleToChangeFrame(): boolean;
     destroy(): void;
 
+    setCuboidFreeBackFace(clientID: number, flag: boolean): void;
+    isCuboidFreeBackFace(clientID: number): boolean;
+
     readonly geometry: Geometry;
 }
 
@@ -190,6 +193,14 @@ class CanvasImpl implements Canvas {
 
     public destroy(): void {
         this.model.destroy();
+    }
+
+    public setCuboidFreeBackFace(clientID: number, flag: boolean): void {
+        this.view.setCuboidFreeBackFace(clientID, flag);
+    }
+
+    public isCuboidFreeBackFace(clientID: number): boolean {
+        return this.view.isCuboidFreeBackFace(clientID);
     }
 }
 

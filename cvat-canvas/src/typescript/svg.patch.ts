@@ -403,20 +403,55 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.drCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_ew');
             this.dlCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_ew');
 
+            // Back-face corner handles (only visible when freeBackFace is on).
+            // Indices on the cuboid model: blt=6, blb=7, brt=4, brb=5.
+            this.bltCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_lt')
+                .addClass('cvat_canvas_cuboid_back_corner');
+            this.blbCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_lb')
+                .addClass('cvat_canvas_cuboid_back_corner');
+            this.brtCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_rt')
+                .addClass('cvat_canvas_cuboid_back_corner');
+            this.brbCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_rb')
+                .addClass('cvat_canvas_cuboid_back_corner');
+
             const grabPoints = this.getGrabPoints();
             const edges = this.getEdges();
             for (let i = 0; i < grabPoints.length; i += 1) {
                 const edge = edges[i];
+                if (!edge) continue;
                 const cx = (edge.attr('x2') + edge.attr('x1')) / 2;
                 const cy = (edge.attr('y2') + edge.attr('y1')) / 2;
                 grabPoints[i].center(cx, cy);
             }
+
+            // Position back-face corner handles directly on their points.
+            this.positionBackFaceHandles();
 
             if (viewModel.orientation === Orientation.LEFT) {
                 this.dlCenter.hide();
             } else {
                 this.drCenter.hide();
             }
+
+            this.updateBackFaceHandlesVisibility();
+        },
+
+        positionBackFaceHandles() {
+            if (!this.bltCenter) return;
+            const pts = this.cuboidModel.points;
+            // Indices: blt=6, blb=7, brt=4, brb=5
+            this.bltCenter.center(pts[6].x, pts[6].y);
+            this.blbCenter.center(pts[7].x, pts[7].y);
+            this.brtCenter.center(pts[4].x, pts[4].y);
+            this.brbCenter.center(pts[5].x, pts[5].y);
         },
 
         showProjections() {
@@ -486,6 +521,14 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.getGrabPoints().forEach((point: SVG.Element) => {
                     point && point.remove();
                 });
+                [this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter]
+                    .forEach((point: SVG.Element) => {
+                        if (point) point.remove();
+                    });
+                this.bltCenter = null;
+                this.blbCenter = null;
+                this.brtCenter = null;
+                this.brbCenter = null;
             } else {
                 this.setupGrabPoints(
                     this.face
@@ -545,6 +588,16 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                         point.off('dragend');
                     }
                 });
+
+                // Clean back-face corner handle listeners as well.
+                [this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter]
+                    .forEach((point: SVG.Element) => {
+                        if (point) {
+                            point.off('dragstart');
+                            point.off('dragmove');
+                            point.off('dragend');
+                        }
+                    });
 
                 return;
             }
@@ -889,6 +942,40 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     this.fire(new CustomEvent('resizedone', event));
                 });
 
+            // Back-face corner handles: only active when freeBackFace is on.
+            // Each handle drags one of the four back-face point indices (4..7)
+            // independently, with no perspective constraints.
+            const setupBackCornerHandle = (handle: any, pointIndex: number): void => {
+                if (!handle) return;
+                handle
+                    .draggable(() => ({
+                        // Allow free 2D motion while in free-back-face mode;
+                        // when not in that mode, lock the handle in place.
+                        x: !!this.cuboidModel.freeBackFace,
+                        y: !!this.cuboidModel.freeBackFace,
+                    }))
+                    .on('dragstart', (event: CustomEvent) => {
+                        this.fire(new CustomEvent('resizestart', event));
+                    })
+                    .on('dragmove', (event: CustomEvent) => {
+                        if (!this.cuboidModel.freeBackFace) return;
+                        const cx = handle.cx();
+                        const cy = handle.cy();
+                        this.cuboidModel.points[pointIndex] = { x: cx, y: cy };
+                        this.updateViewAndVM(false);
+                        this.fire(new CustomEvent('resizing', event));
+                    })
+                    .on('dragend', (event: CustomEvent) => {
+                        this.fire(new CustomEvent('resizedone', event));
+                    });
+            };
+
+            // Indices: blt=6, blb=7, brt=4, brb=5
+            setupBackCornerHandle(this.bltCenter, 6);
+            setupBackCornerHandle(this.blbCenter, 7);
+            setupBackCornerHandle(this.brtCenter, 4);
+            setupBackCornerHandle(this.brbCenter, 5);
+
             return this;
         },
 
@@ -1137,7 +1224,14 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
         updateViewAndVM(build: boolean) {
             this.cuboidModel.updateOrientation();
-            this.cuboidModel.buildBackEdge(build);
+            if (!this.cuboidModel.freeBackFace) {
+                this.cuboidModel.buildBackEdge(build);
+            } else {
+                // Refresh vanishing points from current geometry purely so the
+                // projection guides (ftProj/fbProj/rtProj/rbProj) stay sane.
+                // Do NOT rewrite back-face points: they are user-controlled.
+                (this.cuboidModel as any).updateVanishingPoints(false);
+            }
             this.updateView();
 
             // to correct getting of points in resizedone, dragdone
@@ -1148,6 +1242,46 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     .reduce((acc: string, point: Point): string => `${acc} ${point.x},${point.y}`, '')
                     .trim(),
             );
+        },
+
+        // Toggle decoupled back-face editing mode for this cuboid.
+        // When enabled, the four back-face corner points (indices 4-7) become
+        // independently draggable; when disabled, the back face is rebuilt to
+        // be perspective-consistent with the front face.
+        setFreeBackFace(flag: boolean) {
+            this.cuboidModel.freeBackFace = !!flag;
+            if (!flag) {
+                // Snap the back face back onto the perspective rays.
+                this.cuboidModel.buildBackEdge(false);
+            }
+            this.updateBackFaceHandlesVisibility();
+            this.updateView();
+            this._attr(
+                'points',
+                this.cuboidModel
+                    .getPoints()
+                    .reduce((acc: string, point: Point): string => `${acc} ${point.x},${point.y}`, '')
+                    .trim(),
+            );
+            // Notify CVAT so the change is persisted via the resize event chain.
+            this.fire(new CustomEvent('resizedone', { detail: {} }));
+        },
+
+        isFreeBackFace(): boolean {
+            return !!(this.cuboidModel && this.cuboidModel.freeBackFace);
+        },
+
+        updateBackFaceHandlesVisibility() {
+            const handles = [
+                this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter,
+            ];
+            const show = !!(this.cuboidModel && this.cuboidModel.freeBackFace);
+            handles.forEach((h: any) => {
+                if (h) {
+                    if (show) h.show();
+                    else h.hide();
+                }
+            });
         },
 
         computeHeightFace(point: Point, index: number) {
@@ -1250,8 +1384,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             const edges = this.getEdges();
             for (let i = 0; i < centers.length; i += 1) {
                 const edge = edges[i];
-                if (centers[i]) centers[i].center(edge.cx(), edge.cy());
+                if (centers[i] && edge) centers[i].center(edge.cx(), edge.cy());
             }
+            // Back-face corner handles follow their own (corner) coordinates.
+            this.positionBackFaceHandles();
         },
     },
     construct: {

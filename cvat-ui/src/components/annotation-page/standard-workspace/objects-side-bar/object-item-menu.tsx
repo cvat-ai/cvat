@@ -51,6 +51,8 @@ interface Props {
     toOneLayerBackward(): void;
     toOneLayerForward(): void;
     resetCuboidPerspective(): void;
+    toggleCuboidFreeBackFace(): void;
+    cuboidFreeBackFace: boolean;
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
@@ -194,6 +196,23 @@ function ResetPerspectiveItem(props: ItemProps): JSX.Element {
     );
 }
 
+function ToggleFreeBackFaceItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { toggleCuboidFreeBackFace, cuboidFreeBackFace } = toolProps;
+    return (
+        <CVATTooltip title='Decouple the back face from the front face so its corners can be moved independently. Useful for compensating lens distortion.'>
+            <Button
+                type='link'
+                onClick={toggleCuboidFreeBackFace}
+                className='cvat-object-item-menu-toggle-free-back-face'
+            >
+                <Icon component={ResetPerspectiveIcon} />
+                {cuboidFreeBackFace ? 'Lock back face' : 'Free back face'}
+            </Button>
+        </CVATTooltip>
+    );
+}
+
 function ToBackgroundItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
     const { toBackgroundShortcut, toBackground } = toolProps;
@@ -321,6 +340,7 @@ export default function ItemMenu(props: Props): MenuProps {
         PROPAGATE = 'propagate',
         SWITCH_ORIENTATION = 'switch_orientation',
         RESET_PERSPECTIVE = 'reset_perspective',
+        TOGGLE_FREE_BACK_FACE = 'toggle_free_back_face',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
         TO_ONE_LAYER_BACKWARD = 'to_one_layer_backward',
@@ -390,6 +410,10 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.RESET_PERSPECTIVE,
             label: <ResetPerspectiveItem toolProps={props} />,
+        });
+        items.push({
+            key: MenuKeys.TOGGLE_FREE_BACK_FACE,
+            label: <ToggleFreeBackFaceItem toolProps={props} />,
         });
     }
 

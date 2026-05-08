@@ -113,13 +113,32 @@ export class CuboidModel {
     public vpl: Point | null;
     public vpr: Point | null;
     public orientation: Orientation;
+    // When true, the back/dorsal face is decoupled from the front face:
+    // - dorsal vertical edges (dl, dr) may tilt freely
+    // - buildBackEdge() will not be invoked (back face points are user-controlled)
+    // Useful for calibrating cuboids on lens-distorted images where the
+    // perspective vanishing-point assumption breaks down.
+    public freeBackFace: boolean;
 
     public constructor(points?: Point[]) {
         this.points = points;
         this.initEdges();
         this.initFaces();
+        // Auto-detect previously freed back face: if dorsal vertical edges
+        // are not vertical, the cuboid was edited in free-back-face mode and
+        // we must preserve that state across reloads (the wire format is
+        // unchanged: still 8 points).
+        const eps = 0.5;
+        const dorsalsVertical = points && points.length === 8 && (
+            Math.abs(points[4].x - points[5].x) < eps &&
+            Math.abs(points[6].x - points[7].x) < eps
+        );
+        this.freeBackFace = !dorsalsVertical;
+
         this.updateVanishingPoints(false);
-        this.buildBackEdge(false);
+        if (!this.freeBackFace) {
+            this.buildBackEdge(false);
+        }
         this.updatePoints();
         this.updateOrientation();
     }
@@ -146,11 +165,16 @@ export class CuboidModel {
     }
 
     public updatePoints(): void {
-        // making sure that the edges are vertical
+        // Front edges are always vertical (front face is the "anchor").
         this.fr.points[0].x = this.fr.points[1].x;
         this.fl.points[0].x = this.fl.points[1].x;
-        this.dr.points[0].x = this.dr.points[1].x;
-        this.dl.points[0].x = this.dl.points[1].x;
+        // Dorsal/back edges are only forced vertical in standard mode.
+        // In free-back-face mode they may tilt independently to compensate
+        // for lens distortion.
+        if (!this.freeBackFace) {
+            this.dr.points[0].x = this.dr.points[1].x;
+            this.dl.points[0].x = this.dl.points[1].x;
+        }
     }
 
     public computeSideEdgeConstraints(edge: any): any {

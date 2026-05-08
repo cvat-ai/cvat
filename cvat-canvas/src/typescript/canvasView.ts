@@ -48,6 +48,8 @@ export interface CanvasView {
     html(): HTMLDivElement;
     setupConflictRegions(clientID: number): number[];
     translateFromSVG(points: number[]): number[];
+    setCuboidFreeBackFace(clientID: number, flag: boolean): void;
+    isCuboidFreeBackFace(clientID: number): boolean;
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -2409,6 +2411,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public translateFromSVG(point: number[]): number[] {
         return translateFromSVG(this.content, point);
+    }
+
+    public setCuboidFreeBackFace(clientID: number, flag: boolean): void {
+        const shape: any = this.svgShapes[clientID];
+        if (shape && typeof shape.setFreeBackFace === 'function') {
+            shape.setFreeBackFace(flag);
+        }
+    }
+
+    public isCuboidFreeBackFace(clientID: number): boolean {
+        const shape: any = this.svgShapes[clientID];
+        if (shape && typeof shape.isFreeBackFace === 'function') {
+            return shape.isFreeBackFace();
+        }
+        return false;
     }
 
     private redrawBitmap(): void {

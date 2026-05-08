@@ -301,6 +301,16 @@ g.cvat_canvas_shape_occluded {
     cursor: move;
 }
 
+/*
+ * Back-face corner handles for cuboids in "free back face" mode.
+ * Drawn in orange so users can clearly distinguish them from the
+ * standard front-face resize handles.
+ */
+.cvat_canvas_cuboid_back_corner {
+    fill: #ff8c00 !important;
+    stroke: #663d00 !important;
+}
+
 .cvat_canvas_first_poly_point {
     fill: lightgray;
 }
