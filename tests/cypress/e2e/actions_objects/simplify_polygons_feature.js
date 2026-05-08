@@ -1,6 +1,6 @@
 // Copyright (C) CVAT.ai Corporation
 //
-// SPDX-License-Identifier: LicenseRef-CVAT-AI-Commercial
+// SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
