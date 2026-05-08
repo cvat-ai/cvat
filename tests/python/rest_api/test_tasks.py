@@ -3345,9 +3345,10 @@ class TestImportTaskAnnotations:
             )
         else:
             assert not self._has_sentinel(imported_annotations)
-            assert compare_annotations(
-                original_annotations, imported_annotations, ignore_source=True
-            ) == {}
+            assert (
+                compare_annotations(original_annotations, imported_annotations, ignore_source=True)
+                == {}
+            )
 
     @pytest.mark.skip("Fails sometimes, needs to be fixed")
     @pytest.mark.timeout(70)
