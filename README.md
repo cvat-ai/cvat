@@ -49,7 +49,7 @@ For commercial hosted setups, advanced labeling tools, or managed services, see
 Clone the repository and launch the services.
 
 ```bash
-git clone https://github.com/opencv/cvat.git
+git clone https://github.com/cvat-ai/cvat
 cd cvat
 
 # Optional: set your IP or domain
@@ -64,7 +64,7 @@ docker compose up -d
 docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
 ```
 
-See the [Installation Guide](https://opencv.github.io/cvat/docs/administration/basics/installation/) for full
+See the [Installation Guide](https://docs.cvat.ai/docs/administration/community/basics/installation/) for full
 instructions and OS-specific setup.
 
 **3. Sign in and start labeling**
@@ -73,8 +73,8 @@ instructions and OS-specific setup.
 - Log in with your superuser account.
 - Create a project or task, upload your data (images, videos, or point clouds), and define labels to start annotating.
 
-Learn more about annotation tools and workflows in the [CVAT Documentation](https://opencv.github.io/cvat/docs/) or
-take our [free course](https://academy.cvat.ai).
+Learn more about annotation tools and workflows in the [CVAT Documentation](https://docs.cvat.ai/docs/) or
+take our [free course](https://www.cvat.ai/resources/academy).
 
 **4. Optional: Automatic annotation**
 
@@ -84,10 +84,10 @@ To enable ML-powered labeling (e.g., with Segment Anything (SAM), YOLO, or custo
 docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
 ```
 
-See the [Automatic Annotation Guide](https://opencv.github.io/cvat/docs/manual/advanced/automatic_annotation/) for
+See the [Automatic Annotation Guide](https://docs.cvat.ai/docs/annotation/auto-annotation/automatic-annotation/) for
 details.
 
-_For alternative deployments (AWS, Kubernetes, external PostgreSQL, backups, upgrades), see the [Deployment Guides](https://opencv.github.io/cvat/docs/administration/advanced/)._
+_For alternative deployments (AWS, Kubernetes, external PostgreSQL, backups, upgrades), see the [Deployment Guides](https://docs.cvat.ai/docs/administration/community/advanced/)._
 
 ## Key Capabilities
 
@@ -120,7 +120,7 @@ over 20+ industry-standard formats, including:
 - **Specialized:** KITTI, Cityscapes, LabelMe, MOT, MOTS.
 - **3D:** Kitti Enu, Labeled Scene.
 
-[Full list of supported formats.](https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/)
+[Full list of supported formats.](https://docs.cvat.ai/docs/dataset_management/formats/)
 
 ## Editions Comparison
 
@@ -139,9 +139,9 @@ over 20+ industry-standard formats, including:
 
 ## Support
 
-- **Community support:** via [GitHub Issues](https://github.com/opencv/cvat/issues) and
+- **Community support:** via [GitHub Issues](https://github.com/cvat-ai/cvat/issues) and
   [Discord](https://discord.gg/cvat).
-- **FAQ:** [Installation, upgrades, troubleshooting](https://opencv.github.io/cvat/docs/faq/).
+- **FAQ:** [Installation, upgrades, troubleshooting](https://docs.cvat.ai/docs/faq/).
 
 For dedicated support, SLAs, or advanced deployments, consider [CVAT Enterprise](https://cvat.ai/enterprise).
 
@@ -155,7 +155,7 @@ We welcome all contributions: bug reports, documentation fixes, integrations, an
 
 ## Security
 
-- Please review our [Security Policy](https://github.com/opencv/cvat/security/policy) before reporting vulnerabilities.
+- Please review our [Security Policy](https://github.com/cvat-ai/cvat/security/policy) before reporting vulnerabilities.
 - For sensitive issues, contact: [secure@cvat.ai](mailto:secure@cvat.ai).
 
 ## License
