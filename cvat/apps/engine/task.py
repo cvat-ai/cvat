@@ -1155,6 +1155,67 @@ def _filter_cloud_storage_files(
     return cloud_storage_manifest, cloud_storage_manifest_prefix
 
 
+def _detect_media_type_and_dimension(
+    extractor: IMediaReader, *, source_dir: Path, db_data: models.Data
+) -> tuple[models.MediaType, models.DimensionType]:
+    if isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
+        detected_media_type = models.MediaType.IMAGE
+        detected_dimension = models.DimensionType.DIM_2D
+    else:
+        validate_dimension = ValidateDimension()
+        if db_data.storage == models.StorageChoice.LOCAL or (
+            db_data.storage == models.StorageChoice.SHARE
+            and isinstance(
+                extractor, (MEDIA_TYPES["archive"]["extractor"], MEDIA_TYPES["zip"]["extractor"])
+            )
+        ):
+            validate_dimension.validate(source_dir)
+        else:
+            validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
+
+        detected_dimension = validate_dimension.dimension
+
+        if detected_dimension == models.DimensionType.DIM_2D:
+            detected_media_type = models.MediaType.IMAGE
+        elif detected_dimension == models.DimensionType.DIM_3D:
+            detected_media_type = models.MediaType.POINT_CLOUD
+        else:
+            assert False
+
+    return detected_media_type, detected_dimension
+
+
+def _validate_project_dimension(
+    db_project: models.Project, *, detected_dimension: models.DimensionType
+):
+    # TODO: fix the race condition between concurrent task creations
+    project_dimension = next(
+        iter(db_project.tasks.exclude(dimension="").values_list("dimension", flat=True)[:1]), ""
+    )
+
+    if project_dimension and project_dimension != detected_dimension:
+        raise ValidationError(
+            f"Dimension ({detected_dimension}) of the task must be the "
+            f"same as other tasks in the project ({project_dimension})"
+        )
+
+
+def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
+    db_data = db_task.require_data()
+
+    match (db_task.media_type, db_task.mode):
+        case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+            db_data.compressed_chunk_type = (
+                models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
+            )
+            db_data.original_chunk_type = models.DataChoice.VIDEO
+        case (models.MediaType.IMAGE | models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION):
+            db_data.compressed_chunk_type = models.DataChoice.IMAGESET
+            db_data.original_chunk_type = models.DataChoice.IMAGESET
+        case (media_type, mode):
+            assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
+
+
 @transaction.atomic
 def create_thread(
     db_task: int | models.Task,
@@ -1413,30 +1474,19 @@ def create_thread(
     if isinstance(extractor, MEDIA_TYPES["zip"]["extractor"]):
         extractor.extract()
 
-    validate_dimension = ValidateDimension()
-    if db_data.storage == models.StorageChoice.LOCAL or (
-        db_data.storage == models.StorageChoice.SHARE
-        and isinstance(
-            extractor, (MEDIA_TYPES["archive"]["extractor"], MEDIA_TYPES["zip"]["extractor"])
-        )
-    ):
-        validate_dimension.validate(upload_dir)
-    elif not isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
-        validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
+    detected_media_type, detected_dimension = _detect_media_type_and_dimension(
+        extractor=extractor, source_dir=upload_dir, db_data=db_data
+    )
 
-    if (
-        db_task.project is not None
-        and db_task.project.tasks.count() > 1
-        and db_task.project.tasks.first().dimension != validate_dimension.dimension
-    ):
-        raise ValidationError(
-            f"Dimension ({validate_dimension.dimension}) of the task must be the "
-            f"same as other tasks in project ({db_task.project.tasks.first().dimension})"
-        )
+    if db_task.project_id is not None:
+        _validate_project_dimension(db_task.project, detected_dimension=detected_dimension)
 
-    db_task.dimension = validate_dimension.dimension
+    assert not db_task.media_type
+    db_task.media_type = detected_media_type
+    db_task.dimension = detected_dimension
+    db_task.mode = task_mode
 
-    if validate_dimension.dimension == models.DimensionType.DIM_3D:
+    if db_task.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
             source_paths=[
                 # We always work with .pcd files instead of .bin
@@ -1446,7 +1496,7 @@ def create_thread(
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data["stop_frame"],
-            dimension=validate_dimension.dimension,
+            dimension=db_task.dimension,
         )
 
     related_images = {}
@@ -1518,17 +1568,14 @@ def create_thread(
             sorting_method=data["sorting_method"],
         )
 
-    db_task.mode = task_mode
-    db_data.compressed_chunk_type = (
-        models.DataChoice.VIDEO
-        if task_mode == models.TaskMode.INTERPOLATION and not data["use_zip_chunks"]
-        else models.DataChoice.IMAGESET
-    )
-    db_data.original_chunk_type = (
-        models.DataChoice.VIDEO
-        if task_mode == models.TaskMode.INTERPOLATION
-        else models.DataChoice.IMAGESET
-    )
+    # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
+    if manifest_file and not os.path.exists(db_data.get_manifest_path()):
+        shutil.copyfile(os.path.join(manifest_root, manifest_file), db_data.get_manifest_path())
+        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
+            os.remove(os.path.join(manifest_root, manifest_file))
+        manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
+
+    _configure_chunk_types(db_task, data)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
@@ -1543,14 +1590,6 @@ def create_thread(
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
             db_data.chunk_size = 36
-
-    # TODO: try to pull up
-    # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
-    if manifest_file and not os.path.exists(db_data.get_manifest_path()):
-        shutil.copyfile(os.path.join(manifest_root, manifest_file), db_data.get_manifest_path())
-        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
-            os.remove(os.path.join(manifest_root, manifest_file))
-        manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
     # Create task frames from the metadata collected
     video_path: str = ""

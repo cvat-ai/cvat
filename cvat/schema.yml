@@ -2160,9 +2160,25 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id'].
+           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'type', 'parent_job_id', 'dimension', 'media_type', 'mode'].
         schema:
           type: string
+      - name: media_type
+        in: query
+        description: A simple equality filter for the media_type field
+        schema:
+          type: string
+          enum:
+          - image
+          - point_cloud
+      - name: mode
+        in: query
+        description: A simple equality filter for the mode field
+        schema:
+          type: string
+          enum:
+          - annotation
+          - interpolation
       - name: org
         in: query
         description: Organization unique slug
@@ -2212,8 +2228,8 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''task_name'', ''project_name'', ''assignee'', ''state'', ''stage'', ''id'',
-          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'',
-          ''parent_job_id'']'
+          ''task_id'', ''project_id'', ''updated_date'', ''type'', ''parent_job_id'',
+          ''dimension'', ''media_type'', ''mode'']'
         schema:
           type: string
       - name: stage
@@ -5161,7 +5177,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date', 'media_type'].
 
           There are few examples for complex filtering tasks:
 
@@ -5171,6 +5187,14 @@ paths:
 
         schema:
           type: string
+      - name: media_type
+        in: query
+        description: A simple equality filter for the media_type field
+        schema:
+          type: string
+          enum:
+          - image
+          - point_cloud
       - name: mode
         in: query
         description: A simple equality filter for the mode field
@@ -5235,7 +5259,7 @@ paths:
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''project_name'', ''name'', ''owner'', ''status'', ''assignee'', ''subset'',
           ''mode'', ''dimension'', ''tracker_link'', ''validation_mode'', ''id'',
-          ''project_id'', ''updated_date'']'
+          ''project_id'', ''updated_date'', ''media_type'']'
         schema:
           type: string
       - name: status
@@ -8269,7 +8293,12 @@ components:
         dimension:
           type: string
           readOnly: true
-          maxLength: 2
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         bug_tracker:
           type: string
           readOnly: true
@@ -8286,9 +8315,6 @@ components:
         state:
           allOf:
           - $ref: '#/components/schemas/OperationStatus'
-          readOnly: true
-        mode:
-          type: string
           readOnly: true
         frame_count:
           type: integer
@@ -8640,9 +8666,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8654,6 +8677,9 @@ components:
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8668,9 +8694,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8683,6 +8706,9 @@ components:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8719,9 +8745,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8733,6 +8756,9 @@ components:
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8780,9 +8806,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8795,6 +8818,9 @@ components:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8820,9 +8846,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8834,15 +8857,18 @@ components:
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
         elements:
           type: array
           items:
@@ -8857,9 +8883,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8872,15 +8895,18 @@ components:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
         elements:
           type: array
           items:
@@ -10150,7 +10176,6 @@ components:
           type: string
           readOnly: true
           nullable: true
-          maxLength: 16
         organization:
           type: integer
           readOnly: true
@@ -10892,9 +10917,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10906,6 +10928,9 @@ components:
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -10949,9 +10974,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10964,6 +10986,9 @@ components:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -10985,9 +11010,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10999,15 +11021,18 @@ components:
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
       required:
       - frame
       - label_id
@@ -11018,9 +11043,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -11033,15 +11055,18 @@ components:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
       required:
       - frame
       - label_id
@@ -11166,9 +11191,6 @@ components:
           type: string
           nullable: true
           readOnly: true
-        mode:
-          type: string
-          readOnly: true
         owner:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -11236,6 +11258,13 @@ components:
           readOnly: true
         dimension:
           type: string
+          readOnly: true
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         subset:
           type: string
           readOnly: true
@@ -11414,17 +11443,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeVal'
-          default: []
       required:
       - frame
       - type
@@ -11453,17 +11482,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeValRequest'
-          default: []
       required:
       - frame
       - type
