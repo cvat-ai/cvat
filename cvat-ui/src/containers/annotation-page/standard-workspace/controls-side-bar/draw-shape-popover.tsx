@@ -38,7 +38,6 @@ interface StateToProps {
     shapeType: ShapeType;
     labels: any[];
     jobInstance: any;
-    activeSimplifyPoly?: boolean;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -72,7 +71,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         annotation: {
             canvas: { instance: canvasInstance },
             job: { labels, instance: jobInstance },
-            drawing: { activeSimplifyPoly },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -83,7 +81,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         labels,
         normalizedKeyMap,
         jobInstance,
-        activeSimplifyPoly,
     };
 }
 
@@ -106,7 +103,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
 
-        const { shapeType, activeSimplifyPoly } = props;
+        const { shapeType } = props;
         this.isPolyShape = [ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType);
         this.satisfiedLabels = props.labels.filter((label: Label) => {
             if (shapeType === ShapeType.SKELETON) {
@@ -123,7 +120,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             selectedLabelID: defaultLabelID,
             rectDrawingMethod: shapeType === ShapeType.RECTANGLE ? defaultRectDrawingMethod : undefined,
             cuboidDrawingMethod: shapeType === ShapeType.CUBOID ? defaultCuboidDrawingMethod : undefined,
-            simplifyPoly: activeSimplifyPoly || false,
+            simplifyPoly: false,
         };
 
         if (shapeType === ShapeType.POLYGON) {

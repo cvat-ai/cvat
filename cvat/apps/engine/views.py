@@ -23,7 +23,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
-from django.db.models.query import Prefetch
+from django.db.models.query import Prefetch, prefetch_related_objects
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
@@ -546,34 +546,35 @@ class _DataGetter(metaclass=ABCMeta):
     @abstractmethod
     def _get_frame_provider(self) -> IFrameProvider: ...
 
-    def __call__(self):
+    def _get_data_response(self) -> HttpResponse:
         frame_provider = self._get_frame_provider()
 
+        if self.type == 'chunk':
+            data = frame_provider.get_chunk(self.number, quality=self.quality)
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=self._get_chunk_response_headers(data),
+            )
+        elif self.type == 'frame':
+            data = frame_provider.get_frame(self.number, quality=self.quality)
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == 'preview':
+            data = frame_provider.get_preview()
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == 'context_image':
+            data = frame_provider.get_frame_context_images_chunk(self.number)
+            if not data:
+                return HttpResponseNotFound()
+
+            return HttpResponse(data.data, content_type=data.mime)
+        else:
+            return Response(data='unknown data type {}.'.format(self.type),
+                status=status.HTTP_400_BAD_REQUEST)
+
+    def __call__(self):
         try:
-            if self.type == 'chunk':
-                data = frame_provider.get_chunk(self.number, quality=self.quality)
-                return HttpResponse(
-                    data.data.getvalue(),
-                    content_type=data.mime,
-                    headers=self._get_chunk_response_headers(data),
-                )
-            elif self.type == 'frame' or self.type == 'preview':
-                if self.type == 'preview':
-                    data = frame_provider.get_preview()
-                else:
-                    data = frame_provider.get_frame(self.number, quality=self.quality)
-
-                return HttpResponse(data.data.getvalue(), content_type=data.mime)
-
-            elif self.type == 'context_image':
-                data = frame_provider.get_frame_context_images_chunk(self.number)
-                if not data:
-                    return HttpResponseNotFound()
-
-                return HttpResponse(data.data, content_type=data.mime)
-            else:
-                return Response(data='unknown data type {}.'.format(self.type),
-                    status=status.HTTP_400_BAD_REQUEST)
+            return self._get_data_response()
         except (ValidationError, PermissionDenied, NotFound) as ex:
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
@@ -671,43 +672,27 @@ class _JobDataGetter(_DataGetter):
     def _get_frame_provider(self) -> JobFrameProvider:
         return JobFrameProvider(self._db_job)
 
-    def __call__(self):
+    def _get_data_response(self):
         if self.type == 'chunk':
             # Reproduce the task chunk indexing
             frame_provider = self._get_frame_provider()
 
-            try:
-                if self.index is not None:
-                    data = frame_provider.get_chunk(
-                        self.index, quality=self.quality, is_task_chunk=False
-                    )
-                else:
-                    data = frame_provider.get_chunk(
-                        self.number, quality=self.quality, is_task_chunk=True
-                    )
+            if self.index is not None:
+                data = frame_provider.get_chunk(
+                    self.index, quality=self.quality, is_task_chunk=False
+                )
+            else:
+                data = frame_provider.get_chunk(
+                    self.number, quality=self.quality, is_task_chunk=True
+                )
 
-                return HttpResponse(
-                    data.data.getvalue(),
-                    content_type=data.mime,
-                    headers=self._get_chunk_response_headers(data),
-                )
-            except (TimeoutError, CvatChunkTimestampMismatchError, LockError):
-                return Response(
-                    status=status.HTTP_429_TOO_MANY_REQUESTS,
-                    headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
-                )
-            except CacheTooLargeDataError as ex:
-                return Response(
-                    data=str(ex),
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-            except CloudStorageMissingError as ex:
-                return Response(
-                    data=str(ex),
-                    status=status.HTTP_409_CONFLICT,
-                )
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=self._get_chunk_response_headers(data),
+            )
         else:
-            return super().__call__()
+            return super()._get_data_response()
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
@@ -837,18 +822,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
 ):
-    queryset = Task.objects.select_related(
-        'data',
-        'assignee',
-        'owner',
-        'target_storage',
-        'source_storage',
-        'annotation_guide',
-    ).prefetch_related(
-        # avoid loading heavy data in select related
-        # this reduces performance of the COUNT request in the list endpoint
-        'data__validation_layout',
-    )
+    queryset = Task.objects
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -887,13 +861,22 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            queryset = queryset.select_related('assignee', 'owner')
             # with_job_summary() is optimized in the serializer
-        elif self.action == 'preview':
-            queryset = Task.objects.select_related('data')
         elif self.action == 'validation_layout':
             queryset = Task.objects.select_related('data', 'data__validation_layout')
-        else:
-            queryset = queryset.with_job_summary()
+        elif self.action not in ('metadata', 'annotations'):
+            queryset = queryset.select_related('data')
+
+            if self.action in ('create', 'retrieve', 'update', 'partial_update', 'destroy'):
+                queryset = queryset.select_related(
+                    'target_storage',
+                    'source_storage',
+                    'annotation_guide',
+                    'assignee',
+                    'owner',
+                )
+                queryset = queryset.with_job_summary()
 
         return queryset
 
@@ -1461,13 +1444,31 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request: ExtendedRequest, pk: int):
-        self.get_object() #force to call check_object_permissions
-        db_task = models.Task.objects.prefetch_related(
-            'segment_set',
-            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
-        ).get(pk=pk)
+        db_task = self.get_object() #force to call check_object_permissions
+
+        def prefetch():
+            data_queryset = (
+                models.Data.objects
+                .select_related("validation_layout", "video")
+                .prefetch_related(
+                    Prefetch(
+                        'images',
+                        queryset=(
+                            models.Image.objects
+                            .prefetch_related('related_files')
+                            .order_by('frame')
+                        )
+                    )
+                )
+            )
+
+            prefetch_related_objects(
+                [db_task],
+                "segment_set",
+                Prefetch("data", queryset=data_queryset)
+            )
+
+        prefetch()
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
@@ -1655,18 +1656,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
     UploadMixin, DatasetMixin
 ):
-    queryset = (
-        Job.objects
-        .select_related(
-            'assignee',
-            'segment__task',
-            'segment__task__project',
-        )
-        .prefetch_related(
-            'segment__task__data',
-            'segment__task__annotation_guide',
-            'segment__task__project__annotation_guide',
-        )
+    queryset = Job.objects.select_related(
+        # prefetch data for permission checks
+        'segment__task',
+        'segment__task__project',
     )
 
     iam_supports_organization_params = True
@@ -1696,9 +1689,18 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            queryset = queryset.select_related('assignee')
             # with_* optimized in JobReadListSerializer
-        else:
-            queryset = queryset.with_issue_counts().with_child_jobs_counts()
+        elif self.action not in ('annotations', 'metadata'):
+            queryset = queryset.select_related('segment__task__data')
+
+            if self.action in ('create', 'retrieve', 'update', 'partial_update', 'destroy'):
+                queryset = queryset.select_related(
+                    'assignee',
+                    'segment__task__annotation_guide',
+                    'segment__task__project__annotation_guide',
+                )
+                queryset = queryset.with_issue_counts().with_child_jobs_counts()
 
         return queryset
 
@@ -1949,18 +1951,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request: ExtendedRequest, pk: int):
-        self.get_object() # force call of check_object_permissions()
+        db_job = self.get_object() # force call of check_object_permissions()
 
-        db_job = models.Job.objects.select_related(
-            'segment',
-            'segment__task',
-        ).prefetch_related(
-            Prefetch(
-                'segment__task__data',
-                queryset=models.Data.objects.select_related(
-                    'video',
-                    'validation_layout',
-                ).prefetch_related(
+        def prefetch():
+            data_queryset = (
+                models.Data.objects
+                .select_related("validation_layout", "video")
+                .prefetch_related(
                     Prefetch(
                         'images',
                         queryset=(
@@ -1971,7 +1968,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     )
                 )
             )
-        ).get(pk=pk)
+
+            prefetch_related_objects(
+                [db_job],
+                Prefetch("segment__task__data", queryset=data_queryset)
+            )
+
+        prefetch()
 
         if request.method == 'PATCH':
             serializer = JobDataMetaWriteSerializer(instance=db_job, data=request.data)

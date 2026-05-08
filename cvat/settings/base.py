@@ -756,7 +756,7 @@ ASSET_SUPPORTED_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif", "
 ASSET_MAX_IMAGE_SIZE = 1920
 ASSET_MAX_COUNT_PER_GUIDE = 150
 
-SMOKESCREEN_ENABLED = True
+SMOKESCREEN_ENABLED = to_bool(os.getenv("SMOKESCREEN_ENABLED", True))
 
 # By default, email backend is django.core.mail.backends.smtp.EmailBackend
 # But it won't work without additional configuration, so we set it to None

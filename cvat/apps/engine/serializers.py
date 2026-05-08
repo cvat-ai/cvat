@@ -21,6 +21,7 @@ from inspect import isclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, cast
+from urllib.parse import urlparse
 
 import django_rq
 from django.conf import settings
@@ -774,6 +775,9 @@ class JobReadListSerializer(serializers.ListSerializer):
             }
 
             # Join the prefetched objects
+            # Keep in mind that the object ids fetched in the earlier queries
+            # might be missing in the later queries because of locks and removals,
+            # so should not be expected to be present and should be checked before access.
             for job in page:
                 job.user_can_view_task = job.segment.task_id in visible_task_ids
 
@@ -806,6 +810,13 @@ class JobReadListSerializer(serializers.ListSerializer):
             for job in page:
                 job.issue__count = issue_counts.get(job.id, 0)
                 job.child_jobs__count = children_counts.get(job.id, 0)
+
+            prefetch_related_objects(
+                page,
+                "segment__task__data",
+                'segment__task__annotation_guide',
+                'segment__task__project__annotation_guide',
+            )
 
         return super().to_representation(data)
 
@@ -2365,6 +2376,19 @@ class DataSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate_remote_files(self, value: list[dict[str, str]]) -> list[dict[str, str]]:
+        errors: list[str] = []
+        for entry in value:
+            url = entry["file"]
+            parsed = urlparse(url)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                errors.append(
+                    f"{url!r}: remote_files entries must be http(s) URLs."
+                )
+        if errors:
+            raise serializers.ValidationError(errors)
+        return value
+
     # pylint: disable=no-self-use
     def validate(self, attrs):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
@@ -2490,6 +2514,18 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 .only("id", "name")
             }
 
+            page_storage_ids = set(
+                v
+                for task in page
+                for v in (task.source_storage_id, task.target_storage_id)
+            )
+            storages = {
+                s.id: s for s in models.Storage.objects.filter(id__in=page_storage_ids)
+            }
+
+            # Keep in mind that the object ids fetched in the earlier queries
+            # might be missing in the later queries because of locks and removals,
+            # so should not be expected to be present and should be checked before access.
             for task in page:
                 if task.project_id:
                     task.user_can_view_project = task.project_id in visible_projects
@@ -2499,6 +2535,22 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 task_job_summary = job_counts.get(task.id)
                 for k in job_summary_fields:
                     setattr(task, k, task_job_summary[k])
+
+                if task.source_storage_id in storages:
+                    task.source_storage = storages[task.source_storage_id]
+
+                if task.target_storage_id in storages:
+                    task.target_storage = storages[task.target_storage_id]
+
+            prefetch_related_objects(
+                page,
+                "data",
+                Prefetch(
+                    "data__validation_layout",
+                    queryset=models.ValidationLayout.objects.only("id", "task_data_id", "mode")
+                ),
+                "annotation_guide",
+            )
 
         return super().to_representation(data)
 
@@ -3286,12 +3338,23 @@ class AttributeValSerializer(serializers.Serializer):
         data['value'] = str(data['value'])
         return super().to_internal_value(data)
 
+class AttributedAnnotationSerializer(serializers.Serializer):
+    attributes = AttributeValSerializer(many=True, default=[])
+
+class ScoredAnnotationSerializer(serializers.Serializer):
+    score = serializers.FloatField(min_value=0, max_value=1, default=1)
+
+class FrameAnnotationSerializer(serializers.Serializer):
+    frame = serializers.IntegerField(min_value=0)
+
 class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
-    frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
-    group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
-    source = serializers.CharField(default='manual')
+    group = serializers.IntegerField(
+        min_value=0, default=0,
+        allow_null=True # backward compatibility; TODO: disallow on the DB level
+    )
+    source = serializers.CharField(default=models.SourceType.MANUAL)
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3302,6 +3365,9 @@ class AnnotationSerializer(serializers.Serializer):
         if value is None:
             raise serializers.ValidationError("must be present and not null")
         return value
+
+    def validate_group(self, value):
+        return value or 0 # backward compatibility; TODO: disallow on the DB level
 
     @cached_property
     def validate_id(self):
@@ -3327,8 +3393,10 @@ class AnnotationSerializer(serializers.Serializer):
 
         return None
 
-class LabeledImageSerializer(AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True, default=[])
+class LabeledImageSerializer(
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
+):
+    pass
 
 class OptimizedFloatListField(serializers.ListField):
     '''Default ListField is extremely slow when try to process long lists of points'''
@@ -3393,9 +3461,11 @@ class ShapeSerializer(serializers.Serializer):
 
         return attrs
 
-class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True, default=[])
-    score = serializers.FloatField(min_value=0, max_value=1, default=1)
+class SubLabeledShapeSerializer(
+    ShapeSerializer, AnnotationSerializer, FrameAnnotationSerializer,
+    AttributedAnnotationSerializer, ScoredAnnotationSerializer,
+):
+    pass
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -3419,7 +3489,13 @@ class LabeledShapeSerializer(SubLabeledShapeSerializer):
         return attrs
 
 def _convert_annotation(obj, keys):
-    return OrderedDict([(key, obj[key]) for key in keys])
+    d = OrderedDict([(key, obj[key]) for key in keys])
+
+    if "group" in d:
+        # backward compatibility; TODO: disallow null on the DB level
+        d["group"] = d["group"] or 0
+
+    return d
 
 def _convert_attributes(attr_set):
     attr_keys = ['spec_id', 'value']
@@ -3474,14 +3550,14 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
 
         return convert_track(instance)
 
-class TrackedShapeSerializer(ShapeSerializer):
+class TrackedShapeSerializer(ShapeSerializer, AttributedAnnotationSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True, default=[])
 
-class SubLabeledTrackSerializer(AnnotationSerializer):
+class SubLabeledTrackSerializer(
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
+):
     shapes = TrackedShapeSerializer(many=True, allow_empty=True)
-    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)
