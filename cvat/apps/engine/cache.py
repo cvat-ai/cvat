@@ -1011,7 +1011,7 @@ class MediaCache:
 
         match db_segment.task.media_type:
             case models.MediaType.POINT_CLOUD:
-                preview = PIL.Image.open(ASSETS_DIR / "pcd_default_preview.png")
+                preview = PIL.Image.open(ASSETS_DIR / "point_cloud_default_preview.png")
             case models.MediaType.IMAGE:
                 from cvat.apps.engine.frame_provider import (  # avoid circular import
                     FrameOutputType,
