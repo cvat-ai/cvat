@@ -8177,7 +8177,7 @@ components:
           readOnly: true
           nullable: true
         accepted:
-          type: string
+          type: boolean
           readOnly: true
         organization_info:
           $ref: '#/components/schemas/BasicOrganization'
