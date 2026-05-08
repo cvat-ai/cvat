@@ -10766,6 +10766,9 @@ components:
         job_id:
           type: integer
           nullable: true
+        org_id:
+          type: integer
+          nullable: true
         format:
           type: string
           nullable: true
