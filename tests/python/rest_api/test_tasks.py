@@ -356,6 +356,7 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
         (
             "assignee",
             "dimension",
+            "media_type",
             "mode",
             "name",
             "owner",
@@ -532,6 +533,35 @@ class TestPostTasks:
             labels, _ = api_client.labels_api.list(task_id=task.id)
 
             assert labels.count == 0
+
+    def test_cannot_create_data_with_non_http_remote_files(self, admin_user):
+        """Regression test for https://github.com/cvat-ai/cvat/issues/9647.
+
+        `remote_files` entries are direct download URLs and must use the
+        http(s) scheme. Anything else is rejected synchronously by the
+        DataSerializer with HTTP 400, instead of being enqueued and failing
+        deep in the worker.
+        """
+        bad_url = "not-a-url/foo.jpg"
+
+        with make_api_client(admin_user) as api_client:
+            task, _ = api_client.tasks_api.create({"name": "task with bad remote_files"})
+
+            _, response = api_client.tasks_api.create_data(
+                task.id,
+                data_request=models.DataRequest(
+                    image_quality=70,
+                    remote_files=[bad_url],
+                ),
+                upload_start=True,
+                upload_finish=True,
+                _parse_response=False,
+                _check_status=False,
+            )
+
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert b"remote_files" in response.data
+            assert bad_url.encode() in response.data
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
