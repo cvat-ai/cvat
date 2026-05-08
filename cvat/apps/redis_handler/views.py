@@ -33,6 +33,9 @@ from cvat.apps.redis_handler.serializers import RequestSerializer, RequestStatus
 slogger = ServerLogManager(__name__)
 
 
+_builtin_list = list  # the list symbol is redefined below
+
+
 @extend_schema(tags=["requests"])
 @extend_schema_view(
     list=extend_schema(
@@ -80,7 +83,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         ]
     )
 
-    filter_fields = list(simple_filters)
+    filter_fields = _builtin_list(simple_filters)
 
     lookup_fields = {
         "created_date": "created_at",
@@ -118,7 +121,7 @@ class RequestViewSet(viewsets.GenericViewSet):
     def queues(self) -> Iterable[DjangoRQ]:
         return (django_rq.get_queue(queue_name) for queue_name in set(SELECTOR_TO_QUEUE.values()))
 
-    def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> list[RQJob]:
+    def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> _builtin_list[RQJob]:
         job_ids = set(
             queue.get_job_ids()
             + queue.started_job_registry.get_job_ids()
@@ -143,7 +146,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
         return jobs
 
-    def _get_rq_jobs(self, user_id: int) -> list[RQJob]:
+    def _get_rq_jobs(self, user_id: int) -> _builtin_list[RQJob]:
         """
         Get all RQ jobs for a specific user and return them as a list of RQJob objects.
 
