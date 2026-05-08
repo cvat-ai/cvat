@@ -2525,6 +2525,15 @@ paths:
           Input format name
           You can get the list of supported formats at:
           /server/annotation/formats
+      - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - replace
+          - append
+          default: replace
+        description: How to import annotations
       - in: path
         name: id
         schema:
@@ -5515,6 +5524,15 @@ paths:
           Input format name
           You can get the list of supported formats at:
           /server/annotation/formats
+      - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - replace
+          - append
+          default: replace
+        description: How to import annotations
       - in: path
         name: id
         schema:
