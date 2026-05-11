@@ -110,6 +110,16 @@ def pytest_sessionstart(session) -> None:
 
     if platform == "kube" and any((start_services, stop_services, rebuild)):
         raise pytest.UsageError("--platform=kube does not support deprecated local lifecycle flags")
+    if platform == "kube" and infra_mode in {
+        InfraMode.UP,
+        InfraMode.DOWN,
+        InfraMode.RESTORE_DB,
+        InfraMode.BUILD_IMAGES,
+    }:
+        raise pytest.UsageError(
+            "--infra=up/down/restore-db/build-images are local-runtime lifecycle modes "
+            "and cannot be used with --platform=kube"
+        )
     if collect_only and any(
         (
             cleanup,
