@@ -28,3 +28,10 @@
 .cvat-modal-import-switch-conv-mask-to-poly-container {
     width: 100%;
 }
+
+.cvat-modal-import-mode {
+    .ant-radio-group {
+        display: flex;
+        flex-direction: column;
+    }
+}
