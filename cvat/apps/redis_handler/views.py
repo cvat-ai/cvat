@@ -63,24 +63,22 @@ class RequestViewSet(viewsets.GenericViewSet):
     ordering_fields = ["created_date", "status", "action"]
     ordering = "-created_date"
 
-    simple_filters = sorted(
-        [
-            # RQ job fields
-            "status",
-            # derivatives fields (from meta)
-            "project_id",
-            "task_id",
-            "job_id",
-            # derivatives fields (from parsed rq_id)
-            "action",
-            "target",
-            "subresource",
-            "format",
-            # request context
-            "org",
-            "org_id",
-        ]
-    )
+    simple_filters = [
+        # RQ job fields
+        "status",
+        # derivatives fields (from meta)
+        "project_id",
+        "task_id",
+        "job_id",
+        # derivatives fields (from parsed rq_id)
+        "action",
+        "target",
+        "subresource",
+        "format",
+        # request context
+        "org",
+        "org_id",
+    ]
 
     filter_fields = [*simple_filters]
 

@@ -323,9 +323,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'annotation_guide', 'source_storage', 'target_storage',
     )
 
-    search_fields = sorted(('name', 'owner', 'assignee'))
-    simple_filters = sorted(set(search_fields) | {'status'})
-    filter_fields = sorted(set(simple_filters) | {'id', 'updated_date'})
+    search_fields = ('name', 'owner', 'assignee')
+    simple_filters = (*search_fields, 'status')
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
@@ -831,13 +831,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'tracker_link': 'bug_tracker',
         'validation_mode': 'data__validation_layout__mode',
     }
-    search_fields = sorted((
+    search_fields = (
         'project_name', 'name', 'owner', 'assignee', 'subset', 'tracker_link',
-    ))
-    simple_filters = sorted(set(search_fields) | {
-        'project_id', 'status', 'media_type', 'mode', 'dimension', 'validation_mode'
-    })
-    filter_fields = sorted(set(simple_filters) | {'id', 'updated_date'})
+    )
+    simple_filters = (
+        *search_fields,
+        'project_id', 'status', 'media_type', 'mode', 'dimension', 'validation_mode',
+    )
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
@@ -1664,12 +1665,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
-    search_fields = sorted(('task_name', 'project_name', 'assignee'))
-    simple_filters = sorted(set(search_fields) | {
+    search_fields = ('task_name', 'project_name', 'assignee')
+    simple_filters = (
+        *search_fields,
         'task_id', 'project_id', 'type', 'parent_job_id',
         'dimension', 'media_type', "mode", 'state', 'stage',
-    })
-    filter_fields = sorted(set(simple_filters) | {'id', 'updated_date'})
+    )
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
@@ -2150,9 +2152,9 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     iam_supports_organization_params = True
     iam_permission_class = IssuePermission
-    search_fields = sorted(('owner', 'assignee'))
-    simple_filters = sorted(set(search_fields) | {'job_id', 'task_id', 'resolved', 'frame_id'})
-    filter_fields = sorted(set(simple_filters) | {'id'})
+    search_fields = ('owner', 'assignee')
+    simple_filters = (*search_fields, 'job_id', 'task_id', 'resolved', 'frame_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     lookup_fields = {
         'owner': 'owner__username',
@@ -2223,8 +2225,8 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_supports_organization_params = True
     iam_permission_class = CommentPermission
     search_fields = ('owner',)
-    simple_filters = sorted(set(search_fields) | {'issue_id', 'frame_id', 'job_id'})
-    filter_fields = sorted(set(simple_filters) | {'id'})
+    simple_filters = (*search_fields, 'issue_id', 'frame_id', 'job_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     ordering = '-id'
     lookup_fields = {
@@ -2308,9 +2310,9 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_supports_organization_params = True
     iam_permission_class = LabelPermission
 
-    search_fields = sorted(('name', 'parent'))
-    simple_filters = sorted(set(search_fields) | {'type', 'color', 'parent_id'})
-    filter_fields = sorted(set(simple_filters) | {'id'})
+    search_fields = ('name', 'parent')
+    simple_filters = (*search_fields, 'type', 'color', 'parent_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     lookup_fields = {
         'parent': 'parent__name',
@@ -2454,9 +2456,9 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_supports_organization_params = True
     iam_permission_class = UserPermission
 
-    search_fields = sorted(('username', 'first_name', 'last_name'))
-    simple_filters = sorted(set(search_fields) | {'is_active'})
-    filter_fields = sorted(set(simple_filters) | {'id'})
+    search_fields = ('username', 'first_name', 'last_name')
+    simple_filters = (*search_fields, 'is_active')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
@@ -2536,11 +2538,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = CloudStorage.objects.all()
 
-    search_fields = sorted(('name', 'resource', 'owner', 'description'))
-    simple_filters = sorted(
-        (set(search_fields) - {"description"}) | {'provider_type', 'credentials_type'}
-    )
-    filter_fields = sorted(set(simple_filters) | {'id', "description"})
+    search_fields = ('name', 'resource', 'owner', 'description')
+    simple_filters = ('name', 'resource', 'owner', 'provider_type', 'credentials_type')
+    filter_fields = (*simple_filters, 'id', 'description')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}

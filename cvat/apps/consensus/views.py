@@ -129,7 +129,7 @@ class ConsensusSettingsViewSet(
 
     search_fields = []
     simple_filters = ["task_id"]
-    filter_fields = sorted(set(simple_filters) | {"id"})
+    filter_fields = (*simple_filters, "id")
     ordering_fields = ["id"]
     ordering = "id"
 
