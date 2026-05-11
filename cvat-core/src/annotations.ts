@@ -214,13 +214,8 @@ export function importDataset(
     } = {},
 ): Promise<string> {
     const updateStatusCallback = options.updateStatusCallback || (() => {});
-    const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
+    const convMaskToPoly = options.convMaskToPoly ?? true;
     const importMode = options.importMode ?? 'replace';
-    const adjustedOptions = {
-        updateStatusCallback,
-        convMaskToPoly,
-        importMode,
-    };
 
     if (!(instance instanceof Project || instance instanceof Task || instance instanceof Job)) {
         throw new ArgumentError('Instance must be a Project || Task || Job instance');
@@ -262,7 +257,10 @@ export function importDataset(
                 useDefaultSettings,
                 sourceStorage,
                 file,
-                adjustedOptions,
+                {
+                    updateStatusCallback,
+                    convMaskToPoly,
+                },
             );
     }
 
@@ -275,6 +273,9 @@ export function importDataset(
             useDefaultSettings,
             sourceStorage,
             file,
-            adjustedOptions,
+            {
+                convMaskToPoly,
+                importMode,
+            },
         );
 }

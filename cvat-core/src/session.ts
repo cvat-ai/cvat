@@ -388,6 +388,7 @@ export class Session {
             file: File | string,
             options?: {
                 convMaskToPoly?: boolean,
+                importMode?: 'replace' | 'append',
                 updateStatusCallback?: (s: string, n: number) => void,
             },
         ) => Promise<string>;
