@@ -555,4 +555,7 @@ class QualitySettingsViewSet(
             )
             queryset = permissions.filter(queryset)
 
+        if self.action in ("list", "retrieve"):
+            queryset = queryset.prefetch_related("transcription_requirements")
+
         return queryset

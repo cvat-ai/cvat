@@ -14,7 +14,16 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
+from cvat.apps.engine.models import (
+    AttributeSpec,
+    Job,
+    JobType,
+    Project,
+    ShapeType,
+    Task,
+    TimestampedModel,
+    User,
+)
 
 if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
@@ -198,21 +207,29 @@ class QualityReport(models.Model):
 
 class AnnotationConflict(models.Model):
     report = models.ForeignKey(QualityReport, on_delete=models.CASCADE, related_name="conflicts")
-    frame = models.PositiveIntegerField()
+    frame = models.PositiveIntegerField(null=True)
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
 
     annotation_ids: Sequence[AnnotationId]
+    attributes = models.JSONField(default=None, null=True)
 
     @property
     def organization_id(self):
         return self.report.organization_id
+
+    def save(self, *args, **kwargs):
+        if self.attributes:
+            assert isinstance(self.attributes, list)
+
+        return super().save(*args, **kwargs)
 
 
 class AnnotationType(str, Enum):
     TAG = "tag"
     SHAPE = "shape"
     TRACK = "track"
+    INTERVAL = "interval"
 
     def __str__(self) -> str:
         return self.value
@@ -238,7 +255,7 @@ class AnnotationId(models.Model):
         if self.type in [AnnotationType.SHAPE, AnnotationType.TRACK]:
             if not self.shape_type:
                 raise ValidationError("Annotation kind must be specified")
-        elif self.type == AnnotationType.TAG:
+        elif self.type in [AnnotationType.TAG, AnnotationType.INTERVAL]:
             if self.shape_type:
                 raise ValidationError("Annotation kind must be empty")
         else:
@@ -248,6 +265,18 @@ class AnnotationId(models.Model):
 class PointSizeBase(str, Enum):
     IMAGE_SIZE = "image_size"
     GROUP_BBOX_SIZE = "group_bbox_size"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class TranscriptionQualityMetric(str, Enum):
+    WER = "wer"
+    CER = "cer"
 
     def __str__(self) -> str:
         return self.value
@@ -311,6 +340,8 @@ class QualitySettings(TimestampedModel):
 
     max_validations_per_job = models.PositiveIntegerField(default=0)
 
+    transcription_requirements: models.manager.RelatedManager[TranscriptionQualityRequirement]
+
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -340,7 +371,11 @@ class QualitySettings(TimestampedModel):
         return {k: v for k, v in default_settings.items() if k in existing_fields}
 
     def to_dict(self):
-        return model_to_dict(self)
+        d = model_to_dict(self)
+        d["transcription_requirements"] = [
+            r.to_dict() for r in self.transcription_requirements.all()
+        ]
+        return d
 
     @property
     def organization_id(self):
@@ -356,3 +391,52 @@ class QualitySettings(TimestampedModel):
         from .quality_reports import TaskQualityCalculator
 
         return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())
+
+
+class TranscriptionQualityRequirement(models.Model):
+    settings = models.ForeignKey(
+        QualitySettings,
+        on_delete=models.CASCADE,
+        related_name="transcription_requirements",
+        related_query_name="transcription_requirement",
+        null=False,
+        blank=False,
+    )
+
+    attribute = models.ForeignKey(
+        AttributeSpec,
+        on_delete=(
+            # Users should not lose their settings if an attribute is deleted.
+            # Conflicting requirements just become disabled.
+            models.SET_NULL
+        ),
+        null=True,
+        blank=True,
+    )
+
+    metric = models.CharField(
+        max_length=32,
+        choices=TranscriptionQualityMetric.choices(),
+        default=TranscriptionQualityMetric.WER,
+    )
+
+    acceptance_threshold = models.FloatField()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="transcription_quality_requirement_threshold_is_valid",
+                check=(
+                    models.Q(acceptance_threshold__gte=0) & models.Q(acceptance_threshold__lte=1)
+                ),
+            ),
+            models.UniqueConstraint(
+                name="transcription_quality_requirement_attr_unique_per_settings",
+                fields=["settings_id", "attribute_id"],
+            ),
+        ]
+
+    def to_dict(self):
+        d = model_to_dict(self, exclude=("settings"))
+        d["attribute_id"] = d.pop("attribute")
+        return d

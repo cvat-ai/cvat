@@ -87,12 +87,23 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
     serialized_data.update(comparison_report.to_dict())
 
     if db_report.project:
-        # project reports should not have per-frame statistics, it's too detailed for this level
+        # too detailed for this level
         serialized_data["comparison_summary"].pop("frames")
         serialized_data.pop("frame_results")
-    else:
+
+        serialized_data.pop("conflicts")
+    elif db_report.task:
+        # too detailed for this level
+        for frame_result in serialized_data["frame_results"].values():
+            frame_result.pop("conflicts")
+
+        serialized_data.pop("conflicts")
+    elif db_report.job:
         for frame_result in serialized_data["frame_results"].values():
             for conflict in frame_result["conflicts"]:
+                if conflict.get("attributes") is None:
+                    conflict.pop("attributes", None)
+
                 for ann_id in conflict["annotation_ids"]:
                     task_id = jobs_to_tasks[ann_id["job_id"]]
                     ann_id["url"] = (
@@ -106,6 +117,18 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
         serialized_data["frame_results"] = {
             str(k): v for k, v in serialized_data["frame_results"].items()
         }
+
+        for conflict in serialized_data["conflicts"]:
+            if conflict.get("attributes") is None:
+                conflict.pop("attributes", None)
+
+            for ann_id in conflict["annotation_ids"]:
+                task_id = jobs_to_tasks[ann_id["job_id"]]
+                ann_id["url"] = (
+                    f"{host}tasks/{task_id}/jobs/{ann_id['job_id']}"
+                    f"&type={ann_id['type']}"
+                    f"&serverID={ann_id['obj_id']}"
+                )
 
     if task_stats := serialized_data["comparison_summary"].get("tasks", {}):
         for k in ("all", "custom", "not_configured", "excluded"):
