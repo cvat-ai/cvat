@@ -1235,8 +1235,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "This task has no data attached yet. Please set up task data and try again"
             )
-        if task.dimension != models.DimensionType.DIM_2D:
-            raise serializers.ValidationError("Ground Truth jobs can only be added in 2d tasks")
 
         if task.data.validation_mode in (models.ValidationMode.GT_POOL, models.ValidationMode.GT):
             raise serializers.ValidationError(
@@ -1244,98 +1242,105 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 "cannot have more than 1 GT job"
             )
 
-        task_size = task.data.size
-        valid_frame_ids = task.data.get_valid_frame_indices()
+        if task.media_type == models.MediaType.AUDIO:
+            frames = []
+        elif task.media_type == models.MediaType.IMAGE:
+            task_size = task.data.size
+            valid_frame_ids = task.data.get_valid_frame_indices()
 
-        frame_selection_method = validated_data.pop("frame_selection_method")
-        if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-            if frame_count := validated_data.pop("frame_count", None):
-                if task_size < frame_count:
+            frame_selection_method = validated_data.pop("frame_selection_method")
+            if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                if frame_count := validated_data.pop("frame_count", None):
+                    if task_size < frame_count:
+                        raise serializers.ValidationError(
+                            f"The number of frames requested ({frame_count}) "
+                            f"must not be greater than the number of the task frames ({task_size})"
+                        )
+                elif frame_share := validated_data.pop("frame_share", None):
+                    frame_count = max(1, int(frame_share * task_size))
+                else:
                     raise serializers.ValidationError(
-                        f"The number of frames requested ({frame_count}) "
-                        f"must not be greater than the number of the task frames ({task_size})"
+                        "The number of validation frames is not specified"
                     )
-            elif frame_share := validated_data.pop("frame_share", None):
-                frame_count = max(1, int(frame_share * task_size))
+
+                seed = validated_data.pop("random_seed", None)
+
+                # The RNG backend must not change to yield reproducible results,
+                # so here we specify it explicitly
+                rng = random.Generator(random.MT19937(seed=seed))
+
+                frames = rng.choice(
+                    list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
+                ).tolist()
+            elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+                if frame_count := validated_data.pop("frames_per_job_count", None):
+                    if task_size < frame_count:
+                        raise serializers.ValidationError(
+                            f"The number of frames requested ({frame_count}) "
+                            f"must be not be greater than the segment size ({task.segment_size})"
+                        )
+                elif frame_share := validated_data.pop("frames_per_job_share", None):
+                    frame_count = min(max(1, int(frame_share * task.segment_size)), task_size)
+                else:
+                    raise serializers.ValidationError(
+                        "The number of validation frames is not specified"
+                    )
+
+                task_frame_provider = TaskFrameProvider(task)
+                seed = validated_data.pop("random_seed", None)
+
+                # The RNG backend must not change to yield reproducible results,
+                # so here we specify it explicitly
+                rng = random.Generator(random.MT19937(seed=seed))
+
+                frames: list[int] = []
+                overlap = task.overlap
+                for segment in task.segment_set.all():
+                    segment_frames = set(
+                        map(task_frame_provider.get_rel_frame_number, segment.frame_set)
+                    )
+                    selected_frames = segment_frames.intersection(frames)
+                    selected_count = len(selected_frames)
+
+                    missing_count = min(len(segment_frames), frame_count) - selected_count
+                    if missing_count <= 0:
+                        continue
+
+                    selectable_segment_frames = set(
+                        sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
+                    ).difference(selected_frames)
+
+                    frames.extend(
+                        rng.choice(
+                            tuple(selectable_segment_frames), size=missing_count, replace=False
+                        ).tolist()
+                    )
+
+                frames = list(map(task_frame_provider.get_abs_frame_number, frames))
+            elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+                frames = validated_data.pop("frames")
+
+                unique_frames = set(frames)
+                if len(unique_frames) != len(frames):
+                    raise serializers.ValidationError("Frames must not repeat")
+
+                invalid_ids = unique_frames.difference(range(task_size))
+                if invalid_ids:
+                    raise serializers.ValidationError(
+                        "The following frames do not exist in the task: {}".format(
+                            format_list(tuple(map(str, sorted(invalid_ids))))
+                        )
+                    )
+
+                task_frame_provider = TaskFrameProvider(task)
+                frames = list(map(task_frame_provider.get_abs_frame_number, frames))
             else:
                 raise serializers.ValidationError(
-                    "The number of validation frames is not specified"
+                    f"Unexpected frame selection method '{frame_selection_method}'"
                 )
-
-            seed = validated_data.pop("random_seed", None)
-
-            # The RNG backend must not change to yield reproducible results,
-            # so here we specify it explicitly
-            rng = random.Generator(random.MT19937(seed=seed))
-
-            frames = rng.choice(
-                list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
-            ).tolist()
-        elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
-            if frame_count := validated_data.pop("frames_per_job_count", None):
-                if task_size < frame_count:
-                    raise serializers.ValidationError(
-                        f"The number of frames requested ({frame_count}) "
-                        f"must be not be greater than the segment size ({task.segment_size})"
-                    )
-            elif frame_share := validated_data.pop("frames_per_job_share", None):
-                frame_count = min(max(1, int(frame_share * task.segment_size)), task_size)
-            else:
-                raise serializers.ValidationError(
-                    "The number of validation frames is not specified"
-                )
-
-            task_frame_provider = TaskFrameProvider(task)
-            seed = validated_data.pop("random_seed", None)
-
-            # The RNG backend must not change to yield reproducible results,
-            # so here we specify it explicitly
-            rng = random.Generator(random.MT19937(seed=seed))
-
-            frames: list[int] = []
-            overlap = task.overlap
-            for segment in task.segment_set.all():
-                segment_frames = set(
-                    map(task_frame_provider.get_rel_frame_number, segment.frame_set)
-                )
-                selected_frames = segment_frames.intersection(frames)
-                selected_count = len(selected_frames)
-
-                missing_count = min(len(segment_frames), frame_count) - selected_count
-                if missing_count <= 0:
-                    continue
-
-                selectable_segment_frames = set(
-                    sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
-                ).difference(selected_frames)
-
-                frames.extend(
-                    rng.choice(
-                        tuple(selectable_segment_frames), size=missing_count, replace=False
-                    ).tolist()
-                )
-
-            frames = list(map(task_frame_provider.get_abs_frame_number, frames))
-        elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
-            frames = validated_data.pop("frames")
-
-            unique_frames = set(frames)
-            if len(unique_frames) != len(frames):
-                raise serializers.ValidationError(f"Frames must not repeat")
-
-            invalid_ids = unique_frames.difference(range(task_size))
-            if invalid_ids:
-                raise serializers.ValidationError(
-                    "The following frames do not exist in the task: {}".format(
-                        format_list(tuple(map(str, sorted(invalid_ids))))
-                    )
-                )
-
-            task_frame_provider = TaskFrameProvider(task)
-            frames = list(map(task_frame_provider.get_abs_frame_number, frames))
         else:
             raise serializers.ValidationError(
-                f"Unexpected frame selection method '{frame_selection_method}'"
+                f"Ground Truth jobs are not available for the '{task.media_type}' media type"
             )
 
         # Save the new job
@@ -1344,18 +1349,28 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             stop_frame=task.data.size - 1,
             frames=frames,
             task=task,
-            type=models.SegmentType.SPECIFIC_FRAMES,
+            type=models.SegmentType.SPECIFIC_FRAMES if frames else models.SegmentType.RANGE,
         )
 
-        validated_data["segment"] = segment
-        validated_data["assignee_id"] = validated_data.pop("assignee", None)
+        job_params = {
+            "type": validated_data.pop("type"),
+            "segment": segment,
+            "assignee_id": validated_data.pop("assignee", None),
+        }
+
+        if validated_data:
+            raise serializers.ValidationError(
+                "Fields {} specified, but not used.".format(
+                    ", ".join(f'"{k}"' for k in validated_data)
+                )
+            )
 
         try:
-            job = super().create(validated_data)
+            job = super().create(job_params)
         except models.TaskGroundTruthJobsLimitError as ex:
             raise serializers.ValidationError(ex.message) from ex
 
-        if validated_data.get("assignee_id"):
+        if job_params.get("assignee_id"):
             job.assignee_updated_date = job.updated_date
             job.save(update_fields=["assignee_updated_date"])
 
@@ -2319,12 +2334,13 @@ class JobFileMapping(serializers.ListField):
 class ValidationParamsSerializer(serializers.ModelSerializer):
     mode = serializers.ChoiceField(choices=models.ValidationMode.choices(), required=True)
     frame_selection_method = serializers.ChoiceField(
-        choices=models.JobFrameSelectionMethod.choices(), required=True
+        choices=models.JobFrameSelectionMethod.choices(), required=False
     )
     frames = serializers.ListField(
         write_only=True,
         child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
         required=False,
+        allow_empty=False,
         help_text=textwrap.dedent("""\
             The list of file names to be included in the validation set.
             Applicable only to the "{}" frame selection method.
@@ -2389,15 +2405,16 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs["mode"] == models.ValidationMode.GT:
-            field_validation.require_one_of_values(
-                attrs,
-                "frame_selection_method",
-                [
-                    models.JobFrameSelectionMethod.MANUAL,
-                    models.JobFrameSelectionMethod.RANDOM_UNIFORM,
-                    models.JobFrameSelectionMethod.RANDOM_PER_JOB,
-                ],
-            )
+            if "frame_selection_method" in attrs:
+                field_validation.require_one_of_values(
+                    attrs,
+                    "frame_selection_method",
+                    [
+                        models.JobFrameSelectionMethod.MANUAL,
+                        models.JobFrameSelectionMethod.RANDOM_UNIFORM,
+                        models.JobFrameSelectionMethod.RANDOM_PER_JOB,
+                    ],
+                )
         elif attrs["mode"] == models.ValidationMode.GT_POOL:
             field_validation.require_one_of_values(
                 attrs,
@@ -2412,6 +2429,9 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
             )
         else:
             assert False, f"Unknown validation mode {attrs['mode']}"
+
+        if "frame_selection_method" not in attrs:
+            return super().validate(attrs)
 
         if attrs["frame_selection_method"] == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             field_validation.require_one_of_fields(attrs, ["frame_count", "frame_share"])
