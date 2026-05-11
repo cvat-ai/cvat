@@ -41,6 +41,19 @@ class InfraMode(str, Enum):
 
 
 _INFRA_MODES = tuple(str(mode) for mode in InfraMode)
+_LIFECYCLE_COMMAND_MODES = (
+    InfraMode.UP,
+    InfraMode.DOWN,
+    InfraMode.REUSE,
+    InfraMode.RESTORE_DB,
+    InfraMode.BUILD_IMAGES,
+)
+_VERSION_CHECK_SKIP_MODES = (
+    InfraMode.UP,
+    InfraMode.DOWN,
+    InfraMode.RESTORE_DB,
+    InfraMode.BUILD_IMAGES,
+)
 
 
 def _validate_project_name(name: str) -> str:
@@ -150,6 +163,22 @@ class ProjectInfraConfig:
         )
 
 
+@dataclass(frozen=True)
+class RuntimeRequest:
+    platform: str
+    infra_mode: InfraMode
+    run_prefix: str
+    collect_only: bool
+    cleanup: bool
+    dumpdb: bool
+    rebuild: bool
+    no_services: bool
+    skip_version_check: bool
+    external_base_url: str | None
+    deprecation_warnings: tuple[str, ...]
+    should_run_version_check: bool
+
+
 class RuntimeInfraConfig:
     _run_id: str | None = None
     _run_dir: Path | None = None
@@ -159,11 +188,11 @@ class RuntimeInfraConfig:
         if cls._run_id and cls._run_dir:
             return
 
+        request = cls.resolve_request(config)
         runs_root_dir = _RUNS_ROOT_DIR
         runs_root_dir.mkdir(parents=True, exist_ok=True)
 
-        run_prefix = cls.get_run_prefix_from_config(config)
-        base_run_id = f"{run_prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        base_run_id = f"{request.run_prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         run_id = base_run_id
         suffix = 2
         while (runs_root_dir / run_id).exists():
@@ -227,6 +256,135 @@ class RuntimeInfraConfig:
             raise pytest.UsageError(
                 f"Unknown infra mode {value!r}. Allowed: {', '.join(_INFRA_MODES)}"
             ) from ex
+
+    @classmethod
+    def resolve_request(cls, config) -> RuntimeRequest:
+        request = getattr(config, "_cvat_runtime_request", None)
+        if request is not None:
+            return request
+
+        infra_mode = cls.parse_infra_mode(config.getoption("--infra"))
+        explicit_infra_mode = infra_mode != InfraMode.AUTO
+        args = list(config.args)
+        lifecycle_commands = tuple(str(mode) for mode in _LIFECYCLE_COMMAND_MODES)
+        requested_lifecycle_commands = [arg for arg in args if arg in lifecycle_commands]
+
+        if len(requested_lifecycle_commands) > 1:
+            raise pytest.UsageError(
+                "Only one lifecycle command can be used at a time: "
+                f"{', '.join(requested_lifecycle_commands)}"
+            )
+        if explicit_infra_mode and requested_lifecycle_commands:
+            raise pytest.UsageError(
+                f"--infra={infra_mode} cannot be combined with lifecycle command "
+                f"{requested_lifecycle_commands[0]}"
+            )
+        if requested_lifecycle_commands:
+            args.remove(requested_lifecycle_commands[0])
+            config.args[:] = args
+            infra_mode = cls.parse_infra_mode(requested_lifecycle_commands[0])
+
+        no_services = bool(config.getoption("--no-services"))
+        start_services = bool(config.getoption("--start-services"))
+        stop_services = bool(config.getoption("--stop-services"))
+        rebuild = bool(config.getoption("--rebuild"))
+        cleanup = bool(config.getoption("--cleanup"))
+        dumpdb = bool(config.getoption("--dumpdb"))
+        collect_only = bool(config.getoption("--collect-only"))
+        platform = str(config.getoption("--platform"))
+        skip_version_check = bool(config.getoption("--skip-version-check"))
+        run_prefix = cls.get_run_prefix_from_config(config)
+
+        deprecation_warnings = []
+        if start_services:
+            deprecation_warnings.append("--start-services is deprecated; use --infra=up")
+        if stop_services:
+            deprecation_warnings.append("--stop-services is deprecated; use --infra=down")
+        if rebuild:
+            deprecation_warnings.append(
+                "--rebuild is deprecated; use --infra=build-images for rebuild-only use"
+            )
+
+        if start_services and stop_services:
+            raise pytest.UsageError("--start-services and --stop-services are incompatible")
+        if infra_mode != InfraMode.AUTO and any((start_services, stop_services)):
+            raise pytest.UsageError(
+                "--start-services/--stop-services cannot be combined with --infra modes "
+                "or lifecycle commands"
+            )
+        if start_services:
+            infra_mode = InfraMode.UP
+        elif stop_services:
+            infra_mode = InfraMode.DOWN
+
+        if no_services:
+            if infra_mode not in {InfraMode.AUTO, InfraMode.REUSE}:
+                raise pytest.UsageError("--no-services is compatible only with --infra=auto/reuse")
+            infra_mode = InfraMode.REUSE
+
+        if platform == "kube" and any((start_services, stop_services, rebuild)):
+            raise pytest.UsageError(
+                "--platform=kube does not support deprecated local lifecycle flags"
+            )
+        if platform == "kube" and infra_mode in {
+            InfraMode.UP,
+            InfraMode.DOWN,
+            InfraMode.RESTORE_DB,
+            InfraMode.BUILD_IMAGES,
+        }:
+            raise pytest.UsageError(
+                "--infra=up/down/restore-db/build-images are local-runtime lifecycle modes "
+                "and cannot be used with --platform=kube"
+            )
+        if collect_only and any(
+            (
+                cleanup,
+                dumpdb,
+                rebuild,
+                infra_mode
+                in {
+                    InfraMode.UP,
+                    InfraMode.DOWN,
+                    InfraMode.RESTORE_DB,
+                    InfraMode.BUILD_IMAGES,
+                },
+            )
+        ):
+            raise pytest.UsageError(
+                "--collect-only is not compatible with --cleanup/--dumpdb/--rebuild/"
+                "--infra=up/down/restore-db/build-images"
+            )
+        if platform == "kube" and any((cleanup, dumpdb)):
+            raise pytest.UsageError("--platform=kube does not support --cleanup/--dumpdb")
+
+        external_base_url = None
+        if infra_mode == InfraMode.REUSE or no_services:
+            external_base_url = os.environ.get("CVAT_BASE_URL")
+
+        should_run_version_check = (
+            not collect_only
+            and infra_mode not in _VERSION_CHECK_SKIP_MODES
+            and not any((cleanup, dumpdb))
+            and not skip_version_check
+        )
+
+        request = RuntimeRequest(
+            platform=platform,
+            infra_mode=infra_mode,
+            run_prefix=run_prefix,
+            collect_only=collect_only,
+            cleanup=cleanup,
+            dumpdb=dumpdb,
+            rebuild=rebuild,
+            no_services=no_services,
+            skip_version_check=skip_version_check,
+            external_base_url=external_base_url,
+            deprecation_warnings=tuple(deprecation_warnings),
+            should_run_version_check=should_run_version_check,
+        )
+        setattr(config, "_cvat_runtime_request", request)
+        setattr(config, "_cvat_infra_mode", request.infra_mode)
+        return request
 
     @classmethod
     def get_server_url(cls, endpoint: str, **kwargs) -> str:

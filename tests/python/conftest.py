@@ -33,6 +33,7 @@ pytest_plugins = [
 
 
 def pytest_configure(config) -> None:
+    RuntimeInfraConfig.resolve_request(config)
     RuntimeInfraConfig.initialize(config)
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.configure(config)
@@ -62,81 +63,12 @@ def pytest_runtestloop(session):
 
 def pytest_sessionstart(session) -> None:
     config = session.config
+    request = RuntimeInfraConfig.resolve_request(config)
 
-    infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
-    no_services = bool(config.getoption("--no-services"))
-    start_services = bool(config.getoption("--start-services"))
-    stop_services = bool(config.getoption("--stop-services"))
-    rebuild = bool(config.getoption("--rebuild"))
-    if infra_mode == InfraMode.AUTO:
-        args = list(config.args)
-        for candidate in (
-            str(InfraMode.UP),
-            str(InfraMode.DOWN),
-            str(InfraMode.REUSE),
-            str(InfraMode.RESTORE_DB),
-            str(InfraMode.BUILD_IMAGES),
-        ):
-            if candidate in args:
-                args.remove(candidate)
-                config.args[:] = args
-                infra_mode = RuntimeInfraConfig.parse_infra_mode(candidate)
-                break
+    for warning in request.deprecation_warnings:
+        warnings.warn(warning, DeprecationWarning, stacklevel=2)
 
-    _warn_deprecated_lifecycle_options(start_services, stop_services, rebuild)
-
-    if start_services and stop_services:
-        raise pytest.UsageError("--start-services and --stop-services are incompatible")
-    if infra_mode != InfraMode.AUTO and any((start_services, stop_services)):
-        raise pytest.UsageError(
-            "--start-services/--stop-services cannot be combined with explicit --infra modes"
-        )
-    if start_services:
-        infra_mode = InfraMode.UP
-    elif stop_services:
-        infra_mode = InfraMode.DOWN
-
-    if no_services:
-        if infra_mode not in {InfraMode.AUTO, InfraMode.REUSE}:
-            raise pytest.UsageError("--no-services is compatible only with --infra=auto/reuse")
-        infra_mode = InfraMode.REUSE
-
-    setattr(config, "_cvat_infra_mode", infra_mode)
-
-    cleanup = bool(config.getoption("--cleanup"))
-    dumpdb = bool(config.getoption("--dumpdb"))
-    collect_only = bool(config.getoption("--collect-only"))
-    platform = str(config.getoption("--platform"))
-
-    if platform == "kube" and any((start_services, stop_services, rebuild)):
-        raise pytest.UsageError("--platform=kube does not support deprecated local lifecycle flags")
-    if platform == "kube" and infra_mode in {
-        InfraMode.UP,
-        InfraMode.DOWN,
-        InfraMode.RESTORE_DB,
-        InfraMode.BUILD_IMAGES,
-    }:
-        raise pytest.UsageError(
-            "--infra=up/down/restore-db/build-images are local-runtime lifecycle modes "
-            "and cannot be used with --platform=kube"
-        )
-    if collect_only and any(
-        (
-            cleanup,
-            dumpdb,
-            rebuild,
-            infra_mode
-            in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES},
-        )
-    ):
-        raise pytest.UsageError(
-            "--collect-only is not compatible with --cleanup/--dumpdb/--rebuild/"
-            "--infra=up/down/restore-db/build-images"
-        )
-    if platform == "kube" and any((cleanup, dumpdb)):
-        raise pytest.UsageError("--platform=kube does not support --cleanup/--dumpdb")
-
-    if infra_mode == InfraMode.BUILD_IMAGES:
+    if request.infra_mode == InfraMode.BUILD_IMAGES:
         cvat_root_dir = RuntimeInfraConfig.get_cvat_root_dir()
         from infra.system_utils import run_command
 
@@ -156,21 +88,14 @@ def pytest_sessionstart(session) -> None:
         )
         pytest.exit("CVAT images have been rebuilt (cvat/server:dev, cvat/ui:dev)", returncode=0)
 
-    should_run_version_check = (
-        not collect_only
-        and infra_mode
-        not in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES}
-        and not any((cleanup, dumpdb))
-        and not bool(config.getoption("--skip-version-check"))
-    )
-    if collect_only:
+    if request.collect_only:
         return
 
-    if platform == "kube":
+    if request.platform == "kube":
         legacy_init.session_start(session)
-        if should_run_version_check:
+        if request.should_run_version_check:
             run_sanity_version_check(
-                cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=platform
+                cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=request.platform
             )
         return
 
@@ -179,25 +104,26 @@ def pytest_sessionstart(session) -> None:
         cvat_db_dir=RuntimeInfraConfig.get_cvat_db_dir(),
         waiting_time=300,
         extra_dc_files=None,
-        rebuild=rebuild,
+        rebuild=request.rebuild,
     )
     instance = InfraInstance.create(session, instance_config)
     setattr(config, "_cvat_infra_instance", instance)
     instance.start()
 
-    if should_run_version_check:
+    if request.should_run_version_check:
         run_sanity_version_check(
-            cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=platform
+            cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=request.platform
         )
 
 
 def pytest_sessionfinish(session, exitstatus: int) -> None:
-    if session.config.getoption("--collect-only"):
+    request = RuntimeInfraConfig.resolve_request(session.config)
+    if request.collect_only:
         return
 
     setattr(session.config, "_cvat_exitstatus", int(exitstatus))
 
-    if session.config.getoption("--platform") == "kube":
+    if request.platform == "kube":
         legacy_init.session_finish(session)
         return
 
@@ -211,26 +137,8 @@ def pytest_collection_modifyitems(config, items) -> None:
         plugin_class.collection_modifyitems(config, items)
 
 
-def _warn_deprecated_lifecycle_options(
-    start_services: bool,
-    stop_services: bool,
-    rebuild: bool,
-) -> None:
-    replacements = []
-    if start_services:
-        replacements.append("--start-services is deprecated; use --infra=up")
-    if stop_services:
-        replacements.append("--stop-services is deprecated; use --infra=down")
-    if rebuild:
-        replacements.append(
-            "--rebuild is deprecated; use --infra=build-images for rebuild-only use"
-        )
-    if replacements:
-        warnings.warn("; ".join(replacements), DeprecationWarning, stacklevel=2)
-
-
 def _selected_runtime_class(config):
-    if config.getoption("--platform") != "local":
+    if RuntimeInfraConfig.resolve_request(config).platform != "local":
         return None
 
     selected = getattr(config, "_cvat_runtime_class", None)
@@ -241,7 +149,7 @@ def _selected_runtime_class(config):
 
 
 def _selected_plugin_classes(config):
-    if config.getoption("--platform") != "local":
+    if RuntimeInfraConfig.resolve_request(config).platform != "local":
         return []
 
     classes = getattr(config, "_cvat_plugin_classes", None)

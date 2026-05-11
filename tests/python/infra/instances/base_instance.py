@@ -83,7 +83,7 @@ class InfraInstance(ABC):
         return None
 
     def should_collect_failure_logs(self) -> bool:
-        if self.config.getoption("--collect-only"):
+        if RuntimeInfraConfig.resolve_request(self.config).collect_only:
             return False
 
         exitstatus = getattr(self.config, "_cvat_exitstatus", 0)

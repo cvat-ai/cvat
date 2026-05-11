@@ -79,13 +79,13 @@ def preconfigure_local_runtime_env(config) -> None:
     This prevents import-time constants from sticking to localhost:8080
     when running with --run-prefix.
     """
-    project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
-    infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
+    request = RuntimeInfraConfig.resolve_request(config)
+    project_name = request.run_prefix
 
-    if config.getoption("--platform") != "local":
+    if request.platform != "local":
         return
 
-    if config.getoption("--collect-only") or infra_mode == InfraMode.DOWN:
+    if request.collect_only or request.infra_mode == InfraMode.DOWN:
         os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         return
 
@@ -94,18 +94,27 @@ def preconfigure_local_runtime_env(config) -> None:
         project_cfg,
         default_project_name=RuntimeInfraConfig.get_default_project_name(),
     )
-    _configure_runtime_env(project_name=project_name, port_config=port_config)
+    _configure_runtime_env(
+        project_name=project_name,
+        port_config=port_config,
+        base_url=request.external_base_url,
+    )
 
 
 def resolve_local_project_context(session) -> tuple[str, dict]:
     config = session.config
-    project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
+    request = RuntimeInfraConfig.resolve_request(config)
+    project_name = request.run_prefix
     project_cfg = RuntimeInfraConfig.get_project_config(project_name)
     port_config = resolve_port_config(
         project_cfg,
         default_project_name=RuntimeInfraConfig.get_default_project_name(),
     )
-    _configure_runtime_env(project_name=project_name, port_config=port_config)
+    _configure_runtime_env(
+        project_name=project_name,
+        port_config=port_config,
+        base_url=request.external_base_url,
+    )
     project_cfg.save_state(
         {
             "project_name": project_name,
@@ -514,7 +523,7 @@ class LocalInstance(InfraInstance):
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
-        return config.getoption("--platform") == "local"
+        return RuntimeInfraConfig.resolve_request(config).platform == "local"
 
     def exec_cvat(self, command: list[str]):
         return run_command(
@@ -748,11 +757,11 @@ class LocalInstance(InfraInstance):
         restore_databases_from_assets()
 
     def start(self) -> None:
-        config = self.config
-        infra_mode = getattr(config, "_cvat_infra_mode")
-        project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
+        request = RuntimeInfraConfig.resolve_request(self.config)
+        infra_mode = request.infra_mode
+        project_name = request.run_prefix
 
-        if config.getoption("--collect-only"):
+        if request.collect_only:
             return
 
         if infra_mode == InfraMode.DOWN:
@@ -763,15 +772,16 @@ class LocalInstance(InfraInstance):
 
         self._run_local_lifecycle(
             infra_mode=infra_mode,
-            dumpdb=config.getoption("--dumpdb"),
-            cleanup=config.getoption("--cleanup"),
+            dumpdb=request.dumpdb,
+            cleanup=request.cleanup,
         )
 
     def finish(self) -> None:
-        if self.config.getoption("--platform") != "local":
+        request = RuntimeInfraConfig.resolve_request(self.config)
+        if request.platform != "local":
             return
 
-        if self.config.getoption("--collect-only"):
+        if request.collect_only:
             return
 
         if self.should_collect_failure_logs():
@@ -780,17 +790,14 @@ class LocalInstance(InfraInstance):
         if os.environ.get("COVERAGE_PROCESS_START"):
             self.collect_code_coverage_from_containers()
 
-        infra_mode = getattr(self.config, "_cvat_infra_mode", InfraMode.AUTO)
-        run_prefix = RuntimeInfraConfig.get_run_prefix_from_config(self.config)
         cleanup_after_session(
-            infra_mode=infra_mode,
-            run_prefix=run_prefix,
+            infra_mode=request.infra_mode,
+            run_prefix=request.run_prefix,
         )
 
     def collect_failure_logs(self) -> None:
-        project_cfg = RuntimeInfraConfig.get_project_config(
-            RuntimeInfraConfig.get_run_prefix_from_config(self.config)
-        )
+        request = RuntimeInfraConfig.resolve_request(self.config)
+        project_cfg = RuntimeInfraConfig.get_project_config(request.run_prefix)
         running = set(running_containers())
         logs_dir = self.failure_logs_dir()
         for container in _FAILURE_LOG_CONTAINERS:
@@ -905,7 +912,7 @@ class LocalPlugin(InfraPlugin):
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
-        return config.getoption("--platform") == "local"
+        return RuntimeInfraConfig.resolve_request(config).platform == "local"
 
 
 LocalInstance.plugin_class = LocalPlugin
