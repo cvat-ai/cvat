@@ -60,7 +60,7 @@ which are used by containers for the testing system.
 Run all REST API tests:
 
 ```bash
-pytest ./tests/python
+pytest tests/python
 ```
 
 This command will automatically start all necessary docker containers.
@@ -68,15 +68,15 @@ This command will automatically start all necessary docker containers.
 Use these lifecycle commands to manage the test runtime without running tests:
 
 ```bash
-pytest ./tests/python up
-pytest ./tests/python down
-pytest ./tests/python reuse
-pytest ./tests/python restore-db
+pytest tests/python up
+pytest tests/python down
+pytest tests/python reuse
+pytest tests/python restore-db
 ```
 
 If you need to rebuild your CVAT images, run:
 ```bash
-pytest ./tests/python build-images
+pytest tests/python build-images
 ```
 
 The explicit `--infra=up`, `--infra=down`, `--infra=reuse`, `--infra=restore-db`,
@@ -86,8 +86,8 @@ CVAT data state.
 
 If you want to get a code coverage report, use special option for it:
 ```bash
-pytest ./tests/python build-images
-COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --cov --cov-report xml
+pytest tests/python build-images
+COVERAGE_PROCESS_START=.coveragerc pytest tests/python --cov --cov-report xml
 ```
 
 **Debugging**

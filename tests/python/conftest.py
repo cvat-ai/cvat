@@ -222,7 +222,9 @@ def _warn_deprecated_lifecycle_options(
     if stop_services:
         replacements.append("--stop-services is deprecated; use --infra=down")
     if rebuild:
-        replacements.append("--rebuild is deprecated; use --infra=build-images for rebuild-only use")
+        replacements.append(
+            "--rebuild is deprecated; use --infra=build-images for rebuild-only use"
+        )
     if replacements:
         warnings.warn("; ".join(replacements), DeprecationWarning, stacklevel=2)
 

@@ -138,7 +138,9 @@ def _docker_list_containers() -> list[dict]:
         return []
 
     inspect_stdout, _ = run_command(["docker", "inspect", *container_ids.splitlines()])
-    return [_normalize_docker_inspect_container(container) for container in json.loads(inspect_stdout)]
+    return [
+        _normalize_docker_inspect_container(container) for container in json.loads(inspect_stdout)
+    ]
 
 
 def _normalize_docker_inspect_container(container: dict) -> dict:

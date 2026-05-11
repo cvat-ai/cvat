@@ -38,7 +38,7 @@ which are used by containers for the testing system.
 - Run all REST API tests:
 
   ```shell
-  pytest ./tests/python
+  pytest tests/python
   ```
 
   This command will automatically start all necessary docker containers.
@@ -53,7 +53,7 @@ procedure to add them:
 
 1. Run a clean CVAT instance and restore DB and data volume
    ```console
-   pytest tests/python/ up
+   pytest tests/python up
    ```
 1. Add new objects (e.g. issues, comments, tasks, projects)
 1. Backup DB and data volume using commands below
@@ -82,10 +82,12 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-cd tests/python
-python shared/utils/dump_test_db.py
-docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
+pytest tests/python dumpdb
+docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > tests/python/shared/assets/cvat_db/cvat_data.tar.bz2
 ```
+
+> Note: `dumpdb` uses `--indent 2`. If you dump `data.json` manually without
+> this option or with another value, it can lead to merge problems.
 
 ## How to update *.json files in the assets directory?
 
@@ -93,13 +95,9 @@ If you have updated the test database and want to update the assets/*.json
 files as well, run the appropriate script:
 
 ```
-cd tests/python
-pytest ./ up
-python shared/utils/dump_objects.py
+pytest tests/python up
+python tests/python/shared/utils/dump_objects.py
 ```
-
-Use `pytest ./ reuse` instead of `up` when you want to work with an already-running
-test stack and keep its current DB, Redis, ClickHouse, and CVAT data state.
 
 ## How to restore DB and data volume?
 
