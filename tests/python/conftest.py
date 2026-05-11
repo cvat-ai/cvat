@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import warnings
+
 import pytest
 from infra import options as infra_options
 from infra.config import InfraMode, RuntimeInfraConfig
@@ -63,11 +65,15 @@ def pytest_sessionstart(session) -> None:
 
     infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
     no_services = bool(config.getoption("--no-services"))
+    start_services = bool(config.getoption("--start-services"))
+    stop_services = bool(config.getoption("--stop-services"))
+    rebuild = bool(config.getoption("--rebuild"))
     if infra_mode == InfraMode.AUTO:
         args = list(config.args)
         for candidate in (
             str(InfraMode.UP),
             str(InfraMode.DOWN),
+            str(InfraMode.REUSE),
             str(InfraMode.RESTORE_DB),
             str(InfraMode.BUILD_IMAGES),
         ):
@@ -76,6 +82,19 @@ def pytest_sessionstart(session) -> None:
                 config.args[:] = args
                 infra_mode = RuntimeInfraConfig.parse_infra_mode(candidate)
                 break
+
+    _warn_deprecated_lifecycle_options(start_services, stop_services, rebuild)
+
+    if start_services and stop_services:
+        raise pytest.UsageError("--start-services and --stop-services are incompatible")
+    if infra_mode != InfraMode.AUTO and any((start_services, stop_services)):
+        raise pytest.UsageError(
+            "--start-services/--stop-services cannot be combined with explicit --infra modes"
+        )
+    if start_services:
+        infra_mode = InfraMode.UP
+    elif stop_services:
+        infra_mode = InfraMode.DOWN
 
     if no_services:
         if infra_mode not in {InfraMode.AUTO, InfraMode.REUSE}:
@@ -89,16 +108,19 @@ def pytest_sessionstart(session) -> None:
     collect_only = bool(config.getoption("--collect-only"))
     platform = str(config.getoption("--platform"))
 
+    if platform == "kube" and any((start_services, stop_services, rebuild)):
+        raise pytest.UsageError("--platform=kube does not support deprecated local lifecycle flags")
     if collect_only and any(
         (
             cleanup,
             dumpdb,
+            rebuild,
             infra_mode
             in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES},
         )
     ):
         raise pytest.UsageError(
-            "--collect-only is not compatible with --cleanup/--dumpdb/"
+            "--collect-only is not compatible with --cleanup/--dumpdb/--rebuild/"
             "--infra=up/down/restore-db/build-images"
         )
     if platform == "kube" and any((cleanup, dumpdb)):
@@ -147,6 +169,7 @@ def pytest_sessionstart(session) -> None:
         cvat_db_dir=RuntimeInfraConfig.get_cvat_db_dir(),
         waiting_time=300,
         extra_dc_files=None,
+        rebuild=rebuild,
     )
     instance = InfraInstance.create(session, instance_config)
     setattr(config, "_cvat_infra_instance", instance)
@@ -176,6 +199,22 @@ def pytest_sessionfinish(session, exitstatus: int) -> None:
 def pytest_collection_modifyitems(config, items) -> None:
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.collection_modifyitems(config, items)
+
+
+def _warn_deprecated_lifecycle_options(
+    start_services: bool,
+    stop_services: bool,
+    rebuild: bool,
+) -> None:
+    replacements = []
+    if start_services:
+        replacements.append("--start-services is deprecated; use --infra=up")
+    if stop_services:
+        replacements.append("--stop-services is deprecated; use --infra=down")
+    if rebuild:
+        replacements.append("--rebuild is deprecated; use --infra=build-images for rebuild-only use")
+    if replacements:
+        warnings.warn("; ".join(replacements), DeprecationWarning, stacklevel=2)
 
 
 def _selected_runtime_class(config):

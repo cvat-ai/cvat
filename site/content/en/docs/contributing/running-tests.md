@@ -65,27 +65,29 @@ pytest ./tests/python
 
 This command will automatically start all necessary docker containers.
 
-If you want to start/stop these containers without running tests
-use special options for it:
+Use these lifecycle commands to manage the test runtime without running tests:
 
 ```bash
-pytest ./tests/python --start-services
-pytest ./tests/python --stop-services
+pytest ./tests/python up
+pytest ./tests/python down
+pytest ./tests/python reuse
+pytest ./tests/python restore-db
 ```
 
-If you need to rebuild your CVAT images add `--rebuild` option:
+If you need to rebuild your CVAT images, run:
 ```bash
-pytest ./tests/python --rebuild
+pytest ./tests/python build-images
 ```
 
-If you need to persist data volumes across test sessions add `--keep-data` option
-```bash
-pytest ./tests/python --start-services --keep-data
-```
+The explicit `--infra=up`, `--infra=down`, `--infra=reuse`, `--infra=restore-db`,
+and `--infra=build-images` forms are equivalent. Use `reuse` when you want to run
+against an already-running stack and keep its existing DB, Redis, ClickHouse, and
+CVAT data state.
 
 If you want to get a code coverage report, use special option for it:
 ```bash
-COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --rebuild --cov --cov-report xml
+pytest ./tests/python build-images
+COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --cov --cov-report xml
 ```
 
 **Debugging**
@@ -100,7 +102,8 @@ To debug a server deployed with Docker, you need to do the following:
 - Rebuild the images and start the test containers:
 
 ```bash
-CVAT_DEBUG_ENABLED=yes pytest --rebuild --start-services tests/python
+CVAT_DEBUG_ENABLED=yes pytest tests/python build-images
+CVAT_DEBUG_ENABLED=yes pytest tests/python up
 ```
 
 Now, you can use VS Code tasks to attach to the running server containers.

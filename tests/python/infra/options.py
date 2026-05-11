@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import argparse
+
 from infra.config import RuntimeInfraConfig
 
 
@@ -63,4 +65,7 @@ def add_infra_options(parser):
         default=False,
         help="Skip startup sanity check for sdk/cli/server image versions. (default: %(default)s)",
     )
+    group._addoption("--start-services", action="store_true", help=argparse.SUPPRESS)
+    group._addoption("--stop-services", action="store_true", help=argparse.SUPPRESS)
+    group._addoption("--rebuild", action="store_true", help=argparse.SUPPRESS)
     return group

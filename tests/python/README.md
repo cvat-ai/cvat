@@ -53,7 +53,7 @@ procedure to add them:
 
 1. Run a clean CVAT instance and restore DB and data volume
    ```console
-   pytest tests/python/ --start-services
+   pytest tests/python/ up
    ```
 1. Add new objects (e.g. issues, comments, tasks, projects)
 1. Backup DB and data volume using commands below
@@ -94,9 +94,12 @@ files as well, run the appropriate script:
 
 ```
 cd tests/python
-pytest ./ --start-services
+pytest ./ up
 python shared/utils/dump_objects.py
 ```
+
+Use `pytest ./ reuse` instead of `up` when you want to work with an already-running
+test stack and keep its current DB, Redis, ClickHouse, and CVAT data state.
 
 ## How to restore DB and data volume?
 

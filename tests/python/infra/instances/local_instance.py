@@ -303,6 +303,7 @@ def start_services(
     default_project_name: str,
     dc_files: list[Path],
     project_directory: Path,
+    rebuild: bool = False,
 ) -> None:
     if project_name == default_project_name and any(
         [cn in ["cvat_server", "cvat_db"] for cn in running_containers()]
@@ -313,7 +314,8 @@ def start_services(
         )
 
     run_command(
-        docker_compose(project_name, dc_files, project_directory) + ["up", "-d"],
+        docker_compose(project_name, dc_files, project_directory)
+        + ["up", "-d", *(["--build"] if rebuild else [])],
         capture_output=False,
         logger=logger,
     )
@@ -670,12 +672,13 @@ class LocalInstance(InfraInstance):
             project_running = False
 
         if infra_mode == InfraMode.UP:
-            if not project_running:
+            if not project_running or self.deps.rebuild:
                 start_services(
                     project_name=project_name,
                     default_project_name=RuntimeInfraConfig.get_default_project_name(),
                     dc_files=dc_files,
                     project_directory=self.deps.cvat_root_dir,
+                    rebuild=self.deps.rebuild,
                 )
                 infra_health.wait_for_services(self.deps.waiting_time)
             restore_databases_from_assets()
@@ -689,6 +692,7 @@ class LocalInstance(InfraInstance):
                     default_project_name=RuntimeInfraConfig.get_default_project_name(),
                     dc_files=dc_files,
                     project_directory=self.deps.cvat_root_dir,
+                    rebuild=self.deps.rebuild,
                 )
             restore_databases_from_assets()
             pytest.exit("CVAT database has been restored from test assets.", returncode=0)
@@ -697,12 +701,13 @@ class LocalInstance(InfraInstance):
             # In auto mode, tear down only stacks that this session had to start.
             set_auto_started(not project_running)
 
-        if not project_running:
+        if not project_running or self.deps.rebuild:
             start_services(
                 project_name=project_name,
                 default_project_name=RuntimeInfraConfig.get_default_project_name(),
                 dc_files=dc_files,
                 project_directory=self.deps.cvat_root_dir,
+                rebuild=self.deps.rebuild,
             )
 
         restore_databases_from_assets()

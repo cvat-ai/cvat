@@ -7,7 +7,7 @@ This script lists resources on the CVAT server
 and saves them to JSON files in the `assets` directory.
 Before running it, start the test instance by running:
 
-    pytest tests/python --start-services
+    pytest tests/python up
 
 The script determines which endpoints to query by looking at the set of existing JSON files.
 For example, if `tasks.json` exists, the script will overwrite it with output of `GET /api/tasks`.
