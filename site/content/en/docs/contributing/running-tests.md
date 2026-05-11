@@ -68,15 +68,11 @@ This command will automatically start all necessary docker containers.
 Use these lifecycle commands to manage the test runtime without running tests:
 
 ```bash
-pytest tests/python up
-pytest tests/python down
-pytest tests/python reuse
-pytest tests/python restore-db
-```
-
-If you need to rebuild your CVAT images, run:
-```bash
-pytest tests/python build-images
+pytest tests/python build-images # Rebuild CVAT server and UI images and exit
+pytest tests/python up           # Start test services, restore test data, and exit
+pytest tests/python down         # Stop and remove test services and volumes
+pytest tests/python reuse        # Use an already-running test stack without resetting data
+pytest tests/python restore-db   # Restore test DB/data in the current stack and exit
 ```
 
 The explicit `--infra=up`, `--infra=down`, `--infra=reuse`, `--infra=restore-db`,
