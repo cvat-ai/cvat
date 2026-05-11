@@ -1755,7 +1755,7 @@ def create_thread(
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
 
-        if MEDIA_TYPES[media_type]["mode"] == "annotation":
+        if MEDIA_TYPES[media_type]["mode"] == models.TaskMode.ANNOTATION:
             details["sorting_method"] = (
                 data["sorting_method"] if not is_media_sorted else models.SortingMethod.PREDEFINED
             )

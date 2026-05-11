@@ -1006,6 +1006,17 @@
   }
 },
 {
+  "model": "engine.validationlayout",
+  "pk": 8,
+  "fields": {
+    "task_data": 35,
+    "mode": "gt",
+    "frames_per_job_count": null,
+    "frames": "[]",
+    "disabled_frames": "[]"
+  }
+},
+{
   "model": "engine.data",
   "pk": 2,
   "fields": {
@@ -1581,8 +1592,27 @@
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 35,
+  "fields": {
+    "content_size": 56401,
+    "size": 6914,
+    "start_frame": 0,
+    "stop_frame": 6913,
+    "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 6914,
+    "image_quality": 70,
+    "compressed_chunk_type": "audio_mp3",
+    "original_chunk_type": "audio_mp3",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1613,6 +1643,16 @@
     "path": "random_video_10s.mp4",
     "width": 1280,
     "height": 720
+  }
+},
+{
+  "model": "engine.audio",
+  "pk": 1,
+  "fields": {
+    "data": 35,
+    "path": "sample2_with_cover.mp3",
+    "sampling_rate": 24000,
+    "has_cover_image": true
   }
 },
 {
@@ -5402,6 +5442,34 @@
   }
 },
 {
+  "model": "engine.task",
+  "pk": 36,
+  "fields": {
+    "created_date": "2026-05-11T17:25:43.375Z",
+    "updated_date": "2026-05-11T17:25:43.643Z",
+    "assignee": null,
+    "assignee_updated_date": null,
+    "project": null,
+    "name": "task with audio and gt",
+    "owner": [
+      "user2"
+    ],
+    "bug_tracker": "",
+    "status": "annotation",
+    "overlap": 0,
+    "segment_size": 6914,
+    "data": 35,
+    "dimension": "1d",
+    "mode": "interpolation",
+    "media_type": "audio",
+    "subset": "",
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null,
+    "consensus_replicas": 0
+  }
+},
+{
   "model": "engine.clientfile",
   "pk": 131,
   "fields": {
@@ -7005,6 +7073,30 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 56,
+  "fields": {
+    "task": 36,
+    "start_frame": 0,
+    "stop_frame": 6913,
+    "chunks_updated_date": "2026-05-11T17:25:43.503Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 57,
+  "fields": {
+    "task": 36,
+    "start_frame": 0,
+    "stop_frame": 6913,
+    "chunks_updated_date": "2026-05-11T17:25:43.566Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -7907,6 +7999,38 @@
     "stage": "annotation",
     "state": "new",
     "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 64,
+  "fields": {
+    "created_date": "2026-05-11T17:25:43.509Z",
+    "updated_date": "2026-05-11T17:25:43.621Z",
+    "assignee": null,
+    "assignee_updated_date": null,
+    "segment": 56,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 65,
+  "fields": {
+    "created_date": "2026-05-11T17:25:43.568Z",
+    "updated_date": "2026-05-11T17:25:43.641Z",
+    "assignee": null,
+    "assignee_updated_date": null,
+    "segment": 57,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "ground_truth",
     "parent_job": null
   }
 },
@@ -8931,6 +9055,18 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 93,
+  "fields": {
+    "task": 36,
+    "project": null,
+    "name": "event",
+    "color": "#d76534",
+    "type": "interval",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -9193,6 +9329,30 @@
     "label": 80,
     "name": "src",
     "mutable": false,
+    "input_type": "text",
+    "default_value": "",
+    "values": ""
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 19,
+  "fields": {
+    "label": 93,
+    "name": "speaker",
+    "mutable": false,
+    "input_type": "select",
+    "default_value": "Alice",
+    "values": "Alice\nBob"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 20,
+  "fields": {
+    "label": 93,
+    "name": "tr-en",
+    "mutable": true,
     "input_type": "text",
     "default_value": "",
     "values": ""
@@ -16383,6 +16543,138 @@
     "rotation": 0.0,
     "track": 19,
     "frame": 2
+  }
+},
+{
+  "model": "engine.labeledinterval",
+  "pk": 1,
+  "fields": {
+    "job": 64,
+    "label": 93,
+    "group": 0,
+    "source": "manual",
+    "score": 1.0,
+    "start": 0,
+    "stop": 6913
+  }
+},
+{
+  "model": "engine.labeledinterval",
+  "pk": 2,
+  "fields": {
+    "job": 64,
+    "label": 93,
+    "group": 0,
+    "source": "manual",
+    "score": 1.0,
+    "start": 0,
+    "stop": 6913
+  }
+},
+{
+  "model": "engine.labeledinterval",
+  "pk": 3,
+  "fields": {
+    "job": 65,
+    "label": 93,
+    "group": 0,
+    "source": "manual",
+    "score": 1.0,
+    "start": 0,
+    "stop": 6913
+  }
+},
+{
+  "model": "engine.labeledinterval",
+  "pk": 4,
+  "fields": {
+    "job": 65,
+    "label": 93,
+    "group": 0,
+    "source": "manual",
+    "score": 1.0,
+    "start": 0,
+    "stop": 6913
+  }
+},
+{
+  "model": "engine.labeledintervalattributeval",
+  "pk": 1,
+  "fields": {
+    "spec": 19,
+    "job": 64,
+    "value": "Bob",
+    "interval": 1
+  }
+},
+{
+  "model": "engine.labeledintervalattributeval",
+  "pk": 2,
+  "fields": {
+    "spec": 20,
+    "job": 64,
+    "value": "",
+    "interval": 1
+  }
+},
+{
+  "model": "engine.labeledintervalattributeval",
+  "pk": 3,
+  "fields": {
+    "spec": 19,
+    "job": 64,
+    "value": "Bob",
+    "interval": 2
+  }
+},
+{
+  "model": "engine.labeledintervalattributeval",
+  "pk": 4,
+  "fields": {
+    "spec": 20,
+    "job": 64,
+    "value": "",
+    "interval": 2
+  }
+},
+{
+  "model": "engine.labeledintervalattributeval",
+  "pk": 5,
+  "fields": {
+    "spec": 19,
+    "job": 65,
+    "value": "Bob",
+    "interval": 3
+  }
+},
+{
+  "model": "engine.labeledintervalattributeval",
+  "pk": 6,
+  "fields": {
+    "spec": 20,
+    "job": 65,
+    "value": "",
+    "interval": 3
+  }
+},
+{
+  "model": "engine.labeledintervalattributeval",
+  "pk": 7,
+  "fields": {
+    "spec": 19,
+    "job": 65,
+    "value": "Bob",
+    "interval": 4
+  }
+},
+{
+  "model": "engine.labeledintervalattributeval",
+  "pk": 8,
+  "fields": {
+    "spec": 20,
+    "job": 65,
+    "value": "",
+    "interval": 4
   }
 },
 {
@@ -23742,6 +24034,35 @@
     "created_date": "2025-11-13T11:32:48.140Z",
     "updated_date": "2025-11-13T11:32:48.140Z",
     "task": 35,
+    "project": null,
+    "inherit": true,
+    "job_filter": "",
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "empty_is_annotated": false,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 48,
+  "fields": {
+    "created_date": "2026-05-11T17:25:43.435Z",
+    "updated_date": "2026-05-11T17:25:43.435Z",
+    "task": 36,
     "project": null,
     "inherit": true,
     "job_filter": "",

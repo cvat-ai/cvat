@@ -10,6 +10,7 @@ import re
 import sys
 from collections import defaultdict
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping, Sequence
+from datetime import timedelta
 from functools import partial, reduce
 from operator import add
 from pathlib import Path
@@ -69,6 +70,12 @@ class InstanceLabelData:
     class Attribute(NamedTuple):
         name: str
         value: Any
+
+    class AttributeSpec(NamedTuple):
+        name: str
+        value_type: str
+        default_value: Any
+        values: Sequence[Any]
 
     @classmethod
     def add_prefetch_info(cls, queryset: QuerySet[Label]) -> QuerySet[Label]:
@@ -265,6 +272,16 @@ class CommonData(InstanceLabelData):
         source: str | None
         group: int | None = 0
         id: int | None = None
+
+    class LabeledInterval(NamedTuple):
+        start: timedelta
+        stop: timedelta
+        label: int
+        attributes: Sequence[CommonData.Attribute]
+        group: int = 0
+        source: str | None = None
+        id: int | None = None
+        score: float = 1.0
 
     @attrs
     class Frame:
@@ -500,6 +517,20 @@ class CommonData(InstanceLabelData):
             type=label.type
         )
 
+    def _export_labeled_interval(self, interval: dict[str, Any]) -> LabeledInterval:
+        def frame_to_timestamp(frame: int) -> timedelta:
+            return timedelta(milliseconds=frame)
+
+        return CommonData.LabeledInterval(
+            id=interval["id"],
+            start=frame_to_timestamp(self.abs_frame_id(interval["start"])),
+            stop=frame_to_timestamp(self.abs_frame_id(interval["stop"])),
+            label=self._get_label_name(interval["label_id"]),
+            group=interval.get("group", 0),
+            source=interval["source"],
+            attributes=self._export_attributes(interval["attributes"]),
+        )
+
     def group_by_frame(self, include_empty: bool = False) -> Generator[CommonData.Frame, None, None]:
         included_frames = self.get_included_frames()
         anno_manager = AnnotationManager(
@@ -614,6 +645,10 @@ class CommonData(InstanceLabelData):
             if tag["frame"] not in self._deleted_frames:
                 yield self._export_tag(tag)
 
+    def iterate_intervals(self) -> Generator[LabeledInterval, None, None]:
+        for interval in self._annotation_ir.intervals:
+            yield self._export_labeled_interval(interval)
+
     @property
     def meta(self):
         return self._meta
@@ -681,6 +716,25 @@ class CommonData(InstanceLabelData):
 
         return _track
 
+    def _import_interval(self, interval: LabeledInterval):
+        def timestamp_to_frame(timestamp: timedelta) -> int:
+            return int(timestamp.total_seconds() * 1000)
+
+        _interval = interval._asdict()
+        label_id = self._get_label_id(_interval.pop('label'))
+        _interval['start'] = self.rel_frame_id(timestamp_to_frame(_interval['start']))
+        _interval['stop'] = self.rel_frame_id(timestamp_to_frame(_interval['stop']))
+        _interval['label_id'] = label_id
+        _interval['attributes'] = [
+            self._import_attribute(label_id, attrib)
+            for attrib in _interval['attributes']
+            if self._get_attribute_id(label_id, attrib.name) or (
+                self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
+            )
+        ]
+
+        return _interval
+
     def _ensure_points_converted_to_floats(self, shape) -> None:
         """
         Historically, there were importers that were not converting points to ints/floats.
@@ -727,6 +781,12 @@ class CommonData(InstanceLabelData):
         imported_track = self._import_track(track)
         if imported_track['label_id']:
             self._annotation_ir.add_track(imported_track)
+            self._call_callback()
+
+    def add_interval(self, interval: LabeledInterval):
+        imported_interval = self._import_interval(interval)
+        if imported_interval['label_id']:
+            self._annotation_ir.add_interval(imported_interval)
             self._call_callback()
 
     @property
