@@ -11,14 +11,15 @@ import requests
 
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 
+from .exceptions import WebhookDeliveryRetryable
 from .models import Webhook, WebhookDelivery
 
 WEBHOOK_TIMEOUT = 10
 RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
 
 
-def send_webhook(webhook: Webhook, payload: dict, redelivery: bool = False) -> WebhookDelivery:
-    headers = {}
+def _perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]:
+    headers: dict[str, str] = {}
     if webhook.secret:
         headers["X-Signature-256"] = (
             "sha256="
@@ -51,6 +52,17 @@ def send_webhook(webhook: Webhook, payload: dict, redelivery: bool = False) -> W
     response = ""
     if response_body is not None and len(response_body) < RESPONSE_SIZE_LIMIT + 1:
         response = response_body.decode("utf-8")
+    return status_code, response
+
+
+def send_webhook(
+    webhook_id: int, payload: dict, redelivery: bool = False
+) -> WebhookDelivery | None:
+    webhook = Webhook.objects.filter(pk=webhook_id, is_active=True).first()
+    if webhook is None:
+        return None
+
+    status_code, response = _perform_webhook_request(webhook, payload)
 
     delivery = WebhookDelivery.objects.create(
         webhook_id=webhook.id,
@@ -61,5 +73,10 @@ def send_webhook(webhook: Webhook, payload: dict, redelivery: bool = False) -> W
         request=payload,
         response=response,
     )
+
+    if status_code >= 500 or status_code in (HTTPStatus.REQUEST_TIMEOUT, HTTPStatus.TOO_MANY_REQUESTS):
+        raise WebhookDeliveryRetryable(
+            f"webhook {webhook.id} attempt failed with status {status_code}"
+        )
 
     return delivery

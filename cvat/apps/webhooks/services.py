@@ -4,7 +4,7 @@
 
 from .dispatch import add_to_queue
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
-from .tasks import send_webhook
+from .tasks import _perform_webhook_request
 from .utils import get_sender
 
 
@@ -49,4 +49,13 @@ def ping(serializer) -> WebhookDelivery:
         "webhook": serializer.data,
         "sender": get_sender(serializer.instance),
     }
-    return send_webhook(webhook=serializer.instance, payload=data, redelivery=False)
+    status_code, response = _perform_webhook_request(serializer.instance, data)
+    return WebhookDelivery.objects.create(
+        webhook_id=serializer.instance.id,
+        event="ping",
+        status_code=status_code,
+        changed_fields="",
+        redelivery=False,
+        request=data,
+        response=response,
+    )
