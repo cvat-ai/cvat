@@ -109,9 +109,16 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
     return project_name, port_config
 
 
-def local_exec(container, command, capture_output=True):
+def local_exec(container, command: list[str], capture_output=True):
     return run_command(
-        f"docker exec -u root {RuntimeInfraConfig.get_prefixed_container_name(container)} {command}",
+        [
+            "docker",
+            "exec",
+            "-u",
+            "root",
+            RuntimeInfraConfig.get_prefixed_container_name(container),
+            *command,
+        ],
         capture_output=capture_output,
         logger=logger,
     )[0]
@@ -483,16 +490,17 @@ class LocalInstance(InfraInstance):
     def can_handle_config(cls, config) -> bool:
         return config.getoption("--platform") == "local"
 
-    def exec_cvat(self, command: list[str] | str):
-        base = f"docker exec {RuntimeInfraConfig.get_prefixed_container_name('cvat_server')}"
-        docker_command = f"{base} {command}" if isinstance(command, str) else base.split() + command
-        return run_command(docker_command, logger=logger)[0]
+    def exec_cvat(self, command: list[str]):
+        return run_command(
+            ["docker", "exec", RuntimeInfraConfig.get_prefixed_container_name("cvat_server")]
+            + command,
+            logger=logger,
+        )[0]
 
-    def exec_redis_inmem(self, command: list[str] | str):
-        redis_command = ["sh", "-c", command] if isinstance(command, str) else command
+    def exec_redis_inmem(self, command: list[str]):
         return run_command(
             ["docker", "exec", RuntimeInfraConfig.get_prefixed_container_name("cvat_redis_inmem")]
-            + redis_command,
+            + command,
             logger=logger,
         )[0]
 
@@ -512,18 +520,16 @@ class LocalInstance(InfraInstance):
                 logger.info("Skipping coverage collection for absent container '%s'", prefixed_name)
                 continue
 
-            process_command = "python3"
-
             # find process with code coverage
-            pid = local_exec(container, f"pidof {process_command} -o 1")
+            pid = local_exec(container, ["pidof", "python3", "-o", "1"])
 
             # stop process with code coverage
-            local_exec(container, f"kill -15 {pid}")
+            local_exec(container, ["kill", "-15", pid])
             sleep(3)
 
             # get code coverage report
-            local_exec(container, "coverage combine", capture_output=False)
-            local_exec(container, "coverage json", capture_output=False)
+            local_exec(container, ["coverage", "combine"], capture_output=False)
+            local_exec(container, ["coverage", "json"], capture_output=False)
             docker_cp(
                 f"{prefixed_name}:home/django/coverage.json",
                 f"coverage_{container}.json",

@@ -6,11 +6,14 @@ import logging
 from subprocess import run
 
 
-def run_command(command, capture_output=True, *, logger: logging.Logger | None = None):
-    shell = isinstance(command, str)
+def run_command(
+    command: list[str],
+    capture_output=True,
+    *,
+    logger: logging.Logger | None = None,
+):
     result = run(
         command,
-        shell=shell,
         check=True,
         capture_output=capture_output,
         text=True,
@@ -23,24 +26,4 @@ def run_command(command, capture_output=True, *, logger: logging.Logger | None =
 
 
 def docker_cp(source, target, *, logger: logging.Logger | None = None) -> None:
-    run_command(f"docker container cp {source} {target}", logger=logger)
-
-
-def kubectl_cp(
-    source,
-    target,
-    *,
-    context: str | None = None,
-    namespace: str | None = None,
-    container: str | None = None,
-    logger: logging.Logger | None = None,
-) -> None:
-    command: list[str] = ["kubectl"]
-    if context:
-        command += ["--context", context]
-    if namespace:
-        command += ["--namespace", namespace]
-    command += ["cp", str(source), str(target)]
-    if container:
-        command += ["-c", container]
-    run_command(command, logger=logger)
+    run_command(["docker", "container", "cp", str(source), str(target)], logger=logger)

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-# Generic test request helpers intentionally rely on pytest/runtime-level timeouts.
+# Generic test request helpers intentionally rely on the timeout configured in pytest.ini.
 # pylint: disable=missing-timeout
 
 from collections.abc import Generator

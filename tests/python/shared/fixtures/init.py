@@ -348,10 +348,6 @@ def kube_restore_data_volumes():
     kube_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
-def get_server_image_tag():
-    return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
-
-
 def docker_compose(dc_files, cvat_root_dir):
     return [
         "docker",

@@ -139,10 +139,10 @@ class InfraInstance(ABC):
     def restore_redis_ondisk(self) -> None:
         raise NotImplementedError
 
-    def exec_cvat(self, command: list[str] | str):
+    def exec_cvat(self, command: list[str]):
         raise NotImplementedError
 
-    def exec_redis_inmem(self, command: list[str] | str):
+    def exec_redis_inmem(self, command: list[str]):
         raise NotImplementedError
 
     @abstractmethod
