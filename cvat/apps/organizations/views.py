@@ -268,7 +268,6 @@ class InvitationViewSet(
         "user_id": "membership__user__id",
         "accepted": "membership__is_active",
     }
-    _related = ("owner", "membership__user", "membership__organization")
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:

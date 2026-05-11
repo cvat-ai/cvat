@@ -3806,7 +3806,7 @@ paths:
         required: false
         in: query
         description: 'A search term. Available search_fields: [''assignee'', ''name'',
-          ''owner'', ''status'']'
+          ''owner'']'
         schema:
           type: string
       - name: sort

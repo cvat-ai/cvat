@@ -323,9 +323,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'annotation_guide', 'source_storage', 'target_storage',
     )
 
-    search_fields = sorted(('name', 'owner', 'assignee', 'status'))
-    simple_filters = sorted(search_fields)
-    filter_fields = sorted(set(search_fields) | {'id', 'updated_date'})
+    search_fields = sorted(('name', 'owner', 'assignee'))
+    simple_filters = sorted(set(search_fields) | {'status'})
+    filter_fields = sorted(set(simple_filters) | {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
