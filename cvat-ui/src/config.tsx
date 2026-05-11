@@ -54,8 +54,8 @@ const DEFAULT_AWS_REGIONS: string[][] = [
 
 const SERVER_UNAVAILABLE_COMPONENT = (
     <>
-        Make sure the CVAT backend and all necessary services
-        (Database, Redis and Open Policy Agent) are running and available.
+        CVAT could not reach the server or one of the services required to run it.
+        Make sure the backend, Database, Redis and Open Policy Agent are running and available.
         If you upgraded from version 2.2.0 or earlier, manual actions may be needed,
         see the&nbsp;
         <a

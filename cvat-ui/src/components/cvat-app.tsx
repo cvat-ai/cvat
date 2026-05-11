@@ -88,6 +88,14 @@ import SelectOrganizationModal from './select-organization-modal/select-organiza
 import BulkProgress from './bulk-progress';
 import ProfilePageComponent from './profile-page/profile-page';
 
+function getHealthCheckErrorMessage(error: unknown): string {
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+
+    return error ? `${error}` : 'The CVAT server is not reachable.';
+}
+
 interface CVATAppProps {
     loadFormats: () => void;
     loadAbout: () => void;
@@ -132,6 +140,7 @@ interface CVATAppProps {
 interface CVATAppState {
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
+    healthCheckError: string | null;
 }
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
     constructor(props: CVATAppProps & RouteComponentProps) {
@@ -140,6 +149,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         this.state = {
             healthIinitialized: false,
             backendIsHealthy: false,
+            healthCheckError: null,
         };
     }
 
@@ -219,22 +229,32 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             this.setState({
                 healthIinitialized: true,
                 backendIsHealthy: true,
+                healthCheckError: null,
             });
         })
-            .catch(() => {
+            .catch((error: Error) => {
+                const healthCheckError = getHealthCheckErrorMessage(error);
+
                 this.setState({
                     healthIinitialized: true,
                     backendIsHealthy: false,
+                    healthCheckError,
                 });
 
                 Modal.error({
                     title: 'Cannot connect to the server',
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
-                    content:
-    <Text>
-        {SERVER_UNAVAILABLE_COMPONENT}
-    </Text>,
+                    content: (
+                        <Space direction='vertical' align='start'>
+                            <Text className='cvat-health-check-error' style={{ whiteSpace: 'pre-line' }}>
+                                {healthCheckError}
+                            </Text>
+                            <Text>
+                                {SERVER_UNAVAILABLE_COMPONENT}
+                            </Text>
+                        </Space>
+                    ),
                 });
             });
 
@@ -489,7 +509,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             isRegistrationEnabled,
         } = this.props;
 
-        const { healthIinitialized, backendIsHealthy } = this.state;
+        const { healthIinitialized, backendIsHealthy, healthCheckError } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
         let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized && aboutInitialized;
@@ -633,7 +653,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return (
                 <Space align='center' direction='vertical' className='cvat-spinner'>
                     <DisconnectOutlined className='cvat-disconnected' />
-                    Cannot connect to the server.
+                    <Text>Cannot connect to the server.</Text>
+                    {healthCheckError && (
+                        <Text className='cvat-health-check-error' style={{ whiteSpace: 'pre-line' }}>
+                            {healthCheckError}
+                        </Text>
+                    )}
                 </Space>
             );
         }
