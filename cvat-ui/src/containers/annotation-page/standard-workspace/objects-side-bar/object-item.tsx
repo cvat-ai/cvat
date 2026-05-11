@@ -513,7 +513,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private toggleCuboidFreeBackFace = (): void => {
+    private toggleCuboidFreeFaceMode = (): void => {
         const { objectState, canvasInstance } = this.props;
         if (
             objectState.shapeType !== ShapeType.CUBOID ||
@@ -522,8 +522,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             return;
         }
         const clientID = objectState.clientID as number;
-        const current = canvasInstance.isCuboidFreeBackFace(clientID);
-        canvasInstance.setCuboidFreeBackFace(clientID, !current);
+        const current = canvasInstance.isCuboidFreeFaceMode(clientID);
+        canvasInstance.setCuboidFreeFaceMode(clientID, !current);
         // Force a re-render so the menu label flips between "Free" / "Lock".
         this.forceUpdate();
     };
@@ -621,12 +621,12 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     slice={this.slice}
                     simplify={this.requestSimplification}
                     resetCuboidPerspective={this.resetCuboidPerspective}
-                    toggleCuboidFreeBackFace={this.toggleCuboidFreeBackFace}
-                    cuboidFreeBackFace={
+                    toggleCuboidFreeFaceMode={this.toggleCuboidFreeFaceMode}
+                    cuboidFreeFaceMode={
                         objectState.shapeType === ShapeType.CUBOID &&
                         this.props.canvasInstance instanceof Canvas
                             ? this.props.canvasInstance
-                                .isCuboidFreeBackFace(objectState.clientID as number)
+                                .isCuboidFreeFaceMode(objectState.clientID as number)
                             : false
                     }
                     runAnnotationAction={this.runAnnotationAction}

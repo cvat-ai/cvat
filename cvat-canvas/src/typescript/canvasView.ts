@@ -48,8 +48,8 @@ export interface CanvasView {
     html(): HTMLDivElement;
     setupConflictRegions(clientID: number): number[];
     translateFromSVG(points: number[]): number[];
-    setCuboidFreeBackFace(clientID: number, flag: boolean): void;
-    isCuboidFreeBackFace(clientID: number): boolean;
+    setCuboidFreeFaceMode(clientID: number, flag: boolean): void;
+    isCuboidFreeFaceMode(clientID: number): boolean;
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -2413,17 +2413,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return translateFromSVG(this.content, point);
     }
 
-    public setCuboidFreeBackFace(clientID: number, flag: boolean): void {
+    public setCuboidFreeFaceMode(clientID: number, flag: boolean): void {
         const shape: any = this.svgShapes[clientID];
-        if (shape && typeof shape.setFreeBackFace === 'function') {
-            shape.setFreeBackFace(flag);
+        if (shape && typeof shape.setFreeFaceMode === 'function') {
+            shape.setFreeFaceMode(flag);
         }
     }
 
-    public isCuboidFreeBackFace(clientID: number): boolean {
+    public isCuboidFreeFaceMode(clientID: number): boolean {
         const shape: any = this.svgShapes[clientID];
-        if (shape && typeof shape.isFreeBackFace === 'function') {
-            return shape.isFreeBackFace();
+        if (shape && typeof shape.isFreeFaceMode === 'function') {
+            return shape.isFreeFaceMode();
         }
         return false;
     }

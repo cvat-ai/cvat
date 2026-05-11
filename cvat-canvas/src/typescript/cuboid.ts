@@ -113,30 +113,36 @@ export class CuboidModel {
     public vpl: Point | null;
     public vpr: Point | null;
     public orientation: Orientation;
-    // When true, the back/dorsal face is decoupled from the front face:
-    // - dorsal vertical edges (dl, dr) may tilt freely
-    // - buildBackEdge() will not be invoked (back face points are user-controlled)
-    // Useful for calibrating cuboids on lens-distorted images where the
-    // perspective vanishing-point assumption breaks down.
-    public freeBackFace: boolean;
+    // When true, BOTH the front and back faces are decoupled from the
+    // perspective model:
+    //   - none of the four side edges (fl, fr, dl, dr) are forced vertical
+    //   - buildBackEdge() is not invoked (back face points stay user-controlled)
+    //   - per-corner handles on indices 0..7 become individually draggable
+    // Useful for calibrating cuboids on lens-distorted (e.g. fisheye) images
+    // where the perspective vanishing-point assumption breaks down.
+    public freeFaceMode: boolean;
 
     public constructor(points?: Point[]) {
         this.points = points;
         this.initEdges();
         this.initFaces();
-        // Auto-detect previously freed back face: if dorsal vertical edges
-        // are not vertical, the cuboid was edited in free-back-face mode and
-        // we must preserve that state across reloads (the wire format is
-        // unchanged: still 8 points).
+        // Auto-detect a cuboid that was previously edited in free-face mode.
+        // The wire format is unchanged (still 8 points), so we infer the flag
+        // from geometry: if ANY of the four side edges is non-vertical the
+        // cuboid can only have come from free-face mode (this also covers
+        // legacy cuboids that were saved with only the back face freed in the
+        // earlier "Free back face" implementation).
         const eps = 0.5;
-        const dorsalsVertical = points && points.length === 8 && (
-            Math.abs(points[4].x - points[5].x) < eps &&
-            Math.abs(points[6].x - points[7].x) < eps
+        const sideEdgesVertical = points && points.length === 8 && (
+            Math.abs(points[0].x - points[1].x) < eps && // fl
+            Math.abs(points[2].x - points[3].x) < eps && // fr
+            Math.abs(points[4].x - points[5].x) < eps && // dr
+            Math.abs(points[6].x - points[7].x) < eps    // dl
         );
-        this.freeBackFace = !dorsalsVertical;
+        this.freeFaceMode = !sideEdgesVertical;
 
         this.updateVanishingPoints(false);
-        if (!this.freeBackFace) {
+        if (!this.freeFaceMode) {
             this.buildBackEdge(false);
         }
         this.updatePoints();
@@ -165,16 +171,16 @@ export class CuboidModel {
     }
 
     public updatePoints(): void {
-        // Front edges are always vertical (front face is the "anchor").
+        // In standard mode the front face is the perspective anchor: FL/FR
+        // (and via buildBackEdge -> updatePoints, DL/DR) are forced vertical.
+        // In free-face mode no side edge is forced vertical so the user can
+        // freely move every individual corner to compensate for lens distortion.
+        if (this.freeFaceMode) return;
+
         this.fr.points[0].x = this.fr.points[1].x;
         this.fl.points[0].x = this.fl.points[1].x;
-        // Dorsal/back edges are only forced vertical in standard mode.
-        // In free-back-face mode they may tilt independently to compensate
-        // for lens distortion.
-        if (!this.freeBackFace) {
-            this.dr.points[0].x = this.dr.points[1].x;
-            this.dl.points[0].x = this.dl.points[1].x;
-        }
+        this.dr.points[0].x = this.dr.points[1].x;
+        this.dl.points[0].x = this.dl.points[1].x;
     }
 
     public computeSideEdgeConstraints(edge: any): any {

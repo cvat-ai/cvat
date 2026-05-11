@@ -44,8 +44,8 @@ interface Props {
     changeLabel(label: any): void;
     changeColor(color: string): void;
     resetCuboidPerspective(): void;
-    toggleCuboidFreeBackFace(): void;
-    cuboidFreeBackFace: boolean;
+    toggleCuboidFreeFaceMode(): void;
+    cuboidFreeFaceMode: boolean;
     runAnnotationAction(): void;
     edit(): void;
     slice(): void;
@@ -81,8 +81,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeLabel,
         changeColor,
         resetCuboidPerspective,
-        toggleCuboidFreeBackFace,
-        cuboidFreeBackFace,
+        toggleCuboidFreeFaceMode,
+        cuboidFreeFaceMode,
         runAnnotationAction,
         edit,
         slice,
@@ -148,8 +148,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toOneLayerBackward={toOneLayerBackward}
                     toOneLayerForward={toOneLayerForward}
                     resetCuboidPerspective={resetCuboidPerspective}
-                    toggleCuboidFreeBackFace={toggleCuboidFreeBackFace}
-                    cuboidFreeBackFace={cuboidFreeBackFace}
+                    toggleCuboidFreeFaceMode={toggleCuboidFreeFaceMode}
+                    cuboidFreeFaceMode={cuboidFreeFaceMode}
                     edit={edit}
                     slice={slice}
                     simplify={simplify}

@@ -51,8 +51,8 @@ interface Props {
     toOneLayerBackward(): void;
     toOneLayerForward(): void;
     resetCuboidPerspective(): void;
-    toggleCuboidFreeBackFace(): void;
-    cuboidFreeBackFace: boolean;
+    toggleCuboidFreeFaceMode(): void;
+    cuboidFreeFaceMode: boolean;
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
@@ -196,18 +196,18 @@ function ResetPerspectiveItem(props: ItemProps): JSX.Element {
     );
 }
 
-function ToggleFreeBackFaceItem(props: ItemProps): JSX.Element {
+function ToggleFreeFaceModeItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
-    const { toggleCuboidFreeBackFace, cuboidFreeBackFace } = toolProps;
+    const { toggleCuboidFreeFaceMode, cuboidFreeFaceMode } = toolProps;
     return (
-        <CVATTooltip title='Decouple the back face from the front face so its corners can be moved independently. Useful for compensating lens distortion.'>
+        <CVATTooltip title='Decouple all 8 corners of the cuboid so each can be moved independently. Useful for compensating lens distortion (e.g. fisheye footage).'>
             <Button
                 type='link'
-                onClick={toggleCuboidFreeBackFace}
-                className='cvat-object-item-menu-toggle-free-back-face'
+                onClick={toggleCuboidFreeFaceMode}
+                className='cvat-object-item-menu-toggle-free-face-mode'
             >
                 <Icon component={ResetPerspectiveIcon} />
-                {cuboidFreeBackFace ? 'Lock back face' : 'Free back face'}
+                {cuboidFreeFaceMode ? 'Lock face mode' : 'Free Face Mode'}
             </Button>
         </CVATTooltip>
     );
@@ -340,7 +340,7 @@ export default function ItemMenu(props: Props): MenuProps {
         PROPAGATE = 'propagate',
         SWITCH_ORIENTATION = 'switch_orientation',
         RESET_PERSPECTIVE = 'reset_perspective',
-        TOGGLE_FREE_BACK_FACE = 'toggle_free_back_face',
+        TOGGLE_FREE_FACE_MODE = 'toggle_free_face_mode',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
         TO_ONE_LAYER_BACKWARD = 'to_one_layer_backward',
@@ -412,8 +412,8 @@ export default function ItemMenu(props: Props): MenuProps {
             label: <ResetPerspectiveItem toolProps={props} />,
         });
         items.push({
-            key: MenuKeys.TOGGLE_FREE_BACK_FACE,
-            label: <ToggleFreeBackFaceItem toolProps={props} />,
+            key: MenuKeys.TOGGLE_FREE_FACE_MODE,
+            label: <ToggleFreeFaceModeItem toolProps={props} />,
         });
     }
 

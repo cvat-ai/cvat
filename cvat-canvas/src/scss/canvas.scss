@@ -302,11 +302,11 @@ g.cvat_canvas_shape_occluded {
 }
 
 /*
- * Back-face corner handles for cuboids in "free back face" mode.
+ * Per-corner handles for cuboids in "Free Face Mode" (all 8 corners).
  * Drawn in orange so users can clearly distinguish them from the
- * standard front-face resize handles.
+ * standard perspective resize handles.
  */
-.cvat_canvas_cuboid_back_corner {
+.cvat_canvas_cuboid_free_corner {
     fill: #ff8c00 !important;
     stroke: #663d00 !important;
 }

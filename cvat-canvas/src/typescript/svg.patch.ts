@@ -403,24 +403,42 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.drCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_ew');
             this.dlCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_ew');
 
-            // Back-face corner handles (only visible when freeBackFace is on).
-            // Indices on the cuboid model: blt=6, blb=7, brt=4, brb=5.
+            // Per-corner handles (only visible when freeFaceMode is on).
+            // Cuboid model indices:
+            //   front face: flt=0, flb=1, frt=2, frb=3
+            //   back face : brt=4, brb=5, blt=6, blb=7
             this.bltCenter = circle(0, 0)
                 .addClass('svg_select_points')
                 .addClass('svg_select_points_lt')
-                .addClass('cvat_canvas_cuboid_back_corner');
+                .addClass('cvat_canvas_cuboid_free_corner');
             this.blbCenter = circle(0, 0)
                 .addClass('svg_select_points')
                 .addClass('svg_select_points_lb')
-                .addClass('cvat_canvas_cuboid_back_corner');
+                .addClass('cvat_canvas_cuboid_free_corner');
             this.brtCenter = circle(0, 0)
                 .addClass('svg_select_points')
                 .addClass('svg_select_points_rt')
-                .addClass('cvat_canvas_cuboid_back_corner');
+                .addClass('cvat_canvas_cuboid_free_corner');
             this.brbCenter = circle(0, 0)
                 .addClass('svg_select_points')
                 .addClass('svg_select_points_rb')
-                .addClass('cvat_canvas_cuboid_back_corner');
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.fltCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_lt')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.flbCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_lb')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.frtCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_rt')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.frbCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_rb')
+                .addClass('cvat_canvas_cuboid_free_corner');
 
             const grabPoints = this.getGrabPoints();
             const edges = this.getEdges();
@@ -432,8 +450,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 grabPoints[i].center(cx, cy);
             }
 
-            // Position back-face corner handles directly on their points.
-            this.positionBackFaceHandles();
+            // Position per-corner handles directly on their points.
+            this.positionFreeCornerHandles();
 
             if (viewModel.orientation === Orientation.LEFT) {
                 this.dlCenter.hide();
@@ -441,17 +459,24 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.drCenter.hide();
             }
 
-            this.updateBackFaceHandlesVisibility();
+            this.updateFreeCornerHandlesVisibility();
         },
 
-        positionBackFaceHandles() {
+        positionFreeCornerHandles() {
             if (!this.bltCenter) return;
             const pts = this.cuboidModel.points;
-            // Indices: blt=6, blb=7, brt=4, brb=5
+            // Back face: blt=6, blb=7, brt=4, brb=5
             this.bltCenter.center(pts[6].x, pts[6].y);
             this.blbCenter.center(pts[7].x, pts[7].y);
             this.brtCenter.center(pts[4].x, pts[4].y);
             this.brbCenter.center(pts[5].x, pts[5].y);
+            // Front face: flt=0, flb=1, frt=2, frb=3
+            if (this.fltCenter) {
+                this.fltCenter.center(pts[0].x, pts[0].y);
+                this.flbCenter.center(pts[1].x, pts[1].y);
+                this.frtCenter.center(pts[2].x, pts[2].y);
+                this.frbCenter.center(pts[3].x, pts[3].y);
+            }
         },
 
         showProjections() {
@@ -521,14 +546,20 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.getGrabPoints().forEach((point: SVG.Element) => {
                     point && point.remove();
                 });
-                [this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter]
-                    .forEach((point: SVG.Element) => {
-                        if (point) point.remove();
-                    });
+                [
+                    this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter,
+                    this.fltCenter, this.flbCenter, this.frtCenter, this.frbCenter,
+                ].forEach((point: SVG.Element) => {
+                    if (point) point.remove();
+                });
                 this.bltCenter = null;
                 this.blbCenter = null;
                 this.brtCenter = null;
                 this.brbCenter = null;
+                this.fltCenter = null;
+                this.flbCenter = null;
+                this.frtCenter = null;
+                this.frbCenter = null;
             } else {
                 this.setupGrabPoints(
                     this.face
@@ -589,15 +620,17 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     }
                 });
 
-                // Clean back-face corner handle listeners as well.
-                [this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter]
-                    .forEach((point: SVG.Element) => {
-                        if (point) {
-                            point.off('dragstart');
-                            point.off('dragmove');
-                            point.off('dragend');
-                        }
-                    });
+                // Clean per-corner handle listeners (front + back) as well.
+                [
+                    this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter,
+                    this.fltCenter, this.flbCenter, this.frtCenter, this.frbCenter,
+                ].forEach((point: SVG.Element) => {
+                    if (point) {
+                        point.off('dragstart');
+                        point.off('dragmove');
+                        point.off('dragend');
+                    }
+                });
 
                 return;
             }
@@ -628,6 +661,22 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     let dyPortion = dy - accumulatedOffset.y;
                     accumulatedOffset.x += dxPortion;
                     accumulatedOffset.y += dyPortion;
+
+                    // ── FREE-FACE PATH ──────────────────────────────────
+                    // When free-face mode is on, dragging a single front-face
+                    // corner must move only that corner. Skip all perspective
+                    // recomputation that normally enforces vertical FL/FR.
+                    if (this.cuboidModel.freeFaceMode) {
+                        const pts = this.cuboidModel.points;
+                        pts[resizedCubePoint] = {
+                            x: pts[resizedCubePoint].x + dxPortion,
+                            y: pts[resizedCubePoint].y + dyPortion,
+                        };
+                        this.updateViewAndVM(false);
+                        this.face.plot(this.cuboidModel.front.points);
+                        this.fire(new CustomEvent('resizing', event));
+                        return;
+                    }
 
                     const edge = getEdgeIndex(resizedCubePoint);
                     const [edgeTopIndex, edgeBottomIndex] = getTopDown(edge);
@@ -942,23 +991,23 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     this.fire(new CustomEvent('resizedone', event));
                 });
 
-            // Back-face corner handles: only active when freeBackFace is on.
-            // Each handle drags one of the four back-face point indices (4..7)
-            // independently, with no perspective constraints.
-            const setupBackCornerHandle = (handle: any, pointIndex: number): void => {
+            // Per-corner handles (front + back). Active only when freeFaceMode
+            // is on. Each handle drags its own cuboid point with no perspective
+            // constraint; other corners are unaffected.
+            const setupFreeCornerHandle = (handle: any, pointIndex: number): void => {
                 if (!handle) return;
                 handle
                     .draggable(() => ({
-                        // Allow free 2D motion while in free-back-face mode;
+                        // Allow free 2D motion while in free-face mode;
                         // when not in that mode, lock the handle in place.
-                        x: !!this.cuboidModel.freeBackFace,
-                        y: !!this.cuboidModel.freeBackFace,
+                        x: !!this.cuboidModel.freeFaceMode,
+                        y: !!this.cuboidModel.freeFaceMode,
                     }))
                     .on('dragstart', (event: CustomEvent) => {
                         this.fire(new CustomEvent('resizestart', event));
                     })
                     .on('dragmove', (event: CustomEvent) => {
-                        if (!this.cuboidModel.freeBackFace) return;
+                        if (!this.cuboidModel.freeFaceMode) return;
                         const cx = handle.cx();
                         const cy = handle.cy();
                         this.cuboidModel.points[pointIndex] = { x: cx, y: cy };
@@ -970,11 +1019,16 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     });
             };
 
-            // Indices: blt=6, blb=7, brt=4, brb=5
-            setupBackCornerHandle(this.bltCenter, 6);
-            setupBackCornerHandle(this.blbCenter, 7);
-            setupBackCornerHandle(this.brtCenter, 4);
-            setupBackCornerHandle(this.brbCenter, 5);
+            // Back face: blt=6, blb=7, brt=4, brb=5
+            setupFreeCornerHandle(this.bltCenter, 6);
+            setupFreeCornerHandle(this.blbCenter, 7);
+            setupFreeCornerHandle(this.brtCenter, 4);
+            setupFreeCornerHandle(this.brbCenter, 5);
+            // Front face: flt=0, flb=1, frt=2, frb=3
+            setupFreeCornerHandle(this.fltCenter, 0);
+            setupFreeCornerHandle(this.flbCenter, 1);
+            setupFreeCornerHandle(this.frtCenter, 2);
+            setupFreeCornerHandle(this.frbCenter, 3);
 
             return this;
         },
@@ -1224,12 +1278,13 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
         updateViewAndVM(build: boolean) {
             this.cuboidModel.updateOrientation();
-            if (!this.cuboidModel.freeBackFace) {
+            if (!this.cuboidModel.freeFaceMode) {
                 this.cuboidModel.buildBackEdge(build);
             } else {
                 // Refresh vanishing points from current geometry purely so the
-                // projection guides (ftProj/fbProj/rtProj/rbProj) stay sane.
-                // Do NOT rewrite back-face points: they are user-controlled.
+                // projection guides (ftProj/fbProj/rtProj/rbProj) stay sane if
+                // the user toggles back to standard mode. Do NOT rewrite the
+                // face points: they are user-controlled in free-face mode.
                 (this.cuboidModel as any).updateVanishingPoints(false);
             }
             this.updateView();
@@ -1244,17 +1299,25 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             );
         },
 
-        // Toggle decoupled back-face editing mode for this cuboid.
-        // When enabled, the four back-face corner points (indices 4-7) become
-        // independently draggable; when disabled, the back face is rebuilt to
-        // be perspective-consistent with the front face.
-        setFreeBackFace(flag: boolean) {
-            this.cuboidModel.freeBackFace = !!flag;
+        // Toggle Free Face Mode for this cuboid.
+        // When enabled, all 8 corner points (indices 0..7) become individually
+        // draggable and no side edge is forced vertical. When disabled, the
+        // front face is re-verticalised and the back face is rebuilt from the
+        // perspective rays so the cuboid is once again perspective-consistent.
+        setFreeFaceMode(flag: boolean) {
+            this.cuboidModel.freeFaceMode = !!flag;
             if (!flag) {
-                // Snap the back face back onto the perspective rays.
+                // Snap side edges back to vertical and rebuild the back face
+                // along the perspective rays.
+                this.cuboidModel.updatePoints();
                 this.cuboidModel.buildBackEdge(false);
+                this.showProjections();
+            } else {
+                // Hide the vanishing-point projection guides while in free
+                // mode — they're meaningless without perspective coupling.
+                this.hideProjections();
             }
-            this.updateBackFaceHandlesVisibility();
+            this.updateFreeCornerHandlesVisibility();
             this.updateView();
             this._attr(
                 'points',
@@ -1267,15 +1330,16 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.fire(new CustomEvent('resizedone', { detail: {} }));
         },
 
-        isFreeBackFace(): boolean {
-            return !!(this.cuboidModel && this.cuboidModel.freeBackFace);
+        isFreeFaceMode(): boolean {
+            return !!(this.cuboidModel && this.cuboidModel.freeFaceMode);
         },
 
-        updateBackFaceHandlesVisibility() {
+        updateFreeCornerHandlesVisibility() {
             const handles = [
                 this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter,
+                this.fltCenter, this.flbCenter, this.frtCenter, this.frbCenter,
             ];
-            const show = !!(this.cuboidModel && this.cuboidModel.freeBackFace);
+            const show = !!(this.cuboidModel && this.cuboidModel.freeFaceMode);
             handles.forEach((h: any) => {
                 if (h) {
                     if (show) h.show();
@@ -1386,8 +1450,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 const edge = edges[i];
                 if (centers[i] && edge) centers[i].center(edge.cx(), edge.cy());
             }
-            // Back-face corner handles follow their own (corner) coordinates.
-            this.positionBackFaceHandles();
+            // Per-corner handles follow their own (corner) coordinates.
+            this.positionFreeCornerHandles();
         },
     },
     construct: {
