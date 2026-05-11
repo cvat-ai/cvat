@@ -130,3 +130,10 @@ export function prettify(obj) {
     // note: JSON.stringify doesn't expand the object
     return inspect(obj, { depth: 6 });
 }
+
+export function translatePoint(vector, point) {
+    const { a = 0, b = 0 } = vector;
+    const dx = point.x + a;
+    const dy = point.y + b;
+    return { x: dx, y: dy };
+}
