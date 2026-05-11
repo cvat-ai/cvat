@@ -7,11 +7,20 @@ import React from 'react';
 import { Redirect, Route, Switch } from 'react-router';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
+import Alert from 'antd/lib/alert';
 import Layout from 'antd/lib/layout';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
-import { DisconnectOutlined } from '@ant-design/icons';
+import {
+    ClockCircleOutlined,
+    DashboardOutlined,
+    DatabaseOutlined,
+    DisconnectOutlined,
+    ExclamationCircleOutlined,
+    HddOutlined,
+    SafetyCertificateOutlined,
+} from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 
@@ -88,12 +97,88 @@ import SelectOrganizationModal from './select-organization-modal/select-organiza
 import BulkProgress from './bulk-progress';
 import ProfilePageComponent from './profile-page/profile-page';
 
-function getHealthCheckErrorMessage(error: unknown): string {
-    if (error instanceof Error && error.message) {
-        return error.message;
+function renderHealthCheckIcon(checkName: string): JSX.Element {
+    if (checkName.startsWith('Cache backend') || checkName.startsWith('DatabaseBackend')) {
+        return <DatabaseOutlined className='cvat-health-check-icon' />;
     }
 
-    return error ? `${error}` : 'The CVAT server is not reachable.';
+    if (checkName === 'DiskUsage') {
+        return <HddOutlined className='cvat-health-check-icon' />;
+    }
+
+    if (checkName === 'MemoryUsage') {
+        return <DashboardOutlined className='cvat-health-check-icon' />;
+    }
+
+    if (checkName === 'OPAHealthCheck') {
+        return <SafetyCertificateOutlined className='cvat-health-check-icon' />;
+    }
+
+    return <ExclamationCircleOutlined className='cvat-health-check-icon' />;
+}
+
+function renderServerUnavailableDetails(details: string | null): JSX.Element {
+    const rows = details ? details.split('\n').filter((row: string): boolean => !!row.trim()) : [];
+    if (!rows.length) {
+        return (
+            <div className='cvat-server-unavailable-message'>
+                <Text>
+                    CVAT could not reach the server or one of the services required to run it.
+                    Make sure the backend, database, Redis and Open Policy Agent are running and available.
+                </Text>
+            </div>
+        );
+    }
+
+    const [summary, ...checks] = rows;
+
+    if (!checks.length) {
+        return (
+            <Alert
+                className='cvat-health-check-error'
+                type='error'
+                showIcon
+                icon={<ClockCircleOutlined />}
+                message='Connection check failed'
+                description={summary}
+            />
+        );
+    }
+
+    return (
+        <Alert
+            className='cvat-health-check-error'
+            type='error'
+            showIcon
+            message='Required services are not healthy'
+            description={(
+                <Space direction='vertical' size={12}>
+                    <Text type='secondary'>{summary}</Text>
+                    <div className='cvat-health-check-list'>
+                        {checks.map((check: string): JSX.Element => {
+                            const separator = check.indexOf(' - ');
+                            const checkName = separator === -1 ? check : check.slice(0, separator);
+                            const checkStatus = separator === -1 ? '' : check.slice(separator + 3);
+
+                            return (
+                                <div className='cvat-health-check-item' key={check}>
+                                    {renderHealthCheckIcon(checkName)}
+                                    <div>
+                                        <Text strong>{checkName}</Text>
+                                        {checkStatus && (
+                                            <Text className='cvat-health-check-status' type='secondary'>
+                                                {checkStatus}
+                                            </Text>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </Space>
+            )}
+        />
+    );
 }
 
 interface CVATAppProps {
@@ -158,7 +243,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const { history, onChangeLocation } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
-            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
+            RESET_NOTIFICATIONS_PATHS,
         } = appConfig;
 
         // Logger configuration
@@ -232,29 +317,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 healthCheckError: null,
             });
         })
-            .catch((error: Error) => {
-                const healthCheckError = getHealthCheckErrorMessage(error);
+            .catch((error: unknown) => {
+                const healthCheckError = error instanceof Error ? error.message : 'The CVAT server is not reachable.';
 
                 this.setState({
                     healthIinitialized: true,
                     backendIsHealthy: false,
                     healthCheckError,
-                });
-
-                Modal.error({
-                    title: 'Cannot connect to the server',
-                    className: 'cvat-modal-cannot-connect-server',
-                    closable: false,
-                    content: (
-                        <Space direction='vertical' align='start'>
-                            <Text className='cvat-health-check-error' style={{ whiteSpace: 'pre-line' }}>
-                                {healthCheckError}
-                            </Text>
-                            <Text>
-                                {SERVER_UNAVAILABLE_COMPONENT}
-                            </Text>
-                        </Space>
-                    ),
                 });
             });
 
@@ -510,6 +579,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         } = this.props;
 
         const { healthIinitialized, backendIsHealthy, healthCheckError } = this.state;
+        const { SERVER_UNAVAILABLE_COMPONENT } = appConfig;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
         let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized && aboutInitialized;
@@ -651,14 +721,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (healthIinitialized && !backendIsHealthy) {
             return (
-                <Space align='center' direction='vertical' className='cvat-spinner'>
+                <Space align='center' direction='vertical' className='cvat-spinner cvat-server-unavailable'>
                     <DisconnectOutlined className='cvat-disconnected' />
-                    <Text>Cannot connect to the server.</Text>
-                    {healthCheckError && (
-                        <Text className='cvat-health-check-error' style={{ whiteSpace: 'pre-line' }}>
-                            {healthCheckError}
-                        </Text>
-                    )}
+                    <Text className='cvat-server-unavailable-title' strong>
+                        Cannot connect to the server
+                    </Text>
+                    {SERVER_UNAVAILABLE_COMPONENT({
+                        details: healthCheckError,
+                        renderDetails: renderServerUnavailableDetails,
+                    })}
                 </Space>
             );
         }

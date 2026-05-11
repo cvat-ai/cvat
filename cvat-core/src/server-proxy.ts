@@ -168,34 +168,28 @@ function filterPythonTraceback(data: string): string {
     return data;
 }
 
-function isHealthCheckResponse(data: unknown): data is HealthCheckResponse {
-    if (data === null || Array.isArray(data) || typeof data !== 'object') {
-        return false;
+function generateHealthCheckError(errorData: AxiosError<unknown>): ServerError | null {
+    const { response } = errorData;
+    if (!response || response.data === null || Array.isArray(response.data) || typeof response.data !== 'object') {
+        return null;
     }
 
-    return Object.values(data).every((value) => typeof value === 'string');
-}
+    const checks = Object.entries(response.data);
+    if (!checks.every(([, checkStatus]) => typeof checkStatus === 'string')) {
+        return null;
+    }
 
-function healthCheckResponseToError(data: HealthCheckResponse, status: number): ServerError | null {
-    const failedChecks = Object.entries(data).filter(([, checkStatus]) => checkStatus !== 'working');
+    const failedChecks = checks.filter(([, checkStatus]) => checkStatus !== 'working');
     if (!failedChecks.length) {
         return null;
     }
 
     const message = [
         'Server health check failed. CVAT cannot start while required services report errors:',
-        ...failedChecks.map(([checkName, checkStatus]) => `${checkName}: ${checkStatus}`),
+        ...failedChecks.map(([checkName, checkStatus]) => `${checkName} - ${checkStatus}`),
     ].join('\n');
 
-    return new ServerError(message, status);
-}
-
-function generateHealthCheckError(errorData: AxiosError<unknown>): ServerError | null {
-    if (!errorData.response || !isHealthCheckResponse(errorData.response.data)) {
-        return null;
-    }
-
-    return healthCheckResponseToError(errorData.response.data, errorData.response.status);
+    return new ServerError(message, response.status);
 }
 
 function generateError(errorData: AxiosError): ServerError {
