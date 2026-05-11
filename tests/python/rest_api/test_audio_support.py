@@ -9,7 +9,7 @@ from itertools import product
 from pathlib import Path, PurePosixPath
 
 import pytest
-from cvat_sdk import exceptions, models
+from cvat_sdk import models
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
@@ -242,29 +242,25 @@ class TestAudioTasks:
             assert chunk_audio.shape[0] / sampling_rate >= job_meta.size / 1000
 
     @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
-    def test_cant_create_gt_job(self, task: Task):
-        with pytest.raises(exceptions.ApiException) as capture:
-            self.client.jobs.api.create(
-                job_write_request=models.JobWriteRequest(type="ground_truth", task_id=task.id)
-            )
+    def test_can_create_gt_job(self, task: Task):
+        gt_job = self.client.jobs.api.create(
+            job_write_request=models.JobWriteRequest(type="ground_truth", task_id=task.id)
+        )[0]
 
-        assert "can only be added in 2d tasks" in str(capture.value)
+        assert gt_job.type == "ground_truth"
+        assert gt_job.frame_count == task.size
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
-    def test_cant_create_task_with_gt_job(self, fxt_test_name: str, source_filename: Path):
-        with pytest.raises(BackgroundRequestException) as capture:
-            self.client.tasks.create_from_data(
-                spec={
-                    "name": fxt_test_name,
-                },
-                resources=[source_filename],
-                data_params={
-                    "validation_params": {
-                        "mode": "gt",
-                        "frame_selection_method": "manual",
-                        "frames": [0],
-                    }
-                },
-            )
+    def test_can_create_task_with_gt_job(self, fxt_test_name: str, source_filename: Path):
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": fxt_test_name,
+            },
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
 
-        assert "not available" in str(capture.value)
+        gt_job = next(j for j in task.get_jobs() if j.type == "ground_truth")
+
+        assert gt_job.type == "ground_truth"
+        assert gt_job.frame_count == task.size
