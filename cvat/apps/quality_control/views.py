@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.db.models import Q
 from django.http import HttpResponse
-from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
