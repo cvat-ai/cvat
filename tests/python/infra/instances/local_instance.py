@@ -35,6 +35,10 @@ _LOCAL_DC_FILES = (
 )
 
 
+class StackCompatibilityError(RuntimeError):
+    pass
+
+
 def _configure_runtime_env(
     project_name: str,
     port_config: dict,
@@ -178,27 +182,46 @@ def project_containers_running(project_name: str) -> bool:
     return expected.issubset(containers)
 
 
-def project_stack_compatible(
+def ensure_project_stack_compatible(
     project_name: str,
     *,
+    expected_http_port: int,
+    expected_logs_port: int,
     expected_db_port: int,
     expected_redis_inmem_port: int,
     expected_redis_ondisk_port: int,
-) -> tuple[bool, str]:
+) -> None:
+    if not project_traefik_ports_ready(
+        project_name,
+        expected_http_host_port=expected_http_port,
+        expected_logs_host_port=expected_logs_port,
+    ):
+        raise StackCompatibilityError("Traefik host port mapping is missing or outdated")
     if not project_db_port_ready(project_name, expected_db_port):
-        return False, "PostgreSQL host port mapping is missing or outdated"
+        raise StackCompatibilityError("PostgreSQL host port mapping is missing or outdated")
     if not project_redis_ports_ready(
         project_name,
         expected_inmem_host_port=expected_redis_inmem_port,
         expected_ondisk_host_port=expected_redis_ondisk_port,
     ):
-        return False, "Redis host port mapping is missing or outdated"
-    return True, ""
+        raise StackCompatibilityError("Redis host port mapping is missing or outdated")
 
 
 def project_db_port_ready(project_name: str, expected_host_port: int) -> bool:
     service_ports = project_service_port_map(project_name).get("cvat_db", {})
     return int(service_ports.get(5432, -1)) == expected_host_port
+
+
+def project_traefik_ports_ready(
+    project_name: str,
+    *,
+    expected_http_host_port: int,
+    expected_logs_host_port: int,
+) -> bool:
+    service_ports = project_service_port_map(project_name).get("traefik", {})
+    http_port = int(service_ports.get(8080, -1))
+    logs_port = int(service_ports.get(8090, -1))
+    return http_port == expected_http_host_port and logs_port == expected_logs_host_port
 
 
 def project_redis_ports_ready(
@@ -616,17 +639,20 @@ class LocalInstance(InfraInstance):
                 raise pytest.UsageError(
                     f"--infra={InfraMode.REUSE} requires running services for project '{project_name}'"
                 )
-            stack_ok, reason = project_stack_compatible(
-                project_name,
-                expected_db_port=project_cfg.host_db_port,
-                expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
-                expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
-            )
-            if not stack_ok:
+            try:
+                ensure_project_stack_compatible(
+                    project_name,
+                    expected_http_port=project_cfg.host_http_port,
+                    expected_logs_port=project_cfg.host_logs_port,
+                    expected_db_port=project_cfg.host_db_port,
+                    expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
+                    expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
+                )
+            except StackCompatibilityError as exc:
                 raise pytest.UsageError(
                     f"--infra={InfraMode.REUSE} found an incompatible running stack for "
-                    f"project '{project_name}': {reason}"
-                )
+                    f"project '{project_name}': {exc}"
+                ) from exc
             infra_health.wait_for_services(self.deps.waiting_time)
             infra_health.wait_for_auth_login_ready()
             return
@@ -647,12 +673,20 @@ class LocalInstance(InfraInstance):
             project_cfg.delete_state()
             pytest.exit("All testing containers are stopped", returncode=0)
 
-        stack_ok, incompatibility_reason = project_stack_compatible(
-            project_name,
-            expected_db_port=project_cfg.host_db_port,
-            expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
-            expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
-        )
+        stack_ok = True
+        incompatibility_reason = ""
+        try:
+            ensure_project_stack_compatible(
+                project_name,
+                expected_http_port=project_cfg.host_http_port,
+                expected_logs_port=project_cfg.host_logs_port,
+                expected_db_port=project_cfg.host_db_port,
+                expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
+                expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
+            )
+        except StackCompatibilityError as exc:
+            stack_ok = False
+            incompatibility_reason = str(exc)
 
         if project_running and not stack_ok and infra_mode in {InfraMode.AUTO, InfraMode.UP}:
             logger.warning(
