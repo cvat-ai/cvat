@@ -4053,6 +4053,29 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
         return convert_track(instance)
 
 
+class LabeledIntervalSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
+    def to_representation(self, instance):
+        def convert_interval(interval):
+            result = _convert_annotation(
+                interval,
+                [
+                    "id",
+                    "label_id",
+                    "start",
+                    "stop",
+                    "group",
+                    "source",
+                    "score",
+                ],
+            )
+            result["attributes"] = _convert_attributes(interval["attributes"])
+            return result
+
+        return convert_interval(instance)
+
+
 class TrackedShapeSerializer(ShapeSerializer, AttributedAnnotationSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
@@ -4068,11 +4091,21 @@ class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)
 
 
+class LabeledIntervalSerializer(
+    AnnotationSerializer,
+    AttributedAnnotationSerializer,
+    ScoredAnnotationSerializer,
+):
+    start = serializers.IntegerField(min_value=0)
+    stop = serializers.IntegerField(min_value=0, allow_null=True)
+
+
 class LabeledDataSerializer(serializers.Serializer):
     version = serializers.IntegerField(default=0)  # TODO: remove
     tags = LabeledImageSerializer(many=True, default=[])
     shapes = LabeledShapeSerializer(many=True, default=[])
     tracks = LabeledTrackSerializer(many=True, default=[])
+    intervals = LabeledIntervalSerializer(many=True, default=[])
 
 
 class FileInfoSerializer(serializers.Serializer):
