@@ -90,6 +90,7 @@ class LabelType(str, Enum):
     POLYLINE = "polyline"
     RECTANGLE = "rectangle"
     SKELETON = "skeleton"
+    INTERVAL = "interval"
     TAG = "tag"
 
     @classmethod
@@ -768,12 +769,14 @@ def clear_annotations_in_jobs(job_ids: Iterable[int]):
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImageAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledIntervalAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledInterval.objects.filter(job_id__in=job_ids_chunk).delete()
 
 
 @transaction.atomic(savepoint=False)
 def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence[int]):
     if db_task.data.validation_mode != ValidationMode.GT_POOL:
-        # Tracks are prohibited in honeypot tasks
+        # Tracks and intervals are prohibited in honeypot tasks
         raise AssertionError
 
     for frames_batch in take_by(frames, chunk_size=1000):
@@ -1319,6 +1322,9 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     labeledtrackattributeval_set: models.manager.RelatedManager[LabeledTrackAttributeVal]
     trackedshapeattributeval_set: models.manager.RelatedManager[TrackedShapeAttributeVal]
 
+    labeledinterval_set: models.manager.RelatedManager[LabeledInterval]
+    labeledintervalattributeval_set: models.manager.RelatedManager[LabeledIntervalAttributeVal]
+
     user_can_view_task: MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
@@ -1650,6 +1656,20 @@ class TrackedShape(FrameAnnotationMixin, ShapeAnnotationMixin):
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(
         TrackedShape,
+        on_delete=models.DO_NOTHING,
+        related_name="attributes",
+        related_query_name="attribute",
+    )
+
+
+class LabeledInterval(Annotation, ScoredAnnotationMixin):
+    start = models.PositiveIntegerField()
+    stop = models.PositiveIntegerField(null=True)
+
+
+class LabeledIntervalAttributeVal(AttributeVal):
+    interval = models.ForeignKey(
+        LabeledInterval,
         on_delete=models.DO_NOTHING,
         related_name="attributes",
         related_query_name="attribute",

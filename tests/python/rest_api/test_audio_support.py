@@ -263,3 +263,22 @@ class TestAudioTasks:
 
         assert gt_job.type == "ground_truth"
         assert gt_job.frame_count == task.size
+
+    @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
+    def test_cant_export_dataset(self, task: Task, tmp_path: Path):
+        with pytest.raises(BackgroundRequestException) as capture:
+            task.export_dataset("Generic TSV 1.0", filename=tmp_path, include_images=True)
+
+        assert "export as dataset is not supported for audio" in str(capture.value)
+
+    @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
+    def test_cant_import_dataset(self, task: Task, tmp_path: Path, fxt_test_name: str):
+        project = self.client.projects.create({"name": fxt_test_name})
+
+        temp_file = tmp_path / "test.tsv"
+        temp_file.write_text("test")
+
+        with pytest.raises(BackgroundRequestException) as capture:
+            project.import_dataset("Generic TSV 1.0", filename=temp_file)
+
+        assert "import from dataset is not supported for audio" in str(capture.value)
