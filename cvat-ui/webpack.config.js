@@ -102,8 +102,6 @@ module.exports = (env) => {
                 fs: false,
             },
             alias: {
-                config$: path.join(__dirname, 'src/config.tsx'),
-
                 // when import svg modules
                 // the loader transforms their to modules with JSX code
                 // and adds 'import React from "react";'
