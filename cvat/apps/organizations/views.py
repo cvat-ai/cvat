@@ -268,7 +268,6 @@ class InvitationViewSet(
         "user_id": "membership__user__id",
         "accepted": "membership__is_active",
     }
-    _related = ("owner", "membership__user", "membership__organization")
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -278,13 +277,14 @@ class InvitationViewSet(
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        related = ("owner", "membership__user", "membership__organization")
 
         if self.action == "list":
-            queryset = queryset.prefetch_related(*self._related)
+            queryset = queryset.prefetch_related(*related)
             permission = InvitationPermission.create_scope_list(self.request)
             queryset = permission.filter(queryset)
         else:
-            queryset = queryset.select_related(*self._related)
+            queryset = queryset.select_related(*related)
 
         return queryset
 
