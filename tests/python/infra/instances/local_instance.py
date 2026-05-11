@@ -26,6 +26,12 @@ _COVERED_CONTAINERS = (
     "cvat_worker_webhooks",
     "cvat_worker_utils",
 )
+_REQUIRED_RUNNING_CONTAINERS = _COVERED_CONTAINERS + (
+    "cvat_db",
+    "cvat_worker_chunks",
+    "cvat_worker_consensus",
+    "traefik",
+)
 _FAILURE_LOG_CONTAINERS = _COVERED_CONTAINERS + ("cvat_opa", "traefik")
 _LOCAL_DC_FILES = (
     "tests/docker-compose.file_share.yml",
@@ -174,11 +180,7 @@ def running_containers() -> list[str]:
 
 def project_containers_running(project_name: str) -> bool:
     containers = set(running_containers())
-    expected = {
-        f"{project_name}_cvat_server_1",
-        f"{project_name}_cvat_db_1",
-        f"{project_name}_traefik_1",
-    }
+    expected = {f"{project_name}_{container}_1" for container in _REQUIRED_RUNNING_CONTAINERS}
     return expected.issubset(containers)
 
 
