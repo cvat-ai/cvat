@@ -50,16 +50,6 @@ const DEFAULT_AWS_REGIONS: string[][] = [
     ['sa-east-1', 'South America (São Paulo)'],
 ];
 
-const SERVER_UNAVAILABLE_COMPONENT = function ServerUnavailableComponent({
-    renderDetails,
-    details = null,
-}: {
-    renderDetails: (details: string | null) => JSX.Element;
-    details: string | null;
-}): JSX.Element {
-    return renderDetails(details);
-};
-
 const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
     ['NORTHAMERICA-NORTHEAST1', 'Montréal'],
     ['NORTHAMERICA-NORTHEAST2', 'Toronto'],
@@ -173,7 +163,6 @@ export default {
     HEALTH_CHECK_RETRIES,
     HEALTH_CHECK_PERIOD,
     HEALTH_CHECK_REQUEST_TIMEOUT,
-    SERVER_UNAVAILABLE_COMPONENT,
     CANVAS_WORKSPACE_ROWS,
     CANVAS_WORKSPACE_COLS,
     CANVAS_WORKSPACE_MARGIN,
