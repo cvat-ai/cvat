@@ -2,11 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import http.client
 import json
 import logging
 import os
-import socket
 from pathlib import Path
 from subprocess import CalledProcessError, run
 from time import sleep
@@ -124,47 +122,46 @@ def local_exec(container, command: list[str], capture_output=True):
     )[0]
 
 
-def _docker_socket_path() -> str:
-    # `docker ps` can become a bottleneck or hang under heavy test churn. Querying the
-    # engine API over the local socket keeps local stack discovery cheap and reliable.
-    docker_host = os.environ.get("DOCKER_HOST", "")
-    if docker_host.startswith("unix://"):
-        candidate = docker_host.removeprefix("unix://")
-        if os.path.exists(candidate):
-            return candidate
+def _docker_list_containers() -> list[dict]:
+    container_ids, _ = run_command(["docker", "ps", "-q"])
+    if not container_ids:
+        return []
 
-    rootless_candidate = f"/run/user/{os.getuid()}/docker.sock"
-    for path in (
-        "/var/run/docker.sock",
-        rootless_candidate,
-        os.path.expanduser("~/.docker/run/docker.sock"),
-    ):
-        if os.path.exists(path):
-            return path
-    raise FileNotFoundError("Docker socket not found")
+    inspect_stdout, _ = run_command(["docker", "inspect", *container_ids.splitlines()])
+    return [_normalize_docker_inspect_container(container) for container in json.loads(inspect_stdout)]
 
 
-def _docker_api_list_containers() -> list[dict]:
-    socket_path = _docker_socket_path()
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
-        client.settimeout(5.0)
-        client.connect(socket_path)
-        client.sendall(
-            b"GET /containers/json HTTP/1.1\r\n" b"Host: localhost\r\n" b"Connection: close\r\n\r\n"
-        )
-        response = http.client.HTTPResponse(client)
-        response.begin()
-        if response.status != 200:
-            raise RuntimeError(f"Docker API request failed: HTTP {response.status}")
+def _normalize_docker_inspect_container(container: dict) -> dict:
+    return {
+        "Names": [str(container.get("Name", "")).lstrip("/")],
+        "Ports": _normalize_docker_inspect_ports(
+            container.get("NetworkSettings", {}).get("Ports") or {}
+        ),
+    }
 
-        body = response.read()
 
-    return json.loads(body.decode("utf-8"))
+def _normalize_docker_inspect_ports(ports: dict) -> list[dict]:
+    normalized_ports = []
+    for private_port_spec, bindings in ports.items():
+        private_port, _, port_type = private_port_spec.partition("/")
+        if not bindings:
+            continue
+        for binding in bindings:
+            host_port = binding.get("HostPort")
+            if host_port:
+                normalized_ports.append(
+                    {
+                        "PrivatePort": int(private_port),
+                        "PublicPort": int(host_port),
+                        "Type": port_type,
+                    }
+                )
+    return normalized_ports
 
 
 def running_containers() -> list[str]:
     containers = []
-    for container in _docker_api_list_containers():
+    for container in _docker_list_containers():
         names = container.get("Names") or []
         for name in names:
             containers.append(name.lstrip("/"))
@@ -237,7 +234,7 @@ def dump_db(*, prefixed_container_name, cvat_db_dir: Path) -> None:
 
 def project_host_ports(project_name: str) -> set[int]:
     ports: set[int] = set()
-    for container in _docker_api_list_containers():
+    for container in _docker_list_containers():
         names = [name.lstrip("/") for name in container.get("Names") or []]
         if not any(name.startswith(f"{project_name}_") for name in names):
             continue
@@ -250,7 +247,7 @@ def project_host_ports(project_name: str) -> set[int]:
 
 def project_service_port_map(project_name: str) -> dict[str, dict[int, int]]:
     service_ports: dict[str, dict[int, int]] = {}
-    for container in _docker_api_list_containers():
+    for container in _docker_list_containers():
         names = [name.lstrip("/") for name in container.get("Names") or []]
         container_name = next((name for name in names if name.startswith(f"{project_name}_")), None)
         if not container_name:
