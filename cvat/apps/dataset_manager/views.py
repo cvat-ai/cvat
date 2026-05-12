@@ -214,8 +214,6 @@ def export(
             f"as {dst_format!r} at {output_path!r} and available for downloading for the next "
             f"{cache_ttl.total_seconds()} seconds. "
         )
-        return output_path
-
     except LockNotAvailableError:
         # Need to retry later if the lock was not available
         retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
@@ -240,6 +238,7 @@ def export(
         dst_format=dst_format,
         status=ExportStatus.COMPLETED,
     )
+    return output_path
 
 
 def export_job_annotations(job_id: int, dst_format: str, *, server_url: str | None = None):
