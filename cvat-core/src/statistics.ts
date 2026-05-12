@@ -27,6 +27,7 @@ interface StatisticsBody {
 
 export default class Statistics {
     private labelData: Record<string, StatisticsBody>;
+
     private totalData: StatisticsBody;
 
     constructor(label: Statistics['labelData'], total: Statistics['totalData']) {

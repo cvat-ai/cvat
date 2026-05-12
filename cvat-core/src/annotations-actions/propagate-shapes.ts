@@ -15,6 +15,7 @@ import { BaseCollectionAction, CollectionActionInput, CollectionActionOutput } f
 
 export class PropagateShapes extends BaseCollectionAction {
     #instance: Task | Job;
+
     #targetFrame: number;
 
     public async init(instance: Job | Task, parameters): Promise<void> {

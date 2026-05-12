@@ -47,6 +47,7 @@ type InputRef = React.ComponentRef<typeof Input>;
 
 export default class LabelForm extends React.Component<Props> {
     private formRef: RefObject<FormInstance>;
+
     private inputNameRef: RefObject<InputRef>;
 
     constructor(props: Props) {
@@ -147,7 +148,6 @@ export default class LabelForm extends React.Component<Props> {
         }
     };
 
-    /* eslint-disable class-methods-use-this */
     private renderAttributeNameInput(fieldInstance: any, attr: any): JSX.Element {
         const { key } = fieldInstance;
         const attrNames = this.formRef.current?.getFieldValue('attributes')

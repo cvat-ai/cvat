@@ -19,16 +19,27 @@ export type RequestOperation = {
 
 export class Request {
     #id: string;
+
     #status: RQStatus;
+
     #operation: Partial<SerializedRequest['operation']>;
+
     #message: string;
+
     #progress: number;
+
     #resultUrl: string;
+
     #resultID: number;
+
     #createdDate: string;
+
     #startedDate: string;
+
     #finishedDate: string;
+
     #expiryDate: string;
+
     #owner: User;
 
     constructor(initialData: SerializedRequest) {

@@ -77,6 +77,7 @@ interface State {
 
 class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     private satisfiedLabels: Label[];
+
     constructor(props: Props) {
         super(props);
 

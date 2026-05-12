@@ -9,10 +9,15 @@ import serverProxy from './server-proxy';
 
 class AnnotationGuide {
     #id: AnnotationGuide['id'];
+
     #taskId: AnnotationGuide['taskId'];
+
     #projectId: AnnotationGuide['projectId'];
+
     #createdDate?: AnnotationGuide['createdDate'];
+
     #updatedDate?: AnnotationGuide['updatedDate'];
+
     #markdown: AnnotationGuide['markdown'];
 
     constructor(initialData: Partial<SerializedGuide>) {

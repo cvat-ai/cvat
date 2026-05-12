@@ -74,37 +74,64 @@ export default class ObjectState {
     };
 
     public readonly updateFlags: UpdateFlags;
+
     public readonly frame: number;
+
     public readonly objectType: ObjectType;
+
     public readonly shapeType: ShapeType;
+
     public readonly source: Source;
+
     public readonly clientID: number | null;
+
     public readonly serverID: number | null;
+
     public readonly parentID: number | null;
+
     public readonly updated: number;
+
     public readonly group: { color: string; id: number; } | null;
+
     public readonly isGroundTruth: boolean;
+
     public readonly keyframes: {
         first: number | null;
         prev: number | null;
         next: number | null;
         last: number | null;
     } | null;
+
     public readonly score: number | undefined;
+
     public readonly votes: number | undefined;
+
     public label: Label;
+
     public color: string;
+
     public hidden: boolean;
+
     public pinned: boolean;
+
     public points: number[] | null;
+
     public rotation: number | null;
+
     public zOrder: number;
+
     public outside: boolean;
+
     public occluded: boolean;
+
     public keyframe: boolean;
+
     public lock: boolean;
+
     public attributes: Record<number, string>;
+
     public descriptions: string[];
+
     public elements: ObjectState[];
 
     constructor(serialized: SerializedData) {

@@ -98,31 +98,48 @@ export class ChapterMetaData {
 
 export class Chapter {
     public id: number;
+
     public start: number;
+
     public stop: number;
+
     public metadata: ChapterMetaData;
 }
 
 export class FramesMetaData {
     public chunkSize: number;
+
     public chapters: Chapter[] | null;
+
     public deletedFrames: Record<number, boolean>;
+
     public includedFrames: number[] | null;
+
     public frameFilter: string;
+
     public frames: {
         width: number;
         height: number;
         name: string;
         related_files: number;
     }[];
+
     public imageQuality: number;
+
     public size: number;
+
     public startFrame: number;
+
     public stopFrame: number;
+
     public frameStep: number;
+
     public chunkCount: number;
+
     public chunksUpdatedDate: string;
+
     public storage: string;
+
     public cloudStorageId: number | null;
 
     #updateTrigger: FieldUpdateTrigger;
@@ -339,11 +356,17 @@ export class FramesMetaData {
 
 export class FrameData {
     public readonly filename: string;
+
     public readonly width: number;
+
     public readonly height: number;
+
     public readonly number: number;
+
     public readonly relatedFiles: number;
+
     public readonly deleted: boolean;
+
     public readonly jobID: number;
 
     constructor({
@@ -402,7 +425,9 @@ export class FrameData {
 
 class PrefetchAnalyzer {
     #requestedFrames: number[];
+
     #meta: FramesMetaData;
+
     #getDataFrameNumber: (frameNumber: number) => number;
 
     constructor(meta: FramesMetaData, dataFrameNumberGetter: (frameNumber: number) => number) {

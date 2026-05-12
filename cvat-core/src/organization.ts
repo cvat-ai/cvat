@@ -43,12 +43,19 @@ function validateContact(contact: unknown): void {
 
 export default class Organization {
     public readonly id: number;
+
     public readonly slug: string;
+
     public readonly createdDate: string;
+
     public readonly updatedDate: string;
+
     public readonly owner: User;
+
     public readonly contact: SerializedOrganizationContact;
+
     public readonly name: string;
+
     public readonly description: string;
 
     constructor(initialData: SerializedOrganization) {
@@ -193,10 +200,15 @@ export default class Organization {
 
 export class Invitation {
     #createdDate: string;
+
     #owner: User | null;
+
     #key: string;
+
     #expired: boolean;
+
     #organization: number;
+
     #organizationInfo: Organization;
 
     constructor(initialData: SerializedInvitationData) {
@@ -235,10 +247,15 @@ export class Invitation {
 
 export class Membership {
     #id: number;
+
     #user: User;
+
     #isActive: boolean;
+
     #joinedDate: string;
+
     #role: MembershipRole;
+
     #invitation: Invitation | null;
 
     constructor(initialData: SerializedMembershipData) {
@@ -261,12 +278,15 @@ export class Membership {
     get isActive(): boolean {
         return this.#isActive;
     }
+
     get joinedDate(): string {
         return this.#joinedDate;
     }
+
     get role(): MembershipRole {
         return this.#role;
     }
+
     get invitation(): Invitation {
         return this.#invitation;
     }

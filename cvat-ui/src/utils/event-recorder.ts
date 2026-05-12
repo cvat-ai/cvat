@@ -21,7 +21,9 @@ const defaultLogger: Logger = core.logger;
 // and for saving recorded events to the server with a certain period
 class EventRecorder {
     #lastActivityRecorded: number;
+
     #savingTimeout: number | null;
+
     #logger: Logger | null;
 
     public constructor() {

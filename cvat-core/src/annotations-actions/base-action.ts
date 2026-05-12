@@ -30,12 +30,17 @@ export type ActionParameters = Record<string, {
 
 export abstract class BaseAction {
     public abstract init(sessionInstance: Job | Task, parameters: Record<string, string | number>): Promise<void>;
+
     public abstract destroy(): Promise<void>;
+
     public abstract run(input: unknown): Promise<unknown>;
+
     public abstract applyFilter(input: unknown): unknown;
+
     public abstract isApplicableForObject(objectState: ObjectState): boolean;
 
     public abstract get name(): string;
+
     public abstract get parameters(): ActionParameters | null;
 }
 

@@ -63,6 +63,7 @@ registerComponentShortcuts(componentShortcuts);
 
 export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
     static contextType = ShortcutsContext;
+
     static defaultProps = {
         disabled: false,
     };
@@ -72,11 +73,17 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
     };
 
     private canvasRef: React.RefObject<HTMLCanvasElement>;
+
     private svgRef: React.RefObject<SVGSVGElement>;
+
     private resizeListener: EventListener;
+
     private nodeCounter: number;
+
     private elementCounter: number;
+
     private draggableElement: SVGElement | null;
+
     private labels: Record<number, LabelOptColor>;
 
     public constructor(props: Props) {

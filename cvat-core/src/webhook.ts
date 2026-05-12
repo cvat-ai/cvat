@@ -30,21 +30,35 @@ interface RawWebhookData {
 
 export default class Webhook {
     public readonly id: number;
+
     public readonly type: WebhookSourceType;
+
     public readonly organizationID: number | null;
+
     public readonly projectID: number | null;
+
     public readonly owner: User;
+
     public readonly lastStatus: number;
+
     public readonly lastDeliveryDate?: string;
+
     public readonly createdDate: string;
+
     public readonly updatedDate: string;
 
     public targetURL: string;
+
     public events: string[];
+
     public contentType: RawWebhookData['content_type'];
+
     public description?: string;
+
     public secret?: string;
+
     public isActive?: boolean;
+
     public enableSSL: boolean;
 
     static async availableEvents(type: WebhookSourceType): Promise<string[]> {
@@ -264,10 +278,15 @@ interface RawWebhookDeliveryData {
 
 export class WebhookDelivery {
     public readonly id?: number;
+
     public readonly event: string;
+
     public readonly webhookId: number;
+
     public readonly statusCode: string;
+
     public readonly createdDate?: string;
+
     public readonly updatedDate?: string;
 
     constructor(initialData: RawWebhookDeliveryData) {

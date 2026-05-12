@@ -33,6 +33,7 @@ export interface CollectionActionOutput {
 
 export abstract class BaseCollectionAction extends BaseAction {
     public abstract run(input: CollectionActionInput): Promise<CollectionActionOutput>;
+
     public abstract applyFilter(
         input: Pick<CollectionActionInput, 'collection' | 'frameData'>,
     ): CollectionActionInput['collection'];

@@ -788,51 +788,88 @@ export class Job extends Session {
 
 export class Task extends Session {
     public name: string;
+
     public projectId: number | null;
+
     public projectName: string | null;
+
     public organizationId: number | null;
+
     public assignee: User | null;
+
     public bugTracker: string;
+
     public subset: string;
+
     public labels: Label[];
+
     public sourceStorage: Storage;
+
     public targetStorage: Storage;
+
     public readonly guideId: number | null;
+
     public readonly id: number;
+
     public readonly status: TaskStatus;
+
     public readonly size: number;
+
     public readonly mode: TaskMode;
+
     public readonly owner: User;
+
     public readonly createdDate: string;
+
     public readonly updatedDate: string;
+
     public readonly overlap: number | null;
+
     public readonly segmentSize: number;
+
     public readonly imageQuality: number;
+
     public readonly dataChunkSize: number;
+
     public readonly dataChunkType: ChunkType;
+
     public readonly dimension: DimensionType;
+
     public readonly progress: {
         completedJobs: number,
         totalJobs: number,
         validationJobs: number,
         annotationJobs: number,
     };
+
     public readonly jobs: Job[];
+
     public readonly consensusEnabled: boolean;
 
     public readonly startFrame: number;
+
     public readonly stopFrame: number;
+
     public readonly frameFilter: string;
+
     public readonly useZipChunks: boolean;
+
     public readonly useCache: boolean;
+
     public readonly copyData: boolean;
+
     public readonly cloudStorageId: number | null;
+
     public readonly sortingMethod: string;
 
     public readonly validationMode: string | null;
+
     public readonly validationFramesPercent: number;
+
     public readonly validationFramesPerJobPercent: number;
+
     public readonly frameSelectionMethod: string;
+
     public readonly _updateTrigger: FieldUpdateTrigger;
 
     public meta: {

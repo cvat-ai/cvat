@@ -12,10 +12,15 @@ import { ArgumentError } from './exceptions';
 
 export class Attribute {
     public id?: number;
+
     public defaultValue: string;
+
     public inputType: AttrInputType;
+
     public mutable: boolean;
+
     public name: string;
+
     public values: string[];
 
     constructor(initialData: SerializedAttribute) {
@@ -88,16 +93,24 @@ export class Attribute {
 
 export class Label {
     public name: string;
+
     public readonly id?: number;
+
     public readonly color?: string;
+
     public readonly attributes: Attribute[];
+
     public readonly type: LabelType;
+
     public structure: {
         sublabels: Label[];
         svg: SVGSVGElement;
     } | null;
+
     public deleted: boolean;
+
     public patched: boolean;
+
     public readonly hasParent?: boolean;
 
     constructor(initialData: Readonly<SerializedLabel>) {

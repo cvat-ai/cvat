@@ -120,6 +120,7 @@ const mapDispatchToProps = {
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
+
     private latestPoints: [number, number][];
 
     public constructor(props: Props & DispatchToProps) {

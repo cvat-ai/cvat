@@ -24,13 +24,21 @@ interface RawIssueData {
 
 export default class Issue {
     public readonly id?: number;
+
     public readonly job: number;
+
     public readonly frame: number;
+
     public readonly owner?: User;
+
     public readonly comments: Comment[];
+
     public readonly resolved?: boolean;
+
     public readonly createdDate?: string;
+
     public position?: number[];
+
     private readonly __internal: RawIssueData & { comments: Comment[] };
 
     constructor(initialData: RawIssueData) {

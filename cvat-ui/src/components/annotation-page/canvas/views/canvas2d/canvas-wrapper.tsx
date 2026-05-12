@@ -401,6 +401,7 @@ type Props = StateToProps & DispatchToProps;
 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
+
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
 
     public componentDidMount(): void {
@@ -924,6 +925,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         });
         onSliceAnnotations(state, results);
     };
+
     private onCanvasDragStart = (): void => {
         const { updateActiveControl } = this.props;
         updateActiveControl(ActiveControl.DRAG_CANVAS);

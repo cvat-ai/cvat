@@ -48,11 +48,17 @@ function clientIdGen(): string {
 
 class Logger {
     public clientID: string;
+
     public collection: Array<Event>;
+
     public lastSentEvent: Event | null;
+
     public ignoreRules: Record<string, IgnoreRule>;
+
     public isActiveChecker: () => boolean;
+
     public saving: boolean;
+
     public compressedScopes: Array<EventScope>;
 
     constructor() {

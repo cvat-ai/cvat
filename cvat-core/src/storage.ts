@@ -16,6 +16,7 @@ interface StorageJsonData {
 
 export class Storage {
     public location: StorageLocation;
+
     public cloudStorageId: number;
 
     constructor(initialData: StorageData) {

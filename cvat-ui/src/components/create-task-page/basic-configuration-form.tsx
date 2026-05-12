@@ -24,7 +24,9 @@ type InputRef = React.ComponentRef<typeof Input>;
 
 export default class BasicConfigurationForm extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
+
     private inputRef: RefObject<InputRef>;
+
     private initialName: string;
 
     public constructor(props: Props) {

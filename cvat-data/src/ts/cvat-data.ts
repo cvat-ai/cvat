@@ -82,23 +82,35 @@ interface BlockToDecode {
 
 export class FrameDecoder {
     private blockType: BlockType;
+
     /*
         ImageBitmap when decode zip or video chunks
         Blob when 3D dimension
         null when not decoded yet
     */
     private decodedChunks: Record<number, Record<number, ImageBitmap | Blob>>;
+
     private chunkIsBeingDecoded: BlockToDecode | null;
+
     private requestedChunkToDecode: BlockToDecode | null;
+
     private orderedStack: number[];
+
     private mutex: Mutex;
+
     private dimension: DimensionType;
+
     private cachedChunksLimit: number;
+
     // used for video chunks to get correct side after decoding
     private renderWidth: number;
+
     private renderHeight: number;
+
     private zipWorker: Worker | null;
+
     private videoWorker: Worker | null;
+
     private getChunkIndex: (frame: number) => number;
 
     constructor(

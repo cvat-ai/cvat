@@ -262,8 +262,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps & RouteComponentProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private inputFrameRef: React.RefObject<HTMLInputElement>;
+
     private autoSaveInterval: number | undefined;
+
     private isWaitingForPlayDelay: boolean;
+
     private unblock: any;
 
     constructor(props: Props) {
