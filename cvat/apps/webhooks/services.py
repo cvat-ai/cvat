@@ -2,10 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.db.models import Model
-
-from cvat.apps.events.handlers import organization_id, project_id
-
 from .dispatch import add_to_queue
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 from .tasks import send_webhook
@@ -13,28 +9,30 @@ from .utils import get_sender
 
 
 def select_webhooks(
-    instance: Model,
+    *,
     event: str,
+    organization_id: int | None,
+    project_id: int | None,
     select_for_org: bool = True,
     select_for_project: bool = True,
 ) -> list[Webhook]:
     selected_webhooks = []
 
-    if select_for_org and (oid := organization_id(instance)) is not None:
+    if select_for_org and organization_id is not None:
         webhooks = Webhook.objects.filter(
             is_active=True,
             events__contains=event,
             type=WebhookTypeChoice.ORGANIZATION,
-            organization=oid,
+            organization=organization_id,
         )
         selected_webhooks += list(webhooks)
 
-    if select_for_project and (pid := project_id(instance)) is not None:
+    if select_for_project and project_id is not None:
         webhooks = Webhook.objects.filter(
             is_active=True,
             events__contains=event,
             type=WebhookTypeChoice.PROJECT,
-            project=pid,
+            project=project_id,
         )
         selected_webhooks += list(webhooks)
 

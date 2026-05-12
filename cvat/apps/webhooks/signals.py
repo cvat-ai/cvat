@@ -14,6 +14,8 @@ from cvat.apps.events.handlers import (
     get_instance_diff,
     get_serializer,
 )
+from cvat.apps.events.handlers import organization_id as resolve_organization_id
+from cvat.apps.events.handlers import project_id as resolve_project_id
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 
 from .dispatch import batch_add_to_queue
@@ -54,25 +56,37 @@ def pre_save_resource_event(sender, instance, **kwargs):
         and not created
         and old_instance.organization_id != instance.organization_id
     ):
+        new_org_id = resolve_organization_id(instance)
+        new_project_id = resolve_project_id(instance)
+        old_org_id = resolve_organization_id(old_instance)
+        old_project_id = resolve_project_id(old_instance)
+
         instance._webhooks_selected_webhooks = {}
         for event_, filters in {
             event_type: {
-                "instance": instance,
+                "organization_id": new_org_id,
+                "project_id": new_project_id,
                 "select_for_org": False,
             },
             event_name(action="delete", resource=resource_name): {
-                "instance": old_instance,
+                "organization_id": old_org_id,
+                "project_id": old_project_id,
                 "select_for_project": False,
             },
             event_name(action="create", resource=resource_name): {
-                "instance": instance,
+                "organization_id": new_org_id,
+                "project_id": new_project_id,
                 "select_for_project": False,
             },
         }.items():
             if webhooks := select_webhooks(event=event_, **filters):
                 instance._webhooks_selected_webhooks[event_] = webhooks
     else:
-        instance._webhooks_selected_webhooks = select_webhooks(instance=instance, event=event_type)
+        instance._webhooks_selected_webhooks = select_webhooks(
+            event=event_type,
+            organization_id=resolve_organization_id(instance),
+            project_id=resolve_project_id(instance),
+        )
 
     if not instance._webhooks_selected_webhooks:
         return
@@ -162,8 +176,9 @@ def pre_delete_resource_event(sender, instance, **kwargs):
     related_webhooks = []
     if resource_name in ["project", "organization"]:
         related_webhooks = select_webhooks(
-            instance=instance,
             event=event_name(action="delete", resource=resource_name),
+            organization_id=resolve_organization_id(instance),
+            project_id=resolve_project_id(instance),
         )
 
     serializer = get_serializer(instance=deepcopy(instance))
@@ -186,7 +201,11 @@ def post_delete_resource_event(sender, instance, **kwargs):
     if event_type not in (a[0] for a in EventTypeChoice.choices()):
         return
 
-    filtered_webhooks = select_webhooks(instance=instance, event=event_type)
+    filtered_webhooks = select_webhooks(
+        event=event_type,
+        organization_id=resolve_organization_id(instance),
+        project_id=resolve_project_id(instance),
+    )
 
     data = {
         "event": event_type,
