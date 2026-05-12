@@ -673,7 +673,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         writeLatestFrame(jobInstance.id, frameNumber);
         if (jobInstance.annotations.hasUnsavedChanges() && !forceExit) {
             const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
-            // eslint-disable-next-line no-param-reassign
+
             event.returnValue = confirmationMessage;
             return confirmationMessage;
         }

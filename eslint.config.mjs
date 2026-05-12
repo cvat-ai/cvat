@@ -84,7 +84,7 @@ const cypressGlobals = {
 const testsGlobalConfig = {
     camelcase: ['error', { properties: 'never', ignoreDestructuring: false, ignoreImports: false }],
     'no-continue': 0,
-    'no-console': 0,
+    'no-console': "error",
     'no-param-reassign': ['error', { props: false }],
     'no-restricted-syntax': [
         'error',
@@ -189,6 +189,13 @@ export default [
         ],
         plugins: {
             '@stylistic': stylisticPlugin,
+            security: securityPlugin,
+            'no-unsanitized': noUnsanitizedPlugin,
+        },
+        rules: {
+            ...securityPlugin.configs['recommended-legacy'].rules,
+            ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
+            'no-constant-condition': ['error', { checkLoops: 'allExceptWhileTrue' }],
         },
     },
     ...scopedConfig(rootConfig, sourceFiles),
