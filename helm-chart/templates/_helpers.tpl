@@ -119,6 +119,11 @@ The name of the service account to use for backend pods
       name: "{{ tpl (.Values.postgresql.secret.name) . }}"
       key: password
 
+{{- if and (ne .Values.cvat.backend.numProxies nil) (ne (toString .Values.cvat.backend.numProxies) "") }}
+- name: CVAT_NUM_PROXIES
+  value: "{{ .Values.cvat.backend.numProxies }}"
+{{- end }}
+
 - name: CVAT_OPA_URL
   value: "http://{{ .Release.Name }}-opa-service:8181"
 

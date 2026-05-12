@@ -2,10 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 from datetime import datetime, timezone
 
 from django.db import transaction
+from django.http import HttpRequest
 from rest_framework.renderers import JSONRenderer
+from rest_framework.throttling import BaseThrottle
 
 from cvat.apps.engine.log import vlogger
 
@@ -41,6 +44,37 @@ class EventScopes:
             for resource in resources
             for action in cls.RESOURCES.get(resource, [])
         ]
+
+
+def get_remote_addr(request) -> str | None:
+    if not isinstance(request, HttpRequest):
+        return None
+
+    try:
+        return BaseThrottle().get_ident(request)
+    except Exception:
+        return None
+
+
+def add_remote_addr_to_payload(payload: str | None, remote_addr: str) -> str | None:
+    try:
+        data = json.loads(payload or "{}")
+    except (TypeError, json.JSONDecodeError):
+        return payload
+
+    if not isinstance(data, dict):
+        return payload
+
+    request = data.get("request")
+    if not isinstance(request, dict):
+        request = {}
+
+    data["request"] = {
+        **request,
+        "remote_addr": remote_addr,
+    }
+
+    return json.dumps(data)
 
 
 def record_server_event(

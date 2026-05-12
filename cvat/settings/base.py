@@ -122,6 +122,9 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
+_cvat_num_proxies = os.getenv("CVAT_NUM_PROXIES")
+_drf_num_proxies = int(_cvat_num_proxies) if _cvat_num_proxies not in (None, "") else None
+
 REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
@@ -162,6 +165,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/minute",
     },
+    "NUM_PROXIES": _drf_num_proxies,
     "DEFAULT_METADATA_CLASS": "rest_framework.metadata.SimpleMetadata",
     "DEFAULT_SCHEMA_CLASS": "cvat.apps.iam.schema.CustomAutoSchema",
     "EXCEPTION_HANDLER": "cvat.apps.events.handlers.handle_viewset_exception",

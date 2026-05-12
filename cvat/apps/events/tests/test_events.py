@@ -2,13 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import unittest
 from datetime import datetime, timedelta, timezone
+from unittest import mock
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 
 from cvat.apps.events.const import MAX_EVENT_DURATION, WORKING_TIME_RESOLUTION
+from cvat.apps.events.event import add_remote_addr_to_payload, get_remote_addr
+from cvat.apps.events.handlers import request_info
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.events.utils import compute_working_time_per_ids, is_contained
 from cvat.apps.organizations.models import Organization
@@ -216,3 +221,69 @@ class WorkingTimeTestCase(unittest.TestCase):
         )
         event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 0)
+
+
+def _rest_framework_settings(*, num_proxies):
+    return {
+        **settings.REST_FRAMEWORK,
+        "NUM_PROXIES": num_proxies,
+    }
+
+
+class EventRemoteAddrTestCase(unittest.TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def _request(self, *, x_forwarded_for=None, remote_addr="203.0.113.10"):
+        extra = {"REMOTE_ADDR": remote_addr}
+        if x_forwarded_for is not None:
+            extra["HTTP_X_FORWARDED_FOR"] = x_forwarded_for
+        return self.factory.post("/api/events", **extra)
+
+    @override_settings(REST_FRAMEWORK=_rest_framework_settings(num_proxies=None))
+    def test_get_remote_addr_uses_remote_addr_without_forwarded_for(self):
+        request = self._request(remote_addr="203.0.113.10")
+
+        self.assertEqual(get_remote_addr(request), "203.0.113.10")
+
+    @override_settings(REST_FRAMEWORK=_rest_framework_settings(num_proxies=0))
+    def test_get_remote_addr_ignores_forwarded_for_when_num_proxies_is_zero(self):
+        request = self._request(
+            x_forwarded_for="198.51.100.1, 198.51.100.2",
+            remote_addr="203.0.113.10",
+        )
+
+        self.assertEqual(get_remote_addr(request), "203.0.113.10")
+
+    @override_settings(REST_FRAMEWORK=_rest_framework_settings(num_proxies=2))
+    def test_get_remote_addr_uses_base_throttle_ident_for_forwarded_for(self):
+        request = self._request(
+            x_forwarded_for="198.51.100.1, 198.51.100.2, 198.51.100.3",
+            remote_addr="203.0.113.10",
+        )
+
+        self.assertEqual(get_remote_addr(request), "198.51.100.2")
+
+    @override_settings(REST_FRAMEWORK=_rest_framework_settings(num_proxies=1))
+    def test_request_info_includes_remote_addr(self):
+        request = self._request(
+            x_forwarded_for="198.51.100.1",
+            remote_addr="203.0.113.10",
+        )
+
+        with mock.patch("cvat.apps.events.handlers.get_request", return_value=request):
+            self.assertEqual(request_info()["remote_addr"], "198.51.100.1")
+
+    def test_add_remote_addr_to_payload_preserves_existing_request_info(self):
+        payload = add_remote_addr_to_payload(
+            json.dumps({"request": {"id": "request-id"}, "message": "test"}),
+            "198.51.100.1",
+        )
+
+        data = json.loads(payload)
+        self.assertEqual(data["request"]["id"], "request-id")
+        self.assertEqual(data["request"]["remote_addr"], "198.51.100.1")
+
+    def test_add_remote_addr_to_payload_keeps_invalid_or_non_object_payload_unchanged(self):
+        self.assertEqual(add_remote_addr_to_payload("[1, 2, 3]", "198.51.100.1"), "[1, 2, 3]")
+        self.assertEqual(add_remote_addr_to_payload("{invalid", "198.51.100.1"), "{invalid")
