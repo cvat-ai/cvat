@@ -257,4 +257,5 @@ export default interface CVATCore {
     opencv: {
         createOpenCVInterface: typeof createOpenCVInterface;
     };
+// eslint-disable-next-line semi
 }

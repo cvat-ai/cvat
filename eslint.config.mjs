@@ -13,6 +13,7 @@ import cypressPlugin from 'eslint-plugin-cypress';
 import globals from 'globals';
 import importPlugin from 'eslint-plugin-import';
 import noUnsanitizedPlugin from 'eslint-plugin-no-unsanitized';
+import reactPlugin from 'eslint-plugin-react';
 import securityPlugin from 'eslint-plugin-security';
 import chaiFriendlyPlugin from 'eslint-plugin-chai-friendly';
 
@@ -212,6 +213,9 @@ export default [
             'cvat-canvas3d/**/*.{ts,mts,cts}',
             'cvat-ui/**/*.{ts,tsx,mts,cts}'
         ],
+        plugins: {
+            react: reactPlugin,
+        },
         languageOptions: {
             globals: {
                 JSX: 'readonly',
