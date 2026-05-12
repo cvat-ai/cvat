@@ -179,15 +179,14 @@ CVAT Community is released under the MIT License.
 
 For the latest product releases, feature walkthroughs, and all things CVAT see:
 
-<img src="site/content/en/images/social-badges.svg" usemap="#badges">
-<map name="badges">
-  <area href="https://www.cvat.ai/resources/blog"         coords="0,0,108,120"    shape="rect">
-  <area href="https://www.cvat.ai/resources/academy"      coords="118,0,226,120"  shape="rect">
-  <area href="https://www.cvat.ai/resources/case-studies" coords="236,0,344,120"  shape="rect">
-  <area href="https://www.youtube.com/@cvat-ai"           coords="354,0,462,120"  shape="rect">
-  <area href="https://www.linkedin.com/company/cvat-ai"   coords="472,0,580,120"  shape="rect">
-  <area href="https://www.cvat.ai/#:~:text=Subscribe%20to%20the%20CVAT%20Newsletter" coords="590,0,698,120" shape="rect">
-</map>
+<table><tr>
+  <td><a href="https://www.cvat.ai/resources/blog"><img src="site/content/en/images/badge-blog.svg" height="120"/></a></td>
+  <td><a href="https://www.cvat.ai/resources/academy"><img src="site/content/en/images/badge-academy.svg" height="120"/></a></td>
+  <td><a href="https://www.cvat.ai/resources/case-studies"><img src="site/content/en/images/badge-case-studies.svg" height="120"/></a></td>
+  <td><a href="https://www.youtube.com/@cvat-ai"><img src="site/content/en/images/badge-youtube.svg" height="120"/></a></td>
+  <td><a href="https://www.linkedin.com/company/cvat-ai"><img src="site/content/en/images/badge-linkedin.svg" height="120"/></a></td>
+  <td><a href="https://www.cvat.ai/#:~:text=Subscribe%20to%20the%20CVAT%20Newsletter"><img src="site/content/en/images/badge-newsletter.svg" height="120"/></a></td>
+</tr></table>
 
   <!-- Badges -->
 

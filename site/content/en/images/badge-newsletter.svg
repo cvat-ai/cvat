@@ -1,0 +1,9 @@
+<svg viewBox="0 0 108 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600&amp;display=swap');</style>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D4D4D4"/><stop offset="100%" stop-color="#BEBEBE"/></linearGradient>
+  </defs>
+  <rect x="0" y="0" width="108" height="120" rx="10" fill="#F0F0F0"/>
+  <text x="54" y="55" font-size="28" text-anchor="middle" font-family="Segoe UI Emoji, Apple Color Emoji, sans-serif">✉️</text>
+  <text x="54" y="88" fill="#000000" font-size="9" font-weight="600" text-anchor="middle" font-family="Sora, sans-serif">Newsletter</text>
+</svg>
