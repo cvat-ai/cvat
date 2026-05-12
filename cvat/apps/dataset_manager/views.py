@@ -64,7 +64,9 @@ EXPORT_CACHE_LOCK_TTL = timedelta(seconds=settings.EXPORT_CACHE_LOCK_TTL)
 EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.EXPORT_LOCKED_RETRY_INTERVAL)
 
 
-def get_export_cache_ttl(db_instance: str | Project | Task | Job | None = None) -> timedelta:
+def get_export_cache_ttl(
+    db_instance: str | Project | Task | Job | None = None,
+) -> timedelta:
     if not db_instance:
         return DEFAULT_CACHE_TTL
 
@@ -239,13 +241,19 @@ def export_task_annotations(task_id: int, dst_format: str, *, server_url: str | 
 
 def export_project_as_dataset(project_id: int, dst_format: str, *, server_url: str | None = None):
     return export(
-        dst_format=dst_format, project_id=project_id, server_url=server_url, save_images=True
+        dst_format=dst_format,
+        project_id=project_id,
+        server_url=server_url,
+        save_images=True,
     )
 
 
 def export_project_annotations(project_id: int, dst_format: str, *, server_url: str | None = None):
     return export(
-        dst_format=dst_format, project_id=project_id, server_url=server_url, save_images=False
+        dst_format=dst_format,
+        project_id=project_id,
+        server_url=server_url,
+        save_images=False,
     )
 
 
