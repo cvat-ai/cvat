@@ -361,6 +361,7 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
             "name",
             "owner",
             "project_id",
+            "project_name",
             "status",
             "subset",
             "tracker_link",

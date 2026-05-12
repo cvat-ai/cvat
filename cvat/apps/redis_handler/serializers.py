@@ -52,6 +52,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     task_id = serializers.IntegerField(required=False, allow_null=True)
     job_id = serializers.IntegerField(required=False, allow_null=True)
+    org_id = serializers.IntegerField(required=False, allow_null=True)
     format = serializers.CharField(required=False, allow_null=True)
     function_id = serializers.CharField(required=False, allow_null=True)
     lightweight = serializers.BooleanField(required=False, allow_null=True)
@@ -66,6 +67,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
             "project_id": base_rq_job_meta.project_id,
             "task_id": base_rq_job_meta.task_id,
             "job_id": base_rq_job_meta.job_id,
+            "org_id": base_rq_job_meta.org_id,
         }
         if parsed_request_id.action == RequestAction.AUTOANNOTATE:
             representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
