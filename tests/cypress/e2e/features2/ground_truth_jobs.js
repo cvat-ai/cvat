@@ -551,7 +551,7 @@ context('Ground truth jobs', () => {
                                     cy.goCheckFrameNumber(index);
                                     const expectedFilenameNumber = index + 1; // imageGenerator starts with 1
                                     const expectedFilename = `${imageFileName}_${expectedFilenameNumber}.${extension}`;
-                                    // eslint-disable-next-line security/detect-non-literal-regexp
+
                                     cy.get('.cvat-player-filename-wrapper').should('have.text', expectedFilename);
                                 });
                             });

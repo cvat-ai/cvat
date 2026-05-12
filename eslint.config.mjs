@@ -133,6 +133,7 @@ const cypressBaseConfig = {
     rules: {
         ...testsSourceRules,
         ...testsGlobalConfig,
+        indent: 'off', // airbnb's legacy indent
     },
 };
 

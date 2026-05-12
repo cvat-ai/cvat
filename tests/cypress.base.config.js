@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
- 
 const reporter = require('allure-cypress/reporter');
 
 const { allureCypress } = reporter;

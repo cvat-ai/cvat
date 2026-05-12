@@ -5,7 +5,6 @@
 
 /// <reference types="cypress" />
 
-
 import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Objects ordering feature', () => {
