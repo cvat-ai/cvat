@@ -57,6 +57,14 @@ spec:
           env:
           - name: ALLOWED_HOSTS
             value: {{ $localValues.envs.ALLOWED_HOSTS | squote}}
+          - name: CVAT_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: CVAT_NGINX_ACCESS_LOG
+            value: "/home/django/logs/nginx/$(CVAT_POD_NAME)/access.log"
+          - name: CVAT_NGINX_ERROR_LOG
+            value: "/home/django/logs/nginx/$(CVAT_POD_NAME)/error.log"
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
