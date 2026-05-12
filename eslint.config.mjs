@@ -14,6 +14,7 @@ import globals from 'globals';
 import importPlugin from 'eslint-plugin-import';
 import noUnsanitizedPlugin from 'eslint-plugin-no-unsanitized';
 import securityPlugin from 'eslint-plugin-security';
+import chaiFriendlyPlugin from 'eslint-plugin-chai-friendly';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -214,6 +215,7 @@ export default [
             cypress: cypressPlugin,
             security: securityPlugin,
             'no-unsanitized': noUnsanitizedPlugin,
+            'chai-friendly': chaiFriendlyPlugin,
         },
         languageOptions: {
             globals: testsNodeAndCypressGlobals,
@@ -229,6 +231,8 @@ export default [
             'no-prototype-builtins': 'off',
             'no-underscore-dangle': 'off',
             'security/detect-object-injection':'off',
+            "no-unused-expressions": 0,
+            "chai-friendly/no-unused-expressions": "error"
         },
     },
     ...scopedConfig(cypressBaseConfig, ['tests/cypress/plugins/**/*.js']),

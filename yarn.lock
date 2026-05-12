@@ -6061,6 +6061,7 @@ __metadata:
     eslint-config-airbnb: "npm:^19.0.4"
     eslint-config-airbnb-base: "npm:14.2.1"
     eslint-config-airbnb-typescript: "npm:^17.1.0"
+    eslint-plugin-chai-friendly: "npm:^1.2.0"
     eslint-plugin-cypress: "npm:^5.1.1"
     eslint-plugin-import: "npm:^2.32.0"
     eslint-plugin-jsx-a11y: "npm:^6.10.2"
@@ -7209,6 +7210,15 @@ __metadata:
     eslint:
       optional: true
   checksum: 10c0/6f4efbe7a91ae49bf67b4ab3644cb60bc5bd7db4cb5521de1b65be0847ffd3fb6bce0dd68f0995e1b312d137f768e2a1f842ee26fe73621afa05f850628fdc40
+  languageName: node
+  linkType: hard
+
+"eslint-plugin-chai-friendly@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "eslint-plugin-chai-friendly@npm:1.2.0"
+  peerDependencies:
+    eslint: ">=3.0.0"
+  checksum: 10c0/728569742d702d8133d18a4c494b21c1298efea0cd85c373d824641d7e6f0b3a16740f6c679238662cf6faa82febf5db84f1ea40ba1b3f8ae4eac2100470ddee
   languageName: node
   linkType: hard
 
