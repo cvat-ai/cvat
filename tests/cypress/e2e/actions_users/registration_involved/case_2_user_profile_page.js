@@ -139,8 +139,8 @@ context('User page, password change, token handling', () => {
         cy.visit('auth/login');
         cy.headlessCreateUser(userSpec);
         cy.headlessLogin({ ...userSpec, nextURL: '/tasks' });
-        cy.headlessCreateProject({ ...projectSpec, name: projectName }).then(({ projectID }) => {
-            projectId = projectID;
+        cy.headlessCreateProject({ ...projectSpec, name: projectName }).then(({ projectId }) => {
+            projectId = projectId;
         });
     });
 
