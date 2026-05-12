@@ -502,7 +502,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         frame_ids_to_download = []
         frame_names_to_download = []
-        for media_file in self._db_data.images.all():
+        for media_file in self._db_data.images.order_by("frame").all():
             media_path = media_file.path
 
             local_path = os.path.join(data_dir, media_path)
