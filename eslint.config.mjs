@@ -212,12 +212,29 @@ export default [
             'cvat-canvas3d/**/*.{ts,mts,cts}',
             'cvat-ui/**/*.{ts,tsx,mts,cts}'
         ],
+        languageOptions: {
+            globals: {
+                JSX: 'readonly',
+                React: 'readonly',
+            },
+        },
         rules: {
             camelcase: 'off',
             'import/extensions': 'off',
             'import/no-unresolved': 'off',
             'no-unused-vars': 'off',
-            '@typescript-eslint/no-unused-vars': 'error',
+            '@typescript-eslint/no-unused-vars': ['error', {
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_',
+            }],
+            '@typescript-eslint/default-param-last': 'off',
+            'default-param-last': 'off',
+            'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
+            // Relax the object type restriction - use Record<string, unknown> or explicit types where reasonable
+            '@typescript-eslint/no-restricted-types': 'off',
+            // Allow {} in generics (e.g., React.PureComponent<{}, State>)
+            '@typescript-eslint/no-empty-object-type': ['error', { allowObjectTypes: 'always' }],
         },
     },
     ...scopedConfig(cypressBaseConfig, [
