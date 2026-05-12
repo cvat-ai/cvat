@@ -5,11 +5,11 @@
 import warnings
 
 import pytest
+
 from infra import options as infra_options
 from infra.config import InfraMode, RuntimeInfraConfig
+from infra.health import run_runtime_sanity_checks
 from infra.instances import InfraInstance, InstanceConfig
-from infra.version_check import run_sanity_version_check
-
 from shared.fixtures import init as legacy_init
 
 restore_db_per_function = legacy_init.restore_db_per_function
@@ -94,7 +94,7 @@ def pytest_sessionstart(session) -> None:
     if request.platform == "kube":
         legacy_init.session_start(session)
         if request.should_run_version_check:
-            run_sanity_version_check(
+            run_runtime_sanity_checks(
                 cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=request.platform
             )
         return
@@ -111,7 +111,7 @@ def pytest_sessionstart(session) -> None:
     instance.start()
 
     if request.should_run_version_check:
-        run_sanity_version_check(
+        run_runtime_sanity_checks(
             cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=request.platform
         )
 

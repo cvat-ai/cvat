@@ -389,7 +389,7 @@ class RuntimeInfraConfig:
     @classmethod
     def get_server_url(cls, endpoint: str, **kwargs) -> str:
         query = urlencode(kwargs)
-        return f"{cls.get_base_url()}/{endpoint}" + (f"?{query}" if query else "")
+        return f"{cls.get_base_url().rstrip('/')}/{endpoint}" + (f"?{query}" if query else "")
 
     @classmethod
     def get_base_url(cls) -> str:
