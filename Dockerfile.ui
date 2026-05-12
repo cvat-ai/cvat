@@ -27,12 +27,10 @@ COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
 
 ARG CLIENT_PLUGINS
-ARG DISABLE_SOURCE_MAPS
-ARG SOURCE_MAPS_TOKEN
+ARG SOURCE_MAPS_ENABLED=false
 
 RUN CLIENT_PLUGINS="${CLIENT_PLUGINS}" \
-DISABLE_SOURCE_MAPS="${DISABLE_SOURCE_MAPS}" \
-SOURCE_MAPS_TOKEN="${SOURCE_MAPS_TOKEN}" yarn run build:cvat-ui
+SOURCE_MAPS_ENABLED="${SOURCE_MAPS_ENABLED}" yarn run build:cvat-ui
 
 FROM nginxinc/nginx-unprivileged:1.29.5-alpine3.23-slim
 
