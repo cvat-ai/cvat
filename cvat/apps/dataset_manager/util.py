@@ -20,10 +20,50 @@ from uuid import UUID
 
 import attrs
 import django_rq
+import rq
 from datumaro.util import to_snake_case
 from datumaro.util.os_util import make_file_name
 from django.conf import settings
 from pottery import Redlock
+
+from cvat.apps.engine.models import Job, Project, Task
+
+from .enums import ExportStatus
+
+
+def queue_export_webhook_task(
+    *,
+    target: Project | Task | Job,
+    dst_format: str,
+    status: ExportStatus,
+    message: str = "",
+) -> None:
+    from cvat.apps.events.handlers import organization_id as resolve_organization_id
+    from cvat.apps.events.handlers import project_id as resolve_project_id
+    from cvat.apps.webhooks.dispatch import batch_add_to_queue
+    from cvat.apps.webhooks.event_type import event_name
+    from cvat.apps.webhooks.services import select_webhooks
+
+    event = event_name(action="create", resource="export")
+    webhooks = select_webhooks(
+        event=event,
+        organization_id=resolve_organization_id(target),
+        project_id=resolve_project_id(target),
+    )
+    if not webhooks:
+        return
+
+    rq_job = rq.get_current_job()
+    payload = {
+        "event": event,
+        "status": status.value,
+        "target": target.__class__.__name__.lower(),
+        "target_id": target.id,
+        "format": dst_format,
+        "rq_id": rq_job.id if rq_job else None,
+        "message": message,
+    }
+    batch_add_to_queue(webhooks=webhooks, data=payload)
 
 
 def current_function_name(depth=1):

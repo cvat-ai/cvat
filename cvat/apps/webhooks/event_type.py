@@ -19,6 +19,7 @@ class Events:
         "organization": ["update", "delete"],
         "invitation": ["create", "delete"],
         "membership": ["create", "update", "delete"],
+        "export": ["create"],
     }
 
     @classmethod
@@ -48,7 +49,7 @@ class AllEvents:
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
     events = [
-        *Events.select(["task", "job", "label", "issue", "comment"]),
+        *Events.select(["task", "job", "label", "issue", "comment", "export"]),
         event_name(action="update", resource="project"),
         event_name(action="delete", resource="project"),
     ]

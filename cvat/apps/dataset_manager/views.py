@@ -23,6 +23,7 @@ from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_rq_lock_by_user
 
+from .enums import ExportStatus
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
     ExportCacheManager,
@@ -31,6 +32,7 @@ from .util import (
     current_function_name,
     extend_export_file_lifetime,
     get_export_cache_lock,
+    queue_export_webhook_task,
 )
 
 slogger = ServerLogManager(__name__)
@@ -131,20 +133,20 @@ def export(
     server_url: str | None = None,
     save_images: bool = False,
 ):
-    try:
-        if task_id is not None:
-            logger = slogger.task[task_id]
-            export_fn = task.export_task
-            db_instance = Task.objects.get(pk=task_id)
-        elif project_id is not None:
-            logger = slogger.project[project_id]
-            export_fn = project.export_project
-            db_instance = Project.objects.get(pk=project_id)
-        else:
-            logger = slogger.job[job_id]
-            export_fn = task.export_job
-            db_instance = Job.objects.get(pk=job_id)
+    if task_id is not None:
+        logger = slogger.task[task_id]
+        export_fn = task.export_task
+        db_instance = Task.objects.get(pk=task_id)
+    elif project_id is not None:
+        logger = slogger.project[project_id]
+        export_fn = project.export_project
+        db_instance = Project.objects.get(pk=project_id)
+    else:
+        logger = slogger.job[job_id]
+        export_fn = task.export_job
+        db_instance = Job.objects.get(pk=job_id)
 
+    try:
         cache_ttl = get_export_cache_ttl(db_instance)
         instance_type = db_instance.__class__.__name__
 
@@ -177,6 +179,11 @@ def export(
         ):
             if osp_exists(output_path):
                 extend_export_file_lifetime(output_path)
+                queue_export_webhook_task(
+                    target=db_instance,
+                    dst_format=dst_format,
+                    status=ExportStatus.COMPLETED,
+                )
                 return output_path
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as temp_dir:
@@ -207,8 +214,8 @@ def export(
             f"as {dst_format!r} at {output_path!r} and available for downloading for the next "
             f"{cache_ttl.total_seconds()} seconds. "
         )
-
         return output_path
+
     except LockNotAvailableError:
         # Need to retry later if the lock was not available
         retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
@@ -218,9 +225,21 @@ def export(
             )
         )
         raise
-    except Exception:
+    except Exception as exc:
+        queue_export_webhook_task(
+            target=db_instance,
+            dst_format=dst_format,
+            status=ExportStatus.FAILED,
+            message=str(exc),
+        )
         log_exception(logger)
         raise
+
+    queue_export_webhook_task(
+        target=db_instance,
+        dst_format=dst_format,
+        status=ExportStatus.COMPLETED,
+    )
 
 
 def export_job_annotations(job_id: int, dst_format: str, *, server_url: str | None = None):
