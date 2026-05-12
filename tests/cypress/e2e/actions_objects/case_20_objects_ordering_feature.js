@@ -5,7 +5,6 @@
 
 /// <reference types="cypress" />
 
-/* eslint-disable no-unused-expressions */
 
 import { defaultTaskSpec } from '../../support/default-specs';
 

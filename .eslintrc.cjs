@@ -20,7 +20,7 @@ module.exports = {
         'site/**',
         'webpack.config.cjs',
     ],
-    plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'import'],
+    plugins: ['@typescript-eslint', '@stylistic', 'security', 'no-unsanitized', 'import'],
     extends: [
         'eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM',
         'airbnb-base', 'plugin:import/errors', 'plugin:import/warnings',
@@ -37,12 +37,12 @@ module.exports = {
         'no-param-reassign': ['error', { 'props': false }],
         'no-restricted-syntax': [0, { selector: 'ForOfStatement' }],
         'no-await-in-loop': 0,
-        'indent': ['error', 4, { 'SwitchCase': 1 }],
+        '@stylistic/indent': ['error', 4, { 'SwitchCase': 1 }],
         'max-len': ['error', { code: 120, ignoreStrings: true }],
         'func-names': 0,
         'valid-typeof': 0,
         'quotes': ['error', 'single', { "avoidEscape": true }],
-        'lines-between-class-members': 0,
+        '@stylistic/lines-between-class-members': 0,
         'class-methods-use-this': 0,
         'no-underscore-dangle': ['error', { allowAfterThis: true }],
         'max-classes-per-file': 0,
@@ -60,17 +60,23 @@ module.exports = {
         '@typescript-eslint/default-param-last': 0, // does not really work with redux reducers
         '@typescript-eslint/ban-ts-comment': 0,
         '@typescript-eslint/no-explicit-any': 0,
-        '@typescript-eslint/indent': ['error', 4],
-        '@typescript-eslint/lines-between-class-members': 0,
         '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
         '@typescript-eslint/explicit-module-boundary-types': 'off',
-        '@typescript-eslint/ban-types': [
+        '@typescript-eslint/no-empty-object-type': [
+            'error',
+            {
+                allowInterfaces: 'always',
+                allowObjectTypes: 'never',
+            },
+        ],
+        '@typescript-eslint/no-unsafe-function-type': 'error',
+        '@typescript-eslint/no-restricted-types': [
             'error',
             {
                 types: {
-                    '{}': false, // TODO: try to fix with Record<string, unknown>
-                    object: false, // TODO: try to fix with Record<string, unknown>
-                    Function: false, // TODO: try to fix somehow
+                    object: {
+                        message: 'Use a more specific object shape, Record<string, unknown>, or unknown instead of object.',
+                    },
                 },
             },
         ],

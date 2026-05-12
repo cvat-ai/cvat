@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line import/no-unresolved
+ 
 const reporter = require('allure-cypress/reporter');
 
 const { allureCypress } = reporter;

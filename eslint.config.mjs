@@ -8,11 +8,12 @@ import { createRequire } from 'node:module';
 
 import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
+import stylisticPlugin from '@stylistic/eslint-plugin';
 import cypressPlugin from 'eslint-plugin-cypress';
-import noUnsanitizedPlugin from 'eslint-plugin-no-unsanitized';
-import securityPlugin from 'eslint-plugin-security';
 import globals from 'globals';
 import importPlugin from 'eslint-plugin-import';
+import noUnsanitizedPlugin from 'eslint-plugin-no-unsanitized';
+import securityPlugin from 'eslint-plugin-security';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,12 +32,6 @@ function scopedConfig(config, files) {
 }
 
 function withoutUnsupportedExtends(config) {
-    const unsupportedRules = new Set([
-        '@typescript-eslint/ban-types',
-        '@typescript-eslint/indent',
-        '@typescript-eslint/lines-between-class-members',
-    ]);
-
     return {
         ...config,
         extends: (config.extends || []).filter((extend) => (
@@ -47,7 +42,6 @@ function withoutUnsupportedExtends(config) {
         )),
         rules: Object.fromEntries(
             Object.entries(config.rules || {}).filter(([ruleName]) => (
-                !unsupportedRules.has(ruleName) &&
                 !ruleName.startsWith('security/')
             )),
         ),
@@ -104,7 +98,7 @@ const testsGlobalConfig = {
             message: 'Use "Id" instead of "ID" in imported local names.',
         },
     ],
-    'func-names': 0,
+    'func-names': 0, // TODO: remove this, all procedures should be named
     quotes: ['error', 'single', { avoidEscape: true }],
     'no-underscore-dangle': ['error', { allowAfterThis: true }],
     'import/order': ['error', { groups: ['builtin', 'external', 'internal'] }],
@@ -115,11 +109,6 @@ const testsNodeAndCypressGlobals = {
     ...browserAndNodeGlobals,
     ...cypressGlobals,
 };
-const cypressFiles = [
-    'tests/cypress/**/*.js',
-    'tests/*cypress*.config.js',
-    'tests/nightly_cypress.config.js',
-];
 
 const rootConfig = withoutUnsupportedExtends(require('./.eslintrc.cjs'));
 const dataConfig = require('./cvat-data/.eslintrc.cjs');
@@ -130,7 +119,7 @@ const uiConfig = withoutUnsupportedExtends(require('./cvat-ui/.eslintrc.cjs'));
 const testsSourceRules = Object.fromEntries(
     Object.entries(rootConfig.rules || {}).filter(([ruleName]) => !ruleName.startsWith('@typescript-eslint')),
 );
-const testsBaseConfig = {
+const cypressBaseConfig = {
     parserOptions: {
         parser: '@babel/eslint-parser',
         sourceType: 'module',
@@ -144,7 +133,6 @@ const testsBaseConfig = {
     rules: {
         ...testsSourceRules,
         ...testsGlobalConfig,
-        'cypress/no-unnecessary-waiting': 'off',
     },
 };
 
@@ -180,6 +168,17 @@ export default [
             'node_modules/**',
         ],
     },
+    {
+        files: [
+            ...sourceFiles,
+            'tests/cypress/**/*.js',
+            'tests/*cypress*.config.js',
+            'tests/cypress/plugins/**/*.js',
+        ],
+        plugins: {
+            '@stylistic': stylisticPlugin,
+        },
+    },
     ...scopedConfig(rootConfig, sourceFiles),
     ...scopedConfig(dataConfig, ['cvat-data/**/*.{js,ts}']),
     ...scopedConfig(coreConfig, ['cvat-core/**/*.{js,ts}']),
@@ -198,31 +197,60 @@ export default [
             camelcase: 'off',
             'import/extensions': 'off',
             'no-unused-vars': 'off',
-            '@typescript-eslint/no-unsafe-function-type': 'off',
             '@typescript-eslint/no-unused-vars': 'error',
         },
     },
-    ...scopedConfig(testsBaseConfig, cypressFiles),
-    ...scopedConfig(securityPlugin.configs['recommended-legacy'], cypressFiles),
-    ...scopedConfig(noUnsanitizedPlugin.configs['recommended-legacy'], cypressFiles),
+    ...scopedConfig(cypressBaseConfig, [
+        'tests/cypress/**/*.js',
+        'tests/*cypress*.config.js',
+    ]),
     {
-        ...cypressPlugin.configs.recommended,
-        files: cypressFiles,
-        languageOptions: {
-            ...cypressPlugin.configs.recommended.languageOptions,
-            globals: {
-                ...(cypressPlugin.configs.recommended.languageOptions?.globals || {}),
-                ...testsNodeAndCypressGlobals,
-            },
+        files: [
+            'tests/cypress/**/*.js',
+            'tests/*cypress*.config.js',
+        ],
+        plugins: {
+            import: importPlugin,
+            cypress: cypressPlugin,
+            security: securityPlugin,
+            'no-unsanitized': noUnsanitizedPlugin,
         },
-    },
-    {
-        files: cypressFiles,
         languageOptions: {
             globals: testsNodeAndCypressGlobals,
+            sourceType: 'module',
+            ecmaVersion: 'latest',
         },
         rules: {
-            'cypress/no-unnecessary-waiting': 'off',
+            ...cypressPlugin.configs.recommended.rules,
+            ...securityPlugin.configs['recommended-legacy'].rules,
+            ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
+            'cypress/no-unnecessary-waiting': 'off', // TODO: enable but silence when necessary
+            'import/no-unresolved': 'off',
+            'import/extensions': 'off',
+            'no-prototype-builtins': 'off',
+            'no-underscore-dangle': 'off',
+        },
+    },
+    ...scopedConfig(cypressBaseConfig, ['tests/cypress/plugins/**/*.js']),
+    {
+        files: ['tests/cypress/plugins/**/*.js'],
+        plugins: {
+            import: importPlugin,
+            security: securityPlugin,
+            'no-unsanitized': noUnsanitizedPlugin,
+        },
+        languageOptions: {
+            globals: browserAndNodeGlobals,
+            sourceType: 'module',
+            ecmaVersion: 'latest',
+        },
+        rules: {
+            ...securityPlugin.configs['recommended-legacy'].rules,
+            ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
+            'import/no-unresolved': 'off',
+            'import/extensions': 'off',
+            'no-prototype-builtins': 'off',
+            'no-underscore-dangle': 'off',
         },
     },
 ];

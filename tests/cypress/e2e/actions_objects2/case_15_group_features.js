@@ -5,8 +5,6 @@
 
 /// <reference types="cypress" />
 
-/* eslint-disable no-loop-func */
-
 import { taskName, labelName } from '../../support/const';
 
 context('Group features', () => {
