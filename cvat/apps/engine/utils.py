@@ -21,9 +21,10 @@ from contextlib import contextmanager, nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import cv2 as cv
+import rq
 from attr.converters import to_bool
 from av import VideoFrame
 from datumaro.util.os_util import walk
@@ -38,7 +39,11 @@ from redis.lock import Lock
 from rest_framework.reverse import reverse as _reverse
 from rq.job import Job as RQJob
 
+from cvat.apps.engine.enums import BackupStatus
 from cvat.apps.engine.types import ExtendedRequest
+
+if TYPE_CHECKING:
+    from cvat.apps.engine.models import Project, Task
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -489,3 +494,38 @@ def transaction_with_repeatable_read():
             connection.cursor().execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
             connection.cursor().execute("SET TRANSACTION READ ONLY;")
         yield
+
+
+def queue_backup_created_event(
+    *,
+    target: "Project | Task",
+    lightweight: bool | None,
+    status: BackupStatus,
+    message: str = "",
+) -> None:
+    from cvat.apps.events.handlers import organization_id as resolve_organization_id
+    from cvat.apps.events.handlers import project_id as resolve_project_id
+    from cvat.apps.webhooks.dispatch import batch_add_to_queue
+    from cvat.apps.webhooks.event_type import event_name
+    from cvat.apps.webhooks.services import select_webhooks
+
+    event = event_name(action="create", resource="backup")
+    webhooks = select_webhooks(
+        event=event,
+        organization_id=resolve_organization_id(target),
+        project_id=resolve_project_id(target),
+    )
+    if not webhooks:
+        return
+
+    rq_job = rq.get_current_job()
+    payload = {
+        "event": event,
+        "status": status.value,
+        "target": target.__class__.__name__.lower(),
+        "target_id": target.id,
+        "lightweight": lightweight,
+        "rq_id": rq_job.id if rq_job else None,
+        "message": message,
+    }
+    batch_add_to_queue(webhooks=webhooks, data=payload)

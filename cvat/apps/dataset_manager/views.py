@@ -32,7 +32,7 @@ from .util import (
     current_function_name,
     extend_export_file_lifetime,
     get_export_cache_lock,
-    queue_export_webhook_task,
+    queue_export_created_event,
 )
 
 slogger = ServerLogManager(__name__)
@@ -179,7 +179,7 @@ def export(
         ):
             if osp_exists(output_path):
                 extend_export_file_lifetime(output_path)
-                queue_export_webhook_task(
+                queue_export_created_event(
                     target=db_instance,
                     dst_format=dst_format,
                     status=ExportStatus.COMPLETED,
@@ -226,7 +226,7 @@ def export(
         )
         raise
     except Exception as exc:
-        queue_export_webhook_task(
+        queue_export_created_event(
             target=db_instance,
             dst_format=dst_format,
             status=ExportStatus.FAILED,
@@ -235,7 +235,7 @@ def export(
         log_exception(logger)
         raise
 
-    queue_export_webhook_task(
+    queue_export_created_event(
         target=db_instance,
         dst_format=dst_format,
         status=ExportStatus.COMPLETED,

@@ -31,7 +31,7 @@ from cvat.apps.engine.models import Job, Project, Task
 from .enums import ExportStatus
 
 
-def queue_export_webhook_task(
+def queue_export_created_event(
     *,
     target: Project | Task | Job,
     dst_format: str,
