@@ -126,16 +126,13 @@ export class FieldUpdateTrigger {
     }
 
     getUpdated(data: object, propMap: Record<string, string> = {}): Record<string, unknown> {
-        const result = {};
+        const source = data as Record<string, unknown>;
+        const result: Record<string, unknown> = {};
         for (const updatedField of Object.keys(this.#updatedFlags)) {
-            result[propMap[updatedField] || updatedField] = data[updatedField];
+            result[propMap[updatedField] || updatedField] = source[updatedField];
         }
         return result;
     }
-}
-
-export function clamp(value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), max);
 }
 
 export function camelToSnakeCase(str: string): string {
@@ -177,7 +174,7 @@ export function filterFieldsToSnakeCase(
         }
     }
 
-    if (searchParams.filter) {
+    if (typeof searchParams.filter === 'string') {
         const parsed = JSON.parse(searchParams.filter);
         searchParams.filter = JSON.stringify({ and: [parsed, ...filtersGroup] });
     } else if (filtersGroup.length) {

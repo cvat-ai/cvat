@@ -90,6 +90,13 @@ def pytest_addoption(parser):
     )
 
     group._addoption(
+        "--no-services",
+        action="store_true",
+        help=("""Don't start, stop, or seed any containers — assume the user runs
+            the test stack externally"""),
+    )
+
+    group._addoption(
         "--platform",
         action="store",
         default="local",
@@ -432,6 +439,12 @@ def session_start(
             raise Exception("""--collect-only is not compatible with any of the other options:
                 --stop-services --start-services --rebuild --cleanup --dumpdb""")
         return  # don't need to start the services to collect tests
+
+    if session.config.getoption("--no-services"):
+        # User manages the stack and the server externally — pytest does
+        # nothing on session start. Per-test restore fixtures still docker-exec
+        # into the user's containers (which must be named test_<service>_1).
+        return
 
     platform = session.config.getoption("--platform")
 

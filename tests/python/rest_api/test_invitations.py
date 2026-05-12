@@ -106,6 +106,7 @@ class TestCreateInvitations:
 class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
         "owner": ["owner", "username"],
+        "user_id": ["user", "id"],
     }
 
     @pytest.fixture(autouse=True)
@@ -118,7 +119,7 @@ class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.mark.parametrize(
         "field",
-        ("owner",),
+        ("owner", "user_id", "accepted"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)

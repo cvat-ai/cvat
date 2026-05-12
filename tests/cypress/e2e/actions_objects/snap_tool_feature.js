@@ -5,12 +5,18 @@
 
 /// <reference types="cypress" />
 
+/**
+ * A point on a two dimensional plane.
+ * @typedef {Object} Point
+ * @property {number} x - The X Coordinate
+ * @property {number} y - The Y Coordinate
+ */
+
 import * as allure from 'allure-js-commons';
 import { taskName, labelName } from '../../support/const';
-import { checkAutoborderPointsCount } from '../../support/utils.cy';
+import { checkAutoborderPointsCount, getShapeCoord } from '../../support/utils.cy';
 
 context('Snap tool feature.', () => {
-    const keyCodeN = 78;
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -20,20 +26,16 @@ context('Snap tool feature.', () => {
         secondX: 500,
         secondY: 450,
     };
+    const createPolygonShape = {
+        type: 'Shape',
+        labelName,
+        pointsMap: [
+            { x: 400, y: 350 },
+            { x: 500, y: 350 },
+            { x: 400, y: 450 },
+        ],
+    };
     const defaultStartingPoint = { x: 450, y: 150 };
-
-    function getShapeCoord(type, objectId) {
-        const arrToPush = [];
-        if (type === 'rect') {
-            cy.get(objectId).invoke('attr', 'x').then((x) => arrToPush.push(+x));
-            cy.get(objectId).invoke('attr', 'y').then((y) => arrToPush.push(+y));
-            cy.get(objectId).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
-            cy.get(objectId).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
-        } else {
-            cy.get(objectId).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
-        }
-        return cy.wrap(arrToPush);
-    }
 
     function testCollectShapePointRadius(objectId) {
         cy.get(objectId).should('exist').and('be.visible')
@@ -64,7 +66,6 @@ context('Snap tool feature.', () => {
         cy.get('.cvat-snap-tools-control-popover').should('not.be.visible');
     }
 
-    const toArr = (p) => ([p.x, p.y]);
     const coordsToRect = (coords) => ({
         firstX: coords[0],
         firstY: coords[1],
@@ -106,7 +107,7 @@ context('Snap tool feature.', () => {
      * @param {number} point.y
      * @param {object} rect
      * @param {number} angleDegrees
-     * @returns {object} new point
+     * @returns {Point}
      */
     function rotate(point, rect, angleDegrees) {
         const { center: origin } = getRectCenter(rect);
@@ -146,15 +147,6 @@ context('Snap tool feature.', () => {
         let rectanglePoints;
 
         context('Basic drawing cases', () => {
-            const createPolygonShape = {
-                type: 'Shape',
-                labelName,
-                pointsMap: [
-                    { x: 400, y: 350 },
-                    { x: 500, y: 350 },
-                    { x: 400, y: 450 },
-                ],
-            };
             const createPolylineShape = {
                 type: 'Shape',
                 labelName,
@@ -186,9 +178,6 @@ context('Snap tool feature.', () => {
             });
 
             it('Drawing a polygon with autoborder.', () => {
-                cy.interactControlButton('draw-polygon');
-                cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
-
                 cy.createPolygon(createPolygonShape, { numberOfAutoborderPoints: 8 });
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
@@ -220,24 +209,16 @@ context('Snap tool feature.', () => {
                 const rotatedCornersGlobal = getRectCorners(rectangleGlobal, true)
                     .map((p) => rotate(p, rectangleGlobal, degrees));
 
-                // Draw polygon with autoborder at the rotated corner positions
-                cy.interactControlButton('draw-polygon');
-                cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
-
-                checkAutoborderPointsCount(8); // 8 points at the rectangles (4 per rectangle)
-
                 // Create polygon at rotated positions (use first 3 corners)
                 const { tl, br } = getRectCorners(createRectangleShape2Points);
-                const [p1, p2] = [tl, br].map((p) => toArr(rotate(p, createRectangleShape2Points, degrees)));
+                const createAutoborderedPolygonShape = {
+                    type: 'Shape',
+                    labelName,
+                    pointsMap: [tl, br].map((p) => rotate(p, createRectangleShape2Points, degrees)),
+                };
 
-                cy.get('.cvat-canvas-container').trigger('mousemove', ...p1);
-                cy.get('.cvat-canvas-container').trigger('mousedown', ...p1, { button: 0 });
-
-                cy.get('.cvat-canvas-container').trigger('mousemove', ...p2);
-                cy.get('.cvat-canvas-container').trigger('mousedown', ...p2, { button: 0 });
-
-                cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
-                cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+                // Draw polygon with autoborder at the rotated corner positions
+                cy.createPolygon(createAutoborderedPolygonShape, { numberOfAutoborderPoints: 8 }, 'trigger');
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
                 // Collect the polygon points coordinates and verify they match rotated rectangle corners
@@ -360,9 +341,6 @@ context('Snap tool feature.', () => {
                 labelName,
             };
 
-            cy.interactControlButton('draw-polyline');
-            cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
-
             cy.createPolyline(createRegionOfRectanglePolylineShape);
 
             cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
@@ -389,23 +367,17 @@ context('Snap tool feature.', () => {
             cy.shapeRotate('#cvat_canvas_shape_1', degrees.toFixed(1), true);
 
             // Draw a polygon
-            cy.interactControlButton('draw-polygon');
-            cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
-
-            cy.get('.cvat-canvas-container').trigger('mousemove', ...toArr(defaultStartingPoint));
-            cy.get('.cvat-canvas-container').trigger('mousedown', ...toArr(defaultStartingPoint), { button: 0 });
-
-            // Should snap inside delta region
-            cy.get('.cvat-canvas-container').trigger('mousemove', ...toArr(regionOf(rotatedPoints[0])));
-            cy.get('.cvat-canvas-container').trigger('mousedown', ...toArr(regionOf(rotatedPoints[0])), { button: 0 });
-
-            cy.get('.cvat-canvas-container').trigger('mousemove', ...toArr(regionOf(rotatedPoints[1])));
-            cy.get('.cvat-canvas-container').trigger('mousedown', ...toArr(regionOf(rotatedPoints[1])), { button: 0 });
-
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
-            cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
-
-            // TODO: cy.createPolygon approach used in previous as doesn't work here
+            const createRotatedPolygonShape = {
+                type: 'Shape',
+                labelName,
+                pointsMap: [
+                    defaultStartingPoint,
+                    regionOf(rotatedPoints[0]),
+                    regionOf(rotatedPoints[1]),
+                ],
+            };
+            cy.createPolygon(createRotatedPolygonShape, null, 'trigger');
+            // TODO: cy.createPolygon 'click' approach, as used previously, doesn't work here
             // some snapped points are drawn twice and persist after test
             // cy.wait in loop doesn't work
             // not reproducible manually though, so not a user issue
@@ -417,6 +389,24 @@ context('Snap tool feature.', () => {
                     .equal(`${rotatedPointsGlobal[0].x},${rotatedPointsGlobal[0].y}`);
                 expect(commonPoints[1]).to.be
                     .equal(`${rotatedPointsGlobal[1].x},${rotatedPointsGlobal[1].y}`);
+            });
+        });
+
+        it('Snapping works when the first snapped point is on another shape', () => {
+            allure.issue('https://github.com/cvat-ai/cvat/pull/10509', 'Snap to initial point');
+            const rectCorners = getRectCorners(createRectangleShape2Points);
+            const createPolygonShapeSnappedSide = {
+                pointsMap: [
+                    regionOf(rectCorners.tl),
+                    regionOf(rectCorners.tr),
+                    { x: rectCorners.tl.x + 50, y: rectCorners.tr.y - 100 },
+                ],
+                type: 'Shape',
+                labelName,
+            };
+            cy.createPolygon(createPolygonShapeSnappedSide);
+            getShapeCoord('polygon', '#cvat_canvas_shape_2').should(([firstPolygonPoint]) => {
+                expect(firstPolygonPoint).to.equal(`${rectanglePointsGlobal[0]},${rectanglePointsGlobal[1]}`);
             });
         });
     });
@@ -440,7 +430,7 @@ context('Snap tool feature.', () => {
             cy.removeAnnotations();
             toggleSnapTool('contour', false);
         });
-        it('Issue 3931: Autoborder points are not visible for invisible shapes', () => {
+        it('Autoborder points are not visible for invisible shapes', () => {
             allure.issue('https://github.com/cvat-ai/cvat/pull/3931');
 
             cy.get('.cvat-objects-sidebar-state-item').find('[data-icon="eye"]').click();

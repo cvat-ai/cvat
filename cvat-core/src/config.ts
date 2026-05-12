@@ -11,6 +11,7 @@ const config = {
     },
     origin: '',
     uploadChunkSize: 100,
+    opencvPath: '',
     removeUnderlyingMaskPixels: {
         enabled: false,
         onEmptyMaskOccurrence: null,

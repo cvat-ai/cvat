@@ -50,7 +50,7 @@ from cvat.apps.dataset_manager.views import (
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import DataChoice, StorageChoice
+from cvat.apps.engine.models import DataChoice, StorageChoice, TaskMode
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -656,7 +656,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return serialized_jobs
 
         def serialize_segment_file_names(db_segment: models.Segment):
-            if self._db_task.mode == "annotation":
+            if self._db_task.mode == TaskMode.ANNOTATION:
                 files: Iterable[models.Image] = self._db_data.images.order_by("frame").all()
                 return {"files": [files[f].path for f in sorted(db_segment.frame_set)]}
             else:

@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import Space from 'antd/lib/space';

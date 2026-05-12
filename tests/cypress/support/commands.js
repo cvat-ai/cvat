@@ -7,8 +7,13 @@
 
 /* eslint-disable security/detect-non-literal-regexp */
 
+import { keyCodeN } from './const';
 import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
-import { checkAutoborderPointsCount } from './utils.cy';
+import {
+    checkAutoborderPointsCount,
+    drawPolyshape,
+    toggleAutoSimplify,
+} from './utils.cy';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -341,24 +346,15 @@ Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
 
 Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
     cy.window().its('cvat').should('not.be.undefined').then(async (cvat) => {
-        const task = new cvat.classes.Task({
-            ...taskSpec,
-            ...dataSpec,
-        });
+        const extrasWithData = {
+            ...(extras || {}),
+            clientFiles: dataSpec.client_files || [],
+            serverFiles: dataSpec.server_files || [],
+            remoteFiles: dataSpec.remote_files || [],
+        };
 
-        if (dataSpec.server_files) {
-            task.serverFiles = dataSpec.server_files;
-        }
-
-        if (dataSpec.client_files) {
-            task.clientFiles = dataSpec.client_files;
-        }
-
-        if (dataSpec.remote_files) {
-            task.remoteFiles = dataSpec.remote_files;
-        }
-
-        const result = await task.save(extras || {});
+        const task = new cvat.classes.Task({ ...taskSpec, ...dataSpec });
+        const result = await task.save(extrasWithData);
         return cy.wrap({ taskID: result.id, jobIDs: result.jobs.map((job) => job.id) });
     });
 });
@@ -611,13 +607,10 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
         }
         cy.contains('button', createPointParams.type).click();
     });
-    createPointParams.pointsMap.forEach((element) => {
-        cy.get('.cvat-canvas-container').click(element.x, element.y);
-    });
+    drawPolyshape(createPointParams, 'click');
     if (createPointParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else if (!createPointParams.numberOfPoints) {
-        const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
             .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
         cy.get('.cvat-canvas-container')
@@ -685,7 +678,7 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
         .trigger('keyup', { keyCode: keyCodeG, code: 'KeyG' });
 });
 
-Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = null) => {
+Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = null, drawMethod = 'click') => {
     if (!createPolygonParams.reDraw) {
         cy.interactControlButton('draw-polygon');
         cy.switchLabel(createPolygonParams.labelName, 'draw-polygon');
@@ -697,19 +690,19 @@ Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = n
                 cy.get('.ant-input-number-input').clear();
                 cy.get('.ant-input-number-input').type(createPolygonParams.numberOfPoints);
             }
+            if (createPolygonParams.simplify === true) {
+                toggleAutoSimplify(true, 'polygon');
+            }
             cy.contains('button', createPolygonParams.type).click();
         });
     }
     if (autoborderParams && Number.isInteger(autoborderParams.numberOfAutoborderPoints)) {
         checkAutoborderPointsCount(autoborderParams.numberOfAutoborderPoints);
     }
-    createPolygonParams.pointsMap.forEach((element) => {
-        cy.get('.cvat-canvas-container').click(element.x, element.y);
-    });
+    drawPolyshape(createPolygonParams, drawMethod);
     if (createPolygonParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else if (!createPolygonParams.numberOfPoints) {
-        const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
             .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
         cy.get('.cvat-canvas-container')
@@ -860,7 +853,7 @@ Cypress.Commands.add('updateAttributes', (attributes) => {
     });
 });
 
-Cypress.Commands.add('createPolyline', (createPolylineParams, autoborderParams = null) => {
+Cypress.Commands.add('createPolyline', (createPolylineParams, autoborderParams = null, drawMethod = 'click') => {
     cy.interactControlButton('draw-polyline');
     cy.switchLabel(createPolylineParams.labelName, 'draw-polyline');
     cy.get('.cvat-draw-polyline-popover').within(() => {
@@ -871,18 +864,18 @@ Cypress.Commands.add('createPolyline', (createPolylineParams, autoborderParams =
             cy.get('.ant-input-number-input').clear();
             cy.get('.ant-input-number-input').type(createPolylineParams.numberOfPoints);
         }
+        if (createPolylineParams.simplify === true) {
+            toggleAutoSimplify(true, 'polyline');
+        }
         cy.contains('button', createPolylineParams.type).click();
     });
     if (autoborderParams && autoborderParams.numberOfAutoborderPoints) {
         checkAutoborderPointsCount(autoborderParams.numberOfAutoborderPoints);
     }
-    createPolylineParams.pointsMap.forEach((element) => {
-        cy.get('.cvat-canvas-container').click(element.x, element.y);
-    });
+    drawPolyshape(createPolylineParams, drawMethod);
     if (createPolylineParams.finishWithButton) {
         cy.contains('span', 'Done').click();
     } else if (!createPolylineParams.numberOfPoints) {
-        const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
             .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
         cy.get('.cvat-canvas-container')
@@ -1767,7 +1760,7 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
 });
 
 Cypress.Commands.add('hideTooltips', () => {
-    cy.wait(500); // wait while tooltips are opened
+    cy.wait(500); // FIXME: wait while tooltips are opened
 
     cy.document().then((doc) => {
         const tooltips = Array.from(doc.querySelectorAll('.ant-tooltip'));
@@ -1816,8 +1809,7 @@ Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
 });
 
 Cypress.Commands.add('clickSaveAnnotationView', () => {
-    cy.get('button').contains('Save').click();
-    cy.get('button').contains('Save').trigger('mouseout');
+    cy.get('.cvat-annotation-header-save-button').should('exist').and('be.visible').click();
 });
 
 Cypress.Commands.add('makeCustomImage', (directory, fileName,

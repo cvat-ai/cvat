@@ -22,9 +22,9 @@ import {
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, CloudStorage } from 'cvat-core-wrapper';
 import config from 'config';
-import { CloudStorage, RemoteFileType } from 'reducers';
+import { RemoteFileType } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
 
 interface Node {
@@ -39,6 +39,7 @@ interface Node {
 }
 
 export type RemoteFile = Pick<Node, 'key' | 'type' | 'mimeType' | 'name'>;
+type RemoteNode = Omit<Node, 'key' | 'children' | 'initialized'>;
 
 interface Props {
     resource: 'share' | CloudStorage;
@@ -145,7 +146,7 @@ function RemoteBrowser(props: Props): JSX.Element {
         const { searchString } = dataSource;
         if (!dataSource.initialized || dataSource.nextToken) {
             const path = `${currentPath.slice(1).join('/')}/`;
-            const convertChildren = (children: Omit<Node, 'key' | 'children'>[]): Node[] => (
+            const convertChildren = (children: RemoteNode[]): Node[] => (
                 children.map((child) => {
                     const ending = `${child.type === 'DIR' ? '/' : ''}`;
                     return {
@@ -170,11 +171,14 @@ function RemoteBrowser(props: Props): JSX.Element {
             try {
                 let nodes: Node[] = [];
                 if (resource === 'share') {
-                    const files: (Omit<Node, 'key' | 'children'>)[] = await core.server.share(path, searchString);
+                    const files: RemoteNode[] = await core.server.share(path, searchString);
                     nodes = convertChildren(files);
                 } else {
-                    const response: { next: string | null, content: Omit<Node, 'key' | 'children'>[] } =
-                        await resource.getContent(`${path}${(searchString) || ''}`, dataSource.nextToken, manifestPath);
+                    const response: { next: string | null, content: RemoteNode[] } =
+                        await resource.getContent(
+                            `${path}${(searchString) ?? ''}`,
+                            dataSource.nextToken,
+                        );
                     const { next, content: files } = response;
                     dataSource.nextToken = next;
                     nodes = convertChildren(files);

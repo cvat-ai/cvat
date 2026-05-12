@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, shallowEqual } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { CombinedState } from 'reducers';
 
 import { UserOutlined, LockOutlined } from '@ant-design/icons';

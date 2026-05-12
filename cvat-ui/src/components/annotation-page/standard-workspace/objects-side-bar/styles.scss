@@ -444,7 +444,7 @@
 .cvat-approx-poly-threshold-wrapper {
     @extend .cvat-workspace-settings-approx-poly-threshold;
 
-    width: $grid-unit-size * 32;
+    width: $grid-unit-size * 44;
     position: absolute;
     background: $background-color-2;
     top: $grid-unit-size;
@@ -452,6 +452,7 @@
     border-radius: $border-radius-base;
     border: 1px solid $border-color-1;
     z-index: 100;
+    padding: $grid-unit-size * 0.5 $grid-unit-size;
 
     .ant-slider {
         height: $grid-unit-size * 2;
@@ -470,6 +471,12 @@
         left: 50%;
         transform: translate(-50%, 0);
     }
+}
+
+.cvat-actions-slider-wrapper {
+    position: relative;
+    left: 0;
+    margin-bottom: $grid-unit-size;
 }
 
 .cvat-interactor-threshold-wrapper {
