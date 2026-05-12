@@ -266,8 +266,8 @@ context('CSV Export from different pages', () => {
                 2,
                 (row) => {
                     const columns = row.split(',');
-                    const projectId = parseInt(columns[0], 10);
-                    expect(projectId).to.equal(projectId);
+                    const pid = parseInt(columns[0], 10);
+                    expect(pid).to.equal(projectId);
                     const projectNameValue = columns[1].replace(/^"|"$/g, '');
                     expect(projectNameValue).to.equal(projectName);
                     expect(columns[2]).to.include(`/projects/${projectId}`);
