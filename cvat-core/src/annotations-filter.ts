@@ -24,85 +24,15 @@ interface ConvertedAttributes {
     [key: string]: ConvertedAttributeValue | ConvertedAttributes;
 }
 
-interface FilterReferences {
-    labelValues: Set<string>;
-    vars: Set<string>;
-}
-
-function getFilterReferences(filter: object): FilterReferences {
-    const references: FilterReferences = {
-        labelValues: new Set(),
-        vars: new Set(),
-    };
-
-    const getVar = (value: unknown): string | null => {
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-            const varName = (value as { var?: unknown }).var;
-            return typeof varName === 'string' ? varName : null;
-        }
-
-        return null;
-    };
-
-    const collectStrings = (value: unknown): void => {
-        if (Array.isArray(value)) {
-            value.forEach(collectStrings);
-        } else if (typeof value === 'string') {
-            references.labelValues.add(value);
-        }
-    };
-
-    const collect = (value: unknown): void => {
-        if (Array.isArray(value)) {
-            value.forEach(collect);
-        } else if (value && typeof value === 'object') {
-            Object.entries(value).forEach(([key, entry]) => {
-                if (key === 'var' && typeof entry === 'string') {
-                    references.vars.add(entry);
-                    return;
-                }
-
-                if (Array.isArray(entry) && entry.some((item) => getVar(item) === 'label')) {
-                    entry.forEach((item) => {
-                        if (getVar(item) !== 'label') {
-                            collectStrings(item);
-                        }
-                    });
-                }
-
-                collect(entry);
-            });
-        }
-    };
-
-    collect(filter);
-    return references;
-}
-
-function isLabelScopeReferenced(labelName: string, references: FilterReferences): boolean {
-    if (references.labelValues.has(labelName)) {
-        return true;
-    }
-
-    const adjustedLabelName = adjustName(labelName);
-    return [...references.vars].some((varName) => (
-        varName === `attr.${adjustedLabelName}` ||
-        varName.startsWith(`attr.${adjustedLabelName}.`)
-    ));
-}
-
-function hasReferencedSublabel(
-    sublabels: string[],
-    references: FilterReferences,
-): boolean {
-    return sublabels.some((sublabel) => isLabelScopeReferenced(sublabel, references));
-}
-
 function getDimensions(
     points: number[],
     shapeType: ShapeType,
 ): Dimensions {
     let [width, height]: (number | null)[] = [null, null];
+    if (!points.length) {
+        return { width, height };
+    }
+
     if (shapeType === ShapeType.MASK) {
         const [xtl, ytl, xbr, ybr] = points.slice(-4);
         [width, height] = [xbr - xtl + 1, ybr - ytl + 1];
@@ -204,19 +134,25 @@ function buildLabelMaps(labels: Label[]): {
     return { labelByID, attributeByID };
 }
 
-interface ConvertedObjectData {
+interface BaseConvertedData {
     width: number | null;
     height: number | null;
     rotation: number | null;
     attr: Record<string, ConvertedAttributes>;
     label: string;
-    serverID: number | null;
-    objectID: number | null;
-    type: ObjectType;
+    type: ObjectType | null;
     shape: ShapeType | null;
     occluded: boolean | null;
     score: number | null;
     votes: number | null;
+}
+
+type ConvertedElementData = BaseConvertedData;
+
+interface ConvertedObjectData extends BaseConvertedData {
+    serverID: number | null;
+    objectID: number | null;
+    elements: ConvertedElementData[];
 }
 
 function getRotation(shapeType: ShapeType, rotation?: number | null): number | null {
@@ -234,121 +170,112 @@ function getMatchingIDs(entries: ConvertedObjectData[], filter: object): number[
 }
 
 export default class AnnotationsFilter {
-    private _convertSerializedObjectStates(
-        statesData: SerializedData[],
-        filterReferences: FilterReferences,
-    ): ConvertedObjectData[] {
-        const objects: ConvertedObjectData[] = [];
-
-        statesData.forEach((state) => {
+    private _convertSerializedObjectStates(statesData: SerializedData[]): ConvertedObjectData[] {
+        return statesData.map((state) => {
             const labelAttributes = buildAttributeMap(state.label.attributes);
-            const hasSublabelScope = state.shapeType === ShapeType.SKELETON && state.elements ?
-                hasReferencedSublabel(
-                    state.elements.map((element) => `${state.label.name} / ${element.label.name}`),
-                    filterReferences,
-                ) :
-                false;
-            const shouldAddParentEntry = !hasSublabelScope ||
-                isLabelScopeReferenced(state.label.name, filterReferences);
 
             let dimensions: Dimensions = { width: null, height: null };
             let rotation: number | null = null;
             if (state.objectType !== ObjectType.TAG) {
                 const points =
                     state.shapeType === ShapeType.SKELETON ?
-                        state.elements
-                            .reduce((acc, val) => {
-                                acc.push(val.points);
-                                return acc;
-                            }, [])
+                        (state.elements ?? [])
+                            .map((element) => element.points ?? [])
                             .flat() :
                         state.points;
 
-                dimensions = getDimensions(points, state.shapeType as ShapeType);
+                dimensions = getDimensions(points ?? [], state.shapeType as ShapeType);
                 rotation = getRotation(state.shapeType, state.rotation);
             }
 
-            if (shouldAddParentEntry) {
-                const attributes = convertAttributes(state.attributes, labelAttributes);
-                objects.push({
-                    width: dimensions.width,
-                    height: dimensions.height,
-                    rotation,
-                    attr: {
-                        [adjustName(state.label.name)]: attributes,
-                    },
-                    label: state.label.name,
-                    serverID: state.serverID,
-                    objectID: state.clientID,
-                    type: state.objectType,
-                    shape: state.shapeType,
-                    occluded: state.occluded,
-                    score: state.score ?? null,
-                    votes: state.votes ?? null,
-                });
-            }
-
-            // For skeleton shapes, create separate filterable entries for each element (sublabel)
-            if (state.shapeType === ShapeType.SKELETON && state.elements) {
-                state.elements.forEach((element) => {
+            const attributes = convertAttributes(state.attributes || {}, labelAttributes);
+            const elements: ConvertedElementData[] = state.shapeType === ShapeType.SKELETON && state.elements ?
+                state.elements.map((element) => {
                     const elementLabelAttributes = buildAttributeMap(element.label.attributes);
-                    const elementShape = (element.shapeType ?? ShapeType.POINTS) as ShapeType;
-                    const elementDimensions = element.points ?
-                        getDimensions(element.points, elementShape) :
-                        { width: null, height: null };
                     const sublabelName = `${state.label.name} / ${element.label.name}`;
+                    const elementAttributes = convertAttributes(element.attributes || {}, elementLabelAttributes);
 
-                    if (isLabelScopeReferenced(sublabelName, filterReferences)) {
-                        const attributes = convertAttributes(element.attributes || {}, elementLabelAttributes);
-                        objects.push({
-                            width: elementDimensions.width,
-                            height: elementDimensions.height,
-                            rotation: element.rotation ?? null,
-                            attr: {
-                                [adjustName(sublabelName)]: attributes,
-                            },
-                            label: sublabelName,
-                            serverID: state.serverID,
-                            objectID: state.clientID,
-                            type: state.objectType,
-                            shape: elementShape,
-                            occluded: element.occluded ?? false,
-                            score: null,
-                            votes: null,
-                        });
-                    }
-                });
-            }
+                    return {
+                        width: null,
+                        height: null,
+                        rotation: null,
+                        attr: {
+                            [adjustName(sublabelName)]: elementAttributes,
+                        },
+                        label: sublabelName,
+                        type: null,
+                        shape: null,
+                        occluded: element.occluded ?? false,
+                        score: null,
+                        votes: null,
+                    };
+                }) :
+                [];
+
+            return {
+                width: dimensions.width,
+                height: dimensions.height,
+                rotation,
+                attr: {
+                    [adjustName(state.label.name)]: attributes,
+                },
+                label: state.label.name,
+                serverID: state.serverID ?? null,
+                objectID: state.clientID ?? null,
+                type: state.objectType,
+                shape: state.shapeType ?? null,
+                occluded: state.occluded ?? null,
+                score: state.score ?? null,
+                votes: state.votes ?? null,
+                elements,
+            };
         });
-
-        return objects;
     }
 
     private _convertSerializedCollection(
         collection: Omit<SerializedCollection, 'version'>,
         labelsSpec: Label[],
-        filterReferences: FilterReferences,
     ): { shapes: ConvertedObjectData[]; tags: ConvertedObjectData[]; tracks: ConvertedObjectData[] } {
         const { labelByID, attributeByID } = buildLabelMaps(labelsSpec);
 
         return {
-            shapes: collection.shapes.flatMap((shape) => {
+            shapes: collection.shapes.map((shape) => {
                 const label = labelByID[shape.label_id];
                 const points =
-                    shape.type === ShapeType.SKELETON ? shape.elements.map((el) => el.points).flat() : shape.points;
-                const dimensions = getDimensions(points, shape.type);
-                const elementLabels = shape.type === ShapeType.SKELETON && shape.elements ?
-                    shape.elements.flatMap((element) => {
-                        const elementLabelName = labelByID[element.label_id]?.name;
-                        return elementLabelName ? [`${label.name} / ${elementLabelName}`] : [];
-                    }) :
-                    [];
-                const hasSublabelScope = hasReferencedSublabel(elementLabels, filterReferences);
-                const shouldAddParentEntry = !hasSublabelScope ||
-                    isLabelScopeReferenced(label.name, filterReferences);
+                    shape.type === ShapeType.SKELETON ?
+                        shape.elements.map((el) => el.points ?? []).flat() :
+                        shape.points;
+                const dimensions = getDimensions(points ?? [], shape.type);
                 const attributes = convertAttributes(shape.attributes, attributeByID);
 
-                const mainEntry: ConvertedObjectData = {
+                const elements: ConvertedElementData[] = shape.type === ShapeType.SKELETON && shape.elements ?
+                    shape.elements.flatMap((element) => {
+                        const elementLabel = labelByID[element.label_id];
+                        if (!elementLabel) {
+                            return [];
+                        }
+
+                        const sublabelName = `${label.name} / ${elementLabel.name}`;
+                        const elementAttributes = convertAttributes(element.attributes, attributeByID);
+
+                        return [{
+                            width: null,
+                            height: null,
+                            rotation: null,
+                            attr: {
+                                [adjustName(sublabelName)]: elementAttributes,
+                            },
+                            label: sublabelName,
+                            type: null,
+                            shape: null,
+                            occluded: element.occluded ?? false,
+                            score: null,
+                            votes: null,
+                        }];
+                    }) :
+                    [];
+
+                return {
                     width: dimensions.width,
                     height: dimensions.height,
                     rotation: getRotation(shape.type, shape.rotation),
@@ -363,43 +290,8 @@ export default class AnnotationsFilter {
                     occluded: shape.occluded,
                     score: shape.score ?? null,
                     votes: null,
+                    elements,
                 };
-
-                const entries: ConvertedObjectData[] = shouldAddParentEntry ? [mainEntry] : [];
-
-                // For skeleton shapes, create separate entries for each element (sublabel)
-                if (shape.type === ShapeType.SKELETON && shape.elements) {
-                    shape.elements.forEach((element) => {
-                        const elementLabel = labelByID[element.label_id];
-                        if (elementLabel) {
-                            const elementShape = element.type ?? ShapeType.POINTS;
-                            const elementDimensions = getDimensions(element.points, elementShape);
-                            const sublabelName = `${label.name} / ${elementLabel.name}`;
-
-                            if (isLabelScopeReferenced(sublabelName, filterReferences)) {
-                                const elementAttributes = convertAttributes(element.attributes, attributeByID);
-                                entries.push({
-                                    width: elementDimensions.width,
-                                    height: elementDimensions.height,
-                                    rotation: element.rotation ?? null,
-                                    attr: {
-                                        [adjustName(sublabelName)]: elementAttributes,
-                                    },
-                                    label: sublabelName,
-                                    serverID: shape.id ?? null,
-                                    objectID: shape.clientID ?? null,
-                                    type: ObjectType.SHAPE,
-                                    shape: elementShape,
-                                    occluded: element.occluded ?? false,
-                                    score: null,
-                                    votes: null,
-                                });
-                            }
-                        }
-                    });
-                }
-
-                return entries;
             }),
             tags: collection.tags.map((tag) => {
                 const label = labelByID[tag.label_id];
@@ -420,22 +312,42 @@ export default class AnnotationsFilter {
                     occluded: false,
                     score: null,
                     votes: null,
+                    elements: [],
                 };
             }),
-            tracks: collection.tracks.flatMap((track) => {
+            tracks: collection.tracks.map((track) => {
                 const label = labelByID[track.label_id];
-                const elementLabels = track.shapes[0]?.type === ShapeType.SKELETON && track.elements ?
-                    track.elements.flatMap((element) => {
-                        const elementLabelName = labelByID[element.label_id]?.name;
-                        return elementLabelName ? [`${label.name} / ${elementLabelName}`] : [];
-                    }) :
-                    [];
-                const hasSublabelScope = hasReferencedSublabel(elementLabels, filterReferences);
-                const shouldAddParentEntry = !hasSublabelScope ||
-                    isLabelScopeReferenced(label.name, filterReferences);
                 const attributes = convertAttributes(getTrackAttributes(track), attributeByID);
 
-                const mainEntry: ConvertedObjectData = {
+                let elements: ConvertedElementData[] = [];
+                if (track.shapes[0]?.type === ShapeType.SKELETON && track.elements) {
+                    elements = track.elements.flatMap((element) => {
+                        const elementLabel = labelByID[element.label_id];
+                        if (!elementLabel) {
+                            return [];
+                        }
+
+                        const sublabelName = `${label.name} / ${elementLabel.name}`;
+                        const elementAttributes = convertAttributes(getTrackAttributes(element), attributeByID);
+
+                        return [{
+                            width: null,
+                            height: null,
+                            rotation: null,
+                            attr: {
+                                [adjustName(sublabelName)]: elementAttributes,
+                            },
+                            label: sublabelName,
+                            type: null,
+                            shape: null,
+                            occluded: null,
+                            score: null,
+                            votes: null,
+                        }];
+                    });
+                }
+
+                return {
                     width: null,
                     height: null,
                     rotation: null,
@@ -450,41 +362,8 @@ export default class AnnotationsFilter {
                     occluded: null,
                     score: null,
                     votes: null,
+                    elements,
                 };
-
-                const entries: ConvertedObjectData[] = shouldAddParentEntry ? [mainEntry] : [];
-
-                // For skeleton tracks, create separate entries for each element (sublabel)
-                if (track.shapes[0]?.type === ShapeType.SKELETON && track.elements) {
-                    track.elements.forEach((element) => {
-                        const elementLabel = labelByID[element.label_id];
-                        if (elementLabel) {
-                            const sublabelName = `${label.name} / ${elementLabel.name}`;
-
-                            if (isLabelScopeReferenced(sublabelName, filterReferences)) {
-                                const elementAttributes = convertAttributes(getTrackAttributes(element), attributeByID);
-                                entries.push({
-                                    width: null,
-                                    height: null,
-                                    rotation: null,
-                                    attr: {
-                                        [adjustName(sublabelName)]: elementAttributes,
-                                    },
-                                    label: sublabelName,
-                                    serverID: track.id ?? null,
-                                    objectID: track.clientID ?? null,
-                                    type: ObjectType.TRACK,
-                                    shape: element.shapes?.[0]?.type ?? ShapeType.POINTS,
-                                    occluded: null,
-                                    score: null,
-                                    votes: null,
-                                });
-                            }
-                        }
-                    });
-                }
-
-                return entries;
             }),
         };
     }
@@ -495,8 +374,7 @@ export default class AnnotationsFilter {
         }
 
         const filter = filters[0];
-        const filterReferences = getFilterReferences(filter);
-        const converted = this._convertSerializedObjectStates(statesData, filterReferences);
+        const converted = this._convertSerializedObjectStates(statesData);
         return getMatchingIDs(converted, filter);
     }
 
@@ -514,8 +392,7 @@ export default class AnnotationsFilter {
         }
 
         const filter = filters[0];
-        const filterReferences = getFilterReferences(filter);
-        const converted = this._convertSerializedCollection(collection, labelsSpec, filterReferences);
+        const converted = this._convertSerializedCollection(collection, labelsSpec);
 
         return {
             shapes: getMatchingIDs(converted.shapes, filter),

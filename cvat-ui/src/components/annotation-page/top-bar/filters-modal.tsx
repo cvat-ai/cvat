@@ -93,10 +93,30 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
             label.name,
             label.attributes,
         );
+    });
 
-        // Skeleton sublabels are filterable via the Label dropdown instead,
-        // which gives access to all builtin properties (occluded, width, height, rotation, etc.)
-        // in addition to user-defined attributes listed below
+    return subfields;
+};
+
+const getKeypointLabelValues = (labels: Label[]): { value: string; title: string }[] => (
+    labels.flatMap((label: any): { value: string; title: string }[] => {
+        if (label.type !== 'skeleton' || !label.structure?.sublabels) {
+            return [];
+        }
+
+        return label.structure.sublabels.map((sublabel: any) => {
+            const sublabelName = `${label.name} / ${sublabel.name}`;
+            return {
+                value: sublabelName,
+                title: sublabelName,
+            };
+        });
+    })
+);
+
+const getKeypointAttributesSubfields = (labels: Label[]): Record<string, any> => {
+    const subfields: Record<string, any> = {};
+    labels.forEach((label: any): void => {
         if (label.type === 'skeleton' && label.structure?.sublabels) {
             label.structure.sublabels.forEach((sublabel: any): void => {
                 const sublabelDisplayLabel = `${label.name} / ${sublabel.name}`;
@@ -125,6 +145,8 @@ function FiltersModalComponent(): JSX.Element {
     const [filters, setFilters] = useState([] as StoredFilter[]);
 
     useEffect(() => {
+        const keypointLabelValues = getKeypointLabelValues(labels);
+        const keypointAttributesSubfields = getKeypointAttributesSubfields(labels);
         const initialConfig = {
             ...AntdConfig,
             fields: {
@@ -133,21 +155,48 @@ function FiltersModalComponent(): JSX.Element {
                     type: 'select',
                     valueSources: ['value'] as 'value'[],
                     fieldSettings: {
-                        listValues: labels.reduce((acc: any[], label: any) => {
-                            acc.push({ value: label.name, title: label.name });
-                            if (label.type === 'skeleton' && label.structure?.sublabels) {
-                                label.structure.sublabels.forEach((sublabel: any) => {
-                                    const sublabelName = `${label.name} / ${sublabel.name}`;
-                                    acc.push({
-                                        value: sublabelName,
-                                        title: sublabelName,
-                                    });
-                                });
-                            }
-                            return acc;
-                        }, []),
+                        listValues: labels.map((label: any) => ({
+                            value: label.name,
+                            title: label.name,
+                        })),
                     },
                 },
+                ...(keypointLabelValues.length ? {
+                    elements: {
+                        label: 'Keypoints',
+                        type: '!group',
+                        mode: 'array',
+                        defaultOperator: 'some',
+                        operators: ['some'],
+                        subfields: {
+                            label: {
+                                label: 'Label',
+                                type: 'select',
+                                operators: ['select_equals', 'select_any_in'],
+                                valueSources: ['value'] as 'value'[],
+                                fieldSettings: {
+                                    listValues: keypointLabelValues,
+                                },
+                            },
+                            occluded: {
+                                label: 'Occluded',
+                                type: 'boolean',
+                            },
+                            ...(Object.keys(keypointAttributesSubfields).length ? {
+                                attr: {
+                                    label: 'Attributes',
+                                    type: '!struct',
+                                    subfields: keypointAttributesSubfields,
+                                    fieldSettings: {
+                                        treeSelectOnlyLeafs: true,
+                                        treeDefaultExpandAll: false,
+                                        treeNodeFilterProp: 'title',
+                                    },
+                                },
+                            } : {}),
+                        },
+                    },
+                } : {}),
                 type: {
                     label: 'Type',
                     type: 'select',

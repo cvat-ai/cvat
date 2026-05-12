@@ -51,7 +51,11 @@ Cypress.Commands.add('addFiltersGroup', (groupIndex) => {
 Cypress.Commands.add('addFiltersRule', (groupIndex) => {
     cy.checkFiltersModalOpened();
     cy.collectGroupID().then((groupIdIndex) => {
-        cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).contains('button', 'Add rule').click();
+        cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).then(($group) => {
+            const addRuleButton = Array.from($group[0].querySelectorAll('button'))
+                .find((button) => ['Add rule', 'Add sub rule'].includes(button.textContent.trim()));
+            cy.wrap(addRuleButton).click();
+        });
     });
 });
 
@@ -88,6 +92,9 @@ Cypress.Commands.add(
                     cy.contains('.ant-dropdown-menu-item-only-child', labelAttr).should('be.visible').click();
                 } else {
                     cy.get('.ant-dropdown').not('.ant-dropdown-hidden').contains('[role="menuitem"]', field).click();
+                }
+                if (field === 'Keypoints') {
+                    return;
                 }
                 cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
                     .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
