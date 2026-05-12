@@ -8,11 +8,17 @@ import ErrorStackParser from 'error-stack-parser';
 
 export class Exception extends Error {
     private readonly time: string;
+
     private readonly system: string;
+
     private readonly client: string;
+
     private readonly info: string;
+
     private readonly filename: string;
+
     private readonly line: number;
+
     private readonly column: number;
 
     constructor(message) {
@@ -103,6 +109,7 @@ export class RequestError extends Exception {}
 
 export class ServerError extends Exception {
     public code: number;
+
     constructor(message, code) {
         super(message);
 

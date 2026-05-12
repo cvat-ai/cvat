@@ -36,7 +36,9 @@ export function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point 
 
 export class Equation {
     private a: number;
+
     private b: number;
+
     private c: number;
 
     public constructor(p1: Point, p2: Point) {
@@ -53,6 +55,7 @@ export class Equation {
 
 export class Figure {
     private indices: number[];
+
     private allPoints: Point[];
 
     public constructor(indices: number[], points: Point[]) {
@@ -90,28 +93,51 @@ export class Edge extends Figure {
 
 export class CuboidModel {
     public points: Point[];
+
     private fr: Edge;
+
     private fl: Edge;
+
     private dr: Edge;
+
     private dl: Edge;
+
     private ft: Edge;
+
     private rt: Edge;
+
     private lt: Edge;
+
     private dt: Edge;
+
     private fb: Edge;
+
     private rb: Edge;
+
     private lb: Edge;
+
     private db: Edge;
+
     public edgeList: Edge[];
+
     private front: Figure;
+
     private right: Figure;
+
     private dorsal: Figure;
+
     private left: Figure;
+
     private top: Figure;
+
     private bot: Figure;
+
     public facesList: Figure[];
+
     public vpl: Point | null;
+
     public vpr: Point | null;
+
     public orientation: Orientation;
 
     public constructor(points?: Point[]) {
@@ -327,7 +353,7 @@ function sortPointsClockwise(points: any[]): any[] {
         } else if (ang < startAng) {
             ang += Math.PI * 2;
         }
-        // eslint-disable-next-line no-param-reassign
+
         point.angle = ang; // add the angle to the point
     });
 

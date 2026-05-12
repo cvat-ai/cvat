@@ -17,7 +17,9 @@ interface ActionItem {
 
 export default class AnnotationHistory {
     private frozen: boolean;
+
     private _undo: ActionItem[];
+
     private _redo: ActionItem[];
 
     constructor() {

@@ -29,15 +29,25 @@ export type ObjectState = any;
 
 export class ObjectSelectorImpl implements ObjectSelector {
     private selectionFilter: SelectionFilter | null;
+
     private canvas: SVG.Container;
+
     private selectionRect: SVG.Rect;
+
     private geometry: Geometry;
+
     private isEnabled: boolean;
+
     private mouseDownPosition: { x: number; y: number; };
+
     private selectedObjects: Record<number, ObjectState>;
+
     private resetAppearance: Record<number, () => void>;
+
     private findObjectOnClick: (event: MouseEvent) => void;
+
     private getStates: () => ObjectState[];
+
     private onSelectCallback: (selected: ObjectState[]) => void;
 
     public constructor(

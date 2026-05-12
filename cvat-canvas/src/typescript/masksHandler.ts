@@ -37,34 +37,55 @@ export class MasksHandlerImpl implements MasksHandler {
         continueDraw?: boolean,
         prevDrawData?: DrawData,
     ) => void;
+
     private onDrawRepeat: (data: DrawData) => void;
+
     private onEditStart: (state: any) => void;
+
     private onEditDone: (state: any, points: number[]) => void;
+
     private vectorDrawHandler: DrawHandler;
 
     private redraw: number | null;
+
     private isDrawing: boolean;
+
     private isEditing: boolean;
+
     private isInsertion: boolean;
+
     private isMouseDown: boolean;
+
     private isBrushSizeChanging: boolean;
+
     private resizeBrushToolLatestX: number;
+
     private brushMarker: fabric.Rect | fabric.Circle | null;
+
     private drawablePolygon: null | fabric.Polygon;
+
     private isPolygonDrawing: boolean;
+
     private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[];
 
     private tool: DrawData['brushTool'] | null;
+
     private drawData: DrawData | null;
+
     private canvas: fabric.Canvas;
 
     private editData: MasksEditData | null;
 
     private colorBy: ColorBy;
+
     private latestMousePos: Position;
+
     private startTimestamp: number;
+
     private geometry: Geometry;
+
     private drawingOpacity: number;
+
     private isHidden: boolean;
 
     private keepDrawnPolygon(): void {

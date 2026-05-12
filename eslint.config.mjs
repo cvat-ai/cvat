@@ -208,6 +208,7 @@ export default [
         rules: {
             camelcase: 'off',
             'import/extensions': 'off',
+            'import/no-unresolved': 'off',
             'no-unused-vars': 'off',
             '@typescript-eslint/no-unused-vars': 'error',
         },

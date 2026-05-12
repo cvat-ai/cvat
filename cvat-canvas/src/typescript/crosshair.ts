@@ -7,7 +7,9 @@ import consts from './consts';
 
 export default class Crosshair {
     private x: SVG.Line | null;
+
     private y: SVG.Line | null;
+
     private canvas: SVG.Container | null;
 
     public constructor() {

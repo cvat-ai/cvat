@@ -112,23 +112,38 @@ function drawnDataFromState(state: ObjectState): DrawnObjectData {
 
 export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private controller: Canvas3dController;
+
     private views: Views;
+
     private clock: THREE.Clock;
+
     private speed: number;
+
     private cube: CuboidModel;
+
     private isPerspectiveBeingDragged: boolean;
+
     private activatedElementID: number | null;
+
     private isCtrlDown: boolean;
+
     private stateToBeSplitted: ObjectState | null;
+
     private statesToBeGrouped: ObjectState[];
+
     private statesToBeMerged: ObjectState[];
+
     private sceneBBox: THREE.Box3;
+
     private sideViewsZoomMemory: Record<number, SideViewsZoomMemory>;
+
     private model: Canvas3dModel & Master;
+
     private drawnObjects: Record<number, {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
+
     private hoverNeedsUpdate: boolean;
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {
@@ -1790,7 +1805,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             };
         };
 
-        // eslint-disable-next-line no-param-reassign
         points.material.size = 0.05;
         points.material.color.set(new THREE.Color(0xffffff));
 
@@ -1841,7 +1855,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         topScenePlane.name = Planes.TOP;
         (topScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
         (topScenePlane as any).verticesNeedUpdate = true;
-        // eslint-disable-next-line no-param-reassign
+
         points.material = material;
         material.size = 0.5;
         const topCloud = points.clone();

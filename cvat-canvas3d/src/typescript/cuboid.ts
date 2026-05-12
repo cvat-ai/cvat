@@ -34,9 +34,13 @@ export function makeCornerPointsMatrix(x: number, y: number, z: number): number[
 
 export class CuboidModel {
     public perspective: THREE.Mesh;
+
     public top: THREE.Mesh;
+
     public side: THREE.Mesh;
+
     public front: THREE.Mesh;
+
     public wireframe: THREE.LineSegments;
 
     public orientationArrows: Record<ViewType, ObjectArrowHelper> = {

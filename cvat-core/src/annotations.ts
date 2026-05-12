@@ -114,7 +114,6 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
             history,
         });
 
-        // eslint-disable-next-line no-unsanitized/method
         collection.import(serializedAnnotations);
         const saver = new AnnotationsSaver(serializedAnnotations.version, collection, session);
         cache.collection.set(session, { collection, saver });
