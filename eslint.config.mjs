@@ -174,7 +174,6 @@ export default [
             ...sourceFiles,
             'tests/cypress/**/*.js',
             'tests/*cypress*.config.js',
-            'tests/cypress/plugins/**/*.js',
         ],
         plugins: {
             '@stylistic': stylisticPlugin,
@@ -229,6 +228,7 @@ export default [
             'import/extensions': 'off',
             'no-prototype-builtins': 'off',
             'no-underscore-dangle': 'off',
+            'security/detect-object-injection':'off',
         },
     },
     ...scopedConfig(cypressBaseConfig, ['tests/cypress/plugins/**/*.js']),
