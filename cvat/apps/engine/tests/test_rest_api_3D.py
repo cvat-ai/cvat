@@ -68,7 +68,10 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _patch_api_v2_task_id_annotations(self, tid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/tasks/{}/annotations?action={}".format(tid, action), data=data, format="json"
+                "/api/tasks/{}/annotations".format(tid),
+                query_params={"action": action},
+                data=data,
+                format="json",
             )
 
         return response
@@ -76,7 +79,10 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _patch_api_v2_job_id_annotations(self, jid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/jobs/{}/annotations?action={}".format(jid, action), data=data, format="json"
+                "/api/jobs/{}/annotations".format(jid),
+                query_params={"action": action},
+                data=data,
+                format="json",
             )
 
         return response
@@ -100,7 +106,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -146,7 +154,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
-                lambda page: self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+                lambda page: self.client.get(
+                    "/api/jobs", query_params={"task_id": task_id, "page": page}
+                )
             )
         return values
 
