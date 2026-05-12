@@ -225,7 +225,6 @@ export default [
             ...cypressPlugin.configs.recommended.rules,
             ...securityPlugin.configs['recommended-legacy'].rules,
             ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
-            'cypress/no-unnecessary-waiting': 'off', // TODO: enable but silence when necessary
             'import/no-unresolved': 'off',
             'import/extensions': 'off',
             'no-prototype-builtins': 'off',
