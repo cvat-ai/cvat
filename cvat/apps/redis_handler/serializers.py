@@ -4,14 +4,13 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import timedelta, timezone
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
 import rq.defaults as rq_defaults
 from django.db.models import TextChoices
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rq.job import JobStatus as RQJobStatus
