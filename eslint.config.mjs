@@ -41,11 +41,13 @@ function withoutUnsupportedExtends(config) {
             extend !== 'airbnb-typescript' &&
             extend !== 'airbnb-typescript/base'
         )),
-        rules: Object.fromEntries(
+        rules: {
+            ...Object.fromEntries(
             Object.entries(config.rules || {}).filter(([ruleName]) => (
                 !ruleName.startsWith('security/')
-            )),
-        ),
+            ))),
+            indent: 'off', // airbnb's legacy indent
+        }
     };
 }
 
@@ -134,19 +136,31 @@ const cypressBaseConfig = {
     rules: {
         ...testsSourceRules,
         ...testsGlobalConfig,
-        indent: 'off', // airbnb's legacy indent
     },
 };
 
 export default [
     {
         ignores: [
+            // Directories to ignore (migrated from .eslintignore)
+            '.*/**',
+            '3rdparty/**',
+            'node_modules/**',
+            'dist/**',
+            'data/**',
+            'datumaro/**',
+            'keys/**',
+            'logs/**',
+            'static/**',
+            'templates/**',
+            '**/webpack.config.js',
+
+            // Additional specific ignores
             '.eslintrc.cjs',
             'lint-staged.config.js',
             'site/**',
             'webpack.config.cjs',
             'cvat-ui/.eslintrc.cjs',
-            'cvat-ui/webpack.config.js',
             'cvat-ui/exec-scripts-webpack-plugin.cjs',
             'cvat-ui/src/assets/opencv*.js',
             'cvat-ui/node_modules/**',
@@ -157,17 +171,14 @@ export default [
             'cvat-core/dist/**',
             'cvat-core/tests/**/*.cjs',
             'cvat-canvas/.eslintrc.cjs',
-            'cvat-canvas/webpack.config.js',
             'cvat-canvas/node_modules/**',
             'cvat-canvas/dist/**',
             'cvat-canvas3d/.eslintrc.cjs',
-            'cvat-canvas3d/webpack.config.js',
             'cvat-canvas3d/node_modules/**',
             'cvat-canvas3d/dist/**',
             'cvat-data/src/ts/3rdparty/**',
             'cvat-data/node_modules/**',
             'cvat-data/dist/**',
-            'node_modules/**',
         ],
     },
     {
