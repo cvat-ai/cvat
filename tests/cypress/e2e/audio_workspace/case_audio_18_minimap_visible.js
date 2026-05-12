@@ -7,7 +7,7 @@
 import { taskName } from '../../support/const_audio';
 
 context('Audio annotation. Minimap section is rendered.', () => {
-    const caseId = 'audio_20';
+    const caseId = 'audio_18';
 
     before(() => {
         cy.prepareUserSession();

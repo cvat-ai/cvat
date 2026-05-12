@@ -7,7 +7,7 @@
 import { taskName, firstLabelName } from '../../support/const_audio';
 
 context('Audio annotation. Region details panel shows active region info.', () => {
-    const caseId = 'audio_17';
+    const caseId = 'audio_15';
 
     before(() => {
         cy.prepareUserSession();

@@ -6,8 +6,8 @@
 
 import { taskName, firstLabelName } from '../../support/const_audio';
 
-context('Audio annotation. Undo restores state after create.', () => {
-    const caseId = 'audio_23';
+context('Audio annotation. Delete region via sidebar context menu.', () => {
+    const caseId = 'audio_09';
 
     before(() => {
         cy.prepareUserSession();
@@ -15,10 +15,13 @@ context('Audio annotation. Undo restores state after create.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('After create, Ctrl+Z removes the just-created region', () => {
+        it('Open region item menu and click Remove removes the region', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
             cy.get('.cvat-audio-region-item').should('have.length', 1);
-            cy.audioUndo();
+            cy.get('.cvat-audio-region-item').first()
+                .find('.cvat-audio-region-item-action-btn').last().click();
+            cy.get('.cvat-audio-region-item-menu', { timeout: 5000 }).should('be.visible');
+            cy.get('.cvat-audio-region-item-menu').contains(/remove/i).click();
             cy.get('.cvat-audio-region-item').should('have.length', 0);
         });
     });

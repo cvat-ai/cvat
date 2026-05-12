@@ -7,7 +7,7 @@
 import { taskName, firstLabelName } from '../../support/const_audio';
 
 context('Audio annotation. ESC cancels region creation.', () => {
-    const caseId = 'audio_09';
+    const caseId = 'audio_07';
 
     before(() => {
         cy.prepareUserSession();

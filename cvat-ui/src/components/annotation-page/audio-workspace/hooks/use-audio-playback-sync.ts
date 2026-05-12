@@ -81,16 +81,15 @@ export function useAudioPlaybackSync({
             }
         };
         pin();
+        let r2: number | null = null;
         const r1 = requestAnimationFrame(() => {
             pin();
-            const r2 = requestAnimationFrame(pin);
-            (r1 as unknown as { _r2?: number })._r2 = r2;
+            r2 = requestAnimationFrame(pin);
         });
         // eslint-disable-next-line consistent-return
         return () => {
             cancelAnimationFrame(r1);
-            const r2 = (r1 as unknown as { _r2?: number })._r2;
-            if (r2) cancelAnimationFrame(r2);
+            if (r2 !== null) cancelAnimationFrame(r2);
         };
     }, [zoom, wavesurfer]);
 

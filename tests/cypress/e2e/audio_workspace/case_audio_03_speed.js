@@ -7,7 +7,7 @@
 import { taskName } from '../../support/const_audio';
 
 context('Audio annotation. Speed slider changes playback rate.', () => {
-    const caseId = 'audio_05';
+    const caseId = 'audio_03';
 
     before(() => {
         cy.prepareUserSession();

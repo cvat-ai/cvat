@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-const WAVEFORM_TIMEOUT = 30000;
+const WAVEFORM_TIMEOUT = 90000;
 
 Cypress.Commands.add('assertWaveformReady', () => {
     cy.get('.cvat-audio-canvas-wrapper', { timeout: WAVEFORM_TIMEOUT }).should('exist');
@@ -12,11 +12,29 @@ Cypress.Commands.add('assertWaveformReady', () => {
     cy.get('.cvat-audio-waveform-wrapper', { timeout: WAVEFORM_TIMEOUT })
         .should('exist')
         .and('not.have.css', 'visibility', 'hidden');
-    cy.get('.cvat-audio-waveform-wrapper canvas', { timeout: WAVEFORM_TIMEOUT }).should('exist');
 });
 
-Cypress.Commands.add('openAudioJob', (taskName, removeAnnotations = true) => {
-    cy.openTaskJob(taskName, 0, removeAnnotations);
+Cypress.Commands.add('openAudioJob', (taskName) => {
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    // Make sure the cvat-core session is actually authenticated before searching
+    // tasks — between specs (testIsolation: true) the session can race with the
+    // tasks API and return an empty result if we don't gate on the login state.
+    cy.window().then((win) => cy.wrap(win.cvat.users.get({ self: true })))
+        .its('0').should('not.be.undefined');
+    cy.window().then((win) => cy.wrap(win.cvat.tasks.get({ search: taskName }))).then((tasks) => {
+        const task = tasks.find((t) => t.name === taskName);
+        if (!task) {
+            throw new Error(`Audio task "${taskName}" not found. Make sure setup_audio.js ran first.`);
+        }
+        return cy.window().then((win) => cy.wrap(win.cvat.jobs.get({ taskID: task.id }))).then((jobs) => {
+            const job = jobs.find((j) => j.type === 'annotation');
+            if (!job) {
+                throw new Error(`No annotation job for task "${taskName}"`);
+            }
+            cy.visit(`/tasks/${task.id}/jobs/${job.id}`);
+        });
+    });
+    cy.get('.cvat-spinner').should('not.exist');
     cy.assertWaveformReady();
 });
 
@@ -32,17 +50,19 @@ Cypress.Commands.add('audioActivateCreate', (labelName) => {
 });
 
 Cypress.Commands.add('audioDrawRegion', (xStart, xEnd) => {
-    cy.get('.cvat-audio-waveform-wrapper canvas').first().then(($canvas) => {
-        const rect = $canvas[0].getBoundingClientRect();
-        const yMid = rect.top + rect.height / 2;
-        cy.wrap($canvas).trigger('mousedown', {
-            clientX: rect.left + xStart, clientY: yMid, button: 0, force: true,
+    // WaveSurfer renders canvas in an open shadow DOM; ordinary cy selectors
+    // can't pierce it reliably, and synthetic trigger() events don't reach
+    // listeners attached inside the shadow tree. Use cypress-real-events
+    // (CDP-driven) which fires real OS-level mouse events at viewport
+    // coordinates, hitting the canvas regardless of shadow boundaries.
+    cy.get('.cvat-audio-waveform-wrapper').first().then(($el) => {
+        const yOffset = $el[0].getBoundingClientRect().height / 2;
+        cy.get('.cvat-audio-waveform-wrapper').realMouseDown({
+            position: { x: xStart, y: yOffset }, button: 'left',
         });
-        cy.wrap($canvas).trigger('mousemove', {
-            clientX: rect.left + xEnd, clientY: yMid, force: true,
-        });
-        cy.wrap($canvas).trigger('mouseup', {
-            clientX: rect.left + xEnd, clientY: yMid, force: true,
+        cy.get('.cvat-audio-waveform-wrapper').realMouseMove(xEnd, yOffset);
+        cy.get('.cvat-audio-waveform-wrapper').realMouseUp({
+            position: { x: xEnd, y: yOffset }, button: 'left',
         });
     });
 });

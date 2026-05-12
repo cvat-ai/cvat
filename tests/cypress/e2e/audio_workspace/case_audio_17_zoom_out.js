@@ -7,7 +7,7 @@
 import { taskName } from '../../support/const_audio';
 
 context('Audio annotation. Zoom out decreases zoom value.', () => {
-    const caseId = 'audio_19';
+    const caseId = 'audio_17';
 
     before(() => {
         cy.prepareUserSession();

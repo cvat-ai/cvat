@@ -7,7 +7,7 @@
 import { taskName } from '../../support/const_audio';
 
 context('Audio annotation. Volume slider changes volume.', () => {
-    const caseId = 'audio_06';
+    const caseId = 'audio_04';
 
     before(() => {
         cy.prepareUserSession();
@@ -17,7 +17,7 @@ context('Audio annotation. Volume slider changes volume.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Adjusting volume slider updates the value badge on the control', () => {
             cy.get('.cvat-audio-volume-control .cvat-audio-slider-value-badge').invoke('text').then((before) => {
-                cy.audioSliderSetValue('cvat-audio-volume-control', '{downarrow}', 10);
+                cy.audioSliderSetValue('cvat-audio-volume-control', '{uparrow}', 10);
                 cy.get('.cvat-audio-volume-control .cvat-audio-slider-value-badge')
                     .invoke('text').should('not.equal', before);
             });

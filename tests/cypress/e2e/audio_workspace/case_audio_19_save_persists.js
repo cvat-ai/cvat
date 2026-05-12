@@ -7,7 +7,7 @@
 import { taskName, firstLabelName } from '../../support/const_audio';
 
 context('Audio annotation. Save annotations persists across reload.', () => {
-    const caseId = 'audio_22';
+    const caseId = 'audio_19';
 
     before(() => {
         cy.prepareUserSession();
@@ -19,7 +19,6 @@ context('Audio annotation. Save annotations persists across reload.', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
             cy.get('.cvat-audio-region-item').should('have.length', 1);
             cy.audioSaveAnnotations();
-            // Reload preserves the URL → annotations are loaded by loadAudioAnnotationsAsync
             cy.reload();
             cy.assertWaveformReady();
             cy.get('.cvat-audio-region-item', { timeout: 15000 }).should('have.length', 1);

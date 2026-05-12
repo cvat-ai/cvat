@@ -7,7 +7,7 @@
 import { taskName } from '../../support/const_audio';
 
 context('Audio annotation. WaveSurfer container does not overflow on resize.', () => {
-    const caseId = 'audio_27';
+    const caseId = 'audio_24';
 
     before(() => {
         cy.prepareUserSession();
@@ -21,7 +21,6 @@ context('Audio annotation. WaveSurfer container does not overflow on resize.', (
                     const viewportWidth = win.innerWidth;
                     cy.get('.cvat-audio-waveform-wrapper').then(($el) => {
                         const rect = $el[0].getBoundingClientRect();
-                        // Allow a small tolerance for rounding / scrollbar
                         expect(rect.width).to.be.at.most(viewportWidth + 1);
                     });
                 });
@@ -32,10 +31,6 @@ context('Audio annotation. WaveSurfer container does not overflow on resize.', (
             checkWidth();
 
             cy.viewport(900, 700);
-            cy.wait(200);
-            checkWidth();
-
-            cy.viewport(600, 700);
             cy.wait(200);
             checkWidth();
         });

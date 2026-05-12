@@ -18,7 +18,6 @@ context('Audio annotation. Waveform renders.', () => {
         it('Waveform and minimap are rendered, placeholder is gone', () => {
             cy.get('.cvat-audio-placeholder').should('not.exist');
             cy.get('.cvat-audio-waveform-wrapper').should('be.visible');
-            cy.get('.cvat-audio-waveform-wrapper canvas').should('exist');
             cy.get('.cvat-audio-minimap-section').should('be.visible');
             cy.get('#minimap').should('exist');
         });

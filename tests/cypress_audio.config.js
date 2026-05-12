@@ -9,6 +9,10 @@ module.exports = defineConfig({
     ...baseConfig,
     e2e: {
         ...baseConfig.e2e,
+        testIsolation: true,
+        // Override the default support file (which auto-loads allure-cypress).
+        // See cypress/support/e2e_audio.js for the rationale.
+        supportFile: 'cypress/support/e2e_audio.js',
         specPattern: [
             'cypress/e2e/setup/setup_audio.js',
             'cypress/e2e/auth_page.js',

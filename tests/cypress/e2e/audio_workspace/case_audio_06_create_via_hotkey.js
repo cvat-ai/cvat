@@ -4,10 +4,10 @@
 
 /// <reference types="cypress" />
 
-import { taskName, firstLabelName } from '../../support/const_audio';
+import { taskName } from '../../support/const_audio';
 
-context('Audio annotation. Create region via toolbar button.', () => {
-    const caseId = 'audio_07';
+context('Audio annotation. Create region via hotkey.', () => {
+    const caseId = 'audio_06';
 
     before(() => {
         cy.prepareUserSession();
@@ -15,11 +15,10 @@ context('Audio annotation. Create region via toolbar button.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Create region by activating Create button and dragging on waveform', () => {
+        it('Pressing CREATE_AUDIO_REGION (n) activates create mode and a drag creates a region', () => {
             cy.get('.cvat-audio-region-item').should('have.length', 0);
-            cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
+            cy.audioCreateRegionViaHotkey(80, 220);
             cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 1);
-            cy.get('.cvat-audio-region-item').first().should('contain.text', firstLabelName);
         });
     });
 });

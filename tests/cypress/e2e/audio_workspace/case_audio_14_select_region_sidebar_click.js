@@ -7,7 +7,7 @@
 import { taskName, firstLabelName, secondLabelName } from '../../support/const_audio';
 
 context('Audio annotation. Sidebar item click activates region.', () => {
-    const caseId = 'audio_16';
+    const caseId = 'audio_14';
 
     before(() => {
         cy.prepareUserSession();

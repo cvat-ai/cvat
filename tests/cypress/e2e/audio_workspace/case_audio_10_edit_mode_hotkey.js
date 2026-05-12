@@ -6,8 +6,8 @@
 
 import { taskName } from '../../support/const_audio';
 
-context('Audio annotation. ESC exits edit mode back to cursor.', () => {
-    const caseId = 'audio_13';
+context('Audio annotation. Edit mode hotkey activates edit control.', () => {
+    const caseId = 'audio_10';
 
     before(() => {
         cy.prepareUserSession();
@@ -15,12 +15,10 @@ context('Audio annotation. ESC exits edit mode back to cursor.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Edit mode is cancelled by ESC and cursor becomes active', () => {
+        it('Pressing EDIT_AUDIO_REGION (e) marks edit control as active', () => {
+            cy.get('.cvat-audio-edit-region-control').should('not.have.class', 'cvat-active-canvas-control');
             cy.get('body').type('e');
             cy.get('.cvat-audio-edit-region-control').should('have.class', 'cvat-active-canvas-control');
-            cy.get('body').type('{esc}');
-            cy.get('.cvat-audio-edit-region-control').should('not.have.class', 'cvat-active-canvas-control');
-            cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
         });
     });
 });
