@@ -36,6 +36,11 @@ For commercial hosted setups, advanced labeling tools, or managed services, see
 
 ## Getting Started
 
+> 💡 **Tip:** Want to explore CVAT before deploying anything?
+> **[Try CVAT Online (Free plan)](https://app.cvat.ai)** directly in your browser.
+> Includes SAM 3 segmentation, quality control UI, and built-in analytics
+> so you can evaluate the full platform before committing to a self-hosted setup.
+
 ### Installation
 
 **Prerequisites:**
@@ -74,7 +79,7 @@ instructions and OS-specific setup.
 - Create a project or task, upload your data (images, videos, or point clouds), and define labels to start annotating.
 
 Learn more about annotation tools and workflows in the [CVAT Documentation](https://docs.cvat.ai/docs/) or
-take our [free course](https://www.cvat.ai/resources/academy).
+take our free course – [CVAT Academy](https://www.cvat.ai/resources/academy).
 
 **4. Optional: Automatic annotation**
 
@@ -91,17 +96,22 @@ _For alternative deployments (AWS, Kubernetes, external PostgreSQL, backups, upg
 
 ## Key Capabilities
 
-- **Manual & Auto-labeling:** Bounding boxes, polygons, masks, keypoints, and more. Speed up workflows with
-  Nuclio-based auto-annotation or custom ML models.
-- **Task Management:** Organize projects, split datasets into jobs, assign tasks, and track progress in real time.
-- **Collaboration:** Manage access with organizations and roles, comment on objects, and follow a review workflow for
-  high data standards.
-- **Quality Control:** Manual review steps, validation against Ground Truth datasets, and detailed annotation
-  statistics.
-- **Analytics:** Monitor productivity with integrated Grafana dashboards (time spent, label distribution, team
-  performance).
-- **Data Ops & Integrations:** Export/import in 20+ formats (COCO, YOLO, Pascal VOC, TFRecord, etc.), connect to cloud
+- **Manual & Auto-labeling:** Annotate images, videos, and 3D point clouds with bounding boxes, polygons, masks,
+ keypoints, cuboids, tags, and more. Speed up labeling by connecting your own models for automatic annotation.
+- **Task Management:** Organize datasets into projects, split them into tasks and jobs, assign work to annotators,
+and track progress in real time.
+- **Collaboration:** Create organizations, invite teammates, assign roles, and collaborate on annotations with
+ comments and
+issues.
+- **Quality Control:** Review annotations, flag issues, compare results across annotators with consensus,
+and run Ground Truth and Honeypot checks through the server API.
+- **Analytics:** Monitor user activity, working time by job, events, and server logs with Grafana dashboards.
+- **Data Ops & Integrations:** Export/import in 20+ formats (COCO, YOLO, Pascal VOC, KITTI, etc.), connect to cloud
   storage (S3, Azure, Google Cloud), and automate via REST API and Python SDK.
+
+Advanced capabilities such as advanced project analytics, quality control UI, built-in auto-labeling with SAM 2
+ and SAM 3, AI agents, SSO, and more are available in [CVAT Online](https://www.cvat.ai/pricing/cvat-online)
+ paid plans (Solo, Team) and [CVAT Enterprise](https://www.cvat.ai/enterprise).
 
 ## Developer Tools
 
@@ -109,16 +119,12 @@ CVAT is designed for automation. Beyond the Web UI, you can integrate it into yo
 
 - [Python SDK & CLI](https://docs.cvat.ai/docs/api_sdk/sdk/): Automate task creation, data upload, and dataset exports.
 - [REST API](https://docs.cvat.ai/docs/api_sdk/api/): Full programmatic control over every platform feature.
-- **Datumaro:** A powerful framework to build, transform, and analyze datasets.
 
 ## Data and Formats
 
 CVAT Community supports image, video, and 3D (point cloud) annotation workflows. You can move data in and out using
-over 20+ industry-standard formats, including:
-
-- **Standard:** CVAT, COCO, YOLO, Pascal VOC, TFRecord.
-- **Specialized:** KITTI, Cityscapes, LabelMe, MOT, MOTS.
-- **3D:** Kitti Enu, Labeled Scene.
+over 20+ industry-standard formats: CVAT (XML), COCO (JSON), YOLO (TXT), Ultralytics YOLO (TXT/YAML), Pascal VOC (XML),
+KITTI (TXT), MOT (TXT), and more.
 
 [Full list of supported formats.](https://docs.cvat.ai/docs/dataset_management/formats/)
 
@@ -132,10 +138,12 @@ over 20+ industry-standard formats, including:
 | AI Agents | ❌ | ✅ |
 | SAM 2 Video Tracking | ❌ | ✅ |
 | SAM 3 Segmentation (Text prompts) | ❌ | ✅ |
-| Advanced Analytics | Basic (Grafana) | Custom Dashboards |
-| Consensus & Quality Control | ❌ | ✅ |
+| Advanced Analytics | ⚠️ Basic (Grafana) | Custom Dashboards |
+| Quality Control | ⚠️ (Manual QC, Consensus, GT Jobs & Honeypots via API) | ✅ |
 | SSO (LDAP/AD/SAML) | ❌ | ✅ |
 | Technical Support | Community-based | Dedicated / SLA |
+
+For a full feature breakdown, visit [CVAT Pricing](https://www.cvat.ai/pricing/enterprise).
 
 ## Support
 
@@ -171,9 +179,15 @@ CVAT Community is released under the MIT License.
 
 For the latest product releases, feature walkthroughs, and all things CVAT see:
 
-- [CVAT YouTube Channel](https://www.youtube.com/@cvat-ai)
-- [CVAT LinkedIn](https://www.linkedin.com/company/cvat-ai)
-- [CVAT Newsletter](https://www.cvat.ai/#:~:text=Subscribe%20to%20the%20CVAT%20Newsletter)
+<img src="site/content/en/images/social-badges.svg" usemap="#badges">
+<map name="badges">
+  <area href="https://www.cvat.ai/resources/blog"         coords="0,0,108,120"    shape="rect">
+  <area href="https://www.cvat.ai/resources/academy"      coords="118,0,226,120"  shape="rect">
+  <area href="https://www.cvat.ai/resources/case-studies" coords="236,0,344,120"  shape="rect">
+  <area href="https://www.youtube.com/@cvat-ai"           coords="354,0,462,120"  shape="rect">
+  <area href="https://www.linkedin.com/company/cvat-ai"   coords="472,0,580,120"  shape="rect">
+  <area href="https://www.cvat.ai/#:~:text=Subscribe%20to%20the%20CVAT%20Newsletter" coords="590,0,698,120" shape="rect">
+</map>
 
   <!-- Badges -->
 
