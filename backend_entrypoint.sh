@@ -96,11 +96,6 @@ cmd_run() {
     postgres_app_name="cvat:$component"
     if [ "$component" = "server" ]; then
         supervisord_includes=$(_get_includes "$component")
-
-        export CVAT_NGINX_ACCESS_LOG="${CVAT_NGINX_ACCESS_LOG:-/home/django/logs/nginx_access.log}"
-        export CVAT_NGINX_ERROR_LOG="${CVAT_NGINX_ERROR_LOG:-/home/django/logs/nginx_error.log}"
-
-        mkdir -p "$(dirname "$CVAT_NGINX_ACCESS_LOG")" "$(dirname "$CVAT_NGINX_ERROR_LOG")"
     elif [ "$component" = "worker"  ]; then
         if [ "$#" -eq 1 ]; then
             fail "run worker: expected at least 1 queue name"
