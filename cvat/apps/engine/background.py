@@ -418,16 +418,16 @@ class DatasetImporter(ResourceImporter):
         conv_mask_to_poly = to_bool(self.request.query_params.get("conv_mask_to_poly", True))
         import_mode = None
         if not isinstance(self.db_instance, Project):
+            import_mode_param = self.request.query_params.get(
+                "import_mode",
+                dm.task.AnnotationImportMode.REPLACE,
+            )
             try:
-                import_mode = dm.task.AnnotationImportMode(
-                    self.request.query_params.get(
-                        "import_mode",
-                        dm.task.AnnotationImportMode.REPLACE,
-                    )
-                ).value
+                import_mode = dm.task.AnnotationImportMode(import_mode_param).value
             except ValueError as ex:
+                allowed_values = ", ".join(mode.value for mode in dm.task.AnnotationImportMode)
                 raise serializers.ValidationError(
-                    "Please specify a correct 'import_mode' for the request"
+                    f"Invalid import_mode={import_mode_param!r}. Allowed: {allowed_values}"
                 ) from ex
 
         self.import_args: DatasetImporter.ImportArgs = self.ImportArgs(
