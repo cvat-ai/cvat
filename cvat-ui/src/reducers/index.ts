@@ -335,6 +335,11 @@ export interface PluginsState {
         };
     };
     overridableComponents: {
+        app: {
+            serverUnavailable: ((props: {
+                details: string | null;
+            }) => JSX.Element)[];
+        };
         annotationPage: {
             header: {
                 saveAnnotationButton: (() => JSX.Element)[];

@@ -76,7 +76,7 @@ class OrganizationViewSet(
     mixins.DestroyModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = Organization.objects.select_related("owner").all()
+    queryset = Organization.objects.all()
     search_fields = ("name", "owner", "slug")
     filter_fields = list(search_fields) + ["id"]
     simple_filters = list(search_fields)
@@ -90,8 +90,14 @@ class OrganizationViewSet(
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        permission = OrganizationPermission.create_scope_list(self.request)
-        return permission.filter(queryset)
+        if self.action == "list":
+            queryset = queryset.prefetch_related("owner")
+            permission = OrganizationPermission.create_scope_list(self.request)
+            queryset = permission.filter(queryset)
+        else:
+            queryset = queryset.select_related("owner")
+
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -145,7 +151,7 @@ class MembershipViewSet(
     PartialUpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Membership.objects.select_related("invitation", "user").all()
+    queryset = Membership.objects.all()
     ordering = "-id"
     http_method_names = ["get", "patch", "delete", "head", "options"]
     search_fields = ("user", "role")
@@ -166,8 +172,11 @@ class MembershipViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
+            queryset = queryset.prefetch_related("invitation", "user")
             permission = MembershipPermission.create_scope_list(self.request)
             queryset = permission.filter(queryset)
+        else:
+            queryset = queryset.select_related("invitation", "user")
 
         return queryset
 
@@ -268,9 +277,16 @@ class InvitationViewSet(
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        related = ("owner", "membership__user", "membership__organization")
 
-        permission = InvitationPermission.create_scope_list(self.request)
-        return permission.filter(queryset)
+        if self.action == "list":
+            queryset = queryset.prefetch_related(*related)
+            permission = InvitationPermission.create_scope_list(self.request)
+            queryset = permission.filter(queryset)
+        else:
+            queryset = queryset.select_related(*related)
+
+        return queryset
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)

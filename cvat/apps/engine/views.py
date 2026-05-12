@@ -546,34 +546,35 @@ class _DataGetter(metaclass=ABCMeta):
     @abstractmethod
     def _get_frame_provider(self) -> IFrameProvider: ...
 
-    def __call__(self):
+    def _get_data_response(self) -> HttpResponse:
         frame_provider = self._get_frame_provider()
 
+        if self.type == 'chunk':
+            data = frame_provider.get_chunk(self.number, quality=self.quality)
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=self._get_chunk_response_headers(data),
+            )
+        elif self.type == 'frame':
+            data = frame_provider.get_frame(self.number, quality=self.quality)
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == 'preview':
+            data = frame_provider.get_preview()
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == 'context_image':
+            data = frame_provider.get_frame_context_images_chunk(self.number)
+            if not data:
+                return HttpResponseNotFound()
+
+            return HttpResponse(data.data, content_type=data.mime)
+        else:
+            return Response(data='unknown data type {}.'.format(self.type),
+                status=status.HTTP_400_BAD_REQUEST)
+
+    def __call__(self):
         try:
-            if self.type == 'chunk':
-                data = frame_provider.get_chunk(self.number, quality=self.quality)
-                return HttpResponse(
-                    data.data.getvalue(),
-                    content_type=data.mime,
-                    headers=self._get_chunk_response_headers(data),
-                )
-            elif self.type == 'frame' or self.type == 'preview':
-                if self.type == 'preview':
-                    data = frame_provider.get_preview()
-                else:
-                    data = frame_provider.get_frame(self.number, quality=self.quality)
-
-                return HttpResponse(data.data.getvalue(), content_type=data.mime)
-
-            elif self.type == 'context_image':
-                data = frame_provider.get_frame_context_images_chunk(self.number)
-                if not data:
-                    return HttpResponseNotFound()
-
-                return HttpResponse(data.data, content_type=data.mime)
-            else:
-                return Response(data='unknown data type {}.'.format(self.type),
-                    status=status.HTTP_400_BAD_REQUEST)
+            return self._get_data_response()
         except (ValidationError, PermissionDenied, NotFound) as ex:
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
@@ -671,43 +672,27 @@ class _JobDataGetter(_DataGetter):
     def _get_frame_provider(self) -> JobFrameProvider:
         return JobFrameProvider(self._db_job)
 
-    def __call__(self):
+    def _get_data_response(self):
         if self.type == 'chunk':
             # Reproduce the task chunk indexing
             frame_provider = self._get_frame_provider()
 
-            try:
-                if self.index is not None:
-                    data = frame_provider.get_chunk(
-                        self.index, quality=self.quality, is_task_chunk=False
-                    )
-                else:
-                    data = frame_provider.get_chunk(
-                        self.number, quality=self.quality, is_task_chunk=True
-                    )
+            if self.index is not None:
+                data = frame_provider.get_chunk(
+                    self.index, quality=self.quality, is_task_chunk=False
+                )
+            else:
+                data = frame_provider.get_chunk(
+                    self.number, quality=self.quality, is_task_chunk=True
+                )
 
-                return HttpResponse(
-                    data.data.getvalue(),
-                    content_type=data.mime,
-                    headers=self._get_chunk_response_headers(data),
-                )
-            except (TimeoutError, CvatChunkTimestampMismatchError, LockError):
-                return Response(
-                    status=status.HTTP_429_TOO_MANY_REQUESTS,
-                    headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
-                )
-            except CacheTooLargeDataError as ex:
-                return Response(
-                    data=str(ex),
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-            except CloudStorageMissingError as ex:
-                return Response(
-                    data=str(ex),
-                    status=status.HTTP_409_CONFLICT,
-                )
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=self._get_chunk_response_headers(data),
+            )
         else:
-            return super().__call__()
+            return super()._get_data_response()
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
