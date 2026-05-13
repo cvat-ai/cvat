@@ -10,7 +10,9 @@ import {
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory, useLocation, useParams } from 'react-router';
-import { CombinedState, PluginComponent, PluginEntrypoint, InstanceType } from 'reducers';
+import {
+    CombinedState, PluginComponent, PluginEntrypoint, InstanceType,
+} from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
