@@ -861,6 +861,10 @@ class JobAnnotation:
         import_mode = AnnotationImportMode(import_mode)
         if import_mode == AnnotationImportMode.REPLACE:
             self.delete()
+        elif import_mode == AnnotationImportMode.APPEND:
+            pass
+        else:
+            assert False, f"Unknown annotation import mode: {import_mode}"
 
         with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
@@ -1096,6 +1100,10 @@ class TaskAnnotation:
         import_mode = AnnotationImportMode(import_mode)
         if import_mode == AnnotationImportMode.REPLACE:
             self.delete()
+        elif import_mode == AnnotationImportMode.APPEND:
+            pass
+        else:
+            assert False, f"Unknown annotation import mode: {import_mode}"
 
         with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
@@ -1242,7 +1250,8 @@ def import_task_annotations(
     task_id,
     format_name,
     conv_mask_to_poly,
-    import_mode=AnnotationImportMode.REPLACE,
+    *,
+    import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
 ):
     av_scan_paths(src_file)
     task = TaskAnnotation(task_id, write_only=True)
@@ -1266,7 +1275,8 @@ def import_job_annotations(
     job_id,
     format_name,
     conv_mask_to_poly,
-    import_mode=AnnotationImportMode.REPLACE,
+    *,
+    import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
 ):
     av_scan_paths(src_file)
     job = JobAnnotation(job_id, prefetch_images=True)

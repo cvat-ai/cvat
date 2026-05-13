@@ -3292,6 +3292,7 @@ class TestImportTaskAnnotations:
         ("import_mode", "should_append"),
         [
             pytest.param(None, False, id="replace-default"),
+            pytest.param("replace", False, id="replace"),
             pytest.param("append", True, id="append"),
         ],
     )
