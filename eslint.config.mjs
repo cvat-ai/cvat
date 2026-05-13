@@ -335,6 +335,7 @@ export default [
                 caughtErrorsIgnorePattern: '^_',
             }],
             '@typescript-eslint/default-param-last': 'off',
+            'lines-between-class-members': 'off',
             '@typescript-eslint/lines-between-class-members': 'off',
             'default-param-last': 'off',
             // Relax the object type restriction - use Record<string, unknown> or explicit types where reasonable

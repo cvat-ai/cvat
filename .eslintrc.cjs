@@ -42,6 +42,7 @@ module.exports = {
         'func-names': 0,
         'valid-typeof': 0,
         'quotes': ['error', 'single', { "avoidEscape": true }],
+        'lines-between-class-members': 'off',
         '@stylistic/lines-between-class-members': 0,
         '@typescript-eslint/lines-between-class-members': 'off',
         'class-methods-use-this': 0,
