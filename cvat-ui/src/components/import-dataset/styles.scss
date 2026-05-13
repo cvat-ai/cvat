@@ -30,8 +30,9 @@
 }
 
 .cvat-modal-import-mode {
-    .ant-radio-group {
-        display: flex;
-        flex-direction: column;
-    }
+    margin-top: $grid-unit-size;
+}
+
+.cvat-modal-import-mode-label {
+    align-items: center;
 }

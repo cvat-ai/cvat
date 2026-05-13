@@ -656,16 +656,32 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 {isAnnotation() && (
                     <Form.Item
                         name='importMode'
-                        label={<Text strong>Import mode</Text>}
+                        label={(
+                            <Space className='cvat-modal-import-mode-label' size={4}>
+                                <Text strong>Import mode</Text>
+                                <CVATTooltip
+                                    title={(
+                                        <div>
+                                            <div>Choose what to do with existing annotations.</div>
+                                            <div>Replace: remove existing annotations before import.</div>
+                                            <div>Append: keep existing annotations and add imported ones.</div>
+                                        </div>
+                                    )}
+                                >
+                                    <QuestionCircleOutlined />
+                                </CVATTooltip>
+                            </Space>
+                        )}
                         className='cvat-modal-import-mode'
                     >
                         <Radio.Group
+                            buttonStyle='solid'
                             onChange={(event) => {
                                 dispatch(reducerActions.setImportMode(event.target.value));
                             }}
                         >
-                            <Radio value='replace'>Replace existing annotations</Radio>
-                            <Radio value='append'>Append to existing annotations</Radio>
+                            <Radio.Button value='replace'>Replace</Radio.Button>
+                            <Radio.Button value='append'>Append</Radio.Button>
                         </Radio.Group>
                     </Form.Item>
                 )}
