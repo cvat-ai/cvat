@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from django.db import transaction
 from django.http import HttpRequest
+from rest_framework.request import Request
 from rest_framework.renderers import JSONRenderer
 from rest_framework.throttling import BaseThrottle
 
@@ -47,6 +48,9 @@ class EventScopes:
 
 
 def get_remote_addr(request) -> str | None:
+    if isinstance(request, Request):
+        request = request._request
+
     if not isinstance(request, HttpRequest):
         return None
 
