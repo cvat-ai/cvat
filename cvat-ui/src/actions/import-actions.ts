@@ -79,7 +79,7 @@ export const importDatasetAsync = (
     sourceStorage: Storage,
     file: File | string,
     convMaskToPoly: boolean,
-    importMode: 'replace' | 'append' = 'replace',
+    importMode: 'replace' | 'append',
 ): ThunkAction => (
     async (dispatch, getState) => {
         const instanceType = getInstanceType(instance);

@@ -504,21 +504,21 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     };
 
     const confirmUpload = (): void => {
-        if (uploadParams.importMode === 'append') {
-            onUpload();
-            return;
-        }
+        const isAppend = uploadParams.importMode === 'append';
 
         confirm({
-            title: 'Current annotation will be lost',
-            content: `You are going to upload new annotations to ${instanceType}. Continue?`,
+            title: isAppend ? 'Append annotations?' : 'Current annotation will be lost',
+            content: isAppend ?
+                `You are going to append new annotations to ${instanceType}. ` +
+                    'This process cannot be aborted after it starts. Continue?' :
+                `You are going to upload new annotations to ${instanceType}. Continue?`,
             className: `cvat-modal-content-load-${instanceType.split(' ')[0]}-annotation`,
             onOk: () => {
                 onUpload();
             },
             okButtonProps: {
                 type: 'primary',
-                danger: true,
+                danger: !isAppend,
             },
             okText: 'Update',
         });
