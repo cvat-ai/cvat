@@ -102,45 +102,25 @@ export class InterpolationNotPossibleError extends Error {}
 
 class Annotation {
     public clientID: number;
-
     protected taskLabels: Record<number, Label>;
-
     protected history: any;
-
     protected groupColors: Record<number, string>;
-
     public serverID: number | null;
-
     protected parentID: number | null;
-
     protected dimension: DimensionType;
-
     protected jobType: JobType;
-
     public group: number;
-
     public label: Label;
-
     public frame: number;
-
     private _removed: boolean;
-
     public lock: boolean;
-
     protected readOnlyFields: string[];
-
     protected color: string;
-
     protected source: Source;
-
     public score: number;
-
     public votes: number;
-
     public updated: number;
-
     public attributes: Record<number, string>;
-
     protected groupObject: {
         color: string;
         readonly id: number;
@@ -449,13 +429,9 @@ class Annotation {
 
 class Drawn extends Annotation {
     protected framesInfo: AnnotationInjection['framesInfo'];
-
     protected descriptions: string[];
-
     public hidden: boolean;
-
     protected pinned: boolean;
-
     public shapeType: ShapeType;
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
@@ -558,13 +534,9 @@ class Drawn extends Annotation {
 
 export class Shape extends Drawn {
     public points: number[];
-
     public occluded: boolean;
-
     public outside: boolean;
-
     public rotation: number;
-
     public zOrder: number;
 
     constructor(
@@ -890,7 +862,6 @@ export interface InterpolatedPosition {
 
 export class Track extends Drawn {
     public shapes: Record<number, TrackedShape>;
-
     constructor(
         data: SerializedTrack | SerializedTrack['elements'][0],
         clientID: number,
@@ -2266,13 +2237,9 @@ export class SkeletonShape extends Shape {
 
 export class MaskShape extends Shape {
     public left: number;
-
     public top: number;
-
     public right: number;
-
     public bottom: number;
-
     private getMasksOnFrame: AnnotationInjection['getMasksOnFrame'];
 
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
