@@ -98,4 +98,4 @@ To change password:
 1. Open the **Security** tab.
 1. Select **Change password** and follow the instructions on the screen.
 
-   ![Reset password](/images/change_password.jpg)
+   ![Reset password](/images/change_password.png)
