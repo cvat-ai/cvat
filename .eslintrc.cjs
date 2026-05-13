@@ -55,6 +55,8 @@ module.exports = {
         'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
         'import/no-unresolved': 'off',
         'import/prefer-default-export': 0, // works incorrect with interfaces
+        'no-useless-assignment': 'off',
+        'preserve-caught-error': 'off',
 
         'react/jsx-indent-props': 0, // new rule, breaks current styling
         'react/jsx-indent': 0, // new rule, conflicts with eslint@typescript-eslint/indent eslint@indent, breaks current styling

@@ -2,18 +2,22 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { dirname } from 'node:path';
+import { dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
+import { fixupPluginRules } from '@eslint/compat';
 import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
 import stylisticPlugin from '@stylistic/eslint-plugin';
+import tseslintPlugin from '@typescript-eslint/eslint-plugin';
 import cypressPlugin from 'eslint-plugin-cypress';
 import globals from 'globals';
 import importPlugin from 'eslint-plugin-import';
+import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 import noUnsanitizedPlugin from 'eslint-plugin-no-unsanitized';
 import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import securityPlugin from 'eslint-plugin-security';
 import chaiFriendlyPlugin from 'eslint-plugin-chai-friendly';
 
@@ -29,6 +33,11 @@ const compat = new FlatCompat({
 function scopedConfig(config, files) {
     return compat.config(config).map((entry) => ({
         ...entry,
+        ...(entry.plugins ? {
+            plugins: Object.fromEntries(
+                Object.entries(entry.plugins).map(([name, plugin]) => [name, sharedCompatPlugins[name] || plugin]),
+            ),
+        } : {}),
         ...(entry.ignores ? {} : { files }),
     }));
 }
@@ -59,6 +68,79 @@ const browserAndNodeGlobals = {
     AbortController: 'readonly',
     WorkerGlobalScope: 'readonly',
 };
+
+const sharedCompatPlugins = {
+    '@stylistic': stylisticPlugin,
+    '@typescript-eslint': tseslintPlugin,
+    import: importPlugin,
+    'jsx-a11y': jsxA11yPlugin,
+    'no-unsanitized': noUnsanitizedPlugin,
+    react: fixupPluginRules(reactPlugin),
+    'react-hooks': reactHooksPlugin,
+    security: securityPlugin,
+};
+const localReactPlugin = {
+    rules: {
+        'jsx-filename-extension': {
+            meta: {
+                type: 'problem',
+                docs: {
+                    description: 'Restrict file extensions that may contain JSX',
+                },
+                schema: [{
+                    type: 'object',
+                    properties: {
+                        extensions: {
+                            type: 'array',
+                            items: {
+                                type: 'string',
+                            },
+                        },
+                    },
+                    additionalProperties: false,
+                }],
+                messages: {
+                    unexpectedExtension: 'JSX is only allowed in files with extensions: {{ allowed }}. Current file extension: {{ ext }}.',
+                },
+            },
+            create(context) {
+                const [{ extensions = ['.jsx', '.tsx'] } = {}] = context.options;
+                let firstJSXNode = null;
+
+                return {
+                    JSXElement(node) {
+                        firstJSXNode ??= node;
+                    },
+                    JSXFragment(node) {
+                        firstJSXNode ??= node;
+                    },
+                    'Program:exit'() {
+                        if (!firstJSXNode) {
+                            return;
+                        }
+
+                        const currentExtension = extensions.find((extension) => context.filename.endsWith(extension));
+                        if (currentExtension) {
+                            return;
+                        }
+
+                        context.report({
+                            node: firstJSXNode,
+                            messageId: 'unexpectedExtension',
+                            data: {
+                                allowed: extensions.join(', '),
+                                ext: extname(context.filename) || '(no extension)',
+                            },
+                        });
+                    },
+                };
+            },
+        },
+    },
+};
+const disabledReactRules = Object.fromEntries(
+    Object.keys(reactPlugin.rules).map((ruleName) => [`react/${ruleName}`, 'off']),
+);
 
 const sourceFiles = [
     'cvat-data/**/*.{js,ts}',
@@ -188,6 +270,11 @@ export default [
             'tests/cypress/**/*.js',
             'tests/*cypress*.config.js',
         ],
+        settings: {
+            react: {
+                version: '18.2.0',
+            },
+        },
         plugins: {
             '@stylistic': stylisticPlugin,
             security: securityPlugin,
@@ -206,6 +293,21 @@ export default [
     ...scopedConfig(canvas3dConfig, ['cvat-canvas3d/**/*.{js,ts}']),
     ...scopedConfig(uiConfig, ['cvat-ui/**/*.{js,jsx,ts,tsx}']),
     {
+        files: sourceFiles,
+        settings: {
+            react: {
+                version: '18.2.0',
+            },
+        },
+        plugins: {
+            'local-react': localReactPlugin,
+        },
+        rules: {
+            ...disabledReactRules,
+            'local-react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
+        },
+    },
+    {
         files: [
             'cvat-data/**/*.{ts,mts,cts}',
             'cvat-core/**/*.{ts,mts,cts}',
@@ -214,7 +316,7 @@ export default [
             'cvat-ui/**/*.{ts,tsx,mts,cts}'
         ],
         plugins: {
-            react: reactPlugin,
+            react: fixupPluginRules(reactPlugin),
         },
         languageOptions: {
             globals: {
@@ -233,9 +335,8 @@ export default [
                 caughtErrorsIgnorePattern: '^_',
             }],
             '@typescript-eslint/default-param-last': 'off',
-            'lines-between-class-members': 'off',
+            '@typescript-eslint/lines-between-class-members': 'off',
             'default-param-last': 'off',
-            'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
             // Relax the object type restriction - use Record<string, unknown> or explicit types where reasonable
             '@typescript-eslint/no-restricted-types': 'off',
             // Allow {} in generics (e.g., React.PureComponent<{}, State>)
