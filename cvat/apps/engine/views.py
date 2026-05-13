@@ -13,7 +13,7 @@ import zlib
 from abc import ABCMeta, abstractmethod
 from contextlib import suppress
 from copy import copy
-from datetime import datetime
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -23,9 +23,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
-from django.db.models.query import Prefetch
+from django.db.models.query import Prefetch, prefetch_related_objects
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
-from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiExample,
@@ -323,9 +322,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'annotation_guide', 'source_storage', 'target_storage',
     )
 
-    search_fields = ('name', 'owner', 'assignee', 'status')
-    filter_fields = list(search_fields) + ['id', 'updated_date']
-    simple_filters = list(search_fields)
+    search_fields = ('name', 'owner', 'assignee')
+    simple_filters = (*search_fields, 'status')
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
@@ -546,34 +545,35 @@ class _DataGetter(metaclass=ABCMeta):
     @abstractmethod
     def _get_frame_provider(self) -> IFrameProvider: ...
 
-    def __call__(self):
+    def _get_data_response(self) -> HttpResponse:
         frame_provider = self._get_frame_provider()
 
+        if self.type == 'chunk':
+            data = frame_provider.get_chunk(self.number, quality=self.quality)
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=self._get_chunk_response_headers(data),
+            )
+        elif self.type == 'frame':
+            data = frame_provider.get_frame(self.number, quality=self.quality)
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == 'preview':
+            data = frame_provider.get_preview()
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == 'context_image':
+            data = frame_provider.get_frame_context_images_chunk(self.number)
+            if not data:
+                return HttpResponseNotFound()
+
+            return HttpResponse(data.data, content_type=data.mime)
+        else:
+            return Response(data='unknown data type {}.'.format(self.type),
+                status=status.HTTP_400_BAD_REQUEST)
+
+    def __call__(self):
         try:
-            if self.type == 'chunk':
-                data = frame_provider.get_chunk(self.number, quality=self.quality)
-                return HttpResponse(
-                    data.data.getvalue(),
-                    content_type=data.mime,
-                    headers=self._get_chunk_response_headers(data),
-                )
-            elif self.type == 'frame' or self.type == 'preview':
-                if self.type == 'preview':
-                    data = frame_provider.get_preview()
-                else:
-                    data = frame_provider.get_frame(self.number, quality=self.quality)
-
-                return HttpResponse(data.data.getvalue(), content_type=data.mime)
-
-            elif self.type == 'context_image':
-                data = frame_provider.get_frame_context_images_chunk(self.number)
-                if not data:
-                    return HttpResponseNotFound()
-
-                return HttpResponse(data.data, content_type=data.mime)
-            else:
-                return Response(data='unknown data type {}.'.format(self.type),
-                    status=status.HTTP_400_BAD_REQUEST)
+            return self._get_data_response()
         except (ValidationError, PermissionDenied, NotFound) as ex:
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
@@ -671,43 +671,27 @@ class _JobDataGetter(_DataGetter):
     def _get_frame_provider(self) -> JobFrameProvider:
         return JobFrameProvider(self._db_job)
 
-    def __call__(self):
+    def _get_data_response(self):
         if self.type == 'chunk':
             # Reproduce the task chunk indexing
             frame_provider = self._get_frame_provider()
 
-            try:
-                if self.index is not None:
-                    data = frame_provider.get_chunk(
-                        self.index, quality=self.quality, is_task_chunk=False
-                    )
-                else:
-                    data = frame_provider.get_chunk(
-                        self.number, quality=self.quality, is_task_chunk=True
-                    )
+            if self.index is not None:
+                data = frame_provider.get_chunk(
+                    self.index, quality=self.quality, is_task_chunk=False
+                )
+            else:
+                data = frame_provider.get_chunk(
+                    self.number, quality=self.quality, is_task_chunk=True
+                )
 
-                return HttpResponse(
-                    data.data.getvalue(),
-                    content_type=data.mime,
-                    headers=self._get_chunk_response_headers(data),
-                )
-            except (TimeoutError, CvatChunkTimestampMismatchError, LockError):
-                return Response(
-                    status=status.HTTP_429_TOO_MANY_REQUESTS,
-                    headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
-                )
-            except CacheTooLargeDataError as ex:
-                return Response(
-                    data=str(ex),
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-            except CloudStorageMissingError as ex:
-                return Response(
-                    data=str(ex),
-                    status=status.HTTP_409_CONFLICT,
-                )
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=self._get_chunk_response_headers(data),
+            )
         else:
-            return super().__call__()
+            return super()._get_data_response()
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
@@ -837,18 +821,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
 ):
-    queryset = Task.objects.select_related(
-        'data',
-        'assignee',
-        'owner',
-        'target_storage',
-        'source_storage',
-        'annotation_guide',
-    ).prefetch_related(
-        # avoid loading heavy data in select related
-        # this reduces performance of the COUNT request in the list endpoint
-        'data__validation_layout',
-    )
+    queryset = Task.objects
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -858,17 +831,19 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'validation_mode': 'data__validation_layout__mode',
     }
     search_fields = (
-        'project_name', 'name', 'owner', 'status', 'assignee',
-        'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode'
+        'project_name', 'name', 'owner', 'assignee', 'subset', 'tracker_link',
     )
-    filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
+    simple_filters = (
+        *search_fields,
+        'project_id', 'status', 'media_type', 'mode', 'dimension', 'validation_mode',
+    )
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
             - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}\n
             - Get all completed tasks from 1 project - { "and": [{ "==": [{ "var" : "status" }, "completed"]}, { "==" : [{ "var" : "project_id"}, 1]}]}\n
     """)
-    simple_filters = list(search_fields) + ['project_id']
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_supports_organization_params = True
@@ -886,13 +861,22 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            queryset = queryset.select_related('assignee', 'owner')
             # with_job_summary() is optimized in the serializer
-        elif self.action == 'preview':
-            queryset = Task.objects.select_related('data')
         elif self.action == 'validation_layout':
             queryset = Task.objects.select_related('data', 'data__validation_layout')
-        else:
-            queryset = queryset.with_job_summary()
+        elif self.action not in ('metadata', 'annotations'):
+            queryset = queryset.select_related('data')
+
+            if self.action in ('create', 'retrieve', 'update', 'partial_update', 'destroy'):
+                queryset = queryset.select_related(
+                    'target_storage',
+                    'source_storage',
+                    'annotation_guide',
+                    'assignee',
+                    'owner',
+                )
+                queryset = queryset.with_job_summary()
 
         return queryset
 
@@ -1460,13 +1444,31 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request: ExtendedRequest, pk: int):
-        self.get_object() #force to call check_object_permissions
-        db_task = models.Task.objects.prefetch_related(
-            'segment_set',
-            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
-        ).get(pk=pk)
+        db_task = self.get_object() #force to call check_object_permissions
+
+        def prefetch():
+            data_queryset = (
+                models.Data.objects
+                .select_related("validation_layout", "video")
+                .prefetch_related(
+                    Prefetch(
+                        'images',
+                        queryset=(
+                            models.Image.objects
+                            .prefetch_related('related_files')
+                            .order_by('frame')
+                        )
+                    )
+                )
+            )
+
+            prefetch_related_objects(
+                [db_task],
+                "segment_set",
+                Prefetch("data", queryset=data_queryset)
+            )
+
+        prefetch()
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
@@ -1654,31 +1656,27 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
     UploadMixin, DatasetMixin
 ):
-    queryset = (
-        Job.objects
-        .select_related(
-            'assignee',
-            'segment__task',
-            'segment__task__project',
-        )
-        .prefetch_related(
-            'segment__task__data',
-            'segment__task__annotation_guide',
-            'segment__task__project__annotation_guide',
-        )
+    queryset = Job.objects.select_related(
+        # prefetch data for permission checks
+        'segment__task',
+        'segment__task__project',
     )
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
-    search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
-    filter_fields = list(search_fields) + [
-        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id',
-    ]
-    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
+    search_fields = ('task_name', 'project_name', 'assignee')
+    simple_filters = (
+        *search_fields,
+        'task_id', 'project_id', 'type', 'parent_job_id',
+        'dimension', 'media_type', "mode", 'state', 'stage',
+    )
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
         'dimension': 'segment__task__dimension',
+        'media_type': 'segment__task__media_type',
+        'mode': 'segment__task__mode',
         'task_id': 'segment__task_id',
         'project_id': 'segment__task__project_id',
         'task_name': 'segment__task__name',
@@ -1692,9 +1690,18 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+            queryset = queryset.select_related('assignee')
             # with_* optimized in JobReadListSerializer
-        else:
-            queryset = queryset.with_issue_counts().with_child_jobs_counts()
+        elif self.action not in ('annotations', 'metadata'):
+            queryset = queryset.select_related('segment__task__data')
+
+            if self.action in ('create', 'retrieve', 'update', 'partial_update', 'destroy'):
+                queryset = queryset.select_related(
+                    'assignee',
+                    'segment__task__annotation_guide',
+                    'segment__task__project__annotation_guide',
+                )
+                queryset = queryset.with_issue_counts().with_child_jobs_counts()
 
         return queryset
 
@@ -1945,18 +1952,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request: ExtendedRequest, pk: int):
-        self.get_object() # force call of check_object_permissions()
+        db_job = self.get_object() # force call of check_object_permissions()
 
-        db_job = models.Job.objects.select_related(
-            'segment',
-            'segment__task',
-        ).prefetch_related(
-            Prefetch(
-                'segment__task__data',
-                queryset=models.Data.objects.select_related(
-                    'video',
-                    'validation_layout',
-                ).prefetch_related(
+        def prefetch():
+            data_queryset = (
+                models.Data.objects
+                .select_related("validation_layout", "video")
+                .prefetch_related(
                     Prefetch(
                         'images',
                         queryset=(
@@ -1967,7 +1969,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     )
                 )
             )
-        ).get(pk=pk)
+
+            prefetch_related_objects(
+                [db_job],
+                Prefetch("segment__task__data", queryset=data_queryset)
+            )
+
+        prefetch()
 
         if request.method == 'PATCH':
             serializer = JobDataMetaWriteSerializer(instance=db_job, data=request.data)
@@ -2144,8 +2152,8 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_supports_organization_params = True
     iam_permission_class = IssuePermission
     search_fields = ('owner', 'assignee')
-    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
-    simple_filters = list(search_fields) + ['job_id', 'task_id', 'resolved', 'frame_id']
+    simple_filters = (*search_fields, 'job_id', 'task_id', 'resolved', 'frame_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     lookup_fields = {
         'owner': 'owner__username',
@@ -2216,8 +2224,8 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_supports_organization_params = True
     iam_permission_class = CommentPermission
     search_fields = ('owner',)
-    filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
-    simple_filters = list(search_fields) + ['issue_id', 'frame_id', 'job_id']
+    simple_filters = (*search_fields, 'issue_id', 'frame_id', 'job_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     ordering = '-id'
     lookup_fields = {
@@ -2302,8 +2310,8 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_permission_class = LabelPermission
 
     search_fields = ('name', 'parent')
-    filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
-    simple_filters = list(set(filter_fields) - {'id'})
+    simple_filters = (*search_fields, 'type', 'color', 'parent_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     lookup_fields = {
         'parent': 'parent__name',
@@ -2448,8 +2456,8 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_permission_class = UserPermission
 
     search_fields = ('username', 'first_name', 'last_name')
-    filter_fields = list(search_fields) + ['id', 'is_active']
-    simple_filters = list(search_fields) + ['is_active']
+    simple_filters = (*search_fields, 'is_active')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
@@ -2529,10 +2537,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = CloudStorage.objects.all()
 
-    search_fields = ('provider_type', 'name', 'resource',
-                    'credentials_type', 'owner', 'description')
-    filter_fields = list(search_fields) + ['id']
-    simple_filters = list(set(search_fields) - {'description'})
+    search_fields = ('name', 'resource', 'owner', 'description')
+    simple_filters = ('name', 'resource', 'owner', 'provider_type', 'credentials_type')
+    filter_fields = (*simple_filters, 'id', 'description')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}

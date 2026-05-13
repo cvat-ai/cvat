@@ -356,10 +356,12 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
         (
             "assignee",
             "dimension",
+            "media_type",
             "mode",
             "name",
             "owner",
             "project_id",
+            "project_name",
             "status",
             "subset",
             "tracker_link",

@@ -35,6 +35,7 @@ from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_sc
 from numpy import random
 from PIL import Image
 from rest_framework import exceptions, serializers
+from rest_framework.reverse import reverse
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
@@ -60,7 +61,6 @@ from cvat.apps.engine.utils import (
     get_path_size,
     grouped,
     parse_specific_attributes,
-    reverse,
     take_by,
 )
 from cvat.apps.iam.permissions import get_iam_context
@@ -143,11 +143,14 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
             return None
 
         return serializers.Hyperlink(
-            reverse(self.view_name, request=request,
-                query_params=build_field_filter_params(
+            reverse(
+                self.view_name,
+                request=request,
+                query=build_field_filter_params(
                     self.filter_key, getattr(instance, self.key_field)
-            )),
-            instance
+                ),
+            ),
+            instance,
         )
 
 
@@ -203,8 +206,7 @@ class LabelsSummarySerializer(serializers.Serializer):
 
     def get_url(self, request, instance):
         filter_key = instance.__class__.__name__.lower() + '_id'
-        return reverse('label-list', request=request,
-            query_params={ filter_key: instance.id })
+        return reverse('label-list', request=request, query={filter_key: instance.id})
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -220,8 +222,7 @@ class IssuesSummarySerializer(serializers.Serializer):
     count = serializers.IntegerField(read_only=True)
 
     def get_url(self, request, instance):
-        return reverse('issue-list', request=request,
-            query_params={ 'job_id': instance.id })
+        return reverse('issue-list', request=request, query={'job_id': instance.id})
 
     def get_count(self, instance):
         return getattr(instance, 'issue__count', 0)
@@ -775,6 +776,9 @@ class JobReadListSerializer(serializers.ListSerializer):
             }
 
             # Join the prefetched objects
+            # Keep in mind that the object ids fetched in the earlier queries
+            # might be missing in the later queries because of locks and removals,
+            # so should not be expected to be present and should be checked before access.
             for job in page:
                 job.user_can_view_task = job.segment.task_id in visible_task_ids
 
@@ -808,6 +812,13 @@ class JobReadListSerializer(serializers.ListSerializer):
                 job.issue__count = issue_counts.get(job.id, 0)
                 job.child_jobs__count = children_counts.get(job.id, 0)
 
+            prefetch_related_objects(
+                page,
+                "segment__task__data",
+                'segment__task__annotation_guide',
+                'segment__task__project__annotation_guide',
+            )
+
         return super().to_representation(data)
 
 
@@ -826,8 +837,9 @@ class JobReadSerializer(serializers.ModelSerializer):
     # We're using CharField to produce simple strings instead of enums in the generated SDK.
     # SDK enums require explicit .value calls to access the string representation.
     # TODO: move to ChoicesField when SDK supports seamless transition from string to enum
-    dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
-    mode = serializers.CharField(source='segment.task.mode', required=False, read_only=True)
+    dimension = serializers.CharField(source='segment.task.dimension', read_only=True)
+    mode = serializers.CharField(source='segment.task.mode', read_only=True)
+    media_type = serializers.CharField(source='segment.task.media_type', read_only=True)
 
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
@@ -846,7 +858,8 @@ class JobReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'task_name', 'project_id', 'project_name', 'assignee', 'guide_id',
-            'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
+            'dimension', 'mode', 'media_type',
+            'bug_tracker', 'status', 'stage', 'state', 'frame_count',
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
@@ -2502,6 +2515,18 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 .only("id", "name")
             }
 
+            page_storage_ids = set(
+                v
+                for task in page
+                for v in (task.source_storage_id, task.target_storage_id)
+            )
+            storages = {
+                s.id: s for s in models.Storage.objects.filter(id__in=page_storage_ids)
+            }
+
+            # Keep in mind that the object ids fetched in the earlier queries
+            # might be missing in the later queries because of locks and removals,
+            # so should not be expected to be present and should be checked before access.
             for task in page:
                 if task.project_id:
                     task.user_can_view_project = task.project_id in visible_projects
@@ -2511,6 +2536,22 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 task_job_summary = job_counts.get(task.id)
                 for k in job_summary_fields:
                     setattr(task, k, task_job_summary[k])
+
+                if task.source_storage_id in storages:
+                    task.source_storage = storages[task.source_storage_id]
+
+                if task.target_storage_id in storages:
+                    task.target_storage = storages[task.target_storage_id]
+
+            prefetch_related_objects(
+                page,
+                "data",
+                Prefetch(
+                    "data__validation_layout",
+                    queryset=models.ValidationLayout.objects.only("id", "task_data_id", "mode")
+                ),
+                "annotation_guide",
+            )
 
         return super().to_representation(data)
 
@@ -2533,8 +2574,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
     # We're using CharField to produce simple strings instead of enums in the generated SDK.
     # SDK enums require explicit .value calls to access the string representation.
     # TODO: move to ChoicesField when SDK supports seamless transition from string to enum
-    dimension = serializers.CharField(allow_blank=True, required=False)
+    dimension = serializers.CharField(allow_blank=True, required=False, read_only=True)
     mode = serializers.CharField(allow_blank=True, required=False, read_only=True)
+    media_type = serializers.CharField(allow_blank=True, required=False, read_only=True)
 
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
@@ -2550,10 +2592,11 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'project_name', 'mode', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'project_id', 'project_name', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_original_chunk_type', 'data_compressed_chunk_type',
-            'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data', 'dimension',
+            'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data',
+            'dimension', 'mode', 'media_type',
             'subset', 'organization_id',
             'organization', # deprecated field
             'target_storage', 'source_storage', 'jobs', 'labels',
@@ -2894,7 +2937,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
-    dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
+    dimension = serializers.CharField(required=False, allow_null=True, read_only=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     tasks = TasksSummarySerializer(models.Task, url_filter_key='project_id')
@@ -2917,7 +2960,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
         task_dimension = next(
             (task.dimension for task in instance.tasks.all() if task.dimension),
-            None
+            None # backward compatibility; TODO: migrate to "" for consistency with tasks
         )
         response['task_subsets'] = list(task_subsets)
         response['dimension'] = task_dimension
@@ -3296,9 +3339,17 @@ class AttributeValSerializer(serializers.Serializer):
         data['value'] = str(data['value'])
         return super().to_internal_value(data)
 
+class AttributedAnnotationSerializer(serializers.Serializer):
+    attributes = AttributeValSerializer(many=True, default=[])
+
+class ScoredAnnotationSerializer(serializers.Serializer):
+    score = serializers.FloatField(min_value=0, max_value=1, default=1)
+
+class FrameAnnotationSerializer(serializers.Serializer):
+    frame = serializers.IntegerField(min_value=0)
+
 class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
-    frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(
         min_value=0, default=0,
@@ -3343,8 +3394,10 @@ class AnnotationSerializer(serializers.Serializer):
 
         return None
 
-class LabeledImageSerializer(AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True, default=[])
+class LabeledImageSerializer(
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
+):
+    pass
 
 class OptimizedFloatListField(serializers.ListField):
     '''Default ListField is extremely slow when try to process long lists of points'''
@@ -3409,9 +3462,11 @@ class ShapeSerializer(serializers.Serializer):
 
         return attrs
 
-class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
-    attributes = AttributeValSerializer(many=True, default=[])
-    score = serializers.FloatField(min_value=0, max_value=1, default=1)
+class SubLabeledShapeSerializer(
+    ShapeSerializer, AnnotationSerializer, FrameAnnotationSerializer,
+    AttributedAnnotationSerializer, ScoredAnnotationSerializer,
+):
+    pass
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -3496,14 +3551,14 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
 
         return convert_track(instance)
 
-class TrackedShapeSerializer(ShapeSerializer):
+class TrackedShapeSerializer(ShapeSerializer, AttributedAnnotationSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True, default=[])
 
-class SubLabeledTrackSerializer(AnnotationSerializer):
+class SubLabeledTrackSerializer(
+    AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
+):
     shapes = TrackedShapeSerializer(many=True, allow_empty=True)
-    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)

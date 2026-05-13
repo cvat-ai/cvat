@@ -44,7 +44,7 @@ export function checkAutoborderPointsCount(expectedCount) {
 /**
  * Draw a shape by clicking through an array of points
  * using cy.trigger events
- * @param {Array<{x: number, y: number}>} points - Array of points to trigger
+ * @param {Array<{x: number, y: number}>} pointsMap - Array of points to trigger
  */
 export function drawWithTriggers(pointsMap) {
     pointsMap.forEach((p) => {
@@ -56,7 +56,7 @@ export function drawWithTriggers(pointsMap) {
 /**
  * Draw a shape by clicking through an array of points
  * using cy.click
- * @param {Array<{x: number, y: number}>} points - Array of points to click
+ * @param {Array<{x: number, y: number}>} pointsMap - Array of points to click
  */
 export function drawWithClicks(pointsMap) {
     pointsMap.forEach((element) => {
@@ -64,15 +64,63 @@ export function drawWithClicks(pointsMap) {
     });
 }
 
-export function getShapeCoord(type, objectId) {
+/**
+ * Draw a shape by clicking through an array of points
+ * using cy.click
+ * @param {Array<{x: number, y: number}>} pointsMap - Array of points to click
+ */
+export function drawWithShiftHover(pointsMap) {
+    const [firstPoint, ...points] = pointsMap;
+
+    cy.get('.cvat-canvas-container').click(firstPoint.x, firstPoint.y);
+
+    points.forEach((point) => {
+        cy.get('.cvat-canvas-container').trigger('mousemove', point.x, point.y, { shiftKey: true });
+    });
+}
+
+/**
+ * Description
+ * @param {any} createPolyshapeParams
+ * @param {'trigger' | 'shiftHover' | 'click'} drawMethod
+ * @returns {any}
+ */
+export function drawPolyshape(createPolyshapeParams, drawMethod) {
+    if (drawMethod === 'trigger') {
+        drawWithTriggers(createPolyshapeParams.pointsMap);
+    } else if (drawMethod === 'shiftHover') {
+        drawWithShiftHover(createPolyshapeParams.pointsMap);
+    } else if (drawMethod === 'click') {
+        drawWithClicks(createPolyshapeParams.pointsMap);
+    }
+}
+
+/**
+ * Toggle auto-simplify switch for a shape
+ * @param {boolean} expectedState
+ * @param {'polygon' | 'polyline'} shape
+ */
+export function toggleAutoSimplify(expectedState, shape) {
+    cy.get(`.cvat-draw-shape-popover .cvat-draw-${shape}-popover-simplify-switch`)
+        .should('exist').and('be.visible')
+        .click();
+    if (expectedState === true) {
+        cy.get(`.cvat-draw-${shape}-popover-simplify-switch`)
+            .should('have.class', 'ant-switch-checked');
+    } else {
+        cy.get(`.cvat-draw-${shape}-popover-simplify-switch`).should('not.have.class', 'ant-switch-checked');
+    }
+}
+
+export function getShapeCoord(type, objectSelector) {
     const arrToPush = [];
     if (type === 'rect') {
-        cy.get(objectId).invoke('attr', 'x').then((x) => arrToPush.push(+x));
-        cy.get(objectId).invoke('attr', 'y').then((y) => arrToPush.push(+y));
-        cy.get(objectId).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
-        cy.get(objectId).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
+        cy.get(objectSelector).invoke('attr', 'x').then((x) => arrToPush.push(+x));
+        cy.get(objectSelector).invoke('attr', 'y').then((y) => arrToPush.push(+y));
+        cy.get(objectSelector).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
+        cy.get(objectSelector).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
     } else {
-        cy.get(objectId).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
+        cy.get(objectSelector).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
     }
     return cy.wrap(arrToPush);
 }
