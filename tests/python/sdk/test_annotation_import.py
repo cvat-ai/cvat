@@ -89,9 +89,7 @@ def test_import_annotations_sends_import_mode_as_query_param(tmp_path: Path, pro
     }
 
     def assert_upload_request(upload_header: str):
-        [request] = [
-            request for request in requests if upload_header in request["headers"]
-        ]
+        [request] = [request for request in requests if upload_header in request["headers"]]
         assert request["method"] == "POST"
         assert request["url"] == expected_url
         assert request["query_params"] == expected_query_params
