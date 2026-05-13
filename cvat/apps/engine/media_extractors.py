@@ -856,35 +856,21 @@ class AudioReader(IMediaReader):
         frame_start = frame.pts
         frame_end = frame.pts + frame.duration
 
-        filter_start = self.timestamp_to_sample(start)
-        filter_start += self._stream_start  # adjust the filter to the stream beginning
-
-        if stop is not None:
-            filter_end = self.timestamp_to_sample(stop) + 1
-            filter_end += self._stream_start  # adjust the filter to the stream beginning
-        else:
-            filter_end = frame_end
+        # Adjust the filter to the stream beginning
+        filter_start = self.timestamp_to_sample(start) + self._stream_start
+        filter_end = (
+            self.timestamp_to_sample(stop) + 1 + self._stream_start
+            if stop is not None
+            else frame_end
+        )
 
         if filter_start <= frame_start and frame_end <= filter_end:
             return (frame,)
 
-        # Clamp the filter to the frame range
-        filter_start = max(filter_start, frame_start)
-        filter_end = max(filter_start, min(filter_end, frame_end))
-
-        if frame_end <= filter_start or filter_end <= frame_start:
-            return []
-
-        outer_l = min(filter_start, frame_start)
-        outer_r = max(filter_end, frame_end)
-        union = outer_r - outer_l
-
         inner_l = max(filter_start, frame_start)
         inner_r = min(filter_end, frame_end)
-        intersection = max(0, inner_r - inner_l)
-
-        if intersection == union:
-            return [frame]
+        if inner_r <= inner_l:
+            return []
 
         # Frames can be of arbitrary size, depending on the format. We need to take
         # only the included samples from the frame.
@@ -912,9 +898,7 @@ class AudioReader(IMediaReader):
         resampler = av.AudioResampler(frame.format, layout=frame.layout, rate=frame.rate)
         converted_frames = resampler.resample(converted_frame)
         assert len(converted_frames) == 1
-        converted_frame = converted_frames[0]
-
-        return [converted_frame]
+        return [converted_frames[0]]
 
     def __iter__(self) -> Iterable[IMediaReader.AudioFrame]:
         yield from self.read_frames()
