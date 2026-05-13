@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import tempfile
+import traceback
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict, deque
 from collections.abc import Collection, Iterable
@@ -48,6 +49,7 @@ from cvat.apps.dataset_manager.views import (
     retry_current_rq_job,
 )
 from cvat.apps.engine import models
+from cvat.apps.engine.backup_signals import backup_finished
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.enums import BackupStatus
 from cvat.apps.engine.log import ServerLogManager
@@ -71,7 +73,7 @@ from cvat.apps.engine.task import JobFileMapping
 from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import (
     av_scan_paths,
-    queue_backup_created_event,
+    parse_exception_message,
     transaction_with_repeatable_read,
 )
 from utils.dataset_manifest import ImageManifestManager
@@ -1384,7 +1386,8 @@ def create_backup(
             # output_path includes timestamp of the last update
             if os.path.exists(output_path):
                 extend_export_file_lifetime(output_path)
-                queue_backup_created_event(
+                backup_finished.send(
+                    sender=create_backup,
                     target=db_instance,
                     lightweight=lightweight,
                     status=BackupStatus.COMPLETED,
@@ -1418,16 +1421,20 @@ def create_backup(
         )
         raise
     except Exception as exc:
-        queue_backup_created_event(
+        backup_finished.send(
+            sender=create_backup,
             target=db_instance,
             lightweight=lightweight,
             status=BackupStatus.FAILED,
-            message=str(exc),
+            message=parse_exception_message(
+                "".join(traceback.format_exception_only(type(exc), exc))
+            ),
         )
         log_exception(logger)
         raise
 
-    queue_backup_created_event(
+    backup_finished.send(
+        sender=create_backup,
         target=db_instance,
         lightweight=lightweight,
         status=BackupStatus.COMPLETED,

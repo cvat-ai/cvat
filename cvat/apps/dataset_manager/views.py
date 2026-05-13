@@ -7,6 +7,7 @@ import logging
 import os
 import os.path as osp
 import shutil
+import traceback
 from datetime import timedelta
 from os.path import exists as osp_exists
 
@@ -21,10 +22,11 @@ import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import ExportRQMeta
-from cvat.apps.engine.utils import get_rq_lock_by_user
+from cvat.apps.engine.utils import get_rq_lock_by_user, parse_exception_message
 
 from .enums import ExportStatus
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
+from .signals import export_finished
 from .util import (
     ExportCacheManager,
     LockNotAvailableError,
@@ -32,7 +34,6 @@ from .util import (
     current_function_name,
     extend_export_file_lifetime,
     get_export_cache_lock,
-    queue_export_created_event,
 )
 
 slogger = ServerLogManager(__name__)
@@ -179,7 +180,8 @@ def export(
         ):
             if osp_exists(output_path):
                 extend_export_file_lifetime(output_path)
-                queue_export_created_event(
+                export_finished.send(
+                    sender=export,
                     target=db_instance,
                     dst_format=dst_format,
                     status=ExportStatus.COMPLETED,
@@ -224,16 +226,20 @@ def export(
         )
         raise
     except Exception as exc:
-        queue_export_created_event(
+        export_finished.send(
+            sender=export,
             target=db_instance,
             dst_format=dst_format,
             status=ExportStatus.FAILED,
-            message=str(exc),
+            message=parse_exception_message(
+                "".join(traceback.format_exception_only(type(exc), exc))
+            ),
         )
         log_exception(logger)
         raise
 
-    queue_export_created_event(
+    export_finished.send(
+        sender=export,
         target=db_instance,
         dst_format=dst_format,
         status=ExportStatus.COMPLETED,
