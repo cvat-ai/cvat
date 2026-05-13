@@ -179,7 +179,7 @@ CVAT Community is released under the MIT License.
 
 For the latest product releases, feature walkthroughs, and all things CVAT see:
 
-<table border="0"><tr>
+<table cellspacing="10" border="0"><tr>
   <td><a href="https://www.cvat.ai/resources/blog"><img src="site/content/en/images/badge-blog.png" height="120"/></a></td>
   <td><a href="https://www.cvat.ai/resources/academy"><img src="site/content/en/images/badge-academy.png" height="120"/></a></td>
   <td><a href="https://www.cvat.ai/resources/case-studies"><img src="site/content/en/images/badge-case-studies.png" height="120"/></a></td>
