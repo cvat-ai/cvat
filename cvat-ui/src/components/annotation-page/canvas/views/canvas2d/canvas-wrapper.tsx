@@ -69,6 +69,7 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import ImageSetupsContent from './image-setups-content';
 import CanvasTipsComponent from './canvas-hints';
+import LensCalibrationPanel from './lens-calibration-panel';
 
 const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
@@ -401,6 +402,12 @@ type Props = StateToProps & DispatchToProps;
 
 interface State {
     lensCalibration: any | null;
+    lensPanelOpen: boolean;
+    lensCalibrationDraft: any | null;
+    // Snapshot captured when the lens-calibration tuning panel is opened.
+    // Used by Cancel to revert in-canvas state to whatever was active before
+    // the user started dragging sliders.
+    lensCalibrationSnapshot: any | null;
 }
 
 // Default fisheye lens calibration applied automatically to cuboid shapes so
@@ -428,6 +435,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         // persisted value is what the export pipeline will emit.
         this.state = {
             lensCalibration: { ...DEFAULT_FISHEYE_LENS },
+            lensPanelOpen: false,
+            lensCalibrationDraft: null,
+            lensCalibrationSnapshot: null,
         };
     }
 
@@ -473,32 +483,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         //   window.cvatSetLensCalibration(null);  // disable
         (window as any).cvatCanvasInstance = canvasInstance;
         (window as any).cvatSetLensCalibration = async (params: any): Promise<void> => {
-            // Reflect the new calibration in component state so the UI badge
-            // updates. We mirror the validation that canvasModel performs:
-            // null disables, otherwise we accept the object (canvas-side
-            // validation will silently ignore a malformed payload).
-            const isObject = params && typeof params === 'object';
-            const next = isObject ? { ...params } : null;
-            canvasInstance.configure({ lensCalibration: next });
-            this.setState({ lensCalibration: next });
-
-            // Persist to the parent task so the next CVAT-XML export carries
-            // it under <meta>/<task>/<lens_calibration>. Failures are logged
-            // but do not block the in-canvas overlay update above.
-            try {
-                const { jobInstance } = this.props;
-                const taskId = jobInstance?.taskId;
-                if (typeof taskId === 'number') {
-                    const [task] = await cvat.tasks.get({ id: taskId });
-                    if (task) {
-                        task.lensCalibration = next;
-                        await task.save();
-                    }
-                }
-            } catch (error) {
-                // eslint-disable-next-line no-console
-                console.warn('Failed to persist lens calibration to task', error);
-            }
+            // Apply live then persist; mirrors the original behaviour.
+            const next = this.applyCalibrationLive(params);
+            await this.persistCalibration(next);
         };
 
         // Load any persisted task-level calibration so reopening the job
@@ -752,6 +739,59 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         canvasInstance.html().removeEventListener('canvas.warning', this.onCanvasWarningOccurrence);
         canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
+
+    // Live-only update: pushes the new calibration to the canvas and reflects
+    // it in component state. Does NOT persist to the task. Used by both the
+    // DevTools helper and by slider drags in LensCalibrationPanel.
+    private applyCalibrationLive = (params: any | null): any | null => {
+        const isObject = params && typeof params === 'object';
+        const next = isObject ? { ...params } : null;
+        const { canvasInstance } = this.props as { canvasInstance: Canvas };
+        canvasInstance.configure({ lensCalibration: next });
+        this.setState({ lensCalibration: next });
+        return next;
+    };
+
+    // Open the lens-calibration tuning panel (capturing a snapshot for
+    // Cancel) or close it (reverting to that snapshot).
+    private toggleLensPanel = (): void => {
+        const { lensPanelOpen, lensCalibration, lensCalibrationSnapshot } = this.state;
+        if (lensPanelOpen) {
+            if (lensCalibrationSnapshot) {
+                this.applyCalibrationLive(lensCalibrationSnapshot);
+            }
+            this.setState({
+                lensPanelOpen: false,
+                lensCalibrationDraft: null,
+                lensCalibrationSnapshot: null,
+            });
+        } else {
+            this.setState({
+                lensPanelOpen: true,
+                lensCalibrationDraft: lensCalibration ? { ...lensCalibration } : null,
+                lensCalibrationSnapshot: lensCalibration ? { ...lensCalibration } : null,
+            });
+        }
+    };
+
+    // Persists the given calibration to the parent task so the next CVAT-XML
+    // export carries it under <meta>/<task>/<lens_calibration>. Failures are
+    // logged but do not throw.
+    private persistCalibration = async (params: any | null): Promise<void> => {
+        try {
+            const { jobInstance } = this.props;
+            const taskId = jobInstance?.taskId;
+            if (typeof taskId !== 'number') return;
+            const [task] = await cvat.tasks.get({ id: taskId });
+            if (task) {
+                task.lensCalibration = params;
+                await task.save();
+            }
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.warn('Failed to persist lens calibration to task', error);
+        }
+    };
 
     private onCanvasErrorOccurrence = (event: any): void => {
         const { exception, domain } = event.detail;
@@ -1246,7 +1286,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             onExpandObject,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        const { lensCalibration } = this.state;
+        const { lensCalibration, lensPanelOpen, lensCalibrationDraft } = this.state;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1359,7 +1399,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                         title={(
                             <div>
                                 <div>Fisheye lens calibration is active.</div>
-                                <div>Cuboid edges are curved through the configured lens model.</div>
+                                <div>Click to tune the lens parameters.</div>
                                 <div style={{ marginTop: 4, fontFamily: 'monospace', fontSize: 11 }}>
                                     {`a=${lensCalibration.a}, `}
                                     {`b=${lensCalibration.b}, `}
@@ -1376,11 +1416,54 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                         )}
                         placement='right'
                     >
-                        <div className='cvat-canvas-lens-calibration-indicator'>
+                        <div
+                            className='cvat-canvas-lens-calibration-indicator'
+                            role='button'
+                            tabIndex={0}
+                            onClick={(): void => this.toggleLensPanel()}
+                            onKeyDown={(event): void => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    this.toggleLensPanel();
+                                }
+                            }}
+                        >
                             <span className='cvat-canvas-lens-calibration-dot' />
                             Lens calibration ON
                         </div>
                     </CVATTooltip>
+                ) : null}
+
+                {lensPanelOpen && lensCalibrationDraft ? (
+                    <LensCalibrationPanel
+                        value={lensCalibrationDraft}
+                        onChange={(next): void => {
+                            this.setState({ lensCalibrationDraft: next });
+                            this.applyCalibrationLive(next);
+                        }}
+                        onSave={async (): Promise<void> => {
+                            const { lensCalibrationDraft: draft } = this.state;
+                            await this.persistCalibration(draft);
+                            this.setState({
+                                lensPanelOpen: false,
+                                lensCalibrationDraft: null,
+                                lensCalibrationSnapshot: null,
+                            });
+                        }}
+                        onCancel={(): void => {
+                            // Revert canvas to the snapshot captured when
+                            // the panel was opened.
+                            const { lensCalibrationSnapshot } = this.state;
+                            if (lensCalibrationSnapshot) {
+                                this.applyCalibrationLive(lensCalibrationSnapshot);
+                            }
+                            this.setState({
+                                lensPanelOpen: false,
+                                lensCalibrationDraft: null,
+                                lensCalibrationSnapshot: null,
+                            });
+                        }}
+                    />
                 ) : null}
             </>
         );
