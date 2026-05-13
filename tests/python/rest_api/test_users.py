@@ -141,9 +141,13 @@ class TestPatchUsers:
         user = find_users(privilege="user")[0]
 
         with make_api_client(user["username"]) as api_client:
-            _, response = api_client.users_api.partial_update(
-                user["id"],
-                patched_user_request={"username": "bad user"},
+            # Use a raw API call because the generated SDK model validates username
+            # format client-side and would reject this value before the server sees it.
+            _, response = api_client.call_api(
+                f"/api/users/{user['id']}",
+                method="PATCH",
+                body={"username": "bad user"},
+                header_params={"Content-Type": "application/json"},
                 _parse_response=False,
                 _check_status=False,
             )
