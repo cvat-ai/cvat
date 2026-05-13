@@ -319,7 +319,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobId) => {
     });
 
     return cy.window().then(async ($win) => {
-        const [job] = await $win.cvat.jobs.get({ jobId });
+        const [job] = await $win.cvat.jobs.get({ jobID: jobId });
         await job.annotations.clear({ reload: true });
 
         const data = convertClasses({
@@ -440,7 +440,7 @@ Cypress.Commands.add('headlessUpdateTask', (taskId, callback) => {
 
 Cypress.Commands.add('headlessUpdateJob', (jobId, updateJobParameters) => {
     cy.window().then(async ($win) => (
-        cy.wrap($win.cvat.jobs.get({ jobId }))
+        cy.wrap($win.cvat.jobs.get({ jobID: jobId }))
             .then(([job]) => cy.wrap(job.save(updateJobParameters)))
     ));
 });
