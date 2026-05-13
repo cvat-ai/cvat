@@ -613,7 +613,6 @@ def add_padding(
     payload_iter = iter(payload_frames)
 
     first_frame = next(payload_iter)[0]
-    assert first_frame.layout.nb_channels == 1 or first_frame.format.is_planar
     payload_format = first_frame.format
     payload_layout = first_frame.layout
 
