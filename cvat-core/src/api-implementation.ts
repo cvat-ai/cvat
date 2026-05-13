@@ -49,7 +49,7 @@ import { JobType } from './enums';
 import { PaginatedResource } from './core-types';
 import CVATCore from '.';
 
-function implementationMixin(func: Function, implementation: Function): void {
+function implementationMixin(func: object, implementation: unknown): void {
     Object.assign(func, { implementation });
 }
 

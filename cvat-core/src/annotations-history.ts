@@ -9,8 +9,8 @@ const MAX_HISTORY_LENGTH = 32;
 
 interface ActionItem {
     action: HistoryActions;
-    undo: Function;
-    redo: Function;
+    undo: () => void | Promise<void>;
+    redo: () => void | Promise<void>;
     clientIDs: number[];
     frame: number;
 }
@@ -38,7 +38,13 @@ export default class AnnotationHistory {
         };
     }
 
-    public do(action: HistoryActions, undo: Function, redo: Function, clientIDs: number[], frame: number): void {
+    public do(
+        action: HistoryActions,
+        undo: () => void | Promise<void>,
+        redo: () => void | Promise<void>,
+        clientIDs: number[],
+        frame: number,
+    ): void {
         if (this.frozen) return;
         const actionItem = {
             clientIDs,

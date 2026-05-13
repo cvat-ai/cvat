@@ -193,7 +193,6 @@ class Annotation {
         injection.groups.max = Math.max(injection.groups.max, this.group);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected withContext(_: number): {
         delete: Annotation['delete'];
     } {
@@ -1992,6 +1991,7 @@ export class SkeletonShape extends Shape {
                 type: sublabel.type as unknown as ShapeType,
             };
 
+            // eslint-disable-next-line no-use-before-define
             return shapeFactory({
                 ...elementData,
                 group: this.group,
@@ -2300,8 +2300,8 @@ export class MaskShape extends Shape {
     public removeUnderlyingPixels(frame: number):
     {
         clientIDs: number[],
-        undo: Function,
-        redo: Function,
+        undo: () => void,
+        redo: () => void,
         emptyMaskOccurred: boolean,
     } {
         if (frame !== this.frame) {
@@ -2998,6 +2998,7 @@ export class SkeletonTrack extends Track {
                 }],
             };
 
+            // eslint-disable-next-line no-use-before-define
             return trackFactory({
                 ...elementData,
                 group: this.group,
