@@ -102,13 +102,12 @@ class EventsViewSet(viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
 
         handle_client_events_push(request, serializer.validated_data)
-        remote_addr = get_remote_addr(request)
         for event in serializer.validated_data["events"]:
             if event["scope"] == USER_ACTIVITY_SCOPE:
                 # do not record these events, we only need them for correct working time computation
                 continue
 
-            if remote_addr:
+            if remote_addr := get_remote_addr(request):
                 event = {
                     **event,
                     "payload": add_remote_addr_to_payload(event.get("payload"), remote_addr),
