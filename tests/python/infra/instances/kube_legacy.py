@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from infra import health as infra_health
-from infra.config import RuntimeConfig
+from infra.config import RuntimeSettings
 from infra.system_utils import run_command
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ def restore_clickhouse_db() -> None:
         [
             "/bin/sh",
             "-c",
-            f'python "{RuntimeConfig.get_clickhouse_init_script()}" --clear',
+            f'python "{RuntimeSettings.get_clickhouse_init_script()}" --clear',
         ]
     )
 
@@ -131,7 +131,7 @@ def restore_redis_ondisk() -> None:
 
 
 def restore_cvat_data(cvat_db_dir: Path | None = None) -> None:
-    cvat_db_dir = cvat_db_dir or RuntimeConfig.get_cvat_db_dir()
+    cvat_db_dir = cvat_db_dir or RuntimeSettings.get_cvat_db_dir()
     pod_name = _kube_get_server_pod_name()
     kube_cp(
         cvat_db_dir / "cvat_data.tar.bz2",
@@ -141,7 +141,7 @@ def restore_cvat_data(cvat_db_dir: Path | None = None) -> None:
 
 
 def start(cvat_db_dir: Path | None = None) -> None:
-    cvat_db_dir = cvat_db_dir or RuntimeConfig.get_cvat_db_dir()
+    cvat_db_dir = cvat_db_dir or RuntimeSettings.get_cvat_db_dir()
     restore_cvat_data(cvat_db_dir)
 
     server_pod_name = _kube_get_server_pod_name()

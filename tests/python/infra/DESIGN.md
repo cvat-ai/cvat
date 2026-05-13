@@ -40,12 +40,12 @@ child pytest processes. Each child process creates a normal backend
   compatibility rules. Code after parsing should rely on this state instead of
   repeatedly checking raw pytest options.
 
-`RuntimeConfig`
+`RuntimeSettings`
 
-: Static configuration and parsing helpers: repository paths, default values,
-  allowed runtime modes, run prefix validation, and command conflict validation.
-  This is a facade for process-wide runtime settings, not a per-runtime state
-  object.
+: Process-wide runtime settings facade: repository paths, default values,
+  allowed runtime modes, pytest option registration, run prefix validation, raw
+  command-line/environment resolution, and command conflict validation. This is
+  not a per-runtime state object.
 
 `RuntimeContext`
 
@@ -161,7 +161,7 @@ Single local run:
 1. pytest options are parsed into `RuntimeRequest`.
 2. `RuntimeContext` creates the run id and artifact directory.
 3. Local pytest configuration resolves `LocalRuntimeConfig` from the run prefix
-   through `RuntimeConfig.get_local_runtime_config()`.
+   through `RuntimeSettings.get_local_runtime_config()`.
 4. `LocalRuntimeConfig` allocates or loads host ports and uses
    `RuntimeNamespace` for runtime directory and state file access.
 5. `LocalInstance` is created with `InfraInstanceConfig` dependency wiring.

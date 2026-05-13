@@ -11,7 +11,7 @@ from time import sleep
 
 import pytest
 import yaml
-from infra.config import RuntimeConfig, RuntimeContext, RuntimeMode
+from infra.config import RuntimeContext, RuntimeMode, RuntimeSettings
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.system_utils import docker_cp, run_command
 
@@ -79,7 +79,7 @@ def preconfigure_local_runtime_env(config) -> None:
     This prevents import-time constants from sticking to localhost:8080
     when running with --run-prefix.
     """
-    request = RuntimeConfig.resolve_request(config)
+    request = RuntimeSettings.resolve_request(config)
     project_name = request.run_prefix
 
     if request.platform != "local":
@@ -89,9 +89,9 @@ def preconfigure_local_runtime_env(config) -> None:
         os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         return
 
-    project_cfg = RuntimeConfig.get_local_runtime_config(project_name)
+    project_cfg = RuntimeSettings.get_local_runtime_config(project_name)
     port_config = project_cfg.resolve_port_config(
-        default_project_name=RuntimeConfig.get_default_run_prefix(),
+        default_project_name=RuntimeSettings.get_default_run_prefix(),
         used_ports=_used_host_ports(exclude_project_name=project_cfg.project_name),
         runtime_running=project_containers_running(project_cfg.project_name),
     )
@@ -104,11 +104,11 @@ def preconfigure_local_runtime_env(config) -> None:
 
 def resolve_local_project_context(session) -> tuple[str, dict]:
     config = session.config
-    request = RuntimeConfig.resolve_request(config)
+    request = RuntimeSettings.resolve_request(config)
     project_name = request.run_prefix
-    project_cfg = RuntimeConfig.get_local_runtime_config(project_name)
+    project_cfg = RuntimeSettings.get_local_runtime_config(project_name)
     port_config = project_cfg.resolve_port_config(
-        default_project_name=RuntimeConfig.get_default_run_prefix(),
+        default_project_name=RuntimeSettings.get_default_run_prefix(),
         used_ports=_used_host_ports(exclude_project_name=project_cfg.project_name),
         runtime_running=project_containers_running(project_cfg.project_name),
     )
@@ -129,7 +129,7 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
 
 
 def local_exec(container, command: list[str], capture_output=True):
-    prefixed_name = RuntimeConfig.get_local_runtime_config().prefixed_container_name(container)
+    prefixed_name = RuntimeSettings.get_local_runtime_config().prefixed_container_name(container)
     return run_command(
         [
             "docker",
@@ -516,7 +516,7 @@ def _delete_compose_files(container_name_files: list[Path]):
 
 
 def stop_project_services_best_effort(*, project_name: str) -> None:
-    project_cfg = RuntimeConfig.get_local_runtime_config(project_name)
+    project_cfg = RuntimeSettings.get_local_runtime_config(project_name)
     dc_files = project_cfg.dc_files + [project_cfg.cvat_root_dir / f for f in _LOCAL_DC_FILES]
 
     try:
@@ -539,7 +539,7 @@ def cleanup_after_session(*, runtime_mode: RuntimeMode, run_prefix: str) -> None
     if runtime_mode != RuntimeMode.AUTO:
         return
 
-    state = RuntimeConfig.get_local_runtime_config(run_prefix).load_state() or {}
+    state = RuntimeSettings.get_local_runtime_config(run_prefix).load_state() or {}
     if bool(state.get("auto_started", False)):
         stop_project_services_best_effort(project_name=run_prefix)
 
@@ -549,10 +549,10 @@ class LocalInstance(InfraInstance):
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
-        return RuntimeConfig.resolve_request(config).platform == "local"
+        return RuntimeSettings.resolve_request(config).platform == "local"
 
     def exec_cvat(self, command: list[str]):
-        prefixed_name = RuntimeConfig.get_local_runtime_config().prefixed_container_name(
+        prefixed_name = RuntimeSettings.get_local_runtime_config().prefixed_container_name(
             "cvat_server"
         )
         return run_command(
@@ -561,7 +561,7 @@ class LocalInstance(InfraInstance):
         )[0]
 
     def exec_redis_inmem(self, command: list[str]):
-        prefixed_name = RuntimeConfig.get_local_runtime_config().prefixed_container_name(
+        prefixed_name = RuntimeSettings.get_local_runtime_config().prefixed_container_name(
             "cvat_redis_inmem"
         )
         return run_command(
@@ -573,13 +573,13 @@ class LocalInstance(InfraInstance):
         docker_cp(source, f"{cvat_host}:{target}")
 
     def _get_cvat_host(self) -> str:
-        project_cfg = RuntimeConfig.get_local_runtime_config()
+        project_cfg = RuntimeSettings.get_local_runtime_config()
         return project_cfg.prefixed_container_name("cvat_server")
 
     @staticmethod
     def collect_code_coverage_from_containers() -> None:
         running = set(running_containers())
-        project_cfg = RuntimeConfig.get_local_runtime_config()
+        project_cfg = RuntimeSettings.get_local_runtime_config()
         for container in _COVERED_CONTAINERS:
             prefixed_name = project_cfg.prefixed_container_name(container)
             if prefixed_name not in running:
@@ -618,7 +618,9 @@ class LocalInstance(InfraInstance):
     ) -> None:
         from infra import health as infra_health
 
-        project_cfg = RuntimeConfig.get_local_runtime_config(cvat_root_dir=self.deps.cvat_root_dir)
+        project_cfg = RuntimeSettings.get_local_runtime_config(
+            cvat_root_dir=self.deps.cvat_root_dir
+        )
         project_name = project_cfg.project_name
         prefixed_name = project_cfg.prefixed_container_name
         dc_files = self._build_local_dc_files(project_cfg)
@@ -759,7 +761,7 @@ class LocalInstance(InfraInstance):
             if not project_running or self.deps.rebuild_images_before_start:
                 start_services(
                     project_name=project_name,
-                    default_project_name=RuntimeConfig.get_default_run_prefix(),
+                    default_project_name=RuntimeSettings.get_default_run_prefix(),
                     dc_files=dc_files,
                     project_directory=self.deps.cvat_root_dir,
                     rebuild_images=self.deps.rebuild_images_before_start,
@@ -772,7 +774,7 @@ class LocalInstance(InfraInstance):
             if not project_running:
                 start_services(
                     project_name=project_name,
-                    default_project_name=RuntimeConfig.get_default_run_prefix(),
+                    default_project_name=RuntimeSettings.get_default_run_prefix(),
                     dc_files=dc_files,
                     project_directory=self.deps.cvat_root_dir,
                     rebuild_images=self.deps.rebuild_images_before_start,
@@ -787,7 +789,7 @@ class LocalInstance(InfraInstance):
         if not project_running or self.deps.rebuild_images_before_start:
             start_services(
                 project_name=project_name,
-                default_project_name=RuntimeConfig.get_default_run_prefix(),
+                default_project_name=RuntimeSettings.get_default_run_prefix(),
                 dc_files=dc_files,
                 project_directory=self.deps.cvat_root_dir,
                 rebuild_images=self.deps.rebuild_images_before_start,
@@ -796,7 +798,7 @@ class LocalInstance(InfraInstance):
         restore_runtime_state_from_assets()
 
     def start(self) -> None:
-        request = RuntimeConfig.resolve_request(self.config)
+        request = RuntimeSettings.resolve_request(self.config)
         runtime_mode = request.runtime_mode
         project_name = request.run_prefix
 
@@ -816,7 +818,7 @@ class LocalInstance(InfraInstance):
         )
 
     def finish(self) -> None:
-        request = RuntimeConfig.resolve_request(self.config)
+        request = RuntimeSettings.resolve_request(self.config)
         if request.platform != "local":
             return
 
@@ -835,8 +837,8 @@ class LocalInstance(InfraInstance):
         )
 
     def collect_failure_logs(self) -> None:
-        request = RuntimeConfig.resolve_request(self.config)
-        project_cfg = RuntimeConfig.get_local_runtime_config(request.run_prefix)
+        request = RuntimeSettings.resolve_request(self.config)
+        project_cfg = RuntimeSettings.get_local_runtime_config(request.run_prefix)
         running = set(running_containers())
         logs_dir = self.failure_logs_dir()
         for container in _FAILURE_LOG_CONTAINERS:
@@ -880,7 +882,7 @@ class LocalInstance(InfraInstance):
             [
                 "docker",
                 "exec",
-                RuntimeConfig.get_local_runtime_config().prefixed_container_name("cvat_db"),
+                RuntimeSettings.get_local_runtime_config().prefixed_container_name("cvat_db"),
                 "psql",
                 "-U",
                 "root",
@@ -901,7 +903,7 @@ class LocalInstance(InfraInstance):
             [
                 "/bin/sh",
                 "-c",
-                f'python "{RuntimeConfig.get_clickhouse_init_script()}" --clear',
+                f'python "{RuntimeSettings.get_clickhouse_init_script()}" --clear',
             ]
         )
 
@@ -932,7 +934,7 @@ class LocalInstance(InfraInstance):
             [
                 "docker",
                 "exec",
-                RuntimeConfig.get_local_runtime_config().prefixed_container_name(
+                RuntimeSettings.get_local_runtime_config().prefixed_container_name(
                     "cvat_redis_ondisk"
                 ),
                 "redis-cli",
@@ -955,7 +957,7 @@ class LocalPlugin(InfraPlugin):
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
-        return RuntimeConfig.resolve_request(config).platform == "local"
+        return RuntimeSettings.resolve_request(config).platform == "local"
 
 
 LocalInstance.plugin_class = LocalPlugin

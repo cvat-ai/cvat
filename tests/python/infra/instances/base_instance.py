@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from infra.config import RuntimeConfig, RuntimeContext
+from infra.config import RuntimeContext, RuntimeSettings
 
 
 @dataclass(frozen=True)
@@ -84,7 +84,7 @@ class InfraInstance(ABC):
         return None
 
     def should_collect_failure_logs(self) -> bool:
-        if RuntimeConfig.resolve_request(self.config).collect_only:
+        if RuntimeSettings.resolve_request(self.config).collect_only:
             return False
 
         exitstatus = getattr(self.config, "_cvat_exitstatus", 0)

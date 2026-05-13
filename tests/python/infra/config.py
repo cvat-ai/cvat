@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import argparse
 import json
 import logging
 import os
@@ -279,7 +280,77 @@ class RuntimeRequest:
     should_run_runtime_sanity_checks: bool
 
 
-class RuntimeConfig:
+class RuntimeSettings:
+    @classmethod
+    def add_options(cls, parser):
+        group = parser.getgroup("CVAT REST API testing options")
+        group._addoption(
+            "--cleanup",
+            action="store_true",
+            help=(
+                "Delete files that was create by tests without running tests. "
+                "(default: %(default)s)"
+            ),
+        )
+
+        group._addoption(
+            "--dumpdb",
+            action="store_true",
+            help="Update data.json without running tests. (default: %(default)s)",
+        )
+
+        group._addoption(
+            "--platform",
+            action="store",
+            default="local",
+            choices=("kube", "local"),
+            help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
+        )
+        group._addoption(
+            "--no-services",
+            action="store_true",
+            help=(
+                "Reuse externally managed CVAT services without starting, stopping, "
+                "or seeding containers. Equivalent to --infra=reuse for local runs. "
+                "(default: %(default)s)"
+            ),
+        )
+        group._addoption(
+            "--run-prefix",
+            action="store",
+            default=cls.get_default_run_prefix(),
+            help=(
+                "Prefix used for a test run identity. "
+                "It is used as docker compose project/container prefix and runtime state namespace "
+                "(default: 'test')."
+            ),
+        )
+        group._addoption(
+            "--infra",
+            action="store",
+            default=cls.get_default_runtime_mode(),
+            choices=cls.get_runtime_modes(),
+            help=(
+                "Infrastructure mode: auto (default behavior), up (start services and exit), "
+                "reuse (reuse already running services), down (stop services and exit), "
+                "restore (restore test runtime state from assets and exit), "
+                "rebuild (rebuild cvat/server:dev and cvat/ui:dev and exit)."
+            ),
+        )
+        group._addoption(
+            "--skip-version-check",
+            action="store_true",
+            default=False,
+            help=(
+                "Skip startup sanity check for sdk/cli/server image versions. "
+                "(default: %(default)s)"
+            ),
+        )
+        group._addoption("--start-services", action="store_true", help=argparse.SUPPRESS)
+        group._addoption("--stop-services", action="store_true", help=argparse.SUPPRESS)
+        group._addoption("--rebuild", action="store_true", help=argparse.SUPPRESS)
+        return group
+
     @classmethod
     def get_cvat_root_dir(cls) -> Path:
         return _CVAT_ROOT_DIR
@@ -473,7 +544,7 @@ class RuntimeContext:
         if cls._run_id and cls._run_dir:
             return
 
-        request = RuntimeConfig.resolve_request(config)
+        request = RuntimeSettings.resolve_request(config)
         runs_root_dir = _RUNS_ROOT_DIR
         runs_root_dir.mkdir(parents=True, exist_ok=True)
 
@@ -520,7 +591,7 @@ class RuntimeContext:
 
     @classmethod
     def get_namespace(cls, name_arg: str | None = None) -> RuntimeNamespace:
-        return RuntimeConfig.get_namespace(name_arg)
+        return RuntimeSettings.get_namespace(name_arg)
 
     @classmethod
     def write_namespace_context(cls, namespace_name: str) -> None:

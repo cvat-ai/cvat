@@ -5,8 +5,7 @@
 import warnings
 
 import pytest
-from infra import options as infra_options
-from infra.config import RuntimeConfig, RuntimeContext, RuntimeMode
+from infra.config import RuntimeContext, RuntimeMode, RuntimeSettings
 from infra.health import run_runtime_sanity_checks
 from infra.instances import InfraInstance, InfraInstanceConfig, kube_legacy
 
@@ -20,14 +19,14 @@ pytest_plugins = [
 
 
 def pytest_configure(config) -> None:
-    RuntimeConfig.resolve_request(config)
+    RuntimeSettings.resolve_request(config)
     RuntimeContext.initialize(config)
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.configure(config)
 
 
 def pytest_addoption(parser):
-    group = infra_options.add_infra_options(parser)
+    group = RuntimeSettings.add_options(parser)
     InfraInstance.register_all_options(group)
 
 
@@ -50,13 +49,13 @@ def pytest_runtestloop(session):
 
 def pytest_sessionstart(session) -> None:
     config = session.config
-    request = RuntimeConfig.resolve_request(config)
+    request = RuntimeSettings.resolve_request(config)
 
     for warning in request.deprecation_warnings:
         warnings.warn(warning, DeprecationWarning, stacklevel=2)
 
     if request.runtime_mode == RuntimeMode.REBUILD:
-        cvat_root_dir = RuntimeConfig.get_cvat_root_dir()
+        cvat_root_dir = RuntimeSettings.get_cvat_root_dir()
         from infra.system_utils import run_command
 
         run_command(
@@ -82,13 +81,13 @@ def pytest_sessionstart(session) -> None:
         kube_legacy.session_start(session)
         if request.should_run_runtime_sanity_checks:
             run_runtime_sanity_checks(
-                cvat_root_dir=RuntimeConfig.get_cvat_root_dir(), platform=request.platform
+                cvat_root_dir=RuntimeSettings.get_cvat_root_dir(), platform=request.platform
             )
         return
 
     instance_config = InfraInstanceConfig(
-        cvat_root_dir=RuntimeConfig.get_cvat_root_dir(),
-        cvat_db_dir=RuntimeConfig.get_cvat_db_dir(),
+        cvat_root_dir=RuntimeSettings.get_cvat_root_dir(),
+        cvat_db_dir=RuntimeSettings.get_cvat_db_dir(),
         waiting_time=300,
         extra_dc_files=None,
         rebuild_images_before_start=request.rebuild_images_before_start,
@@ -99,12 +98,12 @@ def pytest_sessionstart(session) -> None:
 
     if request.should_run_runtime_sanity_checks:
         run_runtime_sanity_checks(
-            cvat_root_dir=RuntimeConfig.get_cvat_root_dir(), platform=request.platform
+            cvat_root_dir=RuntimeSettings.get_cvat_root_dir(), platform=request.platform
         )
 
 
 def pytest_sessionfinish(session, exitstatus: int) -> None:
-    request = RuntimeConfig.resolve_request(session.config)
+    request = RuntimeSettings.resolve_request(session.config)
     if request.collect_only:
         return
 
@@ -125,7 +124,7 @@ def pytest_collection_modifyitems(config, items) -> None:
 
 
 def _selected_runtime_class(config):
-    if RuntimeConfig.resolve_request(config).platform != "local":
+    if RuntimeSettings.resolve_request(config).platform != "local":
         return None
 
     selected = getattr(config, "_cvat_runtime_class", None)
@@ -136,7 +135,7 @@ def _selected_runtime_class(config):
 
 
 def _selected_plugin_classes(config):
-    if RuntimeConfig.resolve_request(config).platform != "local":
+    if RuntimeSettings.resolve_request(config).platform != "local":
         return []
 
     classes = getattr(config, "_cvat_plugin_classes", None)
