@@ -320,27 +320,27 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
+        "h": 18,
         "w": 16,
         "x": 8,
         "y": 0
       },
       "id": 3,
       "options": {
-        "displayLabels": [],
-        "legend": {
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "calcs": [],
-          "fields": "",
-          "values": true
-        },
+        "orientation": "horizontal",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "barRadius": 0,
+        "fullHighlight": false,
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "showLegend": false
         }
       },
       "targets": [
@@ -356,7 +356,7 @@
         }
       ],
       "title": "Category Share",
-      "type": "piechart"
+      "type": "barchart"
     },
     {
       "datasource": {
@@ -420,7 +420,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 18
       },
       "id": 4,
       "options": {
@@ -504,7 +504,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 28
       },
       "id": 5,
       "options": {
@@ -576,7 +576,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 40
       },
       "id": 6,
       "options": {
@@ -611,6 +611,115 @@
       ],
       "title": "Category Drilldown (Top Exceptions)",
       "type": "table"
+    },
+    {
+      "id": 7,
+      "title": "Server vs Client",
+      "type": "barchart",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 12
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "current_count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Current"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "previous_count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Previous"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "always",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "queryType": "sql",
+          "refId": "A",
+          "rawSql": "WITH current_period AS (\n  SELECT source, count() AS current_count\n  FROM cvat.events\n  WHERE scope = 'send:exception'\n    AND timestamp >= $__fromTime\n    AND timestamp <= $__toTime\n    AND source IN (${sources})\n    AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n  GROUP BY source\n), previous_period AS (\n  SELECT source, count() AS previous_count\n  FROM cvat.events\n  WHERE scope = 'send:exception'\n    AND timestamp >= ($__fromTime - ($__toTime - $__fromTime))\n    AND timestamp < $__fromTime\n    AND source IN (${sources})\n    AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n  GROUP BY source\n)\nSELECT\n  coalesce(c.source, p.source) AS source,\n  ifNull(c.current_count, 0) AS current_count,\n  ifNull(p.previous_count, 0) AS previous_count\nFROM current_period c\nFULL OUTER JOIN previous_period p ON c.source = p.source\nORDER BY source\n"
+        }
+      ],
+      "pluginVersion": "9.3.6"
     }
   ],
   "refresh": false,
