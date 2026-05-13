@@ -39,7 +39,7 @@ def test_string_enum_model_fields_are_serialized_as_strings():
     serialized_shape = to_json(shape)
 
     assert serialized_shape["type"] == "rectangle"
-    assert type(serialized_shape["type"]) is str
+    assert serialized_shape["type"].__class__ is str
 
 
 def test_can_make_custom_request_with_call_api_method(admin_user):
