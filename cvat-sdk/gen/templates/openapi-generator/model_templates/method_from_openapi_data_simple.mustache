@@ -16,7 +16,14 @@
         # required up here when default value is not given
         _path_to_item = kwargs.pop('_path_to_item', ())
 
+{{^isEnum}}
         self = super(OpenApiModel, cls).__new__(cls)
+{{/isEnum}}
+{{#isEnum}}
+{{^isString}}
+        self = super(OpenApiModel, cls).__new__(cls)
+{{/isString}}
+{{/isEnum}}
 
         if 'value' in kwargs:
             value = kwargs.pop('value')
@@ -32,7 +39,7 @@
             raise ApiTypeError(
                 "value is required, but not passed in args or kwargs and doesn't have default",
                 path_to_item=_path_to_item,
-                valid_classes=(self.__class__,),
+                valid_classes=(cls,),
             )
 {{/defaultValue}}
 
@@ -41,6 +48,14 @@
         _configuration = kwargs.pop('_configuration', None)
         _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
 
+{{#isEnum}}
+{{#isString}}
+        self = StringEnumModel.__new__(cls, value)
+        if self is None:
+            return None
+
+{{/isString}}
+{{/isEnum}}
 {{> model_templates/invalid_pos_args }}
 
         self._data_store = {}

@@ -371,6 +371,54 @@ class ModelSimple(OpenApiModel):
 {{> model_templates/methods_tostr_eq_simple }}
 
 
+class StringEnumModel(str, ModelSimple):
+    """The parent class of generated string enum models."""
+
+    def __new__(cls, *args, **kwargs):
+        value = kwargs.get('value')
+        if args:
+            value = args[0]
+        elif 'value' not in kwargs:
+            value = getattr(cls, '_default_value', '')
+
+        if value is None and is_type_nullable(cls):
+            return None
+
+        if isinstance(value, ModelSimple):
+            value = value.value
+
+        return str.__new__(cls, value)
+
+    def __setattr__(self, attr, value):
+        if attr == 'value' and isinstance(value, ModelSimple):
+            value = value.value
+
+        super().__setattr__(attr, value)
+
+    def __getattr__(self, attr):
+        if attr in self.required_properties and attr in self.__dict__:
+            return self.__dict__[attr]
+
+        if attr in self.__dict__.get('_data_store', {}):
+            return self.__dict__['_data_store'][attr]
+
+        raise ApiAttributeError(
+            "{0} has no attribute '{1}'".format(
+                type(self).__name__, attr),
+            [e for e in [self.__dict__.get('_path_to_item'), attr] if e]
+        )
+
+    def __getitem__(self, name):
+        if isinstance(name, str):
+            if name in self.required_properties and name in self.__dict__:
+                return self.__dict__[name]
+
+            if name in self.__dict__.get('_data_store', {}):
+                return self.__dict__['_data_store'][name]
+
+        return str.__getitem__(self, name)
+
+
 class ModelNormal(OpenApiModel):
     """the parent class of models whose type == object in their
     swagger/openapi"""
