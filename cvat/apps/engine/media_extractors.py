@@ -937,7 +937,7 @@ class AudioReader(IMediaReader):
 
             frame_idx = -1
             for frame in container.decode(stream):
-                if stop_sample is not None and stop_sample <= frame.pts + frame.duration:
+                if stop_sample is not None and stop_sample < frame.pts:
                     break
 
                 for frame in self._filter_audio_frame(frame, start=start, stop=stop):
