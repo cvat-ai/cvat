@@ -222,7 +222,7 @@ class LocalRuntimeConfig:
 def _can_bind_port(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         try:
-            sock.bind(("", port))
+            sock.bind(("127.0.0.1", port))
         except OSError:
             return False
     return True
