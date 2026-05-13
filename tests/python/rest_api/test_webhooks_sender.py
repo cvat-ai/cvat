@@ -27,15 +27,34 @@ from .utils import export_task_backup, export_task_dataset
 pytestmark = [pytest.mark.with_external_services]
 
 
-def target_url():
+def _read_receiver_env():
     env_data = {}
     with open(CVAT_ROOT_DIR / "tests/python/webhook_receiver/.env", "r") as f:
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
+    return env_data
+
+
+def target_url():
+    env_data = _read_receiver_env()
     return (
         f'http://{env_data["SERVER_HOST"]}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
     )
+
+
+def failing_target_url():
+    """Endpoint on the webhook_receiver container that always returns 500."""
+    env_data = _read_receiver_env()
+    return (
+        f'http://{env_data["SERVER_HOST"]}:{env_data["SERVER_PORT"]}'
+        f'/{env_data["FAILING_PAYLOAD_ENDPOINT"]}'
+    )
+
+
+def unreachable_target_url():
+    """Port 1 is closed on every host — ConnectionRefused → requests.ConnectionError."""
+    return "http://localhost:1/payload"
 
 
 def webhook_spec(events, project_id=None, webhook_type="organization"):
@@ -778,7 +797,6 @@ class TestWebhookRedelivery:
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
-
 def _task_with_data_in_org(tasks: Container) -> dict:
     return next(
         t
@@ -821,3 +839,58 @@ class TestWebhookBackupEvents:
         assert payload["status"] == "completed"
         assert payload["target"] == "task"
         assert payload["target_id"] == task["id"]
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookRetryOnDeliveryFailure:
+
+    @staticmethod
+    def _create_webhook(target_url_: str, project_id: int) -> int:
+        spec = webhook_spec(["update:project"], project_id=project_id, webhook_type="project")
+        spec["target_url"] = target_url_
+        response = post_method("admin1", "webhooks", spec)
+        assert response.status_code == HTTPStatus.CREATED
+        return response.json()["id"]
+
+    @staticmethod
+    def _trigger_update(project_id: int, name: str) -> None:
+        response = patch_method("admin1", f"projects/{project_id}", {"name": name})
+        assert response.status_code == HTTPStatus.OK
+
+    def test_retry_on_connection_error(self, projects):
+        project_id = list(projects)[0]["id"]
+
+        webhook_id = self._create_webhook(unreachable_target_url(), project_id)
+        self._trigger_update(project_id, "trigger_connection_retry")
+
+        deliveries, _ = get_deliveries(webhook_id, expected_count=2)
+        assert all(
+            d["status_code"] == HTTPStatus.BAD_GATEWAY for d in deliveries["results"]
+        ), deliveries["results"]
+
+    def test_no_retry_on_success_response(self, projects):
+        project_id = list(projects)[0]["id"]
+
+        webhook_id = self._create_webhook(target_url(), project_id)
+        self._trigger_update(project_id, "trigger_success_no_retry")
+
+        deliveries, _ = get_deliveries(webhook_id, expected_count=1)
+        assert deliveries["results"][0]["status_code"] == HTTPStatus.OK
+
+        # NOTE @sosov: wait past settings.SEND_WEBHOOK_TASK_RETRIES[0] to confirm no retry fires
+        sleep(10)
+
+        response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["count"] == 1
+
+    def test_retry_on_5xx_response(self, projects):
+        project_id = list(projects)[0]["id"]
+
+        webhook_id = self._create_webhook(failing_target_url(), project_id)
+        self._trigger_update(project_id, "trigger_5xx_retry")
+
+        deliveries, _ = get_deliveries(webhook_id, expected_count=2)
+        assert all(
+            d["status_code"] == HTTPStatus.INTERNAL_SERVER_ERROR for d in deliveries["results"]
+        ), deliveries["results"]

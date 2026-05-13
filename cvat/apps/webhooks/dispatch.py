@@ -11,15 +11,14 @@ from rq import Retry
 from .models import Webhook
 from .tasks import send_webhook
 
-_SEND_WEBHOOK_TASK_RETRIES = [5, 300, 1_800, 10_800, 86_400, 86_400, 86_400, 86_400]
-
 
 def add_to_queue(webhook: Webhook, payload: dict, redelivery: bool = False) -> None:
     queue = django_rq.get_queue(settings.CVAT_QUEUES.WEBHOOKS.value)
+    retry_intervals = settings.SEND_WEBHOOK_TASK_RETRIES
     queue.enqueue_call(
         func=send_webhook,
         args=(webhook.id, payload, redelivery),
-        retry=Retry(max=len(_SEND_WEBHOOK_TASK_RETRIES), interval=_SEND_WEBHOOK_TASK_RETRIES),
+        retry=Retry(max=len(retry_intervals), interval=retry_intervals),
         failure_ttl=7 * 24 * 60 * 60,
     )
 
