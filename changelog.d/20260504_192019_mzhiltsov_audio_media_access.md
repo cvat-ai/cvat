@@ -1,4 +1,4 @@
-### Changed
+### Added
 
-- \[Server API\] Changed default file extension for project, task, and job previews to `.png`
+- \[Server API\] An option to create audio-based tasks
   (<https://github.com/cvat-ai/cvat/pull/10560>)
