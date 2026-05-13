@@ -50,15 +50,25 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
 
 export default class Collection {
     public flush: boolean;
+
     private stopFrame: number;
+
     private labels: Record<number, Label>;
+
     private annotationsFilter: AnnotationsFilter;
+
     private history: AnnotationHistory;
+
     private shapes: Record<number, Shape[]>;
+
     private tags: Record<number, Tag[]>;
+
     private tracks: Track[];
+
     private objects: Record<number, Shape | Tag | Track>;
+
     private groups: { max: number };
+
     private injection: BasicInjection;
 
     constructor(data: {

@@ -21,9 +21,13 @@ interface SerializedCommentData extends RawCommentData {
 
 export default class Comment {
     public readonly id: number;
+
     public readonly createdDate: string;
+
     public readonly updatedDate: string;
+
     public readonly owner: User;
+
     public message: string;
 
     constructor(initialData: RawCommentData) {

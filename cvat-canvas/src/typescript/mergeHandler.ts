@@ -16,12 +16,19 @@ export interface MergeHandler {
 export class MergeHandlerImpl implements MergeHandler {
     // callback is used to notify about merging end
     private onMergeDone: (objects: any[] | null, duration?: number) => void;
+
     private onFindObject: (event: MouseEvent) => void;
+
     private startTimestamp: number;
+
     private canvas: SVG.Container;
+
     private initialized: boolean;
+
     private statesToBeMerged: any[]; // are being merged
+
     private highlightedShapes: Record<number, SVG.Shape>;
+
     private constraints: {
         labelID: number;
         shapeType: string;

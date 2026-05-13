@@ -635,7 +635,6 @@ export default class LabelForm extends React.Component<Props> {
         return (fieldInstances: any[]): (JSX.Element | null)[] => fieldInstances.map(this.renderAttribute);
     }
 
-    // eslint-disable-next-line react/sort-comp
     public componentDidMount(): void {
         const { label } = this.props;
         if (this.formRef.current && label && label.attributes.length) {

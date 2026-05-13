@@ -53,23 +53,41 @@ function deleteButtonPath(r: number): string {
 
 export class InteractionHandlerImpl implements InteractionHandler {
     private settings: InteractorSettings;
+
     private enabled: boolean;
+
     private command: 'draw_box' | 'draw_points' | 'put_shapes' | 'refine' | 'idle';
+
     private currentRectangle: SVG.Rect | null;
+
     private rectanglePrompts: SVG.Rect[];
+
     private pointPrompts: SVG.Circle[];
+
     private allPrompts: SupportedShapes[];
+
     private deletionButtons: Map<SupportedShapes, SVG.G>;
+
     private intermediateShapes: (SVG.Image | SVG.Polygon)[];
+
     private onInteraction: (interactionResult: InteractionResult[], finished?: boolean) => void;
+
     private onMessage: (messages: CanvasHint[] | null, topic: string) => void;
+
     private geometry: Geometry;
+
     private container: SVG.Container;
+
     private configuration: Configuration;
+
     private effectiveStrokeWidth: number;
+
     private effectivePointSize: number;
+
     private effectiveShapeOpacity: number;
+
     private lastMousePosition: { x: number; y: number };
+
     private crosshair: Crosshair;
 
     public constructor(

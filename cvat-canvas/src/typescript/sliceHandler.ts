@@ -89,21 +89,37 @@ function getAllIntersections(segment: Segment, segments: Segment[]): Record<numb
 
 export class SliceHandlerImpl implements SliceHandler {
     private canvas: SVG.Container;
+
     private startTimestamp: number;
+
     private controlPointSize: number;
+
     private outlinedBorders: string;
+
     private enabled: boolean;
+
     private shapeContour: SVG.PolyLine | null;
+
     private slicingLine: SVG.PolyLine | null;
+
     private slicingPoints: SVG.Circle[];
+
     private hideObject: (clientID: number) => void;
+
     private showObject: (clientID: number) => void;
+
     private onSliceDone: (state?: any, results?: number[][], duration?: number) => void;
+
     private onMessage: (messages: CanvasHint[] | null, topic: string) => void;
+
     private onError: (exception: unknown) => void;
+
     private getObjects: () => any[];
+
     private geometry: Geometry;
+
     private objectSelector: ObjectSelector;
+
     private hiddenClientIDs: number[];
 
     public constructor(

@@ -157,17 +157,29 @@ function collectAddedPointIndexesAndDirection(
 
 export class AutoborderHandlerImpl implements AutoborderHandler {
     private currentShape: SVG.Shape | null;
+
     private excludedClientId?: number;
+
     private container: SVGSVGElement;
+
     private pointGroups: SVGGElement[];
+
     private enabled: boolean;
+
     private scale: number;
+
     private controlPointsSize: number;
+
     private visibleShapes: TransformedShape[];
+
     private currentClick: { groupIdx: number; pointIdx: number; } | null;
+
     private currentPreview: { pointIdx: number; shapePoints: number[][]; } | null;
+
     private pointsToRevertPreview: number[][] | null;
+
     private listeners: Map<SVGCircleElement, { mousedown: (event: MouseEvent) => void; }>;
+
     private isCtrlKeyDown: (() => boolean) | null;
 
     public constructor(container: SVGSVGElement, isCtrlKeyDown: () => boolean) {

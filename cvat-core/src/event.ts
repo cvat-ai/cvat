@@ -28,7 +28,9 @@ export type JSONEventPayload = { [key: string]: number | string | boolean };
 
 export class Event {
     public readonly scope: EventScope;
+
     public readonly timestamp: Date;
+
     public payload: JSONEventPayload;
 
     protected onCloseCallback: (() => void) | null;

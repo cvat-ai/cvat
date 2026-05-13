@@ -22,17 +22,29 @@ export interface EditHandler {
 
 export class EditHandlerImpl implements EditHandler {
     private onEditDone: (state: any, points: number[]) => void;
+
     private autoborderHandler: AutoborderHandler;
+
     private geometry: Geometry | null;
+
     private canvas: SVG.Container;
+
     private editData: PolyEditData | null;
+
     private editedShape: SVG.Shape | null;
+
     private editLine: SVG.PolyLine | null;
+
     private clones: SVG.Polygon[];
+
     private controlPointsSize: number;
+
     private autobordersEnabled: boolean;
+
     private intelligentCutEnabled: boolean;
+
     private outlinedBorders: string;
+
     private isEditing: boolean;
 
     private setupTrailingPoint(circle: SVG.Circle): void {

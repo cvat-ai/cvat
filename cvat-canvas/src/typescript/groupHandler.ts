@@ -14,9 +14,13 @@ export interface GroupHandler {
 
 export class GroupHandlerImpl implements GroupHandler {
     private onSelectDone: (objects?: any[], duration?: number) => void;
+
     private selector: ObjectSelector;
+
     private initialized: boolean;
+
     private statesToBeGrouped: any[];
+
     private startTimestamp: number;
 
     private release(): void {

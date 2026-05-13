@@ -59,7 +59,9 @@ interface Canvas {
 
 class CanvasImpl implements Canvas {
     private model: CanvasModel & Master;
+
     private controller: CanvasController;
+
     private view: CanvasView;
 
     public constructor() {

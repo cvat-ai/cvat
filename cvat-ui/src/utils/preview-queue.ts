@@ -38,7 +38,9 @@ interface PreviewRequest {
 
 class PreviewQueue {
     private queue: PreviewRequest[] = [];
+
     private isProcessing: boolean = false;
+
     private currentRequest: PreviewRequest | null = null;
 
     public addRequest(request: PreviewRequest): void {

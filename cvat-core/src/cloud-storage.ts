@@ -22,23 +22,41 @@ function validateNotEmptyString(value: string): void {
 
 export default class CloudStorage {
     public readonly id: number;
+
     public displayName: string;
+
     public description: string;
+
     public accountName: string;
+
     public accessKey: string;
+
     public secretKey: string;
+
     public token: string;
+
     public keyFile: File;
+
     public connectionString: string;
+
     public resource: string;
+
     public manifestPath: string;
+
     public providerType: CloudStorageProviderType;
+
     public credentialsType: CloudStorageCredentialsType;
+
     public specificAttributes: string;
+
     public manifests: string[];
+
     public readonly owner: User;
+
     public readonly createdDate: string;
+
     public readonly updatedDate: string;
+
     public readonly prefix: string | null;
 
     constructor(initialData: SerializedCloudStorage) {

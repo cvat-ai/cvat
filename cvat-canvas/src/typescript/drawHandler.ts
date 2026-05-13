@@ -97,32 +97,52 @@ export class DrawHandlerImpl implements DrawHandler {
         continueDraw?: boolean,
         prevDrawData?: DrawData,
     ) => void;
+
     private startTimestamp: number;
+
     private canvas: SVG.Container;
+
     private text: SVG.Container;
+
     private cursorPosition: {
         x: number;
         y: number;
     };
+
     private crosshair: Crosshair;
+
     private drawData: DrawData | null;
+
     private geometry: Geometry;
+
     private configuration: Configuration;
+
     private autoborderHandler: AutoborderHandler;
+
     private autobordersEnabled: boolean;
+
     private controlPointsSize: number;
+
     private selectedShapeOpacity: number;
+
     private outlinedBorders: string;
+
     private isHidden: boolean;
+
     private getDrawnStates: (() => Record<number, DrawnState>) | null;
+
     private isCtrlKeyDown: (() => boolean) | null;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
     private drawInstance: any;
+
     private initialized: boolean;
+
     private canceled: boolean;
+
     private pointsGroup: SVG.G | null;
+
     private shapeSizeElement: ShapeSizeElement | null;
 
     private getFinalEllipseCoordinates(points: number[], fitIntoFrame: boolean): number[] {
