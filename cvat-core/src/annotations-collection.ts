@@ -1194,7 +1194,7 @@ export default class Collection {
         }
 
         // Add constructed objects to a collection
-        // eslint-disable-next-line no-unsanitized/method
+
         const imported = this.import(constructed);
         const importedArray = ([] as (Tag | Track | Shape)[])
             .concat(imported.tags, imported.tracks, imported.shapes);

@@ -327,7 +327,7 @@ function sortPointsClockwise(points: any[]): any[] {
         } else if (ang < startAng) {
             ang += Math.PI * 2;
         }
-        // eslint-disable-next-line no-param-reassign
+
         point.angle = ang; // add the angle to the point
     });
 

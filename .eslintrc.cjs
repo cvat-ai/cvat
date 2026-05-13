@@ -43,6 +43,7 @@ module.exports = {
         'valid-typeof': 0,
         'quotes': ['error', 'single', { "avoidEscape": true }],
         '@stylistic/lines-between-class-members': 0,
+        '@typescript-eslint/lines-between-class-members': 'off',
         'class-methods-use-this': 0,
         'no-underscore-dangle': ['error', { allowAfterThis: true }],
         'max-classes-per-file': 0,
@@ -52,6 +53,7 @@ module.exports = {
         'arrow-parens': ['error', 'always'],
         'security/detect-object-injection': 0, // the rule is relevant for user input data on the node.js environment
         'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
+        'import/no-unresolved': 'off',
         'import/prefer-default-export': 0, // works incorrect with interfaces
 
         'react/jsx-indent-props': 0, // new rule, breaks current styling

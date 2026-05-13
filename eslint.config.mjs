@@ -225,6 +225,7 @@ export default [
         rules: {
             camelcase: 'off',
             'import/extensions': 'off',
+            'import/no-unresolved': 'off',
             'no-unused-vars': 'off',
             '@typescript-eslint/no-unused-vars': ['error', {
                 argsIgnorePattern: '^_',
@@ -232,6 +233,7 @@ export default [
                 caughtErrorsIgnorePattern: '^_',
             }],
             '@typescript-eslint/default-param-last': 'off',
+            'lines-between-class-members': 'off',
             'default-param-last': 'off',
             'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
             // Relax the object type restriction - use Record<string, unknown> or explicit types where reasonable

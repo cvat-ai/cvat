@@ -366,7 +366,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    // eslint-disable-next-line new-cap
+
                     state: {
                         ...data,
                         zOrder: zLayer || 0,
