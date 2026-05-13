@@ -5,6 +5,7 @@
 import warnings
 
 import pytest
+
 from infra.config import RuntimeContext, RuntimeMode, RuntimeSettings
 from infra.health import run_runtime_sanity_checks
 from infra.instances import InfraInstance, InfraInstanceConfig, kube_legacy
