@@ -1790,7 +1790,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             };
         };
 
-        // eslint-disable-next-line no-param-reassign
         points.material.size = 0.05;
         points.material.color.set(new THREE.Color(0xffffff));
 
@@ -1841,7 +1840,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         topScenePlane.name = Planes.TOP;
         (topScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
         (topScenePlane as any).verticesNeedUpdate = true;
-        // eslint-disable-next-line no-param-reassign
         points.material = material;
         material.size = 0.5;
         const topCloud = points.clone();

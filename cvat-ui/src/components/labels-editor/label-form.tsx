@@ -147,7 +147,6 @@ export default class LabelForm extends React.Component<Props> {
         }
     };
 
-    /* eslint-disable class-methods-use-this */
     private renderAttributeNameInput(fieldInstance: any, attr: any): JSX.Element {
         const { key } = fieldInstance;
         const attrNames = this.formRef.current?.getFieldValue('attributes')
@@ -635,7 +634,6 @@ export default class LabelForm extends React.Component<Props> {
         return (fieldInstances: any[]): (JSX.Element | null)[] => fieldInstances.map(this.renderAttribute);
     }
 
-    // eslint-disable-next-line react/sort-comp
     public componentDidMount(): void {
         const { label } = this.props;
         if (this.formRef.current && label && label.attributes.length) {

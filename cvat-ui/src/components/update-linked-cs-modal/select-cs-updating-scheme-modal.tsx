@@ -63,9 +63,9 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
                                 <div>
                                     <strong>Move & Auto Match</strong>
                                     : Transfer and attempt to auto-link with a similar cloud storage
-                                     in the target workspace. A similar cloud storage is defined
-                                     by comparing the whole cloud storage configuration except credentials
-                                     and owner.
+                                    in the target workspace. A similar cloud storage is defined
+                                    by comparing the whole cloud storage configuration except credentials
+                                    and owner.
                                 </div>
                             </>
                         )}

@@ -18,7 +18,6 @@ import { authQuery } from './auth-query';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
 import { dispatchContextMenuEvent } from './context-menu-helper';
 
-// eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
     const ref = useRef<T>();
     useEffect(() => {
