@@ -24,9 +24,8 @@ from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_rq_lock_by_user, parse_exception_message
 
-from .enums import ExportStatus
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
-from .signals import export_finished
+from .signals import ExportStatus, export_finished
 from .util import (
     ExportCacheManager,
     LockNotAvailableError,

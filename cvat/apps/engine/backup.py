@@ -49,9 +49,8 @@ from cvat.apps.dataset_manager.views import (
     retry_current_rq_job,
 )
 from cvat.apps.engine import models
-from cvat.apps.engine.backup_signals import backup_finished
+from cvat.apps.engine.backup_signals import BackupStatus, backup_finished
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.engine.enums import BackupStatus
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import DataChoice, StorageChoice, TaskMode
 from cvat.apps.engine.serializers import (

@@ -7,10 +7,8 @@ from typing import Any
 import rq
 from django.dispatch import receiver
 
-from cvat.apps.dataset_manager.enums import ExportStatus
-from cvat.apps.dataset_manager.signals import export_finished
-from cvat.apps.engine.backup_signals import backup_finished
-from cvat.apps.engine.enums import BackupStatus
+from cvat.apps.dataset_manager.signals import ExportStatus, export_finished
+from cvat.apps.engine.backup_signals import BackupStatus, backup_finished
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.events.handlers import organization_id as resolve_organization_id
 from cvat.apps.events.handlers import project_id as resolve_project_id
