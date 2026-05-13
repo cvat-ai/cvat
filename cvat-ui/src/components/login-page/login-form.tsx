@@ -177,7 +177,9 @@ function LoginFormComponent(props: Props): JSX.Element {
                 )}
                 {
                     pluginsToRender.map(({ component: Component }, index) => (
-                        <Component targetProps={props} targetState={{ credential }} key={index} />
+                        React.createElement(Component as React.ComponentType<any>, {
+                            targetProps: props, targetState: { credential }, key: index,
+                        })
                     ))
                 }
             </Form>

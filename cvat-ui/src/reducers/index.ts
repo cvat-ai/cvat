@@ -6,6 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
+import type { ComponentType, ReactNode } from 'react';
 import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
@@ -306,9 +307,10 @@ export type PluginsList = {
 };
 
 export type CallbackReturnType = Promise<undefined | { preventJobStatusChange: boolean }>;
+export type PluginEntrypoint = ComponentType<any> & ((props?: any) => ReactNode);
 
 export interface PluginComponent {
-    component: any;
+    component: PluginEntrypoint;
     data: {
         weight: number;
         shouldBeRendered: (props?: object, state?: object) => boolean;

@@ -231,10 +231,12 @@ function PlayerNavigation(props: Props): JSX.Element {
                         )}
                         {playerSliderPlugins
                             .sort((a, b) => a.weight - b.weight)
-                            .map(({ component: Component }, index) => {
-                                const ComponentToRender = Component as React.ComponentType<any>;
-                                return <ComponentToRender key={index} targetProps={props} />;
-                            })}
+                            .map(({ component: Component }, index) => (
+                                React.createElement(
+                                    Component as React.ComponentType<any>,
+                                    { key: index, targetProps: props },
+                                )
+                            ))}
                     </Col>
                 </Row>
                 <Row justify='center'>

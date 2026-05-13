@@ -42,7 +42,10 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
     if (plugins.length) {
         controls.push(
             ...plugins.map(({ component: Component }, index) => (
-                <Component key={index} targetProps={props} />
+                React.createElement(
+                    Component as React.ComponentType<any>,
+                    { key: index, targetProps: props },
+                )
             )),
         );
     }

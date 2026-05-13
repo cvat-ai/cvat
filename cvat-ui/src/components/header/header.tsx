@@ -229,7 +229,9 @@ function HeaderComponent(props: Props): JSX.Element {
     ), 20]);
 
     aboutLinks.push(...aboutPlugins.map(({ component: Component, weight }, index: number) => (
-        [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
+        [React.createElement(
+            Component as React.ComponentType<any>,
+            { key: index, targetProps: props }), weight] as [JSX.Element, number]
     )));
 
     const showAboutModal = useCallback((): void => {
@@ -385,7 +387,10 @@ function HeaderComponent(props: Props): JSX.Element {
     }, 50]);
 
     menuItems.push(...plugins
-        .map(({ component, weight }): typeof menuItems[0] => [component({ targetProps: props }), weight]),
+        .map(({ component, weight }): typeof menuItems[0] => [
+            (component as (pluginProps?: any) => NonNullable<MenuProps['items']>[0])({ targetProps: props }),
+            weight,
+        ]),
     );
 
     const getButtonClassName = (value: string, highlightable = true): string => {

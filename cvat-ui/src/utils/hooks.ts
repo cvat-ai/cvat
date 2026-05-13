@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory, useLocation, useParams } from 'react-router';
-import { CombinedState, PluginComponent, InstanceType } from 'reducers';
+import { CombinedState, PluginComponent, PluginEntrypoint, InstanceType } from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
@@ -38,7 +38,7 @@ export function useIsMounted(): () => boolean {
 }
 
 export type Plugin = {
-    component: CallableFunction;
+    component: PluginEntrypoint;
     weight: number;
 };
 
@@ -50,7 +50,7 @@ export function usePlugins(
     const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
     const mappedComponents = filteredComponents
         .map(({ component, data }): {
-            component: CallableFunction;
+            component: PluginEntrypoint;
             weight: number;
         } => ({
             component,

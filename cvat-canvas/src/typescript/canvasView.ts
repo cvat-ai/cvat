@@ -683,7 +683,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         Promise.all(objects.map((state) => {
             const [curLeft, , curRight] = state.points.slice(-4, -1);
             const image = new ImageData(
-                RLEToImageData(255, 255, 255, state.points), curRight - curLeft + 1,
+                new Uint8ClampedArray(RLEToImageData(255, 255, 255, state.points)), curRight - curLeft + 1,
             );
             return createImageBitmap(image);
         })).then((results) => {

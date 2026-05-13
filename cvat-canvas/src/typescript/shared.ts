@@ -397,7 +397,7 @@ export function imageDataToDataURL(
 ): void {
     const canvas = new OffscreenCanvas(width, height);
     canvas.getContext('2d').putImageData(
-        new ImageData(imageBitmap, width, height), 0, 0,
+        new ImageData(new Uint8ClampedArray(imageBitmap), width, height), 0, 0,
     );
     canvas.convertToBlob({ type: 'image/png' }).then((blob) => {
         const dataURL = URL.createObjectURL(blob);

@@ -68,7 +68,10 @@ function DeployedModelItem(props: Readonly<Props>): JSX.Element {
 
     topBarItems.push(
         ...topBarPlugins.map(({ component: Component, weight }, index) => (
-            [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
+            [React.createElement(
+                Component as React.ComponentType<any>,
+                { key: index, targetProps: props },
+            ), weight] as [JSX.Element, number]
         )),
     );
     const modelTopBar = (

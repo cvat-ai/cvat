@@ -244,7 +244,10 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
     ), 40]);
 
     items.push(...plugins.map(({ component: Component, weight }, index: number) => (
-        [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
+        [React.createElement(
+            Component as React.ComponentType<any>,
+            { key: index, targetProps: props },
+        ), weight] as [JSX.Element, number]
     )));
 
     return (
