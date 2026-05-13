@@ -11,7 +11,7 @@ import requests
 
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 
-from .exceptions import WebhookDeliveryRetryable
+from .exceptions import WebhookDeliveryError
 from .models import Webhook, WebhookDelivery
 
 WEBHOOK_TIMEOUT = 10
@@ -58,12 +58,6 @@ def _perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]
 def send_webhook(
     webhook_id: int, payload: dict, redelivery: bool = False
 ) -> WebhookDelivery | None:
-    # NOTE @sosov: pre-DEV-866 jobs pickled a Webhook instance as args[0].
-    # Coerce to pk so those jobs drain on the new worker. Remove once the
-    # webhooks queue is known to be flushed of pre-deploy entries.
-    if isinstance(webhook_id, Webhook):
-        webhook_id = webhook_id.pk
-
     webhook = Webhook.objects.filter(pk=webhook_id, is_active=True).first()
     if webhook is None:
         return None
@@ -80,9 +74,10 @@ def send_webhook(
         response=response,
     )
 
-    if status_code >= 500 or status_code in (HTTPStatus.REQUEST_TIMEOUT, HTTPStatus.TOO_MANY_REQUESTS):
-        raise WebhookDeliveryRetryable(
-            f"webhook {webhook.id} attempt failed with status {status_code}"
-        )
+    if status_code >= 500 or status_code in (
+        HTTPStatus.REQUEST_TIMEOUT,
+        HTTPStatus.TOO_MANY_REQUESTS,
+    ):
+        raise WebhookDeliveryError(f"webhook {webhook.id} attempt failed with status {status_code}")
 
     return delivery

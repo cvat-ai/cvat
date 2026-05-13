@@ -3,5 +3,5 @@
 # SPDX-License-Identifier: MIT
 
 
-class WebhookDeliveryRetryable(Exception):
+class WebhookDeliveryError(Exception):
     pass
