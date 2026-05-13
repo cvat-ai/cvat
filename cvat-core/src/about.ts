@@ -6,13 +6,9 @@ import { SerializedAbout } from './server-response-types';
 
 export default class AboutData {
     #description: string;
-
     #name: string;
-
     #version: string;
-
     #logoURL: string;
-
     #subtitle: string;
 
     constructor(initialData: SerializedAbout) {

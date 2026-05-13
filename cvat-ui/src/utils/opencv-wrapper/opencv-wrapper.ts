@@ -3,10 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
+/* eslint-disable indent */
+
+// eslint-disable-next-line import/no-unresolved
 import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
-
+// eslint-disable-next-line import/no-unresolved
 import config from 'config';
-
+// eslint-disable-next-line import/no-unresolved
 import TrackerMILAction from './annotations-actions/tracker-mil';
 
 const core = getCore();

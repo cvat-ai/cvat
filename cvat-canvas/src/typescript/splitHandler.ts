@@ -15,17 +15,11 @@ export interface SplitHandler {
 export class SplitHandlerImpl implements SplitHandler {
     // callback is used to notify about splitting end
     private onSplitDone: (object?: any, duration?: number) => void;
-
     private onFindObject: (event: MouseEvent) => void;
-
     private canvas: SVG.Container;
-
     private highlightedShape: SVG.Shape | null;
-
     private initialized: boolean;
-
     private splitDone: boolean;
-
     private startTimestamp: number;
 
     private resetShape(): void {

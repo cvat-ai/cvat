@@ -15,15 +15,12 @@ class AxiosHttpResponse implements tus.HttpResponse {
     getStatus(): number {
         return this.#axiosResponse.status;
     }
-
     getHeader(header: string): string | undefined {
         return this.#axiosResponse.headers[header.toLowerCase()];
     }
-
     getBody(): string {
         return this.#axiosResponse.data;
     }
-
     getUnderlyingObject(): AxiosResponse {
         return this.#axiosResponse;
     }
@@ -31,7 +28,6 @@ class AxiosHttpResponse implements tus.HttpResponse {
 
 class AxiosHttpRequest implements tus.HttpRequest {
     readonly #axiosConfig: AxiosRequestConfig;
-
     readonly #abortController: AbortController;
 
     constructor(method: string, url: string) {
@@ -51,7 +47,6 @@ class AxiosHttpRequest implements tus.HttpRequest {
     getMethod(): string {
         return this.#axiosConfig.method;
     }
-
     getURL(): string {
         return this.#axiosConfig.url;
     }
@@ -59,7 +54,6 @@ class AxiosHttpRequest implements tus.HttpRequest {
     setHeader(header: string, value: string): void {
         this.#axiosConfig.headers[header.toLowerCase()] = value;
     }
-
     getHeader(header: string): string | undefined {
         return this.#axiosConfig.headers[header.toLowerCase()];
     }
@@ -88,7 +82,6 @@ class AxiosHttpStack implements tus.HttpStack {
     createRequest(method: string, url: string): tus.HttpRequest {
         return new AxiosHttpRequest(method, url);
     }
-
     getName(): string {
         return 'AxiosHttpStack';
     }

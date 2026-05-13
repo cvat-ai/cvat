@@ -44,9 +44,7 @@ interface Canvas3d {
 
 class Canvas3dImpl implements Canvas3d {
     private readonly model: Canvas3dModel & Master;
-
     private readonly controller: Canvas3dController;
-
     private view: Canvas3dView;
 
     public constructor() {

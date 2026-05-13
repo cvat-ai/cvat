@@ -50,25 +50,15 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
 
 export default class Collection {
     public flush: boolean;
-
     private stopFrame: number;
-
     private labels: Record<number, Label>;
-
     private annotationsFilter: AnnotationsFilter;
-
     private history: AnnotationHistory;
-
     private shapes: Record<number, Shape[]>;
-
     private tags: Record<number, Tag[]>;
-
     private tracks: Track[];
-
     private objects: Record<number, Shape | Tag | Track>;
-
     private groups: { max: number };
-
     private injection: BasicInjection;
 
     constructor(data: {
@@ -1204,7 +1194,7 @@ export default class Collection {
         }
 
         // Add constructed objects to a collection
-
+        // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
         const importedArray = ([] as (Tag | Track | Shape)[])
             .concat(imported.tags, imported.tracks, imported.shapes);

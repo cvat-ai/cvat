@@ -17,13 +17,9 @@ export interface RegionSelector {
 
 export class RegionSelectorImpl implements RegionSelector {
     private onRegionSelected: (points?: number[]) => void;
-
     private geometry: Geometry;
-
     private canvas: SVG.Container;
-
     private selectionRect: SVG.Rect | null;
-
     private startSelectionPoint: {
         x: number;
         y: number;

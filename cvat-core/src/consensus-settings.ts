@@ -10,11 +10,8 @@ import { convertDescriptions, getServerAPISchema } from './server-schema';
 
 export default class ConsensusSettings {
     #id: number;
-
     #task: number;
-
     #iouThreshold: number;
-
     #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedConsensusSettingsData) {

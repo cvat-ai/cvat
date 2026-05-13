@@ -18,19 +18,12 @@ export interface ZoomHandler {
 
 export class ZoomHandlerImpl implements ZoomHandler {
     private onZoomRegion: (x: number, y: number, width: number, height: number) => void;
-
     private bindedOnSelectStart: (event: MouseEvent) => void;
-
     private bindedOnSelectUpdate: (event: MouseEvent) => void;
-
     private bindedOnSelectStop: (event: MouseEvent) => void;
-
     private geometry: Geometry;
-
     private canvas: SVG.Container;
-
     private selectionRect: SVG.Rect | null;
-
     private startSelectionPoint: {
         x: number;
         y: number;
@@ -55,11 +48,11 @@ export class ZoomHandlerImpl implements ZoomHandler {
     private getSelectionBox(
         event: MouseEvent,
     ): {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    } {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        } {
         const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
         const stopSelectionPoint = {
             x: point[0],

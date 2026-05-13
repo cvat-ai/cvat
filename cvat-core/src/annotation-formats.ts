@@ -12,13 +12,9 @@ import {
 
 export class Loader {
     public name: string;
-
     public format: string;
-
     public version: string;
-
     public enabled: boolean;
-
     public dimension: DimensionType;
 
     constructor(initialData: SerializedAnnotationImporter) {
@@ -52,13 +48,9 @@ export class Loader {
 
 export class Dumper {
     public name: string;
-
     public format: string;
-
     public version: string;
-
     public enabled: boolean;
-
     public dimension: DimensionType;
 
     constructor(initialData: SerializedAnnotationExporter) {
@@ -92,7 +84,6 @@ export class Dumper {
 
 export default class AnnotationFormats {
     public loaders: Loader[];
-
     public dumpers: Dumper[];
 
     constructor(initialData: SerializedAnnotationFormats) {

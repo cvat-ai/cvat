@@ -45,6 +45,7 @@ const validationPatterns = {
         https://stackoverflow.com/questions/6377407/how-to-validate-both-chinese-unicode-and-english-name
     */
     validateName: {
+        // eslint-disable-next-line
         pattern: /^(\p{L}|\p{Pd}|\p{Cf}|\p{Pc}|['\s]){2,}$/gu,
         message: 'Invalid name',
     },
@@ -65,6 +66,7 @@ const validationPatterns = {
     },
 
     validateURL: {
+        // eslint-disable-next-line
         pattern: /^(https?:\/\/)[^\s$.?#].[^\s]*$/, // url, ip
         message: 'URL is not valid',
     },

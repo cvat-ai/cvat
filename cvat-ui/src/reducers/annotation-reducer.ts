@@ -11,10 +11,10 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { clamp } from 'utils/math';
 import {
     DimensionType, JobStage, Label, LabelType, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
+import { clamp } from 'utils/math';
 
 import {
     ActiveControl,
