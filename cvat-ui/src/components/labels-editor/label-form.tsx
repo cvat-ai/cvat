@@ -322,8 +322,8 @@ export default class LabelForm extends React.Component<Props> {
                     name={[key, 'values']}
                 >
                     <Select className='cvat-attribute-values-input'>
-                        <Select.Option value='false'>False</Select.Option>
-                        <Select.Option value='true'>True</Select.Option>
+                        <Select.Option value='false'>false</Select.Option>
+                        <Select.Option value='true'>true</Select.Option>
                     </Select>
                 </Form.Item>
             </CVATTooltip>

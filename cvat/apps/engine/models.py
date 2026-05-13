@@ -651,11 +651,7 @@ class Audio(models.Model):
     sampling_rate = models.PositiveIntegerField()
     has_cover_image = models.BooleanField(default=False)
 
-    chunks: MaybeUndefined[models.manager.RelatedManager[AudioChunkInfo]]
-
-    class Meta:
-        default_permissions = ()
-
+    chunks: models.manager.RelatedManager[AudioChunkInfo]
 
 class AudioChunkInfo(TimestampedModel):
     key = models.CharField(max_length=128, primary_key=True)
@@ -676,9 +672,6 @@ class AudioChunkInfo(TimestampedModel):
     left_padding = models.PositiveIntegerField(default=0)
     right_padding = models.PositiveIntegerField(default=0)
     content_offset = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        default_permissions = ()
 
 
 class Image(models.Model):
@@ -861,12 +854,14 @@ class TaskQuerySet(models.QuerySet):
 
 class TaskMode(TextChoices):
     ANNOTATION = "annotation"
+    "task is a set of independent MediaType elements"
+
     INTERPOLATION = "interpolation"
+    "task is an ordered sequence of MediaType elements"
 
 
 class MediaType(TextChoices):
     IMAGE = "image"
-    VIDEO = "video"
     POINT_CLOUD = "point_cloud"
     AUDIO = "audio"
 
@@ -1220,7 +1215,7 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     labeledimage_set: models.manager.RelatedManager[LabeledImage]
     labeledshape_set: models.manager.RelatedManager[LabeledShape]
     labeledtrack_set: models.manager.RelatedManager[LabeledTrack]
-    trackedshape_set: models.manager.RelatedManager[TrackedShape]
+    # trackedshape_set: models.manager.RelatedManager[TrackedShape] # TODO: add DB relation?
     labeledimageattributeval_set: models.manager.RelatedManager[LabeledImageAttributeVal]
     labeledshapeattributeval_set: models.manager.RelatedManager[LabeledShapeAttributeVal]
     labeledtrackattributeval_set: models.manager.RelatedManager[LabeledTrackAttributeVal]
@@ -1423,7 +1418,7 @@ class ShapeType(str, Enum):
     POINTS = 'points'       # (x0, y0, ..., xn, yn)
     ELLIPSE = 'ellipse'     # (cx, cy, rx, ty)
     CUBOID = 'cuboid'       # (x0, y0, ..., x7, y7)
-    MASK = 'mask'       # (rle mask, left, top, right, bottom)
+    MASK = 'mask'           # (rle mask, left, top, right, bottom)
     SKELETON = 'skeleton'
 
     @classmethod
@@ -1451,16 +1446,27 @@ class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.DO_NOTHING)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
-    frame = models.PositiveIntegerField()
-    group = models.PositiveIntegerField(null=True)
+    group = models.PositiveIntegerField(
+        # null is not used for anything.
+        # TODO: disallow null on the DB level,
+        # when there are other changes to the annotation tables
+        # https://github.com/cvat-ai/cvat/pull/10522.
+        # - it results in a long migration, that's undesirable if done alone.
+        null=True
+    )
     source = models.CharField(max_length=16, choices=SourceType.choices(),
         default=str(SourceType.MANUAL), null=True)
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
-class Shape(models.Model):
+class FrameAnnotationMixin(models.Model):
+    frame = models.PositiveIntegerField()
+
+    class Meta:
+        abstract = True
+
+class ShapeAnnotationMixin(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
     occluded = models.BooleanField(default=False)
     outside = models.BooleanField(default=False)
@@ -1470,35 +1476,40 @@ class Shape(models.Model):
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
-class LabeledImage(Annotation):
+
+class ScoredAnnotationMixin(models.Model):
+    score = models.FloatField(default=1)
+
+    class Meta:
+        abstract = True
+
+
+class LabeledImage(Annotation, FrameAnnotationMixin):
     pass
 
 class LabeledImageAttributeVal(AttributeVal):
     image = models.ForeignKey(LabeledImage, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
-class LabeledShape(Annotation, Shape):
+class LabeledShape(Annotation, FrameAnnotationMixin, ShapeAnnotationMixin, ScoredAnnotationMixin):
     parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
-    score = models.FloatField(default=1)
 
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(LabeledShape, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
-class LabeledTrack(Annotation):
+class LabeledTrack(Annotation, FrameAnnotationMixin):
     parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
 
 class LabeledTrackAttributeVal(AttributeVal):
     track = models.ForeignKey(LabeledTrack, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
-class TrackedShape(Shape):
+class TrackedShape(FrameAnnotationMixin, ShapeAnnotationMixin):
     id = models.BigAutoField(primary_key=True)
     track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE,
         related_name='shapes', related_query_name='shape')
-    frame = models.PositiveIntegerField()
 
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.DO_NOTHING,

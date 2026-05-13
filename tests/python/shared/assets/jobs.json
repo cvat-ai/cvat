@@ -71,7 +71,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=62"
       },
-      "media_type": "video",
+      "media_type": "image",
       "mode": "interpolation",
       "organization": 2,
       "parent_job_id": null,
@@ -119,7 +119,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=61"
       },
-      "media_type": "video",
+      "media_type": "image",
       "mode": "interpolation",
       "organization": 2,
       "parent_job_id": null,
@@ -167,7 +167,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=60"
       },
-      "media_type": "video",
+      "media_type": "image",
       "mode": "interpolation",
       "organization": 2,
       "parent_job_id": null,
@@ -215,7 +215,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=59"
       },
-      "media_type": "video",
+      "media_type": "image",
       "mode": "interpolation",
       "organization": 2,
       "parent_job_id": null,
@@ -1959,7 +1959,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=19"
       },
-      "media_type": "video",
+      "media_type": "image",
       "mode": "interpolation",
       "organization": null,
       "parent_job_id": null,
@@ -2447,7 +2447,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=7"
       },
-      "media_type": "video",
+      "media_type": "image",
       "mode": "interpolation",
       "organization": null,
       "parent_job_id": null,

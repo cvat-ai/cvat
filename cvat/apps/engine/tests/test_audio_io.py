@@ -12,7 +12,8 @@ from typing import NamedTuple
 import av
 import numpy as np
 
-from cvat.apps.engine.media_extractors import AudioReader
+from cvat.apps.engine.media_extractors import AudioReader, Mp3ChunkWriter
+from cvat.apps.engine.media_io.audio_provider import add_padding
 
 SAMPLE_RATE = 8000
 
@@ -340,8 +341,6 @@ class Mp3ChunkCreationTest(unittest.TestCase):
     CASES = tuple(c for c in _FORMAT_CASES if c.codec in ("pcm_s16le", "wavpack"))
 
     def test_add_padding_preserves_sample_count(self):
-        from cvat.apps.engine.media_io.audio_provider import add_padding
-
         expected_extra_samples = (
             (self.LEFT_PADDING_MS + self.RIGHT_PADDING_MS) * SAMPLE_RATE // 1000
         )
@@ -371,9 +370,6 @@ class Mp3ChunkCreationTest(unittest.TestCase):
                 self.assertTrue(np.all(last_frame.to_ndarray() == 0))
 
     def test_mp3_chunk_covers_full_payload_duration(self):
-        from cvat.apps.engine.media_extractors import Mp3ChunkWriter
-        from cvat.apps.engine.media_io.audio_provider import add_padding
-
         for quality in Mp3ChunkWriter.AudioQuality:
             for case in self.CASES:
                 with self.subTest(case=case.name, quality=quality.value):

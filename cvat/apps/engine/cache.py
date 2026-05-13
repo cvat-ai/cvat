@@ -35,6 +35,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine import models
+from cvat.apps.engine.cache_signals import cache_item_created_signal, cache_item_read_signal
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
@@ -61,12 +62,35 @@ slogger = ServerLogManager(__name__)
 
 DataWithMime: TypeAlias = tuple[io.BytesIO, str]
 _CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
+_RQ_JOB_ORIGIN_ATTRIBUTE = "origin"
+
+ASSETS_DIR = Path(__file__).parent / "assets"
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 
 class CacheTooLargeDataError(Exception):
     pass
+
+
+class ChunkCreationError(Exception):
+    pass
+
+
+def _build_chunk_job_failure_exception(
+    rq_job: rq.job.Job, job_meta: RQMetaWithFailureInfo
+) -> Exception:
+    exc_type = job_meta.exc_type or ChunkCreationError
+    exc_args = job_meta.exc_args or ("Cannot create chunk",)
+
+    try:
+        return exc_type(*exc_args)
+    except TypeError:
+        exc_name = exc_type.__name__
+        details = job_meta.formatted_exception or repr(exc_args)
+        return ChunkCreationError(
+            f"Chunk job {rq_job.id} failed with {exc_name}: {details.strip()}"
+        )
 
 
 def enqueue_create_chunk_job(
@@ -109,9 +133,7 @@ def wait_for_rq_job(rq_job: rq.job.Job):
         elif job_status in ("failed",):
             rq_job.get_meta()  # refresh from Redis
             job_meta = RQMetaWithFailureInfo.for_job(rq_job)
-            exc_type = job_meta.exc_type or Exception
-            exc_args = job_meta.exc_args or ("Cannot create chunk",)
-            raise exc_type(*exc_args)
+            raise _build_chunk_job_failure_exception(rq_job, job_meta)
 
         time.sleep(settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL)
         retries -= 1
@@ -121,6 +143,10 @@ def wait_for_rq_job(rq_job: rq.job.Job):
 
 def _is_run_inside_rq() -> bool:
     return rq.get_current_job() is not None
+
+
+def _get_current_rq_queue_name() -> str | None:
+    return getattr(rq.get_current_job(), _RQ_JOB_ORIGIN_ATTRIBUTE, None)
 
 
 def _convert_args_for_callback(func_args: list[Any]) -> list[Any]:
@@ -219,8 +245,6 @@ class MediaCache:
         create_callback: Callback,
         cache_item_ttl: int | None = None,
     ) -> DataWithMime:
-        from cvat.apps.engine.signals import cache_item_created_signal
-
         timestamp = django_tz.now()
         item_data = create_callback()
         item_data_bytes = item_data[0].getvalue()
@@ -234,9 +258,17 @@ class MediaCache:
             key,
         ):
             cached_item = cache.get(key)
-            if cached_item is not None and timestamp <= cached_item[3]:
-                item = cached_item
-            else:
+            if cached_item is not None:
+                cache_item_read_signal.send(
+                    sender=cls,
+                    item_key=key,
+                    item_data_size=cls._get_cache_item_size(cached_item),
+                    rq_queue=_get_current_rq_queue_name(),
+                )
+
+                if timestamp <= cached_item[3]:
+                    item = cached_item
+            if cached_item is None or timestamp > cached_item[3]:
                 item_size = cls._get_cache_item_size(item)
                 if item_size > settings.CVAT_CACHE_ITEM_MAX_SIZE:
                     raise CacheTooLargeDataError(
@@ -249,7 +281,7 @@ class MediaCache:
                     sender=cls,
                     item_key=key,
                     item_data_size=item_size,
-                    rq_queue=getattr(rq.get_current_job(), "origin", None),
+                    rq_queue=_get_current_rq_queue_name(),
                 )
 
         return item
@@ -300,17 +332,25 @@ class MediaCache:
         slogger.glob.info(f"Removed the cache keys {format_list(keys)}")
 
     def _get_cache_item(self, key: str) -> _CacheItem | None:
+        rq_queue = _get_current_rq_queue_name()
         try:
             item = self._cache().get(key)
         except pickle.UnpicklingError:
             slogger.glob.error(f"Unable to get item from cache: key {key}", exc_info=True)
-            item = None
+            return None
 
         if not item:
             return None
 
         item_data = item[0].getbuffer() if isinstance(item[0], io.BytesIO) else item[0]
         item_checksum = item[2] if len(item) == 4 else None
+        cache_item_read_signal.send(
+            sender=self.__class__,
+            item_key=key,
+            item_data_size=self._get_cache_item_size(item),
+            rq_queue=rq_queue,
+        )
+
         if item_checksum != self._get_checksum(item_data):
             slogger.glob.info(f"Cache item {key} checksum mismatch")
             return None
@@ -600,7 +640,7 @@ class MediaCache:
         db_data = db_task.require_data()
         manifest_path = db_data.get_manifest_path()
 
-        def requested_db_images():
+        def requested_db_images() -> Iterator[str]:
             # TODO: find a way to use prefetched results, if provided
             db_images = (
                 db_data.images.order_by("frame")
@@ -632,48 +672,43 @@ class MediaCache:
                 media = []
                 if db_data.local_storage_backing_cs_id:
                     for frame_path in requested_db_images():
-                        storage_filename = frame_path
-                        fs_filename = tmp_dir / storage_filename
+                        abs_frame_path = tmp_dir / frame_path
 
-                        files_to_download.append((storage_filename, fs_filename))
+                        files_to_download.append((frame_path, abs_frame_path))
                         checksums.append(None)
-                        media.append((fs_filename, os.fspath(fs_filename)))
+                        media.append((abs_frame_path, os.fspath(abs_frame_path)))
 
                 else:
                     assert manifest_path.is_file()
                     reader = ImageReaderWithManifest(manifest_path)
                     for item in reader.iterate_frames(frame_ids):
-                        task_filename = f"{item['name']}{item['extension']}"
-                        storage_filename = item.get("meta", {}).get("original_name", task_filename)
-                        fs_filename = tmp_dir / task_filename
+                        frame_path = item.get("meta", {}).get(
+                            "original_name", f"{item['name']}{item['extension']}"
+                        )
+                        abs_frame_path = tmp_dir / frame_path
 
-                        files_to_download.append((storage_filename, fs_filename))
+                        files_to_download.append((frame_path, abs_frame_path))
                         checksums.append(item.get("checksum", None))
-                        media.append((fs_filename, os.fspath(fs_filename)))
+                        media.append((abs_frame_path, os.fspath(abs_frame_path)))
 
                 storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
-                for (storage_filename, _), checksum, media_item in zip(
-                    files_to_download, checksums, media
-                ):
-                    if checksum and not md5_hash(media_item[1]) == checksum:
+                for checksum, media_item in zip(checksums, media):
+                    frame_path = media_item[1]
+                    if checksum and not md5_hash(frame_path) == checksum:
                         slogger.task[db_task.id].warning(
-                            "Hash sums of files {} do not match".format(media_item[1])
+                            "Hash sums of files {} do not match".format(frame_path)
                         )
 
                     if db_task.dimension == models.DimensionType.DIM_3D and (
-                        storage_filename.endswith(".bin")
+                        frame_path.endswith(".bin")
                     ):
-                        media_item = (
-                            ValidateDimension().convert_bin_to_pcd(
-                                media_item[0],
-                                delete_source=(
-                                    False
-                                    # one file can be used several times for honeypots
-                                ),
-                            ),
-                            *media_item[1:],
+                        frame_path = ValidateDimension().convert_bin_to_pcd(
+                            frame_path,
+                            # one file can be used several times for honeypots
+                            delete_source=False,
                         )
+                        media_item = (frame_path, frame_path)
 
                     if db_task.dimension == models.DimensionType.DIM_2D and decode:
                         media_item = load_image(media_item)
@@ -860,7 +895,7 @@ class MediaCache:
                     chunk_key=chunk_key,
                 )
 
-            case models.MediaType.IMAGE | models.MediaType.VIDEO | models.MediaType.POINT_CLOUD:
+            case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
                 from cvat.apps.engine.media_io.frame_provider import prepare_image_chunk
 
                 with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
@@ -1015,7 +1050,7 @@ class MediaCache:
 
         match db_segment.task.media_type:
             case models.MediaType.POINT_CLOUD:
-                preview = PIL.Image.open(ASSETS_DIR / "pcd_default_preview.png")
+                preview = PIL.Image.open(ASSETS_DIR / "point_cloud_default_preview.png")
             case models.MediaType.AUDIO:
                 from cvat.apps.engine.media_extractors import AudioReader
 
@@ -1026,7 +1061,7 @@ class MediaCache:
                     preview = reader.get_preview_image()
                 else:
                     preview = PIL.Image.open(ASSETS_DIR / "audio_default_preview.png")
-            case models.MediaType.IMAGE | models.MediaType.VIDEO:
+            case models.MediaType.IMAGE:
                 from cvat.apps.engine.media_io.frame_provider import (  # avoid circular import
                     FrameOutputType,
                     make_frame_provider,
@@ -1125,10 +1160,9 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     PREVIEW_SIZE = (256, 256)
 
     ALLOWED_FORMATS = {"PNG", "JPEG"}
-    FORMAT_MIME = {
-        "PNG": "image/png",
-        "JPEG": "image/jpeg",
-    }
+
+    def get_mime(format_name: str) -> str:
+        return PIL.Image.MIME[format_name]
 
     image = PIL.ImageOps.exif_transpose(image)
 
@@ -1139,9 +1173,9 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
 
     if image.format not in ALLOWED_FORMATS:
         image.convert("RGB").save(output_buf, format="JPEG")
-        mime = FORMAT_MIME["JPEG"]
+        mime = get_mime("JPEG")
     else:
         image.save(output_buf)
-        mime = FORMAT_MIME[image.format]
+        mime = get_mime(image.format)
 
     return output_buf, mime

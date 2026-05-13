@@ -18,11 +18,11 @@ django-allauth[saml]==0.57.2
 django-auth-ldap==2.2.0
 django-cors-headers==3.5.0
 django-crum==0.7.9
-django-filter==2.4.0
+django-filter>=25.1
 django-health-check>=3.18.1,<4
 django-rq==2.8.1
 django-sendfile2==0.7.0
-Django~=4.2.7
+Django~=5.2.0
 djangorestframework>=3.15.2,<4
 djangorestframework-api-key~=3.1
 drf-spectacular==0.26.2
@@ -43,7 +43,7 @@ pdf2image==1.14.0
 Pillow>=10.3.0
 pottery~=3.0
 psutil==5.9.4
-psycopg2-binary==2.9.5
+psycopg2-binary~=2.9
 python-ldap==3.4.3
 python-logstash-async==2.5.0
 pyunpack==0.2.1
