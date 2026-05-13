@@ -7604,7 +7604,7 @@ components:
         image_quality:
           type: integer
           maximum: 100
-          minimum: 0
+          minimum: 1
           description: Image quality to use during annotation, required for image
             and video-based tasks
         start_frame:

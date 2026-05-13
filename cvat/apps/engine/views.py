@@ -1488,7 +1488,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         db_data = db_task.data
         if db_data is None:
-            return ValidationError("Data is not uploaded for the task yet")
+            raise ValidationError("Data is not uploaded for the task yet")
 
         if hasattr(db_data, 'audio'):
             media = [db_data.audio]
@@ -2009,7 +2009,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         prefetch()
 
         if request.method == 'PATCH':
-            if db_job.segment.task.media_type is models.MediaType.AUDIO:
+            if db_job.segment.task.media_type == models.MediaType.AUDIO:
                 # TODO: introduce support for frame deletion when there's more information
                 # on use cases. Should probably work with ranges.
                 raise ValidationError("Audio metadata cannot be edited")

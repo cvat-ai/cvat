@@ -670,7 +670,7 @@ SPECTACULAR_SETTINGS = {
         "OperationStatus": "cvat.apps.engine.models.StateChoice",
         "ChunkType": "cvat.apps.engine.models.DataChoice",
         "MediaType": "cvat.apps.engine.models.MediaType",
-        "Dimension": "cvat.apps.engine.models.Dimension",
+        "Dimension": "cvat.apps.engine.models.DimensionType",
         "StorageMethod": "cvat.apps.engine.models.StorageMethodChoice",
         "JobStatus": "cvat.apps.engine.models.StatusChoice",
         "JobStage": "cvat.apps.engine.models.StageChoice",

@@ -2258,7 +2258,7 @@ class DataSerializer(serializers.ModelSerializer):
     https://docs.cvat.ai/docs/manual/basics/create-annotation-task/#advanced-configuration
     """
 
-    image_quality = serializers.IntegerField(min_value=0, max_value=100, required=False,
+    image_quality = serializers.IntegerField(min_value=1, max_value=100, required=False,
         help_text="Image quality to use during annotation, required for image and video-based tasks"
         )
     use_zip_chunks = serializers.BooleanField(default=False,
