@@ -23,7 +23,7 @@ def revert_audio_chunks(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("engine", "0103_add_audio_support"),
+        ("engine", "0104_add_audio_support"),
     ]
 
     operations = [
