@@ -13,7 +13,7 @@ import zlib
 from abc import ABCMeta, abstractmethod
 from contextlib import suppress
 from copy import copy
-from datetime import datetime
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -25,7 +25,6 @@ from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
 from django.db.models.query import Prefetch, prefetch_related_objects
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
-from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiExample,
@@ -323,9 +322,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'annotation_guide', 'source_storage', 'target_storage',
     )
 
-    search_fields = ('name', 'owner', 'assignee', 'status')
-    filter_fields = list(search_fields) + ['id', 'updated_date']
-    simple_filters = list(search_fields)
+    search_fields = ('name', 'owner', 'assignee')
+    simple_filters = (*search_fields, 'status')
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
@@ -838,19 +837,19 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'validation_mode': 'data__validation_layout__mode',
     }
     search_fields = (
-        'project_name', 'name', 'owner', 'status', 'assignee',
-        'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode'
+        'project_name', 'name', 'owner', 'assignee', 'subset', 'tracker_link',
     )
-    filter_fields = list(search_fields) + [
-        'id', 'project_id', 'updated_date', 'media_type'
-    ]
+    simple_filters = (
+        *search_fields,
+        'project_id', 'status', 'media_type', 'mode', 'dimension', 'validation_mode',
+    )
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
             - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}\n
             - Get all completed tasks from 1 project - { "and": [{ "==": [{ "var" : "status" }, "completed"]}, { "==" : [{ "var" : "project_id"}, 1]}]}\n
     """)
-    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_supports_organization_params = True
@@ -1696,12 +1695,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
-    search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
-    filter_fields = list(search_fields) + [
-        'id', 'task_id', 'project_id', 'updated_date', 'type', 'parent_job_id',
-        'dimension', 'media_type', "mode",
-    ]
-    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
+    search_fields = ('task_name', 'project_name', 'assignee')
+    simple_filters = (
+        *search_fields,
+        'task_id', 'project_id', 'type', 'parent_job_id',
+        'dimension', 'media_type', "mode", 'state', 'stage',
+    )
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
@@ -2208,8 +2208,8 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_supports_organization_params = True
     iam_permission_class = IssuePermission
     search_fields = ('owner', 'assignee')
-    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
-    simple_filters = list(search_fields) + ['job_id', 'task_id', 'resolved', 'frame_id']
+    simple_filters = (*search_fields, 'job_id', 'task_id', 'resolved', 'frame_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     lookup_fields = {
         'owner': 'owner__username',
@@ -2280,8 +2280,8 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_supports_organization_params = True
     iam_permission_class = CommentPermission
     search_fields = ('owner',)
-    filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
-    simple_filters = list(search_fields) + ['issue_id', 'frame_id', 'job_id']
+    simple_filters = (*search_fields, 'issue_id', 'frame_id', 'job_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     ordering = '-id'
     lookup_fields = {
@@ -2366,8 +2366,8 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_permission_class = LabelPermission
 
     search_fields = ('name', 'parent')
-    filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
-    simple_filters = list(set(filter_fields) - {'id'})
+    simple_filters = (*search_fields, 'type', 'color', 'parent_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     lookup_fields = {
         'parent': 'parent__name',
@@ -2512,8 +2512,8 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_permission_class = UserPermission
 
     search_fields = ('username', 'first_name', 'last_name')
-    filter_fields = list(search_fields) + ['id', 'is_active']
-    simple_filters = list(search_fields) + ['is_active']
+    simple_filters = (*search_fields, 'is_active')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
@@ -2593,10 +2593,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = CloudStorage.objects.all()
 
-    search_fields = ('provider_type', 'name', 'resource',
-                    'credentials_type', 'owner', 'description')
-    filter_fields = list(search_fields) + ['id']
-    simple_filters = list(set(search_fields) - {'description'})
+    search_fields = ('name', 'resource', 'owner', 'description')
+    simple_filters = ('name', 'resource', 'owner', 'provider_type', 'credentials_type')
+    filter_fields = (*simple_filters, 'id', 'description')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}

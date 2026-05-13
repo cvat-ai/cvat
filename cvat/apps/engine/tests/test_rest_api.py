@@ -917,9 +917,9 @@ class ProjectListAPITestCase(ApiTestBase):
         create_db_users(cls)
         cls.projects = create_dummy_db_projects(cls)
 
-    def _run_api_v2_projects(self, user, params=""):
+    def _run_api_v2_projects(self, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/projects{}".format(params))
+            response = self.client.get("/api/projects")
 
         return response
 
@@ -1073,7 +1073,8 @@ class ProjectCreateAPITestCase(ApiTestBase):
                 labels_response = list(
                     get_paginated_collection(
                         lambda page: self.client.get(
-                            "/api/labels?project_id=%s&page=%s" % (response.data["id"], page)
+                            "/api/labels",
+                            query_params={"project_id": response.data["id"], "page": page},
                         )
                     )
                 )
@@ -1166,7 +1167,7 @@ class ProjectPartialUpdateAPITestCase(ApiTestBase):
                 labels_response = list(
                     get_paginated_collection(
                         lambda page: self.client.get(
-                            "/api/labels?project_id=%s&page=%s" % (pid, page)
+                            "/api/labels", query_params={"project_id": pid, "page": page}
                         )
                     )
                 )
@@ -1317,7 +1318,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
                 labels_response = list(
                     get_paginated_collection(
                         lambda page: self.client.get(
-                            "/api/labels?project_id=%s&page=%s" % (pid, page)
+                            "/api/labels", query_params={"project_id": pid, "page": page}
                         )
                     )
                 )
@@ -1360,7 +1361,7 @@ class ProjectListOfTasksAPITestCase(ApiTestBase):
 
     def _run_api_v2_projects_id_tasks(self, user, pid):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/tasks?project_id={}".format(pid))
+            response = self.client.get("/api/tasks", query_params={"project_id": pid})
 
         return response
 
@@ -1740,7 +1741,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
     def _get_tasks_for_project(self, user, pid):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/tasks?project_id={}".format(pid))
+            response = self.client.get("/api/tasks", query_params={"project_id": pid})
 
         return sorted(response.data["results"], key=lambda task: task["name"])
 
@@ -2261,9 +2262,9 @@ class TaskListAPITestCase(ApiTestBase):
         create_db_users(cls)
         cls.tasks = create_dummy_db_tasks(cls)
 
-    def _run_api_v2_tasks(self, user, params=""):
+    def _run_api_v2_tasks(self, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/tasks{}".format(params))
+            response = self.client.get("/api/tasks")
 
         return response
 
@@ -2306,7 +2307,9 @@ class TaskGetAPITestCase(ApiTestBase):
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -2485,7 +2488,9 @@ class TaskPartialUpdateAPITestCase(ApiTestBase):
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -2686,7 +2691,9 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -2941,7 +2948,8 @@ class TaskCreateAPITestCase(ApiTestBase):
                 labels_response = list(
                     get_paginated_collection(
                         lambda page: self.client.get(
-                            "/api/labels?task_id=%s&page=%s" % (response.data["id"], page)
+                            "/api/labels",
+                            query_params={"task_id": response.data["id"], "page": page},
                         )
                     )
                 )
@@ -3864,13 +3872,13 @@ class TaskDataAPITestCase(ApiTestBase):
     def _run_api_v2_task_id_data_get(
         self, tid, user, data_type, data_quality=None, data_number=None
     ):
-        url = "/api/tasks/{}/data?type={}".format(tid, data_type)
+        query_params = {"type": data_type}
         if data_quality is not None:
-            url += "&quality={}".format(data_quality)
+            query_params["quality"] = data_quality
         if data_number is not None:
-            url += "&number={}".format(data_number)
+            query_params["number"] = data_number
         with ForceLogin(user, self.client):
-            return self.client.get(url)
+            return self.client.get("/api/tasks/{}/data".format(tid), query_params=query_params)
 
     def _get_preview(self, tid, user):
         url = "/api/tasks/{}/preview".format(tid)
@@ -5675,14 +5683,17 @@ class JobAnnotationAPITestCase(ApiTestBase):
                 labels_response = list(
                     get_paginated_collection(
                         lambda page: self.client.get(
-                            "/api/labels?task_id=%s&page=%s" % (response.data["id"], page)
+                            "/api/labels",
+                            query_params={"task_id": response.data["id"], "page": page},
                         )
                     )
                 )
                 response.data["labels"] = labels_response
 
             jobs = get_paginated_collection(
-                lambda page: self.client.get("/api/jobs?task_id={}&page={}".format(tid, page))
+                lambda page: self.client.get(
+                    "/api/jobs", query_params={"task_id": tid, "page": page}
+                )
             )
 
         return (task, jobs)
@@ -5731,7 +5742,10 @@ class JobAnnotationAPITestCase(ApiTestBase):
     def _patch_api_v2_jobs_id_data(self, jid, user, action, data):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/jobs/{}/annotations?action={}".format(jid, action), data=data, format="json"
+                "/api/jobs/{}/annotations".format(jid),
+                query_params={"action": action},
+                data=data,
+                format="json",
             )
 
         return response
@@ -6173,7 +6187,10 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
     def _patch_api_v2_tasks_id_annotations(self, pk, user, action, data):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/tasks/{}/annotations?action={}".format(pk, action), data=data, format="json"
+                "/api/tasks/{}/annotations".format(pk),
+                query_params={"action": action},
+                data=data,
+                format="json",
             )
 
         return response
@@ -7563,7 +7580,7 @@ class ServerShareAPITestCase(ApiTestBase):
 
     def _run_api_v2_server_share(self, user, directory):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/server/share?directory={}".format(directory))
+            response = self.client.get("/api/server/share", query_params={"directory": directory})
 
         return response
 
@@ -7665,7 +7682,7 @@ class ServerShareDifferentTypesAPITestCase(ApiTestBase):
 
     def _run_api_v2_server_share(self, directory):
         with ForceLogin(self.user, self.client):
-            response = self.client.get("/api/server/share?directory={}".format(directory))
+            response = self.client.get("/api/server/share", query_params={"directory": directory})
 
         return response
 
@@ -7870,8 +7887,10 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
             self.client.get(f"/api/tasks/{task_id}/preview")
             for quality in ["compressed", "original"]:
                 for frame in range(task["size"]):
-                    url = f"/api/tasks/{task_id}/data?type=frame&quality={quality}&number={frame}"
-                    self.client.get(url)
+                    self.client.get(
+                        f"/api/tasks/{task_id}/data",
+                        query_params={"type": "frame", "quality": quality, "number": frame},
+                    )
 
             self.assertGreater(len(get_cache_keys()), 0)
 

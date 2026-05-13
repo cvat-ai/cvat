@@ -35,6 +35,7 @@ from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_sc
 from numpy import random
 from PIL import Image
 from rest_framework import exceptions, serializers
+from rest_framework.reverse import reverse
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
@@ -60,7 +61,6 @@ from cvat.apps.engine.utils import (
     get_path_size,
     grouped,
     parse_specific_attributes,
-    reverse,
     take_by,
 )
 from cvat.apps.iam.permissions import get_iam_context
@@ -143,11 +143,14 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
             return None
 
         return serializers.Hyperlink(
-            reverse(self.view_name, request=request,
-                query_params=build_field_filter_params(
+            reverse(
+                self.view_name,
+                request=request,
+                query=build_field_filter_params(
                     self.filter_key, getattr(instance, self.key_field)
-            )),
-            instance
+                ),
+            ),
+            instance,
         )
 
 
@@ -203,8 +206,7 @@ class LabelsSummarySerializer(serializers.Serializer):
 
     def get_url(self, request, instance):
         filter_key = instance.__class__.__name__.lower() + '_id'
-        return reverse('label-list', request=request,
-            query_params={ filter_key: instance.id })
+        return reverse('label-list', request=request, query={filter_key: instance.id})
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -220,8 +222,7 @@ class IssuesSummarySerializer(serializers.Serializer):
     count = serializers.IntegerField(read_only=True)
 
     def get_url(self, request, instance):
-        return reverse('issue-list', request=request,
-            query_params={ 'job_id': instance.id })
+        return reverse('issue-list', request=request, query={'job_id': instance.id})
 
     def get_count(self, instance):
         return getattr(instance, 'issue__count', 0)

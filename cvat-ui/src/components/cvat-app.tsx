@@ -7,20 +7,11 @@ import React from 'react';
 import { Redirect, Route, Switch } from 'react-router';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
-import Alert from 'antd/lib/alert';
 import Layout from 'antd/lib/layout';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
-import {
-    ClockCircleOutlined,
-    DashboardOutlined,
-    DatabaseOutlined,
-    DisconnectOutlined,
-    ExclamationCircleOutlined,
-    HddOutlined,
-    SafetyCertificateOutlined,
-} from '@ant-design/icons';
+import { DisconnectOutlined } from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 
@@ -96,90 +87,7 @@ import InvitationWatcher from './invitation-watcher/invitation-watcher';
 import SelectOrganizationModal from './select-organization-modal/select-organization-modal';
 import BulkProgress from './bulk-progress';
 import ProfilePageComponent from './profile-page/profile-page';
-
-function renderHealthCheckIcon(checkName: string): JSX.Element {
-    if (checkName.startsWith('Cache backend') || checkName.startsWith('DatabaseBackend')) {
-        return <DatabaseOutlined className='cvat-health-check-icon' />;
-    }
-
-    if (checkName === 'DiskUsage') {
-        return <HddOutlined className='cvat-health-check-icon' />;
-    }
-
-    if (checkName === 'MemoryUsage') {
-        return <DashboardOutlined className='cvat-health-check-icon' />;
-    }
-
-    if (checkName === 'OPAHealthCheck') {
-        return <SafetyCertificateOutlined className='cvat-health-check-icon' />;
-    }
-
-    return <ExclamationCircleOutlined className='cvat-health-check-icon' />;
-}
-
-function renderServerUnavailableDetails(details: string | null): JSX.Element {
-    const rows = details ? details.split('\n').filter((row: string): boolean => !!row.trim()) : [];
-    if (!rows.length) {
-        return (
-            <div className='cvat-server-unavailable-message'>
-                <Text>
-                    CVAT could not reach the server or one of the services required to run it.
-                    Make sure the backend, database, Redis and Open Policy Agent are running and available.
-                </Text>
-            </div>
-        );
-    }
-
-    const [summary, ...checks] = rows;
-
-    if (!checks.length) {
-        return (
-            <Alert
-                className='cvat-health-check-error'
-                type='error'
-                showIcon
-                icon={<ClockCircleOutlined />}
-                message='Connection check failed'
-                description={summary}
-            />
-        );
-    }
-
-    return (
-        <Alert
-            className='cvat-health-check-error'
-            type='error'
-            showIcon
-            message='Required services are not healthy'
-            description={(
-                <Space direction='vertical' size={12}>
-                    <Text type='secondary'>{summary}</Text>
-                    <div className='cvat-health-check-list'>
-                        {checks.map((check: string): JSX.Element => {
-                            const separator = check.indexOf(' - ');
-                            const checkName = separator === -1 ? check : check.slice(0, separator);
-                            const checkStatus = separator === -1 ? '' : check.slice(separator + 3);
-
-                            return (
-                                <div className='cvat-health-check-item' key={check}>
-                                    {renderHealthCheckIcon(checkName)}
-                                    <div>
-                                        <Text strong>{checkName}</Text>
-                                        {checkStatus && (
-                                            <Text className='cvat-health-check-status' type='secondary'>
-                                                {checkStatus}
-                                            </Text>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </Space>
-            )}
-        />
-    );
-}
+import ServerUnavailableComponent from './server-unavailable/server-unavailable';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -579,7 +487,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         } = this.props;
 
         const { healthIinitialized, backendIsHealthy, healthCheckError } = this.state;
-        const { SERVER_UNAVAILABLE_COMPONENT } = appConfig;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
         let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized && aboutInitialized;
@@ -726,10 +633,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <Text className='cvat-server-unavailable-title' strong>
                         Cannot connect to the server
                     </Text>
-                    {SERVER_UNAVAILABLE_COMPONENT({
-                        details: healthCheckError,
-                        renderDetails: renderServerUnavailableDetails,
-                    })}
+                    <ServerUnavailableComponent details={healthCheckError} />
                 </Space>
             );
         }
