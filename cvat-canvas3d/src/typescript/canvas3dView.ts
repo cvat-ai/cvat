@@ -112,38 +112,23 @@ function drawnDataFromState(state: ObjectState): DrawnObjectData {
 
 export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private controller: Canvas3dController;
-
     private views: Views;
-
     private clock: THREE.Clock;
-
     private speed: number;
-
     private cube: CuboidModel;
-
     private isPerspectiveBeingDragged: boolean;
-
     private activatedElementID: number | null;
-
     private isCtrlDown: boolean;
-
     private stateToBeSplitted: ObjectState | null;
-
     private statesToBeGrouped: ObjectState[];
-
     private statesToBeMerged: ObjectState[];
-
     private sceneBBox: THREE.Box3;
-
     private sideViewsZoomMemory: Record<number, SideViewsZoomMemory>;
-
     private model: Canvas3dModel & Master;
-
     private drawnObjects: Record<number, {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
-
     private hoverNeedsUpdate: boolean;
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {

@@ -65,15 +65,10 @@ function removeIDFromObject<T extends SerializedShape | SerializedTag | Serializ
 
 export default class AnnotationsSaver {
     private sessionType: 'task' | 'job';
-
     private id: number;
-
     private version: number;
-
     private collection: any;
-
     private hash: string;
-
     private initialObjects: {
         shapes: Record<number, SerializedCollection['shapes'][0]>,
         tracks: Record<number, SerializedCollection['tracks'][0]>,

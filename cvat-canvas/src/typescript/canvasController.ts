@@ -55,9 +55,7 @@ export interface CanvasController {
 
 export class CanvasControllerImpl implements CanvasController {
     private model: CanvasModel;
-
     private lastDragPosition: Position;
-
     private isDragging: boolean;
 
     public constructor(model: CanvasModel) {

@@ -11,21 +11,13 @@ import { fieldsToSnakeCase } from './common';
 
 export default class ApiToken {
     #id?: number;
-
     #name: string;
-
     #createdDate?: string;
-
     #updatedDate?: string;
-
     #expiryDate: string | null;
-
     #lastUsedDate?: string | null;
-
     #readOnly: boolean;
-
     #owner?: User;
-
     #value?: string;
 
     constructor(initialData: Partial<SerializedApiToken>) {

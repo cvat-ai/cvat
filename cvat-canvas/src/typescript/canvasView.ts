@@ -52,87 +52,46 @@ export interface CanvasView {
 
 export class CanvasViewImpl implements CanvasView, Listener {
     private text: SVGSVGElement;
-
     private adoptedText: SVG.Container;
-
     private background: HTMLCanvasElement;
-
     private masksContent: HTMLCanvasElement;
-
     private bitmap: HTMLCanvasElement;
-
     private bitmapUpdateReqId: number;
-
     private grid: SVGSVGElement;
-
     private content: SVGSVGElement;
-
     private attachmentBoard: HTMLDivElement;
-
     private adoptedContent: SVG.Container;
-
     private canvas: HTMLDivElement;
-
     private gridPath: SVGPathElement;
-
     private gridPattern: SVGPatternElement;
-
     private controller: CanvasController;
-
     private svgShapes: Record<number, SVG.Shape>;
-
     private svgTexts: Record<number, SVG.Text>;
-
     private isImageLoading: boolean;
-
     private issueRegionPattern_1: SVG.Pattern;
-
     private issueRegionPattern_2: SVG.Pattern;
-
     private drawnStates: Record<number, DrawnState>;
-
     private drawnIssueRegions: Record<number, SVG.Shape>;
-
     private geometry: Geometry;
-
     private drawHandler: DrawHandler;
-
     private masksHandler: MasksHandler;
-
     private editHandler: EditHandler;
-
     private mergeHandler: MergeHandler;
-
     private splitHandler: SplitHandler;
-
     private groupHandler: GroupHandler;
-
     private sliceHandler: SliceHandler;
-
     private regionSelector: RegionSelector;
-
     private objectSelector: ObjectSelector;
-
     private zoomHandler: ZoomHandler;
-
     private autoborderHandler: AutoborderHandler;
-
     private interactionHandler: InteractionHandler;
-
     private activeElement: ActiveElement;
-
     private highlightedElements: HighlightedElements;
-
     private configuration: Configuration;
-
     private snapToAngleResize: number;
-
     private draggableShape: SVG.Shape | null;
-
     private resizableShape: SVG.Shape | null;
-
     private ctrlPressed: boolean;
-
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
         editHidden: Record<number, boolean>;
