@@ -27,6 +27,15 @@ class {{classname}}({{#isEnum}}{{#isString}}StringEnumModel{{/isString}}{{^isStr
 
 {{> model_templates/classvars }}
 
+{{#isEnum}}
+{{#isString}}
+{{#defaultValue}}
+    _default_value = {{{.}}}
+
+{{/defaultValue}}
+{{/isString}}
+{{/isEnum}}
+
     attribute_map = {}
 
     read_only_vars = set()

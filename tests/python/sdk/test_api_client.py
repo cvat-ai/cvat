@@ -5,27 +5,36 @@
 
 import json
 
+import pytest
+
 from cvat_sdk import models
 from cvat_sdk.api_client.model_utils import to_json
 
 from shared.utils.config import BASE_URL, make_api_client
 
 
-def test_string_enum_models_are_string_compatible():
-    shape_type = models.ShapeType("rectangle")
-    deserialized_shape_type = models.ShapeType._from_openapi_data("rectangle")
+@pytest.mark.parametrize(
+    ("enum_class", "args", "expected_value"),
+    [
+        pytest.param(models.ShapeType, ("rectangle",), "rectangle", id="explicit-value"),
+        pytest.param(models.WebhookContentType, (), "application/json", id="default-value"),
+    ],
+)
+def test_string_enum_models_are_string_compatible(enum_class, args, expected_value):
+    enum_value = enum_class(*args)
+    deserialized_enum_value = enum_class._from_openapi_data(*args)
 
-    assert isinstance(shape_type, str)
-    assert isinstance(deserialized_shape_type, str)
-    assert shape_type == "rectangle"
-    assert "rectangle" == shape_type
-    assert deserialized_shape_type == "rectangle"
-    assert shape_type.value == "rectangle"
-    assert deserialized_shape_type.value == "rectangle"
-    assert str(shape_type) == "rectangle"
-    assert shape_type in {"rectangle"}
-    assert {shape_type: "value"}["rectangle"] == "value"
-    assert json.dumps({"type": shape_type}) == '{"type": "rectangle"}'
+    assert isinstance(enum_value, str)
+    assert isinstance(deserialized_enum_value, str)
+    assert enum_value == expected_value
+    assert expected_value == enum_value
+    assert deserialized_enum_value == expected_value
+    assert enum_value.value == expected_value
+    assert deserialized_enum_value.value == expected_value
+    assert str(enum_value) == expected_value
+    assert enum_value in {expected_value}
+    assert {enum_value: "value"}[expected_value] == "value"
+    assert json.dumps({"value": enum_value}) == json.dumps({"value": expected_value})
 
 
 def test_string_enum_model_fields_are_serialized_as_strings():
