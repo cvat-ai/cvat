@@ -6,17 +6,21 @@ known test state, and collect enough diagnostics when something fails.
 
 ## Core Concepts
 
-`Runtime*` classes describe one pytest process and the user's requested runtime
-lifecycle. They should not know Docker Compose or Kubernetes details.
+Shared `Runtime*` classes describe one pytest process and the user's requested
+runtime lifecycle. `RuntimeMode`, `RuntimeRequest`, `RuntimeContext`, and
+`RuntimeNamespace` are shared runtime concepts. Backend-specific runtime config
+classes can still use the `Runtime` name when they describe the runtime state
+for one backend, for example `LocalRuntimeConfig`.
 
 `Infra*` classes describe a backend that can provide a CVAT test target. Tests
 and fixtures should interact with an `InfraInstance`, not with Docker or
 Kubernetes helpers directly.
 
-Backend-specific classes describe how a backend materializes a target. Local
-runtime uses Docker Compose project names and generated compose files. Kube
-runtime uses minikube profile, namespace, Helm releases, and deployment
-fingerprints. These are not shared runtime concepts.
+Backend-specific runtime config classes describe the identity and persistent
+state needed by a backend. Local runtime uses Docker Compose project names,
+generated compose files, and host ports. Kube runtime is expected to use
+minikube profile, namespace, Helm releases, and deployment fingerprints. These
+are backend runtime concepts, not shared pytest process concepts.
 
 Parallel mode is orchestration. The parent process schedules work and starts
 child pytest processes. Each child process creates a normal backend
@@ -50,22 +54,24 @@ child pytest processes. Each child process creates a normal backend
 
 `RuntimeNamespace`
 
-: Persistent runtime state keyed by `--run-prefix`. It owns the runtime
-  directory, state file, and context file. The state can contain backend-specific
-  sections, but the namespace itself does not know how a backend starts CVAT.
+: Filesystem namespace keyed by `--run-prefix`. It owns the runtime directory,
+  state file, and context file. It is not an instance config and does not decide
+  how any backend starts CVAT.
 
 `LocalRuntimeConfig`
 
-: Local Docker-backed runtime configuration for one named runtime. It owns the
-  Docker Compose project name, generated compose file paths, host port state,
-  and prefixed container names. Docker Compose is the current local backend
-  mechanism, but tests should treat this object as local runtime configuration.
+: Local Docker-backed runtime configuration for one named runtime namespace. It
+  owns the Docker Compose project identity, generated compose file paths, host
+  port state, and prefixed container names. It uses `RuntimeNamespace` internally
+  for runtime directory and state file access, but it is not an
+  `InfraInstanceConfig`.
 
 `InfraInstanceConfig`
 
-: Common dependencies needed to create an infra instance, such as the repository
+: Constructor dependency wiring for an `InfraInstance`, such as the repository
   root, restore asset directory, readiness timeout, extra compose files, and
-  local rebuild preference.
+  local rebuild preference. Some fields are local-biased while only the local
+  backend is implemented through `InfraInstance`.
 
 `InfraInstance`
 
@@ -154,10 +160,14 @@ Single local run:
 
 1. pytest options are parsed into `RuntimeRequest`.
 2. `RuntimeContext` creates the run id and artifact directory.
-3. `LocalInstance` creates a `LocalRuntimeConfig` from the runtime namespace.
-4. The local stack is started, reused, restored, or stopped according to
-   `RuntimeMode`.
-5. Fixtures call `InfraInstance` methods to restore state between tests.
+3. Local pytest configuration resolves `LocalRuntimeConfig` from the run prefix
+   through `RuntimeConfig.get_local_runtime_config()`.
+4. `LocalRuntimeConfig` allocates or loads host ports and uses
+   `RuntimeNamespace` for runtime directory and state file access.
+5. `LocalInstance` is created with `InfraInstanceConfig` dependency wiring.
+6. `LocalInstance` uses `LocalRuntimeConfig` to manage compose files, names,
+   ports, lifecycle, restore, and diagnostics.
+7. Fixtures call `InfraInstance` methods to restore state between tests.
 
 Future kube run:
 
