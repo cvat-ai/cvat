@@ -65,24 +65,28 @@ pytest tests/python
 
 This command will automatically start all necessary docker containers.
 
-Use these lifecycle commands to manage the test runtime without running tests:
+Use these commands to manage or reuse the local test runtime:
 
-```bash
-pytest tests/python build-images # Rebuild CVAT server and UI images and exit
-pytest tests/python up           # Start test services, restore test data, and exit
-pytest tests/python down         # Stop and remove test services and volumes
-pytest tests/python reuse        # Use an already-running test stack without resetting data
-pytest tests/python restore-db   # Restore test DB/data in the current stack and exit
-```
+| Command | Behavior |
+| --- | --- |
+| `pytest tests/python build` | Rebuild CVAT server and UI images and exit. |
+| `pytest tests/python up` | Start test services, restore runtime state from test assets, and exit. |
+| `pytest tests/python restore` | Restore runtime state from test assets in the current stack and exit. Starts the stack first if needed. |
+| `pytest tests/python reuse` | Run tests against an already-running stack without resetting DB, Redis, ClickHouse, or CVAT data. |
+| `pytest tests/python down` | Stop and remove test services and volumes. |
 
-The explicit `--infra=up`, `--infra=down`, `--infra=reuse`, `--infra=restore-db`,
-and `--infra=build-images` forms are equivalent. Use `reuse` when you want to run
-against an already-running stack and keep its existing DB, Redis, ClickHouse, and
-CVAT data state.
+The explicit `--infra=build`, `--infra=up`, `--infra=restore`, `--infra=reuse`,
+and `--infra=down` forms are equivalent to the short commands.
+
+The default `pytest tests/python` command starts missing services, restores runtime
+state from test assets, runs tests, and tears down services it started automatically.
+Use `up` when you want to keep the stack running for repeated work, `reuse` when you
+want to run tests against that existing stack without resetting state, and `restore`
+when you want to reset the running stack back to the test assets.
 
 If you want to get a code coverage report, use special option for it:
 ```bash
-pytest tests/python build-images
+pytest tests/python build
 COVERAGE_PROCESS_START=.coveragerc pytest tests/python --cov --cov-report xml
 ```
 
@@ -98,7 +102,7 @@ To debug a server deployed with Docker, you need to do the following:
 - Rebuild the images and start the test containers:
 
 ```bash
-CVAT_DEBUG_ENABLED=yes pytest tests/python build-images
+CVAT_DEBUG_ENABLED=yes pytest tests/python build
 CVAT_DEBUG_ENABLED=yes pytest tests/python up
 ```
 

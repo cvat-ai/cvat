@@ -11,6 +11,7 @@ from time import sleep
 
 import pytest
 import yaml
+
 from infra.config import InfraMode, RuntimeInfraConfig
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.system_utils import docker_cp, run_command
@@ -591,7 +592,7 @@ class LocalInstance(InfraInstance):
         dc_files = self._build_local_dc_files(project_cfg)
         container_name_files = project_cfg.generated_compose_files
 
-        def restore_databases_from_assets() -> None:
+        def restore_runtime_state_from_assets() -> None:
             self.restore_cvat_data()
             docker_cp(
                 self.deps.cvat_db_dir / "restore.sql",
@@ -628,6 +629,9 @@ class LocalInstance(InfraInstance):
                 ],
                 logger=logger,
             )
+            self.restore_clickhouse_db()
+            self.restore_redis_inmem()
+            self.restore_redis_ondisk()
             infra_health.wait_for_auth_login_ready()
 
         def set_auto_started(value: bool) -> None:
@@ -725,11 +729,10 @@ class LocalInstance(InfraInstance):
                     rebuild=self.deps.rebuild,
                 )
                 infra_health.wait_for_services(self.deps.waiting_time)
-            restore_databases_from_assets()
-            infra_health.wait_for_auth_login_ready()
+            restore_runtime_state_from_assets()
             pytest.exit("All necessary containers have been created and started.", returncode=0)
 
-        if infra_mode == InfraMode.RESTORE_DB:
+        if infra_mode == InfraMode.RESTORE:
             if not project_running:
                 start_services(
                     project_name=project_name,
@@ -738,8 +741,8 @@ class LocalInstance(InfraInstance):
                     project_directory=self.deps.cvat_root_dir,
                     rebuild=self.deps.rebuild,
                 )
-            restore_databases_from_assets()
-            pytest.exit("CVAT database has been restored from test assets.", returncode=0)
+            restore_runtime_state_from_assets()
+            pytest.exit("CVAT test runtime has been restored from test assets.", returncode=0)
 
         if infra_mode == InfraMode.AUTO:
             # In auto mode, tear down only stacks that this session had to start.
@@ -754,7 +757,7 @@ class LocalInstance(InfraInstance):
                 rebuild=self.deps.rebuild,
             )
 
-        restore_databases_from_assets()
+        restore_runtime_state_from_assets()
 
     def start(self) -> None:
         request = RuntimeInfraConfig.resolve_request(self.config)

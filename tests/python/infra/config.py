@@ -32,8 +32,8 @@ class InfraMode(str, Enum):
     AUTO = "auto"
     UP = "up"
     DOWN = "down"
-    RESTORE_DB = "restore-db"
-    BUILD_IMAGES = "build-images"
+    RESTORE = "restore"
+    BUILD = "build"
     REUSE = "reuse"
 
     def __str__(self) -> str:
@@ -45,14 +45,14 @@ _LIFECYCLE_COMMAND_MODES = (
     InfraMode.UP,
     InfraMode.DOWN,
     InfraMode.REUSE,
-    InfraMode.RESTORE_DB,
-    InfraMode.BUILD_IMAGES,
+    InfraMode.RESTORE,
+    InfraMode.BUILD,
 )
 _VERSION_CHECK_SKIP_MODES = (
     InfraMode.UP,
     InfraMode.DOWN,
-    InfraMode.RESTORE_DB,
-    InfraMode.BUILD_IMAGES,
+    InfraMode.RESTORE,
+    InfraMode.BUILD,
 )
 
 
@@ -301,9 +301,7 @@ class RuntimeInfraConfig:
         if stop_services:
             deprecation_warnings.append("--stop-services is deprecated; use --infra=down")
         if rebuild:
-            deprecation_warnings.append(
-                "--rebuild is deprecated; use --infra=build-images for rebuild-only use"
-            )
+            deprecation_warnings.append("--rebuild is deprecated; use --infra=build")
 
         if start_services and stop_services:
             raise pytest.UsageError("--start-services and --stop-services are incompatible")
@@ -329,11 +327,11 @@ class RuntimeInfraConfig:
         if platform == "kube" and infra_mode in {
             InfraMode.UP,
             InfraMode.DOWN,
-            InfraMode.RESTORE_DB,
-            InfraMode.BUILD_IMAGES,
+            InfraMode.RESTORE,
+            InfraMode.BUILD,
         }:
             raise pytest.UsageError(
-                "--infra=up/down/restore-db/build-images are local-runtime lifecycle modes "
+                "--infra=up/down/restore/build are local-runtime lifecycle modes "
                 "and cannot be used with --platform=kube"
             )
         if collect_only and any(
@@ -345,14 +343,14 @@ class RuntimeInfraConfig:
                 in {
                     InfraMode.UP,
                     InfraMode.DOWN,
-                    InfraMode.RESTORE_DB,
-                    InfraMode.BUILD_IMAGES,
+                    InfraMode.RESTORE,
+                    InfraMode.BUILD,
                 },
             )
         ):
             raise pytest.UsageError(
                 "--collect-only is not compatible with --cleanup/--dumpdb/--rebuild/"
-                "--infra=up/down/restore-db/build-images"
+                "--infra=up/down/restore/build"
             )
         if platform == "kube" and any((cleanup, dumpdb)):
             raise pytest.UsageError("--platform=kube does not support --cleanup/--dumpdb")

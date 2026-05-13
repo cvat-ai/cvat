@@ -68,7 +68,7 @@ def pytest_sessionstart(session) -> None:
     for warning in request.deprecation_warnings:
         warnings.warn(warning, DeprecationWarning, stacklevel=2)
 
-    if request.infra_mode == InfraMode.BUILD_IMAGES:
+    if request.infra_mode == InfraMode.BUILD:
         cvat_root_dir = RuntimeInfraConfig.get_cvat_root_dir()
         from infra.system_utils import run_command
 

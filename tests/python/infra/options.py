@@ -55,8 +55,8 @@ def add_infra_options(parser):
         help=(
             "Infrastructure mode: auto (default behavior), up (start services and exit), "
             "reuse (reuse already running services), down (stop services and exit), "
-            "restore-db (restore DB from test assets and exit), "
-            "build-images (rebuild cvat/server:dev and cvat/ui:dev and exit)."
+            "restore (restore test runtime state from assets and exit), "
+            "build (rebuild cvat/server:dev and cvat/ui:dev and exit)."
         ),
     )
     group._addoption(

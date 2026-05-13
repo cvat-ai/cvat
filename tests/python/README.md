@@ -51,7 +51,7 @@ When you have a new use case which cannot be expressed using objects already
 available in the system like comments, users, issues, please use the following
 procedure to add them:
 
-1. Run a clean CVAT instance and restore DB and data volume
+1. Run a clean CVAT instance and restore the test runtime state
    ```console
    pytest tests/python up
    ```
