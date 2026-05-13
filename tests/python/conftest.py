@@ -8,24 +8,11 @@ import pytest
 from infra import options as infra_options
 from infra.config import RuntimeConfig, RuntimeContext, RuntimeMode
 from infra.health import run_runtime_sanity_checks
-from infra.instances import InfraInstance, InfraInstanceConfig
-
-from shared.fixtures import init as legacy_init
-
-restore_db_per_function = legacy_init.restore_db_per_function
-restore_db_per_class = legacy_init.restore_db_per_class
-restore_cvat_data_per_function = legacy_init.restore_cvat_data_per_function
-restore_cvat_data_per_class = legacy_init.restore_cvat_data_per_class
-restore_clickhouse_db_per_function = legacy_init.restore_clickhouse_db_per_function
-restore_clickhouse_db_per_class = legacy_init.restore_clickhouse_db_per_class
-restore_redis_inmem_per_function = legacy_init.restore_redis_inmem_per_function
-restore_redis_inmem_per_class = legacy_init.restore_redis_inmem_per_class
-restore_redis_ondisk_per_function = legacy_init.restore_redis_ondisk_per_function
-restore_redis_ondisk_per_class = legacy_init.restore_redis_ondisk_per_class
-restore_redis_ondisk_after_class = legacy_init.restore_redis_ondisk_after_class
+from infra.instances import InfraInstance, InfraInstanceConfig, kube_legacy
 
 # Register fixture modules explicitly.
 pytest_plugins = [
+    "shared.fixtures.init",
     "shared.fixtures.data",
     "shared.fixtures.s3",
     "shared.fixtures.util",
@@ -92,7 +79,7 @@ def pytest_sessionstart(session) -> None:
         return
 
     if request.platform == "kube":
-        legacy_init.session_start(session)
+        kube_legacy.session_start(session)
         if request.should_run_runtime_sanity_checks:
             run_runtime_sanity_checks(
                 cvat_root_dir=RuntimeConfig.get_cvat_root_dir(), platform=request.platform
@@ -124,7 +111,7 @@ def pytest_sessionfinish(session, exitstatus: int) -> None:
     setattr(session.config, "_cvat_exitstatus", int(exitstatus))
 
     if request.platform == "kube":
-        legacy_init.session_finish(session)
+        kube_legacy.session_finish(session)
         return
 
     instance = getattr(session.config, "_cvat_infra_instance", None)
