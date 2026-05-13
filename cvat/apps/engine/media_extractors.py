@@ -954,7 +954,7 @@ class AudioReader(IMediaReader):
 
             frame_idx = -1
             for frame in container.decode(stream):
-                if stop_sample is not None and stop_sample <= frame.pts + frame.duration:
+                if stop_sample is not None and stop_sample < frame.pts:
                     break
 
                 for frame in self._filter_audio_frame(frame, start=start, stop=stop):
@@ -1468,6 +1468,10 @@ class Mp3ChunkWriter(IChunkWriter):
     ):
         for frame, _ in frames:
             container.mux(stream.encode_lazy(frame))
+
+        # Flush streams
+        for packet in stream.encode():
+            container.mux(packet)
 
 
 def _is_archive(path):
