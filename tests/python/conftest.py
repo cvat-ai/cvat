@@ -68,7 +68,7 @@ def pytest_sessionstart(session) -> None:
     for warning in request.deprecation_warnings:
         warnings.warn(warning, DeprecationWarning, stacklevel=2)
 
-    if request.infra_mode == InfraMode.BUILD:
+    if request.infra_mode == InfraMode.REBUILD:
         cvat_root_dir = RuntimeInfraConfig.get_cvat_root_dir()
         from infra.system_utils import run_command
 
@@ -93,7 +93,7 @@ def pytest_sessionstart(session) -> None:
 
     if request.platform == "kube":
         legacy_init.session_start(session)
-        if request.should_run_version_check:
+        if request.should_run_runtime_sanity_checks:
             run_runtime_sanity_checks(
                 cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=request.platform
             )
@@ -104,13 +104,13 @@ def pytest_sessionstart(session) -> None:
         cvat_db_dir=RuntimeInfraConfig.get_cvat_db_dir(),
         waiting_time=300,
         extra_dc_files=None,
-        rebuild=request.rebuild,
+        rebuild_images_before_start=request.rebuild_images_before_start,
     )
     instance = InfraInstance.create(session, instance_config)
     setattr(config, "_cvat_infra_instance", instance)
     instance.start()
 
-    if request.should_run_version_check:
+    if request.should_run_runtime_sanity_checks:
         run_runtime_sanity_checks(
             cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=request.platform
         )

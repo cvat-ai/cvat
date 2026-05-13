@@ -69,13 +69,13 @@ Use these commands to manage or reuse the local test runtime:
 
 | Command | Behavior |
 | --- | --- |
-| `pytest tests/python build` | Rebuild CVAT server and UI images and exit. |
+| `pytest tests/python rebuild` | Rebuild CVAT server and UI images and exit. |
 | `pytest tests/python up` | Start test services, restore runtime state from test assets, and exit. |
 | `pytest tests/python restore` | Restore runtime state from test assets in the current stack and exit. Starts the stack first if needed. |
 | `pytest tests/python reuse` | Run tests against an already-running stack without resetting DB, Redis, ClickHouse, or CVAT data. |
 | `pytest tests/python down` | Stop and remove test services and volumes. |
 
-The explicit `--infra=build`, `--infra=up`, `--infra=restore`, `--infra=reuse`,
+The explicit `--infra=rebuild`, `--infra=up`, `--infra=restore`, `--infra=reuse`,
 and `--infra=down` forms are equivalent to the short commands.
 
 The default `pytest tests/python` command starts missing services, restores runtime
@@ -86,7 +86,7 @@ when you want to reset the running stack back to the test assets.
 
 If you want to get a code coverage report, use special option for it:
 ```bash
-pytest tests/python build
+pytest tests/python rebuild
 COVERAGE_PROCESS_START=.coveragerc pytest tests/python --cov --cov-report xml
 ```
 
@@ -102,7 +102,7 @@ To debug a server deployed with Docker, you need to do the following:
 - Rebuild the images and start the test containers:
 
 ```bash
-CVAT_DEBUG_ENABLED=yes pytest tests/python build
+CVAT_DEBUG_ENABLED=yes pytest tests/python rebuild
 CVAT_DEBUG_ENABLED=yes pytest tests/python up
 ```
 
