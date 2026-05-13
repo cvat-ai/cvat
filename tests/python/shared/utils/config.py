@@ -7,6 +7,7 @@
 
 from collections.abc import Generator
 from contextlib import contextmanager
+from copy import deepcopy
 from pathlib import Path
 
 import requests
@@ -22,6 +23,7 @@ ADMIN_USER = "admin1"
 ADMIN_PASS = USER_PASS
 BASE_URL = "http://localhost:8080"
 API_URL = BASE_URL + "/api/"
+_DEFAULT_BASE_URL = BASE_URL
 
 # MiniIO settings
 MINIO_KEY = "minio_access_key"
@@ -40,6 +42,24 @@ def get_server_url(endpoint, **kwargs):
 
 def get_api_url(endpoint, **kwargs):
     return API_URL + endpoint + "?" + _to_query_params(**kwargs)
+
+
+def normalize_asset_urls(data):
+    data = deepcopy(data)
+    if BASE_URL == _DEFAULT_BASE_URL:
+        return data
+
+    return _replace_base_url(data)
+
+
+def _replace_base_url(value):
+    if isinstance(value, dict):
+        return {key: _replace_base_url(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_replace_base_url(item) for item in value]
+    if isinstance(value, str):
+        return value.replace(_DEFAULT_BASE_URL, BASE_URL)
+    return value
 
 
 def get_method(username, endpoint, **kwargs):

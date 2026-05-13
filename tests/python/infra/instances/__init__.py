@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .base_instance import InfraInstance, InfraPlugin, InstanceConfig
+from .base_instance import InfraInstance, InfraInstanceConfig, InfraPlugin

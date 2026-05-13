@@ -4,7 +4,7 @@
 
 import argparse
 
-from infra.config import RuntimeInfraConfig
+from infra.config import RuntimeConfig
 
 
 def add_infra_options(parser):
@@ -40,7 +40,7 @@ def add_infra_options(parser):
     group._addoption(
         "--run-prefix",
         action="store",
-        default=RuntimeInfraConfig.get_default_project_name(),
+        default=RuntimeConfig.get_default_run_prefix(),
         help=(
             "Prefix used for a test run identity. "
             "It is used as docker compose project/container prefix and runtime state namespace "
@@ -50,8 +50,8 @@ def add_infra_options(parser):
     group._addoption(
         "--infra",
         action="store",
-        default=RuntimeInfraConfig.get_default_infra_mode(),
-        choices=RuntimeInfraConfig.get_infra_modes(),
+        default=RuntimeConfig.get_default_runtime_mode(),
+        choices=RuntimeConfig.get_runtime_modes(),
         help=(
             "Infrastructure mode: auto (default behavior), up (start services and exit), "
             "reuse (reuse already running services), down (stop services and exit), "

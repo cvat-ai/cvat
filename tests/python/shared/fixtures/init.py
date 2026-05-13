@@ -13,7 +13,7 @@ from time import sleep
 import pytest
 import requests
 import yaml
-from infra.config import RuntimeInfraConfig
+from infra.config import RuntimeConfig
 
 from shared.utils.config import ASSETS_DIR, get_server_url
 
@@ -102,7 +102,7 @@ def _get_optional_bool_option(config, name: str, default: bool = False) -> bool:
 
 
 def _project_cfg():
-    return RuntimeInfraConfig.get_project_config(cvat_root_dir=CVAT_ROOT_DIR)
+    return RuntimeConfig.get_local_compose_stack(cvat_root_dir=CVAT_ROOT_DIR)
 
 
 def _prefixed_container_name(container: str) -> str:

@@ -7,11 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from infra.config import RuntimeInfraConfig
+from infra.config import RuntimeConfig, RuntimeContext
 
 
 @dataclass(frozen=True)
-class InstanceConfig:
+class InfraInstanceConfig:
     cvat_root_dir: Path  # Repo test root used for compose/asset path resolution.
     cvat_db_dir: Path  # Directory with DB/data restore artifacts.
     waiting_time: int  # Max service readiness wait in seconds.
@@ -59,7 +59,7 @@ class InfraInstance(ABC):
         "/home/django/data/tmp",
     )
 
-    def __init__(self, session, deps: InstanceConfig):
+    def __init__(self, session, deps: InfraInstanceConfig):
         self.session = session
         self.config = session.config
         self.deps = deps
@@ -73,7 +73,7 @@ class InfraInstance(ABC):
 
     @classmethod
     @abstractmethod
-    def can_handle(cls, session, deps: InstanceConfig) -> bool:
+    def can_handle(cls, session, deps: InfraInstanceConfig) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -84,14 +84,14 @@ class InfraInstance(ABC):
         return None
 
     def should_collect_failure_logs(self) -> bool:
-        if RuntimeInfraConfig.resolve_request(self.config).collect_only:
+        if RuntimeConfig.resolve_request(self.config).collect_only:
             return False
 
         exitstatus = getattr(self.config, "_cvat_exitstatus", 0)
         return int(exitstatus) != 0
 
     def failure_logs_dir(self) -> Path:
-        path = RuntimeInfraConfig.get_run_dir() / "container-logs"
+        path = RuntimeContext.get_run_dir() / "container-logs"
         path.mkdir(parents=True, exist_ok=True)
         return path
 
@@ -180,7 +180,7 @@ class InfraInstance(ABC):
         raise RuntimeError("Failed to choose infra instance implementation for config")
 
     @classmethod
-    def create(cls, session, deps: InstanceConfig) -> "InfraInstance":
+    def create(cls, session, deps: InfraInstanceConfig) -> "InfraInstance":
         selected_class = getattr(session.config, "_cvat_runtime_class", None)
         if selected_class is None:
             selected_class = cls.select_runtime_class_for_config(session.config)

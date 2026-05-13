@@ -5,14 +5,14 @@
 import json
 import logging
 import os
+import socket
 from pathlib import Path
 from subprocess import CalledProcessError, run
 from time import sleep
 
 import pytest
 import yaml
-
-from infra.config import InfraMode, RuntimeInfraConfig
+from infra.config import RuntimeConfig, RuntimeContext, RuntimeMode
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.system_utils import docker_cp, run_command
 
@@ -40,6 +40,24 @@ _LOCAL_DC_FILES = (
     "tests/docker-compose.pat_settings.yml",
     "tests/docker-compose.test_servers.yml",
 )
+_DEFAULT_PORT_CONFIG = {
+    "http_port": 8080,
+    "logs_port": 8090,
+    "db_port": 15432,
+    "redis_inmem_port": 16379,
+    "redis_ondisk_port": 16666,
+    "minio_port": 9000,
+    "minio_console_port": 9001,
+}
+_NON_DEFAULT_PORT_STARTS = {
+    "http_port": 18080,
+    "logs_port": 18090,
+    "db_port": 15432,
+    "redis_inmem_port": 16379,
+    "redis_ondisk_port": 16666,
+    "minio_port": 19000,
+    "minio_console_port": 19001,
+}
 
 
 class StackCompatibilityError(RuntimeError):
@@ -80,20 +98,20 @@ def preconfigure_local_runtime_env(config) -> None:
     This prevents import-time constants from sticking to localhost:8080
     when running with --run-prefix.
     """
-    request = RuntimeInfraConfig.resolve_request(config)
+    request = RuntimeConfig.resolve_request(config)
     project_name = request.run_prefix
 
     if request.platform != "local":
         return
 
-    if request.collect_only or request.infra_mode == InfraMode.DOWN:
+    if request.collect_only or request.runtime_mode == RuntimeMode.DOWN:
         os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         return
 
-    project_cfg = RuntimeInfraConfig.get_project_config(project_name)
+    project_cfg = RuntimeConfig.get_local_compose_stack(project_name)
     port_config = resolve_port_config(
         project_cfg,
-        default_project_name=RuntimeInfraConfig.get_default_project_name(),
+        default_project_name=RuntimeConfig.get_default_run_prefix(),
     )
     _configure_runtime_env(
         project_name=project_name,
@@ -104,12 +122,12 @@ def preconfigure_local_runtime_env(config) -> None:
 
 def resolve_local_project_context(session) -> tuple[str, dict]:
     config = session.config
-    request = RuntimeInfraConfig.resolve_request(config)
+    request = RuntimeConfig.resolve_request(config)
     project_name = request.run_prefix
-    project_cfg = RuntimeInfraConfig.get_project_config(project_name)
+    project_cfg = RuntimeConfig.get_local_compose_stack(project_name)
     port_config = resolve_port_config(
         project_cfg,
-        default_project_name=RuntimeInfraConfig.get_default_project_name(),
+        default_project_name=RuntimeConfig.get_default_run_prefix(),
     )
     _configure_runtime_env(
         project_name=project_name,
@@ -128,13 +146,14 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
 
 
 def local_exec(container, command: list[str], capture_output=True):
+    prefixed_name = RuntimeConfig.get_local_compose_stack().prefixed_container_name(container)
     return run_command(
         [
             "docker",
             "exec",
             "-u",
             "root",
-            RuntimeInfraConfig.get_prefixed_container_name(container),
+            prefixed_name,
             *command,
         ],
         capture_output=capture_output,
@@ -204,6 +223,8 @@ def ensure_project_stack_compatible(
     expected_db_port: int,
     expected_redis_inmem_port: int,
     expected_redis_ondisk_port: int,
+    expected_minio_port: int,
+    expected_minio_console_port: int,
 ) -> None:
     if not project_traefik_ports_ready(
         project_name,
@@ -219,6 +240,12 @@ def ensure_project_stack_compatible(
         expected_ondisk_host_port=expected_redis_ondisk_port,
     ):
         raise StackCompatibilityError("Redis host port mapping is missing or outdated")
+    if not project_minio_ports_ready(
+        project_name,
+        expected_minio_host_port=expected_minio_port,
+        expected_minio_console_host_port=expected_minio_console_port,
+    ):
+        raise StackCompatibilityError("MinIO host port mapping is missing or outdated")
 
 
 def project_db_port_ready(project_name: str, expected_host_port: int) -> bool:
@@ -248,6 +275,18 @@ def project_redis_ports_ready(
     inmem_port = int(service_ports.get("cvat_redis_inmem", {}).get(6379, -1))
     ondisk_port = int(service_ports.get("cvat_redis_ondisk", {}).get(6666, -1))
     return inmem_port == expected_inmem_host_port and ondisk_port == expected_ondisk_host_port
+
+
+def project_minio_ports_ready(
+    project_name: str,
+    *,
+    expected_minio_host_port: int,
+    expected_minio_console_host_port: int,
+) -> bool:
+    service_ports = project_service_port_map(project_name).get("minio", {})
+    minio_port = int(service_ports.get(9000, -1))
+    console_port = int(service_ports.get(9001, -1))
+    return minio_port == expected_minio_host_port and console_port == expected_minio_console_host_port
 
 
 def dump_db(*, prefixed_container_name, cvat_db_dir: Path) -> None:
@@ -282,6 +321,69 @@ def project_host_ports(project_name: str) -> set[int]:
     return ports
 
 
+def _container_belongs_to_project(container: dict, project_name: str) -> bool:
+    names = [name.lstrip("/") for name in container.get("Names") or []]
+    return any(name.startswith(f"{project_name}_") for name in names)
+
+
+def _used_host_ports(*, exclude_project_name: str | None = None) -> set[int]:
+    ports: set[int] = set()
+    for container in _docker_list_containers():
+        if exclude_project_name and _container_belongs_to_project(container, exclude_project_name):
+            continue
+        for port in container.get("Ports") or []:
+            public_port = port.get("PublicPort")
+            if public_port is not None:
+                ports.add(int(public_port))
+    return ports
+
+
+def _can_bind_port(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        try:
+            sock.bind(("", port))
+        except OSError:
+            return False
+    return True
+
+
+def _port_is_available(port: int, *, used_ports: set[int]) -> bool:
+    return port not in used_ports and _can_bind_port(port)
+
+
+def _next_available_port(start_port: int, *, used_ports: set[int], reserved_ports: set[int]) -> int:
+    port = start_port
+    while port in reserved_ports or not _port_is_available(port, used_ports=used_ports):
+        port += 1
+    reserved_ports.add(port)
+    return port
+
+
+def _state_has_port_config(state: dict) -> bool:
+    return all(name in state for name in _DEFAULT_PORT_CONFIG)
+
+
+def _state_port_config_is_available(project_name: str, state: dict) -> bool:
+    used_ports = _used_host_ports(exclude_project_name=project_name)
+    return all(
+        _port_is_available(int(state[name]), used_ports=used_ports)
+        for name in _DEFAULT_PORT_CONFIG
+    )
+
+
+def _allocate_port_config(project_name: str) -> dict:
+    used_ports = _used_host_ports(exclude_project_name=project_name)
+    reserved_ports: set[int] = set()
+    return {
+        name: _next_available_port(
+            start_port,
+            used_ports=used_ports,
+            reserved_ports=reserved_ports,
+        )
+        for name, start_port in _NON_DEFAULT_PORT_STARTS.items()
+    }
+
+
 def project_service_port_map(project_name: str) -> dict[str, dict[int, int]]:
     service_ports: dict[str, dict[int, int]] = {}
     for container in _docker_list_containers():
@@ -308,15 +410,20 @@ def resolve_port_config(
     *,
     default_project_name: str,
 ) -> dict:
-    return {
-        "http_port": 8080,
-        "logs_port": 8090,
-        "db_port": 15432,
-        "redis_inmem_port": 16379,
-        "redis_ondisk_port": 16666,
-        "minio_port": 9000,
-        "minio_console_port": 9001,
-    }
+    state = project_cfg.load_state() or {}
+
+    if project_cfg.project_name == default_project_name:
+        return {**_DEFAULT_PORT_CONFIG, **state}
+
+    if _state_has_port_config(state) and (
+        project_containers_running(project_cfg.project_name)
+        or _state_port_config_is_available(project_cfg.project_name, state)
+    ):
+        return {name: int(state[name]) for name in _DEFAULT_PORT_CONFIG}
+
+    port_config = _allocate_port_config(project_cfg.project_name)
+    project_cfg.save_state({**state, **port_config})
+    return port_config
 
 
 def docker_compose(project_name: str, dc_files: list[Path], project_directory: Path):
@@ -491,7 +598,7 @@ def _delete_compose_files(container_name_files: list[Path]):
 
 
 def stop_project_services_best_effort(*, project_name: str) -> None:
-    project_cfg = RuntimeInfraConfig.get_project_config(project_name)
+    project_cfg = RuntimeConfig.get_local_compose_stack(project_name)
     dc_files = project_cfg.dc_files + [project_cfg.cvat_root_dir / f for f in _LOCAL_DC_FILES]
 
     try:
@@ -510,11 +617,11 @@ def stop_project_services_best_effort(*, project_name: str) -> None:
         project_cfg.delete_state()
 
 
-def cleanup_after_session(*, infra_mode: InfraMode, run_prefix: str) -> None:
-    if infra_mode != InfraMode.AUTO:
+def cleanup_after_session(*, runtime_mode: RuntimeMode, run_prefix: str) -> None:
+    if runtime_mode != RuntimeMode.AUTO:
         return
 
-    state = RuntimeInfraConfig.get_project_config(run_prefix).load_state() or {}
+    state = RuntimeConfig.get_local_compose_stack(run_prefix).load_state() or {}
     if bool(state.get("auto_started", False)):
         stop_project_services_best_effort(project_name=run_prefix)
 
@@ -524,19 +631,23 @@ class LocalInstance(InfraInstance):
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
-        return RuntimeInfraConfig.resolve_request(config).platform == "local"
+        return RuntimeConfig.resolve_request(config).platform == "local"
 
     def exec_cvat(self, command: list[str]):
+        prefixed_name = RuntimeConfig.get_local_compose_stack().prefixed_container_name(
+            "cvat_server"
+        )
         return run_command(
-            ["docker", "exec", RuntimeInfraConfig.get_prefixed_container_name("cvat_server")]
-            + command,
+            ["docker", "exec", prefixed_name] + command,
             logger=logger,
         )[0]
 
     def exec_redis_inmem(self, command: list[str]):
+        prefixed_name = RuntimeConfig.get_local_compose_stack().prefixed_container_name(
+            "cvat_redis_inmem"
+        )
         return run_command(
-            ["docker", "exec", RuntimeInfraConfig.get_prefixed_container_name("cvat_redis_inmem")]
-            + command,
+            ["docker", "exec", prefixed_name] + command,
             logger=logger,
         )[0]
 
@@ -544,14 +655,15 @@ class LocalInstance(InfraInstance):
         docker_cp(source, f"{cvat_host}:{target}")
 
     def _get_cvat_host(self) -> str:
-        project_cfg = RuntimeInfraConfig.get_project_config()
+        project_cfg = RuntimeConfig.get_local_compose_stack()
         return project_cfg.prefixed_container_name("cvat_server")
 
     @staticmethod
     def collect_code_coverage_from_containers() -> None:
         running = set(running_containers())
+        project_cfg = RuntimeConfig.get_local_compose_stack()
         for container in _COVERED_CONTAINERS:
-            prefixed_name = RuntimeInfraConfig.get_prefixed_container_name(container)
+            prefixed_name = project_cfg.prefixed_container_name(container)
             if prefixed_name not in running:
                 logger.info("Skipping coverage collection for absent container '%s'", prefixed_name)
                 continue
@@ -583,10 +695,12 @@ class LocalInstance(InfraInstance):
             dc_files += self.deps.extra_dc_files
         return dc_files
 
-    def _run_local_lifecycle(self, *, infra_mode: InfraMode, dumpdb: bool, cleanup: bool) -> None:
+    def _run_local_lifecycle(
+        self, *, runtime_mode: RuntimeMode, dumpdb: bool, cleanup: bool
+    ) -> None:
         from infra import health as infra_health
 
-        project_cfg = RuntimeInfraConfig.get_project_config(cvat_root_dir=self.deps.cvat_root_dir)
+        project_cfg = RuntimeConfig.get_local_compose_stack(cvat_root_dir=self.deps.cvat_root_dir)
         project_name = project_cfg.project_name
         prefixed_name = project_cfg.prefixed_container_name
         dc_files = self._build_local_dc_files(project_cfg)
@@ -651,10 +765,10 @@ class LocalInstance(InfraInstance):
             pytest.exit("All generated test files have been deleted", returncode=0)
 
         project_running = project_containers_running(project_name)
-        if infra_mode == InfraMode.REUSE:
+        if runtime_mode == RuntimeMode.REUSE:
             if not project_running:
                 raise pytest.UsageError(
-                    f"--infra={InfraMode.REUSE} requires running services for project '{project_name}'"
+                    f"--infra={RuntimeMode.REUSE} requires running services for project '{project_name}'"
                 )
             try:
                 ensure_project_stack_compatible(
@@ -664,10 +778,12 @@ class LocalInstance(InfraInstance):
                     expected_db_port=project_cfg.host_db_port,
                     expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
                     expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
+                    expected_minio_port=project_cfg.host_minio_port,
+                    expected_minio_console_port=project_cfg.host_minio_console_port,
                 )
             except StackCompatibilityError as exc:
                 raise pytest.UsageError(
-                    f"--infra={InfraMode.REUSE} found an incompatible running stack for "
+                    f"--infra={RuntimeMode.REUSE} found an incompatible running stack for "
                     f"project '{project_name}': {exc}"
                 ) from exc
             infra_health.wait_for_services(self.deps.waiting_time)
@@ -681,7 +797,7 @@ class LocalInstance(InfraInstance):
             project_cfg,
         )
 
-        if infra_mode == InfraMode.DOWN:
+        if runtime_mode == RuntimeMode.DOWN:
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
@@ -700,12 +816,14 @@ class LocalInstance(InfraInstance):
                 expected_db_port=project_cfg.host_db_port,
                 expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
                 expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
+                expected_minio_port=project_cfg.host_minio_port,
+                expected_minio_console_port=project_cfg.host_minio_console_port,
             )
         except StackCompatibilityError as exc:
             stack_ok = False
             incompatibility_reason = str(exc)
 
-        if project_running and not stack_ok and infra_mode in {InfraMode.AUTO, InfraMode.UP}:
+        if project_running and not stack_ok and runtime_mode in {RuntimeMode.AUTO, RuntimeMode.UP}:
             logger.warning(
                 "Project '%s' is running but incompatible with the requested test runtime "
                 "(%s); recreating stack",
@@ -719,11 +837,11 @@ class LocalInstance(InfraInstance):
             )
             project_running = False
 
-        if infra_mode == InfraMode.UP:
+        if runtime_mode == RuntimeMode.UP:
             if not project_running or self.deps.rebuild_images_before_start:
                 start_services(
                     project_name=project_name,
-                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                    default_project_name=RuntimeConfig.get_default_run_prefix(),
                     dc_files=dc_files,
                     project_directory=self.deps.cvat_root_dir,
                     rebuild_images=self.deps.rebuild_images_before_start,
@@ -732,11 +850,11 @@ class LocalInstance(InfraInstance):
             restore_runtime_state_from_assets()
             pytest.exit("All necessary containers have been created and started.", returncode=0)
 
-        if infra_mode == InfraMode.RESTORE:
+        if runtime_mode == RuntimeMode.RESTORE:
             if not project_running:
                 start_services(
                     project_name=project_name,
-                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                    default_project_name=RuntimeConfig.get_default_run_prefix(),
                     dc_files=dc_files,
                     project_directory=self.deps.cvat_root_dir,
                     rebuild_images=self.deps.rebuild_images_before_start,
@@ -744,14 +862,14 @@ class LocalInstance(InfraInstance):
             restore_runtime_state_from_assets()
             pytest.exit("CVAT test runtime has been restored from test assets.", returncode=0)
 
-        if infra_mode == InfraMode.AUTO:
+        if runtime_mode == RuntimeMode.AUTO:
             # In auto mode, tear down only stacks that this session had to start.
             set_auto_started(not project_running)
 
         if not project_running or self.deps.rebuild_images_before_start:
             start_services(
                 project_name=project_name,
-                default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                default_project_name=RuntimeConfig.get_default_run_prefix(),
                 dc_files=dc_files,
                 project_directory=self.deps.cvat_root_dir,
                 rebuild_images=self.deps.rebuild_images_before_start,
@@ -760,27 +878,27 @@ class LocalInstance(InfraInstance):
         restore_runtime_state_from_assets()
 
     def start(self) -> None:
-        request = RuntimeInfraConfig.resolve_request(self.config)
-        infra_mode = request.infra_mode
+        request = RuntimeConfig.resolve_request(self.config)
+        runtime_mode = request.runtime_mode
         project_name = request.run_prefix
 
         if request.collect_only:
             return
 
-        if infra_mode == InfraMode.DOWN:
+        if runtime_mode == RuntimeMode.DOWN:
             os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         else:
-            RuntimeInfraConfig.write_context_for_project(project_name)
+            RuntimeContext.write_namespace_context(project_name)
             resolve_local_project_context(self.session)
 
         self._run_local_lifecycle(
-            infra_mode=infra_mode,
+            runtime_mode=runtime_mode,
             dumpdb=request.dumpdb,
             cleanup=request.cleanup,
         )
 
     def finish(self) -> None:
-        request = RuntimeInfraConfig.resolve_request(self.config)
+        request = RuntimeConfig.resolve_request(self.config)
         if request.platform != "local":
             return
 
@@ -794,13 +912,13 @@ class LocalInstance(InfraInstance):
             self.collect_code_coverage_from_containers()
 
         cleanup_after_session(
-            infra_mode=request.infra_mode,
+            runtime_mode=request.runtime_mode,
             run_prefix=request.run_prefix,
         )
 
     def collect_failure_logs(self) -> None:
-        request = RuntimeInfraConfig.resolve_request(self.config)
-        project_cfg = RuntimeInfraConfig.get_project_config(request.run_prefix)
+        request = RuntimeConfig.resolve_request(self.config)
+        project_cfg = RuntimeConfig.get_local_compose_stack(request.run_prefix)
         running = set(running_containers())
         logs_dir = self.failure_logs_dir()
         for container in _FAILURE_LOG_CONTAINERS:
@@ -844,7 +962,7 @@ class LocalInstance(InfraInstance):
             [
                 "docker",
                 "exec",
-                RuntimeInfraConfig.get_prefixed_container_name("cvat_db"),
+                RuntimeConfig.get_local_compose_stack().prefixed_container_name("cvat_db"),
                 "psql",
                 "-U",
                 "root",
@@ -865,7 +983,7 @@ class LocalInstance(InfraInstance):
             [
                 "/bin/sh",
                 "-c",
-                f'python "{RuntimeInfraConfig.get_clickhouse_init_script()}" --clear',
+                f'python "{RuntimeConfig.get_clickhouse_init_script()}" --clear',
             ]
         )
 
@@ -896,12 +1014,16 @@ class LocalInstance(InfraInstance):
             [
                 "docker",
                 "exec",
-                RuntimeInfraConfig.get_prefixed_container_name("cvat_redis_ondisk"),
-                "redis-cli",
-                "flushall",
-            ],
-            logger=logger,
-        )
+                RuntimeConfig.get_local_compose_stack().prefixed_container_name(
+                "cvat_redis_ondisk"
+            ),
+            "redis-cli",
+            "-p",
+            "6666",
+            "flushall",
+        ],
+        logger=logger,
+    )
 
 
 class LocalPlugin(InfraPlugin):
@@ -915,7 +1037,7 @@ class LocalPlugin(InfraPlugin):
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
-        return RuntimeInfraConfig.resolve_request(config).platform == "local"
+        return RuntimeConfig.resolve_request(config).platform == "local"
 
 
 LocalInstance.plugin_class = LocalPlugin

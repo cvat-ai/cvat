@@ -20,15 +20,15 @@ _LOGGER = logging.getLogger(__name__)
 _CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 _CVAT_DB_DIR = _CVAT_ROOT_DIR / "tests/python/shared/assets/cvat_db"
 _CLICKHOUSE_INIT_SCRIPT = "components/analytics/clickhouse/init.py"
-_DEFAULT_PROJECT_NAME = "test"
-_DEFAULT_INFRA_MODE = "auto"
-_PROJECT_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+_DEFAULT_RUN_PREFIX = "test"
+_DEFAULT_RUNTIME_MODE = "auto"
+_RUN_PREFIX_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _RUNTIME_ROOT_DIR = Path(tempfile.gettempdir()) / "cvat_pytest_infra"
 _RUNS_ROOT_DIR = _RUNTIME_ROOT_DIR / "runs"
 _RUN_CONTEXT_FILE_NAME = "run-context.json"
 
 
-class InfraMode(str, Enum):
+class RuntimeMode(str, Enum):
     AUTO = "auto"
     UP = "up"
     DOWN = "down"
@@ -40,44 +40,82 @@ class InfraMode(str, Enum):
         return self.value
 
 
-_INFRA_MODES = tuple(str(mode) for mode in InfraMode)
+_RUNTIME_MODES = tuple(str(mode) for mode in RuntimeMode)
 _LIFECYCLE_COMMAND_MODES = (
-    InfraMode.UP,
-    InfraMode.DOWN,
-    InfraMode.REUSE,
-    InfraMode.RESTORE,
-    InfraMode.REBUILD,
+    RuntimeMode.UP,
+    RuntimeMode.DOWN,
+    RuntimeMode.REUSE,
+    RuntimeMode.RESTORE,
+    RuntimeMode.REBUILD,
 )
 _TESTLESS_LIFECYCLE_MODES = (
-    InfraMode.UP,
-    InfraMode.DOWN,
-    InfraMode.RESTORE,
-    InfraMode.REBUILD,
+    RuntimeMode.UP,
+    RuntimeMode.DOWN,
+    RuntimeMode.RESTORE,
+    RuntimeMode.REBUILD,
 )
 
 
-def _validate_project_name(name: str) -> str:
-    if not _PROJECT_NAME_PATTERN.match(name):
+def _validate_run_prefix(name: str) -> str:
+    if not _RUN_PREFIX_PATTERN.match(name):
         raise pytest.UsageError(
-            "Invalid project name. Use lowercase letters, digits, '_' or '-', and start with a letter or digit."
+            "Invalid run prefix. Use lowercase letters, digits, '_' or '-', and start with a letter or digit."
         )
 
     return name
 
 
 @dataclass(frozen=True)
-class ProjectInfraConfig:
+class RuntimeNamespace:
+    name: str
+    runtime_root_dir: Path = _RUNTIME_ROOT_DIR
+
+    @property
+    def runtime_dir(self) -> Path:
+        return self.runtime_root_dir / self.name
+
+    @property
+    def state_file(self) -> Path:
+        return self.runtime_dir / "state.json"
+
+    @property
+    def context_file(self) -> Path:
+        return self.runtime_dir / _RUN_CONTEXT_FILE_NAME
+
+    def load_state(self) -> dict | None:
+        if not self.state_file.exists():
+            return None
+        try:
+            with open(self.state_file) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            _LOGGER.warning("Ignoring unreadable runtime state file: %s", self.state_file)
+            return None
+
+    def save_state(self, state: dict) -> None:
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        tmp_state_file = self.state_file.with_suffix(".state.tmp")
+        with open(tmp_state_file, "w") as f:
+            json.dump(state, f, indent=2, sort_keys=True)
+        os.replace(tmp_state_file, self.state_file)
+
+    def delete_state(self) -> None:
+        self.state_file.unlink(missing_ok=True)
+
+
+@dataclass(frozen=True)
+class LocalComposeStackConfig:
     project_name: str
     cvat_root_dir: Path = _CVAT_ROOT_DIR
     runtime_root_dir: Path = _RUNTIME_ROOT_DIR
 
     @property
-    def runtime_dir(self) -> Path:
-        return self.runtime_root_dir / self.project_name
+    def namespace(self) -> RuntimeNamespace:
+        return RuntimeNamespace(name=self.project_name, runtime_root_dir=self.runtime_root_dir)
 
     @property
-    def state_file(self) -> Path:
-        return self.runtime_dir / "state.json"
+    def runtime_dir(self) -> Path:
+        return self.namespace.runtime_dir
 
     @property
     def generated_compose_files(self) -> list[Path]:
@@ -129,44 +167,19 @@ class ProjectInfraConfig:
         return f"{self.project_name}_{container}_1"
 
     def load_state(self) -> dict | None:
-        if not self.state_file.exists():
-            return None
-        try:
-            with open(self.state_file) as f:
-                return json.load(f)
-        except (json.JSONDecodeError, OSError):
-            _LOGGER.warning("Ignoring unreadable runtime state file: %s", self.state_file)
-            return None
+        return self.namespace.load_state()
 
     def save_state(self, state: dict) -> None:
-        self.state_file.parent.mkdir(parents=True, exist_ok=True)
-        tmp_state_file = self.state_file.with_suffix(".state.tmp")
-        with open(tmp_state_file, "w") as f:
-            json.dump(state, f, indent=2, sort_keys=True)
-        os.replace(tmp_state_file, self.state_file)
+        self.namespace.save_state(state)
 
     def delete_state(self) -> None:
-        self.state_file.unlink(missing_ok=True)
-
-    @classmethod
-    def from_config(cls, config, *, cvat_root_dir: Path = _CVAT_ROOT_DIR) -> "ProjectInfraConfig":
-        return cls(
-            project_name=_validate_project_name(config.getoption("--run-prefix")),
-            cvat_root_dir=cvat_root_dir,
-        )
-
-    @classmethod
-    def from_env(cls, *, cvat_root_dir: Path = _CVAT_ROOT_DIR) -> "ProjectInfraConfig":
-        return cls(
-            project_name=os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_PROJECT_NAME),
-            cvat_root_dir=cvat_root_dir,
-        )
+        self.namespace.delete_state()
 
 
 @dataclass(frozen=True)
 class RuntimeRequest:
     platform: str
-    infra_mode: InfraMode
+    runtime_mode: RuntimeMode
     run_prefix: str
     collect_only: bool
     cleanup: bool
@@ -178,51 +191,7 @@ class RuntimeRequest:
     should_run_runtime_sanity_checks: bool
 
 
-class RuntimeInfraConfig:
-    _run_id: str | None = None
-    _run_dir: Path | None = None
-
-    @classmethod
-    def initialize(cls, config) -> None:
-        if cls._run_id and cls._run_dir:
-            return
-
-        request = cls.resolve_request(config)
-        runs_root_dir = _RUNS_ROOT_DIR
-        runs_root_dir.mkdir(parents=True, exist_ok=True)
-
-        base_run_id = f"{request.run_prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        run_id = base_run_id
-        suffix = 2
-        while (runs_root_dir / run_id).exists():
-            run_id = f"{base_run_id}-{suffix}"
-            suffix += 1
-
-        run_dir = runs_root_dir / run_id
-        run_dir.mkdir(parents=True, exist_ok=True)
-        cls._run_id = run_id
-        cls._run_dir = run_dir
-
-    @classmethod
-    def get_run_id(cls) -> str:
-        if not cls._run_id:
-            raise RuntimeError("RuntimeInfraConfig is not initialized")
-        return cls._run_id
-
-    @classmethod
-    def get_run_dir(cls) -> Path:
-        if cls._run_dir is None:
-            raise RuntimeError("RuntimeInfraConfig is not initialized")
-        return cls._run_dir
-
-    @classmethod
-    def get_runtime_root_dir(cls) -> Path:
-        return _RUNTIME_ROOT_DIR
-
-    @classmethod
-    def get_runs_root_dir(cls) -> Path:
-        return _RUNS_ROOT_DIR
-
+class RuntimeConfig:
     @classmethod
     def get_cvat_root_dir(cls) -> Path:
         return _CVAT_ROOT_DIR
@@ -232,29 +201,52 @@ class RuntimeInfraConfig:
         return _CVAT_DB_DIR
 
     @classmethod
-    def get_default_project_name(cls) -> str:
-        return _DEFAULT_PROJECT_NAME
+    def get_default_run_prefix(cls) -> str:
+        return _DEFAULT_RUN_PREFIX
 
     @classmethod
-    def get_default_infra_mode(cls) -> str:
-        return _DEFAULT_INFRA_MODE
+    def get_default_runtime_mode(cls) -> str:
+        return _DEFAULT_RUNTIME_MODE
 
     @classmethod
-    def get_infra_modes(cls) -> tuple[str, ...]:
-        return _INFRA_MODES
+    def get_runtime_modes(cls) -> tuple[str, ...]:
+        return _RUNTIME_MODES
 
     @classmethod
     def get_clickhouse_init_script(cls) -> str:
         return _CLICKHOUSE_INIT_SCRIPT
 
     @classmethod
-    def parse_infra_mode(cls, value: str) -> InfraMode:
+    def parse_runtime_mode(cls, value: str) -> RuntimeMode:
         try:
-            return InfraMode(value)
+            return RuntimeMode(value)
         except ValueError as ex:
             raise pytest.UsageError(
-                f"Unknown infra mode {value!r}. Allowed: {', '.join(_INFRA_MODES)}"
+                f"Unknown runtime mode {value!r}. Allowed: {', '.join(_RUNTIME_MODES)}"
             ) from ex
+
+    @classmethod
+    def get_run_prefix_from_config(cls, config) -> str:
+        return _validate_run_prefix(config.getoption("--run-prefix"))
+
+    @classmethod
+    def get_namespace(cls, name_arg: str | None = None) -> RuntimeNamespace:
+        return RuntimeNamespace(
+            name=_validate_run_prefix(
+                name_arg or os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_RUN_PREFIX)
+            ),
+        )
+
+    @classmethod
+    def get_local_compose_stack(
+        cls, project_name_arg: str | None = None, *, cvat_root_dir: Path = _CVAT_ROOT_DIR
+    ) -> LocalComposeStackConfig:
+        return LocalComposeStackConfig(
+            project_name=_validate_run_prefix(
+                project_name_arg or os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_RUN_PREFIX)
+            ),
+            cvat_root_dir=cvat_root_dir,
+        )
 
     @classmethod
     def resolve_request(cls, config) -> RuntimeRequest:
@@ -262,9 +254,9 @@ class RuntimeInfraConfig:
         if request is not None:
             return request
 
-        infra_mode = cls.parse_infra_mode(config.getoption("--infra"))
-        explicit_infra_mode = infra_mode != InfraMode.AUTO
-        args = list(config.args)
+        runtime_mode = cls.parse_runtime_mode(config.getoption("--infra"))
+        explicit_runtime_mode = runtime_mode != RuntimeMode.AUTO
+        args = list(getattr(config, "args", ()) or ())
         lifecycle_commands = tuple(str(mode) for mode in _LIFECYCLE_COMMAND_MODES)
         requested_lifecycle_commands = [arg for arg in args if arg in lifecycle_commands]
 
@@ -273,15 +265,16 @@ class RuntimeInfraConfig:
                 "Only one lifecycle command can be used at a time: "
                 f"{', '.join(requested_lifecycle_commands)}"
             )
-        if explicit_infra_mode and requested_lifecycle_commands:
+        if explicit_runtime_mode and requested_lifecycle_commands:
             raise pytest.UsageError(
-                f"--infra={infra_mode} cannot be combined with lifecycle command "
+                f"--infra={runtime_mode} cannot be combined with lifecycle command "
                 f"{requested_lifecycle_commands[0]}"
             )
         if requested_lifecycle_commands:
             args.remove(requested_lifecycle_commands[0])
-            config.args[:] = args
-            infra_mode = cls.parse_infra_mode(requested_lifecycle_commands[0])
+            if hasattr(config, "args"):
+                config.args[:] = args
+            runtime_mode = cls.parse_runtime_mode(requested_lifecycle_commands[0])
 
         no_services = bool(config.getoption("--no-services"))
         start_services = bool(config.getoption("--start-services"))
@@ -304,30 +297,30 @@ class RuntimeInfraConfig:
 
         if start_services and stop_services:
             raise pytest.UsageError("--start-services and --stop-services are incompatible")
-        if infra_mode != InfraMode.AUTO and any((start_services, stop_services)):
+        if runtime_mode != RuntimeMode.AUTO and any((start_services, stop_services)):
             raise pytest.UsageError(
                 "--start-services/--stop-services cannot be combined with --infra modes "
                 "or lifecycle commands"
             )
         if start_services:
-            infra_mode = InfraMode.UP
+            runtime_mode = RuntimeMode.UP
         elif stop_services:
-            infra_mode = InfraMode.DOWN
+            runtime_mode = RuntimeMode.DOWN
 
         if no_services:
-            if infra_mode not in {InfraMode.AUTO, InfraMode.REUSE}:
+            if runtime_mode not in {RuntimeMode.AUTO, RuntimeMode.REUSE}:
                 raise pytest.UsageError("--no-services is compatible only with --infra=auto/reuse")
-            infra_mode = InfraMode.REUSE
+            runtime_mode = RuntimeMode.REUSE
 
         if platform == "kube" and any((start_services, stop_services, rebuild_images_before_start)):
             raise pytest.UsageError(
                 "--platform=kube does not support deprecated local lifecycle flags"
             )
-        if platform == "kube" and infra_mode in {
-            InfraMode.UP,
-            InfraMode.DOWN,
-            InfraMode.RESTORE,
-            InfraMode.REBUILD,
+        if platform == "kube" and runtime_mode in {
+            RuntimeMode.UP,
+            RuntimeMode.DOWN,
+            RuntimeMode.RESTORE,
+            RuntimeMode.REBUILD,
         }:
             raise pytest.UsageError(
                 "--infra=up/down/restore/rebuild are local-runtime lifecycle modes "
@@ -338,12 +331,12 @@ class RuntimeInfraConfig:
                 cleanup,
                 dumpdb,
                 rebuild_images_before_start,
-                infra_mode
+                runtime_mode
                 in {
-                    InfraMode.UP,
-                    InfraMode.DOWN,
-                    InfraMode.RESTORE,
-                    InfraMode.REBUILD,
+                    RuntimeMode.UP,
+                    RuntimeMode.DOWN,
+                    RuntimeMode.RESTORE,
+                    RuntimeMode.REBUILD,
                 },
             )
         ):
@@ -355,19 +348,19 @@ class RuntimeInfraConfig:
             raise pytest.UsageError("--platform=kube does not support --cleanup/--dumpdb")
 
         external_base_url = None
-        if infra_mode == InfraMode.REUSE or no_services:
+        if runtime_mode == RuntimeMode.REUSE or no_services:
             external_base_url = os.environ.get("CVAT_BASE_URL")
 
         should_run_runtime_sanity_checks = (
             not collect_only
-            and infra_mode not in _TESTLESS_LIFECYCLE_MODES
+            and runtime_mode not in _TESTLESS_LIFECYCLE_MODES
             and not any((cleanup, dumpdb))
             and not skip_runtime_sanity_checks
         )
 
         request = RuntimeRequest(
             platform=platform,
-            infra_mode=infra_mode,
+            runtime_mode=runtime_mode,
             run_prefix=run_prefix,
             collect_only=collect_only,
             cleanup=cleanup,
@@ -379,8 +372,54 @@ class RuntimeInfraConfig:
             should_run_runtime_sanity_checks=should_run_runtime_sanity_checks,
         )
         setattr(config, "_cvat_runtime_request", request)
-        setattr(config, "_cvat_infra_mode", request.infra_mode)
+        setattr(config, "_cvat_runtime_mode", request.runtime_mode)
         return request
+
+
+class RuntimeContext:
+    _run_id: str | None = None
+    _run_dir: Path | None = None
+
+    @classmethod
+    def initialize(cls, config) -> None:
+        if cls._run_id and cls._run_dir:
+            return
+
+        request = RuntimeConfig.resolve_request(config)
+        runs_root_dir = _RUNS_ROOT_DIR
+        runs_root_dir.mkdir(parents=True, exist_ok=True)
+
+        base_run_id = f"{request.run_prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        run_id = base_run_id
+        suffix = 2
+        while (runs_root_dir / run_id).exists():
+            run_id = f"{base_run_id}-{suffix}"
+            suffix += 1
+
+        run_dir = runs_root_dir / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        cls._run_id = run_id
+        cls._run_dir = run_dir
+
+    @classmethod
+    def get_run_id(cls) -> str:
+        if not cls._run_id:
+            raise RuntimeError("RuntimeContext is not initialized")
+        return cls._run_id
+
+    @classmethod
+    def get_run_dir(cls) -> Path:
+        if cls._run_dir is None:
+            raise RuntimeError("RuntimeContext is not initialized")
+        return cls._run_dir
+
+    @classmethod
+    def get_runtime_root_dir(cls) -> Path:
+        return _RUNTIME_ROOT_DIR
+
+    @classmethod
+    def get_runs_root_dir(cls) -> Path:
+        return _RUNS_ROOT_DIR
 
     @classmethod
     def get_server_url(cls, endpoint: str, **kwargs) -> str:
@@ -392,28 +431,12 @@ class RuntimeInfraConfig:
         return os.environ.get("CVAT_BASE_URL", "http://localhost:8080")
 
     @classmethod
-    def get_run_prefix_from_config(cls, config) -> str:
-        return _validate_project_name(config.getoption("--run-prefix"))
+    def get_namespace(cls, name_arg: str | None = None) -> RuntimeNamespace:
+        return RuntimeConfig.get_namespace(name_arg)
 
     @classmethod
-    def get_project_config(
-        cls, project_name_arg: str | None = None, *, cvat_root_dir: Path = _CVAT_ROOT_DIR
-    ) -> ProjectInfraConfig:
-        return ProjectInfraConfig(
-            project_name=project_name_arg
-            or os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_PROJECT_NAME),
-            cvat_root_dir=cvat_root_dir,
-        )
-
-    @classmethod
-    def get_prefixed_container_name(
-        cls, container: str, *, project_name_arg: str | None = None
-    ) -> str:
-        return cls.get_project_config(project_name_arg).prefixed_container_name(container)
-
-    @classmethod
-    def write_context_for_project(cls, project_name_arg: str) -> None:
-        context_file = cls.context_file_for_project(project_name_arg)
+    def write_namespace_context(cls, namespace_name: str) -> None:
+        context_file = cls.get_namespace(namespace_name).context_file
         context_file.parent.mkdir(parents=True, exist_ok=True)
 
         payload = {
@@ -426,5 +449,5 @@ class RuntimeInfraConfig:
         tmp_file.replace(context_file)
 
     @classmethod
-    def context_file_for_project(cls, project_name_arg: str) -> Path:
-        return cls.get_project_config(project_name_arg).runtime_dir / _RUN_CONTEXT_FILE_NAME
+    def context_file_for_namespace(cls, namespace_name: str) -> Path:
+        return cls.get_namespace(namespace_name).context_file

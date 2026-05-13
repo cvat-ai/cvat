@@ -10,6 +10,7 @@ import pytest
 from deepdiff import DeepDiff
 
 from shared.utils import config
+from shared.utils.config import normalize_asset_urls
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -29,7 +30,7 @@ class TestGetResources:
                 endpoint = "auth/access_tokens"
 
             if endpoint == "annotations":
-                objects = json.load(f)
+                objects = normalize_asset_urls(json.load(f))
                 for jid, annotations in objects["job"].items():
                     response = config.get_method("admin1", f"jobs/{jid}/annotations").json()
                     assert (
@@ -42,7 +43,7 @@ class TestGetResources:
                         == {}
                     )
             elif endpoint == "auth/access_tokens":
-                objects = json.load(f)
+                objects = normalize_asset_urls(json.load(f))
                 assert set(objects) == {"user"}
 
                 for username, tokens in objects["user"].items():
@@ -59,7 +60,7 @@ class TestGetResources:
                     )
             else:
                 response = config.get_method("admin1", endpoint, page_size="all")
-                json_objs = json.load(f)
+                json_objs = normalize_asset_urls(json.load(f))
                 resp_objs = response.json()
 
                 assert (

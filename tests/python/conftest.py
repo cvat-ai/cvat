@@ -5,11 +5,11 @@
 import warnings
 
 import pytest
-
 from infra import options as infra_options
-from infra.config import InfraMode, RuntimeInfraConfig
+from infra.config import RuntimeConfig, RuntimeContext, RuntimeMode
 from infra.health import run_runtime_sanity_checks
-from infra.instances import InfraInstance, InstanceConfig
+from infra.instances import InfraInstance, InfraInstanceConfig
+
 from shared.fixtures import init as legacy_init
 
 restore_db_per_function = legacy_init.restore_db_per_function
@@ -33,8 +33,8 @@ pytest_plugins = [
 
 
 def pytest_configure(config) -> None:
-    RuntimeInfraConfig.resolve_request(config)
-    RuntimeInfraConfig.initialize(config)
+    RuntimeConfig.resolve_request(config)
+    RuntimeContext.initialize(config)
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.configure(config)
 
@@ -46,9 +46,9 @@ def pytest_addoption(parser):
 
 def pytest_report_header(config):
     return (
-        f"CVAT pytest runtime directory: {RuntimeInfraConfig.get_runtime_root_dir()}\n"
-        f"CVAT pytest run id: {RuntimeInfraConfig.get_run_id()}\n"
-        f"CVAT pytest run artifacts: {RuntimeInfraConfig.get_run_dir()}"
+        f"CVAT pytest runtime directory: {RuntimeContext.get_runtime_root_dir()}\n"
+        f"CVAT pytest run id: {RuntimeContext.get_run_id()}\n"
+        f"CVAT pytest run artifacts: {RuntimeContext.get_run_dir()}"
     )
 
 
@@ -63,13 +63,13 @@ def pytest_runtestloop(session):
 
 def pytest_sessionstart(session) -> None:
     config = session.config
-    request = RuntimeInfraConfig.resolve_request(config)
+    request = RuntimeConfig.resolve_request(config)
 
     for warning in request.deprecation_warnings:
         warnings.warn(warning, DeprecationWarning, stacklevel=2)
 
-    if request.infra_mode == InfraMode.REBUILD:
-        cvat_root_dir = RuntimeInfraConfig.get_cvat_root_dir()
+    if request.runtime_mode == RuntimeMode.REBUILD:
+        cvat_root_dir = RuntimeConfig.get_cvat_root_dir()
         from infra.system_utils import run_command
 
         run_command(
@@ -95,13 +95,13 @@ def pytest_sessionstart(session) -> None:
         legacy_init.session_start(session)
         if request.should_run_runtime_sanity_checks:
             run_runtime_sanity_checks(
-                cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=request.platform
+                cvat_root_dir=RuntimeConfig.get_cvat_root_dir(), platform=request.platform
             )
         return
 
-    instance_config = InstanceConfig(
-        cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(),
-        cvat_db_dir=RuntimeInfraConfig.get_cvat_db_dir(),
+    instance_config = InfraInstanceConfig(
+        cvat_root_dir=RuntimeConfig.get_cvat_root_dir(),
+        cvat_db_dir=RuntimeConfig.get_cvat_db_dir(),
         waiting_time=300,
         extra_dc_files=None,
         rebuild_images_before_start=request.rebuild_images_before_start,
@@ -112,12 +112,12 @@ def pytest_sessionstart(session) -> None:
 
     if request.should_run_runtime_sanity_checks:
         run_runtime_sanity_checks(
-            cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=request.platform
+            cvat_root_dir=RuntimeConfig.get_cvat_root_dir(), platform=request.platform
         )
 
 
 def pytest_sessionfinish(session, exitstatus: int) -> None:
-    request = RuntimeInfraConfig.resolve_request(session.config)
+    request = RuntimeConfig.resolve_request(session.config)
     if request.collect_only:
         return
 
@@ -138,7 +138,7 @@ def pytest_collection_modifyitems(config, items) -> None:
 
 
 def _selected_runtime_class(config):
-    if RuntimeInfraConfig.resolve_request(config).platform != "local":
+    if RuntimeConfig.resolve_request(config).platform != "local":
         return None
 
     selected = getattr(config, "_cvat_runtime_class", None)
@@ -149,7 +149,7 @@ def _selected_runtime_class(config):
 
 
 def _selected_plugin_classes(config):
-    if RuntimeInfraConfig.resolve_request(config).platform != "local":
+    if RuntimeConfig.resolve_request(config).platform != "local":
         return []
 
     classes = getattr(config, "_cvat_plugin_classes", None)

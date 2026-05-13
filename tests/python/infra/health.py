@@ -19,8 +19,8 @@ from urllib.request import urlopen
 import packaging.version as pv
 import pytest
 import requests
+from infra.config import RuntimeContext
 
-from infra.config import RuntimeInfraConfig
 from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)
@@ -136,7 +136,7 @@ def _check_python_package_versions(cvat_root_dir: Path, expected_sdk_version: st
 
 
 def _check_live_server_version(expected_version: str) -> None:
-    about_url = RuntimeInfraConfig.get_server_url("api/server/about")
+    about_url = RuntimeContext.get_server_url("api/server/about")
     logger.debug("checking live server version url=%s expected=%s", about_url, expected_version)
     try:
         with urlopen(
@@ -256,7 +256,7 @@ def _major_minor(version: str) -> tuple[int, int]:
 def wait_for_services(timeout_seconds: int = 300) -> None:
     REQUEST_TIMEOUT_SECONDS = 5
     POLL_INTERVAL_SECONDS = 1
-    url = RuntimeInfraConfig.get_server_url("api/server/health/", format="json")
+    url = RuntimeContext.get_server_url("api/server/health/", format="json")
     logger.debug("wait_for_services start url=%s timeout=%ss", url, timeout_seconds)
     deadline = monotonic() + timeout_seconds
     attempt = 0
@@ -308,7 +308,7 @@ def wait_for_auth_login_ready() -> None:
     TIMEOUT_SECONDS = 180
     REQUEST_TIMEOUT_SECONDS = 5
     POLL_INTERVAL_SECONDS = 1
-    login_url = RuntimeInfraConfig.get_server_url("api/auth/login")
+    login_url = RuntimeContext.get_server_url("api/auth/login")
     payload = {"username": ADMIN_USER, "password": ADMIN_PASS}
     logger.debug(
         "wait_for_auth_login_ready start url=%s timeout=%ss",
