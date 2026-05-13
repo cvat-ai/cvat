@@ -587,7 +587,13 @@ class RuntimeContext:
 
     @classmethod
     def get_base_url(cls) -> str:
-        return os.environ.get("CVAT_BASE_URL", "http://localhost:8080")
+        if base_url := os.environ.get("CVAT_BASE_URL"):
+            return base_url
+
+        # Helm CI rewrites the shared test config to cvat.local instead of localhost.
+        from shared.utils import config as shared_config
+
+        return getattr(shared_config, "BASE_URL", "http://localhost:8080")
 
     @classmethod
     def get_namespace(cls, name_arg: str | None = None) -> RuntimeNamespace:

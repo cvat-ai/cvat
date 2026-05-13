@@ -37,11 +37,6 @@ class InfraPlugin(ABC):
     def runtestloop(cls, session):
         return None
 
-    @classmethod
-    @abstractmethod
-    def can_handle_config(cls, config) -> bool:
-        raise NotImplementedError
-
 
 class InfraInstance(ABC):
     plugin_class: type[InfraPlugin]
@@ -69,11 +64,6 @@ class InfraInstance(ABC):
     @classmethod
     @abstractmethod
     def can_handle_config(cls, config) -> bool:
-        raise NotImplementedError
-
-    @classmethod
-    @abstractmethod
-    def can_handle(cls, session, deps: InfraInstanceConfig) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -157,13 +147,13 @@ class InfraInstance(ABC):
 
     @classmethod
     def runtime_candidates(cls):
-        from infra.instances.local_instance import LocalInstance
+        from infra.instances.local import LocalInstance
 
         return (LocalInstance,)
 
     @classmethod
     def plugin_candidates(cls):
-        from infra.instances.local_instance import LocalPlugin
+        from infra.instances.local import LocalPlugin
 
         return (LocalPlugin,)
 

@@ -87,8 +87,17 @@ child pytest processes. Each child process creates a normal backend
 `LocalInstance`
 
 : Current local Docker Compose implementation of `InfraInstance`. It owns the
-  local lifecycle for one local runtime and uses `LocalRuntimeConfig` for local
-  names, files, ports, and persisted runtime state.
+  fixture-facing local operations for one local runtime and uses
+  `LocalRuntimeConfig` for local names, files, ports, and persisted runtime
+  state.
+
+`infra.instances.local`
+
+: Local runtime implementation package. `instance.py` keeps the
+  `InfraInstance`/pytest-facing surface. Helper modules own Docker discovery,
+  compose file generation, environment setup, stack compatibility, and
+  lifecycle orchestration. These helpers are local-runtime implementation
+  details, not fixture-facing APIs.
 
 ## Planned Classes
 
@@ -165,8 +174,8 @@ Single local run:
 4. `LocalRuntimeConfig` allocates or loads host ports and uses
    `RuntimeNamespace` for runtime directory and state file access.
 5. `LocalInstance` is created with `InfraInstanceConfig` dependency wiring.
-6. `LocalInstance` uses `LocalRuntimeConfig` to manage compose files, names,
-   ports, lifecycle, restore, and diagnostics.
+6. The local runtime package uses `LocalRuntimeConfig` to manage compose files,
+   names, ports, lifecycle, restore, and diagnostics behind `LocalInstance`.
 7. Fixtures call `InfraInstance` methods to restore state between tests.
 
 Future kube run:
