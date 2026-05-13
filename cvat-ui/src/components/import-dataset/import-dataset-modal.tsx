@@ -505,22 +505,27 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     const confirmUpload = (): void => {
         const isAppend = uploadParams.importMode === 'append';
+        const annotationEntity = isTask() ? 'task' : 'job';
+        const title = isAppend ? 'Append annotations?' : 'Replace existing annotations?';
+        const content = isAppend ?
+            `Uploaded annotations will be added to the existing annotations in this ${annotationEntity}. ` +
+                'Existing annotations will not be removed.' :
+            `This will remove the current annotations in this ${annotationEntity} and ` +
+                'upload annotations from the selected file instead.';
 
         confirm({
-            title: isAppend ? 'Append annotations?' : 'Current annotation will be lost',
-            content: isAppend ?
-                `You are going to append new annotations to ${instanceType}. ` +
-                    'This process cannot be aborted after it starts. Continue?' :
-                `You are going to upload new annotations to ${instanceType}. Continue?`,
+            title,
+            content,
             className: `cvat-modal-content-load-${instanceType.split(' ')[0]}-annotation`,
             onOk: () => {
                 onUpload();
             },
             okButtonProps: {
                 type: 'primary',
-                danger: !isAppend,
+                danger: true,
             },
-            okText: 'Update',
+            okText: isAppend ? 'Append annotations' : 'Replace annotations',
+            cancelText: 'Cancel',
         });
     };
 
