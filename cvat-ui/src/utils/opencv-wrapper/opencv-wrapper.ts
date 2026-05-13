@@ -4,9 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
-
 import config from 'config';
-
 import TrackerMILAction from './annotations-actions/tracker-mil';
 
 const core = getCore();
