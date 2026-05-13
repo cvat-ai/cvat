@@ -6,7 +6,6 @@
 import json
 
 import pytest
-
 from cvat_sdk import models
 from cvat_sdk.api_client.model_utils import to_json
 
