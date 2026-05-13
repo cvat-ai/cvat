@@ -297,3 +297,113 @@ class AudioReaderLosslessContentTest(unittest.TestCase):
 
                 self.assertEqual(stitched.shape, original.shape)
                 np.testing.assert_array_equal(stitched, original)
+
+
+class Mp3ChunkCreationTest(unittest.TestCase):
+    """
+    Exercise the building blocks of MP3 chunk creation used by
+    cvat.apps.engine.media_io.audio_provider.prepare_audio_chunk:
+    - add_padding pads the payload with silent samples on either side;
+    - Mp3ChunkWriter.save_as_chunk encodes arbitrary input format/layout
+      payloads to a playable MP3 chunk whose duration covers the full payload
+      (modulo the encoder's priming/lookahead, which a right-side padding is
+      expected to mask).
+    """
+
+    DURATION_S = 1.0
+
+    # Production default for fresh chunks is (left=0, right=500) -- see
+    # TaskAudioProvider._build_audio_chunk in audio_provider.py. The 500ms right
+    # padding is the constant chosen as "big enough for most cases" to cover
+    # libmp3lame's priming/lookahead, which causes the encoded MP3 to drop
+    # samples from the payload tail unless extra silence is appended.
+    # find_best_padding's PaddingType.auto search bounds are (0, 1000) with
+    # step 100 on both sides, so production never exceeds 1s of padding per
+    # side. The test's non-zero left padding exercises that code path even
+    # though production prefers left=0 (MP3 priming/lookahead only affects the
+    # tail; the head priming is masked by the LAME info tag a compliant
+    # decoder reads).
+    #
+    # Background on MP3 encoder delay:
+    # - LAME introduces ~576 samples of encoder delay; decoder MDCT inverse
+    #   adds another ~528-1152 samples. The MP3 bitstream itself has no
+    #   standard way to record delay/padding, so seekless trimming is lossy.
+    #   https://wiki.hydrogenaudio.org/index.php?title=Gapless_playback
+    # - FFmpeg's libmp3lame wrapper (used by Mp3ChunkWriter via the
+    #   "libmp3lame" codec): supported options and their meanings are listed
+    #   in the upstream source:
+    #   https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/libmp3lame.c
+    LEFT_PADDING_MS = 100
+    RIGHT_PADDING_MS = 500
+
+    # Only lossless inputs: the duration assertions need exact source length.
+    CASES = tuple(c for c in _FORMAT_CASES if c.codec in ("pcm_s16le", "wavpack"))
+
+    def test_add_padding_preserves_sample_count(self):
+        from cvat.apps.engine.media_io.audio_provider import add_padding
+
+        expected_extra_samples = (
+            (self.LEFT_PADDING_MS + self.RIGHT_PADDING_MS) * SAMPLE_RATE // 1000
+        )
+
+        for case in self.CASES:
+            with self.subTest(case=case.name):
+                reader = _make_reader(case, duration_s=self.DURATION_S)
+                payload_samples = sum(f.samples for f, _ in reader.read_frames())
+
+                padded_frames = list(
+                    add_padding(
+                        reader.read_frames(),
+                        left_padding_ms=self.LEFT_PADDING_MS,
+                        right_padding_ms=self.RIGHT_PADDING_MS,
+                    )
+                )
+                padded_samples = sum(f.samples for f, _ in padded_frames)
+
+                self.assertEqual(padded_samples, payload_samples + expected_extra_samples)
+
+                # First and last frames should be silent padding of the requested length.
+                first_frame = padded_frames[0][0]
+                last_frame = padded_frames[-1][0]
+                self.assertEqual(first_frame.samples, self.LEFT_PADDING_MS * SAMPLE_RATE // 1000)
+                self.assertEqual(last_frame.samples, self.RIGHT_PADDING_MS * SAMPLE_RATE // 1000)
+                self.assertTrue(np.all(first_frame.to_ndarray() == 0))
+                self.assertTrue(np.all(last_frame.to_ndarray() == 0))
+
+    def test_mp3_chunk_covers_full_payload_duration(self):
+        from cvat.apps.engine.media_extractors import Mp3ChunkWriter
+        from cvat.apps.engine.media_io.audio_provider import add_padding
+
+        for quality in Mp3ChunkWriter.AudioQuality:
+            for case in self.CASES:
+                with self.subTest(case=case.name, quality=quality.value):
+                    reader = _make_reader(case, duration_s=self.DURATION_S)
+                    padded_frames = add_padding(
+                        reader.read_frames(),
+                        left_padding_ms=self.LEFT_PADDING_MS,
+                        right_padding_ms=self.RIGHT_PADDING_MS,
+                    )
+
+                    writer = Mp3ChunkWriter(quality=quality)
+                    chunk = io.BytesIO()
+                    writer.save_as_chunk(padded_frames, chunk)
+
+                    chunk.seek(0)
+                    self.assertGreater(len(chunk.getvalue()), 0)
+
+                    result = AudioReader([chunk])
+                    self.assertEqual(result.format_name, "mp3")
+                    # libmp3lame resamples to its configured stream rate / layout.
+                    self.assertEqual(result.sampling_rate, writer.rate)
+
+                    # The output must cover at least the payload duration; the
+                    # right padding masks libmp3lame's priming/lookahead. We
+                    # allow some slack on the upper bound for the same reason.
+                    expected_min_s = self.DURATION_S
+                    expected_max_s = (
+                        self.DURATION_S
+                        + (self.LEFT_PADDING_MS + self.RIGHT_PADDING_MS) / 1000
+                        + 0.1
+                    )
+                    self.assertGreaterEqual(result.duration, expected_min_s)
+                    self.assertLessEqual(result.duration, expected_max_s)
