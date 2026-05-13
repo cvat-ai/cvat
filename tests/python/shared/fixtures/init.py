@@ -102,7 +102,7 @@ def _get_optional_bool_option(config, name: str, default: bool = False) -> bool:
 
 
 def _project_cfg():
-    return RuntimeConfig.get_local_compose_stack(cvat_root_dir=CVAT_ROOT_DIR)
+    return RuntimeConfig.get_local_runtime_config(cvat_root_dir=CVAT_ROOT_DIR)
 
 
 def _prefixed_container_name(container: str) -> str:

@@ -40,6 +40,8 @@ child pytest processes. Each child process creates a normal backend
 
 : Static configuration and parsing helpers: repository paths, default values,
   allowed runtime modes, run prefix validation, and command conflict validation.
+  This is a facade for process-wide runtime settings, not a per-runtime state
+  object.
 
 `RuntimeContext`
 
@@ -52,11 +54,12 @@ child pytest processes. Each child process creates a normal backend
   directory, state file, and context file. The state can contain backend-specific
   sections, but the namespace itself does not know how a backend starts CVAT.
 
-`LocalComposeStackConfig`
+`LocalRuntimeConfig`
 
-: Local Docker Compose stack details: compose project name, generated compose
-  files, host ports, and prefixed container names. This is the replacement for a
-  global "project" concept. "Project" here means Docker Compose project only.
+: Local Docker-backed runtime configuration for one named runtime. It owns the
+  Docker Compose project name, generated compose file paths, host port state,
+  and prefixed container names. Docker Compose is the current local backend
+  mechanism, but tests should treat this object as local runtime configuration.
 
 `InfraInstanceConfig`
 
@@ -78,10 +81,17 @@ child pytest processes. Each child process creates a normal backend
 `LocalInstance`
 
 : Current local Docker Compose implementation of `InfraInstance`. It owns the
-  local lifecycle for one compose stack and uses `LocalComposeStackConfig` for
-  compose-specific names, files, and ports.
+  local lifecycle for one local runtime and uses `LocalRuntimeConfig` for local
+  names, files, ports, and persisted runtime state.
 
 ## Planned Classes
+
+`KubeRuntimeConfig` (TBD)
+
+: Kube-backed runtime configuration for one named runtime. It should own the
+  kube namespace/release/profile identity, base URL or port-forward state,
+  persisted compatibility metadata, and any state needed to reuse or restore a
+  kube runtime.
 
 `RuntimeProfile` (TBD)
 
@@ -91,20 +101,26 @@ child pytest processes. Each child process creates a normal backend
 
 `KubeDeploymentConfig` (TBD)
 
-: Kube-specific deployment identity and compatibility state: minikube profile,
-  namespace, Helm release names, image repositories/tags, profile values, and
-  fingerprint.
+: Lower-level kube deployment details derived from `KubeRuntimeConfig`: minikube
+  profile, Helm release names, image repositories/tags, profile values, and
+  deployment fingerprint.
 
 `KubeInstance` (TBD)
 
-: Kubernetes implementation of `InfraInstance`. It should map `RuntimeRequest`
-  and `RuntimeNamespace` to `KubeDeploymentConfig`, then manage minikube, Helm,
-  port forwards, restore helpers, and diagnostics.
+: Kubernetes implementation of `InfraInstance`. It should create
+  `KubeRuntimeConfig`, derive `KubeDeploymentConfig` from it when needed, then
+  manage minikube, Helm, port forwards, restore helpers, and diagnostics.
 
 `ParallelPlan` (TBD)
 
 : Parent-process plan for parallel execution: lane count, lane profiles,
   grouping policy, and whether to prewarm or reuse lanes.
+
+`ParallelRuntimeConfig` (TBD)
+
+: Parent-process runtime configuration for parallel execution. It should own
+  lane count, lane naming, profile assignment, reuse policy, and cleanup policy
+  before child pytest processes are started.
 
 `ParallelLane` (TBD)
 
@@ -138,8 +154,7 @@ Single local run:
 
 1. pytest options are parsed into `RuntimeRequest`.
 2. `RuntimeContext` creates the run id and artifact directory.
-3. `LocalInstance` creates a `LocalComposeStackConfig` from the runtime
-   namespace.
+3. `LocalInstance` creates a `LocalRuntimeConfig` from the runtime namespace.
 4. The local stack is started, reused, restored, or stopped according to
    `RuntimeMode`.
 5. Fixtures call `InfraInstance` methods to restore state between tests.
@@ -147,18 +162,19 @@ Single local run:
 Future kube run:
 
 1. The same `RuntimeRequest` and `RuntimeContext` are used.
-2. `KubeInstance` derives `KubeDeploymentConfig` from the request, namespace
+2. `KubeInstance` creates a `KubeRuntimeConfig` from the request, namespace
    state, and kube options.
-3. Kube lifecycle code manages minikube, Helm releases, port forwards, restore
+3. `KubeRuntimeConfig` derives lower-level `KubeDeploymentConfig` when Helm or
+   minikube details are needed.
+4. Kube lifecycle code manages minikube, Helm releases, port forwards, restore
    helpers, and diagnostics behind the `InfraInstance` interface.
 
 Future parallel run:
 
-1. The parent process builds a `ParallelPlan`.
+1. The parent process builds a `ParallelRuntimeConfig` and `ParallelPlan`.
 2. `ParallelCoordinator` creates `ParallelLane` objects.
 3. A platform adapter persists lane state and builds child pytest commands.
 4. Each child process loads the parent run context and creates a normal backend
    `InfraInstance`.
 5. The parent process only coordinates and replays events; it does not expose
    fixture restore or exec capabilities.
-

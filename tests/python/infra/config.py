@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import re
+import socket
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime
@@ -26,6 +27,24 @@ _RUN_PREFIX_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _RUNTIME_ROOT_DIR = Path(tempfile.gettempdir()) / "cvat_pytest_infra"
 _RUNS_ROOT_DIR = _RUNTIME_ROOT_DIR / "runs"
 _RUN_CONTEXT_FILE_NAME = "run-context.json"
+_DEFAULT_LOCAL_PORT_CONFIG = {
+    "http_port": 8080,
+    "logs_port": 8090,
+    "db_port": 15432,
+    "redis_inmem_port": 16379,
+    "redis_ondisk_port": 16666,
+    "minio_port": 9000,
+    "minio_console_port": 9001,
+}
+_NON_DEFAULT_LOCAL_PORT_STARTS = {
+    "http_port": 18080,
+    "logs_port": 18090,
+    "db_port": 15432,
+    "redis_inmem_port": 16379,
+    "redis_ondisk_port": 16666,
+    "minio_port": 19000,
+    "minio_console_port": 19001,
+}
 
 
 class RuntimeMode(str, Enum):
@@ -104,7 +123,7 @@ class RuntimeNamespace:
 
 
 @dataclass(frozen=True)
-class LocalComposeStackConfig:
+class LocalRuntimeConfig:
     project_name: str
     cvat_root_dir: Path = _CVAT_ROOT_DIR
     runtime_root_dir: Path = _RUNTIME_ROOT_DIR
@@ -131,40 +150,63 @@ class LocalComposeStackConfig:
     @property
     def host_http_port(self) -> int:
         state = self.load_state() or {}
-        return int(state.get("http_port", 8080))
+        return int(state.get("http_port", _DEFAULT_LOCAL_PORT_CONFIG["http_port"]))
 
     @property
     def host_logs_port(self) -> int:
         state = self.load_state() or {}
-        return int(state.get("logs_port", 8090))
+        return int(state.get("logs_port", _DEFAULT_LOCAL_PORT_CONFIG["logs_port"]))
 
     @property
     def host_db_port(self) -> int:
         state = self.load_state() or {}
-        return int(state.get("db_port", 15432))
+        return int(state.get("db_port", _DEFAULT_LOCAL_PORT_CONFIG["db_port"]))
 
     @property
     def host_redis_inmem_port(self) -> int:
         state = self.load_state() or {}
-        return int(state.get("redis_inmem_port", 16379))
+        return int(state.get("redis_inmem_port", _DEFAULT_LOCAL_PORT_CONFIG["redis_inmem_port"]))
 
     @property
     def host_redis_ondisk_port(self) -> int:
         state = self.load_state() or {}
-        return int(state.get("redis_ondisk_port", 16666))
+        return int(state.get("redis_ondisk_port", _DEFAULT_LOCAL_PORT_CONFIG["redis_ondisk_port"]))
 
     @property
     def host_minio_port(self) -> int:
         state = self.load_state() or {}
-        return int(state.get("minio_port", 9000))
+        return int(state.get("minio_port", _DEFAULT_LOCAL_PORT_CONFIG["minio_port"]))
 
     @property
     def host_minio_console_port(self) -> int:
         state = self.load_state() or {}
-        return int(state.get("minio_console_port", 9001))
+        return int(
+            state.get("minio_console_port", _DEFAULT_LOCAL_PORT_CONFIG["minio_console_port"])
+        )
 
     def prefixed_container_name(self, container: str) -> str:
         return f"{self.project_name}_{container}_1"
+
+    def resolve_port_config(
+        self,
+        *,
+        default_project_name: str,
+        used_ports: set[int],
+        runtime_running: bool,
+    ) -> dict:
+        state = self.load_state() or {}
+
+        if self.project_name == default_project_name:
+            return {**_DEFAULT_LOCAL_PORT_CONFIG, **state}
+
+        if _state_has_local_port_config(state) and (
+            runtime_running or _state_local_port_config_is_available(state, used_ports=used_ports)
+        ):
+            return {name: int(state[name]) for name in _DEFAULT_LOCAL_PORT_CONFIG}
+
+        port_config = _allocate_local_port_config(used_ports=used_ports)
+        self.save_state({**state, **port_config})
+        return port_config
 
     def load_state(self) -> dict | None:
         return self.namespace.load_state()
@@ -174,6 +216,52 @@ class LocalComposeStackConfig:
 
     def delete_state(self) -> None:
         self.namespace.delete_state()
+
+
+def _can_bind_port(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        try:
+            sock.bind(("", port))
+        except OSError:
+            return False
+    return True
+
+
+def _local_port_is_available(port: int, *, used_ports: set[int]) -> bool:
+    return port not in used_ports and _can_bind_port(port)
+
+
+def _next_available_local_port(
+    start_port: int, *, used_ports: set[int], reserved_ports: set[int]
+) -> int:
+    port = start_port
+    while port in reserved_ports or not _local_port_is_available(port, used_ports=used_ports):
+        port += 1
+    reserved_ports.add(port)
+    return port
+
+
+def _state_has_local_port_config(state: dict) -> bool:
+    return all(name in state for name in _DEFAULT_LOCAL_PORT_CONFIG)
+
+
+def _state_local_port_config_is_available(state: dict, *, used_ports: set[int]) -> bool:
+    return all(
+        _local_port_is_available(int(state[name]), used_ports=used_ports)
+        for name in _DEFAULT_LOCAL_PORT_CONFIG
+    )
+
+
+def _allocate_local_port_config(*, used_ports: set[int]) -> dict:
+    reserved_ports: set[int] = set()
+    return {
+        name: _next_available_local_port(
+            start_port,
+            used_ports=used_ports,
+            reserved_ports=reserved_ports,
+        )
+        for name, start_port in _NON_DEFAULT_LOCAL_PORT_STARTS.items()
+    }
 
 
 @dataclass(frozen=True)
@@ -238,10 +326,10 @@ class RuntimeConfig:
         )
 
     @classmethod
-    def get_local_compose_stack(
+    def get_local_runtime_config(
         cls, project_name_arg: str | None = None, *, cvat_root_dir: Path = _CVAT_ROOT_DIR
-    ) -> LocalComposeStackConfig:
-        return LocalComposeStackConfig(
+    ) -> LocalRuntimeConfig:
+        return LocalRuntimeConfig(
             project_name=_validate_run_prefix(
                 project_name_arg or os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_RUN_PREFIX)
             ),
