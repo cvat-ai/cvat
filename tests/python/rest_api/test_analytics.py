@@ -256,6 +256,19 @@ class TestGetAuditEvents:
             uuid.UUID(request_id)
 
     @pytest.mark.parametrize("api_version", [1, 2])
+    def test_exported_events_do_not_contain_remote_addr(self, api_version: int):
+        query_params = {
+            "project_id": self.project_id,
+        }
+        data = self._test_get_audit_logs_as_csv(api_version=api_version, **query_params)
+        events = self._csv_to_dict(data)
+
+        assert len(events)
+        for event in events:
+            payload = json.loads(event["payload"])
+            assert "remote_addr" not in payload["request"]
+
+    @pytest.mark.parametrize("api_version", [1, 2])
     def test_delete_project(self, api_version: int):
         response = delete_method("admin1", f"projects/{self.project_id}")
         assert response.status_code == HTTPStatus.NO_CONTENT
