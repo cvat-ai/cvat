@@ -66,8 +66,6 @@ _RQ_JOB_ORIGIN_ATTRIBUTE = "origin"
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
-ASSETS_DIR = Path(__file__).parent / "assets"
-
 
 class CacheTooLargeDataError(Exception):
     pass
