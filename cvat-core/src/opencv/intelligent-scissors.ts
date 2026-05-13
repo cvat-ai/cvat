@@ -30,9 +30,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
     public kind = 'opencv_intelligent_scissors';
 
     private cv: any;
-
     private dsize: any;
-
     private originalSize: { width: number; height: number };
 
     // @ts-ignore initialized in this.reset called from constructor
@@ -178,10 +176,12 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         return [...state.contour];
     }
 
+    // eslint-disable-next-line class-methods-use-this
     public get type(): string {
         return 'opencv_intelligent_scissors';
     }
 
+    // eslint-disable-next-line class-methods-use-this
     public get params(): IntelligentScissorsParams {
         return {
             shape: {

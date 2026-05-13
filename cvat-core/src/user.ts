@@ -11,29 +11,17 @@ import serverProxy from './server-proxy';
 
 export default class User {
     public readonly id: number;
-
     public readonly username: string;
-
     public readonly email: string;
-
     public readonly firstName: string;
-
     public readonly lastName: string;
-
     public readonly groups: ('user' | 'admin')[];
-
     public readonly lastLogin: string;
-
     public readonly dateJoined: string;
-
     public readonly isStaff: boolean;
-
     public readonly isSuperuser: boolean;
-
     public readonly isActive: boolean;
-
     public readonly isVerified: boolean;
-
     public readonly hasAnalyticsAccess: boolean;
 
     constructor(initialData: SerializedUser) {

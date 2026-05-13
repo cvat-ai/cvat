@@ -181,9 +181,9 @@ const samPlugin: SAMPlugin = {
                         obj_bbox: number[][];
                     },
                 ): Promise<{
-                    mask: number[][];
-                    bounds: [number, number, number, number];
-                } | unknown> {
+                        mask: number[][];
+                        bounds: [number, number, number, number];
+                    } | unknown> {
                     return new Promise((resolve, reject) => {
                         if (model.id !== plugin.data.modelID) {
                             resolve(result);

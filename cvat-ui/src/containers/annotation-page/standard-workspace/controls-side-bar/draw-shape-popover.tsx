@@ -96,7 +96,6 @@ interface State {
 
 class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     private minimumPoints = 3;
-
     private satisfiedLabels: Label[];
 
     private isPolyShape: boolean;

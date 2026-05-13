@@ -33,7 +33,6 @@ export interface WorkerResponse {
 
 class ActionsWorkerManager {
     private cvInterface: OpenCVInterface | null = null;
-
     private initialized = false;
 
     public async initialize(opencvPath: string): Promise<void> {

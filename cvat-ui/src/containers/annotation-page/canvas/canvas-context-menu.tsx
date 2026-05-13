@@ -123,11 +123,8 @@ interface State {
 
 class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
     private initialized: HTMLDivElement | null;
-
     private dragging: boolean;
-
     private dragInitPosX: number;
-
     private dragInitPosY: number;
 
     public constructor(props: Props) {

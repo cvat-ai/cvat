@@ -19,7 +19,6 @@ export interface ImageProcessing {
 /* eslint @typescript-eslint/no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
 export class BaseImageFilter implements ImageProcessing {
     public filter: any = null;
-
     public currentProcessedImage: number | null = null;
 
     processImage(_r: ImageData, _frameNumber: number): ImageData {

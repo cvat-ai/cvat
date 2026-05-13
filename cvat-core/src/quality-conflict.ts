@@ -18,17 +18,11 @@ export enum ConflictSeverity {
 
 export class AnnotationConflict {
     #jobID: number;
-
     #serverID: number;
-
     #type: ObjectType;
-
     #shapeType: string | null;
-
     #conflictType: QualityConflictType;
-
     #severity: ConflictSeverity;
-
     #description: string;
 
     constructor(initialData: SerializedAnnotationConflictData) {
@@ -74,15 +68,10 @@ export class AnnotationConflict {
 
 export default class QualityConflict {
     #id: number;
-
     #frame: number;
-
     #type: QualityConflictType;
-
     #annotationConflicts: AnnotationConflict[];
-
     #severity: ConflictSeverity;
-
     #description: string;
 
     constructor(initialData: SerializedQualityConflictData) {

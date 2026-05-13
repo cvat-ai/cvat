@@ -7,9 +7,7 @@ import PluginRegistry from './plugins';
 
 export class JobValidationLayout {
     #honeypotCount: JobValidationLayout['honeypotCount'];
-
     #honeypotFrames: JobValidationLayout['honeypotFrames'];
-
     #honeypotRealFrames: JobValidationLayout['honeypotRealFrames'];
 
     public constructor(data: SerializedJobValidationLayout) {
@@ -53,9 +51,7 @@ Object.defineProperties(JobValidationLayout.prototype.getRealFrame, {
 
 export class TaskValidationLayout extends JobValidationLayout {
     #mode: TaskValidationLayout['mode'];
-
     #validationFrames: TaskValidationLayout['validationFrames'];
-
     #disabledFrames: TaskValidationLayout['disabledFrames'];
 
     public constructor(data: SerializedTaskValidationLayout) {

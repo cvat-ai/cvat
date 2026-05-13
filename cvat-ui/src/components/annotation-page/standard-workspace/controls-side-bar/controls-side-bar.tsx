@@ -228,22 +228,22 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             };
 
     const dynamicGroupIconProps =
-        activeControl === ActiveControl.GROUP ?
-            {
-                className: 'cvat-group-control cvat-active-canvas-control',
-                onClick: (): void => {
-                    canvasInstance.group({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
-                },
-            } :
-            {
-                className: 'cvat-group-control',
-                onClick: (): void => {
-                    canvasInstance.cancel();
-                    canvasInstance.group({ enabled: true });
-                    updateActiveControl(ActiveControl.GROUP);
-                },
-            };
+    activeControl === ActiveControl.GROUP ?
+        {
+            className: 'cvat-group-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.group({ enabled: false });
+                updateActiveControl(ActiveControl.CURSOR);
+            },
+        } :
+        {
+            className: 'cvat-group-control',
+            onClick: (): void => {
+                canvasInstance.cancel();
+                canvasInstance.group({ enabled: true });
+                updateActiveControl(ActiveControl.GROUP);
+            },
+        };
 
     const dynamicTrackIconProps = activeControl === ActiveControl.SPLIT ?
         {

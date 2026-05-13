@@ -22,52 +22,31 @@ export enum PointSizeBase {
 }
 
 export type QualitySettingsSaveFields = Partial<Camelized<
-    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions'>
+Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions'>
 >>;
 
 export default class QualitySettings {
     #id: number;
-
     #targetMetric: TargetMetric;
-
     #targetMetricThreshold: number;
-
     #maxValidationsPerJob: number;
-
     #taskId: number;
-
     #iouThreshold: number;
-
     #oksSigma: number;
-
     #pointSizeBase: PointSizeBase;
-
     #lineThickness: number;
-
     #lowOverlapThreshold: number;
-
     #compareLineOrientation: boolean;
-
     #lineOrientationThreshold: number;
-
     #compareGroups: boolean;
-
     #groupMatchThreshold: number;
-
     #checkCoveredAnnotations: boolean;
-
     #objectVisibilityThreshold: number;
-
     #panopticComparison: boolean;
-
     #compareAttributes: boolean;
-
     #emptyIsAnnotated: boolean;
-
     #jobFilter: string;
-
     #inherit: boolean;
-
     #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {

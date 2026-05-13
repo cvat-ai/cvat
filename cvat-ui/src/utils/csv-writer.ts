@@ -39,11 +39,8 @@ export interface CSVColumn<T> {
 
 class IncrementalCSVWriter<T> {
     private columns: CSVColumn<T>[];
-
     private rows: string[] = [];
-
     private uniqueKey: keyof T | null;
-
     private seenKeys: Set<string | number> = new Set();
 
     constructor(columns: CSVColumn<T>[], uniqueKey: keyof T | null = null) {

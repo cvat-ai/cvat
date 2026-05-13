@@ -30,7 +30,7 @@ const FilteringComponentBase = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity,
 );
 const FilteringComponent = FilteringComponentBase as React.ComponentType<
-    Omit<React.ComponentProps<typeof FilteringComponentBase>, 'value' | 'onApplyFilter'>
+Omit<React.ComponentProps<typeof FilteringComponentBase>, 'value' | 'onApplyFilter'>
 >;
 
 export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element | null {

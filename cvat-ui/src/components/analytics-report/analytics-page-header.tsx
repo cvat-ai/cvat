@@ -60,7 +60,7 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
                     icon={<DownloadOutlined />}
                     onClick={onExportEvents}
                 >
-                    Export events
+                        Export events
                 </Button>
             </Col>
         </Row>

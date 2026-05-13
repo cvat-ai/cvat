@@ -30,7 +30,6 @@ export interface ShapesActionOutput {
 
 export abstract class BaseShapesAction extends BaseAction {
     public abstract run(input: ShapesActionInput): Promise<ShapesActionOutput>;
-
     public abstract applyFilter(
         input: Pick<ShapesActionInput, 'collection' | 'frameData'>
     ): ShapesActionInput['collection'];

@@ -38,7 +38,6 @@ class RequestsManager {
     }>;
 
     private requestStack: number[];
-
     constructor() {
         this.listening = {};
         this.requestStack = [];

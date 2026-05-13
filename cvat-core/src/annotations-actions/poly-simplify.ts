@@ -13,7 +13,6 @@ import type { SimplifyShape, WorkerRequest, WorkerResponse } from './actions-wor
 
 export class PolySimplify extends BaseShapesAction {
     #threshold = 1.0;
-
     #worker: Worker | null = null;
 
     public async init(_instance: any, parameters: Record<string, any>): Promise<void> {

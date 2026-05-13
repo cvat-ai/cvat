@@ -20,15 +20,10 @@ export interface TrackerMILInterface {
 
 export default class TrackerMILImplementation implements TrackerMILInterface {
     public name: string;
-
     private imageData: ImageData | null;
-
     private cv: any;
-
     private trackerMIL: any;
-
     private maxSize: number;
-
     private imageScale: number;
 
     constructor(cv: any) {

@@ -45,21 +45,13 @@ export interface QualitySummary {
 
 export default class QualityReport {
     #id: number;
-
     #parentID: number;
-
     #taskID: number;
-
     #jobID: number;
-
     #target: string;
-
     #createdDate: string;
-
     #gtLastUpdated: string;
-
     #assignee: User | null;
-
     #summary: Partial<SerializedQualityReportData['summary']>;
 
     constructor(initialData: SerializedQualityReportData) {

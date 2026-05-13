@@ -16,37 +16,21 @@ import AnnotationGuide from './guide';
 
 export default class Project {
     public readonly id: number;
-
     public readonly _updateTrigger: FieldUpdateTrigger;
-
     public name: string;
-
     public organizationId: number | null;
-
     public assignee: User | null;
-
     public bugTracker: string;
-
     public sourceStorage: Storage;
-
     public targetStorage: Storage;
-
     public readonly status: ProjectStatus;
-
     public readonly guideId: number | null;
-
     public readonly owner: User;
-
     public readonly createdDate: string;
-
     public readonly updatedDate: string;
-
     public readonly subsets: string[];
-
     public readonly dimension: DimensionType;
-
     public labels: Label[];
-
     public annotations: {
         exportDataset: (
             format: string,
