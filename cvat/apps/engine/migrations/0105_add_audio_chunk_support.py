@@ -76,8 +76,5 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={
-                "default_permissions": (),
-            },
         ),
     ]
