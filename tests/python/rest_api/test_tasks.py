@@ -49,7 +49,8 @@ from rest_api.utils import (
     create_task,
     export_dataset,
     export_task_dataset,
-    wait_background_request,
+    import_job_annotations,
+    import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
 from shared.tasks.interface import ITaskSpec
@@ -62,7 +63,6 @@ from shared.utils.config import (
     make_api_client,
     make_sdk_client,
     patch_method,
-    post_files_method,
     put_method,
 )
 from shared.utils.helpers import generate_image_files
@@ -3202,27 +3202,37 @@ class TestImportTaskAnnotations:
 
     def _import_annotations_file(
         self,
-        endpoint: str,
+        target_type: str,
+        target_id: int,
         annotation_file: bytes,
         *,
         import_mode: str | None = None,
     ) -> None:
-        query_params = {"format": self.import_format}
+        annotation_file_io = io.BytesIO(annotation_file)
+        annotation_file_io.name = "annotations.zip"
+
+        import_func = {
+            "tasks": import_task_annotations,
+            "jobs": import_job_annotations,
+        }[target_type]
+
+        query_params = {
+            "id": target_id,
+            "format": self.import_format,
+        }
         if import_mode:
             query_params["import_mode"] = import_mode
 
-        response = post_files_method(
+        background_request = import_func(
             self.user,
-            endpoint,
-            data={},
-            files={"annotation_file": ("annotations.zip", io.BytesIO(annotation_file))},
+            annotation_file_io,
+            max_retries=300,
             **query_params,
         )
-        assert response.status_code == HTTPStatus.ACCEPTED, response.content
-
-        rq_id = response.json()["rq_id"]
-        with make_api_client(self.user) as api_client:
-            wait_background_request(api_client, rq_id, max_retries=300)
+        assert (
+            background_request.status.value
+            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+        )
 
     def _is_2d_annotation_task(self, task: dict[str, Any], *, require_size: bool = False) -> bool:
         return (
@@ -3330,7 +3340,8 @@ class TestImportTaskAnnotations:
         assert response.status_code == HTTPStatus.OK, response.content
 
         self._import_annotations_file(
-            endpoint,
+            target_type,
+            target_id,
             annotation_file,
             import_mode=import_mode,
         )
