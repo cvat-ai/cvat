@@ -19,17 +19,32 @@
 
 ## What is CVAT Community?
 
-**CVAT Community** is the free, self-hosted open-source edition of [CVAT](https://www.cvat.ai/) — the leading data
-annotation platform for building and maintaining high-quality visual datasets for computer vision and visual AI. It
-provides a production-ready environment for teams who want to own their data and labeling infrastructure, rather than
-relying on a managed service.
+**CVAT Community** is the free, self-hosted open-source edition of [CVAT](https://www.cvat.ai/) — one of
+the most widely used data annotation platforms for building high-quality visual datasets for
+computer vision and visual AI.
+Since 2018, CVAT has been the go-to annotation platform for millions of users and thousands of AI teams worldwide,
+including Fortune 100 companies.
 
 CVAT Community supports image, video, and 3D annotation, dataset management, team collaboration, cloud storage
-integration, and developer-friendly SDKs and APIs.
+integration, developer-friendly SDKs and APIs, and gives your team full control over your data
+and annotation infrastructure.
+The platform serves as the foundation of
+[CVAT Online](https://www.cvat.ai/pricing/cvat-online) and
+[CVAT Enterprise](https://www.cvat.ai/enterprise), and is actively maintained by the CVAT engineering team.
+
+Why teams choose CVAT Community:
+
+- **Own your data:** Run entirely within your own infrastructure. No data leaves your environment.
+- **AI-powered annotation:** Connect your own ML models for detection, segmentation, and tracking to speed up labeling.
+- **Team collaboration:** Multi-user and multi-organization support with roles, task assignments,
+  and review workflows.
+- **MIT licensed:** Free to use in any project, including commercial, with no restrictions.
+- **Production-grade:** The foundation of all CVAT commercial products — battle-tested at scale.
+- **True open-source:** Transparent development, active community, on GitHub since 2018.
 
 This repository contains the source code and deployment assets for CVAT Community.
 
-For commercial hosted setups, advanced labeling tools, or managed services, see
+For a fully managed setup, annotation services, or enterprise features, see
 [CVAT Online](https://www.cvat.ai/pricing/cvat-online),
 [CVAT Enterprise](https://www.cvat.ai/enterprise) and
 [CVAT Labeling Services](https://www.cvat.ai/annotation-services).
@@ -81,33 +96,24 @@ instructions and OS-specific setup.
 Learn more about annotation tools and workflows in the [CVAT Documentation](https://docs.cvat.ai/docs/) or
 take our free course – [CVAT Academy](https://www.cvat.ai/resources/academy).
 
-**4. Optional: Automatic annotation**
-
-To enable ML-powered labeling (e.g., with Segment Anything (SAM), YOLO, or custom models):
-
-```bash
-docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
-```
-
-See the [Automatic Annotation Guide](https://docs.cvat.ai/docs/annotation/auto-annotation/automatic-annotation/) for
-details.
-
 _For alternative deployments (AWS, Kubernetes, external PostgreSQL, backups, upgrades), see the [Deployment Guides](https://docs.cvat.ai/docs/administration/community/advanced/)._
 
 ## Key Capabilities
 
-- **Manual & Auto-labeling:** Annotate images, videos, and 3D point clouds with bounding boxes, polygons, masks,
- keypoints, cuboids, tags, and more. Speed up labeling by connecting your own models for automatic annotation.
-- **Task Management:** Organize datasets into projects, split them into tasks and jobs, assign work to annotators,
-and track progress in real time.
-- **Collaboration:** Create organizations, invite teammates, assign roles, and collaborate on annotations with
- comments and
-issues.
-- **Quality Control:** Review annotations, flag issues, compare results across annotators with consensus,
-and run Ground Truth and Honeypot checks through the server API.
-- **Analytics:** Monitor user activity, working time by job, events, and server logs with Grafana dashboards.
-- **Data Ops & Integrations:** Export/import in 20+ formats (COCO, YOLO, Pascal VOC, KITTI, etc.), connect to cloud
-  storage (S3, Azure, Google Cloud), and automate via REST API and Python SDK.
+- **[Manual & Auto-labeling](https://docs.cvat.ai/docs/annotation/manual-annotation/):** Annotate images, videos, and
+  3D point clouds with bounding boxes, polygons, masks, keypoints, cuboids, tags, and more. Speed up labeling
+  by connecting your own models for automatic annotation.
+- **[Task Management](https://docs.cvat.ai/docs/workspace/):** Organize datasets into projects, split them into tasks
+  and jobs, assign work to annotators, and track progress in real time.
+- **[Collaboration](https://docs.cvat.ai/docs/account_management/user-roles/):** Create organizations, invite teammates,
+  assign roles, and collaborate on annotations with comments and issues.
+- **[Quality Control](https://docs.cvat.ai/docs/qa-analytics/manual-qa/):** Review annotations, flag issues, compare
+  results across annotators with consensus, and run Ground Truth and Honeypot checks through the server API.
+- **[Analytics](https://docs.cvat.ai/docs/administration/community/advanced/analytics/):** Monitor user activity,
+  working time by job, events, and server logs with Grafana dashboards.
+- **[Data Ops & Integrations](https://docs.cvat.ai/docs/dataset_management/export-datasets/):** Export/import in 20+
+  formats (COCO, YOLO, Pascal VOC, KITTI, etc.), connect to cloud storage (S3, Azure, Google Cloud), and automate
+  via REST API and Python SDK.
 
 Advanced capabilities such as advanced project analytics, quality control UI, built-in auto-labeling with SAM 2
  and SAM 3, AI agents, SSO, and more are available in [CVAT Online](https://www.cvat.ai/pricing/cvat-online)
@@ -127,6 +133,32 @@ over 20+ industry-standard formats: CVAT (XML), COCO (JSON), YOLO (TXT), Ultraly
 KITTI (TXT), MOT (TXT), and more.
 
 [Full list of supported formats.](https://docs.cvat.ai/docs/dataset_management/formats/)
+
+## ML and AI Models
+
+CVAT Community supports automatic annotation via pre-built serverless models powered by Nuclio,
+covering detection, segmentation, pose estimation, and tracking:
+
+| Model | Framework | Type |
+| --- | --- | --- |
+| [Segment Anything (SAM)](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/sam/nuclio) | PyTorch | Interactor |
+| [Inside-Outside Guidance (IOG)](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/shiyinzhang/iog/nuclio) | PyTorch | Interactor |
+| [RetinaNet R101](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio) | PyTorch | Detector |
+| [HRNet32 Whole Body Pose](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/mmpose/hrnet32/nuclio) | PyTorch | Pose Estimation |
+| [TransT](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/dschoerk/transt/nuclio) | PyTorch | Tracker |
+| [YOLO v7](https://github.com/cvat-ai/cvat/tree/develop/serverless/onnx/WongKinYiu/yolov7/nuclio) | ONNX | Detector |
+| [Mask RCNN Inception ResNet v2](https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio) | OpenVINO | Detector |
+| [Face Detection 0205](https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/face-detection-0205/nuclio) | OpenVINO | Detector |
+| [Faster RCNN Inception v2](https://github.com/cvat-ai/cvat/tree/develop/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio) | TensorFlow | Detector |
+
+To enable automatic annotation, add the serverless component to your deployment:
+
+```bash
+docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
+```
+
+See the [Automatic Annotation Guide](https://docs.cvat.ai/docs/annotation/auto-annotation/automatic-annotation/)
+for details on deploying models and running auto-annotation jobs.
 
 ## Editions Comparison
 
