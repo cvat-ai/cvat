@@ -177,7 +177,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/minute",
     },
-    "NUM_PROXIES": parse_num_proxies(os.getenv("CVAT_NUM_PROXIES")),
+    "NUM_PROXIES": parse_num_proxies(os.getenv("CVAT_NUM_PROXIES", "2")),
     "DEFAULT_METADATA_CLASS": "rest_framework.metadata.SimpleMetadata",
     "DEFAULT_SCHEMA_CLASS": "cvat.apps.iam.schema.CustomAutoSchema",
     "EXCEPTION_HANDLER": "cvat.apps.events.handlers.handle_viewset_exception",
