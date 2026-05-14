@@ -52,9 +52,15 @@ jobs:
       - name: Regenerate Python requirements
         run: cvat/requirements/regenerate.sh --no-upgrade
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Regenerate Python requirements
-          file_pattern: |
-            cvat/requirements/*.txt
-            utils/dataset_manifest/requirements.txt
+      - name: Commit regenerated requirements
+        run: |
+          if git diff --quiet -- cvat/requirements/*.txt utils/dataset_manifest/requirements.txt; then
+            echo "No generated requirements changes"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add cvat/requirements/*.txt utils/dataset_manifest/requirements.txt
+          git commit -m "Regenerate Python requirements"
+          git push
