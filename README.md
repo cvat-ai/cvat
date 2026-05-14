@@ -25,8 +25,9 @@
 **CVAT Community** is the free, self-hosted open-source edition of [CVAT](https://www.cvat.ai/) — one of
 the most widely used data annotation platforms for building high-quality visual datasets for
 computer vision and visual AI.
-Since 2018, CVAT has been the go-to annotation platform for millions of users and thousands of AI teams worldwide,
-including Fortune 100 companies.
+Since 2018, CVAT has become one of the best-known data annotation tools in computer vision, with a
+large open-source community, millions of Docker pulls, and broad adoption across research and
+production AI teams.
 
 CVAT Community supports image, video, and 3D annotation, dataset management, team collaboration, cloud storage
 integration, developer-friendly SDKs and APIs, and gives your team full control over your data
@@ -138,8 +139,8 @@ and script common CVAT workflows from the terminal.
 
 ## Data and Formats
 
-CVAT Community supports image, video, and 3D (point cloud) annotation workflows. You can move data in and out using
-over 20+ industry-standard formats: CVAT (XML), COCO (JSON), YOLO (TXT), Ultralytics YOLO (TXT/YAML), Pascal VOC (XML),
+CVAT Community supports image, video, and 3D (point cloud) annotation workflows. You can move data in and out using 20+
+industry-standard formats: CVAT (XML), COCO (JSON), YOLO (TXT), Ultralytics YOLO (TXT/YAML), Pascal VOC (XML),
 KITTI (TXT), MOT (TXT), and more.
 
 [Full list of supported formats.](https://docs.cvat.ai/docs/dataset_management/formats/)
@@ -167,8 +168,8 @@ To enable automatic annotation, add the serverless component to your deployment:
 docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
 ```
 
-See the [Automatic Annotation Guide](https://docs.cvat.ai/docs/annotation/auto-annotation/automatic-annotation/)
-for details on deploying models and running auto-annotation jobs.
+This starts the serverless infrastructure. To make models available in CVAT, install `nuctl` and deploy
+the functions you need, for example SAM or YOLO, as described in the [Automatic Annotation Guide](https://docs.cvat.ai/docs/annotation/auto-annotation/automatic-annotation/).
 
 ## Which CVAT edition should I choose?
 
@@ -192,7 +193,7 @@ Stack Overflow with the `cvat` tag.
 - **Bugs and feature requests:** use [GitHub Issues](https://github.com/cvat-ai/cvat/issues).
 - **FAQ:** [Installation, upgrades, troubleshooting](https://docs.cvat.ai/docs/faq/).
 
-For dedicated support, SLAs, or advanced deployments, consider [CVAT Enterprise](https://cvat.ai/enterprise).
+For dedicated support, SLAs, or advanced deployments, consider [CVAT Enterprise](https://www.cvat.ai/enterprise).
 
 ## Contributing
 
@@ -221,12 +222,12 @@ CVAT Community is released under the MIT License.
 For the latest product releases, feature walkthroughs, and all things CVAT see:
 
 <table cellspacing="10" border="0"><tr>
-  <td><a href="https://www.cvat.ai/resources/blog"><img src="site/content/en/images/badge-blog.png" height="120"/></a></td>
-  <td><a href="https://www.cvat.ai/resources/academy"><img src="site/content/en/images/badge-academy.png" height="120"/></a></td>
-  <td><a href="https://www.cvat.ai/resources/case-studies"><img src="site/content/en/images/badge-case-studies.png" height="120"/></a></td>
-  <td><a href="https://www.youtube.com/@cvat-ai"><img src="site/content/en/images/badge-youtube.png" height="120"/></a></td>
-  <td><a href="https://www.linkedin.com/company/cvat-ai"><img src="site/content/en/images/badge-linkedin.png" height="120"/></a></td>
-  <td><a href="https://www.cvat.ai/#:~:text=Subscribe%20to%20the%20CVAT%20Newsletter"><img src="site/content/en/images/badge-newsletter.png" height="120"/></a></td>
+  <td><a href="https://www.cvat.ai/resources/blog"><img src="site/content/en/images/badge-blog.png" alt="CVAT Blog" height="120"/></a></td>
+  <td><a href="https://www.cvat.ai/resources/academy"><img src="site/content/en/images/badge-academy.png" alt="CVAT Academy" height="120"/></a></td>
+  <td><a href="https://www.cvat.ai/resources/case-studies"><img src="site/content/en/images/badge-case-studies.png" alt="Case Studies" height="120"/></a></td>
+  <td><a href="https://www.youtube.com/@cvat-ai"><img src="site/content/en/images/badge-youtube.png" alt="YouTube" height="120"/></a></td>
+  <td><a href="https://www.linkedin.com/company/cvat-ai"><img src="site/content/en/images/badge-linkedin.png" alt="LinkedIn" height="120"/></a></td>
+  <td><a href="https://www.cvat.ai/#:~:text=Subscribe%20to%20the%20CVAT%20Newsletter"><img src="site/content/en/images/badge-newsletter.png" alt="Newsletter" height="120"/></a></td>
 </tr></table>
 
   <!-- Badges -->
