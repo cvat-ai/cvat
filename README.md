@@ -1,14 +1,17 @@
-![CVAT Community header](site/content/en/images/cvat_github_header.webp)
-# CVAT Community: The Open-Source Edition of CVAT (Computer Vision Annotation Tool)
+[![CVAT Community header](site/content/en/images/cvat_github_header.webp)](https://app.cvat.ai)
+# CVAT: Computer Vision Annotation Tool
 
 [![Release][release-img]][release-url]
 [![GitHub stars][stars-img]][stars-url]
 [![License][license-img]][license-url]
 [![CI][ci-img]][ci-url]
-[![Docs][docs-img]][docs-url]
+[![server pulls][docker-server-pulls-img]][docker-server-image-url]
+[![ui pulls][docker-ui-pulls-img]][docker-ui-image-url]
 [![CVAT Online][online-img]][online-url]
 [![CVAT Enterprise][enterprise-img]][enterprise-url]
 [![Status][status-img]][status-url]
+[![Discord][discord-img]][discord-url]
+[![Docs][docs-img]][docs-url]
 
 [Website](https://www.cvat.ai/) ·
 [Docs](https://docs.cvat.ai/docs/) ·
@@ -38,7 +41,8 @@ Why teams choose CVAT Community:
 - **AI-powered annotation:** Connect your own ML models for detection, segmentation, and tracking to speed up labeling.
 - **Team collaboration:** Multi-user and multi-organization support with roles, task assignments,
   and review workflows.
-- **MIT licensed:** Free to use in any project, including commercial, with no restrictions.
+- **MIT-licensed core:** Use, modify, and distribute CVAT Community under the permissive MIT License. Some serverless
+assets and dependencies may have separate licenses.
 - **Production-grade:** The foundation of all CVAT commercial products — battle-tested at scale.
 - **True open-source:** Transparent development, active community, on GitHub since 2018.
 
@@ -51,10 +55,10 @@ For a fully managed setup, annotation services, or enterprise features, see
 
 ## Getting Started
 
-> 💡 **Tip:** Want to explore CVAT before deploying anything?
+> 💡 Want to explore CVAT before deploying anything?
 > **[Try CVAT Online (Free plan)](https://app.cvat.ai)** directly in your browser.
-> Includes SAM 3 segmentation, quality control UI, and built-in analytics
-> so you can evaluate the full platform before committing to a self-hosted setup.
+> Feature availability and usage limits vary by plan; see
+> [CVAT Online pricing](https://www.cvat.ai/pricing/cvat-online) for details.
 
 ### Installation
 
@@ -63,6 +67,9 @@ For a fully managed setup, annotation services, or enterprise features, see
 - [Docker Engine](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 - [Git](https://git-scm.com/)
+
+> 💡 CVAT is primarily tested with Chromium-based browsers (Google Chrome, Microsoft Edge).
+> Firefox may work with some caveats; Safari/WebKit is not supported.
 
 **1. Start the default stack**
 
@@ -123,8 +130,11 @@ Advanced capabilities such as advanced project analytics, quality control UI, bu
 
 CVAT is designed for automation. Beyond the Web UI, you can integrate it into your pipelines using:
 
-- [Python SDK & CLI](https://docs.cvat.ai/docs/api_sdk/sdk/): Automate task creation, data upload, and dataset exports.
-- [REST API](https://docs.cvat.ai/docs/api_sdk/api/): Full programmatic control over every platform feature.
+- [Python SDK](https://docs.cvat.ai/docs/api_sdk/sdk/): install with `pip install cvat-sdk` and automate task creation,
+uploads, and exports from Python.
+- [Command line tool](https://docs.cvat.ai/docs/api_sdk/cli/): install with `pip install cvat-cli`
+and script common CVAT workflows from the terminal.
+- [REST API](https://docs.cvat.ai/docs/api_sdk/api/): full programmatic control over CVAT.
 
 ## Data and Formats
 
@@ -160,27 +170,26 @@ docker compose -f docker-compose.yml -f components/serverless/docker-compose.ser
 See the [Automatic Annotation Guide](https://docs.cvat.ai/docs/annotation/auto-annotation/automatic-annotation/)
 for details on deploying models and running auto-annotation jobs.
 
-## Editions Comparison
+## Which CVAT edition should I choose?
 
-| Feature | CVAT Community | CVAT Online / Enterprise |
-| --- | --- | --- |
-| Basic Annotation Tools | ✅ | ✅ |
-| Cloud Storage Connectors | ✅ | ✅ |
-| Auto-annotation (Nuclio) | ✅ (Self-managed) | ✅ (Pre-configured) |
-| AI Agents | ❌ | ✅ |
-| SAM 2 Video Tracking | ❌ | ✅ |
-| SAM 3 Segmentation (Text prompts) | ❌ | ✅ |
-| Advanced Analytics | ⚠️ Basic (Grafana) | Custom Dashboards |
-| Quality Control | ⚠️ (Manual QC, Consensus, GT Jobs & Honeypots via API) | ✅ |
-| SSO (LDAP/AD/SAML) | ❌ | ✅ |
-| Technical Support | Community-based | Dedicated / SLA |
+- **CVAT Online**: the fastest way to try CVAT and start labeling without deployment. Use it to evaluate CVAT in
+the browser, explore managed features, and move to cost-efficient paid plans when you need more capacity or team
+workflows.
+- **CVAT Community**: the MIT-licensed self-hosted edition for teams that want to run CVAT themselves, customize the
+stack, and control their infrastructure.
+- **CVAT Enterprise**: for organizations that need CVAT in their own cloud or internal environment, enterprise support,
+security controls such as SSO, paid platform features, and SLAs.
+- **Labeling Services**: for teams that want to outsource annotation work to CVAT.ai’s experienced labeling team instead
+of building an internal labeling operation. Customers get trial access to CVAT Online during the project.
 
-For a full feature breakdown, visit [CVAT Pricing](https://www.cvat.ai/pricing/enterprise).
+For detailed plan limits and feature availability, see [CVAT Online pricing](https://www.cvat.ai/pricing/cvat-online),
+ [CVAT Enterprise](https://www.cvat.ai/enterprise), and [Labeling Services](https://www.cvat.ai/annotation-services).
 
 ## Support
 
-- **Community support:** via [GitHub Issues](https://github.com/cvat-ai/cvat/issues) and
-  [Discord](https://discord.gg/cvat).
+- **Usage questions:** ask the community on [Discord](https://discord.com/invite/fNR3eXfk6C) or
+Stack Overflow with the `cvat` tag.
+- **Bugs and feature requests:** use [GitHub Issues](https://github.com/cvat-ai/cvat/issues).
 - **FAQ:** [Installation, upgrades, troubleshooting](https://docs.cvat.ai/docs/faq/).
 
 For dedicated support, SLAs, or advanced deployments, consider [CVAT Enterprise](https://cvat.ai/enterprise).
@@ -245,3 +254,12 @@ For the latest product releases, feature walkthroughs, and all things CVAT see:
 
 [enterprise-img]: https://img.shields.io/badge/CVAT%20Enterprise-cvat.ai-orange?style=flat-square
 [enterprise-url]: https://www.cvat.ai/enterprise
+
+[docker-server-pulls-img]: https://img.shields.io/docker/pulls/cvat/server.svg?style=flat-square&label=server%20pulls
+[docker-server-image-url]: https://hub.docker.com/r/cvat/server
+
+[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/cvat/ui.svg?style=flat-square&label=UI%20pulls
+[docker-ui-image-url]: https://hub.docker.com/r/cvat/ui
+
+[discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
+[discord-url]: https://discord.gg/fNR3eXfk6C
