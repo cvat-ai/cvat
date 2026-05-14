@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Icon from '@ant-design/icons';
-import { AudioCreateRegionIcon } from 'icons';
+import { AudioExtendRegionIcon } from 'icons';
 import Popover from 'antd/lib/popover';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -17,29 +17,34 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { useSelector } from 'react-redux';
 
 export interface Props {
-    activeControl: ActiveControl;
-    createRegionShortkey: string;
+    extendRegionShortkey: string;
     labels: Label[];
     activeLabelId: number | null;
-    updateActiveControl(activeControl: ActiveControl): void;
+    recording: boolean;
+    onExtendRegion(labelId: number): void;
     onSetActiveLabel(labelId: number | null): void;
+    updateActiveControl(activeControl: ActiveControl): void;
 }
 
 const componentShortcuts = {
-    CREATE_AUDIO_REGION: {
-        name: 'Create audio interval',
-        description: 'Enable audio interval creation mode — drag on waveform to create an interval',
-        sequences: ['n'],
+    EXTEND_AUDIO_REGION_FROM_LAST: {
+        name: 'Extend interval from last region',
+        description: (
+            'Create a new audio interval that starts at the end of the most recently ' +
+            'added region (or at the audio start if none exists) and ends at the ' +
+            'current playback position.'
+        ),
+        sequences: ['shift+e'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
 };
 
 registerComponentShortcuts(componentShortcuts);
 
-function CreateRegionControl(props: Props): JSX.Element {
+function ExtendRegionControl(props: Props): JSX.Element {
     const {
-        activeControl, createRegionShortkey, labels, activeLabelId,
-        updateActiveControl, onSetActiveLabel,
+        extendRegionShortkey, labels, activeLabelId, recording,
+        onExtendRegion, onSetActiveLabel, updateActiveControl,
     } = props;
     const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
     const [popoverOpen, setPopoverOpen] = useState(false);
@@ -47,37 +52,39 @@ function CreateRegionControl(props: Props): JSX.Element {
         activeLabelId ?? (labels.length ? labels[0].id ?? null : null),
     );
 
-    const isActive = activeControl === ActiveControl.AUDIO_REGION_CREATE;
     const noLabels = labels.length === 0;
 
-    const startCreation = (): void => {
-        if (noLabels) return;
-        if (selectedLabelId !== null) {
-            onSetActiveLabel(selectedLabelId);
-        }
-        updateActiveControl(ActiveControl.AUDIO_REGION_CREATE);
+    const performExtend = (): void => {
+        if (noLabels || selectedLabelId === null) return;
+        onSetActiveLabel(selectedLabelId);
+        onExtendRegion(selectedLabelId);
         setPopoverOpen(false);
     };
 
     const handler = (): void => {
         if (noLabels) return;
+        // Pressing Extend while recording finishes the recording (mirroring
+        // the Record button's toggle-off) without adding an extend region.
+        if (recording) {
+            updateActiveControl(ActiveControl.CURSOR);
+            setPopoverOpen(false);
+            return;
+        }
         if (popoverOpen) {
             setPopoverOpen(false);
-            if (isActive) {
-                updateActiveControl(ActiveControl.CURSOR);
-            }
         } else {
             setPopoverOpen(true);
         }
     };
 
-    // Hotkey mirrors image-mode "N": skip the label popup and start
-    // creation immediately with the last selected label. Falls back to
-    // the popup only when no label is available to pre-select.
+    // Hotkey skips the popover and uses the last-selected label, mirroring
+    // the create/record-interval shortcuts. Falls back to the popup only
+    // when there is no label to pre-select.
     const hotkeyHandler = (): void => {
         if (noLabels) return;
-        if (isActive) {
+        if (recording) {
             updateActiveControl(ActiveControl.CURSOR);
+            setPopoverOpen(false);
             return;
         }
         const labelId = selectedLabelId ?? activeLabelId ?? labels[0]?.id ?? null;
@@ -87,22 +94,22 @@ function CreateRegionControl(props: Props): JSX.Element {
         }
         onSetActiveLabel(labelId);
         setSelectedLabelId(labelId);
-        updateActiveControl(ActiveControl.AUDIO_REGION_CREATE);
+        onExtendRegion(labelId);
         setPopoverOpen(false);
     };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        CREATE_AUDIO_REGION: (event?: KeyboardEvent) => {
+        EXTEND_AUDIO_REGION_FROM_LAST: (event?: KeyboardEvent) => {
             if (event) event.preventDefault();
             hotkeyHandler();
         },
     };
 
     const popoverContent = (
-        <div className='cvat-audio-create-region-popover-content'>
+        <div className='cvat-audio-extend-region-popover-content'>
             <Row justify='start'>
                 <Col>
-                    <Text className='cvat-text-color' strong>Create audio interval</Text>
+                    <Text className='cvat-text-color' strong>Extend audio interval</Text>
                 </Col>
             </Row>
             <Row justify='start'>
@@ -123,8 +130,8 @@ function CreateRegionControl(props: Props): JSX.Element {
             </Row>
             <Row justify='start' style={{ marginTop: 8 }}>
                 <Col>
-                    <Button type='primary' onClick={startCreation} disabled={!selectedLabelId}>
-                        Create
+                    <Button type='primary' onClick={performExtend} disabled={!selectedLabelId}>
+                        Extend
                     </Button>
                 </Col>
             </Row>
@@ -138,10 +145,10 @@ function CreateRegionControl(props: Props): JSX.Element {
                 handlers={handlers}
             />
             <Popover
-                overlayClassName='cvat-audio-create-region-popover'
+                overlayClassName='cvat-audio-extend-region-popover'
                 trigger='click'
                 placement='right'
-                open={popoverOpen && !noLabels}
+                open={popoverOpen && !noLabels && !recording}
                 onOpenChange={(visible) => {
                     if (!visible) setPopoverOpen(false);
                 }}
@@ -150,18 +157,17 @@ function CreateRegionControl(props: Props): JSX.Element {
                 <CVATTooltip
                     title={
                         noLabels ?
-                            'Add a label to the task to create intervals' :
-                            `Create interval ${createRegionShortkey}`
+                            'Add a label to the task to extend intervals' :
+                            `Extend interval ${extendRegionShortkey}`
                     }
                     placement='right'
                 >
                     <Icon
-                        component={AudioCreateRegionIcon}
+                        component={AudioExtendRegionIcon}
                         className={
-                            (isActive ?
-                                'cvat-active-canvas-control cvat-audio-create-region-control' :
-                                'cvat-audio-create-region-control') +
-                            (noLabels ? ' cvat-audio-create-region-control--disabled' : '')
+                            `cvat-audio-extend-region-control${
+                                noLabels ? ' cvat-audio-extend-region-control--disabled' : ''
+                            }`
                         }
                         onClick={handler}
                     />
@@ -171,4 +177,4 @@ function CreateRegionControl(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(CreateRegionControl);
+export default React.memo(ExtendRegionControl);

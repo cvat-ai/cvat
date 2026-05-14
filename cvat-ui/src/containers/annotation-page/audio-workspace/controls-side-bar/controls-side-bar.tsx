@@ -1,10 +1,10 @@
 import { connect } from 'react-redux';
-import { Dispatch } from 'redux';
 
 import ControlsSideBarComponent from 'components/annotation-page/audio-workspace/controls-side-bar/controls-side-bar';
 import { computeMaxZoom } from 'components/annotation-page/audio-workspace/utils/zoom-bounds';
 import { ActiveControl, CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
+import { ThunkDispatch } from 'utils/redux';
 import {
     updateActiveControl,
     setAudioZoom,
@@ -12,6 +12,7 @@ import {
     setAudioVolume,
     setAudioLoop,
     setAudioActiveLabel,
+    extendAudioRegionFromLastAsync,
 } from 'actions/annotation-actions';
 
 interface StateToProps {
@@ -33,6 +34,7 @@ interface DispatchToProps {
     onVolumeChange(volume: number): void;
     onLoopChange(loop: boolean): void;
     onSetActiveLabel(labelId: number | null): void;
+    onExtendRegion(labelId: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -59,7 +61,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: Dispatch): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
         updateActiveControl(activeControl: ActiveControl): void {
             dispatch(updateActiveControl(activeControl));
@@ -78,6 +80,9 @@ function mapDispatchToProps(dispatch: Dispatch): DispatchToProps {
         },
         onSetActiveLabel(labelId: number | null): void {
             dispatch(setAudioActiveLabel(labelId));
+        },
+        onExtendRegion(labelId: number): void {
+            dispatch(extendAudioRegionFromLastAsync(labelId));
         },
     };
 }

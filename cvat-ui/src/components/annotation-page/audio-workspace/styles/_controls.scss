@@ -1,3 +1,13 @@
+.cvat-label-color-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    border: 1px solid rgba(0, 0, 0, 10%);
+}
+
 .cvat-audio-slider-popover-overlay {
     .cvat-audio-slider-popover {
         display: flex;
@@ -41,7 +51,8 @@
     }
 
     .cvat-audio-create-region-control--disabled,
-    .cvat-audio-record-region-control--disabled {
+    .cvat-audio-record-region-control--disabled,
+    .cvat-audio-extend-region-control--disabled {
         color: #d9d9d9;
         cursor: not-allowed;
 

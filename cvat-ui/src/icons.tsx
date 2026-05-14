@@ -83,6 +83,7 @@ import SVGAudioLoopIcon from './assets/audio-loop-icon.svg';
 import SVGAudioCreateRegionIcon from './assets/audio-create-region-icon.svg';
 import SVGAudioEditRegionIcon from './assets/audio-edit-region-icon.svg';
 import SVGAudioRecordRegionIcon from './assets/audio-record-region-icon.svg';
+import SVGAudioExtendRegionIcon from './assets/audio-extend-region-icon.svg';
 import SVGAudioSpeedIcon from './assets/audio-speed-icon.svg';
 
 export const CVATIcon = React.memo((): JSX.Element => <SVGCVATIcon />);
@@ -163,4 +164,5 @@ export const AudioLoopIcon = React.memo((): JSX.Element => <SVGAudioLoopIcon />)
 export const AudioCreateRegionIcon = React.memo((): JSX.Element => <SVGAudioCreateRegionIcon />);
 export const AudioEditRegionIcon = React.memo((): JSX.Element => <SVGAudioEditRegionIcon />);
 export const AudioRecordRegionIcon = React.memo((): JSX.Element => <SVGAudioRecordRegionIcon />);
+export const AudioExtendRegionIcon = React.memo((): JSX.Element => <SVGAudioExtendRegionIcon />);
 export const AudioSpeedIcon = React.memo((): JSX.Element => <SVGAudioSpeedIcon />);

@@ -534,6 +534,44 @@ export function copyAudioRegionAsync(regionId: string): ThunkAction {
     };
 }
 
+export function extendAudioRegionFromLastAsync(labelId: number | null): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { audioPlayer: { regions, currentTime, duration } } = getState().annotation;
+        const { labels } = getState().annotation.job;
+
+        const lastRegion = regions.length > 0 ? regions[regions.length - 1] : null;
+        const start = lastRegion ? lastRegion.end : 0;
+        const end = Math.min(currentTime, duration || currentTime);
+        // Need a non-degenerate forward interval; otherwise silently skip.
+        if (end - start <= 0.001) return;
+
+        const matchingLabel = labelId !== null ? labels.find((l) => l.id === labelId) : null;
+        const defaultAttrs: Record<number, string> = {};
+        if (matchingLabel) {
+            matchingLabel.attributes.forEach((attr) => {
+                defaultAttrs[attr.id!] = attr.defaultValue;
+            });
+        }
+
+        const maxZOrder = regions.length > 0 ? Math.max(...regions.map((r) => r.zOrder)) : 0;
+        const rand = Math.random().toString(36).slice(2);
+        const newId = `extend-${Date.now()}-${rand}`;
+        const newRegion: AudioRegion = {
+            id: newId,
+            start,
+            end,
+            labelId,
+            attributes: defaultAttrs,
+            source: 'manual',
+            color: pickInstanceColor(regions),
+            zOrder: maxZOrder + 1,
+        };
+
+        dispatch(setAudioRegions([...regions, newRegion]));
+        dispatch(setAudioActiveRegion(newId));
+    };
+}
+
 export function saveLogsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch) => {
         try {
@@ -1455,7 +1493,8 @@ export function saveAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { workspace } = getState().annotation;
         if (workspace === Workspace.AUDIO) {
-            return dispatch(saveAudioAnnotationsAsync());
+            await dispatch(saveAudioAnnotationsAsync());
+            return;
         }
 
         const { jobInstance } = receiveAnnotationsParameters();

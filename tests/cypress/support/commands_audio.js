@@ -78,6 +78,20 @@ Cypress.Commands.add('audioCreateRegionViaHotkey', (xStart, xEnd) => {
     cy.audioDrawRegion(xStart, xEnd);
 });
 
+Cypress.Commands.add('audioExtendViaButton', (labelName) => {
+    cy.get('.cvat-audio-extend-region-control').click();
+    cy.get('.cvat-audio-extend-region-popover-content', { timeout: 5000 }).should('be.visible');
+    if (labelName) {
+        cy.get('.cvat-audio-extend-region-popover-content .ant-select').click();
+        cy.get('.ant-select-dropdown:visible').contains('.ant-select-item-option', labelName).click();
+    }
+    cy.get('.cvat-audio-extend-region-popover-content').contains('button', 'Extend').click();
+});
+
+Cypress.Commands.add('audioExtendViaHotkey', () => {
+    cy.get('body').type('{shift}E');
+});
+
 Cypress.Commands.add('audioOpenSlider', (controlClass) => {
     cy.get(`.${controlClass}`).click();
     cy.get('.cvat-audio-slider-popover-overlay:visible', { timeout: 5000 }).should('exist');
