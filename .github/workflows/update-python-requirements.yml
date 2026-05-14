@@ -12,9 +12,9 @@ permissions:
 
 jobs:
   update:
-    # TODO: Restore after the experiment. Manual branch updates are performed
-    # by maintainers, so this condition skips test runs after `gh pr update-branch`.
-    # if: github.actor == 'dependabot[bot]'
+    # Dependabot PRs can be synchronized by maintainers, so github.actor is not
+    # always dependabot[bot]. Limit this write-enabled job to Dependabot branches.
+    if: startsWith(github.event.pull_request.head.ref, 'dependabot/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
