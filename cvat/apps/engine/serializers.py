@@ -498,9 +498,16 @@ class LabelSerializer(SublabelSerializer):
 
         cls.check_attribute_names_unique(attributes)
 
-        if validated_data.get('id') is not None:
+        label_exists = validated_data.get('id') is not None
+        if label_exists:
+            label_filter = dict(parent_info)
+            if parent_label is not None:
+                # Enforce nested update scope: a sublabel ID must belong to the
+                # parent skeleton label currently being patched.
+                label_filter['parent'] = parent_label
+
             try:
-                db_label = models.Label.objects.get(id=validated_data['id'], **parent_info)
+                db_label = models.Label.objects.get(id=validated_data['id'], **label_filter)
             except models.Label.DoesNotExist as exc:
                 raise exceptions.NotFound(
                     detail='Not found label with id #{} to change'.format(validated_data['id'])
@@ -566,6 +573,9 @@ class LabelSerializer(SublabelSerializer):
             db_label.save()
         except models.InvalidLabel as exc:
             raise exceptions.ValidationError(str(exc)) from exc
+
+        if label_exists:
+            cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
 
         for attr in attributes:
             attr_id = attr.get('id', None)
