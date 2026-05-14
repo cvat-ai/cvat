@@ -196,15 +196,11 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @staticmethod
     def _is_export_request(rq_job: CustomRQJob) -> bool:
-        return (
-            rq_job.parsed_id.action == RequestAction.EXPORT
-            and rq_job.parsed_id.subresource
-            in {
-                RequestSubresource.ANNOTATIONS,
-                RequestSubresource.DATASET,
-                RequestSubresource.BACKUP,
-            }
-        )
+        return rq_job.parsed_id.action == RequestAction.EXPORT and rq_job.parsed_id.subresource in {
+            RequestSubresource.ANNOTATIONS,
+            RequestSubresource.DATASET,
+            RequestSubresource.BACKUP,
+        }
 
     @classmethod
     def _is_started_process_cancellable(cls, rq_job: CustomRQJob) -> bool:
