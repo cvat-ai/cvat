@@ -7,9 +7,30 @@ import os
 
 from infra.config import RuntimeConfig, RuntimeMode
 
-from .docker import project_containers_running, used_host_ports
+from .docker import project_containers_running, project_service_port_map, used_host_ports
 
 logger = logging.getLogger(__name__)
+
+
+def _running_project_port_config(project_name: str) -> dict | None:
+    service_ports = project_service_port_map(project_name)
+    expected_ports = {
+        "http_port": ("traefik", 8080),
+        "logs_port": ("traefik", 8090),
+        "db_port": ("cvat_db", 5432),
+        "redis_inmem_port": ("cvat_redis_inmem", 6379),
+        "redis_ondisk_port": ("cvat_redis_ondisk", 6666),
+        "minio_port": ("minio", 9000),
+        "minio_console_port": ("minio", 9001),
+    }
+
+    port_config = {}
+    for name, (service_name, container_port) in expected_ports.items():
+        host_port = service_ports.get(service_name, {}).get(container_port)
+        if host_port is None:
+            return None
+        port_config[name] = int(host_port)
+    return port_config
 
 
 def configure_runtime_env(
@@ -57,10 +78,14 @@ def configure_local_runtime_env(config, *, persist_state: bool) -> None:
         return
 
     local_runtime = RuntimeConfig.get_local_runtime_config(project_name)
+    runtime_running = project_containers_running(local_runtime.project_name)
     port_config = local_runtime.resolve_port_config(
         default_project_name=RuntimeConfig.get_default_run_prefix(),
         used_ports=used_host_ports(exclude_project_name=local_runtime.project_name),
-        runtime_running=project_containers_running(local_runtime.project_name),
+        runtime_running=runtime_running,
+        running_port_config=(
+            _running_project_port_config(local_runtime.project_name) if runtime_running else None
+        ),
     )
     configure_runtime_env(
         project_name=project_name,
