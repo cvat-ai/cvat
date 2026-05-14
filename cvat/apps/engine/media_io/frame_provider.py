@@ -121,6 +121,22 @@ class DataWithMeta(Generic[_T]):
     mime: str
 
 
+class PreviewNotAvailable(Exception):
+    """
+    Raised by get_preview() when there is no media-derived preview for an entity
+    (e.g. point cloud tasks) and the caller has opted in via ``allow_empty``.
+    """
+
+
+_MEDIA_TYPES_WITHOUT_PREVIEW: frozenset[models.MediaType] = frozenset({
+    models.MediaType.POINT_CLOUD,
+})
+
+
+def _has_media_derived_preview(media_type: models.MediaType) -> bool:
+    return media_type not in _MEDIA_TYPES_WITHOUT_PREVIEW
+
+
 class IFrameProvider(metaclass=ABCMeta):
     VIDEO_FRAME_EXT = ".PNG"
     VIDEO_FRAME_MIME = "image/png"
@@ -163,7 +179,7 @@ class IFrameProvider(metaclass=ABCMeta):
     def get_chunk_number(self, frame_number: int) -> int: ...
 
     @abstractmethod
-    def get_preview(self) -> DataWithMeta[BytesIO]: ...
+    def get_preview(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]: ...
 
     @abstractmethod
     def get_chunk(
@@ -240,8 +256,8 @@ class TaskFrameProvider(IFrameProvider):
         """
         return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
-    def get_preview(self) -> DataWithMeta[BytesIO]:
-        return self._get_segment_frame_provider(0).get_preview()
+    def get_preview(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
+        return self._get_segment_frame_provider(0).get_preview(allow_empty=allow_empty)
 
     def get_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
@@ -554,7 +570,10 @@ class SegmentFrameProvider(IFrameProvider):
 
         return chunk_number
 
-    def get_preview(self) -> DataWithMeta[BytesIO]:
+    def get_preview(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
+        if allow_empty and not _has_media_derived_preview(self._db_segment.task.media_type):
+            raise PreviewNotAvailable
+
         cache = MediaCache()
         preview, mime = cache.get_or_set_segment_preview(self._db_segment)
         return DataWithMeta[BytesIO](preview, mime=mime)

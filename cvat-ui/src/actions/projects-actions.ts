@@ -11,7 +11,7 @@ import {
 } from 'reducers';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
-import { getCore, Project } from 'cvat-core-wrapper';
+import { getCore, Project, PreviewResult } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { ResourceUpdateTypes } from 'utils/enums';
 
@@ -60,8 +60,8 @@ const projectActions = {
     getProjectPreview: (projectID: number) => (
         createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW, { projectID })
     ),
-    getProjectPreviewSuccess: (projectID: number, preview: string) => (
-        createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_SUCCESS, { projectID, preview })
+    getProjectPreviewSuccess: (projectID: number, result: PreviewResult) => (
+        createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_SUCCESS, { projectID, result })
     ),
     getProjectPreviewFailed: (projectID: number, error: any) => (
         createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_FAILED, { projectID, error })

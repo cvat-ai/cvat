@@ -7,7 +7,9 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
     ActiveInference, ModelsQuery,
 } from 'reducers';
-import { getCore, MLModel, RQStatus } from 'cvat-core-wrapper';
+import {
+    getCore, MLModel, RQStatus, PreviewResult,
+} from 'cvat-core-wrapper';
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
@@ -88,8 +90,8 @@ export const modelsActions = {
     getModelPreview: (modelID: string | number) => (
         createAction(ModelsActionTypes.GET_MODEL_PREVIEW, { modelID })
     ),
-    getModelPreviewSuccess: (modelID: string | number, preview: string) => (
-        createAction(ModelsActionTypes.GET_MODEL_PREVIEW_SUCCESS, { modelID, preview })
+    getModelPreviewSuccess: (modelID: string | number, result: PreviewResult) => (
+        createAction(ModelsActionTypes.GET_MODEL_PREVIEW_SUCCESS, { modelID, result })
     ),
     getModelPreviewFailed: (modelID: string | number, error: any) => (
         createAction(ModelsActionTypes.GET_MODEL_PREVIEW_FAILED, { modelID, error })

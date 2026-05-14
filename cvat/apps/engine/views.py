@@ -62,6 +62,7 @@ from cvat.apps.engine.media_io.frame_provider import (
     DataWithMeta,
     IFrameProvider,
     JobFrameProvider,
+    PreviewNotAvailable,
     TaskFrameProvider,
 )
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
@@ -482,10 +483,21 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Get a preview image for a project',
+        parameters=[
+            OpenApiParameter('allow_empty', type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY, required=False,
+                description='Opt in to receiving a 204 No Content response when no '
+                'media-derived preview exists. When false (default), the server returns '
+                'a default placeholder image with status 200.'),
+        ],
         responses={
             '200': OpenApiResponse(description='Project image preview'),
+            '204': OpenApiResponse(
+                description='No media-derived preview is available. The client should '
+                'render a placeholder image. Only returned when the request opts in '
+                'via allow_empty=true.'
+            ),
             '404': OpenApiResponse(description='Project image preview not found'),
-
         })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request: ExtendedRequest, pk: int):
@@ -499,6 +511,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_task=first_task,
             data_type='preview',
             data_quality='compressed',
+            allow_empty_preview=to_bool(request.query_params.get('allow_empty', False)),
         )
 
         return data_getter()
@@ -524,7 +537,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
 class _DataGetter(metaclass=ABCMeta):
     def __init__(
-        self, data_type: str, data_num: str | int | None, data_quality: str
+        self,
+        data_type: str,
+        data_num: str | int | None,
+        data_quality: str,
+        *,
+        allow_empty_preview: bool = False,
     ) -> None:
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
         possible_quality_values = ('compressed', 'original')
@@ -541,6 +559,7 @@ class _DataGetter(metaclass=ABCMeta):
         self.number = int(data_num) if data_num is not None else None
         self.quality = FrameQuality.COMPRESSED \
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
+        self.allow_empty_preview = allow_empty_preview
 
     @abstractmethod
     def _get_frame_provider(self) -> IFrameProvider: ...
@@ -559,7 +578,10 @@ class _DataGetter(metaclass=ABCMeta):
             data = frame_provider.get_frame(self.number, quality=self.quality)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == 'preview':
-            data = frame_provider.get_preview()
+            try:
+                data = frame_provider.get_preview(allow_empty=self.allow_empty_preview)
+            except PreviewNotAvailable:
+                return HttpResponse(status=status.HTTP_204_NO_CONTENT)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == 'context_image':
             data = frame_provider.get_frame_context_images_chunk(self.number)
@@ -619,8 +641,14 @@ class _TaskDataGetter(_DataGetter):
         data_type: str,
         data_quality: str,
         data_num: str | int | None = None,
+        allow_empty_preview: bool = False,
     ) -> None:
-        super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
+        super().__init__(
+            data_type=data_type,
+            data_num=data_num,
+            data_quality=data_quality,
+            allow_empty_preview=allow_empty_preview,
+        )
         self._db_task = db_task
 
         if db_task.media_type == models.MediaType.AUDIO:
@@ -644,6 +672,7 @@ class _JobDataGetter(_DataGetter):
         data_quality: str,
         data_num: str | int | None = None,
         data_index: str | int | None = None,
+        allow_empty_preview: bool = False,
     ) -> None:
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
         possible_quality_values = ('compressed', 'original')
@@ -669,6 +698,7 @@ class _JobDataGetter(_DataGetter):
         self.quality = FrameQuality.COMPRESSED \
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
 
+        self.allow_empty_preview = allow_empty_preview
         self._db_job = db_job
 
         if db_job.segment.task.media_type == models.MediaType.AUDIO:
@@ -1557,8 +1587,20 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return get_410_response_for_export_api("/api/tasks/id/dataset/export?save_images=True")
 
     @extend_schema(summary='Get a preview image for a task',
+        parameters=[
+            OpenApiParameter('allow_empty', type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY, required=False,
+                description='Opt in to receiving a 204 No Content response when no '
+                'media-derived preview exists. When false (default), the server returns '
+                'a default placeholder image with status 200.'),
+        ],
         responses={
             '200': OpenApiResponse(description='Task image preview'),
+            '204': OpenApiResponse(
+                description='No media-derived preview is available. The client should '
+                'render a placeholder image. Only returned when the request opts in '
+                'via allow_empty=true.'
+            ),
             '404': OpenApiResponse(description='Task image preview not found'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
@@ -1572,6 +1614,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_task=self._object,
             data_type='preview',
             data_quality='compressed',
+            allow_empty_preview=to_bool(request.query_params.get('allow_empty', False)),
         )
         return data_getter()
 
@@ -2146,8 +2189,20 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         return Response(serializer.data)
 
     @extend_schema(summary='Get a preview image for a job',
+        parameters=[
+            OpenApiParameter('allow_empty', type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY, required=False,
+                description='Opt in to receiving a 204 No Content response when no '
+                'media-derived preview exists. When false (default), the server returns '
+                'a default placeholder image with status 200.'),
+        ],
         responses={
             '200': OpenApiResponse(description='Job image preview'),
+            '204': OpenApiResponse(
+                description='No media-derived preview is available. The client should '
+                'render a placeholder image. Only returned when the request opts in '
+                'via allow_empty=true.'
+            ),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request: ExtendedRequest, pk: int):
@@ -2157,6 +2212,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             db_job=self._object,
             data_type='preview',
             data_quality='compressed',
+            allow_empty_preview=to_bool(request.query_params.get('allow_empty', False)),
         )
         return data_getter()
 

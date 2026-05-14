@@ -24,7 +24,8 @@ import {
     findFrame,
     getContextImage,
     patchMeta,
-    decodePreview,
+    EMPTY_PREVIEW,
+    resolvePreviewResponse,
 } from './frames';
 import Issue from './issue';
 import {
@@ -274,15 +275,12 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.preview> {
             if (this.id === null || this.taskId === null) {
-                return Promise.resolve('');
+                return Promise.resolve(EMPTY_PREVIEW);
             }
 
-            return serverProxy.jobs.getPreview(this.id).then((preview) => {
-                if (!preview) {
-                    return Promise.resolve('');
-                }
-                return decodePreview(preview);
-            });
+            return serverProxy.jobs.getPreview(this.id).then(
+                (response) => resolvePreviewResponse(response, this.dimension),
+            );
         },
     });
 
@@ -964,15 +962,12 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.preview> {
             if (this.id === null) {
-                return Promise.resolve('');
+                return Promise.resolve(EMPTY_PREVIEW);
             }
 
-            return serverProxy.tasks.getPreview(this.id).then((preview) => {
-                if (!preview) {
-                    return Promise.resolve('');
-                }
-                return decodePreview(preview);
-            });
+            return serverProxy.tasks.getPreview(this.id).then(
+                (response) => resolvePreviewResponse(response, this.dimension),
+            );
         },
     });
 

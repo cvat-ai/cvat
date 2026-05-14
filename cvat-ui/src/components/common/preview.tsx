@@ -13,6 +13,10 @@ import { Job, Task, Project } from 'cvat-core-wrapper';
 import MLModel from 'cvat-core/src/ml-model';
 import { previewQueue, getRequestId } from 'utils/preview-queue';
 
+const PLACEHOLDER_ASSETS: Record<string, string> = {
+    point_cloud: '/assets/point_cloud_preview.png',
+};
+
 interface Props {
     job?: Job | undefined;
     task?: Task | undefined;
@@ -98,7 +102,10 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
         );
     }
 
-    if (preview.initialized && !preview.preview) {
+    const placeholderSrc = preview.placeholder ? PLACEHOLDER_ASSETS[preview.placeholder] : undefined;
+    const imgSrc = preview.preview || placeholderSrc;
+
+    if (preview.initialized && !imgSrc) {
         return (
             <div className={emptyPreviewClassName || ''} onClick={onClick} aria-hidden>
                 <PictureOutlined />
@@ -110,7 +117,7 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
         <div className={previewWrapperClassName || ''} aria-hidden>
             <img
                 className={previewClassName || ''}
-                src={preview.preview}
+                src={imgSrc}
                 onClick={onClick}
                 alt='Preview image'
                 aria-hidden

@@ -63,6 +63,7 @@ export default (state: JobsState = defaultState, action: AnyAction): JobsState =
                     ...previews,
                     [jobID]: {
                         preview: '',
+                        placeholder: null,
                         fetching: true,
                         initialized: false,
                     },
@@ -70,14 +71,15 @@ export default (state: JobsState = defaultState, action: AnyAction): JobsState =
             };
         }
         case JobsActionTypes.GET_JOB_PREVIEW_SUCCESS: {
-            const { jobID, preview } = action.payload;
+            const { jobID, result } = action.payload;
             const { previews } = state;
             return {
                 ...state,
                 previews: {
                     ...previews,
                     [jobID]: {
-                        preview,
+                        preview: result.preview,
+                        placeholder: result.placeholder,
                         fetching: false,
                         initialized: true,
                     },
@@ -93,6 +95,7 @@ export default (state: JobsState = defaultState, action: AnyAction): JobsState =
                     ...previews,
                     [jobID]: {
                         ...previews[jobID],
+                        placeholder: null,
                         fetching: false,
                         initialized: true,
                     },

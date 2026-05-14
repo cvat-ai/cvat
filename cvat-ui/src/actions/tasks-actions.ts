@@ -7,6 +7,7 @@ import { AnyAction } from 'redux';
 import { TasksQuery } from 'reducers';
 import {
     getCore, RQStatus, Storage, StorageLocation, Task, UpdateStatusData, Request, FramesMetaData,
+    PreviewResult,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
@@ -170,12 +171,12 @@ function getTaskPreview(taskID: number): AnyAction {
     return action;
 }
 
-function getTaskPreviewSuccess(taskID: number, preview: string): AnyAction {
+function getTaskPreviewSuccess(taskID: number, result: PreviewResult): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASK_PREVIEW_SUCCESS,
         payload: {
             taskID,
-            preview,
+            result,
         },
     };
 

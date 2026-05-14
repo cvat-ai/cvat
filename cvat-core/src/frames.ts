@@ -8,7 +8,7 @@ import {
     FrameDecoder, BlockType, DimensionType, ChunkQuality, decodeContextImages, RequestOutdatedError,
 } from 'cvat-data';
 import PluginRegistry from './plugins';
-import serverProxy from './server-proxy';
+import serverProxy, { PREVIEW_EMPTY, PreviewResponse } from './server-proxy';
 import { SerializedChapterMetaData, SerializedFramesMetaData } from './server-response-types';
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
@@ -867,6 +867,13 @@ export async function getContextImage(
     });
 }
 
+export interface PreviewResult {
+    preview: string;
+    placeholder: string | null;
+}
+
+export const EMPTY_PREVIEW: PreviewResult = { preview: '', placeholder: null };
+
 export function decodePreview(preview: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -878,6 +885,27 @@ export function decodePreview(preview: Blob): Promise<string> {
         };
         reader.readAsDataURL(preview);
     });
+}
+
+function placeholderKindFor(dimension: string | undefined): string | null {
+    if (dimension === '3d') {
+        return 'point_cloud';
+    }
+    return null;
+}
+
+export async function resolvePreviewResponse(
+    response: PreviewResponse,
+    dimension?: string,
+): Promise<PreviewResult> {
+    if (response === null) {
+        return EMPTY_PREVIEW;
+    }
+    if (response === PREVIEW_EMPTY) {
+        return { preview: '', placeholder: placeholderKindFor(dimension) };
+    }
+    const preview = await decodePreview(response);
+    return { preview, placeholder: null };
 }
 
 export async function getFrame(

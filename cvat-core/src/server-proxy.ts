@@ -1588,16 +1588,23 @@ async function updateUser(id: number, userData: Partial<SerializedUser>): Promis
     return response.data;
 }
 
+export const PREVIEW_EMPTY = Symbol('preview-empty');
+export type PreviewResponse = Blob | typeof PREVIEW_EMPTY | null;
+
 function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
-    return async function (id: number | string): Promise<Blob | null> {
+    return async function (id: number | string): Promise<PreviewResponse> {
         const { backendAPI } = config;
 
-        let response = null;
         try {
             const url = `${backendAPI}/${instance}/${id}/preview`;
-            response = await Axios.get(url, {
+            const response = await Axios.get(url, {
                 responseType: 'blob',
+                params: { allow_empty: true },
             });
+
+            if (response.status === 204) {
+                return PREVIEW_EMPTY;
+            }
 
             return response.data;
         } catch (errorData) {

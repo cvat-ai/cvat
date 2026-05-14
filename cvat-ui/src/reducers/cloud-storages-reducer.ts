@@ -320,6 +320,7 @@ export default (
                     ...previews,
                     [cloudStorageID]: {
                         preview: '',
+                        placeholder: null,
                         fetching: true,
                         initialized: false,
                     },
@@ -327,14 +328,15 @@ export default (
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS: {
-            const { cloudStorageID, preview } = action.payload;
+            const { cloudStorageID, result } = action.payload;
             const { previews } = state;
             return {
                 ...state,
                 previews: {
                     ...previews,
                     [cloudStorageID]: {
-                        preview,
+                        preview: result.preview,
+                        placeholder: result.placeholder,
                         fetching: false,
                         initialized: true,
                     },
@@ -350,6 +352,7 @@ export default (
                     ...previews,
                     [cloudStorageID]: {
                         ...previews[cloudStorageID],
+                        placeholder: null,
                         fetching: false,
                         initialized: true,
                     },

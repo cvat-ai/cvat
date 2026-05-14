@@ -50,6 +50,7 @@ interface Preview {
     fetching: boolean;
     initialized: boolean;
     preview: string;
+    placeholder: string | null;
 }
 
 export enum InstanceType {
