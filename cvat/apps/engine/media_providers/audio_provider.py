@@ -236,7 +236,11 @@ class TaskAudioProvider(IAudioProvider):
         except models.AudioChunkInfo.DoesNotExist:
             chunk_info = models.AudioChunkInfo(data=db_data, audio=db_data.audio, key=chunk_key)
             chunk_info_created = True
-            # TODO: padding = PaddingType.auto
+
+            # TODO: use padding = PaddingType.auto, when its performance is good enough.
+            # Currently, it can work quite a while for big files. PyAV encoding works ~3x slower
+            # than pure ffmpeg calls, which makes the situation even worse.
+            # For now, just use a constant padding big enough for most cases.
             padding = (0, 500)
         else:
             chunk_info_created = False
@@ -248,7 +252,6 @@ class TaskAudioProvider(IAudioProvider):
         chunk_data, padding = create_audio_chunk(db_data, reader, quality=quality, padding=padding)
 
         if chunk_info_created:
-            # TODO: handle possible existing value
             chunk_info.left_padding = padding[0]
             chunk_info.right_padding = padding[1]
             chunk_info.content_offset = padding[2]
