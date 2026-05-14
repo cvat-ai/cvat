@@ -317,6 +317,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         try:
             send_stop_job_command(queue.connection, rq_job.id, serializer=queue.serializer)
         except InvalidJobOperation as ex:
-            return HttpResponseBadRequest(str(ex))
+            slogger.glob.warning("Failed to stop RQ job %s: %s", rq_job.id, ex)
+            return HttpResponseBadRequest("The request cannot be cancelled")
 
         return Response(status=status.HTTP_200_OK)
