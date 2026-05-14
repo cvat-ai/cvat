@@ -16,8 +16,6 @@ class InstanceConfig:
     cvat_db_dir: Path  # Directory with DB/data restore artifacts.
     waiting_time: int  # Max service readiness wait in seconds.
     extra_dc_files: Any  # Optional extra docker-compose override files.
-    # Rebuild local compose images before starting services.
-    rebuild_images_before_start: bool = False
 
 
 class InfraPytestPlugin(ABC):

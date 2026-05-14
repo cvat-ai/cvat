@@ -54,7 +54,6 @@ def start_services(
     default_project_name: str,
     dc_files: list[Path],
     project_directory: Path,
-    rebuild_images: bool = False,
 ) -> None:
     running = running_containers()
     if project_name == default_project_name and any(
@@ -66,8 +65,7 @@ def start_services(
         )
 
     run_command(
-        docker_compose_command(project_name, dc_files, project_directory)
-        + ["up", "-d", *(["--build"] if rebuild_images else [])],
+        docker_compose_command(project_name, dc_files, project_directory) + ["up", "-d"],
         capture_output=False,
         logger=logger,
     )

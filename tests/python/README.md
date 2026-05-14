@@ -45,6 +45,14 @@ which are used by containers for the testing system.
   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
   to get more information about tests running.
 
+**Runtime lifecycle commands**
+
+- `pytest tests/python build` rebuilds the CVAT server and UI development images.
+- `pytest tests/python up` starts the managed test stack, restores test state, and exits.
+- `pytest tests/python down` stops the managed test stack and removes its volumes.
+- `pytest tests/python dumpdb` updates `tests/python/shared/assets/cvat_db/data.json`
+  from a running managed test stack without restoring state first.
+
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already

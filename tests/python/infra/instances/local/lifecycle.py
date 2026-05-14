@@ -24,9 +24,7 @@ from .stack import StackCompatibilityError, ensure_project_stack_compatible
 logger = logging.getLogger(__name__)
 
 
-def run_local_runtime_lifecycle(
-    instance, *, runtime_mode: RuntimeMode, dumpdb: bool, cleanup: bool
-) -> None:
+def run_local_runtime_lifecycle(instance, *, runtime_mode: RuntimeMode, cleanup: bool) -> None:
     local_runtime = RuntimeConfig.get_local_runtime_config(
         cvat_root_dir=instance.deps.cvat_root_dir
     )
@@ -34,7 +32,7 @@ def run_local_runtime_lifecycle(
     compose_files = build_local_dc_files(local_runtime, extra_dc_files=instance.deps.extra_dc_files)
     generated_compose_files = local_runtime.generated_compose_files
 
-    if dumpdb:
+    if runtime_mode == RuntimeMode.DUMPDB:
         dump_db(
             prefixed_container_name=local_runtime.prefixed_container_name,
             cvat_db_dir=instance.deps.cvat_db_dir,
@@ -46,21 +44,11 @@ def run_local_runtime_lifecycle(
         pytest.exit("All generated test files have been deleted", returncode=0)
 
     project_running = project_containers_running(project_name)
-    if runtime_mode == RuntimeMode.REUSE:
-        if not project_running:
-            raise pytest.UsageError(
-                f"--infra={RuntimeMode.REUSE} requires running services for project '{project_name}'"
-            )
-        try:
-            ensure_project_stack_compatible(local_runtime)
-        except StackCompatibilityError as exc:
-            raise pytest.UsageError(
-                f"--infra={RuntimeMode.REUSE} found an incompatible running stack for "
-                f"project '{project_name}': {exc}"
-            ) from exc
-        infra_health.wait_for_services(instance.deps.waiting_time)
-        infra_health.wait_for_auth_login_ready()
-        return
+    if runtime_mode == RuntimeMode.UP and project_running:
+        raise pytest.UsageError(
+            f"Project '{project_name}' is already running. Use pytest tests/python, "
+            "pytest tests/python dumpdb, or pytest tests/python down."
+        )
 
     delete_compose_files(generated_compose_files)
     create_compose_files(
@@ -86,16 +74,7 @@ def run_local_runtime_lifecycle(
         stack_ok = False
         incompatibility_reason = str(exc)
 
-    if (
-        project_running
-        and not stack_ok
-        and runtime_mode
-        in {
-            RuntimeMode.AUTO,
-            RuntimeMode.UP,
-            RuntimeMode.RESTORE,
-        }
-    ):
+    if project_running and not stack_ok and runtime_mode == RuntimeMode.AUTO:
         logger.warning(
             "Project '%s' is running but incompatible with the requested test runtime "
             "(%s); recreating stack",
@@ -110,40 +89,25 @@ def run_local_runtime_lifecycle(
         project_running = False
 
     if runtime_mode == RuntimeMode.UP:
-        if not project_running or instance.deps.rebuild_images_before_start:
-            start_services(
-                project_name=project_name,
-                default_project_name=RuntimeConfig.get_default_run_prefix(),
-                dc_files=compose_files,
-                project_directory=instance.deps.cvat_root_dir,
-                rebuild_images=instance.deps.rebuild_images_before_start,
-            )
-            infra_health.wait_for_services(instance.deps.waiting_time)
-        restore_runtime_state_from_assets(instance, local_runtime)
-        pytest.exit("All necessary containers have been created and started.", returncode=0)
-
-    if runtime_mode == RuntimeMode.RESTORE:
-        if not project_running:
-            start_services(
-                project_name=project_name,
-                default_project_name=RuntimeConfig.get_default_run_prefix(),
-                dc_files=compose_files,
-                project_directory=instance.deps.cvat_root_dir,
-                rebuild_images=instance.deps.rebuild_images_before_start,
-            )
-        restore_runtime_state_from_assets(instance, local_runtime)
-        pytest.exit("CVAT test runtime has been restored from test assets.", returncode=0)
-
-    if runtime_mode == RuntimeMode.AUTO:
-        _set_auto_started(local_runtime, not project_running)
-
-    if not project_running or instance.deps.rebuild_images_before_start:
         start_services(
             project_name=project_name,
             default_project_name=RuntimeConfig.get_default_run_prefix(),
             dc_files=compose_files,
             project_directory=instance.deps.cvat_root_dir,
-            rebuild_images=instance.deps.rebuild_images_before_start,
+        )
+        infra_health.wait_for_services(instance.deps.waiting_time)
+        restore_runtime_state_from_assets(instance, local_runtime)
+        pytest.exit("All necessary containers have been created and started.", returncode=0)
+
+    if runtime_mode == RuntimeMode.AUTO:
+        _set_auto_started(local_runtime, not project_running)
+
+    if not project_running:
+        start_services(
+            project_name=project_name,
+            default_project_name=RuntimeConfig.get_default_run_prefix(),
+            dc_files=compose_files,
+            project_directory=instance.deps.cvat_root_dir,
         )
 
     restore_runtime_state_from_assets(instance, local_runtime)

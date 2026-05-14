@@ -54,7 +54,7 @@ def pytest_sessionstart(session) -> None:
     for warning in request.deprecation_warnings:
         warnings.warn(warning, DeprecationWarning, stacklevel=2)
 
-    if request.runtime_mode == RuntimeMode.REBUILD:
+    if request.runtime_mode == RuntimeMode.BUILD:
         cvat_root_dir = RuntimeConfig.get_cvat_root_dir()
         from infra.system_utils import run_command
 
@@ -90,7 +90,6 @@ def pytest_sessionstart(session) -> None:
         cvat_db_dir=RuntimeConfig.get_cvat_db_dir(),
         waiting_time=300,
         extra_dc_files=None,
-        rebuild_images_before_start=request.rebuild_images_before_start,
     )
     instance = InfraInstance.create(session, instance_config)
     setattr(config, "_cvat_infra_instance", instance)

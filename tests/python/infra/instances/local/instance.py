@@ -108,7 +108,6 @@ class LocalInstance(InfraInstance):
         run_local_runtime_lifecycle(
             self,
             runtime_mode=runtime_mode,
-            dumpdb=request.dumpdb,
             cleanup=request.cleanup,
         )
 

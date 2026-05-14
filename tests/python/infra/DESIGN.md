@@ -13,8 +13,8 @@ parallel execution use the same runtime concepts.
 
 `RuntimeMode`
 
-: Normalized lifecycle request: `auto`, `up`, `down`, `reuse`, `restore`, and
-  `rebuild`. The public CLI supports both `--infra=<mode>` and short positional
+: Normalized lifecycle request: `auto`, `up`, `down`, `build`, and `dumpdb`.
+  The public CLI supports both `--infra=<mode>` and short positional
   lifecycle commands.
 
 `RuntimeRequest`
@@ -51,8 +51,7 @@ parallel execution use the same runtime concepts.
 `InstanceConfig`
 
 : Constructor dependency wiring for an `InfraInstance`, such as repository root,
-  restore asset directory, readiness timeout, optional compose overrides, and
-  local rebuild preference.
+  restore asset directory, readiness timeout, and optional compose overrides.
 
 `InfraInstance`
 
@@ -83,7 +82,7 @@ hook points are kept to make the next kube/parallel PRs straightforward.
 
 : Kube-backed runtime state for one named runtime: namespace/release/profile
   identity, base URL or port-forward state, persisted compatibility metadata,
-  and any state needed to reuse or restore a kube runtime.
+  and any state needed to attach to a kube runtime.
 
 `KubeInstance` (TBD)
 
@@ -122,7 +121,7 @@ Single local run:
 3. `LocalPytestPlugin` configures local runtime environment values before test
    collection so import-time constants see the selected ports.
 4. `LocalInstance` writes the named runtime context, persists local runtime
-   state, starts/reuses/restores the Docker Compose stack, and exposes fixture
+   state, starts or attaches to a compatible Docker Compose stack, restores test state, and exposes fixture
    restore operations through `InfraInstance`.
 5. In auto mode, only a stack started by the current session is stopped during
    session cleanup.
@@ -131,8 +130,7 @@ Current kube run:
 
 1. The same `RuntimeRequest` and `RuntimeContext` are used.
 2. `kube_legacy` handles the existing kube startup and fixture restore behavior.
-3. `--infra=reuse` skips destructive kube reseeding and waits for existing
-   services. Local-only lifecycle modes remain rejected for kube.
+3. Local-only lifecycle modes remain rejected for kube.
 
 Future parallel run:
 
