@@ -57,7 +57,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
         cy.get(modalWindowClassName)
             .should('be.visible')
             .within(() => {
-                cy.contains('button', 'Update').click();
+                cy.contains('button', 'Replace annotations').click();
             });
     }
 

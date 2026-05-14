@@ -2565,6 +2565,15 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
+      - in: query
         name: location
         schema:
           type: string
@@ -5573,6 +5582,15 @@ paths:
           type: integer
         description: A unique integer value identifying this task.
         required: true
+      - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
       - in: query
         name: location
         schema:
