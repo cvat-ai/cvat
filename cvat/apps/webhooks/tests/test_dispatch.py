@@ -10,13 +10,13 @@ from rq import Retry
 from cvat.apps.webhooks.dispatch import add_to_queue
 from cvat.apps.webhooks.tasks import send_webhook
 
-from .test_signals import _make_webhook, _payload
+from .utils import make_webhook, payload
 
 
 class TestAddToQueue(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.webhook = _make_webhook()
+        cls.webhook = make_webhook()
 
     @override_settings(SEND_WEBHOOK_TASK_RETRIES=[1, 2, 3])
     @patch("cvat.apps.webhooks.dispatch.django_rq.get_queue")
@@ -24,13 +24,13 @@ class TestAddToQueue(TestCase):
         queue = MagicMock()
         get_queue.return_value = queue
 
-        add_to_queue(self.webhook, _payload())
+        add_to_queue(webhook=self.webhook, payload=payload())
 
         queue.enqueue_call.assert_called_once()
         kwargs = queue.enqueue_call.call_args.kwargs
 
         assert kwargs["func"] is send_webhook
-        assert kwargs["args"] == (self.webhook.id, _payload(), False)
+        assert kwargs["args"] == (self.webhook.id, payload(), False)
 
         retry: Retry = kwargs["retry"]
         assert isinstance(retry, Retry)
@@ -43,7 +43,7 @@ class TestAddToQueue(TestCase):
         queue = MagicMock()
         get_queue.return_value = queue
 
-        add_to_queue(self.webhook, _payload(), redelivery=True)
+        add_to_queue(webhook=self.webhook, payload=payload(), redelivery=True)
 
         kwargs = queue.enqueue_call.call_args.kwargs
-        assert kwargs["args"] == (self.webhook.id, _payload(), True)
+        assert kwargs["args"] == (self.webhook.id, payload(), True)

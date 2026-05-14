@@ -9,10 +9,11 @@ from django.conf import settings
 from rq import Retry
 
 from .models import Webhook
-from .tasks import send_webhook
 
 
 def add_to_queue(webhook: Webhook, payload: dict, redelivery: bool = False) -> None:
+    from .tasks import send_webhook
+
     queue = django_rq.get_queue(settings.CVAT_QUEUES.WEBHOOKS.value)
     retry_intervals = settings.SEND_WEBHOOK_TASK_RETRIES
     queue.enqueue_call(
