@@ -13,6 +13,7 @@ import { ArgumentError } from './exceptions';
 export class Attribute {
     public id?: number;
     public defaultValue: string;
+    public deleted: boolean;
     public inputType: AttrInputType;
     public mutable: boolean;
     public name: string;
@@ -22,6 +23,7 @@ export class Attribute {
         const data = {
             id: undefined,
             default_value: undefined,
+            deleted: false,
             input_type: undefined,
             mutable: undefined,
             name: undefined,
@@ -40,7 +42,7 @@ export class Attribute {
             }
         }
 
-        if (!Object.values(AttributeType).includes(data.input_type)) {
+        if (!data.deleted && !Object.values(AttributeType).includes(data.input_type)) {
             throw new ArgumentError(`Got invalid attribute type ${data.input_type}`);
         }
 
@@ -53,6 +55,9 @@ export class Attribute {
                 defaultValue: {
                     get: () => data.default_value,
                 },
+                deleted: {
+                    get: () => data.deleted,
+                },
                 inputType: {
                     get: () => data.input_type,
                 },
@@ -63,14 +68,16 @@ export class Attribute {
                     get: () => data.name,
                 },
                 values: {
-                    get: () => [...data.values],
+                    get: () => (Array.isArray(data.values) ? [...data.values] : []),
                 },
             }),
         );
     }
 
     toJSON(): SerializedAttribute {
-        const object: SerializedAttribute = {
+        const object: Partial<SerializedAttribute> = this.deleted ? {
+            deleted: true,
+        } : {
             name: this.name,
             mutable: this.mutable,
             input_type: this.inputType,
@@ -82,7 +89,7 @@ export class Attribute {
             object.id = this.id;
         }
 
-        return object;
+        return object as SerializedAttribute;
     }
 }
 

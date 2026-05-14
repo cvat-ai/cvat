@@ -1179,6 +1179,40 @@ class TestPatchProjectLabel:
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
+    def test_can_delete_attribute(self, admin_user):
+        spec = {
+            "name": "test delete project label attribute",
+            "labels": [
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "mazda",
+                            "values": ["mazda"],
+                        }
+                    ],
+                }
+            ],
+        }
+        response = post_method(admin_user, "projects", spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        project = response.json()
+        label = self._get_project_labels(project["id"], admin_user)[0]
+        attribute = label["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'projects/{project["id"]}',
+            {"labels": [{"id": label["id"], "attributes": [{"id": attribute["id"], "deleted": True}]}]},
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        label = self._get_project_labels(project["id"], admin_user)[0]
+        assert label["attributes"] == []
+
     def test_can_rename_label(self, projects_wlc, labels, admin_user):
         project = [p for p in projects_wlc if p["labels"]["count"] > 0][0]
         project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])

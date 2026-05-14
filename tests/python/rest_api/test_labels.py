@@ -17,7 +17,7 @@ from dateutil.parser import isoparse as parse_datetime
 from deepdiff import DeepDiff
 from pytest_cases import fixture, fixture_ref, parametrize
 
-from shared.utils.config import delete_method, get_method, make_api_client, patch_method
+from shared.utils.config import delete_method, get_method, make_api_client, patch_method, post_method
 
 from .utils import CollectionSimpleFilterTestBase, build_exclude_paths_expr, get_attrs
 
@@ -701,6 +701,108 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             expected_data=expected_data,
             ignore_fields=ignore_fields,
         )
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_can_delete_attribute(self, source: str, admin_user: str):
+        source_key = self._get_source_info(source).label_source_key
+        label = next(
+            l
+            for l in self.labels
+            if l.get(source_key) and not l["has_parent"] and l.get("attributes")
+        )
+        attribute = label["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {"attributes": [{"id": attribute["id"], "deleted": True}]},
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert attribute["id"] not in {attr["id"] for attr in response.json()["attributes"]}
+
+        response = get_method(admin_user, f'labels/{label["id"]}')
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert attribute["id"] not in {attr["id"] for attr in response.json()["attributes"]}
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_cannot_delete_attribute_without_id(self, source: str, admin_user: str):
+        source_key = self._get_source_info(source).label_source_key
+        label = next(
+            l
+            for l in self.labels
+            if l.get(source_key) and not l["has_parent"] and l.get("attributes")
+        )
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {"attributes": [{"deleted": True}]},
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST, response.content
+        assert "Deleted attribute must have an ID" in response.text
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_cannot_delete_unknown_attribute(self, source: str, admin_user: str):
+        source_key = self._get_source_info(source).label_source_key
+        label = next(
+            l
+            for l in self.labels
+            if l.get(source_key) and not l["has_parent"]
+        )
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {"attributes": [{"id": 2147483647, "deleted": True}]},
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND, response.content
+        assert "Attribute with id #2147483647 does not exist" in response.text
+
+    def test_cannot_delete_attribute_from_another_label(self, admin_user):
+        task_spec = {
+            "name": "test cannot delete attribute from another label",
+            "labels": [
+                {
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "mazda",
+                            "values": ["mazda"],
+                        }
+                    ],
+                    "name": "car",
+                },
+                {
+                    "name": "person",
+                },
+            ],
+        }
+        response = post_method(admin_user, "tasks", task_spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        task = response.json()
+
+        with make_api_client(admin_user) as client:
+            labels = get_paginated_collection(
+                client.labels_api.list_endpoint, task_id=task["id"], return_json=True
+            )
+
+        label_with_attribute = next(label for label in labels if label["name"] == "car")
+        label_without_attribute = next(label for label in labels if label["name"] == "person")
+        attribute = label_with_attribute["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label_without_attribute["id"]}',
+            {"attributes": [{"id": attribute["id"], "deleted": True}]},
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND, response.content
+        assert f'Attribute with id #{attribute["id"]} does not exist' in response.text
 
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_patch_sublabel_directly(self, admin_user, source):

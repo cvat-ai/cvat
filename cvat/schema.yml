@@ -7166,11 +7166,6 @@ components:
           items:
             type: string
             maxLength: 200
-      required:
-      - input_type
-      - mutable
-      - name
-      - values
     AttributeRequest:
       type: object
       properties:
@@ -7192,11 +7187,10 @@ components:
           items:
             type: string
             maxLength: 200
-      required:
-      - input_type
-      - mutable
-      - name
-      - values
+        deleted:
+          type: boolean
+          writeOnly: true
+          description: Delete the attribute and all related annotation values.
     AttributeVal:
       type: object
       properties:
@@ -8558,8 +8552,8 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass its ID
+            with deleted=true. Related annotation attribute values will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -9745,8 +9739,8 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass its ID
+            with deleted=true. Related annotation attribute values will be deleted.
         deleted:
           type: boolean
           writeOnly: true
@@ -10665,6 +10659,7 @@ components:
           nullable: true
           readOnly: true
       required:
+      - email
       - username
     RegisterSerializerExRequest:
       type: object
@@ -10697,6 +10692,7 @@ components:
           minLength: 1
           maxLength: 150
       required:
+      - email
       - password1
       - password2
       - username
@@ -11115,8 +11111,8 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass its ID
+            with deleted=true. Related annotation attribute values will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -11168,8 +11164,8 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass its ID
+            with deleted=true. Related annotation attribute values will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'

@@ -351,21 +351,43 @@ class DelimitedStringListField(serializers.ListField):
 
 class AttributeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
+    deleted = serializers.BooleanField(required=False, write_only=True,
+        help_text='Delete the attribute and all related annotation values.')
     values = DelimitedStringListField(allow_empty=True,
         child=serializers.CharField(allow_blank=True, max_length=200),
+        required=False,
     )
 
     class Meta:
         model = models.AttributeSpec
-        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
+        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values', 'deleted')
+        extra_kwargs = {
+            'name': { 'required': False },
+            'mutable': { 'required': False },
+            'input_type': { 'required': False },
+            'default_value': { 'required': False },
+        }
+
+    def validate(self, attrs):
+        if attrs.get('deleted'):
+            if attrs.get('id') is None:
+                raise serializers.ValidationError('Deleted attribute must have an ID')
+            return attrs
+
+        if attrs.get('id') is None:
+            for field in ('name', 'mutable', 'input_type', 'values'):
+                if field not in attrs:
+                    raise serializers.ValidationError(f'Attribute field "{field}" is required')
+
+        return attrs
 
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[],
         help_text="The list of attributes. "
-        "If you want to remove an attribute, you need to recreate the label "
-        "and specify the remaining attributes.")
+        "To remove an attribute, pass its ID with deleted=true. "
+        "Related annotation attribute values will be deleted.")
     color = serializers.CharField(allow_blank=True, required=False,
         help_text="The hex value for the RGB color. "
         "Will be generated automatically, unless specified explicitly.")
@@ -447,7 +469,13 @@ class LabelSerializer(SublabelSerializer):
     def check_attribute_names_unique(attrs):
         encountered_names = set()
         for attribute in attrs:
+            if attribute.get('deleted'):
+                continue
+
             attr_name = attribute.get('name')
+            if attr_name is None:
+                continue
+
             if attr_name in encountered_names:
                 raise serializers.ValidationError(f"Duplicate attribute with name '{attr_name}' exists")
             else:
@@ -548,8 +576,18 @@ class LabelSerializer(SublabelSerializer):
                     raise exceptions.NotFound(
                         f'Attribute with id #{attr_id} does not exist'
                     ) from ex
+
+                if attr.get('deleted'):
+                    logger.info("{} attribute for {} label was deleted"
+                        .format(db_attr.name, db_label.name))
+                    db_attr.delete()
+                    continue
+
                 created = False
             else:
+                if attr.get('deleted'):
+                    raise serializers.ValidationError('Deleted attribute must have an ID')
+
                 (db_attr, created) = models.AttributeSpec.objects.get_or_create(
                     label=db_label, name=attr['name'], defaults=attr
                 )
