@@ -212,6 +212,15 @@ class TaskAudioProvider(IAudioProvider):
             # 5000 samples is comfortably above libmp3lame's tail-flush requirement
             # (encoder delay + lookahead, ~1680 samples) at every common sample rate:
             # ~113 ms @ 44.1 kHz, ~104 ms @ 48 kHz, 625 ms @ 8 kHz.
+            #
+            # Left padding is 0: libmp3lame writes a Xing/Info+LAME header in the first
+            # MPEG frame, describing the ~1102-sample builtin encoder delay. Decoders that honor
+            # the tag skip those samples, so payload aligns at sample 0 without any
+            # extra leading padding. It includes all mainstream browsers after 2020,
+            # ffmpeg and the wavesurfer.js library we use.
+            # If we reuse the input file and it misses the tag, recoding would not make it
+            # any better - we just treat the padding as a part of the file itself.
+            # https://wiki.hydrogenaudio.org/index.php?title=Gapless_playback
             right_padding = 5000
         else:
             chunk_info_created = False
