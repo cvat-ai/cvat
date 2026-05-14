@@ -1,0 +1,38 @@
+name: Update Python requirements
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "cvat/requirements/*.in"
+      - "utils/dataset_manifest/requirements.in"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install pip-compile-multi
+        run: python -m pip install pip-compile-multi
+
+      - name: Regenerate Python requirements
+        run: cvat/requirements/regenerate.sh --no-upgrade
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Regenerate Python requirements
+          file_pattern: |
+            cvat/requirements/*.txt
+            utils/dataset_manifest/requirements.txt
