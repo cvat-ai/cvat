@@ -272,11 +272,14 @@ export class Label {
 }
 
 export function getUpdatedLabels(oldLabels: Label[], newLabels: Label[]): Label[] {
-    if (!Array.isArray(newLabels)) {
+    if (!Array.isArray(oldLabels) || !Array.isArray(newLabels)) {
         throw new ArgumentError('Value must be an array of Labels');
     }
 
-    if (newLabels.some((label) => !(label instanceof Label))) {
+    if (
+        oldLabels.some((label) => !(label instanceof Label)) ||
+        newLabels.some((label) => !(label instanceof Label))
+    ) {
         throw new ArgumentError('Each array value must be an instance of Label');
     }
 

@@ -180,7 +180,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 return null;
             }
 
-            return labels.find((label: SerializedLabel): boolean => label.id === id) || null;
+            return labels.find((label: SerializedLabel): boolean => label.id === id) ?? null;
         }
 
         function findDeletedAttributes(label: LabelOptColor, originalLabel: SerializedLabel): SerializedAttribute[] {
@@ -205,18 +205,11 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 id: label.id as number < 0 ? undefined : label.id,
                 color: label.color,
                 type: label.type || 'any',
-                attributes: label.attributes.map((attr: SerializedAttribute): SerializedAttribute => {
-                    const id = attr.id as number < 0 ? undefined : attr.id;
-
-                    return {
-                        name: attr.name,
-                        id,
-                        input_type: attr.input_type.toLowerCase() as SerializedAttribute['input_type'],
-                        default_value: attr.default_value,
-                        mutable: attr.mutable,
-                        values: [...(attr.values || [])],
-                    };
-                }),
+                attributes: label.attributes.map((attr: SerializedAttribute): SerializedAttribute => ({
+                    ...attr,
+                    id: attr.id as number < 0 ? undefined : attr.id,
+                    values: [...attr.values],
+                })),
             };
 
             if (originalLabel) {
