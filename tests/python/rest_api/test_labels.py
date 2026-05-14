@@ -911,7 +911,9 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             for l in self.labels
             if l.get(source_key) and not l["has_parent"] and l.get("attributes")
         )
-        deleted_attribute = {key: value for key, value in label["attributes"][0].items() if key != "id"}
+        deleted_attribute = {
+            key: value for key, value in label["attributes"][0].items() if key != "id"
+        }
 
         response = patch_method(
             admin_user,
@@ -930,15 +932,19 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         response = patch_method(
             admin_user,
             f'labels/{label["id"]}',
-            {"attributes": [{
-                "id": 2147483647,
-                "name": "unknown",
-                "mutable": False,
-                "input_type": "text",
-                "default_value": "",
-                "values": [],
-                "deleted": True,
-            }]},
+            {
+                "attributes": [
+                    {
+                        "id": 2147483647,
+                        "name": "unknown",
+                        "mutable": False,
+                        "input_type": "text",
+                        "default_value": "",
+                        "values": [],
+                        "deleted": True,
+                    }
+                ]
+            },
         )
 
         assert response.status_code == HTTPStatus.NOT_FOUND, response.content

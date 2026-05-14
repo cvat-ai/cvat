@@ -85,6 +85,11 @@ interface Props {
     onSubmit: (labels: LabelOptColor[]) => void;
 }
 
+interface AttributeWithLabelPath {
+    attribute: SerializedAttribute;
+    labelPath: string;
+}
+
 function convertLabel(label: LabelOptColor): LabelOptColor {
     return {
         ...label,
@@ -114,11 +119,18 @@ function collectAttributeIDs(labels: SerializedLabel[]): number[] {
     ]);
 }
 
-function collectAttributes(labels: SerializedLabel[]): SerializedAttribute[] {
-    return labels.flatMap((label: SerializedLabel): SerializedAttribute[] => [
-        ...label.attributes,
-        ...collectAttributes(label.sublabels || []),
-    ]);
+function collectAttributes(labels: SerializedLabel[], parentPath = ''): AttributeWithLabelPath[] {
+    return labels.flatMap((label: SerializedLabel): AttributeWithLabelPath[] => {
+        const labelPath = parentPath ? `${parentPath} / ${label.name}` : label.name;
+
+        return [
+            ...label.attributes.map((attribute: SerializedAttribute): AttributeWithLabelPath => ({
+                attribute,
+                labelPath,
+            })),
+            ...collectAttributes(label.sublabels || [], labelPath),
+        ];
+    });
 }
 
 export default class RawViewer extends React.PureComponent<Props> {
@@ -150,7 +162,7 @@ export default class RawViewer extends React.PureComponent<Props> {
             if (label.id >= 0) {
                 labelIds.push(label.id);
             }
-            for (const attr of collectAttributes([label])) {
+            for (const { attribute: attr } of collectAttributes([label])) {
                 attr.id = attr.id || idGenerator();
             }
         }
@@ -163,8 +175,8 @@ export default class RawViewer extends React.PureComponent<Props> {
 
         const parsedAttrIds = collectAttributeIDs(parsed);
         const deletedAttributes = collectAttributes(labels)
-            .filter((_attr: SerializedAttribute) => {
-                const attrId = _attr.id as number;
+            .filter(({ attribute }: AttributeWithLabelPath) => {
+                const attrId = attribute.id as number;
                 return attrId >= 0 && !parsedAttrIds.includes(attrId);
             });
 
@@ -190,8 +202,8 @@ export default class RawViewer extends React.PureComponent<Props> {
                             <Paragraph>
                                 Following attributes are going to be removed:
                                 <div className='cvat-modal-confirm-content-remove-existing-attributes'>
-                                    {deletedAttributes.map((_attr: SerializedAttribute) => (
-                                        <Tag key={_attr.id as number}>{_attr.name}</Tag>
+                                    {deletedAttributes.map(({ attribute, labelPath }: AttributeWithLabelPath) => (
+                                        <Tag key={attribute.id as number}>{`${labelPath}: ${attribute.name}`}</Tag>
                                     ))}
                                 </div>
                             </Paragraph>
