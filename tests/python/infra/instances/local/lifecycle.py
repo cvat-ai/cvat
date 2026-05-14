@@ -44,11 +44,6 @@ def run_local_runtime_lifecycle(instance, *, runtime_mode: RuntimeMode, cleanup:
         pytest.exit("All generated test files have been deleted", returncode=0)
 
     project_running = project_containers_running(project_name)
-    if runtime_mode == RuntimeMode.UP and project_running:
-        raise pytest.UsageError(
-            f"Project '{project_name}' is already running. Use pytest tests/python, "
-            "pytest tests/python dumpdb, or pytest tests/python down."
-        )
 
     delete_compose_files(generated_compose_files)
     create_compose_files(

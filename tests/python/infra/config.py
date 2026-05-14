@@ -273,21 +273,12 @@ class RuntimeConfig:
             RuntimeMode.BUILD,
             RuntimeMode.DUMPDB,
         )
-        REMOVED_LIFECYCLE_COMMANDS = ("reuse", "restore", "rebuild")
 
         runtime_mode = cls.parse_runtime_mode(config.getoption("--infra"))
         explicit_runtime_mode = runtime_mode != RuntimeMode.AUTO
         args = list(getattr(config, "args", ()) or ())
         lifecycle_commands = tuple(str(mode) for mode in LIFECYCLE_COMMAND_MODES)
         requested_lifecycle_commands = [arg for arg in args if arg in lifecycle_commands]
-        removed_lifecycle_commands = [arg for arg in args if arg in REMOVED_LIFECYCLE_COMMANDS]
-
-        if removed_lifecycle_commands:
-            raise pytest.UsageError(
-                "Unsupported lifecycle command "
-                f"{removed_lifecycle_commands[0]!r}. Use one of: "
-                f"{', '.join(lifecycle_commands)}"
-            )
 
         if len(requested_lifecycle_commands) > 1:
             raise pytest.UsageError(
