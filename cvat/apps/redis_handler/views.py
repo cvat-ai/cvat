@@ -16,8 +16,11 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rq.command import send_stop_job_command
+from rq.exceptions import InvalidJobOperation
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
+from rq.worker import Worker as RQWorker
 
 from cvat.apps.engine.filters import (
     NonModelJsonLogicFilter,
@@ -25,6 +28,7 @@ from cvat.apps.engine.filters import (
     NonModelSimpleFilter,
 )
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.models import RequestAction, RequestSubresource
 from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
@@ -33,6 +37,8 @@ from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 from cvat.apps.redis_handler.serializers import RequestSerializer, RequestStatus
 
 slogger = ServerLogManager(__name__)
+
+CVAT_CAN_STOP_STARTED_JOBS_KEY = "cvat_can_stop_started_jobs"
 
 
 @extend_schema(tags=["requests"])
@@ -130,6 +136,10 @@ class RequestViewSet(viewsets.GenericViewSet):
 
         for job in queue.job_class.fetch_many(job_ids, queue.connection):
             if job and is_rq_job_owner(job, user_id):
+                if job.get_status(refresh=False) in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
+                    job.delete()
+                    continue
+
                 job = cast(CustomRQJob, job)
                 try:
                     parsed_request_id = RequestId.parse_and_validate_queue(
@@ -160,7 +170,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
         return all_jobs
 
-    def _get_rq_job_by_id(self, rq_id: str) -> RQJob | None:
+    def _get_rq_job_by_id(self, rq_id: str) -> CustomRQJob | None:
         """
         Get a RQJob by its ID from the queues.
 
@@ -184,6 +194,36 @@ class RequestViewSet(viewsets.GenericViewSet):
 
         return job
 
+    @staticmethod
+    def _is_export_request(rq_job: CustomRQJob) -> bool:
+        return (
+            rq_job.parsed_id.action == RequestAction.EXPORT
+            and rq_job.parsed_id.subresource
+            in {
+                RequestSubresource.ANNOTATIONS,
+                RequestSubresource.DATASET,
+                RequestSubresource.BACKUP,
+            }
+        )
+
+    @classmethod
+    def _is_started_process_cancellable(cls, rq_job: CustomRQJob) -> bool:
+        if not cls._is_export_request(rq_job):
+            return False
+
+        worker_key = f"{RQWorker.redis_worker_namespace_prefix}{rq_job.worker_name}"
+        # The marker is CVAT-specific and can be absent on already running or older production
+        # workers. Only SimpleWorker writes "0", so default to "can stop" for backward
+        # compatibility.
+        can_stop_started_jobs = (
+            rq_job.connection.hget(worker_key, CVAT_CAN_STOP_STARTED_JOBS_KEY) or "1"
+        )
+
+        if isinstance(can_stop_started_jobs, bytes):
+            can_stop_started_jobs = can_stop_started_jobs.decode()
+
+        return can_stop_started_jobs != "0"
+
     def _handle_redis_exceptions(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -205,6 +245,10 @@ class RequestViewSet(viewsets.GenericViewSet):
             return HttpResponseNotFound("There is no request with specified id")
 
         self.check_object_permissions(request, job)
+
+        if job.get_status(refresh=False) in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
+            job.delete()
+            return HttpResponseNotFound("There is no request with specified id")
 
         serializer = self.get_serializer(job, context={"request": request})
         return Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -242,14 +286,41 @@ class RequestViewSet(viewsets.GenericViewSet):
             return HttpResponseNotFound("There is no request with specified id")
 
         self.check_object_permissions(request, rq_job)
+        rq_job_status = rq_job.get_status(refresh=False)
 
-        if rq_job.get_status(refresh=False) not in {RQJobStatus.QUEUED, RQJobStatus.DEFERRED}:
+        # Terminal canceled jobs are not useful for users in the requests API. Remove them when
+        # they are observed after RQ has already finished cancellation handling.
+        if rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
+            rq_job.delete()
+            return HttpResponseNotFound("There is no request with specified id")
+
+        # Jobs that have not started yet are safe to cancel directly. RQ will also enqueue
+        # dependents when ONE_RUNNING_JOB_IN_QUEUE_PER_USER is enabled.
+        if rq_job_status in {RQJobStatus.QUEUED, RQJobStatus.DEFERRED}:
+            # FUTURE-TODO: race condition is possible here
+            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+            rq_job.delete()
+            return Response(status=status.HTTP_200_OK)
+
+        # Finished, failed, scheduled, and other non-started states cannot be interrupted.
+        if rq_job_status != RQJobStatus.STARTED:
             return HttpResponseBadRequest(
-                "Only requests that have not yet been started can be cancelled"
+                f"Requests with status {rq_job_status!r} cannot be cancelled"
             )
 
-        # FUTURE-TODO: race condition is possible here
-        rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-        rq_job.delete()
+        # Started cancellation is intentionally limited to non-mutating export jobs running in
+        # production-style workers.
+        if not self._is_started_process_cancellable(rq_job):
+            return HttpResponseBadRequest(
+                "Cancellation of started requests is supported only for export requests "
+                "executed by production workers"
+            )
+
+        # RQ will stop the forked work horse and enqueue dependent jobs from its stopped-job path.
+        queue = django_rq.get_queue(rq_job.origin)
+        try:
+            send_stop_job_command(queue.connection, rq_job.id, serializer=queue.serializer)
+        except InvalidJobOperation as ex:
+            return HttpResponseBadRequest(str(ex))
 
         return Response(status=status.HTTP_200_OK)
