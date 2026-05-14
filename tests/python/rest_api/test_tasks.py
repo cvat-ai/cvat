@@ -1220,7 +1220,7 @@ class TestPatchTaskLabel:
             f'tasks/{task["id"]}',
             {
                 "labels": [
-                    {"id": label["id"], "attributes": [{"id": attribute["id"], "deleted": True}]}
+                    {"id": label["id"], "attributes": [{**attribute, "deleted": True}]}
                 ]
             },
         )

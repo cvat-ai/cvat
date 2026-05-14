@@ -354,17 +354,12 @@ class AttributeSerializer(serializers.ModelSerializer):
     deleted = serializers.BooleanField(required=False, write_only=True,
         help_text='Delete the attribute and all related annotation values.')
     values = DelimitedStringListField(allow_empty=True,
-        child=serializers.CharField(allow_blank=True, max_length=200),
-        required=False,
-    )
+        child=serializers.CharField(allow_blank=True, max_length=200))
 
     class Meta:
         model = models.AttributeSpec
         fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values', 'deleted')
         extra_kwargs = {
-            'name': { 'required': False },
-            'mutable': { 'required': False },
-            'input_type': { 'required': False },
             'default_value': { 'required': False },
         }
 
@@ -372,12 +367,6 @@ class AttributeSerializer(serializers.ModelSerializer):
         if attrs.get('deleted'):
             if attrs.get('id') is None:
                 raise serializers.ValidationError('Deleted attribute must have an ID')
-            return attrs
-
-        if attrs.get('id') is None:
-            for field in ('name', 'mutable', 'input_type', 'values'):
-                if field not in attrs:
-                    raise serializers.ValidationError(f'Attribute field "{field}" is required')
 
         return attrs
 
@@ -386,7 +375,7 @@ class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[],
         help_text="The list of attributes. "
-        "To remove an attribute, pass its ID with deleted=true. "
+        "To remove an attribute, pass the full attribute body with deleted=true. "
         "Related annotation attribute values will be deleted.")
     color = serializers.CharField(allow_blank=True, required=False,
         help_text="The hex value for the RGB color. "
@@ -577,27 +566,35 @@ class LabelSerializer(SublabelSerializer):
         if label_exists:
             cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
 
-        for attr in attributes:
+        deleted_attributes = [attr for attr in attributes if attr.get('deleted')]
+        upserted_attributes = [attr for attr in attributes if not attr.get('deleted')]
+
+        def get_db_attr(attr_id: int) -> models.AttributeSpec:
+            try:
+                return models.AttributeSpec.objects.get(id=attr_id, label=db_label)
+            except models.AttributeSpec.DoesNotExist as ex:
+                raise exceptions.NotFound(
+                    f'Attribute with id #{attr_id} does not exist'
+                ) from ex
+
+        # Apply deletions before creates/updates. This keeps an atomic request valid
+        # when an attribute is renamed to a name released by another deleted attribute.
+        for attr in deleted_attributes:
+            attr_id = attr.get('id')
+            if attr_id is None:
+                raise serializers.ValidationError('Deleted attribute must have an ID')
+
+            db_attr = get_db_attr(attr_id)
+            logger.info("{} attribute for {} label was deleted"
+                .format(db_attr.name, db_label.name))
+            db_attr.delete()
+
+        for attr in upserted_attributes:
             attr_id = attr.get('id', None)
             if attr_id is not None:
-                try:
-                    db_attr = models.AttributeSpec.objects.get(id=attr_id, label=db_label)
-                except models.AttributeSpec.DoesNotExist as ex:
-                    raise exceptions.NotFound(
-                        f'Attribute with id #{attr_id} does not exist'
-                    ) from ex
-
-                if attr.get('deleted'):
-                    logger.info("{} attribute for {} label was deleted"
-                        .format(db_attr.name, db_label.name))
-                    db_attr.delete()
-                    continue
-
+                db_attr = get_db_attr(attr_id)
                 created = False
             else:
-                if attr.get('deleted'):
-                    raise serializers.ValidationError('Deleted attribute must have an ID')
-
                 (db_attr, created) = models.AttributeSpec.objects.get_or_create(
                     label=db_label, name=attr['name'], defaults=attr
                 )

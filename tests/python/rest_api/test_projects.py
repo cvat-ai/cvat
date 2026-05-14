@@ -1208,7 +1208,7 @@ class TestPatchProjectLabel:
             f'projects/{project["id"]}',
             {
                 "labels": [
-                    {"id": label["id"], "attributes": [{"id": attribute["id"], "deleted": True}]}
+                    {"id": label["id"], "attributes": [{**attribute, "deleted": True}]}
                 ]
             },
         )

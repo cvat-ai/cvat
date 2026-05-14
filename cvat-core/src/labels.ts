@@ -84,12 +84,12 @@ export class Attribute {
             values: this.values,
         };
 
-        if (this.deleted) {
-            object.deleted = true;
-        }
-
         if (typeof this.id !== 'undefined') {
             object.id = this.id;
+        }
+
+        if (this.deleted) {
+            object.deleted = true;
         }
 
         return object;

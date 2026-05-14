@@ -7166,6 +7166,11 @@ components:
           items:
             type: string
             maxLength: 200
+      required:
+      - input_type
+      - mutable
+      - name
+      - values
     AttributeRequest:
       type: object
       properties:
@@ -7191,6 +7196,11 @@ components:
           type: boolean
           writeOnly: true
           description: Delete the attribute and all related annotation values.
+      required:
+      - input_type
+      - mutable
+      - name
+      - values
     AttributeVal:
       type: object
       properties:
@@ -8552,8 +8562,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. To remove an attribute, pass its ID
-            with deleted=true. Related annotation attribute values will be deleted.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -9739,8 +9750,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. To remove an attribute, pass its ID
-            with deleted=true. Related annotation attribute values will be deleted.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         deleted:
           type: boolean
           writeOnly: true
@@ -11109,8 +11121,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. To remove an attribute, pass its ID
-            with deleted=true. Related annotation attribute values will be deleted.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -11162,8 +11175,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. To remove an attribute, pass its ID
-            with deleted=true. Related annotation attribute values will be deleted.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
