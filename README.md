@@ -227,7 +227,6 @@ For the latest product releases, feature walkthroughs, and all things CVAT see:
   <td><a href="https://www.cvat.ai/resources/case-studies"><img src="site/content/en/images/badge-case-studies.png" alt="Case Studies" height="120"/></a></td>
   <td><a href="https://www.youtube.com/@cvat-ai"><img src="site/content/en/images/badge-youtube.png" alt="YouTube" height="120"/></a></td>
   <td><a href="https://www.linkedin.com/company/cvat-ai"><img src="site/content/en/images/badge-linkedin.png" alt="LinkedIn" height="120"/></a></td>
-  <td><a href="https://www.cvat.ai/#:~:text=Subscribe%20to%20the%20CVAT%20Newsletter"><img src="site/content/en/images/badge-newsletter.png" alt="Newsletter" height="120"/></a></td>
 </tr></table>
 
   <!-- Badges -->
