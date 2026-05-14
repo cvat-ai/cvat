@@ -22,7 +22,6 @@ def configure_runtime_env(
     # tests/docker-compose.minio.yml uses these compose envs for host bindings.
     os.environ["CVAT_TEST_MINIO_PORT"] = str(port_config["minio_port"])
     os.environ["CVAT_TEST_MINIO_CONSOLE_PORT"] = str(port_config["minio_console_port"])
-    os.environ["CVAT_TEST_DB_PORT"] = str(port_config["db_port"])
     os.environ.pop("CVAT_TEST_DB_MINIO_ENDPOINT_URL", None)
     os.environ.pop("CVAT_TEST_DB_WEBHOOK_RECEIVER_URL", None)
 
