@@ -38,9 +38,6 @@ jobs:
       - name: Check changelog fragments
         run: ./dev/check_changelog_fragments.py
 
-      - name: Check redis migrations
-        run: ./dev/check_redis_migrations.py
-
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v4
         with:
@@ -115,6 +112,11 @@ jobs:
         run: |
           docker run --rm "cvat/server:${CVAT_VERSION}" bash \
             -c 'python manage.py makemigrations --check'
+
+      - name: Verify redis migration filenames
+        run: |
+          docker run --rm "cvat/server:${CVAT_VERSION}" bash \
+            -c 'python manage.py checkredismigrations'
 
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v4
