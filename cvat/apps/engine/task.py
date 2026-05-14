@@ -173,7 +173,10 @@ def _generate_segment_params(
                 and db_task.mode == models.TaskMode.INTERPOLATION
             ):
                 overlap = 5
-            elif db_task.media_type == models.MediaType.AUDIO:
+            elif (
+                db_task.media_type == models.MediaType.AUDIO
+                and db_task.mode == models.TaskMode.INTERPOLATION
+            ):
                 overlap = 10000
             else:
                 overlap = 0
