@@ -208,6 +208,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 attributes: label.attributes.map((attr: SerializedAttribute): SerializedAttribute => ({
                     ...attr,
                     id: attr.id as number < 0 ? undefined : attr.id,
+                    input_type: attr.input_type.toLowerCase() as SerializedAttribute['input_type'],
                     values: [...attr.values],
                 })),
             };
