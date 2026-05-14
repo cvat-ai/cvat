@@ -16,7 +16,7 @@ which then need to be reviewed and reverted by hand.
 This script wraps ``dumpdata`` and post-processes its output to make the
 result stable:
 
-* records are sorted by ``(model, pk)``;
+* records are sorted by ``pk`` within each model;
 * field keys within each record are sorted alphabetically;
 * known unordered many-to-many fields (e.g. ``auth.user.groups``) are
   sorted as well.

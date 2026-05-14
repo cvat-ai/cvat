@@ -304,8 +304,6 @@ def dump_db():
     if "test_cvat_server_1" not in running_containers():
         pytest.exit("CVAT is not running")
     try:
-        # Delegate to the normalizing dumper so re-runs without DB
-        # changes produce a stable file (no spurious key-order diffs).
         run(  # nosec
             [
                 sys.executable,
