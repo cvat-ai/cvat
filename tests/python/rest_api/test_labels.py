@@ -822,7 +822,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         response = self._patch_attribute(admin_user, label["id"], attrs[attribute_name], **fields)
 
         assert response.status_code == HTTPStatus.BAD_REQUEST, response.content
-        assert error in response.text
+        assert any(error in message for message in response.json())
 
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_patch_sublabel_directly(self, admin_user, source):
