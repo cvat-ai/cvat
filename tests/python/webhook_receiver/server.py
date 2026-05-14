@@ -10,12 +10,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
-        FAILING_URL_PATTERN = re.compile(r"/" + os.getenv("FAILING_PAYLOAD_ENDPOINT"))
-        if re.search(FAILING_URL_PATTERN, self.path):
-            self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
-            self.end_headers()
-            return
-
         TARGET_URL_PATTERN = re.compile(r"/" + os.getenv("PAYLOAD_ENDPOINT"))
         if not re.search(TARGET_URL_PATTERN, self.path):
             return

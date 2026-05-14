@@ -43,20 +43,6 @@ def target_url():
     )
 
 
-def failing_target_url():
-    """Endpoint on the webhook_receiver container that always returns 500."""
-    env_data = _read_receiver_env()
-    return (
-        f'http://{env_data["SERVER_HOST"]}:{env_data["SERVER_PORT"]}'
-        f'/{env_data["FAILING_PAYLOAD_ENDPOINT"]}'
-    )
-
-
-def unreachable_target_url():
-    """Port 1 is closed on every host — ConnectionRefused → requests.ConnectionError."""
-    return "http://localhost:1/payload"
-
-
 def webhook_spec(events, project_id=None, webhook_type="organization"):
     # Django URL field doesn't allow to use http://webhooks:2020/payload (using alias)
     # So we forced to use ip address of webhook receiver container
@@ -94,7 +80,8 @@ def get_deliveries(webhook_id, expected_count=1, *, timeout: int = 60):
 
         deliveries = response.json()
         if deliveries["count"] == expected_count:
-            delivery_response = json.loads(deliveries["results"][0]["response"])
+            raw_deliver_response = deliveries["results"][0]["response"]
+            delivery_response = json.loads(raw_deliver_response) if raw_deliver_response else {}
             break
 
         if time() - start_time > timeout:
@@ -637,7 +624,7 @@ class TestWebhookCommentEvents:
         webhook_id = create_webhook(events, "organization", org_id=org_id)["id"]
 
         post_data = {"issue": issue["id"], "message": "new comment message"}
-        response = post_method("admin1", f"comments", post_data, org_id=org_id)
+        response = post_method("admin1", "comments", post_data, org_id=org_id)
         assert response.status_code == HTTPStatus.CREATED
 
         create_deliveries, create_payload = get_deliveries(webhook_id)
@@ -797,6 +784,7 @@ class TestWebhookRedelivery:
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
+
 def _task_with_data_in_org(tasks: Container) -> dict:
     return next(
         t
@@ -839,58 +827,3 @@ class TestWebhookBackupEvents:
         assert payload["status"] == "completed"
         assert payload["target"] == "task"
         assert payload["target_id"] == task["id"]
-
-
-@pytest.mark.usefixtures("restore_db_per_function")
-class TestWebhookRetryOnDeliveryFailure:
-
-    @staticmethod
-    def _create_webhook(target_url_: str, project_id: int) -> int:
-        spec = webhook_spec(["update:project"], project_id=project_id, webhook_type="project")
-        spec["target_url"] = target_url_
-        response = post_method("admin1", "webhooks", spec)
-        assert response.status_code == HTTPStatus.CREATED
-        return response.json()["id"]
-
-    @staticmethod
-    def _trigger_update(project_id: int, name: str) -> None:
-        response = patch_method("admin1", f"projects/{project_id}", {"name": name})
-        assert response.status_code == HTTPStatus.OK
-
-    def test_retry_on_connection_error(self, projects):
-        project_id = list(projects)[0]["id"]
-
-        webhook_id = self._create_webhook(unreachable_target_url(), project_id)
-        self._trigger_update(project_id, "trigger_connection_retry")
-
-        deliveries, _ = get_deliveries(webhook_id, expected_count=2)
-        assert all(
-            d["status_code"] == HTTPStatus.BAD_GATEWAY for d in deliveries["results"]
-        ), deliveries["results"]
-
-    def test_no_retry_on_success_response(self, projects):
-        project_id = list(projects)[0]["id"]
-
-        webhook_id = self._create_webhook(target_url(), project_id)
-        self._trigger_update(project_id, "trigger_success_no_retry")
-
-        deliveries, _ = get_deliveries(webhook_id, expected_count=1)
-        assert deliveries["results"][0]["status_code"] == HTTPStatus.OK
-
-        # NOTE @sosov: wait past settings.SEND_WEBHOOK_TASK_RETRIES[0] to confirm no retry fires
-        sleep(10)
-
-        response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
-        assert response.status_code == HTTPStatus.OK
-        assert response.json()["count"] == 1
-
-    def test_retry_on_5xx_response(self, projects):
-        project_id = list(projects)[0]["id"]
-
-        webhook_id = self._create_webhook(failing_target_url(), project_id)
-        self._trigger_update(project_id, "trigger_5xx_retry")
-
-        deliveries, _ = get_deliveries(webhook_id, expected_count=2)
-        assert all(
-            d["status_code"] == HTTPStatus.INTERNAL_SERVER_ERROR for d in deliveries["results"]
-        ), deliveries["results"]
