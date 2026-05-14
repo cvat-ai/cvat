@@ -82,8 +82,11 @@ export class Attribute {
             input_type: this.inputType,
             default_value: this.defaultValue,
             values: this.values,
-            deleted: this.deleted,
         };
+
+        if (this.deleted) {
+            object.deleted = true;
+        }
 
         if (typeof this.id !== 'undefined') {
             object.id = this.id;
