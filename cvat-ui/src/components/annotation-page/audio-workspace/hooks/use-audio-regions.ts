@@ -231,7 +231,6 @@ export function useAudioRegions(params: Params): Result {
 
             const isCursor = activeControlRef.current === ActiveControl.CURSOR;
             const isDoubleClick = !!(e && e.detail >= 2);
-            const isCtrlClick = !!(e && (e.ctrlKey || e.metaKey));
             const clickTime = e ? computeClickTime(e) : null;
 
             if (isCursor) {
@@ -263,9 +262,7 @@ export function useAudioRegions(params: Params): Result {
                 return;
             }
 
-            // Ctrl/Cmd + click moves the playback head; bare single click
-            // only changes selection. Mirrors the image editor convention.
-            if (isCtrlClick && isCursor && clickTime !== null) {
+            if (isCursor && clickTime !== null) {
                 onSetCurrentTime(clickTime);
                 const ws = wavesurferRef.current;
                 if (ws) ws.setTime(clickTime);
