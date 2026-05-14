@@ -4,6 +4,7 @@
 
 import logging
 import os
+import sys
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -302,18 +303,20 @@ def running_containers():
 def dump_db():
     if "test_cvat_server_1" not in running_containers():
         pytest.exit("CVAT is not running")
-    with open(CVAT_DB_DIR / "data.json", "w") as f:
-        try:
-            run(  # nosec
-                "docker exec test_cvat_server_1 \
-                    python manage.py dumpdata \
-                    --indent 2 --natural-foreign \
-                    --exclude=auth.permission --exclude=contenttypes".split(),
-                stdout=f,
-                check=True,
-            )
-        except CalledProcessError:
-            pytest.exit("Database dump failed.\n")
+    try:
+        # Delegate to the normalizing dumper so re-runs without DB
+        # changes produce a stable file (no spurious key-order diffs).
+        run(  # nosec
+            [
+                sys.executable,
+                str(Path(__file__).resolve().parents[1] / "utils" / "dump_test_db.py"),
+                "--output",
+                str(CVAT_DB_DIR / "data.json"),
+            ],
+            check=True,
+        )
+    except CalledProcessError:
+        pytest.exit("Database dump failed.\n")
 
 
 def create_compose_files(container_name_files):

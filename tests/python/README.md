@@ -83,15 +83,17 @@ To backup DB and data volume, please use commands below.
 
 ```console
 cd tests/python
-docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign \
-    --exclude=admin --exclude=auth.permission --exclude=authtoken --exclude=contenttypes \
-    --exclude=django_rq --exclude=sessions \
-    > shared/assets/cvat_db/data.json
+python shared/utils/dump_test_db.py
 docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
 ```
 
-> Note: if you won't be use --indent options or will be use with other value
-> it potentially will lead to problems with merging of this file with other branch.
+`dump_test_db.py` runs `manage.py dumpdata` inside the test container and
+post-processes the output for stable diffs: records are sorted by
+`(model, pk)`, field keys are sorted alphabetically, and volatile
+timestamp fields (`last_login`, `*_updated_date`, ...) are preserved from
+the existing `data.json` so a re-dump after a no-op test run produces zero
+diff. Pass `--refresh-volatile` to take new timestamps from the dump
+instead, or `--help` for other options.
 
 ## How to update *.json files in the assets directory?
 
