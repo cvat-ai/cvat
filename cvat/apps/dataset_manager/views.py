@@ -7,6 +7,7 @@ import logging
 import os
 import os.path as osp
 import shutil
+import time
 import traceback
 from datetime import timedelta
 from os.path import exists as osp_exists
@@ -188,6 +189,9 @@ def export(
                 return output_path
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as temp_dir:
+            # TODO: remove after manual export cancellation testing.
+            time.sleep(60)
+
             temp_file = osp.join(temp_dir, "result")
             # create a subdirectory to store export-related files,
             # which will be fully included in the resulting archive
