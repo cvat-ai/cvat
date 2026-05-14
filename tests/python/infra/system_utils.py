@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from subprocess import run
+from subprocess import CalledProcessError, run
 
 
 def run_command(
@@ -12,12 +12,21 @@ def run_command(
     *,
     logger: logging.Logger | None = None,
 ):
-    result = run(
-        command,
-        check=True,
-        capture_output=capture_output,
-        text=True,
-    )
+    try:
+        result = run(
+            command,
+            check=True,
+            capture_output=capture_output,
+            text=True,
+        )
+    except CalledProcessError as ex:
+        if logger and capture_output:
+            logger.error("Command failed command=%s returncode=%s", command, ex.returncode)
+            if ex.stdout:
+                logger.error("Command failed stdout: %s", ex.stdout.strip())
+            if ex.stderr:
+                logger.error("Command failed stderr: %s", ex.stderr.strip())
+        raise
     stdout = result.stdout.strip() if capture_output and result.stdout else ""
     stderr = result.stderr.strip() if capture_output and result.stderr else ""
     if logger and capture_output and stdout:

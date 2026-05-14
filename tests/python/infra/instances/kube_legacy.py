@@ -28,6 +28,33 @@ def _kube_get_pod_name(label_filter: str) -> str:
     return stdout
 
 
+def _kube_wait_for_ready_pod(label_filter: str) -> None:
+    TIMEOUT_SECONDS = 300
+
+    logger.debug(
+        "waiting for kube pod to become ready label=%s timeout=%ss",
+        label_filter,
+        TIMEOUT_SECONDS,
+    )
+    run_command(
+        [
+            "kubectl",
+            "wait",
+            "pod",
+            "-l",
+            label_filter,
+            "--for=condition=Ready",
+            f"--timeout={TIMEOUT_SECONDS}s",
+        ],
+        logger=logger,
+    )
+
+
+def _kube_get_ready_pod_name(label_filter: str) -> str:
+    _kube_wait_for_ready_pod(label_filter)
+    return _kube_get_pod_name(label_filter)
+
+
 def _kube_get_server_pod_name() -> str:
     return _kube_get_pod_name("component=server")
 
@@ -113,7 +140,7 @@ def restore_redis_ondisk() -> None:
 
 def restore_cvat_data(cvat_db_dir: Path | None = None) -> None:
     cvat_db_dir = cvat_db_dir or RuntimeConfig.get_cvat_db_dir()
-    pod_name = _kube_get_server_pod_name()
+    pod_name = _kube_get_ready_pod_name("component=server")
     kube_cp(
         cvat_db_dir / "cvat_data.tar.bz2",
         f"{pod_name}:/tmp/cvat_data.tar.bz2",
@@ -125,8 +152,8 @@ def start(cvat_db_dir: Path | None = None) -> None:
     cvat_db_dir = cvat_db_dir or RuntimeConfig.get_cvat_db_dir()
     restore_cvat_data(cvat_db_dir)
 
-    server_pod_name = _kube_get_server_pod_name()
-    db_pod_name = _kube_get_db_pod_name()
+    server_pod_name = _kube_get_ready_pod_name("component=server")
+    db_pod_name = _kube_get_ready_pod_name("app.kubernetes.io/name=postgresql")
     kube_cp(cvat_db_dir / "restore.sql", f"{db_pod_name}:/tmp/restore.sql")
     kube_cp(cvat_db_dir / "data.json", f"{server_pod_name}:/tmp/data.json")
 

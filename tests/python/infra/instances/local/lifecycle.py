@@ -86,7 +86,16 @@ def run_local_runtime_lifecycle(
         stack_ok = False
         incompatibility_reason = str(exc)
 
-    if project_running and not stack_ok and runtime_mode in {RuntimeMode.AUTO, RuntimeMode.UP}:
+    if (
+        project_running
+        and not stack_ok
+        and runtime_mode
+        in {
+            RuntimeMode.AUTO,
+            RuntimeMode.UP,
+            RuntimeMode.RESTORE,
+        }
+    ):
         logger.warning(
             "Project '%s' is running but incompatible with the requested test runtime "
             "(%s); recreating stack",

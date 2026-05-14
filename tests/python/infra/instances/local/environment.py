@@ -52,7 +52,7 @@ def configure_local_runtime_env(config, *, persist_state: bool) -> None:
     if request.platform != "local":
         return
 
-    if request.collect_only or request.runtime_mode == RuntimeMode.DOWN:
+    if request.collect_only or request.cleanup or request.runtime_mode == RuntimeMode.DOWN:
         os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         return
 
