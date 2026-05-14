@@ -11,7 +11,7 @@ import shutil
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePath, PurePosixPath
 from typing import Any, NamedTuple, TypeAlias
 from urllib import parse as urlparse
@@ -31,6 +31,7 @@ from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
+    AudioReader,
     CachingMediaIterator,
     ImageListReader,
     IMediaReader,
@@ -63,6 +64,8 @@ from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_in
 slogger = ServerLogManager(__name__)
 
 JobFileMapping: TypeAlias = list[list[str]]
+
+MAX_AUDIO_DURATION = timedelta(hours=4)
 
 
 class SegmentParams(NamedTuple):
@@ -160,14 +163,21 @@ def _generate_segment_params(
         if segment_size == 0 or segment_size > data_size:
             segment_size = data_size
 
-        overlap = min(
-            (
-                db_task.overlap
-                if db_task.overlap is not None
-                else 5 if db_task.mode == models.TaskMode.INTERPOLATION else 0
-            ),
-            segment_size // 2,
-        )
+        overlap = db_task.overlap
+        if overlap is None:
+            if data_size <= segment_size:
+                overlap = 0
+            elif (
+                db_task.media_type == models.MediaType.IMAGE
+                and db_task.mode == models.TaskMode.INTERPOLATION
+            ):
+                overlap = 5
+            elif db_task.media_type == models.MediaType.AUDIO:
+                overlap = 10000
+            else:
+                overlap = 0
+
+        overlap = min(overlap, segment_size // 2)
         segments_range = range(0, data_size - overlap, segment_size - overlap)
         segments_count = len(segments_range)
 
@@ -888,6 +898,11 @@ def _create_validation_jobs(
 ) -> None:
     db_data = db_task.require_data()
 
+    if db_task.media_type == models.MediaType.AUDIO and validation_params:
+        raise ValidationError(
+            f"Quality control is not available for '{models.MediaType.AUDIO}' media type"
+        )
+
     if validation_params and validation_params["mode"] == models.ValidationMode.GT:
 
         def _to_rel_frame(abs_frame: int) -> int:
@@ -1151,6 +1166,10 @@ def _detect_media_type_and_dimension(
     if isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
         detected_media_type = models.MediaType.IMAGE
         detected_dimension = models.DimensionType.DIM_2D
+    elif isinstance(extractor, MEDIA_TYPES["audio"]["extractor"]):
+        # TODO: support audio reading from video?
+        detected_media_type = models.MediaType.AUDIO
+        detected_dimension = models.DimensionType.DIM_1D
     else:
         validate_dimension = ValidateDimension()
         if db_data.storage == models.StorageChoice.LOCAL or (
@@ -1175,18 +1194,18 @@ def _detect_media_type_and_dimension(
     return detected_media_type, detected_dimension
 
 
-def _validate_project_dimension(
-    db_project: models.Project, *, detected_dimension: models.DimensionType
+def _validate_project_media_type(
+    db_project: models.Project, *, detected_media_type: models.MediaType
 ):
     # TODO: fix the race condition between concurrent task creations
-    project_dimension = next(
-        iter(db_project.tasks.exclude(dimension="").values_list("dimension", flat=True)[:1]), ""
+    project_media_type = next(
+        iter(db_project.tasks.exclude(media_type="").values_list("media_type", flat=True)[:1]), ""
     )
 
-    if project_dimension and project_dimension != detected_dimension:
+    if project_media_type and project_media_type != detected_media_type:
         raise ValidationError(
-            f"Dimension ({detected_dimension}) of the task must be the "
-            f"same as other tasks in the project ({project_dimension})"
+            f"Media type ({detected_media_type}) of the task must be compatible "
+            f"with other tasks in the project ({project_media_type})"
         )
 
 
@@ -1194,6 +1213,10 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
     db_data = db_task.require_data()
 
     match (db_task.media_type, db_task.mode):
+        case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+            # Not supported yet
+            db_data.compressed_chunk_type = ""
+            db_data.original_chunk_type = ""
         case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
             db_data.compressed_chunk_type = (
                 models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
@@ -1455,6 +1478,41 @@ def _create_image_task_media_descriptors(
     return images, manifest, job_file_mapping
 
 
+def _collect_audio_dataset_descriptors(
+    extractor: AudioReader, *, db_data: models.Data, upload_dir: Path, audio_path: Path
+) -> tuple[models.Audio, int]:
+    audio = models.Audio(
+        data=db_data,
+        path=audio_path.relative_to(upload_dir),
+        sampling_rate=extractor.sampling_rate,
+        has_cover_image=extractor.get_preview_image() is not None,
+    )
+
+    if MAX_AUDIO_DURATION.total_seconds() < extractor.duration:
+        raise ValidationError(f"Audio files longer than {MAX_AUDIO_DURATION} are not allowed")
+
+    return audio, extractor.length
+
+
+def _create_audio_task_media_descriptors(
+    db_task: models.Task, *, extractor: AudioReader, upload_dir: Path, media: dict[str, Any]
+) -> models.Audio:
+    db_data = db_task.require_data()
+
+    audio, audio_length = _collect_audio_dataset_descriptors(
+        extractor=extractor,
+        audio_path=upload_dir / media["audio"][0],
+        upload_dir=upload_dir,
+        db_data=db_data,
+    )
+    db_data.size = audio_length
+    db_data.chunk_size = audio_length  # the UI can't handle chunks yet
+
+    audio.save()
+
+    return audio
+
+
 @transaction.atomic
 def create_thread(
     db_task: int | models.Task,
@@ -1542,20 +1600,27 @@ def create_thread(
 
     # count and validate uploaded files
     media = _count_files(data)
-    media, task_mode = _validate_data(media, manifest_files=manifest_files)
+    media, detected_mode = _validate_data(media, manifest_files=manifest_files)
     is_media_sorted = False
 
-    if job_file_mapping is not None and task_mode != models.TaskMode.ANNOTATION:
+    if job_file_mapping is not None and detected_mode != models.TaskMode.ANNOTATION:
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if (
-        db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
-        and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
-    ) or (
-        # static cache can not be initialized on lightweight backup restore
-        is_data_in_cloud
-        and is_backup_restore
-        and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+        (
+            db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+            and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
+        )
+        or (
+            # static cache can not be initialized on lightweight backup restore
+            is_data_in_cloud
+            and is_backup_restore
+            and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+        )
+        or (
+            # TODO: Not supported yet, maybe implement later
+            media["audio"]
+        )
     ):
         db_data.storage_method = models.StorageMethodChoice.CACHE
 
@@ -1681,10 +1746,10 @@ def create_thread(
 
         details = {
             "source_paths": source_paths,
-            "step": db_data.get_frame_step(),
             "start": db_data.start_frame,
             "stop": data["stop_frame"],
         }
+
         if (
             media_type in {"archive", "zip", "pdf"}
             and db_data.storage == models.StorageChoice.SHARE
@@ -1692,10 +1757,14 @@ def create_thread(
             details["extract_dir"] = db_data.get_upload_dirname()
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
-        if media_type != "video":
+
+        if MEDIA_TYPES[media_type]["mode"] == "annotation":
             details["sorting_method"] = (
                 data["sorting_method"] if not is_media_sorted else models.SortingMethod.PREDEFINED
             )
+
+        if media_type != "audio":
+            details["step"] = db_data.get_frame_step()
 
         extractor = MEDIA_TYPES[media_type]["extractor"](**details)
 
@@ -1729,12 +1798,12 @@ def create_thread(
     )
 
     if db_task.project_id is not None:
-        _validate_project_dimension(db_task.project, detected_dimension=detected_dimension)
+        _validate_project_media_type(db_task.project, detected_media_type=detected_media_type)
 
     assert not db_task.media_type
     db_task.media_type = detected_media_type
     db_task.dimension = detected_dimension
-    db_task.mode = task_mode
+    db_task.mode = detected_mode
 
     if db_task.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
@@ -1755,7 +1824,9 @@ def create_thread(
 
     if job_file_mapping or (
         (
-            not isinstance(extractor, MEDIA_TYPES["video"]["extractor"])
+            not isinstance(
+                extractor, (MEDIA_TYPES["video"]["extractor"], MEDIA_TYPES["audio"]["extractor"])
+            )
             and is_backup_restore
             and db_data.storage_method == models.StorageMethodChoice.CACHE
             and db_data.sorting_method
@@ -1769,7 +1840,10 @@ def create_thread(
                 isinstance(extractor, MEDIA_TYPES["zip"]["extractor"])
                 # Sorting with manifest is optional for non-video
                 or (manifest_file or manifest)
-                and not isinstance(extractor, MEDIA_TYPES["video"]["extractor"])
+                and not isinstance(
+                    extractor,
+                    (MEDIA_TYPES["video"]["extractor"], MEDIA_TYPES["audio"]["extractor"]),
+                )
             )
         )
     ):
@@ -1818,6 +1892,13 @@ def create_thread(
             sorting_method=data["sorting_method"],
         )
 
+    if isinstance(extractor, MEDIA_TYPES["audio"]["extractor"]):
+        if job_file_mapping:
+            raise ValidationError("The 'job_file_mapping' parameter cannot be used in audio tasks")
+
+        if not is_backup_restore and (db_task.segment_size or data.get("segment_size")):
+            raise ValidationError("The 'segment_size' parameter cannot be used in audio tasks")
+
     # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
     if manifest_file and not os.path.exists(db_data.get_manifest_path()):
         shutil.copyfile(os.path.join(manifest_root, manifest_file), db_data.get_manifest_path())
@@ -1840,6 +1921,13 @@ def create_thread(
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
             db_data.chunk_size = 36
+
+    if db_task.media_type == models.MediaType.IMAGE and not data.get(
+        "image_quality", db_data.image_quality
+    ):
+        raise ValidationError(
+            "The 'image_quality' parameter is required for image- and video-based tasks"
+        )
 
     # Create task media descriptors from the metadata collected
     images = None
@@ -1865,8 +1953,15 @@ def create_thread(
                 is_backup_restore=is_backup_restore,
                 is_data_in_cloud=is_data_in_cloud,
             )
+        case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+            _create_audio_task_media_descriptors(
+                db_task,
+                media=media,
+                extractor=extractor,
+                upload_dir=upload_dir,
+            )
         case (media_type, mode):
-            assert False, f"Unexpected media type '{media_type}' and mode '{mode}' combination"
+            assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
 
     # validate stop_frame
     if db_data.stop_frame == 0:
@@ -1898,7 +1993,9 @@ def create_thread(
         _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
     # Prepare the preview image and save it in the cache
-    if not (is_data_in_cloud and is_backup_restore):
+    if db_task.media_type != models.MediaType.AUDIO and not (
+        is_data_in_cloud and is_backup_restore
+    ):
         TaskFrameProvider(db_task=db_task).get_preview()
 
     _move_to_backing_cs_if_configured(db_data)
