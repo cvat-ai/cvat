@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 import base64
 import io
-import yaml
-import numpy as np
-from PIL import Image
+import json
 
+import numpy as np
+import yaml
 from mmpose.apis import MMPoseInferencer
+from PIL import Image
 
 
 def init_context(context):

@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+
 import cv2
 import numpy as np
 from model_loader import ModelLoader

@@ -1,13 +1,13 @@
-import json
 import base64
 import io
-from PIL import Image
+import json
 
 import torch
-from detectron2.model_zoo import get_config
+from detectron2.data.datasets.builtin_meta import COCO_CATEGORIES
 from detectron2.data.detection_utils import convert_PIL_to_numpy
 from detectron2.engine.defaults import DefaultPredictor
-from detectron2.data.datasets.builtin_meta import COCO_CATEGORIES
+from detectron2.model_zoo import get_config
+from PIL import Image
 
 CONFIG_OPTS = ["MODEL.WEIGHTS", "model_final_971ab9.pkl"]
 CONFIDENCE_THRESHOLD = 0.5

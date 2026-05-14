@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 import base64
-from PIL import Image
 import io
-from model_handler import FaceDetectorHandler, AttributesExtractorHandler
+import json
+
+from model_handler import AttributesExtractorHandler, FaceDetectorHandler
+from PIL import Image
 
 
 def init_context(context):

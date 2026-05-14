@@ -3,12 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-import numpy as np
 import os
+
 import cv2
+import numpy as np
 import torch
-from networks.mainnetwork import Network
 from dataloaders import helpers
+from networks.mainnetwork import Network
 
 
 def mask_to_rle(mask):
