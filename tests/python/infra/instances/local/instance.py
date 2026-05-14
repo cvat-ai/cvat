@@ -13,9 +13,8 @@ from infra.config import RuntimeConfig, RuntimeContext, RuntimeMode
 from infra.instances.base_instance import InfraInstance, InfraPytestPlugin
 from infra.system_utils import docker_cp, run_command
 
-from .constants import COVERED_CONTAINERS, FAILURE_LOG_CONTAINERS
-from .docker import exec_container_as_root, running_containers
-from .environment import configure_local_runtime_env, configure_local_runtime_env_before_collection
+from .docker import COVERED_CONTAINERS, exec_container_as_root, running_containers
+from .environment import configure_local_runtime_env
 from .lifecycle import run_local_runtime_lifecycle
 from .stack import cleanup_after_session
 
@@ -133,6 +132,8 @@ class LocalInstance(InfraInstance):
         )
 
     def collect_failure_logs(self) -> None:
+        FAILURE_LOG_CONTAINERS = COVERED_CONTAINERS + ("cvat_opa", "traefik")
+
         request = RuntimeConfig.parse_request(self.config)
         local_runtime = RuntimeConfig.get_local_runtime_config(request.run_prefix)
         running = set(running_containers())
@@ -245,7 +246,7 @@ class LocalInstance(InfraInstance):
 class LocalPytestPlugin(InfraPytestPlugin):
     @classmethod
     def configure(cls, config) -> None:
-        configure_local_runtime_env_before_collection(config)
+        configure_local_runtime_env(config, persist_state=False)
 
 
 LocalInstance.plugin_class = LocalPytestPlugin

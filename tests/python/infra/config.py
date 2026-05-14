@@ -20,14 +20,8 @@ import pytest
 _LOGGER = logging.getLogger(__name__)
 
 _CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
-_CVAT_DB_DIR = _CVAT_ROOT_DIR / "tests/python/shared/assets/cvat_db"
-_CLICKHOUSE_INIT_SCRIPT = "components/analytics/clickhouse/init.py"
 _DEFAULT_RUN_PREFIX = "test"
-_DEFAULT_RUNTIME_MODE = "auto"
-_RUN_PREFIX_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _RUNTIME_ROOT_DIR = Path(tempfile.gettempdir()) / "cvat_pytest_infra"
-_RUNS_ROOT_DIR = _RUNTIME_ROOT_DIR / "runs"
-_RUN_CONTEXT_FILE_NAME = "run-context.json"
 _DEFAULT_LOCAL_PORT_CONFIG = {
     "http_port": 8080,
     "logs_port": 8090,
@@ -36,15 +30,6 @@ _DEFAULT_LOCAL_PORT_CONFIG = {
     "redis_ondisk_port": 16666,
     "minio_port": 9000,
     "minio_console_port": 9001,
-}
-_NON_DEFAULT_LOCAL_PORT_STARTS = {
-    "http_port": 18080,
-    "logs_port": 18090,
-    "db_port": 15432,
-    "redis_inmem_port": 16379,
-    "redis_ondisk_port": 16666,
-    "minio_port": 19000,
-    "minio_console_port": 19001,
 }
 
 
@@ -60,24 +45,8 @@ class RuntimeMode(str, Enum):
         return self.value
 
 
-_RUNTIME_MODES = tuple(str(mode) for mode in RuntimeMode)
-_LIFECYCLE_COMMAND_MODES = (
-    RuntimeMode.UP,
-    RuntimeMode.DOWN,
-    RuntimeMode.REUSE,
-    RuntimeMode.RESTORE,
-    RuntimeMode.REBUILD,
-)
-_TESTLESS_LIFECYCLE_MODES = (
-    RuntimeMode.UP,
-    RuntimeMode.DOWN,
-    RuntimeMode.RESTORE,
-    RuntimeMode.REBUILD,
-)
-
-
 def _validate_run_prefix(name: str) -> str:
-    if not _RUN_PREFIX_PATTERN.match(name):
+    if not re.match(r"^[a-z0-9][a-z0-9_-]*$", name):
         raise pytest.UsageError(
             "Invalid run prefix. Use lowercase letters, digits, '_' or '-', and start with a letter or digit."
         )
@@ -100,7 +69,7 @@ class RuntimeStateStore:
 
     @property
     def context_file(self) -> Path:
-        return self.runtime_dir / _RUN_CONTEXT_FILE_NAME
+        return self.runtime_dir / "run-context.json"
 
     def load_state(self) -> dict | None:
         if not self.state_file.exists():
@@ -196,9 +165,13 @@ class LocalRuntimeConfig:
         if self.project_name == default_project_name:
             return {**_DEFAULT_LOCAL_PORT_CONFIG, **state}
 
-        if _state_has_local_port_config(state) and (
-            runtime_running or _state_local_port_config_is_available(state, used_ports=used_ports)
-        ):
+        state_has_port_config = all(name in state for name in _DEFAULT_LOCAL_PORT_CONFIG)
+        state_port_config_is_available = state_has_port_config and all(
+            _local_port_is_available(int(state[name]), used_ports=used_ports)
+            for name in _DEFAULT_LOCAL_PORT_CONFIG
+        )
+
+        if state_has_port_config and (runtime_running or state_port_config_is_available):
             return {name: int(state[name]) for name in _DEFAULT_LOCAL_PORT_CONFIG}
 
         port_config = _allocate_local_port_config(used_ports=used_ports)
@@ -238,18 +211,16 @@ def _next_available_local_port(
     return port
 
 
-def _state_has_local_port_config(state: dict) -> bool:
-    return all(name in state for name in _DEFAULT_LOCAL_PORT_CONFIG)
-
-
-def _state_local_port_config_is_available(state: dict, *, used_ports: set[int]) -> bool:
-    return all(
-        _local_port_is_available(int(state[name]), used_ports=used_ports)
-        for name in _DEFAULT_LOCAL_PORT_CONFIG
-    )
-
-
 def _allocate_local_port_config(*, used_ports: set[int]) -> dict:
+    NON_DEFAULT_LOCAL_PORT_STARTS = {
+        "http_port": 18080,
+        "logs_port": 18090,
+        "db_port": 15432,
+        "redis_inmem_port": 16379,
+        "redis_ondisk_port": 16666,
+        "minio_port": 19000,
+        "minio_console_port": 19001,
+    }
     reserved_ports: set[int] = set()
     return {
         name: _next_available_local_port(
@@ -257,7 +228,7 @@ def _allocate_local_port_config(*, used_ports: set[int]) -> dict:
             used_ports=used_ports,
             reserved_ports=reserved_ports,
         )
-        for name, start_port in _NON_DEFAULT_LOCAL_PORT_STARTS.items()
+        for name, start_port in NON_DEFAULT_LOCAL_PORT_STARTS.items()
     }
 
 
@@ -281,10 +252,24 @@ class RuntimeConfig:
         if request is not None:
             return request
 
+        LIFECYCLE_COMMAND_MODES = (
+            RuntimeMode.UP,
+            RuntimeMode.DOWN,
+            RuntimeMode.REUSE,
+            RuntimeMode.RESTORE,
+            RuntimeMode.REBUILD,
+        )
+        TESTLESS_LIFECYCLE_MODES = (
+            RuntimeMode.UP,
+            RuntimeMode.DOWN,
+            RuntimeMode.RESTORE,
+            RuntimeMode.REBUILD,
+        )
+
         runtime_mode = cls.parse_runtime_mode(config.getoption("--infra"))
         explicit_runtime_mode = runtime_mode != RuntimeMode.AUTO
         args = list(getattr(config, "args", ()) or ())
-        lifecycle_commands = tuple(str(mode) for mode in _LIFECYCLE_COMMAND_MODES)
+        lifecycle_commands = tuple(str(mode) for mode in LIFECYCLE_COMMAND_MODES)
         requested_lifecycle_commands = [arg for arg in args if arg in lifecycle_commands]
 
         if len(requested_lifecycle_commands) > 1:
@@ -312,7 +297,7 @@ class RuntimeConfig:
         collect_only = bool(config.getoption("--collect-only"))
         platform = str(config.getoption("--platform"))
         skip_runtime_sanity_checks = bool(config.getoption("--skip-version-check"))
-        run_prefix = cls.get_run_prefix_from_config(config)
+        run_prefix = _validate_run_prefix(config.getoption("--run-prefix"))
 
         deprecation_warnings = []
         if start_services:
@@ -376,7 +361,7 @@ class RuntimeConfig:
 
         should_run_runtime_sanity_checks = (
             not collect_only
-            and runtime_mode not in _TESTLESS_LIFECYCLE_MODES
+            and runtime_mode not in TESTLESS_LIFECYCLE_MODES
             and not any((cleanup, dumpdb))
             and not skip_runtime_sanity_checks
         )
@@ -439,8 +424,8 @@ class RuntimeConfig:
         group._addoption(
             "--infra",
             action="store",
-            default=cls.get_default_runtime_mode(),
-            choices=cls.get_runtime_modes(),
+            default=str(RuntimeMode.AUTO),
+            choices=tuple(str(mode) for mode in RuntimeMode),
             help=(
                 "Infrastructure mode: auto (default behavior), up (start services and exit), "
                 "reuse (reuse already running services), down (stop services and exit), "
@@ -468,36 +453,25 @@ class RuntimeConfig:
 
     @classmethod
     def get_cvat_db_dir(cls) -> Path:
-        return _CVAT_DB_DIR
+        return _CVAT_ROOT_DIR / "tests/python/shared/assets/cvat_db"
 
     @classmethod
     def get_default_run_prefix(cls) -> str:
         return _DEFAULT_RUN_PREFIX
 
     @classmethod
-    def get_default_runtime_mode(cls) -> str:
-        return _DEFAULT_RUNTIME_MODE
-
-    @classmethod
-    def get_runtime_modes(cls) -> tuple[str, ...]:
-        return _RUNTIME_MODES
-
-    @classmethod
     def get_clickhouse_init_script(cls) -> str:
-        return _CLICKHOUSE_INIT_SCRIPT
+        return "components/analytics/clickhouse/init.py"
 
     @classmethod
     def parse_runtime_mode(cls, value: str) -> RuntimeMode:
         try:
             return RuntimeMode(value)
         except ValueError as ex:
+            allowed_modes = ", ".join(str(mode) for mode in RuntimeMode)
             raise pytest.UsageError(
-                f"Unknown runtime mode {value!r}. Allowed: {', '.join(_RUNTIME_MODES)}"
+                f"Unknown runtime mode {value!r}. Allowed: {allowed_modes}"
             ) from ex
-
-    @classmethod
-    def get_run_prefix_from_config(cls, config) -> str:
-        return _validate_run_prefix(config.getoption("--run-prefix"))
 
     @classmethod
     def get_state_store(cls, name_arg: str | None = None) -> RuntimeStateStore:
@@ -529,7 +503,7 @@ class RuntimeContext:
             return
 
         request = RuntimeConfig.parse_request(config)
-        runs_root_dir = _RUNS_ROOT_DIR
+        runs_root_dir = _RUNTIME_ROOT_DIR / "runs"
         runs_root_dir.mkdir(parents=True, exist_ok=True)
 
         base_run_id = f"{request.run_prefix}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -561,10 +535,6 @@ class RuntimeContext:
         return _RUNTIME_ROOT_DIR
 
     @classmethod
-    def get_runs_root_dir(cls) -> Path:
-        return _RUNS_ROOT_DIR
-
-    @classmethod
     def get_server_url(cls, endpoint: str, **kwargs) -> str:
         query = urlencode(kwargs)
         return f"{cls.get_base_url().rstrip('/')}/{endpoint}" + (f"?{query}" if query else "")
@@ -580,12 +550,8 @@ class RuntimeContext:
         return getattr(shared_config, "BASE_URL", "http://localhost:8080")
 
     @classmethod
-    def get_state_store(cls, name_arg: str | None = None) -> RuntimeStateStore:
-        return RuntimeConfig.get_state_store(name_arg)
-
-    @classmethod
     def write_runtime_context(cls, runtime_name: str) -> None:
-        context_file = cls.get_state_store(runtime_name).context_file
+        context_file = RuntimeConfig.get_state_store(runtime_name).context_file
         context_file.parent.mkdir(parents=True, exist_ok=True)
 
         payload = {
@@ -596,7 +562,3 @@ class RuntimeContext:
         with open(tmp_file, "w") as f:
             json.dump(payload, f, indent=2, sort_keys=True)
         tmp_file.replace(context_file)
-
-    @classmethod
-    def context_file_for_runtime(cls, runtime_name: str) -> Path:
-        return cls.get_state_store(runtime_name).context_file

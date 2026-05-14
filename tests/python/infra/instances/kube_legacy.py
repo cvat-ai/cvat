@@ -36,14 +36,6 @@ def _kube_get_db_pod_name() -> str:
     return _kube_get_pod_name("app.kubernetes.io/name=postgresql")
 
 
-def _kube_get_redis_inmem_pod_name() -> str:
-    return _kube_get_pod_name("app.kubernetes.io/name=redis")
-
-
-def _kube_get_redis_ondisk_pod_name() -> str:
-    return _kube_get_pod_name("app.kubernetes.io/name=cvat,tier=kvrocks")
-
-
 def kube_cp(source: Path, target: str) -> None:
     run_command(["kubectl", "cp", str(source), target], logger=logger)
 
@@ -60,13 +52,13 @@ def exec_cvat_db(command: list[str]) -> None:
 
 
 def exec_redis_inmem(command: list[str]) -> str:
-    pod_name = _kube_get_redis_inmem_pod_name()
+    pod_name = _kube_get_pod_name("app.kubernetes.io/name=redis")
     stdout, _ = run_command(["kubectl", "exec", pod_name, "--", *command], logger=logger)
     return stdout
 
 
 def exec_redis_ondisk(command: list[str]) -> None:
-    pod_name = _kube_get_redis_ondisk_pod_name()
+    pod_name = _kube_get_pod_name("app.kubernetes.io/name=cvat,tier=kvrocks")
     run_command(["kubectl", "exec", pod_name, "--", *command], logger=logger)
 
 
@@ -91,8 +83,8 @@ def restore_clickhouse_db() -> None:
     )
 
 
-def _get_redis_inmem_keys_to_keep() -> tuple[str, ...]:
-    return (
+def restore_redis_inmem() -> None:
+    REDIS_INMEM_KEYS_TO_KEEP = (
         "rq:worker:",
         "rq:workers",
         "rq:scheduler_instance:",
@@ -101,15 +93,13 @@ def _get_redis_inmem_keys_to_keep() -> tuple[str, ...]:
         "cvat:applied_migration:",
     )
 
-
-def restore_redis_inmem() -> None:
     exec_redis_inmem(
         [
             "sh",
             "-c",
             'export REDISCLI_AUTH="${REDIS_PASSWORD}" && '
             'redis-cli -e --scan --pattern "*" | '
-            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" | '
+            'grep -v "' + r"\|".join(REDIS_INMEM_KEYS_TO_KEEP) + '" | '
             "xargs -r redis-cli -e del",
         ]
     )
@@ -161,7 +151,3 @@ def session_start(session) -> None:
         infra_health.wait_for_services()
         return
     start()
-
-
-def session_finish(session) -> None:
-    return None

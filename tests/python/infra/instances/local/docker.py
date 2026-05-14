@@ -8,9 +8,17 @@ import logging
 from infra.config import RuntimeConfig
 from infra.system_utils import run_command
 
-from .constants import REQUIRED_RUNNING_CONTAINERS
-
 logger = logging.getLogger(__name__)
+
+COVERED_CONTAINERS = (
+    "cvat_server",
+    "cvat_worker_annotation",
+    "cvat_worker_import",
+    "cvat_worker_export",
+    "cvat_worker_quality_reports",
+    "cvat_worker_webhooks",
+    "cvat_worker_utils",
+)
 
 
 def exec_container_as_root(container: str, command: list[str], capture_output=True):
@@ -78,6 +86,13 @@ def running_containers() -> list[str]:
 
 
 def project_containers_running(project_name: str) -> bool:
+    REQUIRED_RUNNING_CONTAINERS = COVERED_CONTAINERS + (
+        "cvat_db",
+        "cvat_worker_chunks",
+        "cvat_worker_consensus",
+        "traefik",
+    )
+
     containers = set(running_containers())
     expected = {f"{project_name}_{container}_1" for container in REQUIRED_RUNNING_CONTAINERS}
     return expected.issubset(containers)

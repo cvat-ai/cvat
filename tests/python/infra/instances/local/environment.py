@@ -75,7 +75,3 @@ def configure_local_runtime_env(config, *, persist_state: bool) -> None:
                 "minio_endpoint_url": os.environ["CVAT_MINIO_ENDPOINT_URL"],
             }
         )
-
-
-def configure_local_runtime_env_before_collection(config) -> None:
-    configure_local_runtime_env(config, persist_state=False)

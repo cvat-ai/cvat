@@ -109,10 +109,6 @@ def pytest_sessionfinish(session, exitstatus: int) -> None:
 
     setattr(session.config, "_cvat_exitstatus", int(exitstatus))
 
-    if request.platform == "kube":
-        kube_legacy.session_finish(session)
-        return
-
     instance = getattr(session.config, "_cvat_infra_instance", None)
     if instance is not None:
         instance.finish()

@@ -11,8 +11,7 @@ import yaml
 from infra.config import LocalRuntimeConfig
 from infra.system_utils import run_command
 
-from .constants import COVERED_CONTAINERS, LOCAL_DC_FILES
-from .docker import running_containers
+from .docker import COVERED_CONTAINERS, running_containers
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +19,13 @@ logger = logging.getLogger(__name__)
 def build_local_dc_files(
     local_runtime: LocalRuntimeConfig, extra_dc_files: Any = None
 ) -> list[Path]:
+    LOCAL_DC_FILES = (
+        "tests/docker-compose.file_share.yml",
+        "tests/docker-compose.minio.yml",
+        "tests/docker-compose.pat_settings.yml",
+        "tests/docker-compose.test_servers.yml",
+    )
+
     dc_files = local_runtime.generated_compose_files + [
         local_runtime.cvat_root_dir / f for f in LOCAL_DC_FILES
     ]
