@@ -776,10 +776,14 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             ("1", {"values": ["3", "2", "1", "4"]}, {"values": ["3", "2", "1", "4"]}),
             ("2", {"values": ["1", "2", "3", "4"]}, {"values": ["1", "2", "3", "4"]}),
             ("3", {"values": ["false"]}, {"values": ["false"]}),
-            ("4", {"default_value": "updated", "values": ["updated"]}, {
-                "default_value": "updated",
-                "values": ["updated"],
-            }),
+            (
+                "4",
+                {"default_value": "updated", "values": ["updated"]},
+                {
+                    "default_value": "updated",
+                    "values": ["updated"],
+                },
+            ),
         ],
     )
     def test_can_patch_safe_attribute_fields(
@@ -794,7 +798,9 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         response = self._patch_attribute(admin_user, label["id"], attrs[attribute_name], **fields)
 
         assert response.status_code == HTTPStatus.OK, response.content
-        updated_attr = next(attr for attr in response.json()["attributes"] if attr["name"] == attribute_name)
+        updated_attr = next(
+            attr for attr in response.json()["attributes"] if attr["name"] == attribute_name
+        )
         assert {key: updated_attr[key] for key in expected_fields} == expected_fields
 
     @pytest.mark.parametrize(
