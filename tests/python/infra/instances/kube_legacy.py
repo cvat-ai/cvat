@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from infra import health as infra_health
-from infra.config import RuntimeSettings
+from infra.config import RuntimeMode, RuntimeSettings
 from infra.system_utils import run_command
 
 logger = logging.getLogger(__name__)
@@ -163,9 +163,11 @@ def start(cvat_db_dir: Path | None = None) -> None:
 
 
 def session_start(session) -> None:
-    if session.config.getoption("--collect-only"):
+    request = RuntimeSettings.resolve_request(session.config)
+    if request.collect_only:
         return
-    if session.config.getoption("--no-services"):
+    if request.runtime_mode == RuntimeMode.REUSE:
+        infra_health.wait_for_services()
         return
     start()
 

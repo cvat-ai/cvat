@@ -15,11 +15,9 @@ logger = logging.getLogger(__name__)
 def configure_runtime_env(
     project_name: str,
     port_config: dict,
-    *,
-    base_url: str | None = None,
 ) -> None:
     os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
-    os.environ["CVAT_BASE_URL"] = base_url or f"http://localhost:{port_config['http_port']}"
+    os.environ["CVAT_BASE_URL"] = f"http://localhost:{port_config['http_port']}"
     os.environ["CVAT_MINIO_ENDPOINT_URL"] = f"http://localhost:{port_config['minio_port']}"
     # tests/docker-compose.minio.yml uses these compose envs for host bindings.
     os.environ["CVAT_TEST_MINIO_PORT"] = str(port_config["minio_port"])
@@ -65,7 +63,6 @@ def preconfigure_local_runtime_env(config) -> None:
     configure_runtime_env(
         project_name=project_name,
         port_config=port_config,
-        base_url=request.external_base_url,
     )
 
 
@@ -82,7 +79,6 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
     configure_runtime_env(
         project_name=project_name,
         port_config=port_config,
-        base_url=request.external_base_url,
     )
     project_cfg.save_state(
         {

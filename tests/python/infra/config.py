@@ -274,8 +274,6 @@ class RuntimeRequest:
     cleanup: bool
     dumpdb: bool
     rebuild_images_before_start: bool
-    no_services: bool
-    external_base_url: str | None
     deprecation_warnings: tuple[str, ...]
     should_run_runtime_sanity_checks: bool
 
@@ -309,11 +307,7 @@ class RuntimeSettings:
         group._addoption(
             "--no-services",
             action="store_true",
-            help=(
-                "Reuse externally managed CVAT services without starting, stopping, "
-                "or seeding containers. Equivalent to --infra=reuse for local runs. "
-                "(default: %(default)s)"
-            ),
+            help=argparse.SUPPRESS,
         )
         group._addoption(
             "--run-prefix",
@@ -456,6 +450,11 @@ class RuntimeSettings:
 
         if start_services and stop_services:
             raise pytest.UsageError("--start-services and --stop-services are incompatible")
+        if no_services:
+            raise pytest.UsageError(
+                "--no-services is deprecated and unsupported by the pytest-managed runtime; "
+                "use pytest tests/python reuse or --infra=reuse with a managed running test stack"
+            )
         if runtime_mode != RuntimeMode.AUTO and any((start_services, stop_services)):
             raise pytest.UsageError(
                 "--start-services/--stop-services cannot be combined with --infra modes "
@@ -465,11 +464,6 @@ class RuntimeSettings:
             runtime_mode = RuntimeMode.UP
         elif stop_services:
             runtime_mode = RuntimeMode.DOWN
-
-        if no_services:
-            if runtime_mode not in {RuntimeMode.AUTO, RuntimeMode.REUSE}:
-                raise pytest.UsageError("--no-services is compatible only with --infra=auto/reuse")
-            runtime_mode = RuntimeMode.REUSE
 
         if platform == "kube" and any((start_services, stop_services, rebuild_images_before_start)):
             raise pytest.UsageError(
@@ -506,10 +500,6 @@ class RuntimeSettings:
         if platform == "kube" and any((cleanup, dumpdb)):
             raise pytest.UsageError("--platform=kube does not support --cleanup/--dumpdb")
 
-        external_base_url = None
-        if runtime_mode == RuntimeMode.REUSE or no_services:
-            external_base_url = os.environ.get("CVAT_BASE_URL")
-
         should_run_runtime_sanity_checks = (
             not collect_only
             and runtime_mode not in _TESTLESS_LIFECYCLE_MODES
@@ -525,8 +515,6 @@ class RuntimeSettings:
             cleanup=cleanup,
             dumpdb=dumpdb,
             rebuild_images_before_start=rebuild_images_before_start,
-            no_services=no_services,
-            external_base_url=external_base_url,
             deprecation_warnings=tuple(deprecation_warnings),
             should_run_runtime_sanity_checks=should_run_runtime_sanity_checks,
         )
