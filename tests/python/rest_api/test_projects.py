@@ -1206,7 +1206,11 @@ class TestPatchProjectLabel:
         response = patch_method(
             admin_user,
             f'projects/{project["id"]}',
-            {"labels": [{"id": label["id"], "attributes": [{"id": attribute["id"], "deleted": True}]}]},
+            {
+                "labels": [
+                    {"id": label["id"], "attributes": [{"id": attribute["id"], "deleted": True}]}
+                ]
+            },
         )
 
         assert response.status_code == HTTPStatus.OK, response.content

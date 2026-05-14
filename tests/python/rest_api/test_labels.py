@@ -17,8 +17,13 @@ from dateutil.parser import isoparse as parse_datetime
 from deepdiff import DeepDiff
 from pytest_cases import fixture, fixture_ref, parametrize
 
-from shared.utils.config import delete_method, get_method, make_api_client, patch_method, post_method
-
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 from .utils import CollectionSimpleFilterTestBase, build_exclude_paths_expr, get_attrs
 
 
@@ -863,11 +868,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_delete_unknown_attribute(self, source: str, admin_user: str):
         source_key = self._get_source_info(source).label_source_key
-        label = next(
-            l
-            for l in self.labels
-            if l.get(source_key) and not l["has_parent"]
-        )
+        label = next(l for l in self.labels if l.get(source_key) and not l["has_parent"])
 
         response = patch_method(
             admin_user,

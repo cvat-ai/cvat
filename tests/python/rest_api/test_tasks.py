@@ -1218,7 +1218,11 @@ class TestPatchTaskLabel:
         response = patch_method(
             admin_user,
             f'tasks/{task["id"]}',
-            {"labels": [{"id": label["id"], "attributes": [{"id": attribute["id"], "deleted": True}]}]},
+            {
+                "labels": [
+                    {"id": label["id"], "attributes": [{"id": attribute["id"], "deleted": True}]}
+                ]
+            },
         )
 
         assert response.status_code == HTTPStatus.OK, response.content
