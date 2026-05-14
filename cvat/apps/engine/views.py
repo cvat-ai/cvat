@@ -496,6 +496,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return HttpResponseNotFound('Project image preview not found')
 
         data_getter = _TaskDataGetter(
+            request=request,
             db_task=first_task,
             data_type='preview',
             data_quality='compressed',
@@ -524,7 +525,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
 class _DataGetter(metaclass=ABCMeta):
     def __init__(
-        self, data_type: str, data_num: str | int | None, data_quality: str
+        self,
+        request: ExtendedRequest,
+        data_type: str,
+        data_num: str | int | None,
+        data_quality: str,
     ) -> None:
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
         possible_quality_values = ('compressed', 'original')
@@ -541,20 +546,83 @@ class _DataGetter(metaclass=ABCMeta):
         self.number = int(data_num) if data_num is not None else None
         self.quality = FrameQuality.COMPRESSED \
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
+        self._request = request
 
     @abstractmethod
     def _get_frame_provider(self) -> IFrameProvider: ...
+
+    @staticmethod
+    def _parse_range(range_header: str, content_size: int) -> tuple[int, int]:
+        range_unit, separator, ranges = range_header.partition('=')
+        if range_unit.strip().lower() != 'bytes' or separator != '=' or ',' in ranges:
+            raise ValidationError('Invalid Range header')
+
+        start_text, separator, end_text = ranges.strip().partition('-')
+        if separator != '-':
+            raise ValidationError('Invalid Range header')
+
+        if not start_text and not end_text:
+            raise ValidationError('Invalid Range header')
+
+        try:
+            if start_text:
+                start = int(start_text)
+                end = int(end_text) if end_text else content_size - 1
+            else:
+                suffix_length = int(end_text)
+                if suffix_length <= 0:
+                    raise ValidationError('Invalid Range header')
+                start = max(content_size - suffix_length, 0)
+                end = content_size - 1
+        except ValueError as ex:
+            raise ValidationError('Invalid Range header') from ex
+
+        if start < 0 or end < start or start >= content_size:
+            raise ValidationError('Invalid Range header')
+
+        return start, min(end, content_size - 1)
+
+    def _make_ranged_chunk_response(self, chunk_data: DataWithMeta) -> HttpResponse:
+        data = chunk_data.data.getvalue()
+        content_size = len(data)
+        chunk_headers = {
+            **self._get_chunk_response_headers(chunk_data),
+            'Accept-Ranges': 'bytes',
+        }
+
+        range_header = self._request.headers.get('Range')
+        if not range_header:
+            return HttpResponse(data, content_type=chunk_data.mime, headers=chunk_headers)
+
+        try:
+            start, end = self._parse_range(range_header, content_size)
+        except ValidationError:
+            return HttpResponse(
+                status=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                headers={
+                    **chunk_headers,
+                    'Content-Range': f'bytes */{content_size}',
+                },
+            )
+
+        partial_data = data[start:end + 1]
+        return HttpResponse(
+            partial_data,
+            content_type=chunk_data.mime,
+            status=status.HTTP_206_PARTIAL_CONTENT,
+            headers={
+                **chunk_headers,
+                'Content-Range': f'bytes {start}-{end}/{content_size}',
+                'Content-Length': str(len(partial_data)),
+            },
+        )
 
     def _get_data_response(self) -> HttpResponse:
         frame_provider = self._get_frame_provider()
 
         if self.type == 'chunk':
             data = frame_provider.get_chunk(self.number, quality=self.quality)
-            return HttpResponse(
-                data.data.getvalue(),
-                content_type=data.mime,
-                headers=self._get_chunk_response_headers(data),
-            )
+            return self._make_ranged_chunk_response(data)
         elif self.type == 'frame':
             data = frame_provider.get_frame(self.number, quality=self.quality)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
@@ -608,19 +676,25 @@ class _DataGetter(metaclass=ABCMeta):
     def _make_chunk_response_headers(self, checksum: str, updated_date: datetime) -> dict[str, str]:
         return {
             _DATA_CHECKSUM_HEADER_NAME: str(checksum or ''),
-            _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(updated_date),
+            _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(
+                updated_date
+            ),
         }
+
 
 class _TaskDataGetter(_DataGetter):
     def __init__(
         self,
+        request: ExtendedRequest,
         db_task: models.Task,
         *,
         data_type: str,
         data_quality: str,
         data_num: str | int | None = None,
     ) -> None:
-        super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
+        super().__init__(
+            request=request, data_type=data_type, data_num=data_num, data_quality=data_quality
+        )
         self._db_task = db_task
 
     def _get_frame_provider(self) -> TaskFrameProvider:
@@ -635,6 +709,7 @@ class _TaskDataGetter(_DataGetter):
 class _JobDataGetter(_DataGetter):
     def __init__(
         self,
+        request: ExtendedRequest,
         db_job: models.Job,
         *,
         data_type: str,
@@ -666,6 +741,7 @@ class _JobDataGetter(_DataGetter):
         self.quality = FrameQuality.COMPRESSED \
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
 
+        self._request = request
         self._db_job = db_job
 
     def _get_frame_provider(self) -> JobFrameProvider:
@@ -685,11 +761,7 @@ class _JobDataGetter(_DataGetter):
                     self.number, quality=self.quality, is_task_chunk=True
                 )
 
-            return HttpResponse(
-                data.data.getvalue(),
-                content_type=data.mime,
-                headers=self._get_chunk_response_headers(data),
-            )
+            return self._make_ranged_chunk_response(data)
         else:
             return super()._get_data_response()
 
@@ -1219,21 +1291,27 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description="Specifies the quality level of the requested data"),
             OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame"),
+            OpenApiParameter('Range', location=OpenApiParameter.HEADER, required=False,
+                type=OpenApiTypes.STR,
+                description="Byte range to return, applicable for chunks only. "
+                    "Example: 'bytes=0-1023'"),
             OpenApiParameter(
                 _DATA_CHECKSUM_HEADER_NAME,
                 location=OpenApiParameter.HEADER, type=OpenApiTypes.STR, required=False,
-                response=[200],
+                response=[200, 206],
                 description="Data checksum, applicable for chunks only",
             ),
             OpenApiParameter(
                 _DATA_UPDATED_DATE_HEADER_NAME,
                 location=OpenApiParameter.HEADER, type=OpenApiTypes.DATETIME, required=False,
-                response=[200],
+                response=[200, 206],
                 description="Data update date, applicable for chunks only",
             )
         ],
         responses={
             '200': OpenApiResponse(description='Data of a specific type'),
+            '206': OpenApiResponse(description='Partial chunk data'),
+            '416': OpenApiResponse(description='Requested range is not satisfiable'),
         })
     @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$',
         parser_classes=_UPLOAD_PARSER_CLASSES)
@@ -1265,7 +1343,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             data_quality = request.query_params.get('quality', 'compressed')
 
             data_getter = _TaskDataGetter(
-                self._object, data_type=data_type, data_num=data_num, data_quality=data_quality
+                request=request,
+                db_task=self._object,
+                data_type=data_type,
+                data_num=data_num,
+                data_quality=data_quality,
             )
             return data_getter()
 
@@ -1515,6 +1597,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return HttpResponseNotFound('Task image preview not found')
 
         data_getter = _TaskDataGetter(
+            request=request,
             db_task=self._object,
             data_type='preview',
             data_quality='compressed',
@@ -1918,9 +2001,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             OpenApiParameter('index',
                 location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk, starts from 0 for each job"),
+            OpenApiParameter('Range', location=OpenApiParameter.HEADER, required=False,
+                type=OpenApiTypes.STR,
+                description="Byte range to return, applicable for chunks only. "
+                    "Example: 'bytes=0-1023'"),
             ],
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
+            '206': OpenApiResponse(OpenApiTypes.BINARY, description='Partial chunk data'),
+            '416': OpenApiResponse(description='Requested range is not satisfiable'),
         })
     @action(detail=True, methods=['GET'],
         simple_filters=[] # type query parameter conflicts with the filter
@@ -1933,7 +2022,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         data_quality = request.query_params.get('quality', 'compressed')
 
         data_getter = _JobDataGetter(
-            db_job,
+            request=request,
+            db_job=db_job,
             data_type=data_type, data_quality=data_quality,
             data_index=data_index, data_num=data_num
         )
@@ -2050,6 +2140,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         self._object = self.get_object() # call check_object_permissions as well
 
         data_getter = _JobDataGetter(
+            request=request,
             db_job=self._object,
             data_type='preview',
             data_quality='compressed',
