@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "baseUrl": "../src",
+    "paths": {
+      "@modules/react": ["../../node_modules/@types/react"],
+      "@modules/react-dom": ["../../node_modules/@types/react-dom"],
+      "@modules/react-dom/*": ["../../node_modules/@types/react-dom/*"],
+      "@modules/*": ["../../node_modules/*"],
+      "@types/*": ["../../node_modules/*"],
+      "@root/*": ["*"]
+    },
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "jsx": "react"
+  }
+}
