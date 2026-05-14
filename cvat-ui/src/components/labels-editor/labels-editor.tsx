@@ -204,7 +204,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 name: label.name,
                 id: label.id as number < 0 ? undefined : label.id,
                 color: label.color,
-                type: label.type || 'any',
+                type: label.type ?? 'any',
                 attributes: label.attributes.map((attr: SerializedAttribute): SerializedAttribute => ({
                     ...attr,
                     id: attr.id as number < 0 ? undefined : attr.id,

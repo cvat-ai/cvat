@@ -69,28 +69,27 @@ export class Attribute {
                     get: () => data.name,
                 },
                 values: {
-                    get: () => (Array.isArray(data.values) ? [...data.values] : []),
+                    get: () => [...data.values],
                 },
             }),
         );
     }
 
     toJSON(): SerializedAttribute {
-        const object: Partial<SerializedAttribute> = this.deleted ? {
-            deleted: true,
-        } : {
+        const object: SerializedAttribute = {
             name: this.name,
             mutable: this.mutable,
             input_type: this.inputType,
             default_value: this.defaultValue,
             values: this.values,
+            deleted: this.deleted,
         };
 
         if (typeof this.id !== 'undefined') {
             object.id = this.id;
         }
 
-        return object as SerializedAttribute;
+        return object;
     }
 }
 
@@ -272,22 +271,20 @@ export class Label {
 }
 
 export function getUpdatedLabels(oldLabels: Label[], newLabels: Label[]): Label[] {
-    if (!Array.isArray(oldLabels) || !Array.isArray(newLabels)) {
-        throw new ArgumentError('Value must be an array of Labels');
-    }
-
     if (
+        !Array.isArray(oldLabels) ||
+        !Array.isArray(newLabels) ||
         oldLabels.some((label) => !(label instanceof Label)) ||
         newLabels.some((label) => !(label instanceof Label))
     ) {
-        throw new ArgumentError('Each array value must be an instance of Label');
+        throw new ArgumentError('Old and new labels must be arrays of Labels');
     }
 
-    const oldIDs = oldLabels.map((label) => label.id);
-    const newIDs = newLabels.map((label) => label.id);
+    const oldIDs = new Set(oldLabels.map((label) => label.id));
+    const newIDs = new Set(newLabels.map((label) => label.id));
     const updatedLabels: Label[] = [];
 
-    oldLabels.filter((label) => !newIDs.includes(label.id))
+    oldLabels.filter((label) => !newIDs.has(label.id))
         .forEach((label) => {
             const deletedLabel = new Label(label.toJSON());
             deletedLabel.deleted = true;
@@ -296,7 +293,7 @@ export function getUpdatedLabels(oldLabels: Label[], newLabels: Label[]): Label[
 
     newLabels.forEach((label) => {
         const { id } = label;
-        if (oldIDs.includes(id)) {
+        if (oldIDs.has(id)) {
             const oldLabel = oldLabels.find((_label) => _label.id === id);
             if (oldLabel && !label.equals(oldLabel)) {
                 const patchedLabel = new Label(label.toJSON());
@@ -308,7 +305,8 @@ export function getUpdatedLabels(oldLabels: Label[], newLabels: Label[]): Label[
 
     updatedLabels.push(...newLabels
         .filter((label) => !Number.isInteger(label.id))
-        .map((label) => new Label(label.toJSON())));
+        .map((label) => new Label(label.toJSON())),
+    );
 
     return updatedLabels;
 }
