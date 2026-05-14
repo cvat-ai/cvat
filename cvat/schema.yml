@@ -2565,6 +2565,15 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
+      - in: query
         name: location
         schema:
           type: string
@@ -5574,6 +5583,15 @@ paths:
         description: A unique integer value identifying this task.
         required: true
       - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
+      - in: query
         name: location
         schema:
           type: string
@@ -7946,7 +7964,9 @@ components:
       - webhook_type
     EventsEnum:
       enum:
+      - create:backup
       - create:comment
+      - create:export
       - create:invitation
       - create:issue
       - create:job
@@ -7970,7 +7990,9 @@ components:
       - update:task
       type: string
       description: |-
+        * `create:backup` - CREATE:BACKUP
         * `create:comment` - CREATE:COMMENT
+        * `create:export` - CREATE:EXPORT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB

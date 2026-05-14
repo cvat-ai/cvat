@@ -60,6 +60,18 @@ class PatchAction(str, Enum):
         return self.value
 
 
+class AnnotationImportMode(str, Enum):
+    REPLACE = "replace"
+    APPEND = "append"
+
+    @classmethod
+    def values(cls):
+        return [item.value for item in cls]
+
+    def __str__(self):
+        return self.value
+
+
 def _receive_attributes_from_db(related_manager, foreign_key: str) -> defaultdict[int, list]:
     attributes = defaultdict(list)
     for attr in related_manager.values(
@@ -833,13 +845,26 @@ class JobAnnotation:
         ) as temp_dir:
             exporter(dst_file, temp_dir, job_data, **options)
 
-    def import_annotations(self, src_file, importer, **options):
+    def import_annotations(
+        self,
+        src_file,
+        importer,
+        *,
+        import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
+        **options,
+    ):
         job_data = JobData(
             annotation_ir=AnnotationIR(self.db_job.segment.task.dimension),
             db_job=self.db_job,
             create_callback=self.create,
         )
-        self.delete()
+        import_mode = AnnotationImportMode(import_mode)
+        if import_mode == AnnotationImportMode.REPLACE:
+            self.delete()
+        elif import_mode == AnnotationImportMode.APPEND:
+            pass
+        else:
+            assert False, f"Unknown annotation import mode: {import_mode}"
 
         with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
@@ -1059,13 +1084,26 @@ class TaskAnnotation:
         ) as temp_dir:
             exporter(dst_file, temp_dir, task_data, **options)
 
-    def import_annotations(self, src_file, importer, **options):
+    def import_annotations(
+        self,
+        src_file,
+        importer,
+        *,
+        import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
+        **options,
+    ):
         task_data = TaskData(
             annotation_ir=AnnotationIR(self.db_task.dimension),
             db_task=self.db_task,
             create_callback=self.create,
         )
-        self.delete()
+        import_mode = AnnotationImportMode(import_mode)
+        if import_mode == AnnotationImportMode.REPLACE:
+            self.delete()
+        elif import_mode == AnnotationImportMode.APPEND:
+            pass
+        else:
+            assert False, f"Unknown annotation import mode: {import_mode}"
 
         with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
@@ -1207,26 +1245,50 @@ def export_task(
 
 
 @transaction.atomic
-def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
+def import_task_annotations(
+    src_file,
+    task_id,
+    format_name,
+    conv_mask_to_poly,
+    *,
+    import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
+):
     av_scan_paths(src_file)
     task = TaskAnnotation(task_id, write_only=True)
 
     importer = make_importer(format_name)
     with open(src_file, "rb") as f:
         try:
-            task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+            task.import_annotations(
+                f,
+                importer,
+                conv_mask_to_poly=conv_mask_to_poly,
+                import_mode=import_mode,
+            )
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))
 
 
 @transaction.atomic
-def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
+def import_job_annotations(
+    src_file,
+    job_id,
+    format_name,
+    conv_mask_to_poly,
+    *,
+    import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
+):
     av_scan_paths(src_file)
     job = JobAnnotation(job_id, prefetch_images=True)
 
     importer = make_importer(format_name)
     with open(src_file, "rb") as f:
         try:
-            job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+            job.import_annotations(
+                f,
+                importer,
+                conv_mask_to_poly=conv_mask_to_poly,
+                import_mode=import_mode,
+            )
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))
