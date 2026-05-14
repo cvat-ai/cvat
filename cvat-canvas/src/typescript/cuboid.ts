@@ -10,6 +10,17 @@ export enum Orientation {
     RIGHT = 'right',
 }
 
+export type RotationAxis = 'roll' | 'pitch' | 'yaw';
+
+// Structural subset of FisheyeLens. Declared here to avoid a cyclic import
+// between cuboid.ts and lensModel.ts.
+export interface LensLike {
+    undistortPoint(p: Point): Point;
+    distortPoint(p: Point): Point;
+}
+
+interface Vec3 { x: number; y: number; z: number; }
+
 export function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point | null {
     // Check if none of the lines are of length 0
     const { x: x1, y: y1 } = p1;
@@ -181,6 +192,139 @@ export class CuboidModel {
         this.fl.points[0].x = this.fl.points[1].x;
         this.dr.points[0].x = this.dr.points[1].x;
         this.dl.points[0].x = this.dl.points[1].x;
+    }
+
+    /**
+     * Rotate the cuboid in-place around its local centroid by `angleRad`
+     * about a single axis (roll / pitch / yaw). Used by the on-canvas
+     * rotation gizmo introduced in INT-5976.
+     *
+     * Approach (option B from the plan — "weak-perspective lift"):
+     *   1. Optionally undistort the 8 image points through the lens.
+     *   2. Compute their centroid (rectified pixel space).
+     *   3. Lift each point to a 3D box-local position by treating front-face
+     *      points (indices 0..3) as z = -d/2 and back-face points (4..7) as
+     *      z = +d/2, where d = ‖meanBack − meanFront‖.
+     *   4. Apply a single-axis rotation in the local frame.
+     *   5. Re-project with weak perspective (centroid as principal point,
+     *      `focalPx` as focal length).
+     *   6. Optionally re-distort through the lens and write back.
+     *
+     * Side effects: forces `freeFaceMode = true`, since after a rotation the
+     * side edges are generally no longer vertical and the perspective rebuild
+     * (buildBackEdge/updatePoints) would otherwise destroy the rotation.
+     * This matches the auto-detect logic in the constructor.
+     */
+    public rotateCuboid(
+        axis: RotationAxis,
+        angleRad: number,
+        focalPx: number,
+        lens?: LensLike | null,
+        halfDepthOverride?: number,
+        pivotOverride?: Point | null,
+    ): void {
+        if (!this.points || this.points.length !== 8 || !angleRad || !Number.isFinite(angleRad)) {
+            return;
+        }
+
+        // IMPORTANT: rotate directly in image-pixel (distorted) space.
+        //
+        // Earlier this method did `undistort -> rotate-as-3D-box -> distort`,
+        // which produced the "thin / pinched cuboid" regression with lens
+        // calibration on (INT-5976). The reasons that pipeline was wrong:
+        //
+        //  - `lens.undistortPoint` returns rectified-pinhole coordinates, not
+        //    metric 3D-box coordinates. The relative spacing of the 8 corners
+        //    in that space is severely non-uniform (off-axis cuboids get
+        //    sheared, near-horizon points blow up to ~1e6 — see lensModel.ts
+        //    `undistortPoint`). Lifting that warped 2D layout to z = ±d/2 and
+        //    rotating it is NOT a rigid box rotation.
+        //  - `distortPoint` is highly non-linear, so re-distorting each
+        //    rotated corner individually maps small rectified-space shifts to
+        //    wildly different fisheye-pixel offsets. The 8 corners get pushed
+        //    around non-uniformly relative to the visual centroid, which is
+        //    what collapsed the cuboid into a thin shape.
+        //
+        // The 8 stored corners ARE the visual anchors of the cuboid in image
+        // space — the lens overlay simply curves the EDGES between them
+        // (lensModel.ts `curvedEdgePoints`). Applying a rigid 3D-box rotation
+        // to those anchors and writing the result straight back keeps the
+        // anchors where the user expects, and the overlay re-curves the
+        // edges between the new positions automatically.
+        void lens;
+        void focalPx;
+
+        const src: Point[] = this.points.map((p) => ({ x: p.x, y: p.y }));
+
+        // Pivot. Prefer the caller-supplied visual centroid (the same point
+        // the gizmo is rendered at — `cuboidCentroid()` in svg.patch.ts which
+        // averages all 12 curved-edge samples when a lens is active). Without
+        // a pivot override we fall back to the 8-corner mean, which equals
+        // the visual centroid for the no-lens (straight-edged) case.
+        const c: Point = (
+            pivotOverride &&
+            Number.isFinite(pivotOverride.x) &&
+            Number.isFinite(pivotOverride.y)
+        )
+            ? { x: pivotOverride.x, y: pivotOverride.y }
+            : src.reduce(
+                (acc, p) => ({ x: acc.x + p.x / 8, y: acc.y + p.y / 8 }),
+                { x: 0, y: 0 },
+            );
+
+        // Local frame depth, in image-pixel space (consistent with src).
+        // Prefer a stable, gesture-scoped depth captured at drag start so the
+        // cuboid doesn't "breathe" as the box rotates and the 2D distance
+        // between the front- and back-face centroids changes.
+        let halfDepth: number;
+        if (typeof halfDepthOverride === 'number' && Number.isFinite(halfDepthOverride) && halfDepthOverride > 0) {
+            halfDepth = halfDepthOverride;
+        } else {
+            const meanIdx = (idxs: number[]): Point => idxs.reduce(
+                (a, i) => ({ x: a.x + src[i].x / idxs.length, y: a.y + src[i].y / idxs.length }),
+                { x: 0, y: 0 },
+            );
+            const front = meanIdx([0, 1, 2, 3]);
+            const back = meanIdx([4, 5, 6, 7]);
+            halfDepth = (Math.hypot(back.x - front.x, back.y - front.y) || 1) / 2;
+        }
+
+        // Lift to 3D in box-local frame (centroid-relative, rigid box).
+        const lifted: Vec3[] = src.map((p, i) => ({
+            x: p.x - c.x,
+            y: p.y - c.y,
+            z: i < 4 ? -halfDepth : +halfDepth,
+        }));
+
+        // Rotation matrix application (single axis).
+        const cos = Math.cos(angleRad);
+        const sin = Math.sin(angleRad);
+        const rotate = (v: Vec3): Vec3 => {
+            if (axis === 'roll') {
+                return { x: v.x * cos - v.y * sin, y: v.x * sin + v.y * cos, z: v.z };
+            }
+            if (axis === 'pitch') {
+                return { x: v.x, y: v.y * cos - v.z * sin, z: v.y * sin + v.z * cos };
+            }
+            // yaw
+            return { x: v.x * cos + v.z * sin, y: v.y, z: -v.x * sin + v.z * cos };
+        };
+
+        // Orthographic re-projection (drop z, add centroid back) and write
+        // back directly — no re-distortion step.
+        const finalPts: Point[] = lifted.map(rotate).map((v) => (
+            { x: c.x + v.x, y: c.y + v.y }
+        ));
+        for (let i = 0; i < 8; i += 1) {
+            this.points[i].x = finalPts[i].x;
+            this.points[i].y = finalPts[i].y;
+        }
+
+        // After any rotation the side edges are no longer vertical; flip
+        // into freeFaceMode so subsequent edits use the per-corner handles
+        // and updatePoints() does not re-verticalise the box.
+        this.freeFaceMode = true;
+        this.updateOrientation();
     }
 
     public computeSideEdgeConstraints(edge: any): any {

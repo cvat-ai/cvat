@@ -46,6 +46,7 @@ interface Props {
     resetCuboidPerspective(): void;
     toggleCuboidFreeFaceMode(): void;
     cuboidFreeFaceMode: boolean;
+    resetCuboidRotation(): void;
     runAnnotationAction(): void;
     edit(): void;
     slice(): void;
@@ -83,6 +84,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         resetCuboidPerspective,
         toggleCuboidFreeFaceMode,
         cuboidFreeFaceMode,
+        resetCuboidRotation,
         runAnnotationAction,
         edit,
         slice,
@@ -150,6 +152,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     resetCuboidPerspective={resetCuboidPerspective}
                     toggleCuboidFreeFaceMode={toggleCuboidFreeFaceMode}
                     cuboidFreeFaceMode={cuboidFreeFaceMode}
+                    resetCuboidRotation={resetCuboidRotation}
                     edit={edit}
                     slice={slice}
                     simplify={simplify}

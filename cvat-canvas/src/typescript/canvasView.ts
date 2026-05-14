@@ -50,6 +50,7 @@ export interface CanvasView {
     translateFromSVG(points: number[]): number[];
     setCuboidFreeFaceMode(clientID: number, flag: boolean): void;
     isCuboidFreeFaceMode(clientID: number): boolean;
+    resetCuboidRotation(clientID: number): void;
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -2426,6 +2427,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return shape.isFreeFaceMode();
         }
         return false;
+    }
+
+    public resetCuboidRotation(clientID: number): void {
+        const shape: any = this.svgShapes[clientID];
+        if (shape && typeof shape.resetCuboidRotation === 'function') {
+            shape.resetCuboidRotation();
+        }
     }
 
     private redrawBitmap(): void {

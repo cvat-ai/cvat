@@ -10,7 +10,7 @@ import 'svg.select.js';
 import 'svg.draw.js';
 
 import consts from './consts';
-import { Equation, CuboidModel, Orientation, Edge } from './cuboid';
+import { Equation, CuboidModel, Orientation, Edge, RotationAxis } from './cuboid';
 import { Point, parsePoints, clamp } from './shared';
 import {
     FisheyeLens, FisheyeParams, curvedEdgePoints, pointsToPathD, faceToCurvedPathD,
@@ -460,6 +460,9 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             }
 
             this.updateFreeCornerHandlesVisibility();
+            // Rotation gizmo (INT-5976) is created alongside the grab points
+            // so it shares the activation lifecycle.
+            this.setupRotationGizmo();
         },
 
         positionFreeCornerHandles() {
@@ -477,6 +480,261 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.frtCenter.center(pts[2].x, pts[2].y);
                 this.frbCenter.center(pts[3].x, pts[3].y);
             }
+        },
+
+        // ── Rotation gizmo (INT-5976) ───────────────────────────────────
+        // 3 colored arcs at the cuboid centroid. Always available when the
+        // cuboid is selected; coexists with Free Face Mode.
+        //   Roll  = red circle (screen plane)            → drag tangentially
+        //   Pitch = green horizontal flat ellipse (X axis) → drag vertically
+        //   Yaw   = blue  vertical   flat ellipse (Y axis) → drag horizontally
+        cuboidCentroid(): { x: number; y: number } {
+            const pts = this.cuboidModel.points;
+            // Without a lens the 8 stored corners form a straight-edged
+            // cuboid, so their mean is the perceived centroid.
+            if (!this.lens) {
+                return {
+                    x: pts.reduce((s: number, p: Point) => s + p.x / 8, 0),
+                    y: pts.reduce((s: number, p: Point) => s + p.y / 8, 0),
+                };
+            }
+            // With a fisheye lens the 12 edges between the corners curve.
+            // The simple 8-corner mean lands off the visible shape because
+            // bowed edges shift the visual mass. Sample each curved edge
+            // (same routine that draws the overlay) and average all samples
+            // — this lands the gizmo on the perceived centroid of the
+            // distorted cuboid (INT-5976 lens-aware fix).
+            const edges: Edge[] = this.cuboidModel.edgeList;
+            let sx = 0;
+            let sy = 0;
+            let n = 0;
+            for (const e of edges) {
+                const ep = e.points;
+                const samples = curvedEdgePoints(ep[0], ep[1], this.lens);
+                for (const s of samples) {
+                    sx += s.x;
+                    sy += s.y;
+                    n += 1;
+                }
+            }
+            if (n === 0) {
+                return {
+                    x: pts.reduce((s: number, p: Point) => s + p.x / 8, 0),
+                    y: pts.reduce((s: number, p: Point) => s + p.y / 8, 0),
+                };
+            }
+            return { x: sx / n, y: sy / n };
+        },
+
+        cuboidGizmoRadius(): number {
+            const pts = this.cuboidModel.points;
+            const xs = pts.map((p: Point) => p.x);
+            const ys = pts.map((p: Point) => p.y);
+            const w = Math.max(...xs) - Math.min(...xs);
+            const h = Math.max(...ys) - Math.min(...ys);
+            // ~12 % of the smaller bbox dim, clamped to [8, 28] image-pixels.
+            // Kept compact so the gizmo doesn't visually overwhelm large
+            // cuboids and obscure underlying video pixels (INT-5976 tweak).
+            return Math.max(8, Math.min(28, Math.min(w, h) * 0.12));
+        },
+
+        setupRotationGizmo() {
+            const r = this.cuboidGizmoRadius();
+            // Roll = full circle, screen plane.
+            this.rotRoll = this.circle(r * 2)
+                .fill('none')
+                .stroke({ color: '#ff5252', width: 1.5 })
+                .addClass('cvat_canvas_cuboid_rot_gizmo')
+                .addClass('cvat_canvas_cuboid_rot_gizmo_roll');
+            this.rotPitch = this.ellipse(r * 2, (r * 2) / 3)
+                .fill('none')
+                .stroke({ color: '#43a047', width: 1.5 })
+                .addClass('cvat_canvas_cuboid_rot_gizmo')
+                .addClass('cvat_canvas_cuboid_rot_gizmo_pitch');
+            this.rotYaw = this.ellipse((r * 2) / 3, r * 2)
+                .fill('none')
+                .stroke({ color: '#1e88e5', width: 1.5 })
+                .addClass('cvat_canvas_cuboid_rot_gizmo')
+                .addClass('cvat_canvas_cuboid_rot_gizmo_yaw');
+            // Style hooks so the gizmo arcs are easy to grab even though
+            // they are stroke-only (no fill = pointer-events would normally
+            // ignore the interior of the ring).
+            [this.rotRoll, this.rotPitch, this.rotYaw].forEach((g: any) => {
+                g.attr('pointer-events', 'visibleStroke');
+                g.style({ cursor: 'grab' });
+            });
+            this.positionRotationGizmo();
+        },
+
+        positionRotationGizmo() {
+            if (!this.rotRoll) return;
+            const c = this.cuboidCentroid();
+            const r = this.cuboidGizmoRadius();
+            // Re-size arcs to track the cuboid's apparent size.
+            this.rotRoll.size(r * 2, r * 2).center(c.x, c.y);
+            this.rotPitch.size(r * 2, (r * 2) / 3).center(c.x, c.y);
+            this.rotYaw.size((r * 2) / 3, r * 2).center(c.x, c.y);
+        },
+
+        removeRotationGizmo() {
+            [this.rotRoll, this.rotPitch, this.rotYaw].forEach((g: any) => {
+                if (g) g.remove();
+            });
+            this.rotRoll = null;
+            this.rotPitch = null;
+            this.rotYaw = null;
+        },
+
+        attachRotationGizmoHandlers() {
+            if (!this.rotRoll) return;
+
+            const focalPx = (): number => {
+                // Use the SVG viewbox dimensions (image pixel space) as a
+                // reasonable focal-length proxy. Falls back to a sensible
+                // constant if the viewbox isn't yet sized.
+                try {
+                    const root = (this.doc() as any) || this.parent();
+                    const vb = root.viewbox();
+                    return Math.max(vb.width || 0, vb.height || 0) || 1000;
+                } catch (e) {
+                    return 1000;
+                }
+            };
+
+            // Centroid in screen-pixel coordinates (used only for roll's
+            // tangential angle calculation; we need it before each move
+            // because the SVG transform may have changed via pan/zoom).
+            const centroidScreen = (): { x: number; y: number } => {
+                const c = this.cuboidCentroid();
+                const ctm = this.node.getScreenCTM();
+                if (!ctm) return { x: 0, y: 0 };
+                return {
+                    x: c.x * ctm.a + c.y * ctm.c + ctm.e,
+                    y: c.x * ctm.b + c.y * ctm.d + ctm.f,
+                };
+            };
+
+            const wireArc = (axis: RotationAxis, el: any): void => {
+                if (!el) return;
+                let dragging = false;
+                let last = { x: 0, y: 0 };
+                // Captured once per gesture so the cuboid doesn't drift in
+                // size as the rotation progresses (the per-call estimate
+                // would otherwise change as the box rotates in 2D).
+                let halfDepthAtStart = 0;
+
+                const onMove = (ev: MouseEvent): void => {
+                    if (!dragging) return;
+                    const dx = ev.clientX - last.x;
+                    const dy = ev.clientY - last.y;
+                    last = { x: ev.clientX, y: ev.clientY };
+
+                    let dTheta = 0;
+                    if (axis === 'roll') {
+                        const cs = centroidScreen();
+                        const a1 = Math.atan2((ev.clientY - dy) - cs.y, (ev.clientX - dx) - cs.x);
+                        const a2 = Math.atan2(ev.clientY - cs.y, ev.clientX - cs.x);
+                        dTheta = a2 - a1;
+                        // unwrap so a tiny tangential motion doesn't flip ±2π
+                        if (dTheta > Math.PI) dTheta -= Math.PI * 2;
+                        else if (dTheta < -Math.PI) dTheta += Math.PI * 2;
+                    } else if (axis === 'pitch') {
+                        // 0.5°/px (drag down = +pitch).
+                        dTheta = (dy * 0.5) * (Math.PI / 180);
+                    } else {
+                        // yaw — drag right = +yaw.
+                        dTheta = (dx * 0.5) * (Math.PI / 180);
+                    }
+
+                    if (dTheta !== 0) {
+                        // Pass the gizmo's visual centroid as the pivot so the
+                        // cuboid rotates around the exact spot the user grabbed.
+                        // With a lens active `cuboidCentroid()` is the mean of
+                        // all 12 curved-edge samples (image-pixel space), which
+                        // matches the gizmo position. Without a lens it equals
+                        // the 8-corner mean.
+                        const pivot = this.cuboidCentroid();
+                        this.cuboidModel.rotateCuboid(
+                            axis,
+                            dTheta,
+                            focalPx(),
+                            this.lens || null,
+                            halfDepthAtStart,
+                            pivot,
+                        );
+                        // updateViewAndVM refreshes faces/edges AND writes the
+                        // serialised points string back onto the SVG element so
+                        // readPointsFromShape() returns the rotated geometry on
+                        // the eventual `resizedone` (matches the pattern used by
+                        // every other cuboid handle in this file).
+                        this.updateViewAndVM(false);
+                        this.positionRotationGizmo();
+                        this.positionFreeCornerHandles();
+                        this.fire(new CustomEvent('resizing', { detail: { event: ev } }));
+                    }
+                };
+
+                const onUp = (ev: MouseEvent): void => {
+                    if (!dragging) return;
+                    dragging = false;
+                    el.style({ cursor: 'grab' });
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                    this.fire(new CustomEvent('resizedone', { detail: { event: ev } }));
+                };
+
+                const onDown = (ev: MouseEvent): void => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    dragging = true;
+                    last = { x: ev.clientX, y: ev.clientY };
+                    // Snapshot the cuboid's effective depth (in image pixels)
+                    // at the start of the gesture so subsequent rotation steps
+                    // see a stable lift radius. We use the same front-vs-back
+                    // 2D centroid distance heuristic as rotateCuboid's fallback,
+                    // but freeze it for the duration of the drag.
+                    const pts = this.cuboidModel.points;
+                    if (pts && pts.length === 8) {
+                        const meanIdx = (idxs: number[]): { x: number; y: number } => idxs.reduce(
+                            (a, i) => ({
+                                x: a.x + pts[i].x / idxs.length,
+                                y: a.y + pts[i].y / idxs.length,
+                            }),
+                            { x: 0, y: 0 },
+                        );
+                        const f = meanIdx([0, 1, 2, 3]);
+                        const b = meanIdx([4, 5, 6, 7]);
+                        halfDepthAtStart = (Math.hypot(b.x - f.x, b.y - f.y) || 1) / 2;
+                    } else {
+                        halfDepthAtStart = 0;
+                    }
+                    el.style({ cursor: 'grabbing' });
+                    window.addEventListener('mousemove', onMove);
+                    window.addEventListener('mouseup', onUp);
+                    this.fire(new CustomEvent('resizestart', { detail: { event: ev } }));
+                };
+
+                el.node.addEventListener('mousedown', onDown);
+                // Stash for later teardown.
+                el.__rotGizmoTeardown = (): void => {
+                    el.node.removeEventListener('mousedown', onDown);
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                };
+            };
+
+            wireArc('roll', this.rotRoll);
+            wireArc('pitch', this.rotPitch);
+            wireArc('yaw', this.rotYaw);
+        },
+
+        detachRotationGizmoHandlers() {
+            [this.rotRoll, this.rotPitch, this.rotYaw].forEach((g: any) => {
+                if (g && typeof g.__rotGizmoTeardown === 'function') {
+                    g.__rotGizmoTeardown();
+                    g.__rotGizmoTeardown = null;
+                }
+            });
         },
 
         showProjections() {
@@ -560,6 +818,9 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.flbCenter = null;
                 this.frtCenter = null;
                 this.frbCenter = null;
+                // Tear down the rotation gizmo (INT-5976).
+                this.detachRotationGizmoHandlers();
+                this.removeRotationGizmo();
             } else {
                 this.setupGrabPoints(
                     this.face
@@ -631,6 +892,9 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                         point.off('dragend');
                     }
                 });
+
+                // Detach rotation gizmo (INT-5976) listeners.
+                this.detachRotationGizmoHandlers();
 
                 return;
             }
@@ -1030,6 +1294,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             setupFreeCornerHandle(this.frtCenter, 2);
             setupFreeCornerHandle(this.frbCenter, 3);
 
+            // Rotation gizmo (INT-5976) listeners. The SVG elements were
+            // created in setupGrabPoints; here we hook up mouse events.
+            this.attachRotationGizmoHandlers();
+
             return this;
         },
 
@@ -1334,6 +1602,51 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             return !!(this.cuboidModel && this.cuboidModel.freeFaceMode);
         },
 
+        // Zero pitch / roll / yaw by re-anchoring the cuboid to its current
+        // 2D bounding rectangle as a perspective-valid box. INT-5976.
+        resetCuboidRotation() {
+            const pts = this.cuboidModel.points;
+            if (!pts || pts.length !== 8) return;
+            const xs = pts.map((p: Point) => p.x);
+            const ys = pts.map((p: Point) => p.y);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+            const w = Math.max(maxX - minX, 4);
+            // Synthesised dorsal-offset depth: 25 % of width, capped to keep
+            // the front face the dominant face on small cuboids.
+            const d = Math.max(Math.min(w * 0.25, w - 4), 1);
+            // Rebuild as a right-orientation cuboid (front face on the left).
+            pts[0] = { x: minX, y: minY }; // flt
+            pts[1] = { x: minX, y: maxY }; // flb
+            pts[2] = { x: minX + (w - d), y: minY }; // frt
+            pts[3] = { x: minX + (w - d), y: maxY }; // frb
+            pts[4] = { x: maxX, y: minY - d * 0.2 }; // brt
+            pts[5] = { x: maxX, y: maxY + d * 0.2 }; // brb
+            pts[6] = { x: minX + d, y: minY - d * 0.2 }; // blt
+            pts[7] = { x: minX + d, y: maxY + d * 0.2 }; // blb
+            // Snap back to standard perspective mode: re-verticalise side
+            // edges and rebuild the back face along the perspective rays.
+            this.cuboidModel.freeFaceMode = false;
+            this.cuboidModel.updateOrientation();
+            this.cuboidModel.updatePoints();
+            this.cuboidModel.buildBackEdge(false);
+            this.updateFreeCornerHandlesVisibility();
+            this.showProjections();
+            this.updateView();
+            this.positionRotationGizmo();
+            this._attr(
+                'points',
+                this.cuboidModel
+                    .getPoints()
+                    .reduce((acc: string, point: Point): string => `${acc} ${point.x},${point.y}`, '')
+                    .trim(),
+            );
+            // Notify CVAT so the change is persisted via the resize chain.
+            this.fire(new CustomEvent('resizedone', { detail: {} }));
+        },
+
         updateFreeCornerHandlesVisibility() {
             const handles = [
                 this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter,
@@ -1452,6 +1765,8 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             }
             // Per-corner handles follow their own (corner) coordinates.
             this.positionFreeCornerHandles();
+            // Rotation gizmo (INT-5976) follows the cuboid centroid.
+            this.positionRotationGizmo();
         },
     },
     construct: {

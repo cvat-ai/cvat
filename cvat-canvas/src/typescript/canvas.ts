@@ -56,6 +56,7 @@ interface Canvas {
 
     setCuboidFreeFaceMode(clientID: number, flag: boolean): void;
     isCuboidFreeFaceMode(clientID: number): boolean;
+    resetCuboidRotation(clientID: number): void;
 
     readonly geometry: Geometry;
 }
@@ -201,6 +202,10 @@ class CanvasImpl implements Canvas {
 
     public isCuboidFreeFaceMode(clientID: number): boolean {
         return this.view.isCuboidFreeFaceMode(clientID);
+    }
+
+    public resetCuboidRotation(clientID: number): void {
+        this.view.resetCuboidRotation(clientID);
     }
 }
 

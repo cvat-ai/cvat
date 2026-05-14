@@ -528,6 +528,19 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         this.forceUpdate();
     };
 
+    private resetCuboidRotation = (): void => {
+        const { objectState, canvasInstance } = this.props;
+        if (
+            objectState.shapeType !== ShapeType.CUBOID ||
+            !(canvasInstance instanceof Canvas)
+        ) {
+            return;
+        }
+        canvasInstance.resetCuboidRotation(objectState.clientID as number);
+        // The canvas fires 'resizedone' which CVAT's event chain persists.
+        this.forceUpdate();
+    };
+
     private resetCuboidPerspective = (commit = true): void => {
         function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
@@ -629,6 +642,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                                 .isCuboidFreeFaceMode(objectState.clientID as number)
                             : false
                     }
+                    resetCuboidRotation={this.resetCuboidRotation}
                     runAnnotationAction={this.runAnnotationAction}
                 />
                 {simplifyMode && (
