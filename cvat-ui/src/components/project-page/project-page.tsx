@@ -145,8 +145,8 @@ export default function ProjectPageComponent(): JSX.Element {
         ));
     }, [tasks, deletedTasks]);
 
-    const onUpdateProject = useCallback((project: Project) => {
-        const promise = dispatch(updateProjectAsync(project));
+    const onUpdateProject = useCallback((project: Project, fields?: Parameters<Project['save']>[0]) => {
+        const promise = dispatch(updateProjectAsync(project, fields));
         promise.then((updatedProject: Project) => {
             setProjectInstance(updatedProject);
         });

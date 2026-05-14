@@ -725,6 +725,59 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         assert response.status_code == HTTPStatus.OK, response.content
         assert attribute["id"] not in {attr["id"] for attr in response.json()["attributes"]}
 
+    def test_can_delete_skeleton_root_attribute(self, admin_user: str):
+        task_spec = {
+            "name": "test delete skeleton root attribute via label patch",
+            "labels": [
+                {
+                    "name": "skeleton",
+                    "attributes": [
+                        {
+                            "name": "pose",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "standing",
+                            "values": ["standing", "sitting"],
+                        }
+                    ],
+                    "type": "skeleton",
+                    "sublabels": [
+                        {"name": "1", "type": "points"},
+                        {"name": "2", "type": "points"},
+                    ],
+                    "svg": '<circle r="1.5" cx="20" cy="20" data-type="element node" '
+                    'data-element-id="1" data-node-id="1" data-label-name="1"></circle>'
+                    '<circle r="1.5" cx="40" cy="40" data-type="element node" '
+                    'data-element-id="2" data-node-id="2" data-label-name="2"></circle>',
+                }
+            ],
+        }
+        response = post_method(admin_user, "tasks", task_spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        task = response.json()
+
+        with make_api_client(admin_user) as client:
+            labels = get_paginated_collection(
+                client.labels_api.list_endpoint, task_id=task["id"], return_json=True
+            )
+
+        label = next(l for l in labels if l["name"] == "skeleton")
+        attribute = label["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {
+                "name": label["name"],
+                "attributes": [{"id": attribute["id"], "deleted": True}],
+                "type": label["type"],
+                "color": label["color"],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert attribute["id"] not in {attr["id"] for attr in response.json()["attributes"]}
+
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_delete_attribute_without_id(self, source: str, admin_user: str):
         source_key = self._get_source_info(source).label_source_key

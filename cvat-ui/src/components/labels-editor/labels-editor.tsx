@@ -71,7 +71,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                         mutable: attr.mutable,
                         values: [...attr.values],
                         default_value: attr.default_value,
-                        deleted: attr.deleted,
                     }),
                 ),
             };
@@ -206,15 +205,18 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 id: label.id as number < 0 ? undefined : label.id,
                 color: label.color,
                 type: label.type || 'any',
-                attributes: label.attributes.map((attr: SerializedAttribute): SerializedAttribute => ({
-                    name: attr.name,
-                    id: attr.id as number < 0 ? undefined : attr.id,
-                    input_type: attr.input_type.toLowerCase() as SerializedAttribute['input_type'],
-                    default_value: attr.default_value,
-                    mutable: attr.mutable,
-                    values: [...attr.values],
-                    deleted: attr.deleted,
-                })),
+                attributes: label.attributes.map((attr: SerializedAttribute): SerializedAttribute => {
+                    const id = attr.id as number < 0 ? undefined : attr.id;
+
+                    return {
+                        name: attr.name,
+                        id,
+                        input_type: attr.input_type.toLowerCase() as SerializedAttribute['input_type'],
+                        default_value: attr.default_value,
+                        mutable: attr.mutable,
+                        values: [...(attr.values || [])],
+                    };
+                }),
             };
 
             if (originalLabel) {

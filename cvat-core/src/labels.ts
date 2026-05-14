@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import DOMPurify from 'dompurify';
+import _ from 'lodash';
 import {
     AttrInputType, SerializedAttribute, SerializedLabel,
 } from './server-response-types';
@@ -241,6 +242,10 @@ export class Label {
         return object;
     }
 
+    equals(other: Label): boolean {
+        return _.isEqual(this.toJSON(), other.toJSON());
+    }
+
     static parseUntrustedSvg(svgString: string): SVGSVGElement {
         const frag = DOMPurify.sanitize(svgString, {
             ALLOWED_TAGS: ['svg', 'line', 'circle', 'desc'],
@@ -264,4 +269,43 @@ export class Label {
 
         return child;
     }
+}
+
+export function getUpdatedLabels(oldLabels: Label[], newLabels: Label[]): Label[] {
+    if (!Array.isArray(newLabels)) {
+        throw new ArgumentError('Value must be an array of Labels');
+    }
+
+    if (newLabels.some((label) => !(label instanceof Label))) {
+        throw new ArgumentError('Each array value must be an instance of Label');
+    }
+
+    const oldIDs = oldLabels.map((label) => label.id);
+    const newIDs = newLabels.map((label) => label.id);
+    const updatedLabels: Label[] = [];
+
+    oldLabels.filter((label) => !newIDs.includes(label.id))
+        .forEach((label) => {
+            const deletedLabel = new Label(label.toJSON());
+            deletedLabel.deleted = true;
+            updatedLabels.push(deletedLabel);
+        });
+
+    newLabels.forEach((label) => {
+        const { id } = label;
+        if (oldIDs.includes(id)) {
+            const oldLabel = oldLabels.find((_label) => _label.id === id);
+            if (oldLabel && !label.equals(oldLabel)) {
+                const patchedLabel = new Label(label.toJSON());
+                patchedLabel.patched = true;
+                updatedLabels.push(patchedLabel);
+            }
+        }
+    });
+
+    updatedLabels.push(...newLabels
+        .filter((label) => !Number.isInteger(label.id))
+        .map((label) => new Label(label.toJSON())));
+
+    return updatedLabels;
 }

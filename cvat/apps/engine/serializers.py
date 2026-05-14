@@ -704,25 +704,25 @@ class LabelSerializer(SublabelSerializer):
         if not self._local:
             return super().update(instance, validated_data)
 
-        # Here we reuse the parent entity logic to make sure everything is done
-        # like these entities expect. Initial data (unprocessed) is used to
-        # avoid introducing premature changes.
-        data = copy(self.initial_data)
+        if isinstance(instance.project, models.Project):
+            parent_instance = instance.project
+            parent_serializer = ProjectWriteSerializer(parent_instance)
+        elif isinstance(instance.task, models.Task):
+            parent_instance = instance.task
+            parent_serializer = TaskWriteSerializer(parent_instance)
+        else:
+            raise serializers.ValidationError('Label must belong to a project or a task')
+
+        data = copy(validated_data)
         data['id'] = instance.id
         data.setdefault('name', instance.name)
-        parent_query = { 'labels': [data] }
+        sublabels = data.pop('sublabels', [])
+        svg = data.pop('svg', '')
 
-        if isinstance(instance.project, models.Project):
-            parent_serializer = ProjectWriteSerializer(
-                instance=instance.project, data=parent_query, partial=True,
-            )
-        elif isinstance(instance.task, models.Task):
-            parent_serializer = TaskWriteSerializer(
-                instance=instance.task, data=parent_query, partial=True,
-            )
+        self.update_label(data, svg, sublabels, parent_instance=parent_instance)
 
-        parent_serializer.is_valid(raise_exception=True)
-        parent_serializer.save()
+        parent_instance.touch()
+        parent_serializer.update_child_objects_on_labels_update(parent_instance)
 
         self.instance = models.Label.objects.get(pk=instance.pk)
         return self.instance

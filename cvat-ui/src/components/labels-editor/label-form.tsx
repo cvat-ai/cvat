@@ -432,9 +432,6 @@ export default class LabelForm extends React.Component<Props> {
                                     okButtonProps: { type: 'primary', danger: true },
                                     onOk: () => {
                                         this.removeAttribute(key);
-                                        setTimeout(() => {
-                                            this.formRef.current?.submit();
-                                        });
                                     },
                                 });
                             } else {
