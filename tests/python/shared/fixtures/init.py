@@ -14,7 +14,7 @@ def _command_args(command: list[str] | str) -> list[str]:
 
 
 def _platform(config) -> str:
-    return RuntimeConfig.resolve_request(config).platform
+    return RuntimeConfig.parse_request(config).platform
 
 
 def _local_instance(config) -> InfraInstance:

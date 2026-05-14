@@ -154,7 +154,7 @@ def start(cvat_db_dir: Path | None = None) -> None:
 
 
 def session_start(session) -> None:
-    request = RuntimeConfig.resolve_request(session.config)
+    request = RuntimeConfig.parse_request(session.config)
     if request.collect_only:
         return
     if request.runtime_mode == RuntimeMode.REUSE:

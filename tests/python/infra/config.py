@@ -276,6 +276,127 @@ class RuntimeRequest:
 
 class RuntimeConfig:
     @classmethod
+    def parse_request(cls, config) -> RuntimeRequest:
+        request = getattr(config, "_cvat_runtime_request", None)
+        if request is not None:
+            return request
+
+        runtime_mode = cls.parse_runtime_mode(config.getoption("--infra"))
+        explicit_runtime_mode = runtime_mode != RuntimeMode.AUTO
+        args = list(getattr(config, "args", ()) or ())
+        lifecycle_commands = tuple(str(mode) for mode in _LIFECYCLE_COMMAND_MODES)
+        requested_lifecycle_commands = [arg for arg in args if arg in lifecycle_commands]
+
+        if len(requested_lifecycle_commands) > 1:
+            raise pytest.UsageError(
+                "Only one lifecycle command can be used at a time: "
+                f"{', '.join(requested_lifecycle_commands)}"
+            )
+        if explicit_runtime_mode and requested_lifecycle_commands:
+            raise pytest.UsageError(
+                f"--infra={runtime_mode} cannot be combined with lifecycle command "
+                f"{requested_lifecycle_commands[0]}"
+            )
+        if requested_lifecycle_commands:
+            args.remove(requested_lifecycle_commands[0])
+            if hasattr(config, "args"):
+                config.args[:] = args
+            runtime_mode = cls.parse_runtime_mode(requested_lifecycle_commands[0])
+
+        no_services = bool(config.getoption("--no-services"))
+        start_services = bool(config.getoption("--start-services"))
+        stop_services = bool(config.getoption("--stop-services"))
+        rebuild_images_before_start = bool(config.getoption("--rebuild"))
+        cleanup = bool(config.getoption("--cleanup"))
+        dumpdb = bool(config.getoption("--dumpdb"))
+        collect_only = bool(config.getoption("--collect-only"))
+        platform = str(config.getoption("--platform"))
+        skip_runtime_sanity_checks = bool(config.getoption("--skip-version-check"))
+        run_prefix = cls.get_run_prefix_from_config(config)
+
+        deprecation_warnings = []
+        if start_services:
+            deprecation_warnings.append("--start-services is deprecated; use --infra=up")
+        if stop_services:
+            deprecation_warnings.append("--stop-services is deprecated; use --infra=down")
+        if rebuild_images_before_start:
+            deprecation_warnings.append("--rebuild is deprecated; use --infra=rebuild")
+
+        if start_services and stop_services:
+            raise pytest.UsageError("--start-services and --stop-services are incompatible")
+        if no_services:
+            raise pytest.UsageError(
+                "--no-services is deprecated and unsupported by the pytest-managed runtime; "
+                "use pytest tests/python reuse or --infra=reuse with a managed running test stack"
+            )
+        if runtime_mode != RuntimeMode.AUTO and any((start_services, stop_services)):
+            raise pytest.UsageError(
+                "--start-services/--stop-services cannot be combined with --infra modes "
+                "or lifecycle commands"
+            )
+        if start_services:
+            runtime_mode = RuntimeMode.UP
+        elif stop_services:
+            runtime_mode = RuntimeMode.DOWN
+
+        if platform == "kube" and any((start_services, stop_services, rebuild_images_before_start)):
+            raise pytest.UsageError(
+                "--platform=kube does not support deprecated local lifecycle flags"
+            )
+        if platform == "kube" and runtime_mode in {
+            RuntimeMode.UP,
+            RuntimeMode.DOWN,
+            RuntimeMode.RESTORE,
+            RuntimeMode.REBUILD,
+        }:
+            raise pytest.UsageError(
+                "--infra=up/down/restore/rebuild are local-runtime lifecycle modes "
+                "and cannot be used with --platform=kube"
+            )
+        if collect_only and any(
+            (
+                cleanup,
+                dumpdb,
+                rebuild_images_before_start,
+                runtime_mode
+                in {
+                    RuntimeMode.UP,
+                    RuntimeMode.DOWN,
+                    RuntimeMode.RESTORE,
+                    RuntimeMode.REBUILD,
+                },
+            )
+        ):
+            raise pytest.UsageError(
+                "--collect-only is not compatible with --cleanup/--dumpdb/--rebuild/"
+                "--infra=up/down/restore/rebuild"
+            )
+        if platform == "kube" and any((cleanup, dumpdb)):
+            raise pytest.UsageError("--platform=kube does not support --cleanup/--dumpdb")
+
+        should_run_runtime_sanity_checks = (
+            not collect_only
+            and runtime_mode not in _TESTLESS_LIFECYCLE_MODES
+            and not any((cleanup, dumpdb))
+            and not skip_runtime_sanity_checks
+        )
+
+        request = RuntimeRequest(
+            platform=platform,
+            runtime_mode=runtime_mode,
+            run_prefix=run_prefix,
+            collect_only=collect_only,
+            cleanup=cleanup,
+            dumpdb=dumpdb,
+            rebuild_images_before_start=rebuild_images_before_start,
+            deprecation_warnings=tuple(deprecation_warnings),
+            should_run_runtime_sanity_checks=should_run_runtime_sanity_checks,
+        )
+        setattr(config, "_cvat_runtime_request", request)
+        setattr(config, "_cvat_runtime_mode", request.runtime_mode)
+        return request
+
+    @classmethod
     def add_options(cls, parser):
         group = parser.getgroup("CVAT REST API testing options")
         group._addoption(
@@ -397,127 +518,6 @@ class RuntimeConfig:
             cvat_root_dir=cvat_root_dir,
         )
 
-    @classmethod
-    def resolve_request(cls, config) -> RuntimeRequest:
-        request = getattr(config, "_cvat_runtime_request", None)
-        if request is not None:
-            return request
-
-        runtime_mode = cls.parse_runtime_mode(config.getoption("--infra"))
-        explicit_runtime_mode = runtime_mode != RuntimeMode.AUTO
-        args = list(getattr(config, "args", ()) or ())
-        lifecycle_commands = tuple(str(mode) for mode in _LIFECYCLE_COMMAND_MODES)
-        requested_lifecycle_commands = [arg for arg in args if arg in lifecycle_commands]
-
-        if len(requested_lifecycle_commands) > 1:
-            raise pytest.UsageError(
-                "Only one lifecycle command can be used at a time: "
-                f"{', '.join(requested_lifecycle_commands)}"
-            )
-        if explicit_runtime_mode and requested_lifecycle_commands:
-            raise pytest.UsageError(
-                f"--infra={runtime_mode} cannot be combined with lifecycle command "
-                f"{requested_lifecycle_commands[0]}"
-            )
-        if requested_lifecycle_commands:
-            args.remove(requested_lifecycle_commands[0])
-            if hasattr(config, "args"):
-                config.args[:] = args
-            runtime_mode = cls.parse_runtime_mode(requested_lifecycle_commands[0])
-
-        no_services = bool(config.getoption("--no-services"))
-        start_services = bool(config.getoption("--start-services"))
-        stop_services = bool(config.getoption("--stop-services"))
-        rebuild_images_before_start = bool(config.getoption("--rebuild"))
-        cleanup = bool(config.getoption("--cleanup"))
-        dumpdb = bool(config.getoption("--dumpdb"))
-        collect_only = bool(config.getoption("--collect-only"))
-        platform = str(config.getoption("--platform"))
-        skip_runtime_sanity_checks = bool(config.getoption("--skip-version-check"))
-        run_prefix = cls.get_run_prefix_from_config(config)
-
-        deprecation_warnings = []
-        if start_services:
-            deprecation_warnings.append("--start-services is deprecated; use --infra=up")
-        if stop_services:
-            deprecation_warnings.append("--stop-services is deprecated; use --infra=down")
-        if rebuild_images_before_start:
-            deprecation_warnings.append("--rebuild is deprecated; use --infra=rebuild")
-
-        if start_services and stop_services:
-            raise pytest.UsageError("--start-services and --stop-services are incompatible")
-        if no_services:
-            raise pytest.UsageError(
-                "--no-services is deprecated and unsupported by the pytest-managed runtime; "
-                "use pytest tests/python reuse or --infra=reuse with a managed running test stack"
-            )
-        if runtime_mode != RuntimeMode.AUTO and any((start_services, stop_services)):
-            raise pytest.UsageError(
-                "--start-services/--stop-services cannot be combined with --infra modes "
-                "or lifecycle commands"
-            )
-        if start_services:
-            runtime_mode = RuntimeMode.UP
-        elif stop_services:
-            runtime_mode = RuntimeMode.DOWN
-
-        if platform == "kube" and any((start_services, stop_services, rebuild_images_before_start)):
-            raise pytest.UsageError(
-                "--platform=kube does not support deprecated local lifecycle flags"
-            )
-        if platform == "kube" and runtime_mode in {
-            RuntimeMode.UP,
-            RuntimeMode.DOWN,
-            RuntimeMode.RESTORE,
-            RuntimeMode.REBUILD,
-        }:
-            raise pytest.UsageError(
-                "--infra=up/down/restore/rebuild are local-runtime lifecycle modes "
-                "and cannot be used with --platform=kube"
-            )
-        if collect_only and any(
-            (
-                cleanup,
-                dumpdb,
-                rebuild_images_before_start,
-                runtime_mode
-                in {
-                    RuntimeMode.UP,
-                    RuntimeMode.DOWN,
-                    RuntimeMode.RESTORE,
-                    RuntimeMode.REBUILD,
-                },
-            )
-        ):
-            raise pytest.UsageError(
-                "--collect-only is not compatible with --cleanup/--dumpdb/--rebuild/"
-                "--infra=up/down/restore/rebuild"
-            )
-        if platform == "kube" and any((cleanup, dumpdb)):
-            raise pytest.UsageError("--platform=kube does not support --cleanup/--dumpdb")
-
-        should_run_runtime_sanity_checks = (
-            not collect_only
-            and runtime_mode not in _TESTLESS_LIFECYCLE_MODES
-            and not any((cleanup, dumpdb))
-            and not skip_runtime_sanity_checks
-        )
-
-        request = RuntimeRequest(
-            platform=platform,
-            runtime_mode=runtime_mode,
-            run_prefix=run_prefix,
-            collect_only=collect_only,
-            cleanup=cleanup,
-            dumpdb=dumpdb,
-            rebuild_images_before_start=rebuild_images_before_start,
-            deprecation_warnings=tuple(deprecation_warnings),
-            should_run_runtime_sanity_checks=should_run_runtime_sanity_checks,
-        )
-        setattr(config, "_cvat_runtime_request", request)
-        setattr(config, "_cvat_runtime_mode", request.runtime_mode)
-        return request
-
 
 class RuntimeContext:
     _run_id: str | None = None
@@ -528,7 +528,7 @@ class RuntimeContext:
         if cls._run_id and cls._run_dir:
             return
 
-        request = RuntimeConfig.resolve_request(config)
+        request = RuntimeConfig.parse_request(config)
         runs_root_dir = _RUNS_ROOT_DIR
         runs_root_dir.mkdir(parents=True, exist_ok=True)
 

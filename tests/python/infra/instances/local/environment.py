@@ -47,7 +47,7 @@ def configure_local_runtime_env(config, *, persist_state: bool) -> None:
     This prevents import-time constants from sticking to localhost:8080
     when running with --run-prefix.
     """
-    request = RuntimeConfig.resolve_request(config)
+    request = RuntimeConfig.parse_request(config)
     project_name = request.run_prefix
 
     if request.platform != "local":

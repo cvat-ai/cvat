@@ -27,7 +27,7 @@ class LocalInstance(InfraInstance):
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
-        return RuntimeConfig.resolve_request(config).platform == "local"
+        return RuntimeConfig.parse_request(config).platform == "local"
 
     def exec_cvat(self, command: list[str]):
         prefixed_name = RuntimeConfig.get_local_runtime_config().prefixed_container_name(
@@ -93,7 +93,7 @@ class LocalInstance(InfraInstance):
             )
 
     def start(self) -> None:
-        request = RuntimeConfig.resolve_request(self.config)
+        request = RuntimeConfig.parse_request(self.config)
         runtime_mode = request.runtime_mode
         project_name = request.run_prefix
 
@@ -114,7 +114,7 @@ class LocalInstance(InfraInstance):
         )
 
     def finish(self) -> None:
-        request = RuntimeConfig.resolve_request(self.config)
+        request = RuntimeConfig.parse_request(self.config)
         if request.platform != "local":
             return
 
@@ -133,7 +133,7 @@ class LocalInstance(InfraInstance):
         )
 
     def collect_failure_logs(self) -> None:
-        request = RuntimeConfig.resolve_request(self.config)
+        request = RuntimeConfig.parse_request(self.config)
         local_runtime = RuntimeConfig.get_local_runtime_config(request.run_prefix)
         running = set(running_containers())
         logs_dir = self.failure_logs_dir()

@@ -19,7 +19,7 @@ pytest_plugins = [
 
 
 def pytest_configure(config) -> None:
-    RuntimeConfig.resolve_request(config)
+    RuntimeConfig.parse_request(config)
     RuntimeContext.initialize(config)
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.configure(config)
@@ -49,7 +49,7 @@ def pytest_runtestloop(session):
 
 def pytest_sessionstart(session) -> None:
     config = session.config
-    request = RuntimeConfig.resolve_request(config)
+    request = RuntimeConfig.parse_request(config)
 
     for warning in request.deprecation_warnings:
         warnings.warn(warning, DeprecationWarning, stacklevel=2)
@@ -103,7 +103,7 @@ def pytest_sessionstart(session) -> None:
 
 
 def pytest_sessionfinish(session, exitstatus: int) -> None:
-    request = RuntimeConfig.resolve_request(session.config)
+    request = RuntimeConfig.parse_request(session.config)
     if request.collect_only:
         return
 
@@ -124,7 +124,7 @@ def pytest_collection_modifyitems(config, items) -> None:
 
 
 def _selected_runtime_class(config):
-    if RuntimeConfig.resolve_request(config).platform != "local":
+    if RuntimeConfig.parse_request(config).platform != "local":
         return None
 
     selected = getattr(config, "_cvat_runtime_class", None)
@@ -135,7 +135,7 @@ def _selected_runtime_class(config):
 
 
 def _selected_plugin_classes(config):
-    if RuntimeConfig.resolve_request(config).platform != "local":
+    if RuntimeConfig.parse_request(config).platform != "local":
         return []
 
     classes = getattr(config, "_cvat_plugin_classes", None)
