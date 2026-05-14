@@ -9,6 +9,7 @@ from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import Task
 
 
+@pytest.mark.parametrize("target_type", ["task", "job"])
 @pytest.mark.parametrize(
     ("import_mode", "expected_shape_count"),
     [
@@ -17,10 +18,16 @@ from cvat_sdk.core.proxies.tasks import Task
     ],
 )
 def test_import_annotations_respects_import_mode(
-    fxt_new_task: Task, import_mode: str, expected_shape_count: int, tmp_path: Path
+    fxt_new_task: Task,
+    target_type: str,
+    import_mode: str,
+    expected_shape_count: int,
+    tmp_path: Path,
 ):
     labels = fxt_new_task.get_labels()
-    fxt_new_task.set_annotations(
+    target = fxt_new_task if target_type == "task" else fxt_new_task.get_jobs()[0]
+
+    target.set_annotations(
         models.LabeledDataRequest(
             shapes=[
                 models.LabeledShapeRequest(
@@ -33,20 +40,20 @@ def test_import_annotations_respects_import_mode(
         )
     )
 
-    original_annotations = fxt_new_task.get_jobs()[0].get_annotations()
+    original_annotations = target.get_annotations()
     assert len(original_annotations.shapes) == 1
 
-    exported_dataset = fxt_new_task.export_dataset(
+    exported_dataset = target.export_dataset(
         format_name="CVAT for images 1.1",
-        filename=tmp_path / "annotations.zip",
+        filename=tmp_path / f"{target_type}_annotations.zip",
         include_images=False,
     )
 
-    fxt_new_task.import_annotations(
+    target.import_annotations(
         format_name="CVAT 1.1",
         filename=exported_dataset,
         import_mode=import_mode,
     )
 
-    imported_annotations = fxt_new_task.get_jobs()[0].get_annotations()
+    imported_annotations = target.get_annotations()
     assert len(imported_annotations.shapes) == expected_shape_count
