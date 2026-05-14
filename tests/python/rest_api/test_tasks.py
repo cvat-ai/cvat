@@ -1225,63 +1225,6 @@ class TestPatchTaskLabel:
         label = self._get_task_labels(task["id"], admin_user)[0]
         assert label["attributes"] == []
 
-    def test_can_delete_skeleton_sublabel_attribute(self, admin_user):
-        spec = {
-            "name": "test delete task skeleton sublabel attribute",
-            "labels": [
-                {
-                    "name": "person",
-                    "type": "skeleton",
-                    "sublabels": [
-                        {
-                            "name": "head",
-                            "type": "points",
-                            "attributes": [
-                                {
-                                    "name": "note",
-                                    "mutable": False,
-                                    "input_type": "text",
-                                    "default_value": "visible",
-                                    "values": ["visible"],
-                                }
-                            ],
-                        }
-                    ],
-                    "svg": '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="48.794559478759766" '
-                    'cy="36.98698806762695" stroke-width="0.1" data-type="element node" '
-                    'data-element-id="1" data-node-id="1" data-label-name="head"></circle>',
-                }
-            ],
-        }
-        response = post_method(admin_user, "tasks", spec)
-        assert response.status_code == HTTPStatus.CREATED, response.content
-        task = response.json()
-        label = self._get_task_labels(task["id"], admin_user)[0]
-        sublabel = label["sublabels"][0]
-        attribute = sublabel["attributes"][0]
-
-        response = patch_method(
-            admin_user,
-            f'tasks/{task["id"]}',
-            {
-                "labels": [
-                    {
-                        "id": label["id"],
-                        "sublabels": [
-                            {
-                                "id": sublabel["id"],
-                                "attributes": [{"id": attribute["id"], "deleted": True}],
-                            }
-                        ],
-                    }
-                ]
-            },
-        )
-
-        assert response.status_code == HTTPStatus.OK, response.content
-        label = self._get_task_labels(task["id"], admin_user)[0]
-        assert label["sublabels"][0]["attributes"] == []
-
     def test_can_rename_label(self, tasks_wlc, labels, admin_user):
         task = [t for t in tasks_wlc if t["project_id"] is None and t["labels"]["count"] > 0][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])

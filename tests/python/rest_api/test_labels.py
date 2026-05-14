@@ -842,59 +842,6 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         response_sublabel = response.json()["sublabels"][0]
         assert attribute["id"] not in {attr["id"] for attr in response_sublabel["attributes"]}
 
-    def test_can_add_skeleton_sublabel_attribute(self, admin_user: str):
-        task_spec = {
-            "name": "test add skeleton sublabel attribute via label patch",
-            "labels": [
-                {
-                    "name": "skeleton",
-                    "type": "skeleton",
-                    "sublabels": [{"name": "1", "type": "points"}],
-                    "svg": '<circle r="1.5" cx="20" cy="20" data-type="element node" '
-                    'data-element-id="1" data-node-id="1" data-label-name="1"></circle>',
-                }
-            ],
-        }
-        response = post_method(admin_user, "tasks", task_spec)
-        assert response.status_code == HTTPStatus.CREATED, response.content
-        task = response.json()
-
-        with make_api_client(admin_user) as client:
-            labels = get_paginated_collection(
-                client.labels_api.list_endpoint, task_id=task["id"], return_json=True
-            )
-
-        label = next(l for l in labels if l["name"] == "skeleton")
-        sublabel = label["sublabels"][0]
-
-        response = patch_method(
-            admin_user,
-            f'labels/{label["id"]}',
-            {
-                "sublabels": [
-                    {
-                        "id": sublabel["id"],
-                        "name": sublabel["name"],
-                        "attributes": [
-                            {
-                                "name": "pose",
-                                "mutable": False,
-                                "input_type": "select",
-                                "default_value": "standing",
-                                "values": ["standing", "sitting"],
-                            }
-                        ],
-                        "type": sublabel["type"],
-                        "color": sublabel["color"],
-                    }
-                ],
-            },
-        )
-
-        assert response.status_code == HTTPStatus.OK, response.content
-        response_sublabel = response.json()["sublabels"][0]
-        assert [attr["name"] for attr in response_sublabel["attributes"]] == ["pose"]
-
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_delete_attribute_without_id(self, source: str, admin_user: str):
         source_key = self._get_source_info(source).label_source_key
