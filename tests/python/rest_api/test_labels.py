@@ -24,6 +24,7 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
+
 from .utils import CollectionSimpleFilterTestBase, build_exclude_paths_expr, get_attrs
 
 
