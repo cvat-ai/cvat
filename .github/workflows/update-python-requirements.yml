@@ -12,7 +12,9 @@ permissions:
 
 jobs:
   update:
-    if: github.actor == 'dependabot[bot]'
+    # TODO: Restore after the experiment. Manual branch updates are performed
+    # by maintainers, so this condition skips test runs after `gh pr update-branch`.
+    # if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
