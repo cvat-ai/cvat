@@ -27,7 +27,6 @@ import { CombinedState, TasksQuery, SelectedResourceType } from 'reducers';
 import { getProjectTasksAsync, updateProjectAsync } from 'actions/projects-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import TaskItem from 'containers/tasks-page/task-item';
-import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
@@ -368,7 +367,6 @@ export default function ProjectPageComponent(): JSX.Element {
                 ) : content }
             </Col>
 
-            <MoveTaskModal />
             <ModelRunnerDialog />
         </Row>
     );

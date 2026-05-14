@@ -1164,6 +1164,7 @@ export class Task extends Session {
             clientFiles?: File[];
             serverFiles?: string[];
             remoteFiles?: string[];
+            labels?: Label[];
         },
         options?: { updateStatusCallback?: (updateData: Request | UpdateStatusData) => void },
     ): Promise<Task> {

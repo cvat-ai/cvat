@@ -107,7 +107,7 @@ function MoveTaskModal({
                 }
             });
         } else {
-            taskInstance.save().finally(() => {
+            taskInstance.save({ labels }).finally(() => {
                 if (mounted.current) {
                     setIsUpdating(false);
                 }
