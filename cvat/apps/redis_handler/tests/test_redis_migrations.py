@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import os
 from pathlib import Path
 from unittest import TestCase
@@ -9,6 +10,7 @@ from unittest.mock import patch
 
 import fakeredis
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 from cvat.apps.redis_handler.migration_loader import AppliedMigration, LoaderError, MigrationLoader
 from cvat.apps.redis_handler.utils import get_class_from_module
@@ -26,6 +28,14 @@ class Migration:
     def run(cls): ...
 
 """
+
+
+def _write_migration_file(app_name: str, filename: str) -> Path:
+    migration_dir = WORKDIR / app_name / MIGRATION_DIR
+    migration_dir.mkdir(exist_ok=True)
+    path = migration_dir / filename
+    path.write_text(BAD_MIGRATION_FILE)
+    return path
 
 
 @patch(
@@ -81,10 +91,7 @@ class TestRedisMigrations(TestCase):
         # Check keys added
         expected_migrations = {
             f"{app_config.label}.{f.stem}".encode()
-            for app_config in MigrationLoader._find_app_configs()
-            for f in (Path(app_config.path) / MigrationLoader.REDIS_MIGRATIONS_DIR_NAME).glob(
-                "[0-9]*.py"
-            )
+            for app_config, f in MigrationLoader.iter_migration_files()
         }
         assert len(expected_migrations)
 
@@ -100,3 +107,40 @@ class TestRedisMigrations(TestCase):
             with self.assertRaises(LoaderError):
                 call_command("migrateredis")
             mock_run.assert_not_called()
+
+    def test_checkredismigrations_rejects_bad_filename(self, _):
+        path = _write_migration_file("redis_handler", "1_bad.py")
+        self.addCleanup(path.unlink)
+
+        err = io.StringIO()
+        with self.assertRaises(CommandError):
+            call_command("checkredismigrations", stderr=err)
+        self.assertIn("1_bad.py", err.getvalue())
+
+    def test_checkredismigrations_rejects_duplicate_prefix(self, _):
+        path_a = _write_migration_file("redis_handler", "000_dup_a.py")
+        self.addCleanup(path_a.unlink)
+        path_b = _write_migration_file("redis_handler", "000_dup_b.py")
+        self.addCleanup(path_b.unlink)
+
+        err = io.StringIO()
+        with self.assertRaises(CommandError):
+            call_command("checkredismigrations", stderr=err)
+
+        self.assertIn("redis_handler", err.getvalue())
+        self.assertIn("'000'", err.getvalue())
+
+    def test_migrateredis_aborts_on_bad_filename(self, redis):
+        path = _write_migration_file("redis_handler", "1_bad.py")
+        self.addCleanup(path.unlink)
+
+        with redis() as conn:
+            applied_before = set(conn.smembers(AppliedMigration.SET_KEY))
+
+        err = io.StringIO()
+        with self.assertRaises(CommandError):
+            call_command("migrateredis", stderr=err)
+        self.assertIn("1_bad.py", err.getvalue())
+
+        with redis() as conn:
+            self.assertEqual(set(conn.smembers(AppliedMigration.SET_KEY)), applied_before)
