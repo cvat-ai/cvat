@@ -5,15 +5,16 @@
 
 from __future__ import annotations
 
+import io
 import itertools
 import math
 from abc import ABCMeta, abstractmethod
 from bisect import bisect
 from collections import OrderedDict
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, TypeAlias, overload
+from typing import Any, TypeAlias, TypeVar, overload
 
 import av
 import cv2
@@ -26,8 +27,10 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache
 from cvat.apps.engine.media_extractors import (
     IChunkWriter,
+    IMediaReader,
     Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter,
+    RandomAccessIterator,
     VideoReader,
     ZipChunkWriter,
     ZipCompressedChunkWriter,
@@ -42,6 +45,74 @@ from cvat.apps.engine.media_io.media_chunks import (
 from cvat.apps.engine.media_io.media_provider import DataWithMeta, IMediaProvider
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.utils import take_by
+
+_T = TypeVar("_T")
+
+_ReaderFactory: TypeAlias = Callable[[BytesIO], IMediaReader]
+
+
+class _ChunkLoader(metaclass=ABCMeta):
+    def __init__(
+        self,
+        *,
+        reader_factory: _ReaderFactory,
+    ) -> None:
+        self.chunk_id: int | None = None
+        self.chunk_reader: RandomAccessIterator | None = None
+        self.reader_factory = reader_factory
+
+    def load(self, chunk_id: int) -> RandomAccessIterator[tuple[Any, str]]:
+        if self.chunk_id != chunk_id:
+            self.unload()
+
+            self.chunk_id = chunk_id
+            self.chunk_reader = RandomAccessIterator(
+                self.reader_factory(self.read_chunk(chunk_id)[0])
+            )
+
+        return self.chunk_reader
+
+    def unload(self):
+        self.chunk_id = None
+        if self.chunk_reader:
+            self.chunk_reader.close()
+            self.chunk_reader = None
+
+    @abstractmethod
+    def read_chunk(self, chunk_id: int) -> DataWithMime: ...
+
+
+class _FileChunkLoader(_ChunkLoader):
+    def __init__(
+        self,
+        *,
+        reader_factory: _ReaderFactory,
+        get_chunk_path_callback: Callable[[int], str],
+    ) -> None:
+        super().__init__(reader_factory=reader_factory)
+        self.get_chunk_path = get_chunk_path_callback
+
+    def read_chunk(self, chunk_id: int) -> DataWithMime:
+        chunk_path = self.get_chunk_path(chunk_id)
+        with open(chunk_path, "rb") as f:
+            return (
+                io.BytesIO(f.read()),
+                mimetypes.guess_type(chunk_path)[0],
+            )
+
+
+class _BufferChunkLoader(_ChunkLoader):
+    def __init__(
+        self,
+        *,
+        reader_factory: _ReaderFactory,
+        get_chunk_callback: Callable[[int], DataWithMime],
+    ) -> None:
+        super().__init__(reader_factory=reader_factory)
+        self.get_chunk = get_chunk_callback
+
+    def read_chunk(self, chunk_id: int) -> DataWithMime:
+        return self.get_chunk(chunk_id)
 
 
 class FrameOutputType(Enum):

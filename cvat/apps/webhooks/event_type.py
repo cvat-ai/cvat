@@ -5,7 +5,7 @@
 from .models import WebhookTypeChoice
 
 
-def event_name(action, resource):
+def event_name(action: str, resource: str) -> str:
     return f"{action}:{resource}"
 
 
@@ -19,12 +19,14 @@ class Events:
         "organization": ["update", "delete"],
         "invitation": ["create", "delete"],
         "membership": ["create", "update", "delete"],
+        "export": ["create"],
+        "backup": ["create"],
     }
 
     @classmethod
     def select(cls, resources):
         return [
-            f"{event_name(action, resource)}"
+            event_name(action=action, resource=resource)
             for resource in resources
             for action in cls.RESOURCES.get(resource, [])
         ]
@@ -39,7 +41,7 @@ class EventTypeChoice:
 class AllEvents:
     webhook_type = "all"
     events = list(
-        event_name(action, resource)
+        event_name(action=action, resource=resource)
         for resource, actions in Events.RESOURCES.items()
         for action in actions
     )
@@ -48,9 +50,9 @@ class AllEvents:
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
     events = [
-        *Events.select(["task", "job", "label", "issue", "comment"]),
-        event_name("update", "project"),
-        event_name("delete", "project"),
+        *Events.select(["task", "job", "label", "issue", "comment", "export", "backup"]),
+        event_name(action="update", resource="project"),
+        event_name(action="delete", resource="project"),
     ]
 
 

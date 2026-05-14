@@ -437,6 +437,7 @@ class DatasetImporter(ResourceImporter):
     class ImportArgs(ResourceImporter.ImportArgs):
         format: str
         conv_mask_to_poly: bool
+        import_mode: str | None
 
     def __init__(
         self,
@@ -452,11 +453,25 @@ class DatasetImporter(ResourceImporter):
         super().init_request_args()
         format_name = self.request.query_params.get("format", "")
         conv_mask_to_poly = to_bool(self.request.query_params.get("conv_mask_to_poly", True))
+        import_mode = None
+        if not isinstance(self.db_instance, Project):
+            import_mode_param = self.request.query_params.get(
+                "import_mode",
+                dm.task.AnnotationImportMode.REPLACE,
+            )
+            try:
+                import_mode = dm.task.AnnotationImportMode(import_mode_param).value
+            except ValueError as ex:
+                allowed_values = ", ".join(mode.value for mode in dm.task.AnnotationImportMode)
+                raise serializers.ValidationError(
+                    f"Invalid import_mode={import_mode_param!r}. Allowed: {allowed_values}"
+                ) from ex
 
         self.import_args: DatasetImporter.ImportArgs = self.ImportArgs(
             **self.import_args.to_dict(),
             format=format_name,
             conv_mask_to_poly=conv_mask_to_poly,
+            import_mode=import_mode,
         )
 
     def _get_payload_file(self):
@@ -475,18 +490,31 @@ class DatasetImporter(ResourceImporter):
     def _init_callback_with_params(self):
         if isinstance(self.db_instance, Project):
             self.callback = dm.project.import_dataset_as_project
+            self.callback_args = (
+                str(self.tmp_dir / self.import_args.filename),
+                self.db_instance.pk,
+                self.import_args.format,
+                self.import_args.conv_mask_to_poly,
+            )
         elif isinstance(self.db_instance, Task):
             self.callback = dm.task.import_task_annotations
+            self.callback_args = (
+                str(self.tmp_dir / self.import_args.filename),
+                self.db_instance.pk,
+                self.import_args.format,
+                self.import_args.conv_mask_to_poly,
+            )
+            self.callback_kwargs = {"import_mode": self.import_args.import_mode}
         else:
             assert isinstance(self.db_instance, Job)
             self.callback = dm.task.import_job_annotations
-
-        self.callback_args = (
-            str(self.tmp_dir / self.import_args.filename),
-            self.db_instance.pk,
-            self.import_args.format,
-            self.import_args.conv_mask_to_poly,
-        )
+            self.callback_args = (
+                str(self.tmp_dir / self.import_args.filename),
+                self.db_instance.pk,
+                self.import_args.format,
+                self.import_args.conv_mask_to_poly,
+            )
+            self.callback_kwargs = {"import_mode": self.import_args.import_mode}
 
     def validate_request(self):
         super().validate_request()
