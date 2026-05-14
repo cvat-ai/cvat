@@ -7946,7 +7946,9 @@ components:
       - webhook_type
     EventsEnum:
       enum:
+      - create:backup
       - create:comment
+      - create:export
       - create:invitation
       - create:issue
       - create:job
@@ -7970,7 +7972,9 @@ components:
       - update:task
       type: string
       description: |-
+        * `create:backup` - CREATE:BACKUP
         * `create:comment` - CREATE:COMMENT
+        * `create:export` - CREATE:EXPORT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
