@@ -1485,25 +1485,37 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_task = self.get_object() #force to call check_object_permissions
 
         def prefetch():
-            data_queryset = (
-                models.Data.objects
-                .select_related("validation_layout", "video")
-                .prefetch_related(
-                    Prefetch(
-                        'images',
-                        queryset=(
-                            models.Image.objects
-                            .prefetch_related('related_files')
-                            .order_by('frame')
-                        )
-                    )
-                )
-            )
+            data_queryset = models.Data.objects.select_related("validation_layout")
+            extra_prefetches = []
+
+            match (db_task.media_type, db_task.mode):
+                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("audio")
+                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("video")
+                case (
+                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                    models.TaskMode.ANNOTATION,
+                ):
+                    # Could also be done via data_qs.prefetch_related(),
+                    # but it results in more requests
+                    extra_prefetches += [
+                        Prefetch(
+                            "data__images",
+                            queryset=models.Image.objects.order_by('frame'),
+                        ),
+                        "data__images__related_files"
+                    ]
+                case ("", ""):
+                    pass # noop, nothing to load
+                case (media_type, mode):
+                    assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
             prefetch_related_objects(
                 [db_task],
                 "segment_set",
-                Prefetch("data", queryset=data_queryset)
+                Prefetch("data", queryset=data_queryset),
+                *extra_prefetches,
             )
 
         prefetch()
@@ -1522,25 +1534,32 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if db_data is None:
             raise ValidationError("Data is not uploaded for the task yet")
 
-        if hasattr(db_data, 'audio'):
+        if (
+            db_task.media_type == models.MediaType.AUDIO
+            and db_task.mode == models.TaskMode.INTERPOLATION
+        ):
             media = [db_data.audio]
             chapters = None
 
             def serialize_media_item(item: models.Audio) -> dict[str, Any]:
                 return {}
-        else:
-            if hasattr(db_data, 'video'):
+        elif db_task.media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD):
+            if db_task.mode == models.TaskMode.INTERPOLATION:
                 media = [db_data.video]
                 chapters = get_video_chapters(db_data.get_manifest_path())
-            else:
+            elif db_task.mode == models.TaskMode.ANNOTATION:
                 media = list(db_data.images.all())
                 chapters = None
+            else:
+                assert False, f"Unknown mode '{db_task.mode}'"
 
             def serialize_media_item(item: models.Video | models.Image) -> dict[str, Any]:
                 return {
                     'width': item.width,
                     'height': item.height,
                 }
+        elif db_task.media_type:
+            assert False, f"Unknown media type '{db_task.media_type}'"
 
         frame_meta = [
             {
@@ -1557,7 +1576,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_data.chunks_updated_date = db_task.get_chunks_updated_date()
         db_data.chapters = chapters
 
-        serializer = DataMetaReadSerializer(db_data)
+        serializer = DataMetaReadSerializer(db_data, context={"task": db_task})
         return Response(serializer.data)
 
     @extend_schema(exclude=True)
@@ -2022,24 +2041,38 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_job = self.get_object() # force call of check_object_permissions()
 
         def prefetch():
-            data_queryset = (
-                models.Data.objects
-                .select_related("validation_layout", "video")
-                .prefetch_related(
-                    Prefetch(
-                        'images',
-                        queryset=(
-                            models.Image.objects
-                            .prefetch_related('related_files')
-                            .order_by('frame')
-                        )
-                    )
-                )
-            )
+            db_task = db_job.segment.task
+
+            data_queryset = models.Data.objects.select_related("validation_layout")
+            extra_prefetches = []
+
+            match (db_task.media_type, db_task.mode):
+                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("audio")
+                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("video")
+                case (
+                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                    models.TaskMode.ANNOTATION,
+                ):
+                    # Could also be done via data_qs.prefetch_related(),
+                    # but it results in more requests
+                    extra_prefetches += [
+                        Prefetch(
+                            "segment__task__data__images",
+                            queryset=models.Image.objects.order_by('frame'),
+                        ),
+                        "segment__task__data__images__related_files"
+                    ]
+                case ("", ""):
+                    pass # noop, nothing to load
+                case (media_type, mode):
+                    assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
             prefetch_related_objects(
                 [db_job],
-                Prefetch("segment__task__data", queryset=data_queryset)
+                Prefetch("segment__task__data", queryset=data_queryset),
+                *extra_prefetches,
             )
 
         prefetch()
@@ -2069,7 +2102,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             deleted_frames.update(db_data.validation_layout.disabled_frames)
 
         # Keep only frames from the job segment
-        if hasattr(db_data, 'audio'):
+        if db_task.media_type == models.MediaType.AUDIO:
             assert not deleted_frames
         else:
             task_media_provider = TaskFrameProvider(db_task)
@@ -2084,20 +2117,23 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_data.included_frames = db_segment.frames or None
         db_data.chunks_updated_date = db_segment.chunks_updated_date
 
-        if hasattr(db_data, 'audio'):
+        if (
+            db_task.media_type == models.MediaType.AUDIO
+            and db_task.mode == models.TaskMode.INTERPOLATION
+        ):
             media = [db_data.audio]
             chapters = None
 
             def serialize_media_item(item: models.Audio) -> dict[str, Any]:
                 return {}
-        else:
-            if hasattr(db_data, 'video'):
+        elif db_task.media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD):
+            if db_task.mode == models.TaskMode.INTERPOLATION:
                 media = [db_data.video]
                 chapters = get_video_chapters(
                     db_task.data.get_manifest_path(),
                     segment=(data_start_frame, data_stop_frame)
                 )
-            else:
+            elif db_task.mode == models.TaskMode.ANNOTATION:
                 media = [
                     # Insert placeholders if frames are skipped
                     # TODO: remove placeholders, UI supports chunks without placeholders already
@@ -2109,12 +2145,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
                 ]
                 chapters = None
+            else:
+                assert False, f"Unknown mode '{db_task.mode}'"
 
             def serialize_media_item(item: models.Video | models.Image) -> dict[str, Any]:
                 return {
                     'width': item.width,
                     'height': item.height,
                 }
+        elif db_task.media_type:
+            assert False, f"Unknown media type '{db_task.media_type}'"
 
         frame_meta = [
             {
@@ -2130,7 +2170,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_data.frames = frame_meta
         db_data.chapters = chapters
 
-        serializer = DataMetaReadSerializer(db_data)
+        serializer = DataMetaReadSerializer(db_data, context={"task": db_task})
         return Response(serializer.data)
 
     @extend_schema(summary='Get a preview image for a job',
