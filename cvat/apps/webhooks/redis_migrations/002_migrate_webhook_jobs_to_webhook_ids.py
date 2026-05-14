@@ -10,14 +10,11 @@ from rq_scheduler import Scheduler
 from cvat.apps.redis_handler.redis_migrations import BaseMigration
 from cvat.apps.webhooks.models import Webhook
 
-_SEND_WEBHOOK_FUNC_NAMES = {
-    "cvat.apps.webhooks.signals.send_webhook",
-    "cvat.apps.webhooks.tasks.send_webhook",
-}
+_SEND_WEBHOOK_FUNC_NAME = "cvat.apps.webhooks.tasks.send_webhook"
 
 
 def _migrate_job(job: Job) -> None:
-    if job.func_name not in _SEND_WEBHOOK_FUNC_NAMES or not job.args:
+    if job.func_name != _SEND_WEBHOOK_FUNC_NAME or not job.args:
         return
 
     webhook = job.args[0]
