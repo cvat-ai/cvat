@@ -9,11 +9,11 @@ from django.core.management.base import BaseCommand, CommandError
 
 from cvat.apps.redis_handler.migration_loader import MigrationLoader
 
-_MIGRATION_FILENAME_PATTERN = re.compile(r"^\d{3}_[a-z0-9_]+$")
+_MIGRATION_FILENAME_PATTERN = re.compile(r"^\d{3}_\w+$")
 
 
 class Command(BaseCommand):
-    help = "Validate redis migration filenames. Does not touch Redis."
+    help = "Validate redis migrations. Does not touch Redis."
 
     def handle(self, *args, **options) -> None:
         errors = self._collect_errors()
@@ -22,7 +22,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(msg))
 
         if errors:
-            raise CommandError(f"{len(errors)} redis migration filename error(s)")
+            raise CommandError(f"{len(errors)} redis migration error(s)")
 
     def _collect_errors(self) -> list[str]:
         errors: list[str] = []
@@ -34,8 +34,8 @@ class Command(BaseCommand):
             if not _MIGRATION_FILENAME_PATTERN.match(migration_file.stem):
                 errors.append(
                     f"cvat/apps/{app_config.label}/{MigrationLoader.REDIS_MIGRATIONS_DIR_NAME}/"
-                    f"{migration_file.name}: filename must match NNN_snake_case.py "
-                    "(zero-padded 3-digit prefix)"
+                    f"{migration_file.name}: filename must match NNN_<name>.py "
+                    "(zero-padded 3-digit prefix; name uses letters, digits, and underscores)"
                 )
                 continue
 

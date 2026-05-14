@@ -140,7 +140,6 @@ class TestRedisMigrations(TestCase):
         err = io.StringIO()
         with self.assertRaises(CommandError):
             call_command("migrateredis", stderr=err)
-
         self.assertIn("1_bad.py", err.getvalue())
 
         with redis() as conn:

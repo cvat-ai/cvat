@@ -61,7 +61,6 @@ class LoaderError(Exception):
 class MigrationLoader:
     REDIS_MIGRATIONS_DIR_NAME = "redis_migrations"
     REDIS_MIGRATION_CLASS_NAME = "Migration"
-    MIGRATION_FILE_GLOB = "[0-9]*.py"
 
     def __init__(self, *, connection: Redis) -> None:
         self._connection = connection
@@ -89,7 +88,10 @@ class MigrationLoader:
     def iter_migration_files(cls) -> Iterator[tuple[AppConfig, Path]]:
         for app_config in cls._find_app_configs():
             migrations_dir = Path(app_config.path) / cls.REDIS_MIGRATIONS_DIR_NAME
-            for migration_file in sorted(migrations_dir.glob(cls.MIGRATION_FILE_GLOB)):
+            for migration_file in sorted(migrations_dir.glob("*.py")):
+                if migration_file.stem[0] in "_~":
+                    continue
+
                 yield app_config, migration_file
 
     def _load_from_disk(self):
