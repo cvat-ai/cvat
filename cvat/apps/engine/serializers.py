@@ -45,8 +45,8 @@ from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance,
     get_cloud_storage_instance,
 )
-from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
@@ -1262,7 +1262,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             enqueue_create_chunk_job,
             wait_for_rq_job,
         )
-        from cvat.apps.engine.frame_provider import JobFrameProvider
+        from cvat.apps.engine.media_io.frame_provider import JobFrameProvider
 
         db_job = instance
         db_segment = db_job.segment
@@ -1529,7 +1529,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         frame_path_map: dict[int, str],
         segment_frame_map: dict[int,int],
     ):
-        from cvat.apps.engine.frame_provider import prepare_chunk
+        from cvat.apps.engine.media_io.frame_provider import prepare_chunk
 
         db_segment = models.Segment.objects.select_related("task").get(pk=db_segment_id)
         initial_chunks_updated_date = db_segment.chunks_updated_date
