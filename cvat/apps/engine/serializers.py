@@ -453,6 +453,63 @@ class LabelSerializer(SublabelSerializer):
             else:
                 encountered_names.add(attr_name)
 
+    @staticmethod
+    def _split_attribute_values(values: str) -> list[str]:
+        return values.split('\n') if values else []
+
+    @classmethod
+    def _validate_attribute_value(
+        cls, input_type: str, value: str, values: str
+    ) -> None:
+        if input_type == str(models.AttributeType.TEXT):
+            return
+        if input_type == str(models.AttributeType.CHECKBOX):
+            valid = value.lower() in {'true', 'false'}
+        elif input_type == str(models.AttributeType.NUMBER):
+            attr_values = cls._split_attribute_values(values)
+            try:
+                valid = float(attr_values[0]) <= float(value) <= float(attr_values[1])
+            except (IndexError, ValueError):
+                valid = False
+        else:
+            valid = value in cls._split_attribute_values(values)
+
+        if not valid:
+            raise serializers.ValidationError(
+                'Attribute field "default_value" is invalid for attribute input type'
+            )
+
+    @classmethod
+    def _update_attribute(cls, db_attr: models.AttributeSpec, attr: dict[str, Any]) -> None:
+        for field_name in ('mutable', 'input_type'):
+            if field_name in attr and attr[field_name] != getattr(db_attr, field_name):
+                raise serializers.ValidationError(
+                    f'Attribute field "{field_name}" cannot be changed'
+                )
+
+        new_values = attr.get('values', db_attr.values)
+        if new_values != db_attr.values:
+            if db_attr.input_type in (str(models.AttributeType.RADIO), str(models.AttributeType.SELECT)):
+                old_values_list = cls._split_attribute_values(db_attr.values)
+                new_values_list = cls._split_attribute_values(new_values)
+                if not set(old_values_list).issubset(new_values_list):
+                    raise serializers.ValidationError(
+                        'Attribute field "values" can only be appended for radio and select attributes'
+                    )
+            elif db_attr.input_type == str(models.AttributeType.NUMBER):
+                raise serializers.ValidationError(
+                    'Attribute field "values" cannot be changed for number attributes'
+                )
+
+        new_default_value = attr.get('default_value', db_attr.default_value)
+        if new_default_value != db_attr.default_value:
+            cls._validate_attribute_value(db_attr.input_type, new_default_value, new_values)
+
+        db_attr.name = attr.get('name', db_attr.name)
+        db_attr.default_value = new_default_value
+        db_attr.values = new_values
+        db_attr.save()
+
     @classmethod
     @transaction.atomic
     def update_label(
@@ -560,13 +617,7 @@ class LabelSerializer(SublabelSerializer):
                 logger.info("{} attribute for {} label was updated"
                     .format(db_attr.name, db_label.name))
 
-                # FIXME: need to update only "safe" fields
-                db_attr.name = attr.get('name', db_attr.name)
-                db_attr.default_value = attr.get('default_value', db_attr.default_value)
-                db_attr.mutable = attr.get('mutable', db_attr.mutable)
-                db_attr.input_type = attr.get('input_type', db_attr.input_type)
-                db_attr.values = attr.get('values', db_attr.values)
-                db_attr.save()
+                cls._update_attribute(db_attr, attr)
 
         return db_label
 
