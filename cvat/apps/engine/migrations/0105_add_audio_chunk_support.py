@@ -54,9 +54,7 @@ class Migration(migrations.Migration):
                 ("created_date", models.DateTimeField(auto_now_add=True)),
                 ("updated_date", models.DateTimeField(auto_now=True)),
                 ("key", models.CharField(max_length=128, primary_key=True, serialize=False)),
-                ("left_padding", models.PositiveIntegerField(default=0)),
                 ("right_padding", models.PositiveIntegerField(default=0)),
-                ("content_offset", models.PositiveIntegerField(default=0)),
                 (
                     "audio",
                     models.ForeignKey(

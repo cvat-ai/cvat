@@ -5831,10 +5831,6 @@ paths:
                 type: string
                 format: date-time
               description: Data update date, applicable for chunks only
-            X-Media-Offset:
-              schema:
-                type: integer
-              description: Data start offset, applicable for chunks only
           description: Data of a specific type
     post:
       operationId: tasks_create_data

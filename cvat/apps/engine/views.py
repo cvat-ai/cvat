@@ -59,7 +59,6 @@ from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
 from cvat.apps.engine.media_io.audio_provider import (
-    AudioDataWithMeta,
     IAudioProvider,
     JobAudioProvider,
     TaskAudioProvider,
@@ -169,7 +168,6 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
-_DATA_START_OFFSET_HEADER_NAME = 'X-Media-Offset'
 _RETRY_AFTER_TIMEOUT = 10
 
 
@@ -628,13 +626,10 @@ class _DataGetter(metaclass=ABCMeta):
         self,
         checksum: str,
         updated_date: datetime,
-        *,
-        data_start_offset: int | None = None,
     ) -> dict[str, str]:
         return {
             _DATA_CHECKSUM_HEADER_NAME: str(checksum or ''),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(updated_date),
-            _DATA_START_OFFSET_HEADER_NAME: str(data_start_offset if data_start_offset is not None else ''),
         }
 
 class _TaskDataGetter(_DataGetter):
@@ -659,15 +654,9 @@ class _TaskDataGetter(_DataGetter):
                 assert False, f"Unknown media type {media_type}"
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
-        extra_params = {}
-        if self._db_task.media_type == models.MediaType.AUDIO:
-            assert isinstance(chunk_data, AudioDataWithMeta)
-            extra_params["data_start_offset"] = chunk_data.start_offset
-
         return self._make_chunk_response_headers(
             self._get_chunk_checksum(chunk_data),
             self._db_task.get_chunks_updated_date(),
-            **extra_params
         )
 
 
@@ -739,15 +728,9 @@ class _JobDataGetter(_DataGetter):
             return super()._get_data_response()
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
-        extra_params = {}
-        if self._db_job.segment.task.media_type == models.MediaType.AUDIO:
-            assert isinstance(chunk_data, AudioDataWithMeta)
-            extra_params["data_start_offset"] = chunk_data.start_offset
-
         return self._make_chunk_response_headers(
             self._get_chunk_checksum(chunk_data),
             self._db_job.segment.chunks_updated_date,
-            **extra_params
         )
 
 
@@ -1282,12 +1265,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 response=[200],
                 description="Data update date, applicable for chunks only",
             ),
-            OpenApiParameter(
-                _DATA_START_OFFSET_HEADER_NAME,
-                location=OpenApiParameter.HEADER, type=OpenApiTypes.INT, required=False,
-                response=[200],
-                description="Data start offset, applicable for chunks only",
-            )
         ],
         responses={
             '200': OpenApiResponse(description='Data of a specific type'),
