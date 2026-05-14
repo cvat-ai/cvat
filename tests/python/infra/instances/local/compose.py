@@ -17,9 +17,11 @@ from .docker import running_containers
 logger = logging.getLogger(__name__)
 
 
-def build_local_dc_files(project_cfg: LocalRuntimeConfig, extra_dc_files: Any = None) -> list[Path]:
-    dc_files = project_cfg.generated_compose_files + [
-        project_cfg.cvat_root_dir / f for f in LOCAL_DC_FILES
+def build_local_dc_files(
+    local_runtime: LocalRuntimeConfig, extra_dc_files: Any = None
+) -> list[Path]:
+    dc_files = local_runtime.generated_compose_files + [
+        local_runtime.cvat_root_dir / f for f in LOCAL_DC_FILES
     ]
     if extra_dc_files is not None:
         dc_files += extra_dc_files
@@ -92,52 +94,52 @@ def stop_services(
         run_command(["docker", "rm", "-f", *stale_ids], capture_output=False, logger=logger)
 
 
+def namespace_traefik_labels(service_config: dict, *, project_name: str) -> None:
+    labels = service_config.get("labels")
+    if not isinstance(labels, dict):
+        return
+
+    router_service_names = {"cvat", "cvat-ui"}
+    replacement = {name: f"{name}-{project_name}" for name in router_service_names}
+
+    updated_labels: dict[str, str] = {}
+    for key, value in labels.items():
+        new_key = key
+        for kind in ("routers", "services"):
+            prefix = f"traefik.http.{kind}."
+            if new_key.startswith(prefix):
+                parts = new_key.split(".")
+                name_idx = 3
+                if len(parts) > name_idx and parts[name_idx] in replacement:
+                    parts[name_idx] = replacement[parts[name_idx]]
+                    new_key = ".".join(parts)
+                break
+
+        if (
+            new_key.startswith("traefik.http.routers.")
+            and new_key.endswith(".service")
+            and isinstance(value, str)
+            and value in replacement
+        ):
+            value = replacement[value]
+
+        updated_labels[new_key] = value
+
+    for new_name in replacement.values():
+        rule_key = f"traefik.http.routers.{new_name}.rule"
+        service_key = f"traefik.http.routers.{new_name}.service"
+        if rule_key in updated_labels and service_key not in updated_labels:
+            updated_labels[service_key] = new_name
+
+    service_config["labels"] = updated_labels
+
+
 def create_compose_files(
-    container_name_files: list[Path],
+    generated_compose_files: list[Path],
     cvat_root_dir: Path,
-    project_cfg: LocalRuntimeConfig,
+    local_runtime: LocalRuntimeConfig,
 ):
-    def namespace_traefik_labels(service_config: dict) -> None:
-        labels = service_config.get("labels")
-        if not isinstance(labels, dict):
-            return
-
-        router_service_names = {"cvat", "cvat-ui"}
-        suffix = project_cfg.project_name
-        replacement = {name: f"{name}-{suffix}" for name in router_service_names}
-
-        updated_labels: dict[str, str] = {}
-        for key, value in labels.items():
-            new_key = key
-            for kind in ("routers", "services"):
-                prefix = f"traefik.http.{kind}."
-                if new_key.startswith(prefix):
-                    parts = new_key.split(".")
-                    name_idx = 3
-                    if len(parts) > name_idx and parts[name_idx] in replacement:
-                        parts[name_idx] = replacement[parts[name_idx]]
-                        new_key = ".".join(parts)
-                    break
-
-            if (
-                new_key.startswith("traefik.http.routers.")
-                and new_key.endswith(".service")
-                and isinstance(value, str)
-                and value in replacement
-            ):
-                value = replacement[value]
-
-            updated_labels[new_key] = value
-
-        for new_name in replacement.values():
-            rule_key = f"traefik.http.routers.{new_name}.rule"
-            service_key = f"traefik.http.routers.{new_name}.service"
-            if rule_key in updated_labels and service_key not in updated_labels:
-                updated_labels[service_key] = new_name
-
-        service_config["labels"] = updated_labels
-
-    for filename in container_name_files:
+    for filename in generated_compose_files:
         source_name = "docker-compose.yml"
         if ".dev." in filename.name:
             source_name = "docker-compose.dev.yml"
@@ -167,34 +169,37 @@ def create_compose_files(
                     )
                 if service_name == "traefik":
                     service_config["ports"] = [
-                        f"{project_cfg.host_http_port}:8080",
-                        f"{project_cfg.host_logs_port}:8090",
+                        f"{local_runtime.host_http_port}:8080",
+                        f"{local_runtime.host_logs_port}:8090",
                     ]
                     service_env = service_config["environment"]
                     service_env["TRAEFIK_PROVIDERS_DOCKER_NETWORK"] = (
-                        f"{project_cfg.project_name}_cvat"
+                        f"{local_runtime.project_name}_cvat"
                     )
                     service_env["TRAEFIK_PROVIDERS_DOCKER_CONSTRAINTS"] = (
-                        f"Label(`com.docker.compose.project`,`{project_cfg.project_name}`)"
+                        f"Label(`com.docker.compose.project`,`{local_runtime.project_name}`)"
                     )
                 if service_name == "cvat_db":
                     service_config["ports"] = [
-                        f"{project_cfg.host_db_port}:5432",
+                        f"{local_runtime.host_db_port}:5432",
                     ]
                 if service_name == "cvat_redis_inmem":
                     service_config["ports"] = [
-                        f"{project_cfg.host_redis_inmem_port}:6379",
+                        f"{local_runtime.host_redis_inmem_port}:6379",
                     ]
                 if service_name == "cvat_redis_ondisk":
                     service_config["ports"] = [
-                        f"{project_cfg.host_redis_ondisk_port}:6666",
+                        f"{local_runtime.host_redis_ondisk_port}:6666",
                     ]
 
-                namespace_traefik_labels(service_config)
+                namespace_traefik_labels(
+                    service_config,
+                    project_name=local_runtime.project_name,
+                )
 
             yaml.dump(dc_config, ndcf)
 
 
-def delete_compose_files(container_name_files: list[Path]):
-    for filename in container_name_files:
+def delete_compose_files(generated_compose_files: list[Path]):
+    for filename in generated_compose_files:
         filename.unlink(missing_ok=True)

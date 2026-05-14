@@ -5,7 +5,7 @@
 import logging
 import os
 
-from infra.config import RuntimeMode, RuntimeSettings
+from infra.config import RuntimeConfig, RuntimeMode
 
 from .docker import project_containers_running, used_host_ports
 
@@ -38,13 +38,16 @@ def configure_runtime_env(
         logger.debug("Failed to refresh shared.utils.config runtime values", exc_info=True)
 
 
-def preconfigure_local_runtime_env(config) -> None:
+def configure_local_runtime_env(config, *, persist_state: bool) -> None:
     """
-    Set runtime URL/ports before test module import/collection.
+    Set runtime URL/ports and optionally persist the local runtime state.
+
+    This runs once before collection so import-time config constants see the
+    selected ports, and again during startup after the run context is known.
     This prevents import-time constants from sticking to localhost:8080
     when running with --run-prefix.
     """
-    request = RuntimeSettings.resolve_request(config)
+    request = RuntimeConfig.resolve_request(config)
     project_name = request.run_prefix
 
     if request.platform != "local":
@@ -54,38 +57,26 @@ def preconfigure_local_runtime_env(config) -> None:
         os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         return
 
-    project_cfg = RuntimeSettings.get_local_runtime_config(project_name)
-    port_config = project_cfg.resolve_port_config(
-        default_project_name=RuntimeSettings.get_default_run_prefix(),
-        used_ports=used_host_ports(exclude_project_name=project_cfg.project_name),
-        runtime_running=project_containers_running(project_cfg.project_name),
+    local_runtime = RuntimeConfig.get_local_runtime_config(project_name)
+    port_config = local_runtime.resolve_port_config(
+        default_project_name=RuntimeConfig.get_default_run_prefix(),
+        used_ports=used_host_ports(exclude_project_name=local_runtime.project_name),
+        runtime_running=project_containers_running(local_runtime.project_name),
     )
     configure_runtime_env(
         project_name=project_name,
         port_config=port_config,
     )
+    if persist_state:
+        local_runtime.save_state(
+            {
+                "project_name": project_name,
+                **port_config,
+                "base_url": os.environ["CVAT_BASE_URL"],
+                "minio_endpoint_url": os.environ["CVAT_MINIO_ENDPOINT_URL"],
+            }
+        )
 
 
-def resolve_local_project_context(session) -> tuple[str, dict]:
-    config = session.config
-    request = RuntimeSettings.resolve_request(config)
-    project_name = request.run_prefix
-    project_cfg = RuntimeSettings.get_local_runtime_config(project_name)
-    port_config = project_cfg.resolve_port_config(
-        default_project_name=RuntimeSettings.get_default_run_prefix(),
-        used_ports=used_host_ports(exclude_project_name=project_cfg.project_name),
-        runtime_running=project_containers_running(project_cfg.project_name),
-    )
-    configure_runtime_env(
-        project_name=project_name,
-        port_config=port_config,
-    )
-    project_cfg.save_state(
-        {
-            "project_name": project_name,
-            **port_config,
-            "base_url": os.environ["CVAT_BASE_URL"],
-            "minio_endpoint_url": os.environ["CVAT_MINIO_ENDPOINT_URL"],
-        }
-    )
-    return project_name, port_config
+def configure_local_runtime_env_before_collection(config) -> None:
+    configure_local_runtime_env(config, persist_state=False)

@@ -1,167 +1,117 @@
 # CVAT Pytest Runtime Infrastructure Design
 
 This package owns the pytest runtime used by the Python REST API, SDK, and CLI
-tests. Its main job is to make a CVAT instance available to tests, restore the
-known test state, and collect enough diagnostics when something fails.
+tests. Its job is to make a CVAT instance available, restore known test state,
+provide fixture-level restore operations, and collect diagnostics.
 
-## Core Concepts
+The current PR implements the local Docker Compose runtime foundation and keeps
+the existing kube path as a legacy compatibility layer. The next PRs are expected
+to move toward the `tests-infra-kube-stable-v3` prototype, where kube and
+parallel execution use the same runtime concepts.
 
-Shared `Runtime*` classes describe one pytest process and the user's requested
-runtime lifecycle. `RuntimeMode`, `RuntimeRequest`, `RuntimeContext`, and
-`RuntimeNamespace` are shared runtime concepts. Backend-specific runtime config
-classes can still use the `Runtime` name when they describe the runtime state
-for one backend, for example `LocalRuntimeConfig`.
-
-`Infra*` classes describe a backend that can provide a CVAT test target. Tests
-and fixtures should interact with an `InfraInstance`, not with Docker or
-Kubernetes helpers directly.
-
-Backend-specific runtime config classes describe the identity and persistent
-state needed by a backend. Local runtime uses Docker Compose project names,
-generated compose files, and host ports. Kube runtime is expected to use
-minikube profile, namespace, Helm releases, and deployment fingerprints. These
-are backend runtime concepts, not shared pytest process concepts.
-
-Parallel mode is orchestration. The parent process schedules work and starts
-child pytest processes. Each child process creates a normal backend
-`InfraInstance`; the parent itself is not a CVAT test target.
-
-## Current Classes
+## Current Concepts
 
 `RuntimeMode`
 
-: Normalized lifecycle command: `auto`, `up`, `down`, `reuse`, `restore`, and
-  `rebuild`. The public CLI still uses `--infra` and short positional commands,
-  but internally this is runtime intent, not an infra backend type.
+: Normalized lifecycle request: `auto`, `up`, `down`, `reuse`, `restore`, and
+  `rebuild`. The public CLI supports both `--infra=<mode>` and short positional
+  lifecycle commands.
 
 `RuntimeRequest`
 
-: Immutable result of parsing command-line options and environment-dependent
-  compatibility rules. Code after parsing should rely on this state instead of
-  repeatedly checking raw pytest options.
+: Immutable parsed request from pytest options and environment-sensitive
+  compatibility rules. Runtime code should use this normalized state instead of
+  checking raw pytest options repeatedly.
 
-`RuntimeSettings`
+`RuntimeConfig`
 
-: Process-wide runtime settings facade: repository paths, default values,
-  allowed runtime modes, pytest option registration, run prefix validation, raw
-  command-line/environment resolution, and command conflict validation. This is
-  not a per-runtime state object.
+: Process-level configuration facade: pytest option registration, default
+  values, repository paths, run-prefix validation, request parsing, and helpers
+  for backend runtime state.
 
 `RuntimeContext`
 
-: Per-process runtime context: run id, run artifact directory, runtime root, and
-  server URL helpers. It is initialized once during pytest configuration.
+: Per-pytest-process runtime context: run id, run artifact directory, runtime
+  root, and server URL helpers. It also writes `run-context.json` for a named
+  runtime. That file is intentionally present before parallel mode because child
+  pytest processes will need to attach their artifacts to the parent run.
 
-`RuntimeNamespace`
+`RuntimeStateStore`
 
-: Filesystem namespace keyed by `--run-prefix`. It owns the runtime directory,
-  state file, and context file. It is not an instance config and does not decide
-  how any backend starts CVAT.
+: Filesystem state store keyed by `--run-prefix`. It owns the runtime directory,
+  `state.json`, and `run-context.json`. It does not know how Docker Compose or
+  kube starts CVAT.
 
 `LocalRuntimeConfig`
 
-: Local Docker-backed runtime configuration for one named runtime namespace. It
-  owns the Docker Compose project identity, generated compose file paths, host
-  port state, and prefixed container names. It uses `RuntimeNamespace` internally
-  for runtime directory and state file access, but it is not an
-  `InfraInstanceConfig`.
+: Local Docker-backed runtime configuration for one named runtime. It owns the
+  Docker Compose project identity, generated compose file paths, host-port state,
+  and prefixed container names.
 
-`InfraInstanceConfig`
+`InstanceConfig`
 
-: Constructor dependency wiring for an `InfraInstance`, such as the repository
-  root, restore asset directory, readiness timeout, extra compose files, and
-  local rebuild preference. Some fields are local-biased while only the local
-  backend is implemented through `InfraInstance`.
+: Constructor dependency wiring for an `InfraInstance`, such as repository root,
+  restore asset directory, readiness timeout, optional compose overrides, and
+  local rebuild preference.
 
 `InfraInstance`
 
-: Fixture-facing backend interface. It starts and finishes the runtime, executes
-  commands in CVAT/Redis, copies files into CVAT, restores DB/data/Redis/
-  ClickHouse state, and collects logs.
+: Fixture-facing backend interface. Fixtures call it to restore DB/data/Redis/
+  ClickHouse state and execute commands inside CVAT/Redis without knowing the
+  backend implementation.
 
-`InfraPlugin`
+`InfraPytestPlugin`
 
-: Backend pytest integration hook. It registers backend options and can
-  participate in pytest configure, collection, and runtestloop phases.
+: Backend pytest hook surface for option registration and pytest lifecycle
+  phases. It is intentionally kept even though the current PR only has a local
+  implementation; parallel mode needs collection and runtestloop hooks, and kube
+  will need backend-specific option/configuration hooks.
 
 `LocalInstance`
 
-: Current local Docker Compose implementation of `InfraInstance`. It owns the
-  fixture-facing local operations for one local runtime and uses
-  `LocalRuntimeConfig` for local names, files, ports, and persisted runtime
-  state.
+: Current Docker Compose implementation of `InfraInstance`. It delegates local
+  implementation details to `infra.instances.local`: Docker discovery, compose
+  file generation, environment setup, stack compatibility, lifecycle orchestration,
+  and cleanup.
 
-`infra.instances.local`
+## Target Concepts
 
-: Local runtime implementation package. `instance.py` keeps the
-  `InfraInstance`/pytest-facing surface. Helper modules own Docker discovery,
-  compose file generation, environment setup, stack compatibility, and
-  lifecycle orchestration. These helpers are local-runtime implementation
-  details, not fixture-facing APIs.
-
-## Planned Classes
+These concepts are not fully implemented in this PR, but the current naming and
+hook points are kept to make the next kube/parallel PRs straightforward.
 
 `KubeRuntimeConfig` (TBD)
 
-: Kube-backed runtime configuration for one named runtime. It should own the
-  kube namespace/release/profile identity, base URL or port-forward state,
-  persisted compatibility metadata, and any state needed to reuse or restore a
-  kube runtime.
-
-`RuntimeProfile` (TBD)
-
-: Runtime shape used by local and kube backends, for example `simple`,
-  `standard`, and `full`. Profiles define which optional services and workers a
-  test set needs.
-
-`KubeDeploymentConfig` (TBD)
-
-: Lower-level kube deployment details derived from `KubeRuntimeConfig`: minikube
-  profile, Helm release names, image repositories/tags, profile values, and
-  deployment fingerprint.
+: Kube-backed runtime state for one named runtime: namespace/release/profile
+  identity, base URL or port-forward state, persisted compatibility metadata,
+  and any state needed to reuse or restore a kube runtime.
 
 `KubeInstance` (TBD)
 
-: Kubernetes implementation of `InfraInstance`. It should create
-  `KubeRuntimeConfig`, derive `KubeDeploymentConfig` from it when needed, then
-  manage minikube, Helm, port forwards, restore helpers, and diagnostics.
+: Kubernetes implementation of `InfraInstance`. It should manage minikube, Helm,
+  port forwards, restore helpers, and diagnostics behind the same fixture-facing
+  interface as `LocalInstance`.
 
-`ParallelPlan` (TBD)
+`RuntimeProfile` (TBD)
 
-: Parent-process plan for parallel execution: lane count, lane profiles,
-  grouping policy, and whether to prewarm or reuse lanes.
+: Runtime shape such as `simple`, `standard`, or `full`. Profiles define which
+  optional services and background workers a test set requires.
 
-`ParallelRuntimeConfig` (TBD)
+`ParallelInstance` (TBD)
 
-: Parent-process runtime configuration for parallel execution. It should own
-  lane count, lane naming, profile assignment, reuse policy, and cleanup policy
-  before child pytest processes are started.
+: Parent-process orchestration instance. It does not provide a CVAT target to
+  fixtures; it plans lanes, launches child pytest processes, streams events, and
+  handles parent-level lifecycle commands.
 
 `ParallelLane` (TBD)
 
-: One concrete execution lane: lane index, runtime profile, namespace name,
-  artifact directory, backend arguments, and backend-specific runtime state.
-
-`ParallelCoordinator` (TBD)
-
-: Parent process orchestration for parallel runs. It creates lanes, starts child
-  pytest processes, streams child events back into the parent terminal output,
-  handles lane failures, and performs best-effort cleanup.
+: One concrete child runtime: lane index, profile, run-prefix/project name,
+  artifact directory, backend-specific arguments, and persisted backend state.
 
 `ParallelPlatformAdapter` (TBD)
 
-: Backend-specific lane materialization. It converts a `ParallelLane` into
-  command-line arguments and persisted state for a concrete backend.
-
-`LocalParallelAdapter` (TBD)
-
-: Local adapter that allocates compose project names and host ports for each
-  lane.
-
-`KubeParallelAdapter` (TBD)
-
-: Optional future adapter for kube lanes. It should choose a kube strategy
-  explicitly instead of reusing Docker Compose naming.
+: Backend-specific lane materialization. Local lanes allocate Compose projects
+  and host ports; kube lanes will choose kube namespace/release/port-forward
+  state explicitly.
 
 ## Expected Flows
 
@@ -169,31 +119,27 @@ Single local run:
 
 1. pytest options are parsed into `RuntimeRequest`.
 2. `RuntimeContext` creates the run id and artifact directory.
-3. Local pytest configuration resolves `LocalRuntimeConfig` from the run prefix
-   through `RuntimeSettings.get_local_runtime_config()`.
-4. `LocalRuntimeConfig` allocates or loads host ports and uses
-   `RuntimeNamespace` for runtime directory and state file access.
-5. `LocalInstance` is created with `InfraInstanceConfig` dependency wiring.
-6. The local runtime package uses `LocalRuntimeConfig` to manage compose files,
-   names, ports, lifecycle, restore, and diagnostics behind `LocalInstance`.
-7. Fixtures call `InfraInstance` methods to restore state between tests.
+3. `LocalPytestPlugin` configures local runtime environment values before test
+   collection so import-time constants see the selected ports.
+4. `LocalInstance` writes the named runtime context, persists local runtime
+   state, starts/reuses/restores the Docker Compose stack, and exposes fixture
+   restore operations through `InfraInstance`.
+5. In auto mode, only a stack started by the current session is stopped during
+   session cleanup.
 
-Future kube run:
+Current kube run:
 
 1. The same `RuntimeRequest` and `RuntimeContext` are used.
-2. `KubeInstance` creates a `KubeRuntimeConfig` from the request, namespace
-   state, and kube options.
-3. `KubeRuntimeConfig` derives lower-level `KubeDeploymentConfig` when Helm or
-   minikube details are needed.
-4. Kube lifecycle code manages minikube, Helm releases, port forwards, restore
-   helpers, and diagnostics behind the `InfraInstance` interface.
+2. `kube_legacy` handles the existing kube startup and fixture restore behavior.
+3. `--infra=reuse` skips destructive kube reseeding and waits for existing
+   services. Local-only lifecycle modes remain rejected for kube.
 
 Future parallel run:
 
-1. The parent process builds a `ParallelRuntimeConfig` and `ParallelPlan`.
-2. `ParallelCoordinator` creates `ParallelLane` objects.
-3. A platform adapter persists lane state and builds child pytest commands.
-4. Each child process loads the parent run context and creates a normal backend
+1. The parent process creates a plan and lane definitions.
+2. A platform adapter persists lane state and writes `run-context.json` for each
+   lane runtime.
+3. Child pytest processes load the parent run context and create a normal backend
    `InfraInstance`.
-5. The parent process only coordinates and replays events; it does not expose
-   fixture restore or exec capabilities.
+4. The parent process coordinates and replays events; it does not expose fixture
+   restore or exec capabilities.

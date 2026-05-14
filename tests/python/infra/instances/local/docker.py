@@ -5,7 +5,7 @@
 import json
 import logging
 
-from infra.config import RuntimeSettings
+from infra.config import RuntimeConfig
 from infra.system_utils import run_command
 
 from .constants import REQUIRED_RUNNING_CONTAINERS
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def exec_container_as_root(container: str, command: list[str], capture_output=True):
-    prefixed_name = RuntimeSettings.get_local_runtime_config().prefixed_container_name(container)
+    prefixed_name = RuntimeConfig.get_local_runtime_config().prefixed_container_name(container)
     return run_command(
         [
             "docker",

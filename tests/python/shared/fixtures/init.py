@@ -5,7 +5,7 @@
 import shlex
 
 import pytest
-from infra.config import RuntimeSettings
+from infra.config import RuntimeConfig
 from infra.instances import InfraInstance, kube_legacy
 
 
@@ -14,7 +14,7 @@ def _command_args(command: list[str] | str) -> list[str]:
 
 
 def _platform(config) -> str:
-    return RuntimeSettings.resolve_request(config).platform
+    return RuntimeConfig.resolve_request(config).platform
 
 
 def _local_instance(config) -> InfraInstance:

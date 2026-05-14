@@ -9,28 +9,28 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from time import sleep
 
-from infra.config import RuntimeContext, RuntimeMode, RuntimeSettings
-from infra.instances.base_instance import InfraInstance, InfraPlugin
+from infra.config import RuntimeConfig, RuntimeContext, RuntimeMode
+from infra.instances.base_instance import InfraInstance, InfraPytestPlugin
 from infra.system_utils import docker_cp, run_command
 
 from .constants import COVERED_CONTAINERS, FAILURE_LOG_CONTAINERS
 from .docker import exec_container_as_root, running_containers
-from .environment import preconfigure_local_runtime_env, resolve_local_project_context
-from .lifecycle import run_local_lifecycle
+from .environment import configure_local_runtime_env, configure_local_runtime_env_before_collection
+from .lifecycle import run_local_runtime_lifecycle
 from .stack import cleanup_after_session
 
 logger = logging.getLogger(__name__)
 
 
 class LocalInstance(InfraInstance):
-    plugin_class: type[InfraPlugin]
+    plugin_class: type[InfraPytestPlugin]
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
-        return RuntimeSettings.resolve_request(config).platform == "local"
+        return RuntimeConfig.resolve_request(config).platform == "local"
 
     def exec_cvat(self, command: list[str]):
-        prefixed_name = RuntimeSettings.get_local_runtime_config().prefixed_container_name(
+        prefixed_name = RuntimeConfig.get_local_runtime_config().prefixed_container_name(
             "cvat_server"
         )
         return run_command(
@@ -39,7 +39,7 @@ class LocalInstance(InfraInstance):
         )[0]
 
     def exec_redis_inmem(self, command: list[str]):
-        prefixed_name = RuntimeSettings.get_local_runtime_config().prefixed_container_name(
+        prefixed_name = RuntimeConfig.get_local_runtime_config().prefixed_container_name(
             "cvat_redis_inmem"
         )
         return run_command(
@@ -51,15 +51,15 @@ class LocalInstance(InfraInstance):
         docker_cp(source, f"{cvat_host}:{target}")
 
     def _get_cvat_host(self) -> str:
-        project_cfg = RuntimeSettings.get_local_runtime_config()
-        return project_cfg.prefixed_container_name("cvat_server")
+        local_runtime = RuntimeConfig.get_local_runtime_config()
+        return local_runtime.prefixed_container_name("cvat_server")
 
     @staticmethod
     def collect_code_coverage_from_containers() -> None:
         running = set(running_containers())
-        project_cfg = RuntimeSettings.get_local_runtime_config()
+        local_runtime = RuntimeConfig.get_local_runtime_config()
         for container in COVERED_CONTAINERS:
-            prefixed_name = project_cfg.prefixed_container_name(container)
+            prefixed_name = local_runtime.prefixed_container_name(container)
             if prefixed_name not in running:
                 logger.info("Skipping coverage collection for absent container '%s'", prefixed_name)
                 continue
@@ -93,7 +93,7 @@ class LocalInstance(InfraInstance):
             )
 
     def start(self) -> None:
-        request = RuntimeSettings.resolve_request(self.config)
+        request = RuntimeConfig.resolve_request(self.config)
         runtime_mode = request.runtime_mode
         project_name = request.run_prefix
 
@@ -103,10 +103,10 @@ class LocalInstance(InfraInstance):
         if runtime_mode == RuntimeMode.DOWN:
             os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         else:
-            RuntimeContext.write_namespace_context(project_name)
-            resolve_local_project_context(self.session)
+            RuntimeContext.write_runtime_context(project_name)
+            configure_local_runtime_env(self.config, persist_state=True)
 
-        run_local_lifecycle(
+        run_local_runtime_lifecycle(
             self,
             runtime_mode=runtime_mode,
             dumpdb=request.dumpdb,
@@ -114,7 +114,7 @@ class LocalInstance(InfraInstance):
         )
 
     def finish(self) -> None:
-        request = RuntimeSettings.resolve_request(self.config)
+        request = RuntimeConfig.resolve_request(self.config)
         if request.platform != "local":
             return
 
@@ -133,12 +133,12 @@ class LocalInstance(InfraInstance):
         )
 
     def collect_failure_logs(self) -> None:
-        request = RuntimeSettings.resolve_request(self.config)
-        project_cfg = RuntimeSettings.get_local_runtime_config(request.run_prefix)
+        request = RuntimeConfig.resolve_request(self.config)
+        local_runtime = RuntimeConfig.get_local_runtime_config(request.run_prefix)
         running = set(running_containers())
         logs_dir = self.failure_logs_dir()
         for container in FAILURE_LOG_CONTAINERS:
-            prefixed_name = project_cfg.prefixed_container_name(container)
+            prefixed_name = local_runtime.prefixed_container_name(container)
             if prefixed_name not in running:
                 continue
 
@@ -178,7 +178,7 @@ class LocalInstance(InfraInstance):
             [
                 "docker",
                 "exec",
-                RuntimeSettings.get_local_runtime_config().prefixed_container_name("cvat_db"),
+                RuntimeConfig.get_local_runtime_config().prefixed_container_name("cvat_db"),
                 "psql",
                 "-U",
                 "root",
@@ -199,7 +199,7 @@ class LocalInstance(InfraInstance):
             [
                 "/bin/sh",
                 "-c",
-                f'python "{RuntimeSettings.get_clickhouse_init_script()}" --clear',
+                f'python "{RuntimeConfig.get_clickhouse_init_script()}" --clear',
             ]
         )
 
@@ -230,7 +230,7 @@ class LocalInstance(InfraInstance):
             [
                 "docker",
                 "exec",
-                RuntimeSettings.get_local_runtime_config().prefixed_container_name(
+                RuntimeConfig.get_local_runtime_config().prefixed_container_name(
                     "cvat_redis_ondisk"
                 ),
                 "redis-cli",
@@ -242,10 +242,10 @@ class LocalInstance(InfraInstance):
         )
 
 
-class LocalPlugin(InfraPlugin):
+class LocalPytestPlugin(InfraPytestPlugin):
     @classmethod
     def configure(cls, config) -> None:
-        preconfigure_local_runtime_env(config)
+        configure_local_runtime_env_before_collection(config)
 
 
-LocalInstance.plugin_class = LocalPlugin
+LocalInstance.plugin_class = LocalPytestPlugin

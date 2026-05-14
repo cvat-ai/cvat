@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 
 from infra import health as infra_health
-from infra.config import RuntimeMode, RuntimeSettings
+from infra.config import RuntimeConfig, RuntimeMode
 from infra.system_utils import run_command
 
 logger = logging.getLogger(__name__)
@@ -36,10 +36,6 @@ def _kube_get_db_pod_name() -> str:
     return _kube_get_pod_name("app.kubernetes.io/name=postgresql")
 
 
-def _kube_get_clickhouse_pod_name() -> str:
-    return _kube_get_pod_name("app.kubernetes.io/name=clickhouse")
-
-
 def _kube_get_redis_inmem_pod_name() -> str:
     return _kube_get_pod_name("app.kubernetes.io/name=redis")
 
@@ -60,11 +56,6 @@ def exec_cvat(command: list[str]) -> str:
 
 def exec_cvat_db(command: list[str]) -> None:
     pod_name = _kube_get_db_pod_name()
-    run_command(["kubectl", "exec", pod_name, "--", *command], logger=logger)
-
-
-def exec_clickhouse_db(command: list[str]) -> None:
-    pod_name = _kube_get_clickhouse_pod_name()
     run_command(["kubectl", "exec", pod_name, "--", *command], logger=logger)
 
 
@@ -95,7 +86,7 @@ def restore_clickhouse_db() -> None:
         [
             "/bin/sh",
             "-c",
-            f'python "{RuntimeSettings.get_clickhouse_init_script()}" --clear',
+            f'python "{RuntimeConfig.get_clickhouse_init_script()}" --clear',
         ]
     )
 
@@ -131,7 +122,7 @@ def restore_redis_ondisk() -> None:
 
 
 def restore_cvat_data(cvat_db_dir: Path | None = None) -> None:
-    cvat_db_dir = cvat_db_dir or RuntimeSettings.get_cvat_db_dir()
+    cvat_db_dir = cvat_db_dir or RuntimeConfig.get_cvat_db_dir()
     pod_name = _kube_get_server_pod_name()
     kube_cp(
         cvat_db_dir / "cvat_data.tar.bz2",
@@ -141,7 +132,7 @@ def restore_cvat_data(cvat_db_dir: Path | None = None) -> None:
 
 
 def start(cvat_db_dir: Path | None = None) -> None:
-    cvat_db_dir = cvat_db_dir or RuntimeSettings.get_cvat_db_dir()
+    cvat_db_dir = cvat_db_dir or RuntimeConfig.get_cvat_db_dir()
     restore_cvat_data(cvat_db_dir)
 
     server_pod_name = _kube_get_server_pod_name()
@@ -163,7 +154,7 @@ def start(cvat_db_dir: Path | None = None) -> None:
 
 
 def session_start(session) -> None:
-    request = RuntimeSettings.resolve_request(session.config)
+    request = RuntimeConfig.resolve_request(session.config)
     if request.collect_only:
         return
     if request.runtime_mode == RuntimeMode.REUSE:

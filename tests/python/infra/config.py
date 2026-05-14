@@ -86,7 +86,7 @@ def _validate_run_prefix(name: str) -> str:
 
 
 @dataclass(frozen=True)
-class RuntimeNamespace:
+class RuntimeStateStore:
     name: str
     runtime_root_dir: Path = _RUNTIME_ROOT_DIR
 
@@ -130,12 +130,12 @@ class LocalRuntimeConfig:
     runtime_root_dir: Path = _RUNTIME_ROOT_DIR
 
     @property
-    def namespace(self) -> RuntimeNamespace:
-        return RuntimeNamespace(name=self.project_name, runtime_root_dir=self.runtime_root_dir)
+    def state_store(self) -> RuntimeStateStore:
+        return RuntimeStateStore(name=self.project_name, runtime_root_dir=self.runtime_root_dir)
 
     @property
     def runtime_dir(self) -> Path:
-        return self.namespace.runtime_dir
+        return self.state_store.runtime_dir
 
     @property
     def generated_compose_files(self) -> list[Path]:
@@ -143,10 +143,6 @@ class LocalRuntimeConfig:
             self.runtime_dir / "docker-compose.tests.yml",
             self.runtime_dir / "docker-compose.dev.yml",
         ]
-
-    @property
-    def dc_files(self) -> list[Path]:
-        return self.generated_compose_files
 
     @property
     def host_http_port(self) -> int:
@@ -210,13 +206,13 @@ class LocalRuntimeConfig:
         return port_config
 
     def load_state(self) -> dict | None:
-        return self.namespace.load_state()
+        return self.state_store.load_state()
 
     def save_state(self, state: dict) -> None:
-        self.namespace.save_state(state)
+        self.state_store.save_state(state)
 
     def delete_state(self) -> None:
-        self.namespace.delete_state()
+        self.state_store.delete_state()
 
 
 def _can_bind_port(port: int) -> bool:
@@ -278,7 +274,7 @@ class RuntimeRequest:
     should_run_runtime_sanity_checks: bool
 
 
-class RuntimeSettings:
+class RuntimeConfig:
     @classmethod
     def add_options(cls, parser):
         group = parser.getgroup("CVAT REST API testing options")
@@ -315,7 +311,7 @@ class RuntimeSettings:
             default=cls.get_default_run_prefix(),
             help=(
                 "Prefix used for a test run identity. "
-                "It is used as docker compose project/container prefix and runtime state namespace "
+                "It is used as docker compose project/container prefix and runtime state directory "
                 "(default: 'test')."
             ),
         )
@@ -383,8 +379,8 @@ class RuntimeSettings:
         return _validate_run_prefix(config.getoption("--run-prefix"))
 
     @classmethod
-    def get_namespace(cls, name_arg: str | None = None) -> RuntimeNamespace:
-        return RuntimeNamespace(
+    def get_state_store(cls, name_arg: str | None = None) -> RuntimeStateStore:
+        return RuntimeStateStore(
             name=_validate_run_prefix(
                 name_arg or os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_RUN_PREFIX)
             ),
@@ -532,7 +528,7 @@ class RuntimeContext:
         if cls._run_id and cls._run_dir:
             return
 
-        request = RuntimeSettings.resolve_request(config)
+        request = RuntimeConfig.resolve_request(config)
         runs_root_dir = _RUNS_ROOT_DIR
         runs_root_dir.mkdir(parents=True, exist_ok=True)
 
@@ -584,12 +580,12 @@ class RuntimeContext:
         return getattr(shared_config, "BASE_URL", "http://localhost:8080")
 
     @classmethod
-    def get_namespace(cls, name_arg: str | None = None) -> RuntimeNamespace:
-        return RuntimeSettings.get_namespace(name_arg)
+    def get_state_store(cls, name_arg: str | None = None) -> RuntimeStateStore:
+        return RuntimeConfig.get_state_store(name_arg)
 
     @classmethod
-    def write_namespace_context(cls, namespace_name: str) -> None:
-        context_file = cls.get_namespace(namespace_name).context_file
+    def write_runtime_context(cls, runtime_name: str) -> None:
+        context_file = cls.get_state_store(runtime_name).context_file
         context_file.parent.mkdir(parents=True, exist_ok=True)
 
         payload = {
@@ -602,5 +598,5 @@ class RuntimeContext:
         tmp_file.replace(context_file)
 
     @classmethod
-    def context_file_for_namespace(cls, namespace_name: str) -> Path:
-        return cls.get_namespace(namespace_name).context_file
+    def context_file_for_runtime(cls, runtime_name: str) -> Path:
+        return cls.get_state_store(runtime_name).context_file

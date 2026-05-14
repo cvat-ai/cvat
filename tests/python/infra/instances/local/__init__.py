@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .instance import LocalInstance, LocalPlugin
+from .instance import LocalInstance, LocalPytestPlugin

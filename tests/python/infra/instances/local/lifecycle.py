@@ -8,7 +8,7 @@ from subprocess import CalledProcessError, run
 
 import pytest
 from infra import health as infra_health
-from infra.config import RuntimeMode, RuntimeSettings
+from infra.config import RuntimeConfig, RuntimeMode
 from infra.system_utils import docker_cp, run_command
 
 from .compose import (
@@ -24,25 +24,25 @@ from .stack import StackCompatibilityError, ensure_project_stack_compatible
 logger = logging.getLogger(__name__)
 
 
-def run_local_lifecycle(
+def run_local_runtime_lifecycle(
     instance, *, runtime_mode: RuntimeMode, dumpdb: bool, cleanup: bool
 ) -> None:
-    project_cfg = RuntimeSettings.get_local_runtime_config(
+    local_runtime = RuntimeConfig.get_local_runtime_config(
         cvat_root_dir=instance.deps.cvat_root_dir
     )
-    project_name = project_cfg.project_name
-    dc_files = build_local_dc_files(project_cfg, extra_dc_files=instance.deps.extra_dc_files)
-    container_name_files = project_cfg.generated_compose_files
+    project_name = local_runtime.project_name
+    compose_files = build_local_dc_files(local_runtime, extra_dc_files=instance.deps.extra_dc_files)
+    generated_compose_files = local_runtime.generated_compose_files
 
     if dumpdb:
         dump_db(
-            prefixed_container_name=project_cfg.prefixed_container_name,
+            prefixed_container_name=local_runtime.prefixed_container_name,
             cvat_db_dir=instance.deps.cvat_db_dir,
         )
         pytest.exit("data.json has been updated", returncode=0)
 
     if cleanup:
-        delete_compose_files(container_name_files)
+        delete_compose_files(generated_compose_files)
         pytest.exit("All generated test files have been deleted", returncode=0)
 
     project_running = project_containers_running(project_name)
@@ -52,7 +52,7 @@ def run_local_lifecycle(
                 f"--infra={RuntimeMode.REUSE} requires running services for project '{project_name}'"
             )
         try:
-            ensure_project_stack_compatible(project_cfg)
+            ensure_project_stack_compatible(local_runtime)
         except StackCompatibilityError as exc:
             raise pytest.UsageError(
                 f"--infra={RuntimeMode.REUSE} found an incompatible running stack for "
@@ -62,26 +62,26 @@ def run_local_lifecycle(
         infra_health.wait_for_auth_login_ready()
         return
 
-    delete_compose_files(container_name_files)
+    delete_compose_files(generated_compose_files)
     create_compose_files(
-        container_name_files,
+        generated_compose_files,
         instance.deps.cvat_root_dir,
-        project_cfg,
+        local_runtime,
     )
 
     if runtime_mode == RuntimeMode.DOWN:
         stop_services(
             project_name=project_name,
-            dc_files=dc_files,
+            dc_files=compose_files,
             project_directory=instance.deps.cvat_root_dir,
         )
-        project_cfg.delete_state()
+        local_runtime.delete_state()
         pytest.exit("All testing containers are stopped", returncode=0)
 
     stack_ok = True
     incompatibility_reason = ""
     try:
-        ensure_project_stack_compatible(project_cfg)
+        ensure_project_stack_compatible(local_runtime)
     except StackCompatibilityError as exc:
         stack_ok = False
         incompatibility_reason = str(exc)
@@ -95,7 +95,7 @@ def run_local_lifecycle(
         )
         stop_services(
             project_name=project_name,
-            dc_files=dc_files,
+            dc_files=compose_files,
             project_directory=instance.deps.cvat_root_dir,
         )
         project_running = False
@@ -104,44 +104,44 @@ def run_local_lifecycle(
         if not project_running or instance.deps.rebuild_images_before_start:
             start_services(
                 project_name=project_name,
-                default_project_name=RuntimeSettings.get_default_run_prefix(),
-                dc_files=dc_files,
+                default_project_name=RuntimeConfig.get_default_run_prefix(),
+                dc_files=compose_files,
                 project_directory=instance.deps.cvat_root_dir,
                 rebuild_images=instance.deps.rebuild_images_before_start,
             )
             infra_health.wait_for_services(instance.deps.waiting_time)
-        restore_runtime_state_from_assets(instance, project_cfg)
+        restore_runtime_state_from_assets(instance, local_runtime)
         pytest.exit("All necessary containers have been created and started.", returncode=0)
 
     if runtime_mode == RuntimeMode.RESTORE:
         if not project_running:
             start_services(
                 project_name=project_name,
-                default_project_name=RuntimeSettings.get_default_run_prefix(),
-                dc_files=dc_files,
+                default_project_name=RuntimeConfig.get_default_run_prefix(),
+                dc_files=compose_files,
                 project_directory=instance.deps.cvat_root_dir,
                 rebuild_images=instance.deps.rebuild_images_before_start,
             )
-        restore_runtime_state_from_assets(instance, project_cfg)
+        restore_runtime_state_from_assets(instance, local_runtime)
         pytest.exit("CVAT test runtime has been restored from test assets.", returncode=0)
 
     if runtime_mode == RuntimeMode.AUTO:
-        _set_auto_started(project_cfg, not project_running)
+        _set_auto_started(local_runtime, not project_running)
 
     if not project_running or instance.deps.rebuild_images_before_start:
         start_services(
             project_name=project_name,
-            default_project_name=RuntimeSettings.get_default_run_prefix(),
-            dc_files=dc_files,
+            default_project_name=RuntimeConfig.get_default_run_prefix(),
+            dc_files=compose_files,
             project_directory=instance.deps.cvat_root_dir,
             rebuild_images=instance.deps.rebuild_images_before_start,
         )
 
-    restore_runtime_state_from_assets(instance, project_cfg)
+    restore_runtime_state_from_assets(instance, local_runtime)
 
 
-def restore_runtime_state_from_assets(instance, project_cfg) -> None:
-    prefixed_name = project_cfg.prefixed_container_name
+def restore_runtime_state_from_assets(instance, local_runtime) -> None:
+    prefixed_name = local_runtime.prefixed_container_name
     instance.restore_cvat_data()
     docker_cp(
         instance.deps.cvat_db_dir / "restore.sql",
@@ -203,7 +203,7 @@ def dump_db(*, prefixed_container_name, cvat_db_dir: Path) -> None:
             pytest.exit("Database dump failed.\n")
 
 
-def _set_auto_started(project_cfg, value: bool) -> None:
-    state = project_cfg.load_state() or {}
+def _set_auto_started(local_runtime, value: bool) -> None:
+    state = local_runtime.load_state() or {}
     state["auto_started"] = value
-    project_cfg.save_state(state)
+    local_runtime.save_state(state)

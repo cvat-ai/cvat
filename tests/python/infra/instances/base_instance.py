@@ -7,11 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from infra.config import RuntimeContext, RuntimeSettings
+from infra.config import RuntimeConfig, RuntimeContext
 
 
 @dataclass(frozen=True)
-class InfraInstanceConfig:
+class InstanceConfig:
     cvat_root_dir: Path  # Repo test root used for compose/asset path resolution.
     cvat_db_dir: Path  # Directory with DB/data restore artifacts.
     waiting_time: int  # Max service readiness wait in seconds.
@@ -20,7 +20,7 @@ class InfraInstanceConfig:
     rebuild_images_before_start: bool = False
 
 
-class InfraPlugin(ABC):
+class InfraPytestPlugin(ABC):
     @classmethod
     def register_options(cls, group) -> None:
         return None
@@ -39,7 +39,7 @@ class InfraPlugin(ABC):
 
 
 class InfraInstance(ABC):
-    plugin_class: type[InfraPlugin]
+    plugin_class: type[InfraPytestPlugin]
     _CVAT_DATA_ARCHIVE_PATH = "/tmp/cvat_data.tar.bz2"
     _CVAT_DATA_TEMPLATE_DIR = "/tmp/cvat_data_template"
     _CVAT_DATA_DIR = "/home/django/data"
@@ -54,7 +54,7 @@ class InfraInstance(ABC):
         "/home/django/data/tmp",
     )
 
-    def __init__(self, session, deps: InfraInstanceConfig):
+    def __init__(self, session, deps: InstanceConfig):
         self.session = session
         self.config = session.config
         self.deps = deps
@@ -74,7 +74,7 @@ class InfraInstance(ABC):
         return None
 
     def should_collect_failure_logs(self) -> bool:
-        if RuntimeSettings.resolve_request(self.config).collect_only:
+        if RuntimeConfig.resolve_request(self.config).collect_only:
             return False
 
         exitstatus = getattr(self.config, "_cvat_exitstatus", 0)
@@ -153,9 +153,9 @@ class InfraInstance(ABC):
 
     @classmethod
     def plugin_candidates(cls):
-        from infra.instances.local import LocalPlugin
+        from infra.instances.local import LocalPytestPlugin
 
-        return (LocalPlugin,)
+        return (LocalPytestPlugin,)
 
     @classmethod
     def register_all_options(cls, group) -> None:
@@ -170,7 +170,7 @@ class InfraInstance(ABC):
         raise RuntimeError("Failed to choose infra instance implementation for config")
 
     @classmethod
-    def create(cls, session, deps: InfraInstanceConfig) -> "InfraInstance":
+    def create(cls, session, deps: InstanceConfig) -> "InfraInstance":
         selected_class = getattr(session.config, "_cvat_runtime_class", None)
         if selected_class is None:
             selected_class = cls.select_runtime_class_for_config(session.config)
