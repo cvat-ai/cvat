@@ -532,28 +532,39 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             const ys = pts.map((p: Point) => p.y);
             const w = Math.max(...xs) - Math.min(...xs);
             const h = Math.max(...ys) - Math.min(...ys);
-            // ~12 % of the smaller bbox dim, clamped to [8, 28] image-pixels.
-            // Kept compact so the gizmo doesn't visually overwhelm large
-            // cuboids and obscure underlying video pixels (INT-5976 tweak).
-            return Math.max(8, Math.min(28, Math.min(w, h) * 0.12));
+            // ~10 % of the smaller bbox dim, clamped to [8, 18] image-pixels.
+            // The tight upper bound prevents the arcs from ballooning when
+            // certain rotations stretch the bbox; the lower bound keeps the
+            // arcs grabbable on small cuboids. Kept compact so the gizmo
+            // doesn't visually overwhelm large cuboids and obscure underlying
+            // video pixels (INT-5976 tweak).
+            return Math.max(8, Math.min(18, Math.min(w, h) * 0.1));
         },
 
         setupRotationGizmo() {
             const r = this.cuboidGizmoRadius();
+            // Slightly thicker strokes give the arcs a larger hit area so
+            // they are easier to click without obscuring the cuboid.
+            const strokeWidth = 2.5;
             // Roll = full circle, screen plane.
             this.rotRoll = this.circle(r * 2)
                 .fill('none')
-                .stroke({ color: '#ff5252', width: 1.5 })
+                .stroke({ color: '#ff5252', width: strokeWidth })
                 .addClass('cvat_canvas_cuboid_rot_gizmo')
                 .addClass('cvat_canvas_cuboid_rot_gizmo_roll');
-            this.rotPitch = this.ellipse(r * 2, (r * 2) / 3)
+            // Pitch = vertical flat ellipse (blue). Dragging this arc
+            // tangentially produces vertical motion, which matches the
+            // pitch axis (rotation around the horizontal X axis).
+            this.rotPitch = this.ellipse((r * 2) / 3, r * 2)
                 .fill('none')
-                .stroke({ color: '#43a047', width: 1.5 })
+                .stroke({ color: '#1e88e5', width: strokeWidth })
                 .addClass('cvat_canvas_cuboid_rot_gizmo')
                 .addClass('cvat_canvas_cuboid_rot_gizmo_pitch');
-            this.rotYaw = this.ellipse((r * 2) / 3, r * 2)
+            // Yaw = horizontal flat ellipse (green). Tangential drag is
+            // horizontal, matching the yaw axis (rotation around vertical Y).
+            this.rotYaw = this.ellipse(r * 2, (r * 2) / 3)
                 .fill('none')
-                .stroke({ color: '#1e88e5', width: 1.5 })
+                .stroke({ color: '#43a047', width: strokeWidth })
                 .addClass('cvat_canvas_cuboid_rot_gizmo')
                 .addClass('cvat_canvas_cuboid_rot_gizmo_yaw');
             // Style hooks so the gizmo arcs are easy to grab even though
@@ -563,7 +574,61 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 g.attr('pointer-events', 'visibleStroke');
                 g.style({ cursor: 'grab' });
             });
+            // Translation dot at the centroid. Dragging this dot translates
+            // the entire cuboid across the image without changing its
+            // perspective — same behaviour as dragging the front face, but
+            // exposed as an obvious affordance in the middle of the gizmo.
+            const dotRadius = Math.max(2, r * 0.18);
+            this.rotCenterDot = this.circle(dotRadius * 2)
+                .fill('#000')
+                .stroke({ color: '#fff', width: 0.5 })
+                .addClass('cvat_canvas_cuboid_rot_gizmo')
+                .addClass('cvat_canvas_cuboid_rot_gizmo_center');
+            this.rotCenterDot.attr('pointer-events', 'all');
+            this.rotCenterDot.style({ cursor: 'move' });
+            this.attachRotationGizmoHoverHandlers();
             this.positionRotationGizmo();
+        },
+
+        // Dim every arc except `target` to 50 % opacity. Used by both the
+        // hover handlers and the drag handlers so the active axis stands out
+        // throughout the entire interaction (hover → click → drag).
+        dimOtherRotationArcs(target: any) {
+            const arcs: any[] = [this.rotRoll, this.rotPitch, this.rotYaw].filter(Boolean);
+            arcs.forEach((other: any) => {
+                other.attr('opacity', other === target ? 1 : 0.5);
+            });
+        },
+
+        restoreRotationArcsOpacity() {
+            [this.rotRoll, this.rotPitch, this.rotYaw].forEach((g: any) => {
+                if (g) g.attr('opacity', 1);
+            });
+        },
+
+        // Hover behaviour: when the user mouses over one arc, dim the other
+        // two to 50 % opacity so it is visually obvious which axis they are
+        // about to grab. Restored when the pointer leaves — but if a drag is
+        // in progress the active arc keeps the others dimmed regardless of
+        // pointer position.
+        attachRotationGizmoHoverHandlers() {
+            const arcs: any[] = [this.rotRoll, this.rotPitch, this.rotYaw].filter(Boolean);
+            arcs.forEach((target: any) => {
+                const onEnter = (): void => {
+                    if (this.activeRotArc) return; // drag in progress owns the dim state
+                    this.dimOtherRotationArcs(target);
+                };
+                const onLeave = (): void => {
+                    if (this.activeRotArc) return; // keep the drag-driven dimming
+                    this.restoreRotationArcsOpacity();
+                };
+                target.node.addEventListener('mouseenter', onEnter);
+                target.node.addEventListener('mouseleave', onLeave);
+                target.__rotGizmoHoverTeardown = (): void => {
+                    target.node.removeEventListener('mouseenter', onEnter);
+                    target.node.removeEventListener('mouseleave', onLeave);
+                };
+            });
         },
 
         positionRotationGizmo() {
@@ -571,18 +636,31 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             const c = this.cuboidCentroid();
             const r = this.cuboidGizmoRadius();
             // Re-size arcs to track the cuboid's apparent size.
+            // Pitch is the vertical flat ellipse, yaw is the horizontal one
+            // (matches setupRotationGizmo so visuals align with behaviour).
             this.rotRoll.size(r * 2, r * 2).center(c.x, c.y);
-            this.rotPitch.size(r * 2, (r * 2) / 3).center(c.x, c.y);
-            this.rotYaw.size((r * 2) / 3, r * 2).center(c.x, c.y);
+            this.rotPitch.size((r * 2) / 3, r * 2).center(c.x, c.y);
+            this.rotYaw.size(r * 2, (r * 2) / 3).center(c.x, c.y);
+            if (this.rotCenterDot) {
+                const dotRadius = Math.max(2, r * 0.18);
+                this.rotCenterDot.size(dotRadius * 2, dotRadius * 2).center(c.x, c.y);
+            }
         },
 
         removeRotationGizmo() {
-            [this.rotRoll, this.rotPitch, this.rotYaw].forEach((g: any) => {
-                if (g) g.remove();
+            [this.rotRoll, this.rotPitch, this.rotYaw, this.rotCenterDot].forEach((g: any) => {
+                if (g) {
+                    if (typeof g.__rotGizmoHoverTeardown === 'function') {
+                        g.__rotGizmoHoverTeardown();
+                        g.__rotGizmoHoverTeardown = null;
+                    }
+                    g.remove();
+                }
             });
             this.rotRoll = null;
             this.rotPitch = null;
             this.rotYaw = null;
+            this.rotCenterDot = null;
         },
 
         attachRotationGizmoHandlers() {
@@ -680,6 +758,10 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     el.style({ cursor: 'grab' });
                     window.removeEventListener('mousemove', onMove);
                     window.removeEventListener('mouseup', onUp);
+                    // Release the drag-driven dim. If the pointer is still
+                    // over an arc its hover handler will re-apply dimming.
+                    this.activeRotArc = null;
+                    this.restoreRotationArcsOpacity();
                     this.fire(new CustomEvent('resizedone', { detail: { event: ev } }));
                 };
 
@@ -688,6 +770,11 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     ev.preventDefault();
                     dragging = true;
                     last = { x: ev.clientX, y: ev.clientY };
+                    // Mark this arc as the actively-rotated one so hover
+                    // mouseleave events don't restore the other arcs to full
+                    // opacity while the drag is still in progress.
+                    this.activeRotArc = el;
+                    this.dimOtherRotationArcs(el);
                     // Snapshot the cuboid's effective depth (in image pixels)
                     // at the start of the gesture so subsequent rotation steps
                     // see a stable lift radius. We use the same front-vs-back
@@ -726,10 +813,83 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             wireArc('roll', this.rotRoll);
             wireArc('pitch', this.rotPitch);
             wireArc('yaw', this.rotYaw);
+
+            // Centroid translation dot. Mimics the behaviour of dragging the
+            // front face: moves all 8 cuboid corners by the cursor delta in
+            // image-pixel space, leaving the perspective untouched.
+            if (this.rotCenterDot) {
+                const dot = this.rotCenterDot;
+                let dragging = false;
+                let last = { x: 0, y: 0 };
+
+                // Convert a clientX/clientY to image-space (SVG user units)
+                // using the inverse screen CTM. This keeps translation in
+                // sync with the cuboid regardless of pan/zoom.
+                const toImage = (cx: number, cy: number): { x: number; y: number } => {
+                    const ctm = this.node.getScreenCTM();
+                    if (!ctm) return { x: cx, y: cy };
+                    const inv = ctm.inverse();
+                    return {
+                        x: cx * inv.a + cy * inv.c + inv.e,
+                        y: cx * inv.b + cy * inv.d + inv.f,
+                    };
+                };
+
+                const onMove = (ev: MouseEvent): void => {
+                    if (!dragging) return;
+                    const cur = toImage(ev.clientX, ev.clientY);
+                    const dx = cur.x - last.x;
+                    const dy = cur.y - last.y;
+                    last = cur;
+                    if (dx !== 0 || dy !== 0) {
+                        this.dmove(dx, dy);
+                        this.positionRotationGizmo();
+                        this.positionFreeCornerHandles();
+                        this.fire(new CustomEvent('dragmove', { detail: { event: ev } }));
+                    }
+                };
+
+                const onUp = (ev: MouseEvent): void => {
+                    if (!dragging) return;
+                    dragging = false;
+                    dot.style({ cursor: 'move' });
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                    // Mirror the rotation gesture's dim/restore lifecycle so
+                    // the arcs return to full opacity once translation ends.
+                    this.activeRotArc = null;
+                    this.restoreRotationArcsOpacity();
+                    this.fire(new CustomEvent('dragend', { detail: { event: ev } }));
+                };
+
+                const onDown = (ev: MouseEvent): void => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    dragging = true;
+                    last = toImage(ev.clientX, ev.clientY);
+                    dot.style({ cursor: 'grabbing' });
+                    // Dim all three arcs to 50 % so the gizmo visually
+                    // signals "translation in progress". Passing the dot as
+                    // the target dims everything except the dot itself; the
+                    // activeRotArc flag suppresses hover-driven restoration.
+                    this.activeRotArc = dot;
+                    this.dimOtherRotationArcs(dot);
+                    window.addEventListener('mousemove', onMove);
+                    window.addEventListener('mouseup', onUp);
+                    this.fire(new CustomEvent('dragstart', { detail: { event: ev } }));
+                };
+
+                dot.node.addEventListener('mousedown', onDown);
+                dot.__rotGizmoTeardown = (): void => {
+                    dot.node.removeEventListener('mousedown', onDown);
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                };
+            }
         },
 
         detachRotationGizmoHandlers() {
-            [this.rotRoll, this.rotPitch, this.rotYaw].forEach((g: any) => {
+            [this.rotRoll, this.rotPitch, this.rotYaw, this.rotCenterDot].forEach((g: any) => {
                 if (g && typeof g.__rotGizmoTeardown === 'function') {
                     g.__rotGizmoTeardown();
                     g.__rotGizmoTeardown = null;
