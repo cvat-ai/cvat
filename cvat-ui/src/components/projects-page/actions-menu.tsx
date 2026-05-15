@@ -125,7 +125,7 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                 projectsToUpdate,
                 async (project) => {
                     project.organizationId = newOrganization?.id ?? null;
-                    await dispatch(updateProjectAsync(project, ResourceUpdateTypes.UPDATE_ORGANIZATION));
+                    await dispatch(updateProjectAsync(project, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
                 },
                 (project, idx, total) => `Updating organization for project #${project.id} (${idx + 1}/${total})`,
             )).then((processedCount: number) => {

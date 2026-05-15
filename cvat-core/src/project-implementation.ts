@@ -7,13 +7,14 @@ import serverProxy from './server-proxy';
 import { resolvePreviewResponse } from './frames';
 import ProjectClass from './project';
 import { exportDataset, importDataset } from './annotations';
-import { Label } from './labels';
+import { getUpdatedLabels } from './labels';
 import AnnotationGuide from './guide';
 
 export default function implementProject(Project: typeof ProjectClass): typeof ProjectClass {
     Object.defineProperty(Project.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: ProjectClass,
+            fields: Parameters<typeof ProjectClass.prototype.save>[0],
         ): ReturnType<typeof ProjectClass.prototype.save> {
             if (typeof this.id !== 'undefined') {
                 const projectData = this._updateTrigger.getUpdated(this, {
@@ -24,8 +25,9 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                     targetStorage: 'target_storage',
                 }) as Record<string, unknown> & {
                     assignee_id?: { id: number } | null;
-                    labels?: Label[];
                 };
+
+                const updatedLabels = fields?.labels ? getUpdatedLabels(this.labels, fields.labels) : [];
 
                 // TODO: update assignee via "fields" instead
                 // It would be better implementation
@@ -35,7 +37,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                     delete projectData.assignee_id;
                 }
 
-                for await (const label of projectData.labels ?? []) {
+                for await (const label of updatedLabels) {
                     if (label.deleted) {
                         await serverProxy.labels.delete(label.id);
                     }
@@ -46,10 +48,9 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                 }
 
                 // leave only new labels to create them via project PATCH request
-                const labelsToCreate = (projectData.labels ?? [])
+                const labelsToCreate = updatedLabels
                     .filter((label) => !Number.isInteger(label.id))
                     .map((el) => el.toJSON());
-                delete projectData.labels;
                 this._updateTrigger.reset();
 
                 let serializedProject = null;

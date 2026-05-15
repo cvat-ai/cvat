@@ -101,8 +101,8 @@ function TaskPageComponent(): JSX.Element {
         return <TaskNotFoundComponent />;
     }
 
-    const onUpdateTask = (task: Task): Promise<Task> => {
-        const promise = dispatch(updateTaskAsync(task, {}));
+    const onUpdateTask = (task: Task, fields: Parameters<Task['save']>[0] = {}): Promise<Task> => {
+        const promise = dispatch(updateTaskAsync(task, fields));
         promise.then((updatedTask: Task) => {
             setTaskInstance(updatedTask);
         });

@@ -30,7 +30,7 @@ import Issue from './issue';
 import {
     SerializedTask, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
-import { Label } from './labels';
+import { getUpdatedLabels } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -693,8 +693,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                     }),
                 } as Record<string, unknown> & {
                     assignee_id?: { id: number } | null;
-                    labels?: Label[];
                 };
+
+                const updatedLabels = fields?.labels ? getUpdatedLabels(this.labels, fields.labels) : [];
 
                 // TODO: update assignee via "fields" instead
                 // It would be better implementation
@@ -704,7 +705,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                     delete taskData.assignee_id;
                 }
 
-                for await (const label of taskData.labels ?? []) {
+                for await (const label of updatedLabels) {
                     if (label.deleted) {
                         await serverProxy.labels.delete(label.id);
                     } else if (label.patched) {
@@ -713,10 +714,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 }
 
                 // leave only new labels to create them via task PATCH request
-                const labelsToCreate = (taskData.labels ?? [])
+                const labelsToCreate = updatedLabels
                     .filter((label) => !Number.isInteger(label.id))
                     .map((el) => el.toJSON());
-                delete taskData.labels;
                 this._updateTrigger.reset();
 
                 let serializedTask: SerializedTask = null;

@@ -66,6 +66,7 @@ from shared.utils.config import (
     make_api_client,
     make_sdk_client,
     patch_method,
+    post_method,
     put_method,
 )
 from shared.utils.helpers import generate_image_files
@@ -1194,6 +1195,40 @@ class TestPatchTaskLabel:
 
         resulting_labels = self._get_task_labels(task["id"], admin_user)
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
+
+    def test_can_delete_attribute(self, admin_user):
+        spec = {
+            "name": "test delete task label attribute",
+            "labels": [
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "mazda",
+                            "values": ["mazda"],
+                        }
+                    ],
+                }
+            ],
+        }
+        response = post_method(admin_user, "tasks", spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        task = response.json()
+        label = self._get_task_labels(task["id"], admin_user)[0]
+        attribute = label["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'tasks/{task["id"]}',
+            {"labels": [{"id": label["id"], "attributes": [{**attribute, "deleted": True}]}]},
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        label = self._get_task_labels(task["id"], admin_user)[0]
+        assert label["attributes"] == []
 
     def test_can_rename_label(self, tasks_wlc, labels, admin_user):
         task = [t for t in tasks_wlc if t["project_id"] is None and t["labels"]["count"] > 0][0]

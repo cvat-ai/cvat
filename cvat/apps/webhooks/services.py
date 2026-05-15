@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from . import utils
 from .dispatch import add_to_queue
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
-from .tasks import send_webhook
-from .utils import get_sender
 
 
 def select_webhooks(
@@ -43,10 +42,24 @@ def redeliver(webhook: Webhook, data: dict) -> None:
     add_to_queue(webhook=webhook, payload=data, redelivery=True)
 
 
+def send_webhook(webhook: Webhook, payload: dict, redelivery: bool = False) -> WebhookDelivery:
+    status_code, response = utils.perform_webhook_request(webhook=webhook, payload=payload)
+    return WebhookDelivery.objects.create(
+        webhook_id=webhook.id,
+        event=payload["event"],
+        status_code=status_code,
+        changed_fields=",".join(list(payload.get("before_update", {}).keys())),
+        redelivery=redelivery,
+        request=payload,
+        response=response,
+    )
+
+
 def ping(serializer) -> WebhookDelivery:
     data = {
         "event": "ping",
         "webhook": serializer.data,
-        "sender": get_sender(serializer.instance),
+        "sender": utils.get_sender(instance=serializer.instance),
     }
-    return send_webhook(webhook=serializer.instance, payload=data, redelivery=False)
+    delivery = send_webhook(webhook=serializer.instance, payload=data, redelivery=False)
+    return delivery
