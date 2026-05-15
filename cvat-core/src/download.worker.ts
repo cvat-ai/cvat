@@ -33,7 +33,7 @@ function getRetryDelay(response: Response | null, retry: number): number {
 }
 
 function shouldRetry(response: Response | null): boolean {
-    return !response || [408, 429, 500, 502, 503, 504].includes(response.status);
+    return !response || [408, 429, 502, 503, 504].includes(response.status);
 }
 
 function shouldRetryError(response: Response | null): boolean {
