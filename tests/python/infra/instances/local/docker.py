@@ -88,6 +88,7 @@ def running_containers() -> list[str]:
 def project_containers_running(project_name: str) -> bool:
     REQUIRED_RUNNING_CONTAINERS = COVERED_CONTAINERS + (
         "cvat_db",
+        "cvat_clickhouse",
         "cvat_redis_inmem",
         "cvat_redis_ondisk",
         "cvat_worker_chunks",

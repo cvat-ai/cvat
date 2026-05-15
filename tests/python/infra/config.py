@@ -158,14 +158,13 @@ class LocalRuntimeConfig:
         default_project_name: str,
         used_ports: set[int],
         runtime_running: bool,
+        runtime_has_containers: bool = False,
         running_port_config: dict | None = None,
     ) -> dict:
         state = self.load_state() or {}
 
-        if (
-            runtime_running
-            and running_port_config
-            and all(name in running_port_config for name in _DEFAULT_LOCAL_PORT_CONFIG)
+        if running_port_config and all(
+            name in running_port_config for name in _DEFAULT_LOCAL_PORT_CONFIG
         ):
             port_config = {
                 name: int(running_port_config[name]) for name in _DEFAULT_LOCAL_PORT_CONFIG
@@ -182,7 +181,9 @@ class LocalRuntimeConfig:
             for name in _DEFAULT_LOCAL_PORT_CONFIG
         )
 
-        if state_has_port_config and (runtime_running or state_port_config_is_available):
+        if state_has_port_config and (
+            runtime_running or runtime_has_containers or state_port_config_is_available
+        ):
             return {name: int(state[name]) for name in _DEFAULT_LOCAL_PORT_CONFIG}
 
         port_config = _allocate_local_port_config(used_ports=used_ports)

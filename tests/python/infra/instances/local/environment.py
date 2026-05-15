@@ -7,7 +7,12 @@ import os
 
 from infra.config import RuntimeConfig, RuntimeMode
 
-from .docker import project_containers_running, project_service_port_map, used_host_ports
+from .docker import (
+    project_containers_running,
+    project_service_port_map,
+    running_containers,
+    used_host_ports,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -79,13 +84,15 @@ def configure_local_runtime_env(config, *, persist_state: bool) -> None:
 
     local_runtime = RuntimeConfig.get_local_runtime_config(project_name)
     runtime_running = project_containers_running(local_runtime.project_name)
+    runtime_prefix = f"{local_runtime.project_name}_"
     port_config = local_runtime.resolve_port_config(
         default_project_name=RuntimeConfig.get_default_run_prefix(),
         used_ports=used_host_ports(exclude_project_name=local_runtime.project_name),
         runtime_running=runtime_running,
-        running_port_config=(
-            _running_project_port_config(local_runtime.project_name) if runtime_running else None
+        runtime_has_containers=any(
+            container.startswith(runtime_prefix) for container in running_containers()
         ),
+        running_port_config=_running_project_port_config(local_runtime.project_name),
     )
     configure_runtime_env(
         project_name=project_name,
