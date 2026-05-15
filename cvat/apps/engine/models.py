@@ -49,8 +49,9 @@ class SafeCharField(models.CharField):
 
 
 class DimensionType(str, Enum):
-    DIM_3D = '3d'
+    DIM_1D = '1d'
     DIM_2D = '2d'
+    DIM_3D = '3d'
 
     @classmethod
     def choices(cls):
@@ -433,15 +434,16 @@ class Data(models.Model):
     # Media descriptors
     images: models.manager.RelatedManager[Image]
     video: MaybeUndefined[Video]
+    audio: MaybeUndefined[Audio]
     related_files: models.manager.RelatedManager[RelatedFile]
 
     # Cache descriptors
     chunk_size = models.PositiveIntegerField(null=True)
-    image_quality = models.PositiveSmallIntegerField(default=50)
+    image_quality = models.PositiveSmallIntegerField(default=0)
     compressed_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
-        default=DataChoice.IMAGESET)
+        blank=True, default="")
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
-        default=DataChoice.IMAGESET)
+        blank=True, default="")
 
     # Storage descriptors
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
@@ -631,7 +633,6 @@ class Data(models.Model):
         transaction.on_commit(clear_original_files, robust=True)
 
 
-
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
     path = models.CharField(max_length=1024, default='')
@@ -640,6 +641,13 @@ class Video(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class Audio(models.Model):
+    data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="audio", null=True)
+    path = models.CharField(max_length=1024)
+    sampling_rate = models.PositiveIntegerField()
+    has_cover_image = models.BooleanField(default=False)
 
 
 class Image(models.Model):
@@ -831,6 +839,7 @@ class TaskMode(TextChoices):
 class MediaType(TextChoices):
     IMAGE = "image"
     POINT_CLOUD = "point_cloud"
+    AUDIO = "audio"
 
 
 class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):

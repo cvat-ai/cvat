@@ -34,6 +34,7 @@ from cvat.apps.engine.models import (
     Data,
     Job,
     Location,
+    MediaType,
     Project,
     RequestAction,
     RequestSubresource,
@@ -90,6 +91,24 @@ class DatasetExporter(AbstractExporter):
 
     def validate_request(self):
         super().validate_request()
+
+        if (
+            isinstance(self.db_instance, Task)
+            and self.db_instance.media_type == MediaType.AUDIO
+            or isinstance(self.db_instance, Project)
+            and next(
+                iter(
+                    self.db_instance.tasks.exclude(media_type="").values_list(
+                        "media_type", flat=True
+                    )[:1]
+                ),
+                "",
+            )
+            == MediaType.AUDIO
+            or isinstance(self.db_instance, Job)
+            and self.db_instance.segment.task.media_type == MediaType.AUDIO
+        ):
+            raise serializers.ValidationError("Dataset export is not available in audio tasks")
 
         format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_export_formats()}.get(
             self.export_args.format
@@ -201,6 +220,24 @@ class BackupExporter(AbstractExporter):
 
     def validate_request(self):
         super().validate_request()
+
+        if (
+            isinstance(self.db_instance, Task)
+            and self.db_instance.media_type == MediaType.AUDIO
+            or isinstance(self.db_instance, Project)
+            and next(
+                iter(
+                    self.db_instance.tasks.exclude(media_type="").values_list(
+                        "media_type", flat=True
+                    )[:1]
+                ),
+                "",
+            )
+            == MediaType.AUDIO
+            or isinstance(self.db_instance, Job)
+            and self.db_instance.segment.task.media_type == MediaType.AUDIO
+        ):
+            raise serializers.ValidationError("Backup export is not available in audio tasks")
 
         # do not add this check when a project is backed up, as empty tasks are skipped
         if isinstance(self.db_instance, Task) and not self.db_instance.data:
@@ -400,6 +437,7 @@ class DatasetImporter(ResourceImporter):
     class ImportArgs(ResourceImporter.ImportArgs):
         format: str
         conv_mask_to_poly: bool
+        import_mode: str | None
 
     def __init__(
         self,
@@ -415,11 +453,25 @@ class DatasetImporter(ResourceImporter):
         super().init_request_args()
         format_name = self.request.query_params.get("format", "")
         conv_mask_to_poly = to_bool(self.request.query_params.get("conv_mask_to_poly", True))
+        import_mode = None
+        if not isinstance(self.db_instance, Project):
+            import_mode_param = self.request.query_params.get(
+                "import_mode",
+                dm.task.AnnotationImportMode.REPLACE,
+            )
+            try:
+                import_mode = dm.task.AnnotationImportMode(import_mode_param).value
+            except ValueError as ex:
+                allowed_values = ", ".join(mode.value for mode in dm.task.AnnotationImportMode)
+                raise serializers.ValidationError(
+                    f"Invalid import_mode={import_mode_param!r}. Allowed: {allowed_values}"
+                ) from ex
 
         self.import_args: DatasetImporter.ImportArgs = self.ImportArgs(
             **self.import_args.to_dict(),
             format=format_name,
             conv_mask_to_poly=conv_mask_to_poly,
+            import_mode=import_mode,
         )
 
     def _get_payload_file(self):
@@ -438,21 +490,52 @@ class DatasetImporter(ResourceImporter):
     def _init_callback_with_params(self):
         if isinstance(self.db_instance, Project):
             self.callback = dm.project.import_dataset_as_project
+            self.callback_args = (
+                str(self.tmp_dir / self.import_args.filename),
+                self.db_instance.pk,
+                self.import_args.format,
+                self.import_args.conv_mask_to_poly,
+            )
         elif isinstance(self.db_instance, Task):
             self.callback = dm.task.import_task_annotations
+            self.callback_args = (
+                str(self.tmp_dir / self.import_args.filename),
+                self.db_instance.pk,
+                self.import_args.format,
+                self.import_args.conv_mask_to_poly,
+            )
+            self.callback_kwargs = {"import_mode": self.import_args.import_mode}
         else:
             assert isinstance(self.db_instance, Job)
             self.callback = dm.task.import_job_annotations
-
-        self.callback_args = (
-            str(self.tmp_dir / self.import_args.filename),
-            self.db_instance.pk,
-            self.import_args.format,
-            self.import_args.conv_mask_to_poly,
-        )
+            self.callback_args = (
+                str(self.tmp_dir / self.import_args.filename),
+                self.db_instance.pk,
+                self.import_args.format,
+                self.import_args.conv_mask_to_poly,
+            )
+            self.callback_kwargs = {"import_mode": self.import_args.import_mode}
 
     def validate_request(self):
         super().validate_request()
+
+        if (
+            isinstance(self.db_instance, Task)
+            and self.db_instance.media_type == MediaType.AUDIO
+            or isinstance(self.db_instance, Project)
+            and next(
+                iter(
+                    self.db_instance.tasks.exclude(media_type="").values_list(
+                        "media_type", flat=True
+                    )[:1]
+                ),
+                "",
+            )
+            == MediaType.AUDIO
+            or isinstance(self.db_instance, Job)
+            and self.db_instance.segment.task.media_type == MediaType.AUDIO
+        ):
+            raise serializers.ValidationError("Dataset import is not available in audio tasks")
 
         format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_import_formats()}.get(
             self.import_args.format
