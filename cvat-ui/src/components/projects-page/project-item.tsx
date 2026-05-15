@@ -134,10 +134,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                 <div>
                     {ribbonPlugins.sort((item1, item2) => item1.weight - item2.weight)
                         .map((item) => item.component).map((Component, index) => (
-                            React.createElement(
-                                Component as React.ComponentType<any>,
-                                { key: index, targetProps: props },
-                            )
+                            <Component key={index} targetProps={props} />
                         ))}
                 </div>
             )}

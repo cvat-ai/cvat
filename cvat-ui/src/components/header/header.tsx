@@ -229,9 +229,7 @@ function HeaderComponent(props: Props): JSX.Element {
     ), 20]);
 
     aboutLinks.push(...aboutPlugins.map(({ component: Component, weight }, index: number) => (
-        [React.createElement(
-            Component as React.ComponentType<any>,
-            { key: index, targetProps: props }), weight] as [JSX.Element, number]
+        [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
     )));
 
     const showAboutModal = useCallback((): void => {

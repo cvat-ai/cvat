@@ -30,9 +30,13 @@ const compat = new FlatCompat({
     recommendedConfig: js.configs.recommended,
 });
 
+// Convert a legacy .eslintrc-style object to flat config entries and pin it to
+// the files that used to be linted from that package directory.
 function scopedConfig(config, files) {
     return compat.config(config).map((entry) => ({
         ...entry,
+        // FlatCompat resolves plugin names itself, but some legacy configs pull
+        // in plugin objects that need the manually imported/fixed versions below.
         ...(entry.plugins ? {
             plugins: Object.fromEntries(
                 Object.entries(entry.plugins).map(([name, plugin]) => [name, sharedCompatPlugins[name] || plugin]),
@@ -42,6 +46,9 @@ function scopedConfig(config, files) {
     }));
 }
 
+// Some legacy shareable configs still reference rules or plugin presets that do
+// not load cleanly in the flat-config setup. Their supported rule sets are added
+// explicitly later in this file.
 function withoutUnsupportedExtends(config) {
     return {
         ...config,
@@ -53,14 +60,17 @@ function withoutUnsupportedExtends(config) {
         )),
         rules: {
             ...Object.fromEntries(
-            Object.entries(config.rules || {}).filter(([ruleName]) => (
-                !ruleName.startsWith('security/')
-            ))),
+                Object.entries(config.rules || {}).filter(([ruleName]) => (
+                    !ruleName.startsWith('security/')
+                )),
+            ),
             indent: 'off', // airbnb's legacy indent
-        }
+        },
     };
 }
 
+// CVAT frontend packages run in browser code, Node-based tooling, and workers,
+// so the shared source config starts from both browser and Node globals.
 const browserAndNodeGlobals = {
     ...globals.browser,
     ...globals.node,
@@ -69,16 +79,23 @@ const browserAndNodeGlobals = {
     WorkerGlobalScope: 'readonly',
 };
 
+// Shared plugin instances keep FlatCompat output and handwritten flat entries
+// using the same plugin objects.
 const sharedCompatPlugins = {
     '@stylistic': stylisticPlugin,
     '@typescript-eslint': tseslintPlugin,
+    cypress: cypressPlugin,
     import: importPlugin,
     'jsx-a11y': jsxA11yPlugin,
     'no-unsanitized': noUnsanitizedPlugin,
     react: fixupPluginRules(reactPlugin),
     'react-hooks': reactHooksPlugin,
     security: securityPlugin,
+    'chai-friendly': chaiFriendlyPlugin,
 };
+
+// eslint-plugin-react's jsx-filename-extension rule is not available in the
+// shape required here, so the flat config carries a tiny local replacement.
 const localReactPlugin = {
     rules: {
         'jsx-filename-extension': {
@@ -104,7 +121,7 @@ const localReactPlugin = {
                 },
             },
             create(context) {
-                const [{ extensions = ['.jsx', '.tsx'] } = {}] = context.options;
+                const [{ extensions = ['.tsx'] } = {}] = context.options;
                 let firstJSXNode = null;
 
                 return {
@@ -142,12 +159,23 @@ const disabledReactRules = Object.fromEntries(
     Object.keys(reactPlugin.rules).map((ruleName) => [`react/${ruleName}`, 'off']),
 );
 
+// First-party application code is TypeScript today. Vendored JS and generated
+// browser assets are excluded in the ignore block instead of being lint targets.
 const sourceFiles = [
-    'cvat-data/**/*.{js,ts}',
-    'cvat-core/**/*.{js,ts}',
-    'cvat-canvas/**/*.{js,ts}',
-    'cvat-canvas3d/**/*.{js,ts}',
-    'cvat-ui/**/*.{js,jsx,ts,tsx}',
+    'cvat-data/**/*.ts',
+    'cvat-core/**/*.ts',
+    'cvat-canvas/**/*.ts',
+    'cvat-canvas3d/**/*.ts',
+    'cvat-ui/**/*.{ts,tsx}',
+];
+
+// Cypress remains JavaScript, including the root Cypress config files.
+const cypressTestFiles = [
+    'tests/cypress/**/*.js',
+    'tests/*cypress*.config.js',
+];
+const cypressPluginFiles = [
+    'tests/cypress/plugins/**/*.js',
 ];
 
 const cypressGlobals = {
@@ -201,73 +229,52 @@ const coreConfig = require('./cvat-core/.eslintrc.cjs');
 const canvasConfig = require('./cvat-canvas/.eslintrc.cjs');
 const canvas3dConfig = require('./cvat-canvas3d/.eslintrc.cjs');
 const uiConfig = withoutUnsupportedExtends(require('./cvat-ui/.eslintrc.cjs'));
-const testsSourceRules = Object.fromEntries(
-    Object.entries(rootConfig.rules || {}).filter(([ruleName]) => !ruleName.startsWith('@typescript-eslint')),
-);
+const testsConfig = withoutUnsupportedExtends(require('./tests/.eslintrc.js'));
 const cypressBaseConfig = {
-    parserOptions: {
-        parser: '@babel/eslint-parser',
-        sourceType: 'module',
-    },
-    extends: [
-        'eslint:recommended',
-        'airbnb-base',
-        'plugin:import/errors',
-        'plugin:import/warnings',
-    ],
+    ...testsConfig,
     rules: {
-        ...testsSourceRules,
+        ...(testsConfig.rules || {}),
         ...testsGlobalConfig,
     },
 };
 
+// Flat config is ordered. The entries below start with global ignores and broad
+// shared rules, then layer package, TypeScript, Cypress, and mutation-specific
+// overrides on top.
 export default [
     {
         ignores: [
-            // Directories to ignore (migrated from .eslintignore)
+            // Repository-wide generated, vendored, and hidden paths.
             '.*/**',
+            '**/node_modules/**',
+            '**/dist/**',
+            '**/.eslintrc.js',
+            '**/.eslintrc.cjs',
+            '**/lint-staged.config.js',
+            '**/webpack.config.{js,cjs}',
             '3rdparty/**',
-            'node_modules/**',
-            'dist/**',
             'data/**',
             'datumaro/**',
             'keys/**',
             'logs/**',
             'static/**',
             'templates/**',
-            '**/webpack.config.js',
-
-            // Additional specific ignores
-            '.eslintrc.cjs',
-            'lint-staged.config.js',
             'site/**',
-            'webpack.config.cjs',
-            'cvat-ui/.eslintrc.cjs',
+
+            // Package-specific generated or vendored files that are still
+            // matched by broad JavaScript globs.
             'cvat-ui/exec-scripts-webpack-plugin.cjs',
             'cvat-ui/src/assets/opencv*.js',
-            'cvat-ui/node_modules/**',
-            'cvat-ui/dist/**',
-            'cvat-core/.eslintrc.cjs',
-            'cvat-core/webpack.config.cjs',
-            'cvat-core/node_modules/**',
-            'cvat-core/dist/**',
             'cvat-core/tests/**/*.cjs',
-            'cvat-canvas/.eslintrc.cjs',
-            'cvat-canvas/node_modules/**',
-            'cvat-canvas/dist/**',
-            'cvat-canvas3d/.eslintrc.cjs',
-            'cvat-canvas3d/node_modules/**',
-            'cvat-canvas3d/dist/**',
             'cvat-data/src/ts/3rdparty/**',
-            'cvat-data/node_modules/**',
-            'cvat-data/dist/**',
         ],
     },
     {
+        // Security and DOM-sanitization plugins are added here because their
+        // legacy shareable configs are filtered out before FlatCompat runs.
         files: [
             ...sourceFiles,
-            'tests/cypress/**/*.js',
-            'tests/*cypress*.config.js',
+            ...cypressTestFiles,
         ],
         settings: {
             react: {
@@ -285,13 +292,17 @@ export default [
             'no-constant-condition': ['error', { checkLoops: 'allExceptWhileTrue' }],
         },
     },
+    // Legacy package configs are still the source of truth; FlatCompat scopes
+    // each one to the package files that used to discover it via cwd.
     ...scopedConfig(rootConfig, sourceFiles),
-    ...scopedConfig(dataConfig, ['cvat-data/**/*.{js,ts}']),
-    ...scopedConfig(coreConfig, ['cvat-core/**/*.{js,ts}']),
-    ...scopedConfig(canvasConfig, ['cvat-canvas/**/*.{js,ts}']),
-    ...scopedConfig(canvas3dConfig, ['cvat-canvas3d/**/*.{js,ts}']),
-    ...scopedConfig(uiConfig, ['cvat-ui/**/*.{js,jsx,ts,tsx}']),
+    ...scopedConfig(dataConfig, ['cvat-data/**/*.ts']),
+    ...scopedConfig(coreConfig, ['cvat-core/**/*.ts']),
+    ...scopedConfig(canvasConfig, ['cvat-canvas/**/*.ts']),
+    ...scopedConfig(canvas3dConfig, ['cvat-canvas3d/**/*.ts']),
+    ...scopedConfig(uiConfig, ['cvat-ui/**/*.{ts,tsx}']),
     {
+        // The local JSX-extension rule replaces react/jsx-filename-extension
+        // after the upstream React rule set is disabled below.
         files: sourceFiles,
         settings: {
             react: {
@@ -303,17 +314,13 @@ export default [
         },
         rules: {
             ...disabledReactRules,
-            'local-react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
+            'local-react/jsx-filename-extension': ['error', { extensions: ['.tsx'] }],
         },
     },
     {
-        files: [
-            'cvat-data/**/*.{ts,mts,cts}',
-            'cvat-core/**/*.{ts,mts,cts}',
-            'cvat-canvas/**/*.{ts,mts,cts}',
-            'cvat-canvas3d/**/*.{ts,mts,cts}',
-            'cvat-ui/**/*.{ts,tsx,mts,cts}'
-        ],
+        // TypeScript-only relaxations and replacements for rules that conflict
+        // with @typescript-eslint or older CVAT generic patterns.
+        files: sourceFiles,
         plugins: {
             react: fixupPluginRules(reactPlugin),
         },
@@ -334,6 +341,7 @@ export default [
                 caughtErrorsIgnorePattern: '^_',
             }],
             '@typescript-eslint/default-param-last': 'off',
+            '@typescript-eslint/no-unsafe-function-type': 'off',
             'lines-between-class-members': 'off',
             '@typescript-eslint/lines-between-class-members': 'off',
             'default-param-last': 'off',
@@ -343,15 +351,11 @@ export default [
             '@typescript-eslint/no-empty-object-type': ['error', { allowObjectTypes: 'always' }],
         },
     },
-    ...scopedConfig(cypressBaseConfig, [
-        'tests/cypress/**/*.js',
-        'tests/*cypress*.config.js',
-    ]),
+    // Tests keep a dedicated legacy config, then receive Cypress globals and
+    // plugin rules from the following flat entry.
+    ...scopedConfig(cypressBaseConfig, cypressTestFiles),
     {
-        files: [
-            'tests/cypress/**/*.js',
-            'tests/*cypress*.config.js',
-        ],
+        files: cypressTestFiles,
         plugins: {
             import: importPlugin,
             cypress: cypressPlugin,
@@ -372,14 +376,16 @@ export default [
             'import/extensions': 'off',
             'no-prototype-builtins': 'off',
             'no-underscore-dangle': 'off',
-            'security/detect-object-injection':'off',
-            "no-unused-expressions": 0,
-            "chai-friendly/no-unused-expressions": "error"
+            'cypress/no-unnecessary-waiting': 'off',
+            'security/detect-object-injection': 'off',
+            'no-unused-expressions': 0,
+            'chai-friendly/no-unused-expressions': 'error',
         },
     },
-    ...scopedConfig(cypressBaseConfig, ['tests/cypress/plugins/**/*.js']),
     {
-        files: ['tests/cypress/plugins/**/*.js'],
+        // Cypress plugin files execute in Node but are located under the
+        // Cypress tree, so they override only the environment-specific pieces.
+        files: cypressPluginFiles,
         plugins: {
             import: importPlugin,
             security: securityPlugin,
@@ -400,10 +406,11 @@ export default [
         },
     },
     {
+        // Keep the stricter parameter-mutation rule centralized so package and
+        // Cypress layers inherit the same allow-list.
         files: [
             ...sourceFiles,
-            'tests/cypress/**/*.js',
-            'tests/*cypress*.config.js',
+            ...cypressTestFiles,
         ],
         rules: {
             'no-param-reassign': ['error', {

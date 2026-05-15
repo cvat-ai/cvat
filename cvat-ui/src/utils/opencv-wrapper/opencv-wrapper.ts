@@ -214,7 +214,6 @@ export class OpenCVWrapper {
 
             try {
                 const contours = this.contours.findContours(src);
-
                 if (contours.length) {
                     return contours.map((contour) => contour.map((val) => (
                         [val[0] + left, val[1] + top]
@@ -278,7 +277,6 @@ export class OpenCVWrapper {
 }
 
 const openCVWrapper = new OpenCVWrapper();
-
 await core.actions.register(new TrackerMILAction(openCVWrapper));
 
 export default openCVWrapper;
