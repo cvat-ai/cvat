@@ -145,7 +145,6 @@
                 transition: background-color $box-shadow-transition, opacity $box-shadow-transition;
 
                 &:hover {
-                    background: rgba(0, 0, 0, 6%);
                     opacity: 0.8;
                 }
 
@@ -153,18 +152,6 @@
                     opacity: 0.7;
                 }
             }
-        }
-    }
-
-    .cvat-issues-sidebar-hidden-issues,
-    .cvat-issues-sidebar-shown-issues,
-    .cvat-issues-sidebar-hidden-resolved-status,
-    .cvat-objects-sidebar-show-ground-truth {
-        border: 1px solid rgba(0, 0, 0, 6%);
-        background: rgba(255, 255, 255, 58%);
-
-        &:hover {
-            border-color: rgba(0, 0, 0, 16%);
         }
     }
 
@@ -320,8 +307,6 @@
                 transition: background-color $box-shadow-transition, opacity $box-shadow-transition;
 
                 &:hover {
-                    border-color: rgba(0, 0, 0, 10%);
-                    background: rgba(0, 0, 0, 6%);
                     opacity: 0.8;
                 }
             }
@@ -333,8 +318,6 @@
     }
 
     .cvat-objects-sidebar-show-ground-truth-active {
-        border-color: rgba(24, 144, 255, 28%);
-        background: rgba(24, 144, 255, 10%);
         color: #1890ff;
     }
 }
@@ -449,8 +432,7 @@
             border-radius: $border-radius-base;
 
             &:hover {
-                border-color: rgba(0, 0, 0, 10%);
-                background: rgba(0, 0, 0, 6%);
+                opacity: 0.82;
             }
         }
 
@@ -460,8 +442,7 @@
         .cvat-object-item-button-pinned-enabled,
         .cvat-object-item-button-hidden-enabled,
         .cvat-object-item-button-keyframe-enabled {
-            border-color: rgba(24, 144, 255, 22%);
-            background: rgba(24, 144, 255, 9%);
+            color: #1890ff;
         }
     }
 }
@@ -580,7 +561,7 @@
         border-radius: $border-radius-base;
 
         &:hover {
-            background: rgba(0, 0, 0, 6%);
+            opacity: 0.82;
         }
     }
 
