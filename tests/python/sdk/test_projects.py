@@ -182,7 +182,7 @@ class TestProjectUsecases(TestDatasetExport):
         task = project.get_tasks()[0]
         imported_annotations = task.get_annotations()
         assert all(
-            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+            s.type == ("polygon" if convert else "mask") for s in imported_annotations.shapes
         )
 
     def test_can_retrieve_project(self, fxt_new_project: Project):

@@ -136,12 +136,12 @@ class TestTaskVisionDataset:
         assert len(dataset[6][1].annotations.tags) == 1
         assert dataset[6][1].annotations.tags[0].label_id == self.label_ids[1]
         assert len(dataset[6][1].annotations.shapes) == 1
-        assert dataset[6][1].annotations.shapes[0].type.value == "rectangle"
+        assert dataset[6][1].annotations.shapes[0].type == "rectangle"
         assert dataset[6][1].annotations.shapes[0].points == [1.0, 2.0, 3.0, 4.0]
 
         assert not dataset[7][1].annotations.tags
         assert len(dataset[7][1].annotations.shapes) == 1
-        assert dataset[7][1].annotations.shapes[0].type.value == "points"
+        assert dataset[7][1].annotations.shapes[0].type == "points"
         assert dataset[7][1].annotations.shapes[0].points == [1.1, 2.1, 3.1, 4.1]
 
     def test_deleted_frame(self):

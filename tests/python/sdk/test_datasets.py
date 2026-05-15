@@ -124,7 +124,7 @@ class TestTaskDataset:
 
         assert not dataset.samples[6].annotations.tags
         assert len(dataset.samples[6].annotations.shapes) == 1
-        assert dataset.samples[6].annotations.shapes[0].type.value == "rectangle"
+        assert dataset.samples[6].annotations.shapes[0].type == "rectangle"
         assert dataset.samples[6].annotations.shapes[0].points == [1.0, 2.0, 3.0, 4.0]
 
     @pytest.mark.parametrize("media_download_policy", cvatds.MediaDownloadPolicy)

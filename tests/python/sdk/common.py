@@ -73,7 +73,7 @@ class TestDatasetExport:
             or not location
             and (
                 not resource.target_storage
-                or resource.target_storage.location.value == Location.LOCAL
+                or resource.target_storage.location == Location.LOCAL
             )
         )
 

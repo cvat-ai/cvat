@@ -371,16 +371,20 @@ class ModelSimple(OpenApiModel):
 {{> model_templates/methods_tostr_eq_simple }}
 
 
-class StringEnumModel(str, ModelSimple):
+class ModelStringEnum(str, ModelSimple):
     """The parent class of generated string enum models."""
 
     def __new__(cls, *args, **kwargs):
+        # The string value must be selected in __new__, because str is immutable
+        # and cannot be changed later when generated __init__ assigns .value.
         value = kwargs.get('value')
         if args:
             value = args[0]
         elif 'value' not in kwargs:
             value = getattr(cls, '_default_value', '')
 
+        # Preserve nullable enum values as Python None instead of converting them
+        # to the "None" string in str.__new__ below.
         if value is None and is_type_nullable(cls):
             return None
 
@@ -389,13 +393,38 @@ class StringEnumModel(str, ModelSimple):
 
         return str.__new__(cls, value)
 
-    def __setattr__(self, attr, value):
-        if attr == 'value' and isinstance(value, ModelSimple):
+    def _prepare_value_assignment(self, value):
+        if isinstance(value, ModelSimple):
             value = value.value
+
+        if (
+            'value' in self.__dict__.get('_data_store', {})
+            and value != str(self)
+        ):
+            raise ApiValueError(
+                "Cannot change value of immutable string enum %s" %
+                self.__class__.__name__
+            )
+
+        return value
+
+    def __setattr__(self, attr, value):
+        # The underlying str value is immutable, so .value can only be assigned
+        # during initialization, or reassigned to the same value.
+        if attr == 'value':
+            value = self._prepare_value_assignment(value)
 
         super().__setattr__(attr, value)
 
+    def set_attribute(self, name, value):
+        if name == 'value':
+            value = self._prepare_value_assignment(value)
+
+        super().set_attribute(name, value)
+
     def __getattr__(self, attr):
+        # str appears before ModelSimple in the MRO, so restore OpenAPI model
+        # attribute lookup for required properties and _data_store values.
         if attr in self.required_properties and attr in self.__dict__:
             return self.__dict__[attr]
 
@@ -409,6 +438,8 @@ class StringEnumModel(str, ModelSimple):
         )
 
     def __getitem__(self, name):
+        # Support model-style access such as enum["value"], while preserving
+        # normal string indexing/slicing for integer and slice keys.
         if isinstance(name, str):
             if name in self.required_properties and name in self.__dict__:
                 return self.__dict__[name]

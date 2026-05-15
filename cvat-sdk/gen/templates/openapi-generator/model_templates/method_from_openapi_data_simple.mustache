@@ -50,7 +50,7 @@
 
 {{#isEnum}}
 {{#isString}}
-        self = StringEnumModel.__new__(cls, value)
+        self = ModelStringEnum.__new__(cls, value)
         if self is None:
             return None
 

@@ -138,9 +138,9 @@ class _AnnotationMapper:
                 f" but {ds_attr.input_type!r} in the dataset"
             )
 
-        if ds_attr.input_type.value in {"text", "checkbox"}:
+        if ds_attr.input_type in {"text", "checkbox"}:
             values_match = True
-        elif ds_attr.input_type.value in {"select", "radio"}:
+        elif ds_attr.input_type in {"select", "radio"}:
             values_match = sorted(ds_attr.values) == sorted(fun_attr.values)
         else:
             values_match = ds_attr.values == fun_attr.values
@@ -373,9 +373,9 @@ class _AnnotationMapper:
 
         element.frame = ds_frame
 
-        if element.type.value != "points":
+        if element.type != "points":
             raise BadFunctionError(
-                f"function output skeleton with element type other than 'points' ({element.type.value})"
+                f"function output skeleton with element type other than 'points' ({element.type})"
             )
 
         try:
@@ -404,7 +404,7 @@ class _AnnotationMapper:
     def _remap_elements(
         self, shape: models.LabeledShapeRequest, ds_frame: int, label_id_mapping: _LabelIdMapping
     ) -> None:
-        if shape.type.value == "skeleton":
+        if shape.type == "skeleton":
             seen_sl_ids = set()
 
             shape.elements[:] = [
@@ -462,14 +462,14 @@ class _AnnotationMapper:
             shape = cast(models.LabeledShapeRequest, annotation)
 
             if not self._are_label_types_compatible(
-                shape.type.value, label_id_mapping.expected_type
+                shape.type, label_id_mapping.expected_type
             ):
                 raise BadFunctionError(
-                    f"function output shape of type {shape.type.value!r}"
+                    f"function output shape of type {shape.type!r}"
                     f" (expected {label_id_mapping.expected_type!r})"
                 )
 
-            if annotation.type.value == "mask" and self._conv_mask_to_poly:
+            if annotation.type == "mask" and self._conv_mask_to_poly:
                 raise BadFunctionError("function output mask shape despite conv_mask_to_poly=True")
 
             self._remap_elements(shape, ds_frame, label_id_mapping)

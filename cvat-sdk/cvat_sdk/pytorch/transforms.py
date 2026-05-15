@@ -75,7 +75,7 @@ class ExtractBoundingBoxes:
         labels = []
 
         for shape in target.annotations.shapes:
-            if shape.type.value not in self.include_shape_types:
+            if shape.type not in self.include_shape_types:
                 continue
 
             if shape.rotation != 0:

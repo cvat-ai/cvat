@@ -7,6 +7,7 @@ import json
 
 import pytest
 from cvat_sdk import models
+from cvat_sdk.api_client.exceptions import ApiValueError
 from cvat_sdk.api_client.model_utils import to_json
 
 from shared.utils.config import BASE_URL, make_api_client
@@ -48,6 +49,23 @@ def test_string_enum_model_fields_are_serialized_as_strings():
 
     assert serialized_shape["type"] == "rectangle"
     assert serialized_shape["type"].__class__ is str
+
+
+def test_string_enum_model_value_cannot_be_changed():
+    enum_value = models.ShapeType("rectangle")
+
+    with pytest.raises(ApiValueError):
+        enum_value.value = "ellipse"
+
+    with pytest.raises(ApiValueError):
+        enum_value["value"] = "ellipse"
+
+    with pytest.raises(ApiValueError):
+        enum_value.set_attribute("value", "ellipse")
+
+    assert enum_value == "rectangle"
+    assert enum_value.value == "rectangle"
+    assert enum_value["value"] == "rectangle"
 
 
 def test_can_make_custom_request_with_call_api_method(admin_user):

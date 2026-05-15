@@ -293,9 +293,9 @@ class Client:
                 status,
                 message,
             )
-            if status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
+            if status == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
                 break
-            elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
+            elif status == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
                 raise BackgroundRequestException(message)
 
             sleep(status_check_period)

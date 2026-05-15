@@ -418,7 +418,7 @@ class TestTaskUsecases(TestDatasetExport):
 
         imported_annotations = fxt_new_task.get_jobs()[0].get_annotations()
         assert all(
-            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+            s.type == ("polygon" if convert else "mask") for s in imported_annotations.shapes
         )
 
     def _test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
@@ -501,7 +501,7 @@ class TestTaskUsecases(TestDatasetExport):
         anns = fxt_task_with_shapes.get_annotations()
 
         assert len(anns.shapes) == 1
-        assert anns.shapes[0].type.value == "rectangle"
+        assert anns.shapes[0].type == "rectangle"
         assert self.stdout.getvalue() == ""
 
     def test_can_set_annotations(self, fxt_new_task: Task):
