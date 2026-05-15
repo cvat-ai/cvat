@@ -156,4 +156,116 @@ context('Actions on polygon', () => {
             performZOrderAction('.cvat-object-item-menu-to-layer-foreground', '3');
         });
     });
+
+    describe('Z-order layer sidebar actions', () => {
+        before(() => {
+            cy.sidebarItemSortBy('Z Order');
+        });
+
+        it('Shows z-order layers with draggable cards for non-tag objects', () => {
+            cy.contains('.cvat-objects-sidebar-z-layers-title', 'Layer stack').should('exist');
+            cy.get('.cvat-objects-sidebar-z-layer-mark').should('exist');
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .should('have.class', 'cvat-objects-sidebar-state-item-draggable');
+        });
+
+        it('Collapses and expands a single layer', () => {
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '3')
+                .parents('.cvat-objects-sidebar-z-layer')
+                .within(() => {
+                    cy.get('.cvat-objects-sidebar-z-layer-collapse-button').click();
+                    cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
+                    cy.get('.cvat-objects-sidebar-z-layer-collapse-button').click();
+                    cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
+                });
+        });
+
+        it('Collapses and expands all layers', () => {
+            cy.get('.cvat-objects-sidebar-z-layers-collapse-all-button').click();
+            cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
+            cy.get('#cvat-objects-sidebar-state-item-2').should('not.exist');
+
+            cy.get('.cvat-objects-sidebar-z-layers-collapse-all-button').click();
+            cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
+            cy.get('#cvat-objects-sidebar-state-item-2').should('exist');
+        });
+
+        it('Moves a layer with shifting intervening layers', () => {
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '2').then(($layer) => {
+                const targetRect = $layer[0].getBoundingClientRect();
+
+                cy.contains('.cvat-objects-sidebar-z-layer-mark', '3')
+                    .find('.cvat-objects-sidebar-z-layer-drag-handle')
+                    .trigger('pointerdown', { button: 0, isPrimary: true, pointerId: 1 });
+                cy.get('body').trigger('pointermove', {
+                    clientX: targetRect.left + targetRect.width / 2,
+                    clientY: targetRect.top + targetRect.height / 2,
+                    button: 0,
+                    isPrimary: true,
+                    pointerId: 1,
+                });
+                cy.get('body').trigger('pointerup', { button: 0, isPrimary: true, pointerId: 1 });
+            });
+
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '2');
+            cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '3');
+        });
+
+        it('Merges one layer into another layer', () => {
+            cy.contains('.cvat-objects-sidebar-z-layer-mode-switcher label', 'Merge').click();
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '2').then(($layer) => {
+                const targetRect = $layer[0].getBoundingClientRect();
+
+                cy.contains('.cvat-objects-sidebar-z-layer-mark', '3')
+                    .find('.cvat-objects-sidebar-z-layer-drag-handle')
+                    .trigger('pointerdown', { button: 0, isPrimary: true, pointerId: 1 });
+                cy.get('body').trigger('pointermove', {
+                    clientX: targetRect.left + targetRect.width / 2,
+                    clientY: targetRect.top + targetRect.height / 2,
+                    button: 0,
+                    isPrimary: true,
+                    pointerId: 1,
+                });
+                cy.get('body').trigger('pointerup', { button: 0, isPrimary: true, pointerId: 1 });
+            });
+
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '2');
+            cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '2');
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '3').should('not.exist');
+        });
+
+        it('Moves an object to another layer by dragging it to a layer section', () => {
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '2').then(($layer) => {
+                const targetRect = $layer[0].getBoundingClientRect();
+
+                cy.get('#cvat-objects-sidebar-state-item-1')
+                    .trigger('pointerdown', { button: 0, isPrimary: true, pointerId: 1 });
+                cy.get('body').trigger('pointermove', {
+                    clientX: targetRect.left + targetRect.width / 2,
+                    clientY: targetRect.top + targetRect.height / 2,
+                    button: 0,
+                    isPrimary: true,
+                    pointerId: 1,
+                });
+                cy.get('body').trigger('pointerup', { button: 0, isPrimary: true, pointerId: 1 });
+            });
+
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '2');
+        });
+
+        it('Compacts layers while preserving relative order', () => {
+            cy.get('.cvat-objects-sidebar-z-layers-compact-button').click();
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '0');
+            cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '0');
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '0').should('exist');
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '2').should('not.exist');
+        });
+
+        it('Does not make tag cards draggable', () => {
+            cy.createTag(labelName);
+            cy.sidebarItemSortBy('Z Order');
+            cy.get('#cvat-objects-sidebar-state-item-3')
+                .should('not.have.class', 'cvat-objects-sidebar-state-item-draggable');
+        });
+    });
 });
