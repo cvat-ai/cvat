@@ -286,14 +286,10 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
         it('Filter by skeleton sublabel keypoint group', () => {
             const sublabelName = `${skeleton.name} / 1`;
 
-            cy.addFiltersRule(0);
+            cy.addFiltersRule(0, 'elements');
             cy.setFilter({
+                target: 'elements',
                 groupIndex: 0,
-                ruleIndex: 0,
-                field: 'Keypoints',
-            });
-            cy.setFilter({
-                groupIndex: 1,
                 ruleIndex: 0,
                 field: 'Label',
                 operator: '==',
@@ -302,6 +298,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             });
 
             cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('not.exist');
             cy.get('#cvat_canvas_shape_7').should('not.exist');
 
             cy.clearFilters();
@@ -311,23 +309,20 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             const sublabel1 = `${skeleton.name} / 1`;
             const sublabel2 = `${skeleton2.name} / 2`;
 
-            cy.addFiltersRule(0);
+            cy.addFiltersRule(0, 'elements');
             cy.setFilter({
+                target: 'elements',
                 groupIndex: 0,
-                ruleIndex: 0,
-                field: 'Keypoints',
-            });
-            cy.setFilter({
-                groupIndex: 1,
                 ruleIndex: 0,
                 field: 'Label',
                 operator: '==',
                 value: sublabel1,
             });
-            cy.addFiltersRule(1);
-            cy.setGroupCondition(1, 'Or');
+            cy.addFiltersRule(0, 'elements');
+            cy.setGroupCondition(0, 'Or', 'elements');
             cy.setFilter({
-                groupIndex: 1,
+                target: 'elements',
+                groupIndex: 0,
                 ruleIndex: 1,
                 field: 'Label',
                 operator: '==',
@@ -336,7 +331,12 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             });
 
             cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('not.exist');
             cy.get('#cvat_canvas_shape_7').should('exist');
+            cy.get('#cvat_canvas_shape_8').should('not.exist');
+            cy.get('#cvat_canvas_shape_9').should('exist');
+            cy.get('#cvat_canvas_shape_10').should('not.exist');
 
             cy.clearFilters();
         });
@@ -344,22 +344,19 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
         it('Filter skeleton elements by occluded property', () => {
             const sublabel1 = `${skeleton.name} / 1`;
 
-            cy.addFiltersRule(0);
+            cy.addFiltersRule(0, 'elements');
             cy.setFilter({
+                target: 'elements',
                 groupIndex: 0,
-                ruleIndex: 0,
-                field: 'Keypoints',
-            });
-            cy.setFilter({
-                groupIndex: 1,
                 ruleIndex: 0,
                 field: 'Label',
                 operator: '==',
                 value: sublabel1,
             });
-            cy.addFiltersRule(1);
+            cy.addFiltersRule(0, 'elements');
             cy.setFilter({
-                groupIndex: 1,
+                target: 'elements',
+                groupIndex: 0,
                 ruleIndex: 1,
                 field: 'Occluded',
                 operator: '==',
@@ -368,6 +365,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             });
 
             cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('not.exist');
             cy.get('#cvat_canvas_shape_7').should('not.exist');
 
             cy.clearFilters();
@@ -377,21 +376,19 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             const sublabel1 = `${skeleton2.name} / 2`;
             const sublabel2 = `${skeleton.name} / 1`;
 
-            cy.addFiltersRule(0);
+            cy.addFiltersGroup(0, 'elements');
+            cy.addFiltersGroup(0, 'elements');
             cy.setFilter({
-                groupIndex: 0,
-                ruleIndex: 0,
-                field: 'Keypoints',
-            });
-            cy.setFilter({
+                target: 'elements',
                 groupIndex: 1,
                 ruleIndex: 0,
                 field: 'Label',
                 operator: '==',
                 value: sublabel1,
             });
-            cy.addFiltersRule(1);
+            cy.addFiltersRule(1, 'elements');
             cy.setFilter({
+                target: 'elements',
                 groupIndex: 1,
                 ruleIndex: 1,
                 field: 'Occluded',
@@ -399,24 +396,20 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
                 value: 'true',
             });
 
-            cy.addFiltersRule(0);
-            cy.setGroupCondition(0, 'Or');
+            cy.setGroupCondition(0, 'Or', 'elements');
             cy.setFilter({
-                groupIndex: 0,
-                ruleIndex: 2,
-                field: 'Keypoints',
-            });
-            cy.setFilter({
+                target: 'elements',
                 groupIndex: 2,
-                ruleIndex: 2,
+                ruleIndex: 0,
                 field: 'Label',
                 operator: '==',
                 value: sublabel2,
             });
-            cy.addFiltersRule(2);
+            cy.addFiltersRule(2, 'elements');
             cy.setFilter({
+                target: 'elements',
                 groupIndex: 2,
-                ruleIndex: 3,
+                ruleIndex: 1,
                 field: 'Occluded',
                 operator: '==',
                 value: 'true',
@@ -424,6 +417,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             });
 
             cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('not.exist');
             cy.get('#cvat_canvas_shape_7').should('not.exist');
 
             cy.clearFilters();

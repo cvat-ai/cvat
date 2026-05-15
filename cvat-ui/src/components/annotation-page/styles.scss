@@ -568,20 +568,6 @@
     }
 }
 
-.cvat-filters-modal-field-dropdown.ant-select-tree-dropdown {
-    .ant-select-tree-treenode {
-        &:hover {
-            background-color: transparent;
-        }
-    }
-
-    .ant-select-tree-treenode-switcher-open {
-        .ant-select-tree-node-content-wrapper {
-            pointer-events: auto;
-        }
-    }
-}
-
 .cvat-submenu-current-job-state-item {
     &::after {
         content: ' \2713';

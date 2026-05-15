@@ -17,12 +17,12 @@ import {
     AntdWidgets,
 } from '@react-awesome-query-builder/antd';
 
-import { omit } from 'lodash';
 import { DownOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
+import Typography from 'antd/lib/typography';
 import { CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
@@ -35,7 +35,10 @@ const defaultTree = QbUtils.loadTree({ type: 'group', id: QbUtils.uuid() });
 interface StoredFilter {
     id: string;
     logic: JsonLogicTree;
+    keypointLogic?: JsonLogicTree;
 }
+
+const isEmptyLogic = (logic: object | undefined): boolean => !logic || !Object.keys(logic).length;
 
 const getConvertedInputType = (inputType: string): string => {
     switch (inputType) {
@@ -139,9 +142,11 @@ function FiltersModalComponent(): JSX.Element {
         shallowEqual,
     );
     const [config, setConfig] = useState<Config>(AntdConfig);
+    const [keypointConfig, setKeypointConfig] = useState<Config>(AntdConfig);
 
     const dispatch = useDispatch();
     const [immutableTree, setImmutableTree] = useState<ImmutableTree>(defaultTree);
+    const [keypointImmutableTree, setKeypointImmutableTree] = useState<ImmutableTree>(defaultTree);
     const [filters, setFilters] = useState([] as StoredFilter[]);
 
     useEffect(() => {
@@ -161,42 +166,6 @@ function FiltersModalComponent(): JSX.Element {
                         })),
                     },
                 },
-                ...(keypointLabelValues.length ? {
-                    elements: {
-                        label: 'Keypoints',
-                        type: '!group',
-                        mode: 'array',
-                        defaultOperator: 'some',
-                        operators: ['some'],
-                        subfields: {
-                            label: {
-                                label: 'Label',
-                                type: 'select',
-                                operators: ['select_equals', 'select_any_in'],
-                                valueSources: ['value'] as 'value'[],
-                                fieldSettings: {
-                                    listValues: keypointLabelValues,
-                                },
-                            },
-                            occluded: {
-                                label: 'Occluded',
-                                type: 'boolean',
-                            },
-                            ...(Object.keys(keypointAttributesSubfields).length ? {
-                                attr: {
-                                    label: 'Attributes',
-                                    type: '!struct',
-                                    subfields: keypointAttributesSubfields,
-                                    fieldSettings: {
-                                        treeSelectOnlyLeafs: true,
-                                        treeDefaultExpandAll: false,
-                                        treeNodeFilterProp: 'title',
-                                    },
-                                },
-                            } : {}),
-                        },
-                    },
-                } : {}),
                 type: {
                     label: 'Type',
                     type: 'select',
@@ -278,21 +247,48 @@ function FiltersModalComponent(): JSX.Element {
             },
             settings: {
                 ...AntdConfig.settings,
-                renderField: (_props: any) => {
-                    const customProps = {
-                        ...omit(_props.customProps, 'showSearch'),
-                        dropdownMatchSelectWidth: false,
-                        popupClassName: 'cvat-filters-modal-field-dropdown',
-                        treeDefaultExpandAll: false,
-                    };
-                    return <FieldDropdown {..._props} customProps={customProps} />;
-                },
+                renderField: (_props: any) => <FieldDropdown {..._props} />,
                 // using FieldDropdown because we cannot use antd because of antd-related bugs
                 // https://github.com/ukrbublik/react-awesome-query-builder/issues/224
             },
         };
+        const initialKeypointConfig = {
+            ...AntdConfig,
+            fields: {
+                label: {
+                    label: 'Label',
+                    type: 'select',
+                    operators: ['select_equals', 'select_any_in'],
+                    valueSources: ['value'] as 'value'[],
+                    fieldSettings: {
+                        listValues: keypointLabelValues,
+                    },
+                },
+                occluded: {
+                    label: 'Occluded',
+                    type: 'boolean',
+                },
+                ...(Object.keys(keypointAttributesSubfields).length ? {
+                    attr: {
+                        label: 'Attributes',
+                        type: '!struct',
+                        subfields: keypointAttributesSubfields,
+                        fieldSettings: {
+                            treeSelectOnlyLeafs: true,
+                            treeDefaultExpandAll: false,
+                            treeNodeFilterProp: 'title',
+                        },
+                    },
+                } : {}),
+            },
+            settings: {
+                ...AntdConfig.settings,
+                renderField: (_props: any) => <FieldDropdown {..._props} />,
+            },
+        };
 
         setConfig(initialConfig);
+        setKeypointConfig(initialKeypointConfig);
         const filtersHistory = window.localStorage.getItem(FILTERS_HISTORY)?.trim() || '[]';
         try {
             setFilters(JSON.parse(filtersHistory));
@@ -307,20 +303,27 @@ function FiltersModalComponent(): JSX.Element {
 
     useEffect(() => {
         if (visible) {
-            try {
-                if (activeFilters.length) {
-                    const tree = QbUtils.loadFromJsonLogic(activeFilters[0], config);
+            const restoreTree = (logic: object | undefined, builderConfig: Config): ImmutableTree => {
+                if (!isEmptyLogic(logic)) {
+                    const tree = QbUtils.loadFromJsonLogic(logic, builderConfig);
                     if (tree) {
-                        const treeFromActiveFilters = QbUtils.checkTree(tree, config);
-                        setImmutableTree(treeFromActiveFilters);
-                    } else {
-                        throw new Error();
+                        return QbUtils.checkTree(tree, builderConfig);
                     }
-                } else {
-                    throw new Error();
                 }
+
+                throw new Error();
+            };
+
+            try {
+                setImmutableTree(restoreTree(activeFilters[0], config));
             } catch (_: any) {
                 setImmutableTree(defaultTree);
+            }
+
+            try {
+                setKeypointImmutableTree(restoreTree(activeFilters[1], keypointConfig));
+            } catch (_: any) {
+                setKeypointImmutableTree(defaultTree);
             }
         }
     }, [visible]);
@@ -332,21 +335,39 @@ function FiltersModalComponent(): JSX.Element {
     };
 
     const confirmModal = (): void => {
+        const logic = QbUtils.jsonLogicFormat(immutableTree, config).logic || {};
+        const keypointLogic = QbUtils.jsonLogicFormat(keypointImmutableTree, keypointConfig).logic || {};
         const currentFilter: StoredFilter = {
             id: QbUtils.uuid(),
-            logic: QbUtils.jsonLogicFormat(immutableTree, config).logic || {},
+            logic,
+            keypointLogic,
         };
         const updatedFilters = filters.filter(
-            (filter) => JSON.stringify(filter.logic) !== JSON.stringify(currentFilter.logic),
+            (filter) => JSON.stringify(filter.logic) !== JSON.stringify(currentFilter.logic) ||
+                JSON.stringify(filter.keypointLogic || {}) !== JSON.stringify(currentFilter.keypointLogic || {}),
         );
         setFilters([currentFilter, ...updatedFilters].slice(0, 10));
-        applyFilters([currentFilter.logic]);
+        const hasObjectFilter = Object.keys(logic).length > 0;
+        const hasKeypointFilter = Object.keys(keypointLogic).length > 0;
+        if (hasKeypointFilter) {
+            applyFilters([logic, keypointLogic]);
+        } else if (hasObjectFilter) {
+            applyFilters([logic]);
+        } else {
+            applyFilters([]);
+        }
     };
 
-    const isModalConfirmable = (): boolean => (
-        (QbUtils.queryString(immutableTree, config) || '').trim().length > 0 &&
-        QbUtils.isValidTree(immutableTree, config)
-    );
+    const isModalConfirmable = (): boolean => {
+        const objectFilterQuery = (QbUtils.queryString(immutableTree, config) || '').trim();
+        const keypointFilterQuery = (QbUtils.queryString(keypointImmutableTree, keypointConfig) || '').trim();
+        const hasObjectFilter = objectFilterQuery.length > 0;
+        const hasKeypointFilter = keypointFilterQuery.length > 0;
+
+        return (hasObjectFilter || hasKeypointFilter) &&
+            (!hasObjectFilter || QbUtils.isValidTree(immutableTree, config)) &&
+            (!hasKeypointFilter || QbUtils.isValidTree(keypointImmutableTree, keypointConfig));
+    };
 
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
@@ -360,9 +381,13 @@ function FiltersModalComponent(): JSX.Element {
         setImmutableTree(tree);
     };
 
+    const onKeypointFilterChange = (tree: ImmutableTree): void => {
+        setKeypointImmutableTree(tree);
+    };
+
     const menu = (
-        <Menu>
-            {filters
+        <Menu
+            items={filters
                 .map((filter: StoredFilter) => {
                     // if a logic received from local storage does not correspond to current config
                     // which depends on label specification
@@ -370,21 +395,35 @@ function FiltersModalComponent(): JSX.Element {
                     // loadFromJsonLogic() prints a warning to console
                     // the are not ways to configure this behaviour
 
-                    const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
-                    if (tree) {
-                        const queryString = QbUtils.queryString(tree, config);
-                        return { tree, queryString, filter };
-                    }
+                    const tree = isEmptyLogic(filter.logic) ?
+                        null :
+                        QbUtils.loadFromJsonLogic(filter.logic, config);
+                    const keypointTree = !isEmptyLogic(filter.keypointLogic) ?
+                        QbUtils.loadFromJsonLogic(filter.keypointLogic, keypointConfig) : null;
+                    const objectQueryString = tree ? QbUtils.queryString(tree, config) : '';
+                    const keypointQueryString = keypointTree ?
+                        QbUtils.queryString(keypointTree, keypointConfig) : '';
+                    const queryString = [
+                        objectQueryString,
+                        keypointQueryString ? `Elements: ${keypointQueryString}` : '',
+                    ].filter((item) => !!item).join(' | ');
 
-                    return { tree, queryString: null, filter };
+                    return {
+                        tree, keypointTree, queryString, filter,
+                    };
                 })
                 .filter(({ queryString }) => !!queryString)
-                .map(({ filter, tree, queryString }) => (
-                    <Menu.Item key={filter.id} onClick={() => setImmutableTree(tree as ImmutableTree)}>
-                        {queryString}
-                    </Menu.Item>
-                ))}
-        </Menu>
+                .map(({
+                    filter, tree, keypointTree, queryString,
+                }) => ({
+                    key: filter.id,
+                    label: queryString,
+                    onClick: () => {
+                        setImmutableTree((tree as ImmutableTree) || defaultTree);
+                        setKeypointImmutableTree((keypointTree as ImmutableTree) || defaultTree);
+                    },
+                }))}
+        />
     );
 
     return (
@@ -444,12 +483,26 @@ function FiltersModalComponent(): JSX.Element {
                 </Popover>
             </div>
             {!!config.fields && (
-                <Query
-                    {...config}
-                    value={immutableTree as ImmutableTree}
-                    onChange={onChange}
-                    renderBuilder={renderBuilder}
-                />
+                <>
+                    <Typography.Text strong>Objects</Typography.Text>
+                    <Query
+                        {...config}
+                        value={immutableTree as ImmutableTree}
+                        onChange={onChange}
+                        renderBuilder={renderBuilder}
+                    />
+                </>
+            )}
+            {!!keypointConfig.fields && (
+                <>
+                    <Typography.Text strong>Elements</Typography.Text>
+                    <Query
+                        {...keypointConfig}
+                        value={keypointImmutableTree as ImmutableTree}
+                        onChange={onKeypointFilterChange}
+                        renderBuilder={renderBuilder}
+                    />
+                </>
             )}
         </Modal>
     );

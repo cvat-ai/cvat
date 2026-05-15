@@ -58,6 +58,7 @@ export interface DrawnState {
     group: any;
     color: string;
     elements: DrawnState[] | null;
+    visibleSkeletonElements?: number[] | null;
 }
 
 // Translate point array from the canvas coordinate system
@@ -357,7 +358,11 @@ export function makeSVGFromTemplate(template: SVGSVGElement): SVG.G {
     return SVGElement;
 }
 
-export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
+export function setupSkeletonEdges(
+    skeleton: SVG.G,
+    referenceSVG: SVG.G,
+    visibleNodeIDs?: Set<string | number>,
+): void {
     for (const child of referenceSVG.children()) {
         // search for all edges on template
         const dataType = child.attr('data-type');
@@ -366,6 +371,9 @@ export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
             const dataNodeTo = child.attr('data-node-to');
             if (!Number.isInteger(dataNodeFrom) || !Number.isInteger(dataNodeTo)) {
                 throw new Error(`Edge nodeFrom and nodeTo must be numbers, got ${dataNodeFrom}, ${dataNodeTo}`);
+            }
+            if (visibleNodeIDs && (!visibleNodeIDs.has(dataNodeFrom) || !visibleNodeIDs.has(dataNodeTo))) {
+                continue;
             }
 
             // try to find the same edge on the skeleton

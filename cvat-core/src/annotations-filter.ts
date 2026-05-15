@@ -147,7 +147,9 @@ interface BaseConvertedData {
     votes: number | null;
 }
 
-type ConvertedElementData = BaseConvertedData;
+interface ConvertedElementData extends BaseConvertedData {
+    objectID: number | null;
+}
 
 interface ConvertedObjectData extends BaseConvertedData {
     serverID: number | null;
@@ -159,10 +161,21 @@ function getRotation(shapeType: ShapeType, rotation?: number | null): number | n
     return shapeType === ShapeType.RECTANGLE || shapeType === ShapeType.ELLIPSE ? rotation ?? null : null;
 }
 
-function getMatchingIDs(entries: ConvertedObjectData[], filter: object): number[] {
+function isEmptyFilter(filter: object | undefined): boolean {
+    return !filter || !Object.keys(filter).length;
+}
+
+function getMatchingIDs(
+    entries: ConvertedObjectData[],
+    objectFilter?: object,
+    keypointFilter?: object,
+): number[] {
     const matchingIDs = new Set<number>();
     entries.forEach((entry) => {
-        if (typeof entry.objectID === 'number' && jsonLogic.apply(filter, entry)) {
+        const objectMatches = isEmptyFilter(objectFilter) || jsonLogic.apply(objectFilter, entry);
+        const keypointsMatch = isEmptyFilter(keypointFilter) ||
+            entry.elements.some((element) => jsonLogic.apply(keypointFilter, element));
+        if (typeof entry.objectID === 'number' && objectMatches && keypointsMatch) {
             matchingIDs.add(entry.objectID);
         }
     });
@@ -203,6 +216,7 @@ export default class AnnotationsFilter {
                             [adjustName(sublabelName)]: elementAttributes,
                         },
                         label: sublabelName,
+                        objectID: element.clientID ?? null,
                         type: null,
                         shape: null,
                         occluded: element.occluded ?? false,
@@ -266,6 +280,7 @@ export default class AnnotationsFilter {
                                 [adjustName(sublabelName)]: elementAttributes,
                             },
                             label: sublabelName,
+                            objectID: null,
                             type: null,
                             shape: null,
                             occluded: element.occluded ?? false,
@@ -338,6 +353,7 @@ export default class AnnotationsFilter {
                                 [adjustName(sublabelName)]: elementAttributes,
                             },
                             label: sublabelName,
+                            objectID: null,
                             type: null,
                             shape: null,
                             occluded: null,
@@ -369,13 +385,12 @@ export default class AnnotationsFilter {
     }
 
     public filterSerializedObjectStates(statesData: SerializedData[], filters: object[]): number[] {
-        if (!filters.length) {
+        if (isEmptyFilter(filters[0]) && isEmptyFilter(filters[1])) {
             return statesData.map((stateData): number => stateData.clientID);
         }
 
-        const filter = filters[0];
         const converted = this._convertSerializedObjectStates(statesData);
-        return getMatchingIDs(converted, filter);
+        return getMatchingIDs(converted, filters[0], filters[1]);
     }
 
     public filterSerializedCollection(
@@ -383,7 +398,7 @@ export default class AnnotationsFilter {
         labelsSpec: Label[],
         filters: object[],
     ): { shapes: number[]; tags: number[]; tracks: number[] } {
-        if (!filters.length) {
+        if (isEmptyFilter(filters[0]) && isEmptyFilter(filters[1])) {
             return {
                 shapes: collection.shapes.map((shape) => shape.clientID),
                 tags: collection.tags.map((tag) => tag.clientID),
@@ -391,13 +406,30 @@ export default class AnnotationsFilter {
             };
         }
 
-        const filter = filters[0];
         const converted = this._convertSerializedCollection(collection, labelsSpec);
 
         return {
-            shapes: getMatchingIDs(converted.shapes, filter),
-            tags: getMatchingIDs(converted.tags, filter),
-            tracks: getMatchingIDs(converted.tracks, filter),
+            shapes: getMatchingIDs(converted.shapes, filters[0], filters[1]),
+            tags: getMatchingIDs(converted.tags, filters[0], filters[1]),
+            tracks: getMatchingIDs(converted.tracks, filters[0], filters[1]),
         };
+    }
+
+    public filterSerializedSkeletonElements(statesData: SerializedData[], filters: object[]): Record<number, number[]> {
+        if (isEmptyFilter(filters[1])) {
+            return {};
+        }
+
+        const filter = filters[1];
+        const converted = this._convertSerializedObjectStates(statesData);
+        return converted.reduce((acc, entry) => {
+            if (entry.shape === ShapeType.SKELETON && typeof entry.objectID === 'number') {
+                acc[entry.objectID] = entry.elements
+                    .filter((element) => typeof element.objectID === 'number' && jsonLogic.apply(filter, element))
+                    .map((element) => element.objectID as number);
+            }
+
+            return acc;
+        }, {} as Record<number, number[]>);
     }
 }

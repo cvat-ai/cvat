@@ -4,7 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
-import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import {
+    Canvas, RectDrawingMethod, CuboidDrawingMethod, RenderData,
+} from 'cvat-canvas-wrapper';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
@@ -906,6 +908,7 @@ export interface AnnotationState {
         collapsedAll: boolean;
         states: any[];
         filters: object[];
+        renderData: RenderData;
         resetGroupFlag: boolean;
         initialized: boolean;
         history: {

@@ -7,6 +7,7 @@ import { Attribute } from './labels';
 import { ShapeType, AttributeType, ObjectType } from './enums';
 import { SerializedShape } from './server-response-types';
 import ObjectState, { SerializedData } from './object-state';
+import AnnotationsFilter from './annotations-filter';
 
 export function checkNumberOfPoints(shapeType: ShapeType, points: ArrayLike<number>): void {
     if (shapeType === ShapeType.RECTANGLE) {
@@ -392,4 +393,62 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
     }
 
     return states;
+}
+
+function serializeObjectState(objectState: ObjectState): SerializedData {
+    const serialized: SerializedData = {
+        objectType: objectState.objectType,
+        label: objectState.label,
+        frame: objectState.frame,
+        lock: objectState.lock,
+        hidden: objectState.hidden,
+        pinned: objectState.pinned,
+        attributes: objectState.attributes,
+        color: objectState.color,
+        updated: objectState.updated,
+        source: objectState.source,
+        score: objectState.score,
+        votes: objectState.votes,
+        zOrder: objectState.zOrder,
+        occluded: objectState.occluded,
+        outside: objectState.outside,
+        keyframe: objectState.keyframe,
+        descriptions: objectState.descriptions,
+        elements: objectState.elements.map(serializeObjectState),
+    };
+
+    if (objectState.shapeType) {
+        serialized.shapeType = objectState.shapeType;
+    }
+    if (typeof objectState.clientID === 'number') {
+        serialized.clientID = objectState.clientID;
+    }
+    if (typeof objectState.serverID === 'number') {
+        serialized.serverID = objectState.serverID;
+    }
+    if (typeof objectState.parentID === 'number') {
+        serialized.parentID = objectState.parentID;
+    }
+    if (objectState.group) {
+        serialized.group = objectState.group;
+    }
+    if (objectState.points) {
+        serialized.points = objectState.points;
+    }
+    if (typeof objectState.rotation === 'number') {
+        serialized.rotation = objectState.rotation;
+    }
+    if (objectState.keyframes) {
+        serialized.keyframes = objectState.keyframes;
+    }
+
+    return serialized;
+}
+
+export function getVisibleSkeletonElements(
+    objectStates: ObjectState[],
+    filters: object[],
+): Record<number, number[]> {
+    const serializedStates = objectStates.map(serializeObjectState);
+    return new AnnotationsFilter().filterSerializedSkeletonElements(serializedStates, filters);
 }
