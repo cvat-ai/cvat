@@ -48,19 +48,19 @@ class Command(BaseCommand):
     def handle(self, *args, fixture: str, **options):
         if fixture == STDIN_SENTINEL:
             records = json.load(sys.stdin)
-            label = "stdin"
+            input_filename = "stdin"
         else:
             with open(fixture) as f:
                 records = json.load(f)
-            label = Path(fixture).name
+            input_filename = Path(fixture).name
 
-        groups: dict[str, list[dict]] = defaultdict(list)
+        models_by_name: dict[str, list[dict]] = defaultdict(list)
         for record in records:
-            groups[record["model"]].append(record)
+            models_by_name[record["model"]].append(record)
 
         models_by_app: dict = defaultdict(list)
-        for label in groups:
-            model = apps.get_model(label)
+        for model_name in models_by_name:
+            model = apps.get_model(model_name)
             models_by_app[model._meta.app_config].append(model)
 
         ordered_models = sort_dependencies(list(models_by_app.items()), allow_cycles=True)
@@ -68,10 +68,10 @@ class Command(BaseCommand):
         reordered = [
             record
             for model in ordered_models
-            for record in groups[f"{model._meta.app_label}.{model._meta.model_name}"]
+            for record in models_by_name[f"{model._meta.app_label}.{model._meta.model_name}"]
         ]
 
-        tmp_path = Path(tempfile.gettempdir()) / f"loaddata_sorted_{label}.json"
+        tmp_path = Path(tempfile.gettempdir()) / f"loaddata_sorted_{input_filename}.json"
         with open(tmp_path, "w") as f:
             json.dump(reordered, f)
 
