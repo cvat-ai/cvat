@@ -1539,6 +1539,48 @@ def create_thread(
     )
 
     db_data = db_task.require_data()
+
+    if db_data.cloud_storage:
+        cloud_link_storage = models.Storage.get_or_create_cloud_storage_link(db_data.cloud_storage)
+
+        def _is_default_local_storage(storage: models.Storage | None) -> bool:
+            return storage is None or (
+                storage.location == models.Location.LOCAL and storage.cloud_storage_id is None
+            )
+
+        old_task_source_storage = db_task.source_storage
+        if _is_default_local_storage(old_task_source_storage):
+            db_task.source_storage = cloud_link_storage
+            db_task.save(update_fields=["source_storage"])
+
+            if (
+                old_task_source_storage
+                and old_task_source_storage.location == models.Location.LOCAL
+                and old_task_source_storage.cloud_storage_id is None
+                and not models.Task.objects.filter(source_storage=old_task_source_storage).exists()
+                and not models.Project.objects.filter(source_storage=old_task_source_storage).exists()
+                and not models.Task.objects.filter(target_storage=old_task_source_storage).exists()
+                and not models.Project.objects.filter(target_storage=old_task_source_storage).exists()
+            ):
+                old_task_source_storage.delete()
+
+        if db_project := db_task.project:
+            old_project_source_storage = db_project.source_storage
+            if _is_default_local_storage(old_project_source_storage):
+                db_project.source_storage = cloud_link_storage
+                db_project.save(update_fields=["source_storage"])
+
+                if (
+                    old_project_source_storage
+                    and old_project_source_storage.location == models.Location.LOCAL
+                    and old_project_source_storage.cloud_storage_id is None
+                    and not models.Task.objects.filter(source_storage=old_project_source_storage).exists()
+                    and not models.Project.objects.filter(source_storage=old_project_source_storage).exists()
+                    and not models.Task.objects.filter(target_storage=old_project_source_storage).exists()
+                    and not models.Project.objects.filter(target_storage=old_project_source_storage).exists()
+                ):
+                    old_project_source_storage.delete()
+
     upload_dir = (
         db_data.get_upload_dirname()
         if db_data.storage != models.StorageChoice.SHARE

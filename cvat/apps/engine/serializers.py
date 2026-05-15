@@ -4141,9 +4141,14 @@ def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, mod
                 not models.CloudStorage.objects.filter(id=cloud_storage_id).exists()
             ):
                 raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
-            storage_instance = models.Storage(**storage_conf)
-            storage_instance.save()
-            storages[i] = storage_instance
+            if storage_conf.get("location") == models.Location.CLOUD_STORAGE and cloud_storage_id:
+                storages[i] = models.Storage.get_or_create_cloud_storage_link(
+                    models.CloudStorage.objects.get(id=cloud_storage_id)
+                )
+            else:
+                storage_instance = models.Storage(**storage_conf)
+                storage_instance.save()
+                storages[i] = storage_instance
     return storages
 
 class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
