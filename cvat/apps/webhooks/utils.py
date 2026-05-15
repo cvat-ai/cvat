@@ -55,7 +55,7 @@ def perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]:
 
         response = ""
         if response_body is not None and len(response_body) < _RESPONSE_SIZE_LIMIT + 1:
-            response = response_body.decode("utf-8")
+            response = response_body.decode("utf-8", errors="replace")
 
         return status_code, response
     except requests.ConnectionError as ex:
