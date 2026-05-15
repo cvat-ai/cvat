@@ -1,5 +1,4 @@
-ARG PIP_VERSION=24.0
-ARG BASE_IMAGE=ubuntu:22.04
+ARG BASE_IMAGE=ubuntu:24.04
 
 FROM ${BASE_IMAGE} AS build-image-base
 
@@ -10,7 +9,6 @@ RUN apt-get update && \
         g++ \
         gcc \
         git \
-        libgeos-dev \
         libhdf5-dev \
         libldap2-dev \
         libmp3lame-dev \
@@ -28,10 +26,7 @@ RUN apt-get update && \
         --slave /usr/bin/cargo cargo /usr/bin/cargo-1.85 \
     && rm -rf /var/lib/apt/lists/*
 
-ARG PIP_VERSION
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-RUN --mount=type=cache,target=/root/.cache/pip/http \
-    python3 -m pip install -U pip==${PIP_VERSION}
 
 # We build OpenH264, FFmpeg and PyAV in a separate build stage,
 # because this way Docker can do it in parallel to all the other packages.
@@ -117,16 +112,16 @@ ENV DJANGO_SETTINGS_MODULE="cvat.settings.${CVAT_CONFIGURATION}"
 # Install necessary apt packages
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
+        adduser \
         bzip2 \
         ca-certificates \
         curl \
         git \
-        libgeos-c1v5 \
         libgl1 \
         libgomp1 \
-        libldap-2.5-0 \
+        libldap2 \
         libmp3lame0 \
-        libpython3.10 \
+        libpython3.12t64 \
         libsasl2-2 \
         libxml2 \
         libxmlsec1 \
@@ -150,14 +145,15 @@ COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
 # Add a non-root user
 ENV USER=${USER}
 ENV HOME /home/${USER}
-RUN adduser --uid=1000 --shell /bin/bash --disabled-password --gecos "" ${USER}
+RUN deluser --remove-home ubuntu && \
+    adduser --uid=1000 --shell /bin/bash --disabled-password --gecos "" ${USER}
 
 ARG CLAM_AV="no"
 RUN if [ "$CLAM_AV" = "yes" ]; then \
         apt-get update && \
         apt-get --no-install-recommends install -yq \
             clamav \
-            libclamunrar9 && \
+            libclamunrar && \
         sed -i 's/ReceiveTimeout 30/ReceiveTimeout 300/g' /etc/clamav/freshclam.conf && \
         freshclam && \
         chown -R ${USER}:${USER} /var/lib/clamav && \
@@ -167,13 +163,8 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
 # Install wheels from the build image
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
-# Prevent security scanners from finding vulnerabilities in whatever version of setuptools
-# is included in Ubuntu by default.
-RUN python -m pip uninstall -y setuptools
-ARG PIP_VERSION
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 
-RUN python -m pip install -U pip==${PIP_VERSION}
 RUN --mount=type=bind,from=build-image,source=/tmp/wheelhouse,target=/mnt/wheelhouse \
     --mount=type=bind,from=build-image-av,source=/tmp/wheelhouse,target=/mnt/wheelhouse-av \
     python -m pip install --no-index /mnt/wheelhouse/*.whl /mnt/wheelhouse-av/*.whl
@@ -204,7 +195,7 @@ COPY --chown=${USER} components/analytics/clickhouse/init.py ${HOME}/components/
 
 ARG COVERAGE_PROCESS_START
 RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
-        echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
+        echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.12/site-packages/coverage_subprocess.pth; \
     fi
 
 # RUN all commands below as 'django' user.

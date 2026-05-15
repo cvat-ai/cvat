@@ -69,6 +69,7 @@ def _create_csv(query_params: dict, output_filename: str):
             port=clickhouse_settings["PORT"],
             username=clickhouse_settings["USER"],
             password=clickhouse_settings["PASSWORD"],
+            tz_mode="schema",
         ) as client:
             result = client.query(query, parameters=parameters)
 
