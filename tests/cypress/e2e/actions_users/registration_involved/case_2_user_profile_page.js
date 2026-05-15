@@ -113,9 +113,9 @@ context('User page, password change, token handling', () => {
     const username = 'SecuserCase2';
     const emailAddr = `${username}@local.local`;
     const password = 'GDrb41RguF!';
-    // TODO: check update email and username if/when feature is available
     const firstNameNew = 'Jane';
     const lastNameNew = 'Doe';
+    const usernameNew = 'SecuserC2New';
     const incorrectCurrentPassword = 'gDrb41RguF!';
     const newPassword = 'bYdOk8#eEd';
     const secondNewPassword = 'ndTh48@yVY';
@@ -127,6 +127,7 @@ context('User page, password change, token handling', () => {
     const tokenName3 = 'test3';
     const tokenName4 = 'test4';
     const tokenName5 = 'test5';
+    let currentUsername = username;
 
     // Test resource to update
     const projectName = 'Token project';
@@ -146,7 +147,7 @@ context('User page, password change, token handling', () => {
 
     after(() => {
         cy.headlessLogin();
-        cy.headlessDeleteUserByUsername(username); // deleting self can be flaky, only admin should delete users
+        cy.headlessDeleteUserByUsername(currentUsername); // deleting self can be flaky, only admin should delete users
         cy.headlessDeleteProject(projectId);
         cy.headlessLogout();
     });
@@ -166,14 +167,18 @@ context('User page, password change, token handling', () => {
 
             it("Change user's personal info. Update is handled correctly", () => {
                 cy.intercept('PATCH', '/api/users/**', (req) => {
-                    const expectedFields = toSnakeCase({ firstName: firstNameNew, lastName: lastNameNew });
+                    const expectedFields = toSnakeCase({
+                        firstName: firstNameNew,
+                        lastName: lastNameNew,
+                        username: usernameNew,
+                    });
                     assert(
                         Cypress._.isEqual(req.body, expectedFields),
                         'Unexpected request fields:\n' +
                         `${prettify(req.body)} !== ${prettify(expectedFields)}`,
                     );
                     req.continue((res) => {
-                        const resFields = Cypress._.pick(res.body, ['first_name', 'last_name']);
+                        const resFields = Cypress._.pick(res.body, ['first_name', 'last_name', 'username']);
                         assert(
                             Cypress._.isEqual(expectedFields, resFields),
                             'Unexpected response fields:\n' +
@@ -186,9 +191,14 @@ context('User page, password change, token handling', () => {
                 cy.get('input[id="firstName"]').type(firstNameNew);
                 cy.get('input[id="lastName"]').clear();
                 cy.get('input[id="lastName"]').type(lastNameNew);
+                cy.get('input[id="username"]').clear();
+                cy.get('input[id="username"]').type(usernameNew);
 
                 cy.contains('button', 'Save changes').click();
                 cy.wait('@updateFirstLastName');
+                currentUsername = usernameNew;
+                cy.get('.cvat-profile-page-welcome').invoke('text').should('include', `Welcome, ${usernameNew}`);
+                cy.get('.cvat-header-menu-user-dropdown-user').should('have.text', usernameNew);
             });
         });
 
@@ -207,7 +217,7 @@ context('User page, password change, token handling', () => {
                         .invoke('text').should('include', 'New password has been saved');
                     cy.closeNotification('.cvat-notification-notice-change-password-success');
                     cy.logout();
-                    cy.login(username, newPassword);
+                    cy.login(emailAddr, newPassword);
                     cy.openProfile();
                     openProfileTab('Security');
                 });

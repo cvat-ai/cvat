@@ -38,6 +38,7 @@ type Params = {
     filename?: string,
     action?: string,
     save_images?: boolean,
+    import_mode?: 'replace' | 'append',
 };
 
 type HealthCheckResponse = Record<string, string>;
@@ -1752,7 +1753,7 @@ async function uploadAnnotations(
     useDefaultLocation: boolean,
     sourceStorage: Storage,
     file: File | string,
-    options: { convMaskToPoly: boolean },
+    options: { convMaskToPoly: boolean, importMode: 'replace' | 'append' },
 ): Promise<string> {
     const { backendAPI, origin } = config;
     const params: Params & { conv_mask_to_poly: boolean } = {
@@ -1761,6 +1762,7 @@ async function uploadAnnotations(
         format,
         filename: typeof file === 'string' ? file : file.name,
         conv_mask_to_poly: options.convMaskToPoly,
+        import_mode: options.importMode,
     };
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;

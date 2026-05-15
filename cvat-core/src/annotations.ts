@@ -208,15 +208,13 @@ export function importDataset(
     file: File | string,
     options: {
         convMaskToPoly?: boolean,
+        importMode?: 'replace' | 'append',
         updateStatusCallback?: (message: string, progress: number) => void,
     } = {},
 ): Promise<string> {
     const updateStatusCallback = options.updateStatusCallback || (() => {});
-    const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
-    const adjustedOptions = {
-        updateStatusCallback,
-        convMaskToPoly,
-    };
+    const convMaskToPoly = options.convMaskToPoly ?? true;
+    const importMode = options.importMode ?? 'replace';
 
     if (!(instance instanceof Project || instance instanceof Task || instance instanceof Job)) {
         throw new ArgumentError('Instance must be a Project || Task || Job instance');
@@ -226,6 +224,9 @@ export function importDataset(
     }
     if (!(typeof convMaskToPoly === 'boolean')) {
         throw new ArgumentError('Option "convMaskToPoly" must be a boolean');
+    }
+    if (importMode !== 'replace' && importMode !== 'append') {
+        throw new ArgumentError('Option "importMode" must be "replace" or "append"');
     }
     const allowedFileExtensions = [
         '.zip', '.xml', '.json',
@@ -255,7 +256,10 @@ export function importDataset(
                 useDefaultSettings,
                 sourceStorage,
                 file,
-                adjustedOptions,
+                {
+                    updateStatusCallback,
+                    convMaskToPoly,
+                },
             );
     }
 
@@ -268,6 +272,9 @@ export function importDataset(
             useDefaultSettings,
             sourceStorage,
             file,
-            adjustedOptions,
+            {
+                convMaskToPoly,
+                importMode,
+            },
         );
 }

@@ -13,7 +13,7 @@ import zlib
 from abc import ABCMeta, abstractmethod
 from contextlib import suppress
 from copy import copy
-from datetime import datetime
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -25,7 +25,6 @@ from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
 from django.db.models.query import Prefetch, prefetch_related_objects
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
-from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiExample,
@@ -58,13 +57,13 @@ from cvat.apps.engine.cache import (
 from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
-from cvat.apps.engine.frame_provider import (
+from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
+from cvat.apps.engine.media_io.frame_provider import (
     DataWithMeta,
     IFrameProvider,
     JobFrameProvider,
     TaskFrameProvider,
 )
-from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
@@ -323,9 +322,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'annotation_guide', 'source_storage', 'target_storage',
     )
 
-    search_fields = ('name', 'owner', 'assignee', 'status')
-    filter_fields = list(search_fields) + ['id', 'updated_date']
-    simple_filters = list(search_fields)
+    search_fields = ('name', 'owner', 'assignee')
+    simple_filters = (*search_fields, 'status')
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
@@ -624,6 +623,9 @@ class _TaskDataGetter(_DataGetter):
         super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
         self._db_task = db_task
 
+        if db_task.media_type == models.MediaType.AUDIO:
+            raise ValidationError("Media retrieval is not available in audio tasks")
+
     def _get_frame_provider(self) -> TaskFrameProvider:
         return TaskFrameProvider(self._db_task)
 
@@ -668,6 +670,9 @@ class _JobDataGetter(_DataGetter):
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
 
         self._db_job = db_job
+
+        if db_job.segment.task.media_type == models.MediaType.AUDIO:
+            raise ValidationError("Media retrieval is not available in audio tasks")
 
     def _get_frame_provider(self) -> JobFrameProvider:
         return JobFrameProvider(self._db_job)
@@ -832,19 +837,19 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'validation_mode': 'data__validation_layout__mode',
     }
     search_fields = (
-        'project_name', 'name', 'owner', 'status', 'assignee',
-        'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode'
+        'project_name', 'name', 'owner', 'assignee', 'subset', 'tracker_link',
     )
-    filter_fields = list(search_fields) + [
-        'id', 'project_id', 'updated_date', 'media_type'
-    ]
+    simple_filters = (
+        *search_fields,
+        'project_id', 'status', 'media_type', 'mode', 'dimension', 'validation_mode',
+    )
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
             - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}\n
             - Get all completed tasks from 1 project - { "and": [{ "==": [{ "var" : "status" }, "completed"]}, { "==" : [{ "var" : "project_id"}, 1]}]}\n
     """)
-    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_supports_organization_params = True
@@ -1302,6 +1307,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 default=True, deprecated=True),
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('import_mode', description='How to import annotations',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=dm.task.AnnotationImportMode.values(),
+                default=dm.task.AnnotationImportMode.REPLACE),
         ],
         request=AnnotationFileSerializer(required=False),
         responses={
@@ -1448,54 +1457,98 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_task = self.get_object() #force to call check_object_permissions
 
         def prefetch():
-            data_queryset = (
-                models.Data.objects
-                .select_related("validation_layout", "video")
-                .prefetch_related(
-                    Prefetch(
-                        'images',
-                        queryset=(
-                            models.Image.objects
-                            .prefetch_related('related_files')
-                            .order_by('frame')
-                        )
-                    )
-                )
-            )
+            data_queryset = models.Data.objects.select_related("validation_layout")
+            extra_prefetches = []
+
+            match (db_task.media_type, db_task.mode):
+                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("audio")
+                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("video")
+                case (
+                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                    models.TaskMode.ANNOTATION,
+                ):
+                    # Could also be done via data_qs.prefetch_related(),
+                    # but it results in more requests
+                    extra_prefetches += [
+                        Prefetch(
+                            "data__images",
+                            queryset=models.Image.objects.order_by('frame'),
+                        ),
+                        "data__images__related_files"
+                    ]
+                case ("", ""):
+                    pass # noop, nothing to load
+                case (media_type, mode):
+                    assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
             prefetch_related_objects(
                 [db_task],
                 "segment_set",
-                Prefetch("data", queryset=data_queryset)
+                Prefetch("data", queryset=data_queryset),
+                *extra_prefetches,
             )
 
         prefetch()
 
         if request.method == 'PATCH':
+            if db_task.media_type == models.MediaType.AUDIO:
+                # TODO: introduce support for frame deletion when there's more information
+                # on use cases. Should probably work with ranges.
+                raise ValidationError("Audio metadata cannot be edited")
+
             serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
             serializer.is_valid(raise_exception=True)
             db_task.data = serializer.save()
 
-        if hasattr(db_task.data, 'video'):
-            media = [db_task.data.video]
-            chapters = get_video_chapters(db_task.data.get_manifest_path())
-        else:
-            media = list(db_task.data.images.all())
+        db_data = db_task.data
+        if db_data is None:
+            raise ValidationError("Data is not uploaded for the task yet")
+
+        if (
+            db_task.media_type == models.MediaType.AUDIO
+            and db_task.mode == models.TaskMode.INTERPOLATION
+        ):
+            media = [db_data.audio]
             chapters = None
 
-        frame_meta = [{
-            'width': item.width,
-            'height': item.height,
-            'name': item.path,
-            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
-        } for item in media]
+            def serialize_media_item(item: models.Audio) -> dict[str, Any]:
+                return {}
+        elif db_task.media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD):
+            if db_task.mode == models.TaskMode.INTERPOLATION:
+                media = [db_data.video]
+                chapters = get_video_chapters(db_data.get_manifest_path())
+            elif db_task.mode == models.TaskMode.ANNOTATION:
+                media = list(db_data.images.all())
+                chapters = None
+            else:
+                assert False, f"Unknown mode '{db_task.mode}'"
 
-        db_data = db_task.data
+            def serialize_media_item(item: models.Video | models.Image) -> dict[str, Any]:
+                return {
+                    'width': item.width,
+                    'height': item.height,
+                }
+        elif db_task.media_type:
+            assert False, f"Unknown media type '{db_task.media_type}'"
+
+        frame_meta = [
+            {
+                'name': item.path,
+                'related_files': (
+                    item.related_files.count() if hasattr(item, 'related_files') else 0
+                ),
+                **serialize_media_item(item),
+            }
+            for item in media
+        ]
+
         db_data.frames = frame_meta
         db_data.chunks_updated_date = db_task.get_chunks_updated_date()
         db_data.chapters = chapters
 
-        serializer = DataMetaReadSerializer(db_data)
+        serializer = DataMetaReadSerializer(db_data, context={"task": db_task})
         return Response(serializer.data)
 
     @extend_schema(exclude=True)
@@ -1665,12 +1718,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
-    search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
-    filter_fields = list(search_fields) + [
-        'id', 'task_id', 'project_id', 'updated_date', 'type', 'parent_job_id',
-        'dimension', 'media_type', "mode",
-    ]
-    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
+    search_fields = ('task_name', 'project_name', 'assignee')
+    simple_filters = (
+        *search_fields,
+        'task_id', 'project_id', 'type', 'parent_job_id',
+        'dimension', 'media_type', "mode", 'state', 'stage',
+    )
+    filter_fields = (*simple_filters, 'id', 'updated_date')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
@@ -1815,6 +1869,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 default=True, deprecated=True),
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('import_mode', description='How to import annotations',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=dm.task.AnnotationImportMode.values(),
+                default=dm.task.AnnotationImportMode.REPLACE),
         ],
         request=AnnotationFileSerializer(required=False),
         responses={
@@ -1955,36 +2013,55 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_job = self.get_object() # force call of check_object_permissions()
 
         def prefetch():
-            data_queryset = (
-                models.Data.objects
-                .select_related("validation_layout", "video")
-                .prefetch_related(
-                    Prefetch(
-                        'images',
-                        queryset=(
-                            models.Image.objects
-                            .prefetch_related('related_files')
-                            .order_by('frame')
-                        )
-                    )
-                )
-            )
+            db_task = db_job.segment.task
+
+            data_queryset = models.Data.objects.select_related("validation_layout")
+            extra_prefetches = []
+
+            match (db_task.media_type, db_task.mode):
+                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("audio")
+                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+                    data_queryset = data_queryset.select_related("video")
+                case (
+                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                    models.TaskMode.ANNOTATION,
+                ):
+                    # Could also be done via data_qs.prefetch_related(),
+                    # but it results in more requests
+                    extra_prefetches += [
+                        Prefetch(
+                            "segment__task__data__images",
+                            queryset=models.Image.objects.order_by('frame'),
+                        ),
+                        "segment__task__data__images__related_files"
+                    ]
+                case ("", ""):
+                    pass # noop, nothing to load
+                case (media_type, mode):
+                    assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
             prefetch_related_objects(
                 [db_job],
-                Prefetch("segment__task__data", queryset=data_queryset)
+                Prefetch("segment__task__data", queryset=data_queryset),
+                *extra_prefetches,
             )
 
         prefetch()
 
         if request.method == 'PATCH':
+            if db_job.segment.task.media_type == models.MediaType.AUDIO:
+                # TODO: introduce support for frame deletion when there's more information
+                # on use cases. Should probably work with ranges.
+                raise ValidationError("Audio metadata cannot be edited")
+
             serializer = JobDataMetaWriteSerializer(instance=db_job, data=request.data)
             serializer.is_valid(raise_exception=True)
             db_job = serializer.save()
 
         db_segment = db_job.segment
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
         start_frame = db_segment.start_frame
         stop_frame = db_segment.stop_frame
         frame_step = db_data.get_frame_step()
@@ -1992,35 +2069,19 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
         segment_frame_set = db_segment.frame_set
 
-        if hasattr(db_data, 'video'):
-            media = [db_data.video]
-            chapters = get_video_chapters(
-                db_task.data.get_manifest_path(),
-                segment=(data_start_frame, data_stop_frame)
-            )
-        else:
-            media = [
-                # Insert placeholders if frames are skipped
-                # TODO: remove placeholders, UI supports chunks without placeholders already
-                # after https://github.com/cvat-ai/cvat/pull/8272
-                f if f.frame in segment_frame_set else SimpleNamespace(
-                    path=f'placeholder.jpg', width=f.width, height=f.height
-                )
-                for f in db_data.images.all()
-                if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
-            ]
-            chapters = None
-
         deleted_frames = set(db_data.deleted_frames)
         if db_job.type == models.JobType.GROUND_TRUTH:
             deleted_frames.update(db_data.validation_layout.disabled_frames)
 
         # Keep only frames from the job segment
-        task_frame_provider = TaskFrameProvider(db_task)
-        segment_rel_frame_set = set(
-            map(task_frame_provider.get_rel_frame_number, db_segment.frame_set)
-        )
-        db_data.deleted_frames = sorted(deleted_frames.intersection(segment_rel_frame_set))
+        if db_task.media_type == models.MediaType.AUDIO:
+            assert not deleted_frames
+        else:
+            task_media_provider = TaskFrameProvider(db_task)
+            segment_rel_frame_set = set(
+                map(task_media_provider.get_rel_frame_number, db_segment.frame_set)
+            )
+            db_data.deleted_frames = sorted(deleted_frames.intersection(segment_rel_frame_set))
 
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
@@ -2028,17 +2089,60 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_data.included_frames = db_segment.frames or None
         db_data.chunks_updated_date = db_segment.chunks_updated_date
 
-        frame_meta = [{
-            'width': item.width,
-            'height': item.height,
-            'name': item.path,
-            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
-        } for item in media]
+        if (
+            db_task.media_type == models.MediaType.AUDIO
+            and db_task.mode == models.TaskMode.INTERPOLATION
+        ):
+            media = [db_data.audio]
+            chapters = None
+
+            def serialize_media_item(item: models.Audio) -> dict[str, Any]:
+                return {}
+        elif db_task.media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD):
+            if db_task.mode == models.TaskMode.INTERPOLATION:
+                media = [db_data.video]
+                chapters = get_video_chapters(
+                    db_task.data.get_manifest_path(),
+                    segment=(data_start_frame, data_stop_frame)
+                )
+            elif db_task.mode == models.TaskMode.ANNOTATION:
+                media = [
+                    # Insert placeholders if frames are skipped
+                    # TODO: remove placeholders, UI supports chunks without placeholders already
+                    # after https://github.com/cvat-ai/cvat/pull/8272
+                    f if f.frame in segment_frame_set else SimpleNamespace(
+                        path='placeholder.jpg', width=f.width, height=f.height
+                    )
+                    for f in db_data.images.all()
+                    if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
+                ]
+                chapters = None
+            else:
+                assert False, f"Unknown mode '{db_task.mode}'"
+
+            def serialize_media_item(item: models.Video | models.Image) -> dict[str, Any]:
+                return {
+                    'width': item.width,
+                    'height': item.height,
+                }
+        elif db_task.media_type:
+            assert False, f"Unknown media type '{db_task.media_type}'"
+
+        frame_meta = [
+            {
+                'name': item.path,
+                'related_files': (
+                    item.related_files.count() if hasattr(item, 'related_files') else 0
+                ),
+                **serialize_media_item(item),
+            }
+            for item in media
+        ]
 
         db_data.frames = frame_meta
         db_data.chapters = chapters
 
-        serializer = DataMetaReadSerializer(db_data)
+        serializer = DataMetaReadSerializer(db_data, context={"task": db_task})
         return Response(serializer.data)
 
     @extend_schema(summary='Get a preview image for a job',
@@ -2152,8 +2256,8 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_supports_organization_params = True
     iam_permission_class = IssuePermission
     search_fields = ('owner', 'assignee')
-    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
-    simple_filters = list(search_fields) + ['job_id', 'task_id', 'resolved', 'frame_id']
+    simple_filters = (*search_fields, 'job_id', 'task_id', 'resolved', 'frame_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     lookup_fields = {
         'owner': 'owner__username',
@@ -2224,8 +2328,8 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_supports_organization_params = True
     iam_permission_class = CommentPermission
     search_fields = ('owner',)
-    filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
-    simple_filters = list(search_fields) + ['issue_id', 'frame_id', 'job_id']
+    simple_filters = (*search_fields, 'issue_id', 'frame_id', 'job_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     ordering = '-id'
     lookup_fields = {
@@ -2310,8 +2414,8 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_permission_class = LabelPermission
 
     search_fields = ('name', 'parent')
-    filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
-    simple_filters = list(set(filter_fields) - {'id'})
+    simple_filters = (*search_fields, 'type', 'color', 'parent_id')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     lookup_fields = {
         'parent': 'parent__name',
@@ -2456,8 +2560,8 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_permission_class = UserPermission
 
     search_fields = ('username', 'first_name', 'last_name')
-    filter_fields = list(search_fields) + ['id', 'is_active']
-    simple_filters = list(search_fields) + ['is_active']
+    simple_filters = (*search_fields, 'is_active')
+    filter_fields = (*simple_filters, 'id')
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
@@ -2537,10 +2641,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = CloudStorage.objects.all()
 
-    search_fields = ('provider_type', 'name', 'resource',
-                    'credentials_type', 'owner', 'description')
-    filter_fields = list(search_fields) + ['id']
-    simple_filters = list(set(search_fields) - {'description'})
+    search_fields = ('name', 'resource', 'owner', 'description')
+    simple_filters = ('name', 'resource', 'owner', 'provider_type', 'credentials_type')
+    filter_fields = (*simple_filters, 'id', 'description')
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}

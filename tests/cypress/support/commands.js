@@ -1011,7 +1011,7 @@ Cypress.Commands.add('removeAnnotations', () => {
 
 Cypress.Commands.add('confirmUpdate', (modalWindowClassName) => {
     cy.get(modalWindowClassName).should('be.visible').within(() => {
-        cy.contains('button', 'Update').click();
+        cy.contains('button', 'Replace annotations').click();
     });
 });
 

@@ -78,8 +78,8 @@ class OrganizationViewSet(
 ):
     queryset = Organization.objects.all()
     search_fields = ("name", "owner", "slug")
-    filter_fields = list(search_fields) + ["id"]
-    simple_filters = list(search_fields)
+    simple_filters = search_fields
+    filter_fields = (*simple_filters, "id")
     lookup_fields = {"owner": "owner__username"}
     ordering_fields = list(filter_fields)
     ordering = "-id"
@@ -154,9 +154,9 @@ class MembershipViewSet(
     queryset = Membership.objects.all()
     ordering = "-id"
     http_method_names = ["get", "patch", "delete", "head", "options"]
-    search_fields = ("user", "role")
-    filter_fields = list(search_fields) + ["id"]
-    simple_filters = list(search_fields)
+    search_fields = ("user",)
+    simple_filters = (*search_fields, "role")
+    filter_fields = (*simple_filters, "id")
     ordering_fields = list(filter_fields)
     lookup_fields = {"user": "user__username"}
     iam_supports_organization_params = True
@@ -259,8 +259,8 @@ class InvitationViewSet(
     iam_permission_class = InvitationPermission
 
     search_fields = ("owner",)
-    filter_fields = list(search_fields) + ["user_id", "accepted"]
-    simple_filters = list(search_fields)
+    simple_filters = (*search_fields, "user_id", "accepted")
+    filter_fields = (*simple_filters, "id")
     ordering_fields = list(simple_filters) + ["created_date"]
     ordering = "-created_date"
     lookup_fields = {

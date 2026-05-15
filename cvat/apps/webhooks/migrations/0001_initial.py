@@ -116,7 +116,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="webhook",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(("project_id__isnull", False), ("type", "project")),
                     models.Q(
                         ("organization_id__isnull", False),

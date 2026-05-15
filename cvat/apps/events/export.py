@@ -5,12 +5,11 @@
 import csv
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import clickhouse_connect
 from dateutil import parser
 from django.conf import settings
-from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -70,6 +69,7 @@ def _create_csv(query_params: dict, output_filename: str):
             port=clickhouse_settings["PORT"],
             username=clickhouse_settings["USER"],
             password=clickhouse_settings["PASSWORD"],
+            tz_mode="schema",
         ) as client:
             result = client.query(query, parameters=parameters)
 
