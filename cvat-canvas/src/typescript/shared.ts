@@ -390,14 +390,14 @@ export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
 }
 
 export function imageDataToDataURL(
-    imageBitmap: Uint8ClampedArray,
+    imageBitmap: Uint8ClampedArray<ArrayBuffer>,
     width: number,
     height: number,
     handleResult: (dataURL: string) => void,
 ): void {
     const canvas = new OffscreenCanvas(width, height);
     canvas.getContext('2d').putImageData(
-        new ImageData(new Uint8ClampedArray(imageBitmap), width, height), 0, 0,
+        new ImageData(imageBitmap, width, height), 0, 0,
     );
     canvas.convertToBlob({ type: 'image/png' }).then((blob) => {
         const dataURL = URL.createObjectURL(blob);
@@ -430,8 +430,8 @@ export function RLEToImageData(
     g: number,
     b: number,
     encoded: ArrayLike<number>,
-): Uint8ClampedArray {
-    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray {
+): Uint8ClampedArray<ArrayBuffer> {
+    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray<ArrayBuffer> {
         const decoded = new Uint8ClampedArray(width * height * 4).fill(0);
         const { length } = rle;
         let decodedIdx = 0;
