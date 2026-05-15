@@ -45,8 +45,8 @@ from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance,
     get_cloud_storage_instance,
 )
-from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
@@ -470,6 +470,63 @@ class LabelSerializer(SublabelSerializer):
             else:
                 encountered_names.add(attr_name)
 
+    @staticmethod
+    def _split_attribute_values(values: str) -> list[str]:
+        return values.split('\n') if values else []
+
+    @classmethod
+    def _validate_attribute_value(
+        cls, input_type: str, value: str, values: str
+    ) -> None:
+        if input_type == str(models.AttributeType.TEXT):
+            return
+        if input_type == str(models.AttributeType.CHECKBOX):
+            valid = value.lower() in {'true', 'false'}
+        elif input_type == str(models.AttributeType.NUMBER):
+            attr_values = cls._split_attribute_values(values)
+            try:
+                valid = float(attr_values[0]) <= float(value) <= float(attr_values[1])
+            except (IndexError, ValueError):
+                valid = False
+        else:
+            valid = value in cls._split_attribute_values(values)
+
+        if not valid:
+            raise serializers.ValidationError(
+                'Attribute field "default_value" is invalid for attribute input type'
+            )
+
+    @classmethod
+    def _update_attribute(cls, db_attr: models.AttributeSpec, attr: dict[str, Any]) -> None:
+        for field_name in ('mutable', 'input_type'):
+            if field_name in attr and attr[field_name] != getattr(db_attr, field_name):
+                raise serializers.ValidationError(
+                    f'Attribute field "{field_name}" cannot be changed'
+                )
+
+        new_values = attr.get('values', db_attr.values)
+        if new_values != db_attr.values:
+            if db_attr.input_type in (str(models.AttributeType.RADIO), str(models.AttributeType.SELECT)):
+                old_values_list = cls._split_attribute_values(db_attr.values)
+                new_values_list = cls._split_attribute_values(new_values)
+                if not set(old_values_list).issubset(new_values_list):
+                    raise serializers.ValidationError(
+                        'Attribute field "values" can only be appended for radio and select attributes'
+                    )
+            elif db_attr.input_type == str(models.AttributeType.NUMBER):
+                raise serializers.ValidationError(
+                    'Attribute field "values" cannot be changed for number attributes'
+                )
+
+        new_default_value = attr.get('default_value', db_attr.default_value)
+        if new_default_value != db_attr.default_value:
+            cls._validate_attribute_value(db_attr.input_type, new_default_value, new_values)
+
+        db_attr.name = attr.get('name', db_attr.name)
+        db_attr.default_value = new_default_value
+        db_attr.values = new_values
+        db_attr.save()
+
     @classmethod
     @transaction.atomic
     def update_label(
@@ -605,13 +662,7 @@ class LabelSerializer(SublabelSerializer):
                 logger.info("{} attribute for {} label was updated"
                     .format(db_attr.name, db_label.name))
 
-                # FIXME: need to update only "safe" fields
-                db_attr.name = attr.get('name', db_attr.name)
-                db_attr.default_value = attr.get('default_value', db_attr.default_value)
-                db_attr.mutable = attr.get('mutable', db_attr.mutable)
-                db_attr.input_type = attr.get('input_type', db_attr.input_type)
-                db_attr.values = attr.get('values', db_attr.values)
-                db_attr.save()
+                cls._update_attribute(db_attr, attr)
 
         return db_label
 
@@ -1307,7 +1358,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             enqueue_create_chunk_job,
             wait_for_rq_job,
         )
-        from cvat.apps.engine.frame_provider import JobFrameProvider
+        from cvat.apps.engine.media_io.frame_provider import JobFrameProvider
 
         db_job = instance
         db_segment = db_job.segment
@@ -1574,7 +1625,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         frame_path_map: dict[int, str],
         segment_frame_map: dict[int,int],
     ):
-        from cvat.apps.engine.frame_provider import prepare_chunk
+        from cvat.apps.engine.media_io.frame_provider import prepare_chunk
 
         db_segment = models.Segment.objects.select_related("task").get(pk=db_segment_id)
         initial_chunks_updated_date = db_segment.chunks_updated_date
@@ -3263,7 +3314,8 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serialized = super().to_representation(instance)
 
-        if hasattr(instance, 'audio'):
+        if (task := self._context.get("task")) and task.media_type == models.MediaType.AUDIO:
+            # Can also be checked via hasattr(instance, 'audio'), but it results in extra requests
             # TODO: deprecated for 3d, remove later
             serialized.pop('image_quality', None) # not relevant for audio
 

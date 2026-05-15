@@ -38,7 +38,7 @@ function buildDuplicatedAPI(prototype) {
                     useDefaultLocation: boolean,
                     sourceStorage: Storage,
                     file: File | string,
-                    options?: { convMaskToPoly?: boolean },
+                    options?: { convMaskToPoly?: boolean, importMode?: 'replace' | 'append' },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -386,6 +386,7 @@ export class Session {
             file: File | string,
             options?: {
                 convMaskToPoly?: boolean,
+                importMode?: 'replace' | 'append',
                 updateStatusCallback?: (s: string, n: number) => void,
             },
         ) => Promise<string>;
