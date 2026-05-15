@@ -19,7 +19,6 @@ extend-exclude = """
     |engine/(
         models.py
         |serializers.py
-        |views.py
     )
 )
 """
