@@ -26,6 +26,7 @@ interface Props {
     onChange: (next: LensDraft) => void;
     onSave: () => void;
     onCancel: () => void;
+    onTurnOff: () => void;
 }
 
 type SliderKey = 'a' | 'b' | 'c' | 'HFOVInRadians' | 'cx' | 'cy';
@@ -40,7 +41,7 @@ const RANGES: Record<'a' | 'b' | 'c' | 'HFOVInRadians',
 
 export default function LensCalibrationPanel(props: Props): JSX.Element {
     const {
-        value, onChange, onSave, onCancel,
+        value, onChange, onSave, onCancel, onTurnOff,
     } = props;
 
     const width = value.horizontalResolution;
@@ -115,6 +116,9 @@ export default function LensCalibrationPanel(props: Props): JSX.Element {
             <Row justify='end' gutter={8} style={{ marginTop: 8 }}>
                 <Col>
                     <Button onClick={onCancel}>Cancel</Button>
+                </Col>
+                <Col>
+                    <Button danger type='primary' onClick={onTurnOff}>Turn Off</Button>
                 </Col>
                 <Col>
                     <Button type='primary' onClick={onSave}>Save</Button>

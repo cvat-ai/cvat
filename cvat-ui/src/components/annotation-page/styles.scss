@@ -413,6 +413,15 @@
     &:hover {
         background: rgba(115, 209, 61, 95%); // antd green-5
     }
+
+    &.cvat-canvas-lens-calibration-indicator-off {
+        background: rgba(245, 34, 45, 92%); // antd red-6
+        border-color: #cf1322; // antd red-7
+
+        &:hover {
+            background: rgba(255, 77, 79, 95%); // antd red-5
+        }
+    }
 }
 
 .cvat-lens-calibration-panel {
@@ -437,6 +446,10 @@
 
     .ant-input-number {
         width: 100%;
+    }
+
+    &.cvat-lens-calibration-turn-on-panel {
+        width: 280px;
     }
 }
 
