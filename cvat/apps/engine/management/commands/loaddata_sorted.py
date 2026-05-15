@@ -49,11 +49,9 @@ class Command(BaseCommand):
         fixture: str = options["fixture"]
         if fixture == STDIN_SENTINEL:
             records = json.load(sys.stdin)
-            input_filename = "stdin"
         else:
             with open(fixture) as f:
                 records = json.load(f)
-            input_filename = Path(fixture).name
 
         models_by_name: dict[str, list[dict]] = defaultdict(list)
         for record in records:
@@ -72,8 +70,12 @@ class Command(BaseCommand):
             for record in models_by_name[f"{model._meta.app_label}.{model._meta.model_name}"]
         ]
 
-        tmp_path = Path(tempfile.gettempdir()) / f"loaddata_sorted_{input_filename}.json"
-        with open(tmp_path, "w") as f:
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".json", prefix="loaddata_sorted_", delete=False
+        ) as f:
             json.dump(reordered, f)
-
-        call_command("loaddata", str(tmp_path))
+            tmp_path = f.name
+        try:
+            call_command("loaddata", tmp_path)
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
