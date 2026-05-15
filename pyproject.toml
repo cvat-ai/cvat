@@ -17,6 +17,5 @@ extend-exclude = """
 ^/cvat/apps/engine/(
     models.py
     |serializers.py
-    |views.py
 )
 """
