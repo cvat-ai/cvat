@@ -16,7 +16,9 @@ which then need to be reviewed and reverted by hand.
 This script wraps ``dumpdata`` and post-processes its output to make the
 result stable:
 
-* records are sorted by ``pk`` within each model;
+* records are sorted alphabetically by ``(model, pk)`` (the
+  ``loaddata_sorted`` management command reorders by FK dependency at
+  load time, so the on-disk order can be arbitrary);
 * field keys within each record are sorted alphabetically;
 * known unordered many-to-many fields (e.g. ``auth.user.groups``) are
   sorted as well.
@@ -186,18 +188,12 @@ def normalize(
     if reference is not None:
         _preserve_volatile(normalized, reference=reference)
 
-    # Preserve the model order produced by ``dumpdata`` (which respects FK
-    # dependencies so ``loaddata`` can re-import the file). Within each
-    # model group we sort by pk for determinism.
-    grouped: dict[str, list[dict[str, Any]]] = {}
-    for record in normalized:
-        grouped.setdefault(record.get("model", ""), []).append(record)
-
-    return [
-        record
-        for model_records in grouped.values()
-        for record in sorted(model_records, key=lambda r: _pk_sort_key(r.get("pk")))
-    ]
+    # Sort alphabetically by model name (then by pk) so the committed file
+    # has a layout that doesn't depend on Django's dependency sort. The
+    # ``loaddata_sorted`` management command reorders records by dependency
+    # at load time, so any total ordering is fine here.
+    normalized.sort(key=lambda r: (r.get("model", ""), _pk_sort_key(r.get("pk"))))
+    return normalized
 
 
 def dump_from_container(container: str = DEFAULT_CONTAINER_NAME) -> list[dict[str, Any]]:
