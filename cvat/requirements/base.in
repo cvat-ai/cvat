@@ -18,11 +18,11 @@ django-allauth[saml]==0.57.2
 django-auth-ldap==2.2.0
 django-cors-headers==3.5.0
 django-crum==0.7.9
-django-filter==2.4.0
+django-filter>=25.1
 django-health-check>=3.18.1,<4
 django-rq==2.8.1
 django-sendfile2==0.7.0
-Django~=4.2.7
+Django~=5.2.0
 djangorestframework>=3.15.2,<4
 djangorestframework-api-key~=3.1
 drf-spectacular==0.26.2

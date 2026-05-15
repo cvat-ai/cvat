@@ -17,7 +17,13 @@ from dateutil.parser import isoparse as parse_datetime
 from deepdiff import DeepDiff
 from pytest_cases import fixture, fixture_ref, parametrize
 
-from shared.utils.config import delete_method, get_method, make_api_client, patch_method
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 
 from .utils import CollectionSimpleFilterTestBase, build_exclude_paths_expr, get_attrs
 
@@ -701,6 +707,122 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             expected_data=expected_data,
             ignore_fields=ignore_fields,
         )
+
+    def _create_label_with_attribute_types(self, admin_user: str):
+        response = post_method(
+            admin_user,
+            "projects",
+            {
+                "name": "test attribute safe updates",
+                "labels": [
+                    {
+                        "name": "test",
+                        "attributes": [
+                            {
+                                "name": "1",
+                                "input_type": "select",
+                                "mutable": False,
+                                "values": ["1", "2", "3"],
+                                "default_value": "1",
+                            },
+                            {
+                                "name": "2",
+                                "input_type": "radio",
+                                "mutable": False,
+                                "values": ["1", "2", "3"],
+                                "default_value": "1",
+                            },
+                            {
+                                "name": "3",
+                                "input_type": "checkbox",
+                                "mutable": False,
+                                "values": ["true"],
+                                "default_value": "true",
+                            },
+                            {
+                                "name": "4",
+                                "input_type": "text",
+                                "mutable": False,
+                                "values": ["default text"],
+                                "default_value": "default text",
+                            },
+                            {
+                                "name": "5",
+                                "input_type": "number",
+                                "mutable": False,
+                                "values": ["0", "100", "1"],
+                                "default_value": "0",
+                            },
+                        ],
+                    },
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        project = response.json()
+        label = get_method(admin_user, "labels", project_id=project["id"]).json()["results"][0]
+        return label, {attr["name"]: attr for attr in label["attributes"]}
+
+    def _patch_attribute(self, admin_user: str, label_id: int, attribute: dict[str, Any], **fields):
+        payload = deepcopy(attribute)
+        payload.update(fields)
+        return patch_method(admin_user, f"labels/{label_id}", {"attributes": [payload]})
+
+    @pytest.mark.parametrize(
+        "attribute_name, fields, expected_fields",
+        [
+            ("1", {"default_value": "2"}, {"default_value": "2"}),
+            ("1", {"values": ["1", "2", "3", "4"]}, {"values": ["1", "2", "3", "4"]}),
+            ("1", {"values": ["3", "2", "1", "4"]}, {"values": ["3", "2", "1", "4"]}),
+            ("2", {"values": ["1", "2", "3", "4"]}, {"values": ["1", "2", "3", "4"]}),
+            ("3", {"values": ["false"]}, {"values": ["false"]}),
+            (
+                "4",
+                {"default_value": "updated", "values": ["updated"]},
+                {
+                    "default_value": "updated",
+                    "values": ["updated"],
+                },
+            ),
+        ],
+    )
+    def test_can_patch_safe_attribute_fields(
+        self,
+        admin_user: str,
+        attribute_name: str,
+        fields: dict[str, Any],
+        expected_fields: dict[str, Any],
+    ):
+        label, attrs = self._create_label_with_attribute_types(admin_user)
+
+        response = self._patch_attribute(admin_user, label["id"], attrs[attribute_name], **fields)
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        updated_attr = next(
+            attr for attr in response.json()["attributes"] if attr["name"] == attribute_name
+        )
+        assert {key: updated_attr[key] for key in expected_fields} == expected_fields
+
+    @pytest.mark.parametrize(
+        "attribute_name, fields, error",
+        [
+            ("1", {"values": ["1", "2"]}, 'Attribute field "values" can only be appended'),
+            ("1", {"values": ["1", "2", "4"]}, 'Attribute field "values" can only be appended'),
+            ("5", {"values": ["0", "200", "1"]}, 'Attribute field "values" cannot be changed'),
+            ("1", {"mutable": True}, 'Attribute field "mutable" cannot be changed'),
+            ("1", {"input_type": "text"}, 'Attribute field "input_type" cannot be changed'),
+            ("1", {"default_value": "4"}, 'Attribute field "default_value" is invalid'),
+        ],
+    )
+    def test_cannot_patch_unsafe_attribute_fields(
+        self, admin_user: str, attribute_name: str, fields: dict[str, Any], error: str
+    ):
+        label, attrs = self._create_label_with_attribute_types(admin_user)
+
+        response = self._patch_attribute(admin_user, label["id"], attrs[attribute_name], **fields)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST, response.content
+        assert any(error in message for message in response.json())
 
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_patch_sublabel_directly(self, admin_user, source):
