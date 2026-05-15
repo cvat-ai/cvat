@@ -23,7 +23,6 @@ import json
 import sys
 import tempfile
 from collections import defaultdict
-from pathlib import Path
 
 from django.apps import apps
 from django.core.management import call_command
@@ -70,12 +69,8 @@ class Command(BaseCommand):
             for record in models_by_name[f"{model._meta.app_label}.{model._meta.model_name}"]
         ]
 
-        with tempfile.NamedTemporaryFile(
-            "w", suffix=".json", prefix="loaddata_sorted_", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", prefix="loaddata_sorted_") as f:
             json.dump(reordered, f)
-            tmp_path = f.name
-        try:
-            call_command("loaddata", tmp_path)
-        finally:
-            Path(tmp_path).unlink(missing_ok=True)
+            f.flush()
+
+            call_command("loaddata", f.name)
