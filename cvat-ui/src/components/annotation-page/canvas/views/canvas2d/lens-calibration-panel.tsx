@@ -39,6 +39,12 @@ const RANGES: Record<'a' | 'b' | 'c' | 'HFOVInRadians',
     HFOVInRadians: { min: 0, max: 2 * Math.PI, step: 0.001 },
 };
 
+// Width/height boxes are clamped to a sane range so the user cannot type
+// nonsensical resolutions (zero or negative break the lens model; absurdly
+// large values would make cx/cy sliders useless).
+const RES_MIN = 1;
+const RES_MAX = 16384;
+
 export default function LensCalibrationPanel(props: Props): JSX.Element {
     const {
         value, onChange, onSave, onCancel, onTurnOff,
@@ -48,9 +54,35 @@ export default function LensCalibrationPanel(props: Props): JSX.Element {
     const height = value.aspectRatio > 0 ?
         Math.round(width / value.aspectRatio) :
         width;
+    const aspectRatioDisplay = value.aspectRatio > 0 ?
+        Number(value.aspectRatio.toFixed(4)) :
+        0;
 
     const set = (key: SliderKey, v: number): void => {
         onChange({ ...value, [key]: v });
+    };
+
+    const setWidth = (newWidth: number): void => {
+        if (!Number.isFinite(newWidth) || newWidth <= 0) return;
+        const clampedWidth = Math.max(RES_MIN, Math.min(RES_MAX, Math.round(newWidth)));
+        // Preserve current height by recomputing aspectRatio = width / height.
+        const newAspectRatio = height > 0 ? clampedWidth / height : value.aspectRatio;
+        onChange({
+            ...value,
+            horizontalResolution: clampedWidth,
+            aspectRatio: newAspectRatio,
+        });
+    };
+
+    const setHeight = (newHeight: number): void => {
+        if (!Number.isFinite(newHeight) || newHeight <= 0) return;
+        const clampedHeight = Math.max(RES_MIN, Math.min(RES_MAX, Math.round(newHeight)));
+        // Width is unchanged; aspectRatio = width / height.
+        const newAspectRatio = width / clampedHeight;
+        onChange({
+            ...value,
+            aspectRatio: newAspectRatio,
+        });
     };
 
     const sliderRow = (
@@ -113,6 +145,57 @@ export default function LensCalibrationPanel(props: Props): JSX.Element {
             )}
             {sliderRow('cx', 'cx', 0, width, 1, cxDefault)}
             {sliderRow('cy', 'cy', 0, height, 1, cyDefault)}
+
+            <Row align='middle' gutter={8} style={{ marginBottom: 6 }}>
+                <Col span={8}>
+                    <Text className='cvat-text-color'>Video width (px)</Text>
+                </Col>
+                <Col span={16}>
+                    <InputNumber
+                        size='small'
+                        min={RES_MIN}
+                        max={RES_MAX}
+                        step={1}
+                        value={width}
+                        style={{ width: '100%' }}
+                        onChange={(v: number | string | null | undefined): void => {
+                            if (typeof v === 'number') setWidth(v);
+                        }}
+                    />
+                </Col>
+            </Row>
+            <Row align='middle' gutter={8} style={{ marginBottom: 6 }}>
+                <Col span={8}>
+                    <Text className='cvat-text-color'>Video height (px)</Text>
+                </Col>
+                <Col span={16}>
+                    <InputNumber
+                        size='small'
+                        min={RES_MIN}
+                        max={RES_MAX}
+                        step={1}
+                        value={height}
+                        style={{ width: '100%' }}
+                        onChange={(v: number | string | null | undefined): void => {
+                            if (typeof v === 'number') setHeight(v);
+                        }}
+                    />
+                </Col>
+            </Row>
+            <Row align='middle' gutter={8} style={{ marginBottom: 6 }}>
+                <Col span={8}>
+                    <Text className='cvat-text-color'>Aspect ratio</Text>
+                </Col>
+                <Col span={16}>
+                    <InputNumber
+                        size='small'
+                        value={aspectRatioDisplay}
+                        disabled
+                        style={{ width: '100%' }}
+                    />
+                </Col>
+            </Row>
+
             <Row justify='end' gutter={8} style={{ marginTop: 8 }}>
                 <Col>
                     <Button onClick={onCancel}>Cancel</Button>

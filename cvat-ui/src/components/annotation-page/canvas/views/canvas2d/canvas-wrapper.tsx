@@ -429,7 +429,7 @@ const DEFAULT_FISHEYE_LENS = {
     c: 0.448,
     HFOVInRadians: 3.1799898972,
     aspectRatio: 1.0,
-    horizontalResolution: 2992,
+    horizontalResolution: 1280,
     lensType: 'Equidistant' as const,
 };
 
@@ -521,7 +521,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         //       a: 0.11, b: -0.283, c: 0.448,
         //       HFOVInRadians: 3.1799898972,
         //       aspectRatio: 1.0,
-        //       horizontalResolution: 2992,
+        //       horizontalResolution: 1280,
         //       lensType: 'Equidistant',
         //   });
         //   window.cvatSetLensCalibration(null);  // disable
