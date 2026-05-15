@@ -1,8 +1,7 @@
 ### Added
 
 - \[Server API\] The project/task/job `preview` endpoints accept
-  `Prefer: handling=empty` (RFC 7240). When set, entities without a
+  the `Prefer: handling=empty` header (RFC 7240). When set, entities without a
   media-derived preview (e.g. point cloud tasks) return `204 No Content`
-  instead of the default placeholder PNG, and the response carries
-  `Preference-Applied: handling=empty` and `Vary: Prefer`
+  instead of the default placeholder.
   (<https://github.com/cvat-ai/cvat/pull/10611>)
