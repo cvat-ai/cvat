@@ -70,6 +70,7 @@ from cvat.apps.engine.models import (
     StorageChoice,
     StorageMethodChoice,
     Task,
+    TaskMode,
 )
 from cvat.apps.engine.tests.utils import (
     ApiTestBase,
@@ -211,6 +212,7 @@ def create_dummy_db_tasks(obj, project=None):
         "size": 100,
         "project": project,
         "media_type": MediaType.IMAGE,
+        "mode": TaskMode.ANNOTATION,
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -224,6 +226,7 @@ def create_dummy_db_tasks(obj, project=None):
         "size": 200,
         "project": project,
         "media_type": MediaType.IMAGE,
+        "mode": TaskMode.ANNOTATION,
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -238,6 +241,7 @@ def create_dummy_db_tasks(obj, project=None):
         "size": 100,
         "project": project,
         "media_type": MediaType.POINT_CLOUD,
+        "mode": TaskMode.ANNOTATION,
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -251,6 +255,7 @@ def create_dummy_db_tasks(obj, project=None):
         "size": 50,
         "project": project,
         "media_type": MediaType.IMAGE,
+        "mode": TaskMode.INTERPOLATION,
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
