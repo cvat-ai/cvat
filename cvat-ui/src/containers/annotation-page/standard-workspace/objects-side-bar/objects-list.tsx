@@ -470,6 +470,31 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private compactLayers = (): void => {
+        const { updateAnnotations } = this.props;
+        const { filteredStates } = this.state;
+        const zOrderMap = new Map(
+            Array.from(new Set(
+                filteredStates
+                    .filter((state: ObjectState): boolean => state.objectType !== ObjectType.TAG)
+                    .map((state: ObjectState): number => state.zOrder),
+            ))
+                .sort((left: number, right: number): number => left - right)
+                .map((zOrder: number, index: number): [number, number] => [zOrder, index]),
+        );
+        const statesToUpdate = filteredStates.filter((state: ObjectState): boolean => (
+            state.objectType !== ObjectType.TAG && zOrderMap.get(state.zOrder) !== state.zOrder
+        ));
+
+        for (const state of statesToUpdate) {
+            state.zOrder = zOrderMap.get(state.zOrder) as number;
+        }
+
+        if (statesToUpdate.length) {
+            updateAnnotations(statesToUpdate);
+        }
+    };
+
     private lockAllStates(locked: boolean): void {
         const { updateAnnotations } = this.props;
         const { filteredStates } = this.state;
@@ -743,6 +768,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     changeStatesOrdering={this.onChangeStatesOrdering}
                     moveObjectToLayer={this.moveObjectToLayer}
                     moveLayer={this.moveLayer}
+                    compactLayers={this.compactLayers}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}
                     collapseAllStates={this.onCollapseAllStates}

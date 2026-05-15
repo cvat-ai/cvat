@@ -9,7 +9,7 @@ import {
     DndContext, DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors,
 } from '@dnd-kit/core';
 import {
-    CaretDownOutlined, CaretRightOutlined, HolderOutlined,
+    CaretDownOutlined, CaretRightOutlined, HolderOutlined, VerticalAlignMiddleOutlined,
 } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
@@ -18,6 +18,7 @@ import Text from 'antd/lib/typography/Text';
 import { StatesOrdering, Workspace } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { ObjectState, ObjectType } from 'cvat-core-wrapper';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import ObjectListHeader from './objects-list-header';
 
 const OBJECT_DRAG_ID_PREFIX = 'object:';
@@ -79,6 +80,7 @@ interface Props {
     changeStatesOrdering(value: StatesOrdering): void;
     moveObjectToLayer(clientID: number, targetZOrder: number): void;
     moveLayer(sourceZOrder: number, targetZOrder: number, mode: LayerDragMode): void;
+    compactLayers(): void;
     lockAllStates(): void;
     unlockAllStates(): void;
     collapseAllStates(): void;
@@ -153,21 +155,25 @@ function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
             style={style}
         >
             <div className='cvat-objects-sidebar-z-layer-controls'>
-                <Button
-                    className='cvat-objects-sidebar-z-layer-collapse-button'
-                    type='text'
-                    size='small'
-                    icon={collapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
-                    onClick={(): void => toggleLayerCollapsed(zOrder)}
-                />
-                <Button
-                    {...attributes}
-                    {...listeners}
-                    className='cvat-objects-sidebar-z-layer-drag-handle'
-                    type='text'
-                    size='small'
-                    icon={<HolderOutlined />}
-                />
+                <CVATTooltip title={collapsed ? 'Expand layer' : 'Collapse layer'}>
+                    <Button
+                        className='cvat-objects-sidebar-z-layer-collapse-button'
+                        type='text'
+                        size='small'
+                        icon={collapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
+                        onClick={(): void => toggleLayerCollapsed(zOrder)}
+                    />
+                </CVATTooltip>
+                <CVATTooltip title='Drag layer'>
+                    <Button
+                        {...attributes}
+                        {...listeners}
+                        className='cvat-objects-sidebar-z-layer-drag-handle'
+                        type='text'
+                        size='small'
+                        icon={<HolderOutlined />}
+                    />
+                </CVATTooltip>
             </div>
             <Text strong>{zOrder}</Text>
         </div>
@@ -234,6 +240,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         changeStatesOrdering,
         moveObjectToLayer,
         moveLayer,
+        compactLayers,
         lockAllStates,
         unlockAllStates,
         collapseAllStates,
@@ -327,22 +334,35 @@ function ObjectListComponent(props: Props): JSX.Element {
                     <div className='cvat-objects-sidebar-z-layers-panel'>
                         <div className='cvat-objects-sidebar-z-layers-title'>
                             <Text strong>Layer stack</Text>
-                            <Radio.Group
-                                className='cvat-objects-sidebar-z-layer-mode-switcher'
-                                size='small'
-                                value={layerDragMode}
-                                onChange={onLayerDragModeChange}
-                            >
-                                <Radio.Button value='move'>Move</Radio.Button>
-                                <Radio.Button value='merge'>Merge</Radio.Button>
-                            </Radio.Group>
-                            <Button
-                                className='cvat-objects-sidebar-z-layers-collapse-all-button'
-                                type='text'
-                                size='small'
-                                icon={allLayersCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
-                                onClick={toggleAllLayersCollapsed}
-                            />
+                            <CVATTooltip title='Choose how dragged layers are applied'>
+                                <Radio.Group
+                                    className='cvat-objects-sidebar-z-layer-mode-switcher'
+                                    size='small'
+                                    value={layerDragMode}
+                                    onChange={onLayerDragModeChange}
+                                >
+                                    <Radio.Button value='move'>Move</Radio.Button>
+                                    <Radio.Button value='merge'>Merge</Radio.Button>
+                                </Radio.Group>
+                            </CVATTooltip>
+                            <CVATTooltip title='Compact layers'>
+                                <Button
+                                    className='cvat-objects-sidebar-z-layers-compact-button'
+                                    type='text'
+                                    size='small'
+                                    icon={<VerticalAlignMiddleOutlined />}
+                                    onClick={compactLayers}
+                                />
+                            </CVATTooltip>
+                            <CVATTooltip title={allLayersCollapsed ? 'Expand all layers' : 'Collapse all layers'}>
+                                <Button
+                                    className='cvat-objects-sidebar-z-layers-collapse-all-button'
+                                    type='text'
+                                    size='small'
+                                    icon={allLayersCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
+                                    onClick={toggleAllLayersCollapsed}
+                                />
+                            </CVATTooltip>
                         </div>
                         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
                             {zLayers.map((zOrder: number): JSX.Element => (
