@@ -13,18 +13,17 @@ updates:
     directory: "/utils/dataset_manifest"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 10
     exclude-paths:
       - "*.txt"
 
-  # Keep the large CVAT requirements graph on a small PR budget. Dependabot
-  # resolves the full input graph for each candidate update, so processing too
-  # many Python updates in one run can hit the updater timeout.
+  # Dependabot resolves the full CVAT requirements graph for each candidate
+  # update, while generated lock files are refreshed by the workflow below.
   - package-ecosystem: "pip"
     directory: "/cvat/requirements"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 10
     exclude-paths:
       - "*.txt"
       - "all.in"
