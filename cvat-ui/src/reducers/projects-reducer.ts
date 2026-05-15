@@ -175,7 +175,6 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                     ...previews,
                     [projectID]: {
                         preview: '',
-                        placeholder: null,
                         fetching: true,
                         initialized: false,
                     },
@@ -183,15 +182,14 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             };
         }
         case ProjectsActionTypes.GET_PROJECT_PREVIEW_SUCCESS: {
-            const { projectID, result } = action.payload;
+            const { projectID, preview } = action.payload;
             const { previews } = state;
             return {
                 ...state,
                 previews: {
                     ...previews,
                     [projectID]: {
-                        preview: result.preview,
-                        placeholder: result.placeholder,
+                        preview,
                         fetching: false,
                         initialized: true,
                     },
@@ -207,7 +205,6 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                     ...previews,
                     [projectID]: {
                         ...previews[projectID],
-                        placeholder: null,
                         fetching: false,
                         initialized: true,
                     },

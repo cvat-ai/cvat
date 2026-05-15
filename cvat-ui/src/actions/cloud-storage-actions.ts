@@ -7,7 +7,7 @@ import {
     ActionUnion, createAction, ThunkAction, ThunkDispatch,
 } from 'utils/redux';
 import {
-    getCore, Project, Task, CloudStorage, PreviewResult,
+    getCore, Project, Task, CloudStorage,
 } from 'cvat-core-wrapper';
 import { CloudStoragesQuery } from 'reducers';
 import { filterNull } from 'utils/filter-null';
@@ -98,8 +98,8 @@ export const cloudStoragesActions = {
     getCloudStoragePreview: (cloudStorageID: number) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW, { cloudStorageID })
     ),
-    getCloudStoragePreviewSuccess: (cloudStorageID: number, result: PreviewResult) => (
-        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS, { cloudStorageID, result })
+    getCloudStoragePreviewSuccess: (cloudStorageID: number, preview: string) => (
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS, { cloudStorageID, preview })
     ),
     getCloudStoragePreviewFailed: (cloudStorageID: number, error: any) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED, { cloudStorageID, error })

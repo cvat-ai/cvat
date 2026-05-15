@@ -151,7 +151,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...previews,
                     [taskID]: {
                         preview: '',
-                        placeholder: null,
                         fetching: true,
                         initialized: false,
                     },
@@ -159,15 +158,14 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             };
         }
         case TasksActionTypes.GET_TASK_PREVIEW_SUCCESS: {
-            const { taskID, result } = action.payload;
+            const { taskID, preview } = action.payload;
             const { previews } = state;
             return {
                 ...state,
                 previews: {
                     ...previews,
                     [taskID]: {
-                        preview: result.preview,
-                        placeholder: result.placeholder,
+                        preview,
                         fetching: false,
                         initialized: true,
                     },
@@ -183,7 +181,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...previews,
                     [taskID]: {
                         ...previews[taskID],
-                        placeholder: null,
                         fetching: false,
                         initialized: true,
                     },

@@ -22,7 +22,7 @@ import {
     SerializedLabel, SerializedTask,
 } from './server-response-types';
 import AnnotationGuide from './guide';
-import { FrameData, FramesMetaData, PreviewResult } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import Statistics from './statistics';
 import { Request } from './request';
 import logger from './logger';
@@ -429,7 +429,7 @@ export class Session {
         save: () => Promise<FramesMetaData[]>;
         cachedChunks: () => Promise<number[]>;
         frameNumbers: () => Promise<number[]>;
-        preview: () => Promise<PreviewResult>;
+        preview: () => Promise<string>;
         contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
         contextImageData: (frame: number) => Promise<ArrayBuffer>;
         search: (

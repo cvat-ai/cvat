@@ -6,7 +6,7 @@
 import {
     ActionUnion, createAction, ThunkAction, ThunkDispatch,
 } from 'utils/redux';
-import { getCore, Job, PreviewResult } from 'cvat-core-wrapper';
+import { getCore, Job } from 'cvat-core-wrapper';
 import { JobsQuery } from 'reducers';
 import { filterNull } from 'utils/filter-null';
 import { JobData } from 'components/create-job-page/job-form';
@@ -44,8 +44,8 @@ export const jobsActions = {
     getJobPreview: (jobID: number) => (
         createAction(JobsActionTypes.GET_JOB_PREVIEW, { jobID })
     ),
-    getJobPreviewSuccess: (jobID: number, result: PreviewResult) => (
-        createAction(JobsActionTypes.GET_JOB_PREVIEW_SUCCESS, { jobID, result })
+    getJobPreviewSuccess: (jobID: number, preview: string) => (
+        createAction(JobsActionTypes.GET_JOB_PREVIEW_SUCCESS, { jobID, preview })
     ),
     getJobPreviewFailed: (jobID: number, error: any) => (
         createAction(JobsActionTypes.GET_JOB_PREVIEW_FAILED, { jobID, error })

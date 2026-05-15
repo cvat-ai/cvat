@@ -867,12 +867,15 @@ export async function getContextImage(
     });
 }
 
-export interface PreviewResult {
-    preview: string;
-    placeholder: string | null;
+export const PREVIEW_PLACEHOLDER_PREFIX = 'cvat-placeholder:';
+
+export function isPreviewPlaceholder(value: string): boolean {
+    return value.startsWith(PREVIEW_PLACEHOLDER_PREFIX);
 }
 
-export const EMPTY_PREVIEW: PreviewResult = { preview: '', placeholder: null };
+export function previewPlaceholderKind(value: string): string {
+    return value.slice(PREVIEW_PLACEHOLDER_PREFIX.length);
+}
 
 export function decodePreview(preview: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -897,15 +900,15 @@ function placeholderKindFor(dimension: string | undefined): string | null {
 export async function resolvePreviewResponse(
     response: PreviewResponse,
     dimension?: string,
-): Promise<PreviewResult> {
+): Promise<string> {
     if (response === null) {
-        return EMPTY_PREVIEW;
+        return '';
     }
     if (response === PREVIEW_EMPTY) {
-        return { preview: '', placeholder: placeholderKindFor(dimension) };
+        const kind = placeholderKindFor(dimension);
+        return kind ? `${PREVIEW_PLACEHOLDER_PREFIX}${kind}` : '';
     }
-    const preview = await decodePreview(response);
-    return { preview, placeholder: null };
+    return decodePreview(response);
 }
 
 export async function getFrame(

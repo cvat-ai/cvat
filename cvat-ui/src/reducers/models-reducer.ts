@@ -159,7 +159,6 @@ export default function (
                     ...previews,
                     [modelID]: {
                         preview: '',
-                        placeholder: null,
                         fetching: true,
                         initialized: false,
                     },
@@ -167,15 +166,14 @@ export default function (
             };
         }
         case ModelsActionTypes.GET_MODEL_PREVIEW_SUCCESS: {
-            const { modelID, result } = action.payload;
+            const { modelID, preview } = action.payload;
             const { previews } = state;
             return {
                 ...state,
                 previews: {
                     ...previews,
                     [modelID]: {
-                        preview: result.preview,
-                        placeholder: result.placeholder,
+                        preview,
                         fetching: false,
                         initialized: true,
                     },
@@ -191,7 +189,6 @@ export default function (
                     ...previews,
                     [modelID]: {
                         ...previews[modelID],
-                        placeholder: null,
                         fetching: false,
                         initialized: true,
                     },

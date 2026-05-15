@@ -10,7 +10,6 @@ import {
 import {
     SerializedModel, ModelParams, MLModelTip, MLModelLabel,
 } from './core-types';
-import { EMPTY_PREVIEW, PreviewResult } from './frames';
 
 export default class MLModel {
     private serialized: SerializedModel;
@@ -111,7 +110,7 @@ export default class MLModel {
         return labelType;
     }
 
-    public async preview(): Promise<PreviewResult> {
+    public async preview(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.preview);
         return result;
     }
@@ -121,8 +120,8 @@ Object.defineProperties(MLModel.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<PreviewResult> {
-            return EMPTY_PREVIEW;
+        value: async function implementation(): Promise<string> {
+            return '';
         },
     },
 });

@@ -28,7 +28,10 @@ import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core
 import QualitySettings, { TargetMetric, QualitySettingsSaveFields } from 'cvat-core/src/quality-settings';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import ApiToken from 'cvat-core/src/api-token';
-import { FramesMetaData, FrameData, PreviewResult } from 'cvat-core/src/frames';
+import {
+    FramesMetaData, FrameData, PREVIEW_PLACEHOLDER_PREFIX,
+    isPreviewPlaceholder, previewPlaceholderKind,
+} from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
@@ -126,6 +129,9 @@ export {
     MembershipRole,
     AboutData,
     BaseImageFilter,
+    PREVIEW_PLACEHOLDER_PREFIX,
+    isPreviewPlaceholder,
+    previewPlaceholderKind,
 };
 
 export type {
@@ -150,5 +156,4 @@ export type {
     ApiTokensFilter,
     ImageProcessing,
     SerializedImageFilter,
-    PreviewResult,
 };

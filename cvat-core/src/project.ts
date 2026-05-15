@@ -13,7 +13,6 @@ import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
 import AnnotationGuide from './guide';
-import { PreviewResult } from './frames';
 
 export default class Project {
     public readonly id: number;
@@ -244,7 +243,7 @@ export default class Project {
         };
     }
 
-    async preview(): Promise<PreviewResult> {
+    async preview(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.preview);
         return result;
     }

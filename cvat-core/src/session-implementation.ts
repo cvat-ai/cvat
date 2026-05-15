@@ -24,7 +24,6 @@ import {
     findFrame,
     getContextImage,
     patchMeta,
-    EMPTY_PREVIEW,
     resolvePreviewResponse,
 } from './frames';
 import Issue from './issue';
@@ -275,7 +274,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.preview> {
             if (this.id === null || this.taskId === null) {
-                return Promise.resolve(EMPTY_PREVIEW);
+                return Promise.resolve('');
             }
 
             return serverProxy.jobs.getPreview(this.id).then(
@@ -962,7 +961,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.preview> {
             if (this.id === null) {
-                return Promise.resolve(EMPTY_PREVIEW);
+                return Promise.resolve('');
             }
 
             return serverProxy.tasks.getPreview(this.id).then(

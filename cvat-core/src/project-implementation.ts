@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import serverProxy from './server-proxy';
-import { EMPTY_PREVIEW, resolvePreviewResponse } from './frames';
+import { resolvePreviewResponse } from './frames';
 import ProjectClass from './project';
 import { exportDataset, importDataset } from './annotations';
 import { Label } from './labels';
@@ -108,7 +108,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             this: ProjectClass,
         ): ReturnType<typeof ProjectClass.prototype.preview> {
             if (this.id === null) {
-                return Promise.resolve(EMPTY_PREVIEW);
+                return Promise.resolve('');
             }
 
             return serverProxy.projects.getPreview(this.id).then(
