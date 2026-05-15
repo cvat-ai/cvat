@@ -3269,7 +3269,8 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serialized = super().to_representation(instance)
 
-        if hasattr(instance, 'audio'):
+        if (task := self._context.get("task")) and task.media_type == models.MediaType.AUDIO:
+            # Can also be checked via hasattr(instance, 'audio'), but it results in extra requests
             # TODO: deprecated for 3d, remove later
             serialized.pop('image_quality', None) # not relevant for audio
 
