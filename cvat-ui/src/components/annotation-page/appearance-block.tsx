@@ -41,7 +41,7 @@ const componentShortcuts = {
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
     TOGGLE_SHOW_BITMAP_APPEARANCE: {
-        name: 'Toggle objects appearance setting "Show bitmap"',
+        name: 'Switch objects appearance setting "Show bitmap"',
         description: 'Show or hide the bitmap layer on the canvas',
         sequences: [],
         scope: ShortcutScope.ANNOTATION_PAGE,
@@ -176,8 +176,8 @@ function AppearanceBlock(props: Props): JSX.Element {
             changeShapesColorBy(nextColorBy[colorBy]);
         },
         TOGGLE_SHOW_BITMAP_APPEARANCE: (event: KeyboardEvent | undefined) => {
-            event?.preventDefault();
             if (is2D) {
+                event?.preventDefault();
                 changeShowBitmap(!showBitmap);
             }
         },
