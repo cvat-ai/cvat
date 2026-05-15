@@ -27,12 +27,17 @@ from .utils import export_task_backup, export_task_dataset
 pytestmark = [pytest.mark.with_external_services]
 
 
-def target_url():
+def _read_receiver_env():
     env_data = {}
     with open(CVAT_ROOT_DIR / "tests/python/webhook_receiver/.env", "r") as f:
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
+    return env_data
+
+
+def target_url():
+    env_data = _read_receiver_env()
     return (
         f'http://{env_data["SERVER_HOST"]}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
     )
@@ -75,7 +80,8 @@ def get_deliveries(webhook_id, expected_count=1, *, timeout: int = 60):
 
         deliveries = response.json()
         if deliveries["count"] == expected_count:
-            delivery_response = json.loads(deliveries["results"][0]["response"])
+            raw_deliver_response = deliveries["results"][0]["response"]
+            delivery_response = json.loads(raw_deliver_response) if raw_deliver_response else {}
             break
 
         if time() - start_time > timeout:
@@ -618,7 +624,7 @@ class TestWebhookCommentEvents:
         webhook_id = create_webhook(events, "organization", org_id=org_id)["id"]
 
         post_data = {"issue": issue["id"], "message": "new comment message"}
-        response = post_method("admin1", f"comments", post_data, org_id=org_id)
+        response = post_method("admin1", "comments", post_data, org_id=org_id)
         assert response.status_code == HTTPStatus.CREATED
 
         create_deliveries, create_payload = get_deliveries(webhook_id)

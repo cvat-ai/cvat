@@ -351,21 +351,32 @@ class DelimitedStringListField(serializers.ListField):
 
 class AttributeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
+    deleted = serializers.BooleanField(required=False, write_only=True,
+        help_text='Delete the attribute and all related annotation values.')
     values = DelimitedStringListField(allow_empty=True,
-        child=serializers.CharField(allow_blank=True, max_length=200),
-    )
+        child=serializers.CharField(allow_blank=True, max_length=200))
 
     class Meta:
         model = models.AttributeSpec
-        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
+        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values', 'deleted')
+        extra_kwargs = {
+            'default_value': { 'required': False },
+        }
+
+    def validate(self, attrs):
+        if attrs.get('deleted'):
+            if attrs.get('id') is None:
+                raise serializers.ValidationError('Deleted attribute must have an ID')
+
+        return attrs
 
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[],
         help_text="The list of attributes. "
-        "If you want to remove an attribute, you need to recreate the label "
-        "and specify the remaining attributes.")
+        "To remove an attribute, pass the full attribute body with deleted=true. "
+        "Related annotation attribute values will be deleted.")
     color = serializers.CharField(allow_blank=True, required=False,
         help_text="The hex value for the RGB color. "
         "Will be generated automatically, unless specified explicitly.")
@@ -447,11 +458,74 @@ class LabelSerializer(SublabelSerializer):
     def check_attribute_names_unique(attrs):
         encountered_names = set()
         for attribute in attrs:
+            if attribute.get('deleted'):
+                continue
+
             attr_name = attribute.get('name')
+            if attr_name is None:
+                continue
+
             if attr_name in encountered_names:
                 raise serializers.ValidationError(f"Duplicate attribute with name '{attr_name}' exists")
             else:
                 encountered_names.add(attr_name)
+
+    @staticmethod
+    def _split_attribute_values(values: str) -> list[str]:
+        return values.split('\n') if values else []
+
+    @classmethod
+    def _validate_attribute_value(
+        cls, input_type: str, value: str, values: str
+    ) -> None:
+        if input_type == str(models.AttributeType.TEXT):
+            return
+        if input_type == str(models.AttributeType.CHECKBOX):
+            valid = value.lower() in {'true', 'false'}
+        elif input_type == str(models.AttributeType.NUMBER):
+            attr_values = cls._split_attribute_values(values)
+            try:
+                valid = float(attr_values[0]) <= float(value) <= float(attr_values[1])
+            except (IndexError, ValueError):
+                valid = False
+        else:
+            valid = value in cls._split_attribute_values(values)
+
+        if not valid:
+            raise serializers.ValidationError(
+                'Attribute field "default_value" is invalid for attribute input type'
+            )
+
+    @classmethod
+    def _update_attribute(cls, db_attr: models.AttributeSpec, attr: dict[str, Any]) -> None:
+        for field_name in ('mutable', 'input_type'):
+            if field_name in attr and attr[field_name] != getattr(db_attr, field_name):
+                raise serializers.ValidationError(
+                    f'Attribute field "{field_name}" cannot be changed'
+                )
+
+        new_values = attr.get('values', db_attr.values)
+        if new_values != db_attr.values:
+            if db_attr.input_type in (str(models.AttributeType.RADIO), str(models.AttributeType.SELECT)):
+                old_values_list = cls._split_attribute_values(db_attr.values)
+                new_values_list = cls._split_attribute_values(new_values)
+                if not set(old_values_list).issubset(new_values_list):
+                    raise serializers.ValidationError(
+                        'Attribute field "values" can only be appended for radio and select attributes'
+                    )
+            elif db_attr.input_type == str(models.AttributeType.NUMBER):
+                raise serializers.ValidationError(
+                    'Attribute field "values" cannot be changed for number attributes'
+                )
+
+        new_default_value = attr.get('default_value', db_attr.default_value)
+        if new_default_value != db_attr.default_value:
+            cls._validate_attribute_value(db_attr.input_type, new_default_value, new_values)
+
+        db_attr.name = attr.get('name', db_attr.name)
+        db_attr.default_value = new_default_value
+        db_attr.values = new_values
+        db_attr.save()
 
     @classmethod
     @transaction.atomic
@@ -470,9 +544,16 @@ class LabelSerializer(SublabelSerializer):
 
         cls.check_attribute_names_unique(attributes)
 
-        if validated_data.get('id') is not None:
+        label_exists = validated_data.get('id') is not None
+        if label_exists:
+            label_filter = dict(parent_info)
+            if parent_label is not None:
+                # Enforce nested update scope: a sublabel ID must belong to the
+                # parent skeleton label currently being patched.
+                label_filter['parent'] = parent_label
+
             try:
-                db_label = models.Label.objects.get(id=validated_data['id'], **parent_info)
+                db_label = models.Label.objects.get(id=validated_data['id'], **label_filter)
             except models.Label.DoesNotExist as exc:
                 raise exceptions.NotFound(
                     detail='Not found label with id #{} to change'.format(validated_data['id'])
@@ -539,15 +620,36 @@ class LabelSerializer(SublabelSerializer):
         except models.InvalidLabel as exc:
             raise exceptions.ValidationError(str(exc)) from exc
 
-        for attr in attributes:
+        if label_exists:
+            cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
+
+        deleted_attributes = [attr for attr in attributes if attr.get('deleted')]
+        upserted_attributes = [attr for attr in attributes if not attr.get('deleted')]
+
+        def get_db_attr(attr_id: int) -> models.AttributeSpec:
+            try:
+                return models.AttributeSpec.objects.get(id=attr_id, label=db_label)
+            except models.AttributeSpec.DoesNotExist as ex:
+                raise exceptions.NotFound(
+                    f'Attribute with id #{attr_id} does not exist'
+                ) from ex
+
+        # Apply deletions before creates/updates. This keeps an atomic request valid
+        # when an attribute is renamed to a name released by another deleted attribute.
+        for attr in deleted_attributes:
+            attr_id = attr.get('id')
+            if attr_id is None:
+                raise serializers.ValidationError('Deleted attribute must have an ID')
+
+            db_attr = get_db_attr(attr_id)
+            logger.info("{} attribute for {} label was deleted"
+                .format(db_attr.name, db_label.name))
+            db_attr.delete()
+
+        for attr in upserted_attributes:
             attr_id = attr.get('id', None)
             if attr_id is not None:
-                try:
-                    db_attr = models.AttributeSpec.objects.get(id=attr_id, label=db_label)
-                except models.AttributeSpec.DoesNotExist as ex:
-                    raise exceptions.NotFound(
-                        f'Attribute with id #{attr_id} does not exist'
-                    ) from ex
+                db_attr = get_db_attr(attr_id)
                 created = False
             else:
                 (db_attr, created) = models.AttributeSpec.objects.get_or_create(
@@ -560,13 +662,7 @@ class LabelSerializer(SublabelSerializer):
                 logger.info("{} attribute for {} label was updated"
                     .format(db_attr.name, db_label.name))
 
-                # FIXME: need to update only "safe" fields
-                db_attr.name = attr.get('name', db_attr.name)
-                db_attr.default_value = attr.get('default_value', db_attr.default_value)
-                db_attr.mutable = attr.get('mutable', db_attr.mutable)
-                db_attr.input_type = attr.get('input_type', db_attr.input_type)
-                db_attr.values = attr.get('values', db_attr.values)
-                db_attr.save()
+                cls._update_attribute(db_attr, attr)
 
         return db_label
 
@@ -666,25 +762,25 @@ class LabelSerializer(SublabelSerializer):
         if not self._local:
             return super().update(instance, validated_data)
 
-        # Here we reuse the parent entity logic to make sure everything is done
-        # like these entities expect. Initial data (unprocessed) is used to
-        # avoid introducing premature changes.
-        data = copy(self.initial_data)
+        if isinstance(instance.project, models.Project):
+            parent_instance = instance.project
+            parent_serializer = ProjectWriteSerializer(parent_instance)
+        elif isinstance(instance.task, models.Task):
+            parent_instance = instance.task
+            parent_serializer = TaskWriteSerializer(parent_instance)
+        else:
+            raise serializers.ValidationError('Label must belong to a project or a task')
+
+        data = copy(validated_data)
         data['id'] = instance.id
         data.setdefault('name', instance.name)
-        parent_query = { 'labels': [data] }
+        sublabels = data.pop('sublabels', [])
+        svg = data.pop('svg', '')
 
-        if isinstance(instance.project, models.Project):
-            parent_serializer = ProjectWriteSerializer(
-                instance=instance.project, data=parent_query, partial=True,
-            )
-        elif isinstance(instance.task, models.Task):
-            parent_serializer = TaskWriteSerializer(
-                instance=instance.task, data=parent_query, partial=True,
-            )
+        self.update_label(data, svg, sublabels, parent_instance=parent_instance)
 
-        parent_serializer.is_valid(raise_exception=True)
-        parent_serializer.save()
+        parent_instance.touch()
+        parent_serializer.update_child_objects_on_labels_update(parent_instance)
 
         self.instance = models.Label.objects.get(pk=instance.pk)
         return self.instance
@@ -3218,7 +3314,8 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serialized = super().to_representation(instance)
 
-        if hasattr(instance, 'audio'):
+        if (task := self._context.get("task")) and task.media_type == models.MediaType.AUDIO:
+            # Can also be checked via hasattr(instance, 'audio'), but it results in extra requests
             # TODO: deprecated for 3d, remove later
             serialized.pop('image_quality', None) # not relevant for audio
 
