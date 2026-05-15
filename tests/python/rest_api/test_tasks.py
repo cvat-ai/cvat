@@ -26,6 +26,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+import requests
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -58,7 +59,9 @@ from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
 from shared.utils.config import (
     ASSETS_DIR,
+    USER_PASS,
     delete_method,
+    get_api_url,
     get_method,
     make_api_client,
     make_sdk_client,
@@ -2724,6 +2727,74 @@ class TestGetTaskPreview:
         assert len(tasks)
 
         self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestPreviewPreferHeader:
+    """
+    Covers the ``Prefer: handling=empty`` opt-in on preview endpoints:
+    point-cloud entities respond ``204`` when the preference is honored,
+    everything else (no preference, unrelated token, or an entity with a
+    real preview) keeps the legacy 200-with-PNG behavior.
+    """
+
+    @staticmethod
+    def _request_preview(username: str, endpoint: str, *, prefer: str | None):
+        headers = {"Prefer": prefer} if prefer is not None else {}
+        return requests.get(get_api_url(endpoint), headers=headers, auth=(username, USER_PASS))
+
+    @staticmethod
+    def _pick_entity(tasks, jobs, *, instance_type: str, media_type: str):
+        task = next(t for t in tasks if t.get("media_type") == media_type)
+
+        if instance_type == "task":
+            return f"tasks/{task['id']}/preview"
+        elif instance_type == "job":
+            job = next(j for j in jobs if j["task_id"] == task["id"])
+            return f"jobs/{job['id']}/preview"
+        else:
+            assert False
+
+    @parametrize(
+        "instance_type, media_type, prefer, expected_status, expected_applied",
+        [
+            ("task", "point_cloud", "handling=empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+            ("task", "point_cloud", "HANDLING=Empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+            ("task", "point_cloud", None, HTTPStatus.OK, None),
+            ("task", "point_cloud", "wait=5", HTTPStatus.OK, None),
+            ("task", "image", "handling=empty", HTTPStatus.OK, "handling=empty"),
+            ("job", "point_cloud", "handling=empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+        ],
+    )
+    def test_preview_prefer_opt_in(
+        self,
+        admin_user,
+        tasks,
+        jobs,
+        instance_type,
+        media_type,
+        prefer,
+        expected_status,
+        expected_applied,
+    ):
+        endpoint = self._pick_entity(
+            tasks,
+            jobs,
+            instance_type=instance_type,
+            media_type=media_type,
+        )
+        response = self._request_preview(admin_user, endpoint, prefer=prefer)
+
+        assert response.status_code == expected_status
+        assert response.headers.get("Preference-Applied") == expected_applied
+        if expected_applied is not None:
+            assert "Prefer" in (response.headers.get("Vary") or "")
+
+        if expected_status == HTTPStatus.NO_CONTENT:
+            assert response.content == b""
+        else:
+            assert response.headers.get("Content-Type", "").startswith("image/")
+            Image.open(io.BytesIO(response.content))
 
 
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
