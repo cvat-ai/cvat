@@ -167,7 +167,7 @@ const cypressGlobals = {
 const testsGlobalConfig = {
     camelcase: ['error', { properties: 'never', ignoreDestructuring: false, ignoreImports: false }],
     'no-continue': 0,
-    'no-console': "error",
+    'no-console': 0,
     'no-param-reassign': ['error', { props: false }],
     'no-restricted-syntax': [
         'error',
