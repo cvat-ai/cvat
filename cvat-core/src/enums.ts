@@ -58,6 +58,12 @@ export enum TaskMode {
     INTERPOLATION = 'interpolation',
 }
 
+export enum MediaType {
+    IMAGE = 'image',
+    POINT_CLOUD = 'point_cloud',
+    AUDIO = 'audio',
+}
+
 export enum AttributeType {
     CHECKBOX = 'checkbox',
     RADIO = 'radio',

@@ -8,7 +8,7 @@ import _ from 'lodash';
 import { ChunkQuality } from 'cvat-data';
 import {
     ChunkType, DimensionType, HistoryActions, JobStage,
-    JobState, JobType, StorageLocation, TaskMode, TaskStatus,
+    JobState, JobType, MediaType, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -528,6 +528,7 @@ export class Job extends Session {
         task_name: string | null;
         labels: Label[];
         dimension?: DimensionType;
+        media_type?: MediaType | '';
         data_compressed_chunk_type?: ChunkType;
         data_chunk_size?: number;
         bug_tracker: string | null;
@@ -559,6 +560,7 @@ export class Job extends Session {
             task_name: null,
             labels: [],
             dimension: undefined,
+            media_type: undefined,
             data_compressed_chunk_type: undefined,
             data_chunk_size: undefined,
             bug_tracker: null,
@@ -580,6 +582,7 @@ export class Job extends Session {
         this.#data.task_name = initialData.task_name ?? this.#data.task_name;
         this.#data.project_name = initialData.project_name ?? this.#data.project_name;
         this.#data.dimension = initialData.dimension ?? this.#data.dimension;
+        this.#data.media_type = initialData.media_type ?? this.#data.media_type;
         this.#data.data_compressed_chunk_type =
             initialData.data_compressed_chunk_type ?? this.#data.data_compressed_chunk_type;
         this.#data.data_chunk_size = initialData.data_chunk_size ?? this.#data.data_chunk_size;
@@ -698,6 +701,10 @@ export class Job extends Session {
         return this.#data.dimension;
     }
 
+    public get mediaType(): MediaType | '' {
+        return this.#data.media_type;
+    }
+
     public get parentJobId(): number | null {
         return this.#data.parent_job_id;
     }
@@ -812,6 +819,7 @@ export class Task extends Session {
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
     public readonly dimension: DimensionType;
+    public readonly mediaType: MediaType | '';
     public readonly progress: {
         completedJobs: number,
         totalJobs: number,
@@ -872,6 +880,7 @@ export class Task extends Session {
             data_original_chunk_type: undefined,
             data_cloud_storage_id: undefined,
             dimension: undefined,
+            media_type: undefined,
             source_storage: undefined,
             target_storage: undefined,
             progress: undefined,
@@ -955,6 +964,7 @@ export class Task extends Session {
                     bug_tracker: data.bug_tracker,
                     mode: data.mode,
                     dimension: data.dimension,
+                    media_type: data.media_type,
                     data_compressed_chunk_type: data.data_compressed_chunk_type,
                     data_chunk_size: data.data_chunk_size,
                     target_storage: initialData.target_storage,
@@ -1140,6 +1150,9 @@ export class Task extends Session {
                 },
                 dimension: {
                     get: () => data.dimension,
+                },
+                mediaType: {
+                    get: () => data.media_type,
                 },
                 cloudStorageId: {
                     get: () => data.data_cloud_storage_id,

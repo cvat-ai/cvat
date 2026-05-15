@@ -2900,13 +2900,13 @@ paths:
       operationId: jobs_retrieve_preview
       summary: Get a preview image for a job
       parameters:
-      - in: query
-        name: allow_empty
+      - in: header
+        name: Prefer
         schema:
-          type: boolean
-        description: Opt in to receiving a 204 No Content response when no media-derived
-          preview exists. When false (default), the server returns a default placeholder
-          image with status 200.
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -2926,8 +2926,9 @@ paths:
         '200':
           description: Job image preview
         '204':
-          description: No media-derived preview is available. The client should render
-            a placeholder image. Only returned when the request opts in via allow_empty=true.
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
   /api/jobs/{id}/validation_layout:
     get:
       operationId: jobs_retrieve_validation_layout
@@ -4195,13 +4196,13 @@ paths:
       operationId: projects_retrieve_preview
       summary: Get a preview image for a project
       parameters:
-      - in: query
-        name: allow_empty
+      - in: header
+        name: Prefer
         schema:
-          type: boolean
-        description: Opt in to receiving a 204 No Content response when no media-derived
-          preview exists. When false (default), the server returns a default placeholder
-          image with status 200.
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -4221,8 +4222,9 @@ paths:
         '200':
           description: Project image preview
         '204':
-          description: No media-derived preview is available. The client should render
-            a placeholder image. Only returned when the request opts in via allow_empty=true.
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
         '404':
           description: Project image preview not found
   /api/projects/backup/:
@@ -6109,13 +6111,13 @@ paths:
       operationId: tasks_retrieve_preview
       summary: Get a preview image for a task
       parameters:
-      - in: query
-        name: allow_empty
+      - in: header
+        name: Prefer
         schema:
-          type: boolean
-        description: Opt in to receiving a 204 No Content response when no media-derived
-          preview exists. When false (default), the server returns a default placeholder
-          image with status 200.
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -6135,8 +6137,9 @@ paths:
         '200':
           description: Task image preview
         '204':
-          description: No media-derived preview is available. The client should render
-            a placeholder image. Only returned when the request opts in via allow_empty=true.
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
         '404':
           description: Task image preview not found
   /api/tasks/{id}/status:

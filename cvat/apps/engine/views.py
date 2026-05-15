@@ -484,18 +484,19 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Get a preview image for a project',
         parameters=[
-            OpenApiParameter('allow_empty', type=OpenApiTypes.BOOL,
-                location=OpenApiParameter.QUERY, required=False,
-                description='Opt in to receiving a 204 No Content response when no '
-                'media-derived preview exists. When false (default), the server returns '
-                'a default placeholder image with status 200.'),
+            OpenApiParameter('Prefer', type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER, required=False,
+                description='RFC 7240 preference token. Send `handling=empty` to '
+                'receive a 204 No Content response when no media-derived preview '
+                'exists. Without the preference, the server returns a default '
+                'placeholder image with status 200.'),
         ],
         responses={
             '200': OpenApiResponse(description='Project image preview'),
             '204': OpenApiResponse(
                 description='No media-derived preview is available. The client should '
                 'render a placeholder image. Only returned when the request opts in '
-                'via allow_empty=true.'
+                'via `Prefer: handling=empty`.'
             ),
             '404': OpenApiResponse(description='Project image preview not found'),
         })
@@ -511,7 +512,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_task=first_task,
             data_type='preview',
             data_quality='compressed',
-            allow_empty_preview=to_bool(request.query_params.get('allow_empty', False)),
+            allow_empty_preview=_wants_empty_preview(request),
         )
 
         return data_getter()
@@ -534,6 +535,18 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response['progress'] = rq_job_meta.progress or 0.
 
         return response
+
+_PREFER_HANDLING_EMPTY = 'handling=empty'
+
+
+def _wants_empty_preview(request: ExtendedRequest) -> bool:
+    """Return True if the request opts in to 204-on-empty via ``Prefer: handling=empty``."""
+    for token in request.headers.get('Prefer', '').split(','):
+        key, _, value = token.strip().partition('=')
+        if key.strip().lower() == 'handling' and value.strip().lower() == 'empty':
+            return True
+    return False
+
 
 class _DataGetter(metaclass=ABCMeta):
     def __init__(
@@ -578,11 +591,22 @@ class _DataGetter(metaclass=ABCMeta):
             data = frame_provider.get_frame(self.number, quality=self.quality)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == 'preview':
+            preference_headers = {
+                'Preference-Applied': _PREFER_HANDLING_EMPTY,
+                'Vary': 'Prefer',
+            } if self.allow_empty_preview else {}
             try:
                 data = frame_provider.get_preview(allow_empty=self.allow_empty_preview)
             except PreviewNotAvailable:
-                return HttpResponse(status=status.HTTP_204_NO_CONTENT)
-            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+                return HttpResponse(
+                    status=status.HTTP_204_NO_CONTENT,
+                    headers=preference_headers,
+                )
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=preference_headers,
+            )
         elif self.type == 'context_image':
             data = frame_provider.get_frame_context_images_chunk(self.number)
             if not data:
@@ -1588,18 +1612,19 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Get a preview image for a task',
         parameters=[
-            OpenApiParameter('allow_empty', type=OpenApiTypes.BOOL,
-                location=OpenApiParameter.QUERY, required=False,
-                description='Opt in to receiving a 204 No Content response when no '
-                'media-derived preview exists. When false (default), the server returns '
-                'a default placeholder image with status 200.'),
+            OpenApiParameter('Prefer', type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER, required=False,
+                description='RFC 7240 preference token. Send `handling=empty` to '
+                'receive a 204 No Content response when no media-derived preview '
+                'exists. Without the preference, the server returns a default '
+                'placeholder image with status 200.'),
         ],
         responses={
             '200': OpenApiResponse(description='Task image preview'),
             '204': OpenApiResponse(
                 description='No media-derived preview is available. The client should '
                 'render a placeholder image. Only returned when the request opts in '
-                'via allow_empty=true.'
+                'via `Prefer: handling=empty`.'
             ),
             '404': OpenApiResponse(description='Task image preview not found'),
         })
@@ -1614,7 +1639,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_task=self._object,
             data_type='preview',
             data_quality='compressed',
-            allow_empty_preview=to_bool(request.query_params.get('allow_empty', False)),
+            allow_empty_preview=_wants_empty_preview(request),
         )
         return data_getter()
 
@@ -2190,18 +2215,19 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
     @extend_schema(summary='Get a preview image for a job',
         parameters=[
-            OpenApiParameter('allow_empty', type=OpenApiTypes.BOOL,
-                location=OpenApiParameter.QUERY, required=False,
-                description='Opt in to receiving a 204 No Content response when no '
-                'media-derived preview exists. When false (default), the server returns '
-                'a default placeholder image with status 200.'),
+            OpenApiParameter('Prefer', type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER, required=False,
+                description='RFC 7240 preference token. Send `handling=empty` to '
+                'receive a 204 No Content response when no media-derived preview '
+                'exists. Without the preference, the server returns a default '
+                'placeholder image with status 200.'),
         ],
         responses={
             '200': OpenApiResponse(description='Job image preview'),
             '204': OpenApiResponse(
                 description='No media-derived preview is available. The client should '
                 'render a placeholder image. Only returned when the request opts in '
-                'via allow_empty=true.'
+                'via `Prefer: handling=empty`.'
             ),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
@@ -2212,7 +2238,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             db_job=self._object,
             data_type='preview',
             data_quality='compressed',
-            allow_empty_preview=to_bool(request.query_params.get('allow_empty', False)),
+            allow_empty_preview=_wants_empty_preview(request),
         )
         return data_getter()
 

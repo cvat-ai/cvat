@@ -8,7 +8,8 @@ import {
     FrameDecoder, BlockType, DimensionType, ChunkQuality, decodeContextImages, RequestOutdatedError,
 } from 'cvat-data';
 import PluginRegistry from './plugins';
-import serverProxy, { PREVIEW_EMPTY, PreviewResponse } from './server-proxy';
+import { MediaType } from './enums';
+import serverProxy, { PREVIEW_DEFAULT, PreviewResponse } from './server-proxy';
 import { SerializedChapterMetaData, SerializedFramesMetaData } from './server-response-types';
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
@@ -890,8 +891,8 @@ export function decodePreview(preview: Blob): Promise<string> {
     });
 }
 
-function placeholderKindFor(dimension: string | undefined): string | null {
-    if (dimension === '3d') {
+function placeholderKindFor(mediaType: MediaType | '' | undefined): string | null {
+    if (mediaType === MediaType.POINT_CLOUD) {
         return 'point_cloud';
     }
     return null;
@@ -899,13 +900,13 @@ function placeholderKindFor(dimension: string | undefined): string | null {
 
 export async function resolvePreviewResponse(
     response: PreviewResponse,
-    dimension?: string,
+    mediaType?: MediaType | '',
 ): Promise<string> {
     if (response === null) {
         return '';
     }
-    if (response === PREVIEW_EMPTY) {
-        const kind = placeholderKindFor(dimension);
+    if (response === PREVIEW_DEFAULT) {
+        const kind = placeholderKindFor(mediaType);
         return kind ? `${PREVIEW_PLACEHOLDER_PREFIX}${kind}` : '';
     }
     return decodePreview(response);

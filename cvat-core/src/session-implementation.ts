@@ -278,7 +278,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             }
 
             return serverProxy.jobs.getPreview(this.id).then(
-                (response) => resolvePreviewResponse(response, this.dimension),
+                (response) => resolvePreviewResponse(response, this.mediaType),
             );
         },
     });
@@ -965,7 +965,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             return serverProxy.tasks.getPreview(this.id).then(
-                (response) => resolvePreviewResponse(response, this.dimension),
+                (response) => resolvePreviewResponse(response, this.mediaType),
             );
         },
     });

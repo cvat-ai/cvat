@@ -1588,8 +1588,8 @@ async function updateUser(id: number, userData: Partial<SerializedUser>): Promis
     return response.data;
 }
 
-export const PREVIEW_EMPTY = Symbol('preview-empty');
-export type PreviewResponse = Blob | typeof PREVIEW_EMPTY | null;
+export const PREVIEW_DEFAULT = Symbol('preview-default');
+export type PreviewResponse = Blob | typeof PREVIEW_DEFAULT | null;
 
 function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
     return async function (id: number | string): Promise<PreviewResponse> {
@@ -1599,11 +1599,11 @@ function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 
             const url = `${backendAPI}/${instance}/${id}/preview`;
             const response = await Axios.get(url, {
                 responseType: 'blob',
-                params: { allow_empty: true },
+                headers: { Prefer: 'handling=empty' },
             });
 
             if (response.status === 204) {
-                return PREVIEW_EMPTY;
+                return PREVIEW_DEFAULT;
             }
 
             return response.data;

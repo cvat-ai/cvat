@@ -111,9 +111,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                 return Promise.resolve('');
             }
 
-            return serverProxy.projects.getPreview(this.id).then(
-                (response) => resolvePreviewResponse(response, this.dimension),
-            );
+            return serverProxy.projects.getPreview(this.id).then(resolvePreviewResponse);
         },
     });
 
