@@ -334,8 +334,9 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         });
 
         circle.addEventListener('mousedown', (e: MouseEvent) => {
+            const { disabled } = this.props;
             const { activeTool: currentActiveTool } = this.state;
-            if (e.button === 0 && currentActiveTool === 'drag') {
+            if (!disabled && e.button === 0 && currentActiveTool === 'drag') {
                 this.draggableElement = circle;
             }
         });
@@ -384,7 +385,12 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         circle.addEventListener('click', (evt: Event) => {
             evt.stopPropagation();
+            const { disabled } = this.props;
             const { activeTool: currentActiveTool } = this.state;
+            if (disabled) {
+                return;
+            }
+
             if (currentActiveTool === 'delete') {
                 (circle as any).cvat.deleteElement();
             } else if (currentActiveTool === 'join') {
@@ -446,11 +452,16 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
     };
 
     private onSVGClick = (event: MouseEvent): void => {
+        const { disabled } = this.props;
         const { activeTool, contextMenuVisible } = this.state;
         const svg = this.svgRef.current;
 
         if (contextMenuVisible) {
             this.setState({ contextMenuVisible: false });
+            return;
+        }
+
+        if (disabled) {
             return;
         }
 
@@ -708,6 +719,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         elementID={contextMenuElement}
                         labels={this.labels}
                         container={svgRef.current}
+                        disabled={disabled}
                         onDelete={(element) => {
                             this.setState({ contextMenuVisible: false });
                             (element as any).cvat.deleteElement();
@@ -895,7 +907,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         </Upload>
                     </Row>
                 </div>
-                <div className='cvat-skeleton-canvas-wrapper' style={disabledStyle}>
+                <div className='cvat-skeleton-canvas-wrapper'>
                     <canvas ref={canvasRef} className='cvat-skeleton-configurator-canvas' />
                     <svg width={100} height={100} ref={svgRef} className='cvat-skeleton-configurator-svg' />
                 </div>

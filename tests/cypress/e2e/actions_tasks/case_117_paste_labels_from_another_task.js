@@ -86,7 +86,7 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
             cy.get('.cvat-modal-confirm-remove-existing-labels').should('be.visible').within(() => {
                 cy.get('.cvat-modal-confirm-content-remove-existing-labels').should('have.text', task.labelSecond);
                 cy.get('.cvat-modal-confirm-content-remove-existing-attributes')
-                    .should('have.text', task.attrNameSecond);
+                    .should('have.text', `${task.labelSecond}: ${task.attrNameSecond}`);
                 cy.contains('button', 'Delete existing data').click();
             });
             cy.wait('@patchTaskLabels').its('response.statusCode').should('equal', 200);

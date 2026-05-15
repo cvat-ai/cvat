@@ -19,7 +19,7 @@ const core = getCore();
 
 interface DetailsComponentProps {
     project: Project;
-    onUpdateProject: (project: Project) => Promise<Project>;
+    onUpdateProject: (project: Project, fields?: Parameters<Project['save']>[0]) => Promise<Project>;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
@@ -75,8 +75,9 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
             <LabelsEditor
                 labels={project.labels.map((label) => label.toJSON())}
                 onSubmit={(labels: any[]): void => {
-                    project.labels = labels.map((labelData): any => new core.classes.Label(labelData));
-                    onUpdateProject(project);
+                    onUpdateProject(project, {
+                        labels: labels.map((labelData): any => new core.classes.Label(labelData)),
+                    });
                 }}
             />
         </div>
