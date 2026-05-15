@@ -20,6 +20,7 @@ serialization.
 """
 
 import json
+import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
@@ -29,16 +30,29 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.core.serializers import sort_dependencies
 
+STDIN_SENTINEL = "-"
+
 
 class Command(BaseCommand):
     help = "Load a JSON fixture, reordering records by model dependencies first."
 
     def add_arguments(self, parser):
-        parser.add_argument("fixture", help="Path to the JSON fixture file.")
+        parser.add_argument(
+            "fixture",
+            nargs="?",
+            default=STDIN_SENTINEL,
+            help=f'Path to the JSON fixture file. Use "{STDIN_SENTINEL}" '
+            "(the default) to read from stdin.",
+        )
 
     def handle(self, *args, fixture: str, **options):
-        with open(fixture) as f:
-            records = json.load(f)
+        if fixture == STDIN_SENTINEL:
+            records = json.load(sys.stdin)
+            label = "stdin"
+        else:
+            with open(fixture) as f:
+                records = json.load(f)
+            label = Path(fixture).name
 
         groups: dict[str, list[dict]] = defaultdict(list)
         for record in records:
@@ -57,7 +71,7 @@ class Command(BaseCommand):
             for record in groups[f"{model._meta.app_label}.{model._meta.model_name}"]
         ]
 
-        tmp_path = Path(tempfile.gettempdir()) / f"loaddata_sorted_{Path(fixture).name}"
+        tmp_path = Path(tempfile.gettempdir()) / f"loaddata_sorted_{label}.json"
         with open(tmp_path, "w") as f:
             json.dump(reordered, f)
 
