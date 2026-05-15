@@ -128,9 +128,11 @@ class PreviewNotAvailable(Exception):
     """
 
 
-_MEDIA_TYPES_WITHOUT_PREVIEW: frozenset[models.MediaType] = frozenset({
-    models.MediaType.POINT_CLOUD,
-})
+_MEDIA_TYPES_WITHOUT_PREVIEW: frozenset[models.MediaType] = frozenset(
+    {
+        models.MediaType.POINT_CLOUD,
+    }
+)
 
 
 def _has_media_derived_preview(media_type: models.MediaType) -> bool:
