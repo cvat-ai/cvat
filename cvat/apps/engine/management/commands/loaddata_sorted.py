@@ -45,7 +45,8 @@ class Command(BaseCommand):
             "(the default) to read from stdin.",
         )
 
-    def handle(self, *args, fixture: str, **options):
+    def handle(self, *args, **options):
+        fixture: str = options["fixture"]
         if fixture == STDIN_SENTINEL:
             records = json.load(sys.stdin)
             input_filename = "stdin"
