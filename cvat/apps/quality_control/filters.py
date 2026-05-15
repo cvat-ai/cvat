@@ -83,12 +83,6 @@ class _AnnotationAttributesFilterContext:
 
 
 @attrs.define(slots=False)
-class _FilterAttributeContext:
-    name: str
-    value: Any
-
-
-@attrs.define(slots=False)
 class _ShapeFilterContext:
     _ann: dm.Annotation
     _categories: dm.Categories
@@ -170,7 +164,6 @@ class _ShapeFilterContext:
 @attrs.define(slots=False)
 class _FilterContext:
     shape: _ShapeFilterContext
-    attribute: _FilterAttributeContext | None = None
 
 
 class RequirementJsonLogicFilter(JsonLogicFilter):
@@ -218,14 +211,9 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         ),
     }
 
-    _ATTRIBUTE_LOOKUP_FIELDS = {
-        f"attribute.{name}": f"attribute.{name}" for name in _ATTRIBUTE_FILTER_FIELDS
-    }
-
     _LOOKUP_FIELDS = {
         **_SHAPE_LOOKUP_FIELDS,
         **_SKELETON_LOOKUP_FIELDS,
-        **_ATTRIBUTE_LOOKUP_FIELDS,
     }
 
     def __init__(
@@ -253,24 +241,14 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         cls,
         *,
         annotation_type: str | None = None,
-        parent_annotation_type: str | None = None,
     ) -> list[str]:
         if annotation_type is None:
             return sorted(cls._LOOKUP_FIELDS)
 
         supported_terms = dict(cls._LOOKUP_FIELDS)
 
-        if annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE:
-            for term in cls._ATTRIBUTE_LOOKUP_FIELDS:
-                supported_terms.pop(term, None)
-
         supports_skeleton_lookup = (
             annotation_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
-            or (
-                annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
-                and parent_annotation_type
-                == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
-            )
         )
         if not supports_skeleton_lookup:
             for term in cls._SKELETON_LOOKUP_FIELDS:
@@ -284,7 +262,6 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         expression: str,
         *,
         annotation_type: str | None = None,
-        parent_annotation_type: str | None = None,
     ) -> None:
         filter_expression = (expression or "").strip()
         if not filter_expression:
@@ -293,7 +270,6 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         allowed_terms = set(
             cls.get_supported_terms(
                 annotation_type=annotation_type,
-                parent_annotation_type=parent_annotation_type,
             )
         )
         cls._parse_and_validate_query(filter_expression, allowed_terms=allowed_terms)
@@ -399,9 +375,6 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
             return False
 
         return self._matches(self._build_shape_filter_context(ann))
-
-    def matches_attribute(self, shape_ann: dm.Annotation, attr_name: str, attr_value: Any) -> bool:
-        return self._matches(self._build_attribute_filter_context(shape_ann, attr_name, attr_value))
 
     def filter_item(self, item: dm.DatasetItem) -> dm.DatasetItem:
         filtered_annotations = [ann for ann in item.annotations if self.matches_annotation(ann)]
@@ -542,11 +515,3 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
 
     def _build_shape_filter_context(self, ann: dm.Annotation) -> _FilterContext:
         return _FilterContext(shape=self.build_shape_context_for_annotation(ann))
-
-    def _build_attribute_filter_context(
-        self, shape_ann: dm.Annotation, attr_name: str, attr_value: Any
-    ) -> _FilterContext:
-        return _FilterContext(
-            shape=self.build_shape_context_for_annotation(shape_ann),
-            attribute=_FilterAttributeContext(name=attr_name, value=attr_value),
-        )

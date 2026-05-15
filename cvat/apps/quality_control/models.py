@@ -315,7 +315,6 @@ class QualityRequirementAnnotationType(models.TextChoices):
     MASK = "mask"
     POLYGON = "polygon"
     ELLIPSE = "ellipse"
-    ATTRIBUTE = "attribute"
 
 
 class QualityRequirement(TimestampedModel):
@@ -338,49 +337,61 @@ class QualityRequirement(TimestampedModel):
 
     name = models.CharField(max_length=250, blank=False)
 
+    sort_order = models.IntegerField(default=0)
+
     annotation_type = models.CharField(
         max_length=32,
         choices=QualityRequirementAnnotationType.choices,
+        null=True,
+        blank=True,
     )
 
     target_metric = models.CharField(
         max_length=32,
         choices=QualityTargetMetricType.choices(),
         default=QualityTargetMetricType.ACCURACY,
+        null=True,
+        blank=True,
     )
 
-    target_metric_threshold = models.FloatField(default=0.7)
+    target_metric_threshold = models.FloatField(default=0.7, null=True, blank=True)
 
     filter = models.TextField(blank=True)
     enabled = models.BooleanField(default=True)
 
-    # An attribute-based requirement must have a parent shape-based requirement to be computable
-    parent = models.ForeignKey("self", on_delete=models.DO_NOTHING, null=True, blank=True)
-
-    iou_threshold = models.FloatField()
-    oks_sigma = models.FloatField()
-    line_thickness = models.FloatField()
-
-    low_overlap_threshold = models.FloatField()
-
-    point_size_base = models.CharField(
-        max_length=32, choices=PointSizeBase.choices(), default=PointSizeBase.GROUP_BBOX_SIZE
+    parent = models.ForeignKey(
+        "self", on_delete=models.DO_NOTHING, null=True, blank=True, related_name="children"
     )
 
-    compare_line_orientation = models.BooleanField()
-    line_orientation_threshold = models.FloatField()
+    iou_threshold = models.FloatField(null=True, blank=True)
+    oks_sigma = models.FloatField(null=True, blank=True)
+    line_thickness = models.FloatField(null=True, blank=True)
 
-    compare_groups = models.BooleanField()
-    group_match_threshold = models.FloatField()
+    low_overlap_threshold = models.FloatField(null=True, blank=True)
 
-    check_covered_annotations = models.BooleanField()
-    object_visibility_threshold = models.FloatField()
+    point_size_base = models.CharField(
+        max_length=32,
+        choices=PointSizeBase.choices(),
+        default=PointSizeBase.GROUP_BBOX_SIZE,
+        null=True,
+        blank=True,
+    )
 
-    panoptic_comparison = models.BooleanField()
+    compare_line_orientation = models.BooleanField(null=True, blank=True)
+    line_orientation_threshold = models.FloatField(null=True, blank=True)
 
-    compare_attributes = models.BooleanField()
+    compare_groups = models.BooleanField(null=True, blank=True)
+    group_match_threshold = models.FloatField(null=True, blank=True)
 
-    empty_is_annotated = models.BooleanField(default=False)
+    check_covered_annotations = models.BooleanField(null=True, blank=True)
+    object_visibility_threshold = models.FloatField(null=True, blank=True)
+
+    panoptic_comparison = models.BooleanField(null=True, blank=True)
+
+    compare_attributes = models.BooleanField(null=True, blank=True)
+    attribute_comparison = models.JSONField(null=True, blank=True, default=None)
+
+    empty_is_annotated = models.BooleanField(default=False, null=True, blank=True)
 
     @property
     def organization_id(self) -> int | None:

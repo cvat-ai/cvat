@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 import itertools
+import json
 from abc import ABC, abstractmethod
 from collections import Counter
+from collections.abc import Mapping
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
@@ -53,7 +55,233 @@ class MatchingContext:
     estimator: DatasetQualityEstimator
     categories: dm.Categories
     annotation_requirements: dict[int, set]  # ann_id -> set of requirement names
-    parent_results: dict[str, RequirementFrameResult] | None = None  # for attribute requirements
+
+
+@attrs.define(slots=False)
+class EffectiveQualityRequirement:
+    name: str
+    enabled: bool
+    filter: str
+    annotation_type: str
+    target_metric: str
+    target_metric_threshold: float
+    source_requirement_id: int | None = None
+    parent_requirement: int | None = None
+    sort_order: int = 0
+    iou_threshold: float | None = None
+    oks_sigma: float | None = None
+    line_thickness: float | None = None
+    low_overlap_threshold: float | None = None
+    point_size_base: str | None = None
+    compare_line_orientation: bool | None = None
+    line_orientation_threshold: float | None = None
+    compare_groups: bool | None = None
+    group_match_threshold: float | None = None
+    check_covered_annotations: bool | None = None
+    object_visibility_threshold: float | None = None
+    panoptic_comparison: bool | None = None
+    compare_attributes: bool | None = None
+    attribute_comparison: dict[str, Any] | None = None
+    empty_is_annotated: bool | None = None
+    _effective_requirement: bool = True
+
+
+_INHERITED_REQUIREMENT_FIELDS = (
+    "annotation_type",
+    "target_metric",
+    "target_metric_threshold",
+    "iou_threshold",
+    "oks_sigma",
+    "line_thickness",
+    "low_overlap_threshold",
+    "point_size_base",
+    "compare_line_orientation",
+    "line_orientation_threshold",
+    "compare_groups",
+    "group_match_threshold",
+    "check_covered_annotations",
+    "object_visibility_threshold",
+    "panoptic_comparison",
+    "compare_attributes",
+    "attribute_comparison",
+    "empty_is_annotated",
+)
+
+
+def _combine_filters(parent_filter: str | None, child_filter: str | None) -> str:
+    parent_filter = (parent_filter or "").strip()
+    child_filter = (child_filter or "").strip()
+
+    if not parent_filter:
+        return child_filter
+
+    if not child_filter:
+        return parent_filter
+
+    return json.dumps(
+        {"and": [json.loads(parent_filter), json.loads(child_filter)]},
+        separators=(",", ":"),
+    )
+
+
+def _merge_attribute_comparison(
+    parent_value: dict[str, Any] | None, child_value: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    if child_value is None:
+        return deepcopy(parent_value)
+
+    if parent_value is None:
+        return deepcopy(child_value)
+
+    merged = deepcopy(parent_value)
+    for field_name in ("enabled", "default"):
+        if field_name in child_value:
+            merged[field_name] = deepcopy(child_value[field_name])
+
+    parent_rules = {
+        rule.get("name"): deepcopy(rule)
+        for rule in (parent_value.get("rules") or [])
+        if rule.get("name")
+    }
+    for rule in child_value.get("rules") or []:
+        if rule.get("name"):
+            parent_rules[rule["name"]] = deepcopy(rule)
+
+    if parent_rules:
+        merged["rules"] = list(parent_rules.values())
+
+    return merged
+
+
+def _requirement_sort_key(requirement: Any) -> tuple[int, int]:
+    return (
+        getattr(requirement, "sort_order", 0) or 0,
+        getattr(requirement, "id", 0) or 0,
+    )
+
+
+def _requirement_parent_id(requirement: Any) -> int | None:
+    parent_id = getattr(requirement, "parent_id", None)
+    if parent_id is not None:
+        return parent_id
+
+    parent = getattr(requirement, "parent", None)
+    return getattr(parent, "id", None)
+
+
+def _make_effective_requirement(
+    requirement: Any, inherited: EffectiveQualityRequirement | None
+) -> EffectiveQualityRequirement:
+    if inherited is None:
+        defaults = models.QualityRequirement.get_defaults()
+        values = {
+            "annotation_type": models.QualityRequirementAnnotationType.RECTANGLE,
+            "target_metric": models.QualityTargetMetricType.ACCURACY,
+            "target_metric_threshold": 0.7,
+            **defaults,
+            "attribute_comparison": None,
+        }
+    else:
+        values = {
+            field_name: deepcopy(getattr(inherited, field_name))
+            for field_name in _INHERITED_REQUIREMENT_FIELDS
+        }
+
+    for field_name in _INHERITED_REQUIREMENT_FIELDS:
+        local_value = getattr(requirement, field_name, None)
+        if local_value is None:
+            continue
+
+        if field_name == "attribute_comparison":
+            values[field_name] = _merge_attribute_comparison(
+                values.get(field_name), local_value
+            )
+        else:
+            values[field_name] = local_value
+
+    effective_filter = _combine_filters(
+        getattr(inherited, "filter", "") if inherited else "",
+        getattr(requirement, "filter", "") or "",
+    )
+
+    return EffectiveQualityRequirement(
+        name=requirement.name,
+        enabled=bool(getattr(requirement, "enabled", True)),
+        filter=effective_filter,
+        source_requirement_id=getattr(requirement, "id", None),
+        parent_requirement=_requirement_parent_id(requirement),
+        sort_order=getattr(requirement, "sort_order", 0) or 0,
+        **values,
+    )
+
+
+def resolve_effective_requirement(requirement: Any) -> EffectiveQualityRequirement:
+    if getattr(requirement, "_effective_requirement", False):
+        return requirement
+
+    chain = []
+    current = requirement
+    visited_ids = set()
+    while current is not None:
+        current_id = getattr(current, "id", None)
+        if current_id is not None:
+            if current_id in visited_ids:
+                raise ValueError("Requirement parent cycle is not allowed")
+            visited_ids.add(current_id)
+
+        chain.append(current)
+        current = getattr(current, "parent", None)
+
+    effective = None
+    for chain_requirement in reversed(chain):
+        effective = _make_effective_requirement(chain_requirement, effective)
+
+    assert effective is not None
+    return effective
+
+
+def resolve_effective_requirements(requirements: list[Any]) -> list[EffectiveQualityRequirement]:
+    if all(getattr(requirement, "_effective_requirement", False) for requirement in requirements):
+        return requirements
+
+    requirements_by_id = {
+        requirement.id: requirement
+        for requirement in requirements
+        if getattr(requirement, "id", None)
+    }
+    children_by_parent_id: dict[int | None, list[Any]] = {}
+    for requirement in requirements:
+        children_by_parent_id.setdefault(_requirement_parent_id(requirement), []).append(requirement)
+
+    effective_leaves: list[EffectiveQualityRequirement] = []
+
+    def dfs(
+        requirement: Any, inherited: EffectiveQualityRequirement | None, path: set[int]
+    ) -> None:
+        requirement_id = getattr(requirement, "id", None)
+        if requirement_id is not None:
+            if requirement_id in path:
+                raise ValueError("Requirement parent cycle is not allowed")
+            path = {*path, requirement_id}
+
+        effective = _make_effective_requirement(requirement, inherited)
+        children = sorted(children_by_parent_id.get(requirement_id, []), key=_requirement_sort_key)
+        if not children:
+            effective_leaves.append(effective)
+            return
+
+        for child in children:
+            dfs(child, effective, path)
+
+    roots = [
+        requirement
+        for requirement in requirements
+        if _requirement_parent_id(requirement) not in requirements_by_id
+    ]
+    for root in sorted(roots, key=_requirement_sort_key):
+        dfs(root, None, set())
+
+    return effective_leaves
 
 
 def _get_requirement_field(requirement: Any, *names: str, default=None):
@@ -282,6 +510,10 @@ class RequirementHandler(ABC):
                 if value is not None:
                     setattr(params, param_field, value)
 
+        attribute_comparison = getattr(self.requirement, "attribute_comparison", None) or {}
+        if "enabled" in attribute_comparison:
+            params.compare_attributes = bool(attribute_comparison["enabled"])
+
         params.included_annotation_types = self._get_included_annotation_types()
         return params
 
@@ -303,7 +535,6 @@ class RequirementHandler(ABC):
                 dm.AnnotationType.mask,
             ],
             models.QualityRequirementAnnotationType.ELLIPSE: [dm.AnnotationType.ellipse],
-            models.QualityRequirementAnnotationType.ATTRIBUTE: [],
         }
         return mapping.get(self.requirement.annotation_type, [])
 
@@ -346,6 +577,102 @@ class RequirementHandler(ABC):
 
     def _empty_result(self) -> RequirementFrameResult:
         return RequirementFrameResult(summary=self._make_empty_frame_summary())
+
+    def _filter_unassigned_item(self, item: dm.DatasetItem) -> dm.DatasetItem:
+        assigned_annotation_ids = self.context.annotation_requirements
+        filtered_annotations = [
+            ann for ann in item.annotations if id(ann) not in assigned_annotation_ids
+        ]
+
+        if len(filtered_annotations) == len(item.annotations):
+            return item
+
+        return item.wrap(annotations=filtered_annotations)
+
+    def _mark_item_annotations_assigned(self, item: dm.DatasetItem) -> None:
+        requirement_name = getattr(self.requirement, "name", "")
+        for ann in item.annotations:
+            self.context.annotation_requirements.setdefault(id(ann), set()).add(requirement_name)
+
+    @staticmethod
+    def _levenshtein_similarity(left: Any, right: Any) -> float:
+        left = str(left)
+        right = str(right)
+
+        if left == right:
+            return 1.0
+
+        if not left or not right:
+            return 0.0
+
+        previous_row = list(range(len(right) + 1))
+        for left_index, left_char in enumerate(left, start=1):
+            current_row = [left_index]
+            for right_index, right_char in enumerate(right, start=1):
+                insert_cost = current_row[right_index - 1] + 1
+                delete_cost = previous_row[right_index] + 1
+                replace_cost = previous_row[right_index - 1] + (left_char != right_char)
+                current_row.append(min(insert_cost, delete_cost, replace_cost))
+            previous_row = current_row
+
+        distance = previous_row[-1]
+        return 1 - distance / max(len(left), len(right))
+
+    def _match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
+        attribute_comparison = getattr(self.requirement, "attribute_comparison", None) or {}
+        if not attribute_comparison:
+            return self._comparator.match_attrs(ann_a, ann_b)
+
+        if attribute_comparison.get("enabled") is False:
+            return [], [], [], []
+
+        default_rule = {
+            "enabled": True,
+            "comparator": "exact",
+            **(attribute_comparison.get("default") or {}),
+        }
+        rules_by_name = {
+            rule["name"]: {**default_rule, **rule}
+            for rule in attribute_comparison.get("rules", [])
+            if rule.get("name")
+        }
+
+        attrs_a = ann_a.attributes
+        attrs_b = ann_b.attributes
+        keys_to_match = (attrs_a.keys() | attrs_b.keys()).difference(
+            self._comparator.ignored_attrs
+        )
+
+        matches = []
+        mismatches = []
+        a_extra = []
+        b_extra = []
+        notfound = object()
+
+        for attr_name in keys_to_match:
+            rule = rules_by_name.get(attr_name, default_rule)
+            if rule.get("enabled") is False:
+                continue
+
+            attr_a = attrs_a.get(attr_name, notfound)
+            attr_b = attrs_b.get(attr_name, notfound)
+            if attr_a is notfound:
+                b_extra.append(attr_name)
+            elif attr_b is notfound:
+                a_extra.append(attr_name)
+            elif self._attribute_values_match(attr_a, attr_b, rule):
+                matches.append(attr_name)
+            else:
+                mismatches.append(attr_name)
+
+        return matches, mismatches, a_extra, b_extra
+
+    def _attribute_values_match(self, left: Any, right: Any, rule: Mapping[str, Any]) -> bool:
+        comparator = rule.get("comparator", "exact")
+        if comparator == "levenshtein":
+            return self._levenshtein_similarity(left, right) >= rule.get("threshold", 1.0)
+
+        return left == right
 
     def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset) -> AnnotationId:
         """Convert Datumaro annotation to AnnotationId"""
@@ -390,8 +717,6 @@ class RequirementHandler(ABC):
         # Map annotation types to handlers
         if ann_type == QualityRequirementAnnotationType.TAG:
             return TagRequirementHandler(requirement=requirement, context=context)
-        elif ann_type == QualityRequirementAnnotationType.ATTRIBUTE:
-            return AttributeRequirementHandler(requirement=requirement, context=context)
         else:
             # All shape types use ShapeRequirementHandler
             return ShapeRequirementHandler(requirement=requirement, context=context)
@@ -608,6 +933,10 @@ class TagRequirementHandler(RequirementHandler):
         frame_id = self.context.frame_id
         gt_item = self._filter.filter_item(gt_item)
         ds_item = self._filter.filter_item(ds_item)
+        gt_item = self._filter_unassigned_item(gt_item)
+        ds_item = self._filter_unassigned_item(ds_item)
+        self._mark_item_annotations_assigned(gt_item)
+        self._mark_item_annotations_assigned(ds_item)
 
         # Call comparator to match annotations
         matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
@@ -709,6 +1038,10 @@ class ShapeRequirementHandler(RequirementHandler):
         ds_item = self._prepare_item_for_requirement(ds_item)
         gt_item = self._filter.filter_item(gt_item)
         ds_item = self._filter.filter_item(ds_item)
+        gt_item = self._filter_unassigned_item(gt_item)
+        ds_item = self._filter_unassigned_item(ds_item)
+        self._mark_item_annotations_assigned(gt_item)
+        self._mark_item_annotations_assigned(ds_item)
 
         # Call comparator to match annotations
         matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
@@ -867,7 +1200,7 @@ class ShapeRequirementHandler(RequirementHandler):
         if self.settings.compare_attributes:
             for gt_ann, ds_ann in matches:
                 _, mismatching_attributes, missing_attributes, extra_attributes = (
-                    self._comparator.match_attrs(gt_ann, ds_ann)
+                    self._match_attrs(gt_ann, ds_ann)
                 )
                 conflicting_attribute_names = [
                     *mismatching_attributes,
@@ -987,161 +1320,6 @@ class ShapeRequirementHandler(RequirementHandler):
             matched_pairs=list(itertools.chain(shape_matches, shape_mismatches)),
         )
 
-
-class AttributeRequirementHandler(RequirementHandler):
-    def match_annotations(
-        self,
-        *,
-        gt_item: dm.DatasetItem,
-        ds_item: dm.DatasetItem,
-    ) -> RequirementFrameResult:
-        conflicts = []
-        frame_id = self.context.frame_id
-
-        # Attributes are only checked on matched shapes from parent requirement
-        # Get parent requirement results if available
-        if not self.context.parent_results or not self.requirement.parent:
-            return self._empty_result()
-
-        # Get parent requirement name
-        parent_req_name = self.requirement.parent.name if self.requirement.parent else None
-
-        if not parent_req_name or parent_req_name not in self.context.parent_results:
-            return self._empty_result()
-
-        parent_result = self.context.parent_results[parent_req_name]
-        matched_pairs = parent_result.matched_pairs
-        if not matched_pairs:
-            return self._empty_result()
-
-        ignored_attrs = self._comparator.ignored_attrs
-        selected_attr_names = set()
-        matched_attribute_rows = []
-
-        for gt_ann, ds_ann in matched_pairs:
-            gt_attrs = {
-                name: value
-                for name, value in dict(getattr(gt_ann, "attributes", {}) or {}).items()
-                if name not in ignored_attrs and self._filter.matches_attribute(gt_ann, name, value)
-            }
-            ds_attrs = {
-                name: value
-                for name, value in dict(getattr(ds_ann, "attributes", {}) or {}).items()
-                if name not in ignored_attrs and self._filter.matches_attribute(ds_ann, name, value)
-            }
-
-            selected_attr_names.update(gt_attrs)
-            selected_attr_names.update(ds_attrs)
-            matched_attribute_rows.append((gt_ann, ds_ann, gt_attrs, ds_attrs))
-
-        if not selected_attr_names:
-            return self._empty_result()
-
-        include_attr_name = len(selected_attr_names) > 1
-
-        def _token(name: str, value: Any) -> str:
-            return f"{name}={value}" if include_attr_name else str(value)
-
-        attribute_tokens = sorted(
-            {
-                _token(attr_name, attr_value)
-                for _, _, gt_attrs, ds_attrs in matched_attribute_rows
-                for attr_name, attr_value in itertools.chain(gt_attrs.items(), ds_attrs.items())
-            }
-        )
-        attribute_tokens.append("unmatched")
-        token_to_idx = {token: idx for idx, token in enumerate(attribute_tokens)}
-        confusion_matrix = np.zeros((len(attribute_tokens), len(attribute_tokens)), dtype=int)
-
-        valid_attributes = 0
-        invalid_attributes = 0
-        missing_attributes = 0
-        extra_attributes = 0
-        ds_attributes_count = 0
-        gt_attributes_count = 0
-
-        for gt_ann, ds_ann, gt_attrs, ds_attrs in matched_attribute_rows:
-            attr_names = set(gt_attrs) | set(ds_attrs)
-            ds_attributes_count += len(ds_attrs)
-            gt_attributes_count += len(gt_attrs)
-
-            for attr_name in attr_names:
-                gt_value = gt_attrs.get(attr_name)
-                ds_value = ds_attrs.get(attr_name)
-                gt_idx = (
-                    token_to_idx[_token(attr_name, gt_value)]
-                    if gt_value is not None
-                    else self._UNMATCHED_IDX
-                )
-                ds_idx = (
-                    token_to_idx[_token(attr_name, ds_value)]
-                    if ds_value is not None
-                    else self._UNMATCHED_IDX
-                )
-                confusion_matrix[ds_idx, gt_idx] += 1
-
-                if gt_value is not None and ds_value is not None and gt_value == ds_value:
-                    valid_attributes += 1
-                    continue
-
-                if gt_value is None:
-                    extra_attributes += 1
-                elif ds_value is None:
-                    missing_attributes += 1
-                else:
-                    invalid_attributes += 1
-
-                conflicts.append(
-                    self._make_conflict(
-                        frame_id=frame_id,
-                        conflict_type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
-                        annotation_ids=[
-                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                        ],
-                        attribute_names=[attr_name],
-                    )
-                )
-
-        total_attributes = (
-            valid_attributes + invalid_attributes + missing_attributes + extra_attributes
-        )
-
-        return RequirementFrameResult(
-            summary=ComparisonReportFrameSummary(
-                annotations=ComparisonReportAnnotationsSummary(
-                    valid_count=valid_attributes,
-                    missing_count=missing_attributes,
-                    extra_count=extra_attributes,
-                    total_count=total_attributes,
-                    ds_count=ds_attributes_count,
-                    gt_count=gt_attributes_count,
-                    confusion_matrix=ConfusionMatrix(
-                        labels=attribute_tokens,
-                        rows=confusion_matrix,
-                    ),
-                ),
-                annotation_components=ComparisonReportAnnotationComponentsSummary(
-                    shape=ComparisonReportAnnotationShapeSummary(
-                        valid_count=0,
-                        missing_count=0,
-                        extra_count=0,
-                        total_count=0,
-                        ds_count=0,
-                        gt_count=0,
-                        mean_iou=0,
-                    ),
-                    label=ComparisonReportAnnotationLabelSummary(
-                        valid_count=valid_attributes,
-                        invalid_count=invalid_attributes + missing_attributes + extra_attributes,
-                        total_count=total_attributes,
-                    ),
-                ),
-                conflicts=conflicts,
-            ),
-        )
-
-
 class DatasetQualityEstimator:
     DEFAULT_SETTINGS = ComparisonParameters()
 
@@ -1152,7 +1330,7 @@ class DatasetQualityEstimator:
         *,
         requirements: list[models.QualityRequirement],
     ) -> None:
-        self._requirements = requirements
+        self._requirements = resolve_effective_requirements(requirements)
 
         self._ds_data_provider = ds_data_provider
         self._gt_data_provider = gt_data_provider
@@ -1261,21 +1439,13 @@ class DatasetQualityEstimator:
         if not self._requirements:
             return
 
-        shape_reqs = [
-            req
-            for req in self._requirements
-            if req.annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE
-        ]
-        attribute_reqs = [
-            req
-            for req in self._requirements
-            if req.annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
-        ]
-
         per_requirement_results = {}
         annotation_requirements: dict[int, set] = {}
 
-        for requirement in shape_reqs:
+        for requirement in self._requirements:
+            if not getattr(requirement, "enabled", True):
+                continue
+
             handler = RequirementHandler.for_requirement(
                 requirement,
                 context=MatchingContext(
@@ -1283,23 +1453,6 @@ class DatasetQualityEstimator:
                     estimator=self,
                     categories=self._gt_dataset.categories(),
                     annotation_requirements=annotation_requirements,
-                    parent_results=None,
-                ),
-            )
-
-            result = handler.match_annotations(ds_item=ds_item, gt_item=gt_item)
-            per_requirement_results[requirement.name] = result
-            self._results.setdefault(requirement.name, {})[frame_id] = result.summary
-
-        for requirement in attribute_reqs:
-            handler = RequirementHandler.for_requirement(
-                requirement,
-                context=MatchingContext(
-                    frame_id=frame_id,
-                    estimator=self,
-                    categories=self._gt_dataset.categories(),
-                    annotation_requirements=annotation_requirements,
-                    parent_results=per_requirement_results,
                 ),
             )
 
@@ -1383,6 +1536,7 @@ class DatasetQualityEstimator:
                 total_frames=self._get_total_frames(),
             )
             for requirement in self._requirements
+            if getattr(requirement, "enabled", True)
         }
         requirement_stats = build_requirements_summary(self._requirements, group_reports)
         conflicts_by_severity = Counter(c.severity for c in conflicts)

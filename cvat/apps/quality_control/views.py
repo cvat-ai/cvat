@@ -721,7 +721,7 @@ class QualityRequirementViewSet(
         "updated_date",
     ]
     simple_filters = ["settings_id", "annotation_type", "enabled"]
-    ordering_fields = filter_fields + ["name"]
+    ordering_fields = filter_fields + ["name", "sort_order"]
     ordering = "id"
 
     serializer_class = QualityRequirementSerializer
@@ -763,6 +763,9 @@ class QualityRequirementViewSet(
     def perform_destroy(self, instance):
         if instance.settings.requirements.count() <= 1:
             raise ValidationError("The last quality requirement cannot be deleted.")
+
+        if instance.children.exists():
+            raise ValidationError("A quality requirement with child requirements cannot be deleted.")
 
         settings = instance.settings
         result = super().perform_destroy(instance)

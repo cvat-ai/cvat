@@ -37,27 +37,32 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         settings_id: int | None = None,
         enabled: bool = True,
         required_score: float = 0.7,
-        annotation_type: str = "rectangle",
+        annotation_type: str | None = "rectangle",
         filter_expression: str | None = None,
         parent_requirement: int | None = None,
+        sort_order: int | None = None,
         point_size: float | None = None,
         match_orientation: bool | None = None,
         match_attributes: bool | None = None,
         match_groups: bool | None = None,
+        attribute_comparison: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         payload = {
             "name": name,
-            "annotation_type": annotation_type,
             "metric": "accuracy",
             "required_score": required_score,
             "enabled": enabled,
         }
+        if annotation_type is not None:
+            payload["annotation_type"] = annotation_type
         if settings_id is not None:
             payload["settings_id"] = settings_id
         if filter_expression is not None:
             payload["filter"] = filter_expression
         if parent_requirement is not None:
             payload["parent_requirement"] = parent_requirement
+        if sort_order is not None:
+            payload["sort_order"] = sort_order
         if point_size is not None:
             payload["point_size"] = point_size
         if match_orientation is not None:
@@ -66,6 +71,8 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
             payload["match_attributes"] = match_attributes
         if match_groups is not None:
             payload["match_groups"] = match_groups
+        if attribute_comparison is not None:
+            payload["attribute_comparison"] = attribute_comparison
         return payload
 
     @classmethod
@@ -532,7 +539,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "last quality requirement" in json.dumps(response.json()).lower()
 
-    def test_create_attribute_requirement_accepts_skeleton_parent_filter_terms(
+    def test_create_child_requirement_accepts_parent_filter_terms(
         self, admin_user, find_sandbox_task_without_gt
     ):
         task, _ = find_sandbox_task_without_gt(True)
@@ -551,16 +558,17 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         created_requirement, response = self._create_requirement(
             admin_user,
             self._build_requirement_payload(
-                f"skeleton-attribute-filter-{task['id']}",
+                f"skeleton-child-filter-{task['id']}",
                 settings_id=settings["id"],
-                annotation_type="attribute",
+                annotation_type=None,
                 parent_requirement=parent_requirement["id"],
                 filter_expression=json.dumps({"==": [{"var": "shape.skeleton.label"}, "person"]}),
             ),
         )
 
         assert response.status_code == HTTPStatus.CREATED
-        assert created_requirement["annotation_type"] == "attribute"
+        assert created_requirement["annotation_type"] is None
+        assert created_requirement["effective"]["annotation_type"] == "skeleton_keypoint"
         assert created_requirement["parent_requirement"] == parent_requirement["id"]
         assert created_requirement["filter"] == json.dumps(
             {"==": [{"var": "shape.skeleton.label"}, "person"]}
@@ -585,39 +593,23 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "attribute.name" in json.dumps(response.json())
 
-    def test_create_attribute_requirement_accepts_attribute_root_terms(
+    def test_create_attribute_requirement_is_rejected(
         self, admin_user, find_sandbox_task_without_gt
     ):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
 
-        parent_requirement, response = self._create_requirement(
+        _, response = self._create_requirement(
             admin_user,
             self._build_requirement_payload(
-                f"parent-{task['id']}",
-                settings_id=settings["id"],
-                annotation_type="rectangle",
-            ),
-        )
-        assert response.status_code == HTTPStatus.CREATED
-
-        created_requirement, response = self._create_requirement(
-            admin_user,
-            self._build_requirement_payload(
-                f"attribute-filter-{task['id']}",
+                f"attribute-rejected-{task['id']}",
                 settings_id=settings["id"],
                 annotation_type="attribute",
-                parent_requirement=parent_requirement["id"],
-                filter_expression=json.dumps({"==": [{"var": "attribute.name"}, "color"]}),
             ),
         )
 
-        assert response.status_code == HTTPStatus.CREATED
-        assert created_requirement["annotation_type"] == "attribute"
-        assert created_requirement["parent_requirement"] == parent_requirement["id"]
-        assert created_requirement["filter"] == json.dumps(
-            {"==": [{"var": "attribute.name"}, "color"]}
-        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "attribute" in json.dumps(response.json())
 
     def test_patch_requirement_validates_filter_using_existing_annotation_type(
         self, admin_user, find_sandbox_task_without_gt
@@ -856,186 +848,77 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert total_annotations["total_count"] == 1
         assert report_data["comparison_summary"]["conflict_count"] == 0
 
-    @pytest.mark.parametrize(
-        "filter_expression,expected_report",
-        [
-            pytest.param(
-                json.dumps({"==": [{"var": "attribute.name"}, "color"]}),
-                {
-                    "valid_count": 1,
-                    "missing_count": 0,
-                    "extra_count": 0,
-                    "total_count": 1,
-                    "invalid_count": 0,
-                    "conflict_count": 0,
-                },
-                id="color",
-            ),
-            pytest.param(
-                json.dumps({"==": [{"var": "attribute.name"}, "size"]}),
-                {
-                    "valid_count": 0,
-                    "missing_count": 0,
-                    "extra_count": 0,
-                    "total_count": 1,
-                    "invalid_count": 1,
-                    "conflict_count": 1,
-                },
-                id="size",
-            ),
-            pytest.param(
-                json.dumps(
-                    {
-                        "or": [
-                            {"==": [{"var": "attribute.name"}, "color"]},
-                            {"==": [{"var": "attribute.name"}, "size"]},
-                        ]
-                    }
-                ),
-                {
-                    "valid_count": 1,
-                    "missing_count": 0,
-                    "extra_count": 0,
-                    "total_count": 2,
-                    "invalid_count": 1,
-                    "conflict_count": 1,
-                },
-                id="color-and-size",
-            ),
-        ],
-    )
-    def test_task_report_data_applies_attribute_requirement_filter_to_metrics(
-        self,
-        admin_user,
-        filter_expression,
-        expected_report,
-    ):
-        task_id, _ = create_task(
+    def test_task_report_data_applies_attribute_comparison_rules(self, admin_user):
+        (
+            task_id,
+            settings,
+            gt_job,
+            car_label,
+            attribute_ids,
+        ) = self._create_attribute_quality_task(
             admin_user,
-            spec={
-                "name": "attribute-filter-report",
-                "labels": [
-                    {
-                        "name": "car",
-                        "type": "rectangle",
-                        "attributes": [
-                            {
-                                "name": "color",
-                                "mutable": False,
-                                "input_type": "select",
-                                "default_value": "red",
-                                "values": ["red", "blue"],
-                            },
-                            {
-                                "name": "size",
-                                "mutable": False,
-                                "input_type": "select",
-                                "default_value": "large",
-                                "values": ["large", "small"],
-                            },
-                        ],
-                    }
-                ],
-            },
-            data={
-                "image_quality": 70,
-                "client_files": generate_image_files(1),
-            },
+            name="attribute-comparison-report",
         )
-        settings = self._get_task_settings(admin_user, task_id=task_id)
 
-        parent_requirement_name = f"boxes-{task_id}"
-        patched_settings, response = self._patch_settings(
+        requirement_name = f"boxes-{task_id}"
+        _, response = self._patch_settings(
             admin_user,
             settings["id"],
             {
                 "inherit": False,
                 "requirements": [
                     self._build_requirement_payload(
-                        parent_requirement_name,
+                        requirement_name,
                         enabled=True,
                         required_score=1.0,
                         annotation_type="rectangle",
+                        match_attributes=True,
+                        attribute_comparison={
+                            "enabled": True,
+                            "default": {"enabled": False},
+                            "rules": [
+                                {
+                                    "name": "size",
+                                    "enabled": True,
+                                    "comparator": "exact",
+                                }
+                            ],
+                        },
                     )
                 ],
             },
         )
         assert response.status_code == HTTPStatus.OK
-        parent_requirement = patched_settings["requirements"][0]
 
-        attribute_requirement_name = f"attribute-filter-{task_id}"
-        _, response = self._create_requirement(
+        self._set_attribute_quality_annotations(
             admin_user,
-            self._build_requirement_payload(
-                attribute_requirement_name,
-                settings_id=settings["id"],
-                enabled=True,
-                required_score=1.0,
-                annotation_type="attribute",
-                parent_requirement=parent_requirement["id"],
-                filter_expression=filter_expression,
-            ),
+            task_id=task_id,
+            gt_job_id=gt_job.id,
+            label_id=car_label.id,
+            gt_attributes=[
+                {"spec_id": attribute_ids["color"], "value": "red"},
+                {"spec_id": attribute_ids["size"], "value": "large"},
+            ],
+            ds_attributes=[
+                {"spec_id": attribute_ids["color"], "value": "blue"},
+                {"spec_id": attribute_ids["size"], "value": "small"},
+            ],
         )
-        assert response.status_code == HTTPStatus.CREATED
-
-        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
-        labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
-        car_label = labels_by_name["car"]
-        attribute_ids = {attribute.name: attribute.id for attribute in car_label.attributes}
-
-        gt_attributes = [
-            {"spec_id": attribute_ids["color"], "value": "red"},
-            {"spec_id": attribute_ids["size"], "value": "large"},
-        ]
-        ds_attributes = [
-            {"spec_id": attribute_ids["color"], "value": "red"},
-            {"spec_id": attribute_ids["size"], "value": "small"},
-        ]
-
-        with make_api_client(admin_user) as api_client:
-            api_client.jobs_api.update_annotations(
-                gt_job.id,
-                labeled_data_request={
-                    "shapes": [
-                        self._build_rectangle_shape(
-                            frame=0,
-                            label_id=car_label.id,
-                            points=[0, 0, 10, 10],
-                            attributes=gt_attributes,
-                        )
-                    ]
-                },
-            )
-            api_client.tasks_api.update_annotations(
-                task_id,
-                labeled_data_request={
-                    "shapes": [
-                        self._build_rectangle_shape(
-                            frame=0,
-                            label_id=car_label.id,
-                            points=[0, 0, 10, 10],
-                            attributes=ds_attributes,
-                        )
-                    ]
-                },
-            )
 
         self._complete_job(admin_user, gt_job.id)
 
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        attribute_group = report_data["groups"][attribute_requirement_name]["comparison_summary"]
-        attribute_annotations = attribute_group["annotations"]
-        assert attribute_annotations["valid_count"] == expected_report["valid_count"]
-        assert attribute_annotations["missing_count"] == expected_report["missing_count"]
-        assert attribute_annotations["extra_count"] == expected_report["extra_count"]
-        assert attribute_annotations["total_count"] == expected_report["total_count"]
-        assert (
-            attribute_group["annotation_components"]["label"]["invalid_count"]
-            == expected_report["invalid_count"]
-        )
-        assert attribute_group["conflict_count"] == expected_report["conflict_count"]
+        conflicts = report_data["frame_results"]["0"]["conflicts"]
+        assert len(conflicts) == 1
+        assert conflicts[0]["type"] == "mismatching_attributes"
+        assert conflicts[0]["attribute_names"] == ["size"]
+        assert report_data["groups"][requirement_name]["parameters"]["attribute_comparison"] == {
+            "enabled": True,
+            "default": {"enabled": False},
+            "rules": [{"name": "size", "enabled": True, "comparator": "exact"}],
+        }
 
     def test_task_report_data_reports_attribute_conflict_names_and_error_severity(self, admin_user):
         (
@@ -1096,7 +979,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert report_data["comparison_summary"]["warning_count"] == 0
         assert report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 1
 
-    def test_task_report_deduplicates_aggregated_conflicts_across_requirements(self, admin_user):
+    def test_task_report_uses_first_matching_leaf_requirement(self, admin_user):
         (
             task_id,
             settings,
@@ -1105,42 +988,43 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             attribute_ids,
         ) = self._create_attribute_quality_task(
             admin_user,
-            name="attribute-conflict-dedup-report",
+            name="first-matching-leaf-report",
         )
 
-        parent_requirement_name = f"boxes-{task_id}"
-        patched_settings, response = self._patch_settings(
-            admin_user,
-            settings["id"],
-            {
-                "inherit": False,
-                "requirements": [
-                    self._build_requirement_payload(
-                        parent_requirement_name,
-                        enabled=True,
-                        required_score=1.0,
-                        annotation_type="rectangle",
-                    )
-                ],
-            },
+        rectangle_root = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["name"] == "default:rectangle"
         )
-        assert response.status_code == HTTPStatus.OK
-        parent_requirement = patched_settings["requirements"][0]
 
-        attribute_requirement_name = f"size-{task_id}"
-        _, response = self._create_requirement(
+        first_leaf_name = f"first-car-leaf-{task_id}"
+        first_leaf, response = self._create_requirement(
             admin_user,
             self._build_requirement_payload(
-                attribute_requirement_name,
+                first_leaf_name,
                 settings_id=settings["id"],
-                enabled=True,
-                required_score=1.0,
-                annotation_type="attribute",
-                parent_requirement=parent_requirement["id"],
-                filter_expression=json.dumps({"==": [{"var": "attribute.name"}, "size"]}),
+                annotation_type=None,
+                parent_requirement=rectangle_root["id"],
+                sort_order=1,
+                filter_expression=json.dumps({"==": [{"var": "shape.label"}, "car"]}),
             ),
         )
         assert response.status_code == HTTPStatus.CREATED
+
+        second_leaf_name = f"second-car-leaf-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                second_leaf_name,
+                settings_id=settings["id"],
+                annotation_type=None,
+                parent_requirement=rectangle_root["id"],
+                sort_order=2,
+                filter_expression=json.dumps({"==": [{"var": "shape.label"}, "car"]}),
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert first_leaf["effective"]["annotation_type"] == "rectangle"
 
         self._set_attribute_quality_annotations(
             admin_user,
@@ -1161,27 +1045,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
-        conflicts = self._get_report_conflicts(admin_user, report["id"])
 
-        assert report_data["comparison_summary"]["conflict_count"] == 1
-        assert report_data["comparison_summary"]["error_count"] == 1
-        assert report_data["comparison_summary"]["warning_count"] == 0
-        assert len(report_data["frame_results"]["0"]["conflicts"]) == 1
-        assert (
-            report_data["groups"][parent_requirement_name]["comparison_summary"]["conflict_count"]
-            == 1
-        )
-        assert (
-            report_data["groups"][attribute_requirement_name]["comparison_summary"][
-                "conflict_count"
-            ]
-            == 1
-        )
-
-        assert len(conflicts) == 1
-        assert conflicts[0]["type"] == "mismatching_attributes"
-        assert conflicts[0]["severity"] == "error"
-        assert conflicts[0]["attribute_names"] == ["size"]
+        assert report_data["groups"][first_leaf_name]["comparison_summary"]["annotations"][
+            "total_count"
+        ] == 1
+        assert report_data["groups"][second_leaf_name]["comparison_summary"]["annotations"][
+            "total_count"
+        ] == 0
+        assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
 
     def test_task_report_data_contains_groups_and_requirements(self, admin_user):
         task_id, _ = create_task(

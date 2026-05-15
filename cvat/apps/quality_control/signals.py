@@ -12,7 +12,6 @@ from cvat.apps.quality_control.models import (
     QualitySettings,
 )
 
-# Attribute requirements are not standalone: they need an explicit parent shape requirement.
 _DEFAULT_REQUIREMENT_ANNOTATION_TYPES = (
     QualityRequirementAnnotationType.TAG,
     QualityRequirementAnnotationType.RECTANGLE,

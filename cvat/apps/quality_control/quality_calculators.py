@@ -45,6 +45,7 @@ from cvat.apps.quality_control.quality_handlers import (
     build_requirement_report,
     build_requirements_summary,
     merge_frame_summaries,
+    resolve_effective_requirements,
 )
 from cvat.apps.quality_control.quality_reports import JobDataProvider, QualitySettingsManager
 
@@ -146,7 +147,9 @@ class TaskQualityCalculator:
                 for job in jobs
             }
 
-            quality_requirements = list(quality_settings.requirements.all())
+            quality_requirements = resolve_effective_requirements(
+                list(quality_settings.requirements.select_related("parent").all())
+            )
 
             job_comparison_reports: dict[int, ComparisonReport] = {}
             for job in jobs:
@@ -321,6 +324,9 @@ class TaskQualityCalculator:
             for group_name, group_frame_results in task_group_frame_results.items()
         }
         for requirement in requirements:
+            if not getattr(requirement, "enabled", True):
+                continue
+
             requirement_groups.setdefault(
                 requirement.name,
                 build_requirement_report(
@@ -446,8 +452,13 @@ class ProjectQualityCalculator:
                 project = Project.objects.get(id=project)
 
             project_quality_params = self.get_quality_params(project)
-            project_requirements = list(
-                QualitySettingsManager().get_project_settings(project).requirements.all()
+            project_requirements = resolve_effective_requirements(
+                list(
+                    QualitySettingsManager()
+                    .get_project_settings(project)
+                    .requirements.select_related("parent")
+                    .all()
+                )
             )
 
             # Tasks could be added or removed in the project after initial report fetching
@@ -698,6 +709,9 @@ class ProjectQualityCalculator:
             )
 
         for requirement in requirements:
+            if not getattr(requirement, "enabled", True):
+                continue
+
             requirement_groups.setdefault(
                 requirement.name,
                 build_requirement_report(
