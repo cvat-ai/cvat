@@ -303,6 +303,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             'stroke-width': 0.1,
         });
 
+        // eslint-disable-next-line no-param-reassign
         circle.style.transition = 'r 0.25s';
 
         circle.addEventListener('mouseover', () => {
@@ -347,6 +348,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             });
         });
 
+        // eslint-disable-next-line no-param-reassign
         (circle as any).cvat = {
             deleteElement: () => {
                 // first remove all related edges
@@ -430,6 +432,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         this.labels[elementID] = {
             name: labels[elementID]?.name || `${elementID}`,
             attributes: (labels[elementID]?.attributes || []).map((attr) => {
+                // eslint-disable-next-line no-param-reassign
                 attr.id = (attr?.id || 0) > 0 ? attr.id : idGenerator();
                 return attr;
             }),

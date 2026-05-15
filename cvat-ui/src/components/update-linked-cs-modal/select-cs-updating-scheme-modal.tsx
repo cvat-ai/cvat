@@ -87,10 +87,12 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
                     onClick={() => {
                         instances.forEach((instance) => {
                             if (instance.sourceStorage.isCloudLinked()) {
+                                // eslint-disable-next-line no-param-reassign
                                 instance.sourceStorage = Storage.buildLocalStorage();
                             }
 
                             if (instance.targetStorage.isCloudLinked()) {
+                                // eslint-disable-next-line no-param-reassign
                                 instance.targetStorage = Storage.buildLocalStorage();
                             }
                         });

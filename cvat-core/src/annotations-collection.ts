@@ -73,8 +73,10 @@ export default class Collection {
         this.stopFrame = data.stopFrame;
 
         this.labels = data.labels.reduce((labelAccumulator, label) => {
+            // eslint-disable-next-line no-param-reassign
             labelAccumulator[label.id] = label;
             (label?.structure?.sublabels || []).forEach((sublabel) => {
+                // eslint-disable-next-line no-param-reassign
                 labelAccumulator[sublabel.id] = sublabel;
             });
 
@@ -886,6 +888,7 @@ export default class Collection {
                     if (delTrackKeyframesOnly) {
                         for (const keyframe of Object.keys(track.shapes)) {
                             if (+keyframe >= from && +keyframe <= to) {
+                                // eslint-disable-next-line no-param-reassign
                                 delete track.shapes[keyframe];
                                 if (track instanceof SkeletonTrack) {
                                     track.elements.forEach((element) => {
@@ -895,6 +898,7 @@ export default class Collection {
                                         }
                                     });
                                 }
+                                // eslint-disable-next-line no-param-reassign
                                 track.updated = Date.now();
                             }
                         }

@@ -388,6 +388,7 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.intercept('POST', '/api/auth/register**', (req) => {
         req.continue((response) => {
+            // eslint-disable-next-line no-param-reassign
             delete response.headers['set-cookie'];
             expect(response.statusCode).to.eq(201, response.body.username);
             expect(response.body.username).to.eq(userSpecSnake.username);

@@ -170,6 +170,7 @@ class Annotation {
         ) as Annotation['groupObject'];
 
         this.appendDefaultAttributes(this.label);
+        // eslint-disable-next-line no-param-reassign
         injection.groups.max = Math.max(injection.groups.max, this.group);
     }
 
@@ -932,6 +933,7 @@ export class Track extends Drawn {
                 });
 
                 if (this.shapes[frame].points) {
+                    // eslint-disable-next-line no-param-reassign
                     shapesAccumulator[shapesAccumulator.length - 1].points = [...this.shapes[frame].points];
                 }
 
@@ -3262,6 +3264,7 @@ export class SkeletonTrack extends Track {
             // todo: fix extra undo/redo change
             this.validateStateBeforeSave(data, data.updateFlags, frame);
             this.saveKeyframe(frame, data.keyframe);
+            // eslint-disable-next-line no-param-reassign
             data.updateFlags.keyframe = false;
             updateElements(updatedKeyframe, HistoryActions.CHANGED_KEYFRAME);
         }
