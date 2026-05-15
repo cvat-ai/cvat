@@ -34,7 +34,6 @@ module.exports = {
         'no-plusplus': 0,
         'no-continue': 0,
         'no-console': 0,
-        'no-param-reassign': ['error', { 'props': false }],
         'no-restricted-syntax': [0, { selector: 'ForOfStatement' }],
         'no-await-in-loop': 0,
         '@stylistic/indent': ['error', 4, { 'SwitchCase': 1 }],

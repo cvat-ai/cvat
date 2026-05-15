@@ -716,6 +716,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                                 const filteredStates = trackedShapes.filter(
                                                     (trackedShape: TrackedShape) => trackedShape.clientID !== clientID,
                                                 );
+                                                /* eslint no-param-reassign: ["error", { "props": false }] */
                                                 objectState.descriptions = [];
                                                 objectState.save().then(() => {
                                                     this.setState({
