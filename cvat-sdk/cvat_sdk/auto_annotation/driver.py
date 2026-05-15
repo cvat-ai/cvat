@@ -461,9 +461,7 @@ class _AnnotationMapper:
         if object_type == "shape":
             shape = cast(models.LabeledShapeRequest, annotation)
 
-            if not self._are_label_types_compatible(
-                shape.type, label_id_mapping.expected_type
-            ):
+            if not self._are_label_types_compatible(shape.type, label_id_mapping.expected_type):
                 raise BadFunctionError(
                     f"function output shape of type {shape.type!r}"
                     f" (expected {label_id_mapping.expected_type!r})"

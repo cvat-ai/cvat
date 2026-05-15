@@ -71,10 +71,7 @@ class TestDatasetExport:
         expected_locally = (
             location == Location.LOCAL
             or not location
-            and (
-                not resource.target_storage
-                or resource.target_storage.location == Location.LOCAL
-            )
+            and (not resource.target_storage or resource.target_storage.location == Location.LOCAL)
         )
 
         if expected_locally:
