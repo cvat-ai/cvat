@@ -518,7 +518,11 @@ def local_start(
         wait_for_services(waiting_time)
 
         docker_exec_cvat(
-            ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json"]
+            [
+                "sh",
+                "-c",
+                "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json",
+            ]
         )
         docker_exec(
             Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
