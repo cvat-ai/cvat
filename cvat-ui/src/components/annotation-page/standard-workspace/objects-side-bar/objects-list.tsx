@@ -3,14 +3,67 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
+import {
+    DndContext, DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors,
+} from '@dnd-kit/core';
+import {
+    CaretDownOutlined, CaretRightOutlined, HolderOutlined,
+} from '@ant-design/icons';
+import Button from 'antd/lib/button';
+import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Text from 'antd/lib/typography/Text';
 
 import { StatesOrdering, Workspace } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { ObjectState } from 'cvat-core-wrapper';
+import { ObjectState, ObjectType } from 'cvat-core-wrapper';
 import ObjectListHeader from './objects-list-header';
+
+const OBJECT_DRAG_ID_PREFIX = 'object:';
+const LAYER_DRAG_ID_PREFIX = 'drag-layer:';
+const LAYER_DROP_ID_PREFIX = 'layer:';
+
+type LayerDragMode = 'move' | 'merge';
+
+function objectDragID(clientID: number): string {
+    return `${OBJECT_DRAG_ID_PREFIX}${clientID}`;
+}
+
+function layerDragID(zOrder: number): string {
+    return `${LAYER_DRAG_ID_PREFIX}${zOrder}`;
+}
+
+function layerDropID(zOrder: number): string {
+    return `${LAYER_DROP_ID_PREFIX}${zOrder}`;
+}
+
+function parseObjectDragID(id: string): number | null {
+    if (!id.startsWith(OBJECT_DRAG_ID_PREFIX)) {
+        return null;
+    }
+
+    const clientID = Number(id.slice(OBJECT_DRAG_ID_PREFIX.length));
+    return Number.isInteger(clientID) ? clientID : null;
+}
+
+function parseLayerDragID(id: string): number | null {
+    if (!id.startsWith(LAYER_DRAG_ID_PREFIX)) {
+        return null;
+    }
+
+    const zOrder = Number(id.slice(LAYER_DRAG_ID_PREFIX.length));
+    return Number.isInteger(zOrder) ? zOrder : null;
+}
+
+function parseLayerDropID(id: string): number | null {
+    if (!id.startsWith(LAYER_DROP_ID_PREFIX)) {
+        return null;
+    }
+
+    const zOrder = Number(id.slice(LAYER_DROP_ID_PREFIX.length));
+    return Number.isInteger(zOrder) ? zOrder : null;
+}
 
 interface Props {
     workspace: Workspace;
@@ -19,11 +72,13 @@ interface Props {
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
     sortedStatesID: number[];
-    objectStates: any[];
+    objectStates: ObjectState[];
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
     showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
+    moveObjectToLayer(clientID: number, targetZOrder: number): void;
+    moveLayer(sourceZOrder: number, targetZOrder: number, mode: LayerDragMode): void;
     lockAllStates(): void;
     unlockAllStates(): void;
     collapseAllStates(): void;
@@ -31,6 +86,137 @@ interface Props {
     hideAllStates(): void;
     showAllStates(): void;
     changeShowGroundTruth(): void;
+}
+
+interface DraggableObjectItemProps {
+    objectStates: ObjectState[];
+    clientID: number;
+    draggable: boolean;
+}
+
+function DraggableObjectItem(props: DraggableObjectItemProps): JSX.Element {
+    const { objectStates, clientID, draggable } = props;
+    const {
+        attributes, listeners, setNodeRef, transform, isDragging,
+    } = useDraggable({
+        id: objectDragID(clientID),
+        disabled: !draggable,
+    });
+    const style = transform ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    } : undefined;
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={isDragging ? 'cvat-objects-sidebar-z-layer-dragging' : undefined}
+            style={style}
+        >
+            <ObjectItemContainer
+                objectStates={objectStates}
+                clientID={clientID}
+                allowSimplifyLifecycle
+                zLayerDragging={isDragging}
+                zLayerDragProps={draggable ? {
+                    ...attributes,
+                    ...listeners,
+                } as React.HTMLAttributes<HTMLElement> : undefined}
+            />
+        </div>
+    );
+}
+
+interface ZLayerHeaderProps {
+    zOrder: number;
+    collapsed: boolean;
+    toggleLayerCollapsed(zOrder: number): void;
+}
+
+function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
+    const {
+        zOrder, collapsed, toggleLayerCollapsed,
+    } = props;
+    const {
+        attributes, listeners, setNodeRef, transform, isDragging,
+    } = useDraggable({ id: layerDragID(zOrder) });
+    const style = transform ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    } : undefined;
+    const className = `cvat-objects-sidebar-z-layer-mark${
+        isDragging ? ' cvat-objects-sidebar-z-layer-mark-dragging' : ''
+    }`;
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={className}
+            style={style}
+        >
+            <div className='cvat-objects-sidebar-z-layer-controls'>
+                <Button
+                    className='cvat-objects-sidebar-z-layer-collapse-button'
+                    type='text'
+                    size='small'
+                    icon={collapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
+                    onClick={(): void => toggleLayerCollapsed(zOrder)}
+                />
+                <Button
+                    {...attributes}
+                    {...listeners}
+                    className='cvat-objects-sidebar-z-layer-drag-handle'
+                    type='text'
+                    size='small'
+                    icon={<HolderOutlined />}
+                />
+            </div>
+            <Text strong>{zOrder}</Text>
+        </div>
+    );
+}
+
+interface ZLayerSectionProps {
+    zOrder: number;
+    objectIDs: number[];
+    objectStates: ObjectState[];
+    collapsed: boolean;
+    toggleLayerCollapsed(zOrder: number): void;
+}
+
+function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
+    const {
+        zOrder, objectIDs, objectStates, collapsed, toggleLayerCollapsed,
+    } = props;
+    const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={`cvat-objects-sidebar-z-layer${isOver ? ' cvat-objects-sidebar-z-layer-active' : ''}`}
+        >
+            <ZLayerHeader
+                zOrder={zOrder}
+                collapsed={collapsed}
+                toggleLayerCollapsed={toggleLayerCollapsed}
+            />
+            {!collapsed && objectIDs.map((id: number): JSX.Element => {
+                const object = objectStates.find((state: ObjectState): boolean => state.clientID === id);
+
+                return (
+                    <DraggableObjectItem
+                        key={id}
+                        objectStates={objectStates}
+                        clientID={id}
+                        draggable={object?.objectType !== ObjectType.TAG}
+                    />
+                );
+            })}
+        </div>
+    );
+}
+
+function getZLayers(objectStates: ObjectState[]): number[] {
+    return Array.from(new Set(objectStates.map((state: ObjectState): number => state.zOrder)))
+        .sort((left: number, right: number): number => left - right);
 }
 
 function ObjectListComponent(props: Props): JSX.Element {
@@ -46,6 +232,8 @@ function ObjectListComponent(props: Props): JSX.Element {
         switchHiddenAllShortcut,
         showGroundTruth,
         changeStatesOrdering,
+        moveObjectToLayer,
+        moveLayer,
         lockAllStates,
         unlockAllStates,
         collapseAllStates,
@@ -54,8 +242,65 @@ function ObjectListComponent(props: Props): JSX.Element {
         showAllStates,
         changeShowGroundTruth,
     } = props;
+    const sensors = useSensors(useSensor(PointerSensor, {
+        activationConstraint: {
+            distance: 6,
+        },
+    }));
+    const [collapsedZLayers, setCollapsedZLayers] = useState<number[]>([]);
+    const [layerDragMode, setLayerDragMode] = useState<LayerDragMode>('move');
+    const zLayers = getZLayers(objectStates);
+    const allLayersCollapsed = !!zLayers.length && zLayers.every((zOrder: number): boolean => (
+        collapsedZLayers.includes(zOrder)
+    ));
+    useEffect((): void => {
+        setCollapsedZLayers((current: number[]): number[] => (
+            current.filter((zOrder: number): boolean => zLayers.includes(zOrder))
+        ));
+    }, [zLayers.join(',')]);
+    const zLayerIDs = zLayers.reduce((acc: Record<number, number[]>, zOrder: number): Record<number, number[]> => {
+        acc[zOrder] = [];
+        return acc;
+    }, {});
+    sortedStatesID.forEach((id: number): void => {
+        const object = objectStates.find((state: ObjectState): boolean => state.clientID === id);
 
-    let latestZOrder: number | null = null;
+        if (object) {
+            zLayerIDs[object.zOrder] = zLayerIDs[object.zOrder] || [];
+            zLayerIDs[object.zOrder].push(id);
+        }
+    });
+    const onDragEnd = (event: DragEndEvent): void => {
+        const { active, over } = event;
+
+        if (!over) {
+            return;
+        }
+
+        const clientID = parseObjectDragID(String(active.id));
+        const sourceZOrder = parseLayerDragID(String(active.id));
+        const zOrder = parseLayerDropID(String(over.id));
+
+        if (clientID !== null && zOrder !== null) {
+            moveObjectToLayer(clientID, zOrder);
+        } else if (sourceZOrder !== null && zOrder !== null) {
+            moveLayer(sourceZOrder, zOrder, layerDragMode);
+        }
+    };
+    const onLayerDragModeChange = (event: RadioChangeEvent): void => {
+        setLayerDragMode(event.target.value);
+    };
+    const toggleLayerCollapsed = (zOrder: number): void => {
+        setCollapsedZLayers((current: number[]): number[] => (
+            current.includes(zOrder) ?
+                current.filter((currentZOrder: number): boolean => currentZOrder !== zOrder) :
+                [...current, zOrder]
+        ));
+    };
+    const toggleAllLayersCollapsed = (): void => {
+        setCollapsedZLayers(allLayersCollapsed ? [] : [...zLayers]);
+    };
+
     return (
         <>
             <ObjectListHeader
@@ -78,34 +323,48 @@ function ObjectListComponent(props: Props): JSX.Element {
                 changeShowGroundTruth={changeShowGroundTruth}
             />
             <div className='cvat-objects-sidebar-states-list'>
-                {sortedStatesID.map(
-                    (id: number): JSX.Element => {
-                        const object = objectStates.find((state: ObjectState) => state.clientID === id);
-                        const zOrder = object?.zOrder || latestZOrder;
-
-                        const renderZLayer = latestZOrder !== zOrder && statesOrdering === StatesOrdering.Z_ORDER;
-                        if (renderZLayer) {
-                            latestZOrder = zOrder;
-                        }
-
-                        return (
-                            <React.Fragment key={id}>
-                                {renderZLayer && (
-                                    <div className='cvat-objects-sidebar-z-layer-mark'>
-                                        <Text strong>
-                                            {`Layer ${zOrder}`}
-                                        </Text>
-                                    </div>
-                                )}
-                                <ObjectItemContainer
+                {statesOrdering === StatesOrdering.Z_ORDER ? (
+                    <div className='cvat-objects-sidebar-z-layers-panel'>
+                        <div className='cvat-objects-sidebar-z-layers-title'>
+                            <Text strong>Layer stack</Text>
+                            <Radio.Group
+                                className='cvat-objects-sidebar-z-layer-mode-switcher'
+                                size='small'
+                                value={layerDragMode}
+                                onChange={onLayerDragModeChange}
+                            >
+                                <Radio.Button value='move'>Move</Radio.Button>
+                                <Radio.Button value='merge'>Merge</Radio.Button>
+                            </Radio.Group>
+                            <Button
+                                className='cvat-objects-sidebar-z-layers-collapse-all-button'
+                                type='text'
+                                size='small'
+                                icon={allLayersCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
+                                onClick={toggleAllLayersCollapsed}
+                            />
+                        </div>
+                        <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+                            {zLayers.map((zOrder: number): JSX.Element => (
+                                <ZLayerSection
+                                    key={zOrder}
+                                    zOrder={zOrder}
+                                    objectIDs={zLayerIDs[zOrder] || []}
                                     objectStates={objectStates}
-                                    clientID={id}
-                                    allowSimplifyLifecycle
+                                    collapsed={collapsedZLayers.includes(zOrder)}
+                                    toggleLayerCollapsed={toggleLayerCollapsed}
                                 />
-                            </React.Fragment>
-                        );
-                    },
-                )}
+                            ))}
+                        </DndContext>
+                    </div>
+                ) : sortedStatesID.map((id: number): JSX.Element => (
+                    <ObjectItemContainer
+                        key={id}
+                        objectStates={objectStates}
+                        clientID={id}
+                        allowSimplifyLifecycle
+                    />
+                ))}
             </div>
         </>
     );

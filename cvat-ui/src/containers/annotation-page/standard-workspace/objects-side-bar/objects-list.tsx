@@ -73,6 +73,8 @@ interface DispatchToProps {
     changeHideEditedState(value: boolean): void;
 }
 
+type LayerDragMode = 'move' | 'merge';
+
 const componentShortcuts = {
     SWITCH_ALL_LOCK: {
         name: 'Lock/unlock all objects',
@@ -421,6 +423,53 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         changeShowGroundTruth(!showGroundTruth);
     };
 
+    private moveObjectToLayer = (clientID: number, targetZOrder: number): void => {
+        const { updateAnnotations } = this.props;
+        const { filteredStates } = this.state;
+        const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
+
+        if (!objectState || objectState.objectType === ObjectType.TAG || objectState.zOrder === targetZOrder) {
+            return;
+        }
+
+        objectState.zOrder = targetZOrder;
+        updateAnnotations([objectState]);
+    };
+
+    private moveLayer = (sourceZOrder: number, targetZOrder: number, mode: LayerDragMode): void => {
+        const { updateAnnotations } = this.props;
+        const { filteredStates } = this.state;
+
+        if (sourceZOrder === targetZOrder) {
+            return;
+        }
+
+        const statesToUpdate = filteredStates.filter((state: ObjectState): boolean => (
+            state.objectType !== ObjectType.TAG && (
+                state.zOrder === sourceZOrder ||
+                (mode === 'move' && (
+                    sourceZOrder < targetZOrder ?
+                        state.zOrder > sourceZOrder && state.zOrder <= targetZOrder :
+                        state.zOrder >= targetZOrder && state.zOrder < sourceZOrder
+                ))
+            )
+        ));
+
+        for (const state of statesToUpdate) {
+            if (state.zOrder === sourceZOrder) {
+                state.zOrder = targetZOrder;
+            } else if (sourceZOrder < targetZOrder) {
+                state.zOrder -= 1;
+            } else {
+                state.zOrder += 1;
+            }
+        }
+
+        if (statesToUpdate.length) {
+            updateAnnotations(statesToUpdate);
+        }
+    };
+
     private lockAllStates(locked: boolean): void {
         const { updateAnnotations } = this.props;
         const { filteredStates } = this.state;
@@ -692,6 +741,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
+                    moveObjectToLayer={this.moveObjectToLayer}
+                    moveLayer={this.moveLayer}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}
                     collapseAllStates={this.onCollapseAllStates}

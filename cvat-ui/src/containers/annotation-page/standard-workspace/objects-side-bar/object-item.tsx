@@ -40,6 +40,8 @@ interface OwnProps {
     clientID: number;
     objectStates: ObjectState[];
     allowSimplifyLifecycle?: boolean;
+    zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
+    zLayerDragging?: boolean;
 }
 
 interface StateToProps {
@@ -569,12 +571,16 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             normalizedKeyMap,
             keyMap,
             jobInstance,
+            zLayerDragProps,
+            zLayerDragging,
         } = this.props;
 
         return (
             <>
                 <ObjectStateItemComponent
                     jobInstance={jobInstance}
+                    zLayerDragProps={zLayerDragProps}
+                    zLayerDragging={zLayerDragging}
                     activated={activated}
                     objectType={objectState.objectType}
                     shapeType={objectState.shapeType}

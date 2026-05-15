@@ -30,6 +30,8 @@ interface Props {
     labels: any[];
     attributes: any[];
     jobInstance: any;
+    zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
+    zLayerDragging?: boolean;
     activate(activeElementID?: number): void;
     focusAndExpand(): void;
     copy(): void;
@@ -63,6 +65,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         colorBy,
         elements,
         labels,
+        zLayerDragProps,
+        zLayerDragging,
         normalizedKeyMap,
         isGroundTruth,
         activate,
@@ -92,8 +96,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
             `${shapeType.toUpperCase()} ${objectType.toUpperCase()}`;
 
     const className = !activated ?
-        'cvat-objects-sidebar-state-item' :
-        'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
+        `cvat-objects-sidebar-state-item${zLayerDragging ? ' cvat-objects-sidebar-state-item-dragging' : ''}` :
+        `cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item${
+            zLayerDragging ? ' cvat-objects-sidebar-state-item-dragging' : ''
+        }`;
 
     const activateState = useCallback(() => {
         activate();
@@ -102,10 +108,11 @@ function ObjectItemComponent(props: Props): JSX.Element {
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div
+                {...zLayerDragProps}
                 onMouseEnter={activateState}
                 onDoubleClick={focusAndExpand}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
-                className={className}
+                className={`${className}${zLayerDragProps ? ' cvat-objects-sidebar-state-item-draggable' : ''}`}
                 style={{ '--state-item-background': `${color}` } as React.CSSProperties}
             >
                 <ItemBasics

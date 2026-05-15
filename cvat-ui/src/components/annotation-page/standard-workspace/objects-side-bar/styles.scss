@@ -218,8 +218,91 @@
     }
 }
 
+.cvat-objects-sidebar-z-layers-panel {
+    padding: 0 $grid-unit-size * 0.5 $grid-unit-size;
+}
+
+.cvat-objects-sidebar-z-layers-title {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    min-height: $grid-unit-size * 4;
+    padding-left: $grid-unit-size * 0.5;
+}
+
+.cvat-objects-sidebar-z-layer-mode-switcher {
+    margin-left: auto;
+    margin-right: $grid-unit-size * 0.5;
+}
+
+.cvat-objects-sidebar-z-layers-collapse-all-button {
+    margin-right: $grid-unit-size * 0.25;
+}
+
 .cvat-objects-sidebar-z-layer-mark {
-    text-align: center;
+    align-items: center;
+    background: $header-color;
+    display: flex;
+    justify-content: space-between;
+    min-height: $grid-unit-size * 3.5;
+    padding-left: $grid-unit-size;
+    padding-right: $grid-unit-size;
+    position: relative;
+}
+
+.cvat-objects-sidebar-z-layer-mark-dragging {
+    opacity: 0.7;
+    z-index: 1000;
+}
+
+.cvat-objects-sidebar-z-layer-controls {
+    align-items: center;
+    display: flex;
+}
+
+.cvat-objects-sidebar-z-layer-collapse-button {
+    margin-left: -$grid-unit-size * 0.75;
+}
+
+.cvat-objects-sidebar-z-layer-drag-handle {
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+.cvat-objects-sidebar-z-layer {
+    border: 1px solid $border-color-1;
+    margin-bottom: $grid-unit-size;
+    overflow: visible;
+    position: relative;
+    transition: background-color $box-shadow-transition, border-color $box-shadow-transition;
+}
+
+.cvat-objects-sidebar-z-layer-active {
+    background-color: rgba($color: $completed-progress-color, $alpha: 8%);
+    border-color: rgba($color: $completed-progress-color, $alpha: 35%);
+}
+
+.cvat-objects-sidebar-z-layer-dragging {
+    opacity: 0.55;
+    position: relative;
+    z-index: 1000;
+}
+
+.cvat-objects-sidebar-state-item-draggable {
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+.cvat-objects-sidebar-state-item-dragging {
+    box-shadow: $box-shadow-base;
 }
 
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {
