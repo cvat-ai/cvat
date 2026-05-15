@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-/* eslint-disable security/detect-non-literal-fs-filename, no-console */
+/* eslint-disable security/detect-non-literal-fs-filename */
 
 const fs = require('fs');
 const fg = require('fast-glob');
