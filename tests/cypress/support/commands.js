@@ -32,8 +32,8 @@ Cypress.Commands.add('activateCanvasShape', (selector) => {
         const point = svg.createSVGPoint();
 
         if (tagName === 'polygon' && shape.points.length) {
-            point.x = shape.points[0].x;
-            point.y = shape.points[0].y;
+            point.x = Array.from(shape.points).reduce((sum, item) => sum + item.x, 0) / shape.points.length;
+            point.y = Array.from(shape.points).reduce((sum, item) => sum + item.y, 0) / shape.points.length;
         } else if (tagName === 'circle') {
             point.x = +shape.getAttribute('cx');
             point.y = +shape.getAttribute('cy');
@@ -49,7 +49,9 @@ Cypress.Commands.add('activateCanvasShape', (selector) => {
         }
 
         const screenPoint = point.matrixTransform(shape.getScreenCTM());
-        cy.get('.cvat-canvas-container').trigger('mousemove', screenPoint.x, screenPoint.y, {
+        cy.get('#cvat_canvas_wrapper').trigger('mousemove', {
+            clientX: screenPoint.x,
+            clientY: screenPoint.y,
             bubbles: true,
         });
     });
