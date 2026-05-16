@@ -28,19 +28,33 @@ let selectedValueGlobal = '';
 Cypress.Commands.add('activateCanvasShape', (selector) => {
     cy.get(selector).then(([shape]) => {
         const tagName = shape.tagName.toLowerCase();
-        const svg = shape.ownerSVGElement;
-        const point = svg.createSVGPoint();
+        const bbox = shape.getBBox();
+        const renderedBox = shape.getBoundingClientRect();
+        const toClientCoordinates = ({ x, y }) => ({
+            x: bbox.width ?
+                renderedBox.left + ((x - bbox.x) / bbox.width) * renderedBox.width :
+                renderedBox.left + renderedBox.width / 2,
+            y: bbox.height ?
+                renderedBox.top + ((y - bbox.y) / bbox.height) * renderedBox.height :
+                renderedBox.top + renderedBox.height / 2,
+        });
+        let svgPoint = null;
 
-        if (tagName === 'polygon' && shape.points.length) {
-            point.x = Array.from(shape.points).reduce((sum, item) => sum + item.x, 0) / shape.points.length;
-            point.y = Array.from(shape.points).reduce((sum, item) => sum + item.y, 0) / shape.points.length;
+        if (['polygon', 'polyline'].includes(tagName) && shape.points.length) {
+            svgPoint = {
+                x: shape.points[0].x,
+                y: shape.points[0].y,
+            };
         } else if (tagName === 'circle') {
-            point.x = +shape.getAttribute('cx');
-            point.y = +shape.getAttribute('cy');
+            svgPoint = {
+                x: +shape.getAttribute('cx'),
+                y: +shape.getAttribute('cy'),
+            };
         } else if (['rect', 'ellipse'].includes(tagName)) {
-            const bbox = shape.getBBox();
-            point.x = bbox.x + bbox.width / 2;
-            point.y = bbox.y + bbox.height / 2;
+            svgPoint = {
+                x: bbox.x + bbox.width / 2,
+                y: bbox.y + bbox.height / 2,
+            };
         } else {
             throw new Error(
                 `Unsupported canvas shape "${tagName}" for cy.activateCanvasShape. ` +
@@ -48,10 +62,11 @@ Cypress.Commands.add('activateCanvasShape', (selector) => {
             );
         }
 
-        const screenPoint = point.matrixTransform(shape.getScreenCTM());
+        const point = toClientCoordinates(svgPoint);
+
         cy.get('#cvat_canvas_wrapper').trigger('mousemove', {
-            clientX: screenPoint.x,
-            clientY: screenPoint.y,
+            clientX: point.x,
+            clientY: point.y,
             bubbles: true,
         });
     });
