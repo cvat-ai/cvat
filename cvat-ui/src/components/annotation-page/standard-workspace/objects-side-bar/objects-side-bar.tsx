@@ -79,7 +79,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         <Layout.Sider
             className='cvat-objects-sidebar'
             theme='light'
-            width={300}
+            width={320}
             collapsedWidth={0}
             reverseArrow
             collapsible
