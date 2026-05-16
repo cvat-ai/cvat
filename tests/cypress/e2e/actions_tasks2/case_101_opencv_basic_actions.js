@@ -19,21 +19,15 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const createOpencvShape = {
         labelName,
         pointsMap: [
-            { x: 1000, y: 400 },
-            { x: 1250, y: 400 },
-            { x: 1500, y: 500 },
-            { x: 1750, y: 600 },
-            { x: 1500, y: 700 },
+            { x: 696, y: 586 },
+            { x: 1131, y: 588 },
         ],
     };
     const createOpencvShapeSecondLabel = {
         labelName: newLabel,
         pointsMap: [
-            { x: 1500, y: 400 },
-            { x: 1750, y: 400 },
-            { x: 2000, y: 500 },
-            { x: 2250, y: 600 },
-            { x: 2000, y: 700 },
+            { x: 1659, y: 674 },
+            { x: 2095, y: 678 },
         ],
         finishWithButton: true,
     };
@@ -49,20 +43,6 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     };
 
     const keyCodeN = 78;
-    const pointsMap = [
-        { x: 1500, y: 800 },
-        { x: 1750, y: 1000 },
-        { x: 2000, y: 900 },
-        { x: 2250, y: 1000 },
-        { x: 2000, y: 1100 },
-    ];
-    const approximablePointsMap = [
-        { x: 1500, y: 800 },
-        { x: 1750, y: 800 },
-        { x: 2000, y: 800 },
-        { x: 2250, y: 1000 },
-        { x: 2000, y: 1100 },
-    ];
 
     const taskName = `New annotation task for ${labelName}`;
     const attrName = `Attr for ${labelName}`;
@@ -123,14 +103,14 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         it('Change the number of points when the shape is drawn. Cancel drawing.', () => {
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-drawing-tool').click();
-            approximablePointsMap.forEach((point) => {
+            createOpencvShape.pointsMap.forEach((point) => {
                 clickCanvasImagePoint(point);
             });
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
                 // Get count of points
                 const intermediateShapeNumberPointsBeforeChange = intermediateShape.attr('points').split(' ').length;
-                // expected 7 to be above 5
-                expect(intermediateShapeNumberPointsBeforeChange).to.be.gt(approximablePointsMap.length);
+                // Intermediate shape is expected to contain points added by the algorithm
+                expect(intermediateShapeNumberPointsBeforeChange).to.be.gt(createOpencvShape.pointsMap.length);
                 // Change number of points
                 cy.get('.cvat-approx-poly-threshold-wrapper')
                     .find('[role="slider"]')
@@ -138,7 +118,6 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                 cy.get('.cvat_canvas_interact_intermediate_shape').then((_intermediateShape) => {
                     // Get count of points again
                     const intermediateShapeNumberPointsAfterChange = _intermediateShape.attr('points').split(' ').length;
-                    // expected 7 to be below 10
                     expect(intermediateShapeNumberPointsBeforeChange).to.be.lt(
                         intermediateShapeNumberPointsAfterChange,
                     );
@@ -171,26 +150,32 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         });
 
         it('Check "Intelligent scissors blocking feature". Cancel drawing.', () => {
+            const blockingPointsMap = [
+                createOpencvShapeSecondLabel.pointsMap[0],
+                { x: 1877, y: 900 },
+                createOpencvShapeSecondLabel.pointsMap[1],
+            ];
+
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-drawing-tool').click();
             cy.get('.cvat-annotation-header-block-tool-button').click();
             cy.get('.cvat-annotation-header-block-tool-button').should('have.class', 'cvat-button-active');
 
-            pointsMap.forEach((point) => {
+            blockingPointsMap.forEach((point) => {
                 clickCanvasImagePoint(point);
             });
 
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
-                expect(intermediateShape.attr('points').split(' ').length).to.be.equal(pointsMap.length);
+                expect(intermediateShape.attr('points').split(' ').length).to.be.equal(blockingPointsMap.length);
             });
 
             cy.get('.cvat-annotation-header-block-tool-button').click();
             cy.get('.cvat-annotation-header-block-tool-button').should('not.have.class', 'cvat-button-active');
-            clickCanvasImagePoint({ x: 3000, y: 1200 });
+            clickCanvasImagePoint({ x: 2300, y: 900 });
 
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
                 // The last point on the crosshair
-                expect(intermediateShape.attr('points').split(' ').length).to.be.gt(pointsMap.length);
+                expect(intermediateShape.attr('points').split(' ').length).to.be.gt(blockingPointsMap.length);
             });
 
             // Cancel drawing
