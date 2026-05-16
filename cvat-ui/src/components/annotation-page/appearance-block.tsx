@@ -40,6 +40,12 @@ const componentShortcuts = {
         sequences: [],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
+    TOGGLE_SHOW_BITMAP_APPEARANCE: {
+        name: 'Switch objects appearance setting "Show bitmap"',
+        description: 'Show or hide the bitmap layer on the canvas',
+        sequences: [],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -65,7 +71,7 @@ interface DispatchToProps {
     changeShapesOpacity(value: number): void;
     changeSelectedShapesOpacity(value: number): void;
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
-    changeShowBitmap(event: CheckboxChangeEvent): void;
+    changeShowBitmap(showBitmap: boolean): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
     changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): void;
 }
@@ -119,8 +125,8 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeShapesOutlinedBorders(outlined: boolean, color: string): void {
             dispatch(changeShapesOutlinedBordersAction(outlined, color));
         },
-        changeShowBitmap(event: CheckboxChangeEvent): void {
-            dispatch(changeShowBitmapAction(event.target.checked));
+        changeShowBitmap(showBitmap: boolean): void {
+            dispatch(changeShowBitmapAction(showBitmap));
         },
         changeShowProjections(event: CheckboxChangeEvent): void {
             dispatch(changeShowProjectionsAction(event.target.checked));
@@ -168,6 +174,12 @@ function AppearanceBlock(props: Props): JSX.Element {
         SWITCH_COLOR_BY_APPEARANCE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             changeShapesColorBy(nextColorBy[colorBy]);
+        },
+        TOGGLE_SHOW_BITMAP_APPEARANCE: (event: KeyboardEvent | undefined) => {
+            if (is2D) {
+                event?.preventDefault();
+                changeShowBitmap(!showBitmap);
+            }
         },
     };
 
@@ -250,7 +262,9 @@ function AppearanceBlock(props: Props): JSX.Element {
                         {is2D && (
                             <Checkbox
                                 className='cvat-appearance-bitmap-checkbox'
-                                onChange={changeShowBitmap}
+                                onChange={(event: CheckboxChangeEvent) => {
+                                    changeShowBitmap(event.target.checked);
+                                }}
                                 checked={showBitmap}
                             >
                                 Show bitmap
