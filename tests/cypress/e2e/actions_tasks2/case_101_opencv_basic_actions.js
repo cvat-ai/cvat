@@ -19,21 +19,21 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const createOpencvShape = {
         labelName,
         pointsMap: [
-            { x: 200, y: 200 },
-            { x: 250, y: 200 },
-            { x: 300, y: 250 },
-            { x: 350, y: 300 },
-            { x: 300, y: 350 },
+            { x: 1000, y: 400 },
+            { x: 1250, y: 400 },
+            { x: 1500, y: 500 },
+            { x: 1750, y: 600 },
+            { x: 1500, y: 700 },
         ],
     };
     const createOpencvShapeSecondLabel = {
         labelName: newLabel,
         pointsMap: [
-            { x: 300, y: 200 },
-            { x: 350, y: 200 },
-            { x: 400, y: 250 },
-            { x: 450, y: 300 },
-            { x: 400, y: 350 },
+            { x: 1500, y: 400 },
+            { x: 1750, y: 400 },
+            { x: 2000, y: 500 },
+            { x: 2250, y: 600 },
+            { x: 2000, y: 700 },
         ],
         finishWithButton: true,
     };
@@ -50,18 +50,18 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
 
     const keyCodeN = 78;
     const pointsMap = [
-        { x: 300, y: 400 },
-        { x: 350, y: 500 },
-        { x: 400, y: 450 },
-        { x: 450, y: 500 },
-        { x: 400, y: 550 },
+        { x: 1500, y: 800 },
+        { x: 1750, y: 1000 },
+        { x: 2000, y: 900 },
+        { x: 2250, y: 1000 },
+        { x: 2000, y: 1100 },
     ];
     const approximablePointsMap = [
-        { x: 300, y: 400 },
-        { x: 350, y: 400 },
-        { x: 400, y: 400 },
-        { x: 450, y: 500 },
-        { x: 400, y: 550 },
+        { x: 1500, y: 800 },
+        { x: 1750, y: 800 },
+        { x: 2000, y: 800 },
+        { x: 2250, y: 1000 },
+        { x: 2000, y: 1100 },
     ];
 
     const taskName = `New annotation task for ${labelName}`;
@@ -186,7 +186,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
 
             cy.get('.cvat-annotation-header-block-tool-button').click();
             cy.get('.cvat-annotation-header-block-tool-button').should('not.have.class', 'cvat-button-active');
-            clickCanvasImagePoint({ x: 600, y: 600 });
+            clickCanvasImagePoint({ x: 3000, y: 1200 });
 
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
                 // The last point on the crosshair
