@@ -8,7 +8,6 @@
 import * as allure from 'allure-js-commons';
 import { AllureTag } from '../../support/const_allure';
 
-import { generateString } from '../../support/utils';
 import { clickCanvasImagePoint } from '../../support/utils.cy';
 
 context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () => {
@@ -103,6 +102,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         it('Change the number of points when the shape is drawn. Cancel drawing.', () => {
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-drawing-tool').click();
+            cy.get('.cvat-approx-poly-threshold-wrapper .ant-slider').click('center');
             createOpencvShape.pointsMap.forEach((point) => {
                 clickCanvasImagePoint(point);
             });
@@ -112,9 +112,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                 // Intermediate shape is expected to contain points added by the algorithm
                 expect(intermediateShapeNumberPointsBeforeChange).to.be.gt(createOpencvShape.pointsMap.length);
                 // Change number of points
-                cy.get('.cvat-approx-poly-threshold-wrapper')
-                    .find('[role="slider"]')
-                    .type(generateString(4, 'rightarrow'));
+                cy.get('.cvat-approx-poly-threshold-wrapper .ant-slider').click('right');
                 cy.get('.cvat_canvas_interact_intermediate_shape').then((_intermediateShape) => {
                     // Get count of points again
                     const intermediateShapeNumberPointsAfterChange = _intermediateShape.attr('points').split(' ').length;
@@ -150,23 +148,19 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         });
 
         it('Check "Intelligent scissors blocking feature". Cancel drawing.', () => {
-            const blockingPointsMap = [
-                createOpencvShapeSecondLabel.pointsMap[0],
-                { x: 1877, y: 900 },
-                createOpencvShapeSecondLabel.pointsMap[1],
-            ];
-
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-drawing-tool').click();
             cy.get('.cvat-annotation-header-block-tool-button').click();
             cy.get('.cvat-annotation-header-block-tool-button').should('have.class', 'cvat-button-active');
 
-            blockingPointsMap.forEach((point) => {
+            createOpencvShapeSecondLabel.pointsMap.forEach((point) => {
                 clickCanvasImagePoint(point);
             });
 
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
-                expect(intermediateShape.attr('points').split(' ').length).to.be.equal(blockingPointsMap.length);
+                expect(intermediateShape.attr('points').split(' ').length).to.be.equal(
+                    createOpencvShapeSecondLabel.pointsMap.length,
+                );
             });
 
             cy.get('.cvat-annotation-header-block-tool-button').click();
@@ -175,7 +169,9 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
 
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
                 // The last point on the crosshair
-                expect(intermediateShape.attr('points').split(' ').length).to.be.gt(blockingPointsMap.length);
+                expect(intermediateShape.attr('points').split(' ').length).to.be.gt(
+                    createOpencvShapeSecondLabel.pointsMap.length,
+                );
             });
 
             // Cancel drawing
