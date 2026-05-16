@@ -9,6 +9,7 @@ import * as allure from 'allure-js-commons';
 import { AllureTag } from '../../support/const_allure';
 
 import { generateString } from '../../support/utils';
+import { clickCanvasImagePoint } from '../../support/utils.cy';
 
 context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () => {
     allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
@@ -122,8 +123,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         it('Change the number of points when the shape is drawn. Cancel drawing.', () => {
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-drawing-tool').click();
-            approximablePointsMap.forEach((element) => {
-                cy.get('.cvat-canvas-container').click(element.x, element.y);
+            approximablePointsMap.forEach((point) => {
+                clickCanvasImagePoint(point);
             });
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
                 // Get count of points
@@ -175,8 +176,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
             cy.get('.cvat-annotation-header-block-tool-button').click();
             cy.get('.cvat-annotation-header-block-tool-button').should('have.class', 'cvat-button-active');
 
-            pointsMap.forEach((element) => {
-                cy.get('.cvat-canvas-container').click(element.x, element.y);
+            pointsMap.forEach((point) => {
+                clickCanvasImagePoint(point);
             });
 
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
@@ -185,7 +186,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
 
             cy.get('.cvat-annotation-header-block-tool-button').click();
             cy.get('.cvat-annotation-header-block-tool-button').should('not.have.class', 'cvat-button-active');
-            cy.get('.cvat-canvas-container').click(600, 600);
+            clickCanvasImagePoint({ x: 600, y: 600 });
 
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
                 // The last point on the crosshair
