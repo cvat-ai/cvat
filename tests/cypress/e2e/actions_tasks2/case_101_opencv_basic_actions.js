@@ -55,6 +55,13 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         { x: 450, y: 500 },
         { x: 400, y: 550 },
     ];
+    const approximablePointsMap = [
+        { x: 300, y: 400 },
+        { x: 350, y: 400 },
+        { x: 400, y: 400 },
+        { x: 450, y: 500 },
+        { x: 400, y: 550 },
+    ];
 
     const taskName = `New annotation task for ${labelName}`;
     const attrName = `Attr for ${labelName}`;
@@ -115,14 +122,14 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         it('Change the number of points when the shape is drawn. Cancel drawing.', () => {
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-drawing-tool').click();
-            pointsMap.forEach((element) => {
+            approximablePointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y);
             });
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
                 // Get count of points
                 const intermediateShapeNumberPointsBeforeChange = intermediateShape.attr('points').split(' ').length;
                 // expected 7 to be above 5
-                expect(intermediateShapeNumberPointsBeforeChange).to.be.gt(pointsMap.length);
+                expect(intermediateShapeNumberPointsBeforeChange).to.be.gt(approximablePointsMap.length);
                 // Change number of points
                 cy.get('.cvat-approx-poly-threshold-wrapper')
                     .find('[role="slider"]')
