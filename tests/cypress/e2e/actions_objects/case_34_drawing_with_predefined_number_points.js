@@ -59,26 +59,7 @@ context('Drawing with predefined number of points.', () => {
     function tryDeletePoint(successful = true) {
         const svgJsCircleId = [];
         const updatedSvgJsCircleId = [];
-        cy.get('#cvat_canvas_shape_1').then(([shape]) => {
-            const svg = shape.ownerSVGElement;
-            const point = svg.createSVGPoint();
-
-            if (shape.points && shape.points.length) {
-                point.x = shape.points[0].x;
-                point.y = shape.points[0].y;
-            } else {
-                const bbox = shape.getBBox();
-                point.x = bbox.x + bbox.width / 2;
-                point.y = bbox.y + bbox.height / 2;
-            }
-
-            const screenPoint = point.matrixTransform(svg.getScreenCTM());
-            cy.wrap(shape).trigger('mousemove', {
-                clientX: screenPoint.x,
-                clientY: screenPoint.y,
-                bubbles: true,
-            });
-        });
+        cy.activateCanvasShape('#cvat_canvas_shape_1');
         cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         cy.get('circle').then((circle) => {
             for (let i = 0; i < circle.length; i++) {

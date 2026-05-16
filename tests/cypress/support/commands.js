@@ -25,6 +25,36 @@ require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
 
+Cypress.Commands.add('activateCanvasShape', (selector) => {
+    cy.get(selector).then(([shape]) => {
+        const tagName = shape.tagName.toLowerCase();
+        const svg = shape.ownerSVGElement;
+        const point = svg.createSVGPoint();
+
+        if (tagName === 'polygon' && shape.points.length) {
+            point.x = shape.points[0].x;
+            point.y = shape.points[0].y;
+        } else if (tagName === 'circle') {
+            point.x = +shape.getAttribute('cx');
+            point.y = +shape.getAttribute('cy');
+        } else if (['rect', 'ellipse'].includes(tagName)) {
+            const bbox = shape.getBBox();
+            point.x = bbox.x + bbox.width / 2;
+            point.y = bbox.y + bbox.height / 2;
+        } else {
+            throw new Error(
+                `Unsupported canvas shape "${tagName}" for cy.activateCanvasShape. ` +
+                'Support can be added later if this shape type needs it.',
+            );
+        }
+
+        const screenPoint = point.matrixTransform(shape.getScreenCTM());
+        cy.get('.cvat-canvas-container').trigger('mousemove', screenPoint.x, screenPoint.y, {
+            bubbles: true,
+        });
+    });
+});
+
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
     cy.get('#credential').should('be.visible').type(username);
     cy.get('#password').should('be.visible').type(password);
