@@ -393,7 +393,7 @@ function SingleShapeSidebar(): JSX.Element {
     const siderProps: SiderProps = {
         className: 'cvat-single-shape-annotation-sidebar',
         theme: 'light',
-        width: 300,
+        width: 320,
         collapsedWidth: 0,
         reverseArrow: true,
         collapsible: true,
