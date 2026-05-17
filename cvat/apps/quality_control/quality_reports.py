@@ -1081,10 +1081,25 @@ class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
-        if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
-            return 0
+
+        a_area = a_bbox[2] * a_bbox[3]
+        b_area = b_bbox[2] * b_bbox[3]
+
+        # The bbox IoU check is an optimization that skips OKS for clearly
+        # non-overlapping annotations. Skip it for degenerate (zero-area) bboxes —
+        # single-point or collinear skeletons always produce IoU=0 even when
+        # the annotations are identical, causing false negatives.
+        if a_area > 0 and b_area > 0:
+            if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
+                return 0
 
         bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
+
+        # OKS normalizes distances by bbox area (scale = w * h). Expand
+        # degenerate bboxes to avoid division by zero in the exponent.
+        if bbox[2] * bbox[3] <= 0:
+            bbox = (bbox[0], bbox[1], max(bbox[2], 1), max(bbox[3], 1))
+
         return oks(
             a,
             b,
