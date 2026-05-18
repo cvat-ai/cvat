@@ -25,10 +25,18 @@ function sleep(timeout: number): Promise<void> {
     });
 }
 
+function parseRetryAfter(retryAfter: string | null): number | null {
+    if (!retryAfter || !/^\d+$/.test(retryAfter)) {
+        return null;
+    }
+
+    return Number(retryAfter) * 1000;
+}
+
 function getRetryDelay(response: Response | null, retry: number): number {
-    const retryAfter = response?.headers.get('retry-after');
-    if (retryAfter && /^\d+$/.test(retryAfter)) {
-        return +retryAfter * 1000;
+    const retryAfter = parseRetryAfter(response?.headers.get('retry-after') ?? null);
+    if (retryAfter !== null) {
+        return retryAfter;
     }
 
     return Math.min(BASE_RETRY_DELAY_MS * 2 ** retry, MAX_RETRY_DELAY_MS);
