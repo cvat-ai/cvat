@@ -857,14 +857,12 @@ class MediaCache:
         db_task = db_segment.task
         db_data = db_task.require_data()
 
-        chunk_key = self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
-
         chunk_size = db_data.chunk_size
         chunk_start_frame_index = chunk_size * chunk_number
         chunk_end_frame_index = chunk_size * (chunk_number + 1)
         chunk_frame_range = db_segment.frame_set[chunk_start_frame_index:chunk_end_frame_index]
         return self.prepare_custom_range_segment_chunk(
-            db_task, chunk_frame_range, quality=quality, cache=self, chunk_key=chunk_key
+            db_task, chunk_frame_range, quality=quality, cache=self
         )
 
     @classmethod
@@ -875,7 +873,6 @@ class MediaCache:
         *,
         quality: models.FrameQuality,
         cache: MediaCache | None = None,
-        chunk_key: str | None = None,
     ) -> DataWithMime:
         # TODO: refactor all chunk building into another class
 
@@ -883,14 +880,13 @@ class MediaCache:
             case models.MediaType.AUDIO:
                 from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
 
-                assert cache and chunk_key
+                assert cache
 
                 return TaskAudioProvider._build_audio_chunk(
                     db_task=db_task,
                     chunk_frames=(frame_ids[0], frame_ids[-1]),
                     quality=quality,
                     cache=cache,
-                    chunk_key=chunk_key,
                 )
 
             case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
