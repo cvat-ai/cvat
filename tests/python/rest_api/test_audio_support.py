@@ -197,9 +197,10 @@ class TestAudioTasks:
                 task.id, type="chunk", quality=quality, number=chunk_id, _parse_response=False
             )[1]
 
+            start_offset = int(response.headers["X-Media-Offset"])
             chunk_file = io.BytesIO(response.data)
 
-            chunk_audio, sampling_rate = read_audio_pcm(chunk_file)
+            chunk_audio, sampling_rate = read_audio_pcm(chunk_file, offset_ms=start_offset)
 
             assert chunk_audio.shape[0] / sampling_rate >= data_meta.size / 1000
 
@@ -233,9 +234,10 @@ class TestAudioTasks:
                 _parse_response=False,
             )[1]
 
+            start_offset = int(response.headers["X-Media-Offset"])
             chunk_file = io.BytesIO(response.data)
 
-            chunk_audio, sampling_rate = read_audio_pcm(chunk_file)
+            chunk_audio, sampling_rate = read_audio_pcm(chunk_file, offset_ms=start_offset)
 
             assert chunk_audio.shape[0] / sampling_rate >= job_meta.size / 1000
 

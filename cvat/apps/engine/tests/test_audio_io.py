@@ -313,14 +313,17 @@ class Mp3ChunkCreationTest(unittest.TestCase):
 
     DURATION_S = 1.0
 
-    # Production default for fresh chunks is (left=0, right=5000) samples --
-    # see TaskAudioProvider._build_audio_chunk in audio_provider.py. The 5000-
-    # sample right padding is the constant chosen as "big enough for most
-    # cases" to cover libmp3lame's priming/lookahead (~1680 samples), which
-    # causes the encoded MP3 to drop samples from the payload tail unless
-    # extra silence is appended. The test's non-zero left padding exercises
-    # the padding pipeline even though production prefers left=0 (MP3 priming
-    # is masked by the LAME info tag a compliant decoder reads).
+    # Production default for fresh chunks is (left=0, right=500) -- see
+    # TaskAudioProvider._build_audio_chunk in audio_provider.py. The 500ms right
+    # padding is the constant chosen as "big enough for most cases" to cover
+    # libmp3lame's priming/lookahead, which causes the encoded MP3 to drop
+    # samples from the payload tail unless extra silence is appended.
+    # find_best_padding's PaddingType.auto search bounds are (0, 1000) with
+    # step 100 on both sides, so production never exceeds 1s of padding per
+    # side. The test's non-zero left padding exercises that code path even
+    # though production prefers left=0 (MP3 priming/lookahead only affects the
+    # tail; the head priming is masked by the LAME info tag a compliant
+    # decoder reads).
     #
     # Background on MP3 encoder delay:
     # - LAME introduces ~576 samples of encoder delay; decoder MDCT inverse
@@ -331,14 +334,16 @@ class Mp3ChunkCreationTest(unittest.TestCase):
     #   "libmp3lame" codec): supported options and their meanings are listed
     #   in the upstream source:
     #   https://github.com/FFmpeg/FFmpeg/blob/master/libavcodec/libmp3lame.c
-    LEFT_PADDING_SAMPLES = 100 * SAMPLE_RATE // 1000  # 100 ms
-    RIGHT_PADDING_SAMPLES = 500 * SAMPLE_RATE // 1000  # 500 ms
+    LEFT_PADDING_MS = 100
+    RIGHT_PADDING_MS = 500
 
     # Only lossless inputs: the duration assertions need exact source length.
     CASES = tuple(c for c in _FORMAT_CASES if c.codec in ("pcm_s16le", "wavpack"))
 
     def test_add_padding_preserves_sample_count(self):
-        expected_extra_samples = self.LEFT_PADDING_SAMPLES + self.RIGHT_PADDING_SAMPLES
+        expected_extra_samples = (
+            (self.LEFT_PADDING_MS + self.RIGHT_PADDING_MS) * SAMPLE_RATE // 1000
+        )
 
         for case in self.CASES:
             with self.subTest(case=case.name):
@@ -348,8 +353,8 @@ class Mp3ChunkCreationTest(unittest.TestCase):
                 padded_frames = list(
                     add_padding(
                         reader.read_frames(),
-                        left_padding_samples=self.LEFT_PADDING_SAMPLES,
-                        right_padding_samples=self.RIGHT_PADDING_SAMPLES,
+                        left_padding_ms=self.LEFT_PADDING_MS,
+                        right_padding_ms=self.RIGHT_PADDING_MS,
                     )
                 )
                 padded_samples = sum(f.samples for f, _ in padded_frames)
@@ -359,8 +364,8 @@ class Mp3ChunkCreationTest(unittest.TestCase):
                 # First and last frames should be silent padding of the requested length.
                 first_frame = padded_frames[0][0]
                 last_frame = padded_frames[-1][0]
-                self.assertEqual(first_frame.samples, self.LEFT_PADDING_SAMPLES)
-                self.assertEqual(last_frame.samples, self.RIGHT_PADDING_SAMPLES)
+                self.assertEqual(first_frame.samples, self.LEFT_PADDING_MS * SAMPLE_RATE // 1000)
+                self.assertEqual(last_frame.samples, self.RIGHT_PADDING_MS * SAMPLE_RATE // 1000)
                 self.assertTrue(np.all(first_frame.to_ndarray() == 0))
                 self.assertTrue(np.all(last_frame.to_ndarray() == 0))
 
@@ -371,8 +376,8 @@ class Mp3ChunkCreationTest(unittest.TestCase):
                     reader = _make_reader(case, duration_s=self.DURATION_S)
                     padded_frames = add_padding(
                         reader.read_frames(),
-                        left_padding_samples=self.LEFT_PADDING_SAMPLES,
-                        right_padding_samples=self.RIGHT_PADDING_SAMPLES,
+                        left_padding_ms=self.LEFT_PADDING_MS,
+                        right_padding_ms=self.RIGHT_PADDING_MS,
                     )
 
                     writer = Mp3ChunkWriter(quality=quality)
@@ -393,7 +398,7 @@ class Mp3ChunkCreationTest(unittest.TestCase):
                     expected_min_s = self.DURATION_S
                     expected_max_s = (
                         self.DURATION_S
-                        + (self.LEFT_PADDING_SAMPLES + self.RIGHT_PADDING_SAMPLES) / SAMPLE_RATE
+                        + (self.LEFT_PADDING_MS + self.RIGHT_PADDING_MS) / 1000
                         + 0.1
                     )
                     self.assertGreaterEqual(result.duration, expected_min_s)

@@ -8,20 +8,26 @@ import itertools
 import math
 from abc import ABCMeta, abstractmethod
 from bisect import bisect
-from collections.abc import Iterable, Sequence
-from io import IOBase, BytesIO
+from collections.abc import Iterable, Iterator, Sequence
+from dataclasses import dataclass
+from enum import Enum
+from io import BytesIO
+from typing import TypeVar
 
 import av
 import av.audio
 import av.audio.frame
 import numpy as np
+from attrs import define
 from django.db.models import prefetch_related_objects
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     AudioReader,
+    IChunkWriter,
     IMediaReader,
     Mp3ChunkWriter,
 )
@@ -33,6 +39,16 @@ from cvat.apps.engine.media_io.media_chunks import (
 )
 from cvat.apps.engine.media_io.media_provider import DataWithMeta, IMediaProvider
 from cvat.apps.engine.utils import take_by
+from utils.dataset_manifest.utils import MemOpenable
+
+_T = TypeVar("_T")
+
+slogger = ServerLogManager(__name__)
+
+
+@dataclass
+class AudioDataWithMeta(DataWithMeta[_T]):
+    start_offset: int
 
 
 class IAudioProvider(IMediaProvider, metaclass=ABCMeta):
@@ -46,12 +62,12 @@ class IAudioProvider(IMediaProvider, metaclass=ABCMeta):
     def get_chunk_number(self, frame_number: int) -> int: ...
 
     @abstractmethod
-    def get_preview_image(self) -> DataWithMeta[BytesIO]: ...
+    def get_preview_image(self) -> AudioDataWithMeta[BytesIO]: ...
 
     @abstractmethod
     def get_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
-    ) -> DataWithMeta[BytesIO]: ...
+    ) -> AudioDataWithMeta[BytesIO]: ...
 
     def _get_abs_frame_number(self, db_data: models.Data, rel_frame_number: int) -> int:
         return db_data.start_frame + rel_frame_number * db_data.get_frame_step()
@@ -165,8 +181,21 @@ class TaskAudioProvider(IAudioProvider):
 
     def get_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
-    ) -> DataWithMeta[BytesIO]:
-        return self._get_or_create_chunk(chunk_number=chunk_number, quality=quality)
+    ) -> AudioDataWithMeta[BytesIO]:
+        return_type = AudioDataWithMeta[BytesIO]
+
+        chunk = self._get_or_create_chunk(chunk_number=chunk_number, quality=quality)
+
+        cache = MediaCache()
+        chunk_key = cache._make_chunk_key(self._db_task, chunk_number=chunk_number, quality=quality)
+        chunk_info = self._db_task.data.audio_chunks.get(key=chunk_key)
+        assert chunk_info
+
+        return return_type(
+            data=chunk.data,
+            mime=chunk.mime,
+            start_offset=chunk_info.content_offset,
+        )
 
     @classmethod
     def _chunk_create_callback(
@@ -208,51 +237,24 @@ class TaskAudioProvider(IAudioProvider):
             chunk_info = models.AudioChunkInfo(data=db_data, audio=db_data.audio, key=chunk_key)
             chunk_info_created = True
 
-            # We use a constant padding big enough for most cases.
-            # 5000 samples is comfortably above libmp3lame's tail-flush requirement
-            # (encoder delay + lookahead, ~1680 samples) at every common sample rate:
-            # ~113 ms @ 44.1 kHz, ~104 ms @ 48 kHz, 625 ms @ 8 kHz.
-            #
-            # Left padding is 0: libmp3lame writes a Xing/Info+LAME header in the first
-            # MPEG frame describing the ~1102-sample encoder delay. Decoders that honor
-            # the tag skip those samples, so payload aligns at sample 0 without any
-            # extra leading padding. This holds for:
-            #   - ffmpeg/libavcodec (server-side reads, all browser <audio> playback
-            #     paths: Chrome/Edge, Firefox, Safari);
-            #   - Web Audio decodeAudioData (used by wavesurfer.js to compute peaks):
-            #     Chrome >= M62 (2017), Firefox >= 66 (2019), Safari/iOS >= 14 (2020).
-            # Older Safari (<14) would include the 1102 prefix samples in decoded PCM,
-            # causing a ~25 ms visual offset between waveform peaks and playback cursor.
-            # If that becomes a concern, serve precomputed peaks from the server instead
-            # of relying on client-side decodeAudioData.
-            # NOTE: assumes the MP3 encoder is libmp3lame (used here via PyAV/ffmpeg).
-            # Other encoders (Fraunhofer FhG, BladeEnc, Shine, etc.) may write a Xing/Info
-            # VBR header but omit the LAME-extension fields that carry the encoder delay,
-            # in which case left padding would be needed to avoid a leading offset.
-            # iTunes/CoreAudio uses a separate iTunSMPB ID3v2 atom instead of LAME tag.
-            # References:
-            #   - LAME/Xing tag and gapless playback:
-            #     https://wiki.hydrogenaudio.org/index.php?title=Gapless_playback
-            #     https://wiki.hydrogenaudio.org/index.php?title=MP3#The_LAME_tag
-            #     https://lame.sourceforge.io/tech-FAQ.txt
-            #   - Browser handling of MP3 priming samples in decodeAudioData:
-            #     https://github.com/WebAudio/web-audio-api/issues/1091
-            #     https://bugzilla.mozilla.org/show_bug.cgi?id=1566389 (Firefox fix)
-            #     https://jakearchibald.com/2016/sounds-fun/ (overview)
-            right_padding = 5000
+            # TODO: use padding = PaddingType.auto, when its performance is good enough.
+            # Currently, it can work for several minutes for big files.
+            # PyAV works ~3x slower than pure ffmpeg calls, which makes the situation even worse.
+            # For now, just use a constant padding big enough for most cases.
+            padding = (0, 500)
         else:
             chunk_info_created = False
-            right_padding = chunk_info.right_padding
+            padding = (chunk_info.left_padding, chunk_info.right_padding)
 
         source_audio_file, _ = cache.read_raw_audio(db_task)
         reader = AudioReader([source_audio_file], start=chunk_frames[0], stop=chunk_frames[1])
 
-        chunk_data, right_padding = prepare_audio_chunk(
-            db_data, reader, quality=quality, right_padding=right_padding
-        )
+        chunk_data, padding = prepare_audio_chunk(db_data, reader, quality=quality, padding=padding)
 
         if chunk_info_created:
-            chunk_info.right_padding = right_padding
+            chunk_info.left_padding = padding[0]
+            chunk_info.right_padding = padding[1]
+            chunk_info.content_offset = padding[2]
 
             try:
                 chunk_info.save(
@@ -405,8 +407,23 @@ class SegmentAudioProvider(IAudioProvider):
 
     def get_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
-    ) -> DataWithMeta[BytesIO]:
-        return self._get_or_create_chunk(chunk_number=chunk_number, quality=quality)
+    ) -> AudioDataWithMeta[BytesIO]:
+        return_type = AudioDataWithMeta[BytesIO]
+
+        chunk = self._get_or_create_chunk(chunk_number=chunk_number, quality=quality)
+
+        cache = MediaCache()
+        chunk_key = cache._make_chunk_key(
+            self._db_segment, chunk_number=chunk_number, quality=quality
+        )
+        chunk_info = self._db_segment.task.data.audio_chunks.get(key=chunk_key)
+        assert chunk_info
+
+        return return_type(
+            data=chunk.data,
+            mime=chunk.mime,
+            start_offset=chunk_info.content_offset,
+        )
 
     def _get_or_create_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
@@ -473,11 +490,27 @@ class JobAudioProvider(SegmentAudioProvider):
         *,
         quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
         is_task_chunk: bool = False,
-    ) -> DataWithMeta[BytesIO]:
+    ) -> AudioDataWithMeta[BytesIO]:
         if not is_task_chunk:
             return super().get_chunk(chunk_number, quality=quality)
 
-        return self._get_or_create_task_chunk(chunk_number=chunk_number, quality=quality)
+        return_type = AudioDataWithMeta[BytesIO]
+
+        chunk = self._get_or_create_task_chunk(chunk_number=chunk_number, quality=quality)
+
+        cache = MediaCache()
+        chunk_key = (
+            cache._make_chunk_key(self._db_segment, chunk_number=chunk_number, quality=quality)
+            + "-task"
+        )
+        chunk_info = self._db_segment.task.data.audio_chunks.get(key=chunk_key)
+        assert chunk_info
+
+        return return_type(
+            data=chunk.data,
+            mime=chunk.mime,
+            start_offset=chunk_info.content_offset,
+        )
 
     def _get_or_create_task_chunk(
         self,
@@ -578,8 +611,8 @@ def range_overlap(a: range, b: range) -> range:
 def add_padding(
     payload_frames: Iterable[IMediaReader.AudioFrame],
     *,
-    left_padding_samples: int = 0,
-    right_padding_samples: int = 0,
+    left_padding_ms: int = 0,
+    right_padding_ms: int = 0,
 ) -> Iterable[IMediaReader.AudioFrame]:
     payload_iter = iter(payload_frames)
 
@@ -589,9 +622,15 @@ def add_padding(
 
     output_frames = itertools.chain([(first_frame, None)], payload_iter)
 
+    def _ms_to_samples(ms: int) -> int:
+        return math.ceil(ms / 1000 * first_frame.sample_rate)
+
+    left_padding_samples_count = _ms_to_samples(left_padding_ms)
+    right_padding_samples_count = _ms_to_samples(right_padding_ms)
+
     for insert_index, padded_samples_count in [
-        (0, left_padding_samples),
-        (-1, right_padding_samples),
+        (0, left_padding_samples_count),
+        (-1, right_padding_samples_count),
     ]:
         if padded_samples_count == 0:
             continue
@@ -620,64 +659,11 @@ def add_padding(
     yield from output_frames
 
 
-def _mp3_has_lame_tag(source_path) -> bool:
-    """
-    Returns True if the MP3 file at `source_path` contains a Xing/Info VBR header
-    immediately followed by a LAME-style extension carrying the encoder delay/padding.
-    Decoders that honor the tag drop the priming samples, so the payload aligns at
-    sample 0 without an extra leading padding frame.
+class PaddingType(str, Enum):
+    auto = "auto"
 
-    The extension's first 9 bytes are an encoder short-version string. libmp3lame
-    writes "LAMEx.yz" / "LAMEx.yyr"; ffmpeg's mp3 muxer writes "Lavfx.y.z" while still
-    populating the delay/padding fields; lame-forks may write "Lame"/"lame". Files
-    without a recognizable extension (Fraunhofer FhG, BladeEnc, Shine, iTunes' iTunSMPB-
-    only output, etc.) return False and the caller should re-encode.
-
-    Specifications:
-      - ID3v2 header + synchsafe integer size field (10-byte header, last 4 bytes
-        are a 28-bit big-endian synchsafe integer):
-        https://id3.org/id3v2.4.0-structure (sections 3.1 and 6.2)
-      - Xing/Info VBR header (4-byte magic + 4-byte flags + optional frames/bytes/
-        TOC/quality fields, total up to 120 bytes):
-        https://wiki.hydrogenaudio.org/index.php?title=MP3#VBRI.2C_XING_headers
-      - LAME extension layout (encoder short-version string at offset +120, then
-        encoder delay/padding at +141..143):
-        https://wiki.hydrogenaudio.org/index.php?title=MP3#The_LAME_tag
-        https://gabriel.mp3-tech.org/mp3infotag.html
-    """
-    with source_path.open("rb") as f:
-        return has_mp3_lame_tag(f)
-
-
-def has_mp3_lame_tag(stream: IOBase) -> bool:
-    head = stream.read(10)
-
-    # Skip an ID3v2 tag if present so we land on the first MPEG audio frame,
-    # otherwise embedded artwork can push the Xing tag past our read window.
-    # Tag size lives in the last 4 bytes of the 10-byte header as a synchsafe
-    # 28-bit big-endian int (high bit of each byte is reserved and must be 0).
-    if len(head) >= 10 and head[:3] == b"ID3":
-        b0, b1, b2, b3 = head[6:10]
-        id3_size = (b0 << 21) | (b1 << 14) | (b2 << 7) | b3
-        stream.seek(10 + id3_size)
-
-    frame = stream.read(4096)
-
-    # Known encoder short-version-string prefixes used in the LAME extension block.
-    encoder_signatures = (b"LAME", b"Lame", b"lame", b"Lavf", b"Lavc")
-
-    for magic in (b"Xing", b"Info"):
-        pos = frame.find(magic)
-        if pos == -1:
-            continue
-        # The Xing block is at most 120 bytes (magic + flags + frames + bytes + TOC +
-        # quality); the extension's encoder string starts right after. Search a window
-        # generous enough to cover both the maximal and reduced Xing blocks.
-        ext_window = frame[pos + 8 : pos + 256]
-        if any(sig in ext_window for sig in encoder_signatures):
-            return True
-
-    return False
+    def __str__(self):
+        return self.value
 
 
 def prepare_audio_chunk(
@@ -685,8 +671,8 @@ def prepare_audio_chunk(
     payload_reader: AudioReader,
     *,
     quality: models.FrameQuality,
-    right_padding: int = 0,
-) -> tuple[DataWithMime, int]:
+    padding: tuple[int, int] | PaddingType | None = None,
+) -> tuple[DataWithMime, tuple[int, int, int]]:
     assert db_data.compressed_chunk_type == models.DataChoice.AUDIO_MP3
     assert db_data.original_chunk_type == models.DataChoice.AUDIO_MP3
 
@@ -699,18 +685,11 @@ def prepare_audio_chunk(
 
     if (
         payload_reader.format_name == writer.FORMAT
-        and right_padding == 0
+        and (padding == PaddingType.auto or padding == (0, 0) or padding is None)
         and payload_reader.start == 0
         and (payload_reader.stop is None or payload_reader.length <= payload_reader.stop)
-        and _mp3_has_lame_tag(payload_reader._source_path)
     ):
-        # Reuse the source file, if it matches the output format.
-        # We additionally require the Xing/Info + LAME tag to be present so that decoders
-        # skip the encoder delay and the payload aligns at sample 0 (matches the
-        # left_padding=0 contract used for re-encoded chunks). Files produced by encoders
-        # that omit the LAME-extension fields (Fraunhofer FhG, BladeEnc, Shine, iTunes'
-        # iTunSMPB-only output, etc.) fall through to the re-encoding path so that an
-        # explicit left padding can be computed instead.
+        # Reuse the source file, if it matches the output format
         chunk_data = BytesIO()
         with payload_reader._source_path.open("rb") as f:
             chunk_data.write(f.read())
@@ -719,12 +698,23 @@ def prepare_audio_chunk(
 
         # Writing still can fail with CacheTooLargeDataError.
         # TODO: add chunking for too large input files, when UI is able to render them
-        return (chunk_data, writer.CHUNK_MIME_TYPE), 0
+        return (chunk_data, writer.CHUNK_MIME_TYPE), (0, 0, 0)
+
+    if padding == PaddingType.auto:
+        left_padding, right_padding, payload_offset = find_best_padding(
+            payload_reader=payload_reader,
+            writer=writer,
+            step=500,
+            max_left_padding=0,
+        )
+    else:
+        left_padding, right_padding = padding or (0, 0)
+        payload_offset = left_padding
 
     payload = payload_reader.read_frames()
 
-    if right_padding:
-        payload = add_padding(payload, right_padding_samples=right_padding)
+    if left_padding or right_padding:
+        payload = add_padding(payload, left_padding_ms=left_padding, right_padding_ms=right_padding)
 
     chunk_data = BytesIO()
     writer.save_as_chunk(payload, chunk_data)
@@ -732,4 +722,202 @@ def prepare_audio_chunk(
     chunk_data.seek(0)
     mime = writer.CHUNK_MIME_TYPE
 
-    return (chunk_data, mime), right_padding
+    return (chunk_data, mime), (left_padding, right_padding, payload_offset)
+
+
+@define
+class SampleMatcher:
+    matching_sampling_rate = 8000
+
+    def get_samples_for_matching(
+        self, frames: Iterator[IMediaReader.AudioFrame]
+    ) -> np.ndarray | None:
+        resampler = av.AudioResampler(format="s16p", rate=self.matching_sampling_rate)
+        output_frames = (
+            (resampled_frame, None)
+            for input_frame, _ in frames
+            for resampled_frame in resampler.resample(input_frame)
+        )
+        return collect_samples(output_frames)
+
+
+def collect_samples(frames: Iterable[AudioReader.AudioFrame]) -> np.ndarray | None:
+    frames_iter = iter(frames)
+    frame = next(frames_iter, None)
+    if frame is None:
+        return None
+
+    frame = frame[0]
+    samples = frame.to_ndarray().T.copy()
+    insert_pos = samples.shape[0]
+
+    for frame, _ in frames_iter:
+        frame_samples = frame.to_ndarray().T
+
+        if insert_pos + frame_samples.shape[0] > samples.shape[0]:
+            new_size = max(insert_pos + frame_samples.shape[0], samples.shape[0] * 2)
+            samples.resize((new_size, *samples.shape[1:]), refcheck=False)
+
+        samples[insert_pos : insert_pos + frame_samples.shape[0]] = frame_samples
+        insert_pos += frame_samples.shape[0]
+
+    return samples[:insert_pos].T.copy()
+
+
+def find_best_padding(
+    payload_reader: AudioReader,
+    *,
+    writer: IChunkWriter,
+    payload_start: int | None = None,
+    payload_stop: int | None = None,
+    step: int = 100,
+    min_left_padding: int = 0,
+    min_right_padding: int = 0,
+    max_left_padding: int = 1000,
+    max_right_padding: int = 1000,
+) -> tuple[int, int]:
+    """
+    Lossy formats may reduce file duration on encoding. This function helps to find
+    the size of extra zero padding for the payload to be fully present in the output data.
+    The amount of padding may vary depending on the file contents, encoder, and format.
+    """
+
+    assert max_left_padding >= 0 and max_right_padding >= 0
+    assert min_left_padding >= 0 and min_right_padding >= 0
+
+    if payload_start is None:
+        payload_start = payload_reader.start
+
+    if payload_stop is None:
+        payload_stop = payload_reader.stop
+
+    def payload_frames_factory():
+        return payload_reader.read_frames(start=payload_start, stop=payload_stop)
+
+    sample_matcher = SampleMatcher()
+    payload_samples_for_matching = sample_matcher.get_samples_for_matching(payload_frames_factory())
+    if payload_samples_for_matching is None:
+        error_guess_message = ""
+
+        payload_length = payload_stop - payload_start
+        if payload_length < 1000:
+            error_guess_message = f"Payload is too small: {payload_length}"
+
+        raise Exception(" ".join(["Could not find the payload.", error_guess_message]))
+
+    def check_padding(
+        left_padding: int, right_padding: int
+    ) -> tuple[float | None, int | None, tuple[np.ndarray, np.ndarray, int, int, int] | None]:
+        slogger.glob.info(f"checking padding ({left_padding}, {right_padding})")
+
+        result_file = BytesIO()
+
+        chunk_payload_frames = list(
+            add_padding(
+                payload_frames_factory(),
+                left_padding_ms=left_padding,
+                right_padding_ms=right_padding,
+            )
+        )
+
+        writer.save_as_chunk(chunk_payload_frames, result_file)
+        result_file.seek(0)
+
+        result_bytes = result_file.getvalue()
+        if not result_bytes:
+            # If the payload was too small to write anything, there will be an empty file
+            return None, None
+
+        result_reader = AudioReader([MemOpenable(result_bytes)])
+        if result_reader.length < payload_stop - payload_start + 1:
+            return None, None
+
+        result_samples_for_matching = sample_matcher.get_samples_for_matching(
+            result_reader.read_frames()
+        )
+        left_padding_samples = math.ceil(
+            sample_matcher.matching_sampling_rate * left_padding / payload_reader.FRAME_RATE
+        )
+        match_score, match_offset = match_samples(
+            haystack=result_samples_for_matching,
+            needle=payload_samples_for_matching,
+            max_offset=left_padding_samples,
+        )
+
+        match_offset = int(
+            match_offset / sample_matcher.matching_sampling_rate * payload_reader.FRAME_RATE
+        )
+
+        return match_score, match_offset
+
+    # Find the minimal right padding to preserve all the payload
+    result_table = {}
+
+    best_score = None
+    best_result_payload_offset = None
+    best_left_padding = min_left_padding
+    best_right_padding = min_right_padding
+
+    right_padding = min_right_padding
+    while right_padding < max_right_padding + 1:
+        match = check_padding(best_left_padding, right_padding)
+        result_table[(best_left_padding, right_padding)] = match
+
+        match_score, match_offset = match
+        if match_offset is None:
+            right_padding += step
+            continue
+
+        if best_score is None or match_score < best_score:
+            best_score = match_score
+            best_right_padding = right_padding
+            best_result_payload_offset = match_offset
+
+        right_padding += step
+
+    # Find the minimal left padding to preserve all the payload
+    left_padding = min_left_padding + step
+    while left_padding < max_left_padding + 1:
+        match = check_padding(left_padding, best_right_padding)
+        result_table[(left_padding, best_right_padding)] = match
+
+        match_offset, match_score = match
+        if match_offset is None:
+            left_padding += step
+            continue
+
+        if best_score is None or match_score < best_score:
+            best_score = match_score
+            best_left_padding = left_padding
+            best_result_payload_offset = match_offset
+
+        left_padding += step
+
+    return best_left_padding, best_right_padding, best_result_payload_offset
+
+
+def match_samples(
+    haystack: np.ndarray,
+    needle: np.ndarray,
+    *,
+    max_offset: int | None = None,
+) -> tuple[float, int]:
+    best_score = -1
+    best_offset = -1
+
+    window_size = needle.shape[-1]
+
+    max_window_pos = haystack.shape[-1] - window_size - 1
+    if max_offset is not None:
+        max_window_pos = max(0, min(max_window_pos, max_offset))
+
+    # can also be done via np.convolve, but it requires normalization
+    for offset in range(0, max_window_pos + 1):
+        haystack_frame = haystack[..., offset : offset + window_size]
+        score = np.sum(np.abs(haystack_frame - needle))
+
+        if best_score == -1 or score < best_score:
+            best_score = score
+            best_offset = offset
+
+    return best_score, best_offset

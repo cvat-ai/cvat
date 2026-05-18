@@ -669,7 +669,9 @@ class AudioChunkInfo(TimestampedModel):
         related_query_name="chunk"
     )
 
+    left_padding = models.PositiveIntegerField(default=0)
     right_padding = models.PositiveIntegerField(default=0)
+    content_offset = models.PositiveIntegerField(default=0)
 
 
 class Image(models.Model):
