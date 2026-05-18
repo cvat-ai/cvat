@@ -7,6 +7,7 @@ import ControlsSideBarContainer from 'containers/annotation-page/audio-workspace
 import ObjectSideBarComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 import AudioRegionsListContainer from 'containers/annotation-page/audio-workspace/audio-regions-list';
 import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
+import { useAudioAnnotationsEnabled } from 'utils/feature-flags';
 
 import AudioControlsSidebarSkeleton from './skeleton/audio-controls-sidebar-skeleton';
 import AudioRegionsListSkeleton from './skeleton/audio-regions-list-skeleton';
@@ -17,7 +18,14 @@ export interface AudioWorkspaceProps {
     audioError: string | null;
 }
 
-export default function AudioWorkspaceComponent(props: AudioWorkspaceProps): JSX.Element {
+export default function AudioWorkspaceComponent(props: AudioWorkspaceProps): JSX.Element | null {
+    const audioEnabled = useAudioAnnotationsEnabled();
+    if (!audioEnabled) {
+        // Defense in depth: a parent switch (TICKET-06) should keep us out of the audio
+        // workspace when the feature is disabled, but render nothing if we still got here.
+        return null;
+    }
+
     const { waveformReady, audioLoading, audioError } = props;
     const showSkeleton = !audioError && (audioLoading || !waveformReady);
 
