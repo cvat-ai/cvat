@@ -3,7 +3,7 @@
 Install testing requirements:
 
 ```bash
-pip install -r requirements/testing.txt
+pip install -r ../cvat/requirements/testing.txt
 ```
 
 Run unit tests:

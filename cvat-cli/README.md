@@ -7,7 +7,9 @@ comprehensive CVAT administration tool in the future.
 The following subcommands are supported:
 
 - Projects:
+  - `backup` - back up a project
   - `create` - create a new project
+  - `create-from-backup` - create a project from a backup file
   - `delete` - delete projects
   - `ls` - list all projects
 
@@ -72,4 +74,11 @@ List tasks on a custom server with auth:
 cvat-cli --auth admin:password \
     --server-host cvat.my.server.com --server-port 30123 \
     task ls
+```
+
+Back up and restore a project:
+
+```bash
+cvat-cli --auth user project backup 42 project-42.zip
+cvat-cli --auth user project create-from-backup project-42.zip
 ```
