@@ -15,6 +15,7 @@ context('UI and job metadata work correctly when deleting frames', () => {
             cy.prepareUserSession();
             cy.window().then((window) => {
                 defaultJobMetadataReloadPeriod = window.cvat.config.jobMetaDataReloadPeriod;
+                // eslint-disable-next-line no-param-reassign
                 window.cvat.config.jobMetaDataReloadPeriod = chunkReloadPeriod;
             });
         });
@@ -64,6 +65,7 @@ context('UI and job metadata work correctly when deleting frames', () => {
         });
         after(() => {
             cy.window().then((window) => {
+                // eslint-disable-next-line no-param-reassign
                 window.cvat.config.jobMetaDataReloadPeriod = defaultJobMetadataReloadPeriod;
             });
         });

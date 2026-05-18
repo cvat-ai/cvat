@@ -7,15 +7,15 @@
 
 // The test is disabled for Firefox because the "Cypress Real Events" plugin work only in the chromium-based browser.
 context('Creating a project by inserting labels from a task.', { browser: '!firefox' }, () => {
-    const caseID = '116';
+    const caseId = '116';
     const task = {
-        name: `Case ${caseID}`,
+        name: `Case ${caseId}`,
         label: 'Tree',
         attrName: 'Kind',
         attrValue: 'Oak',
     };
 
-    const projectName = `Case ${caseID}`;
+    const projectName = `Case ${caseId}`;
 
     const imagesCount = 1;
     const imageFileName = `image_${task.name.replace(' ', '_').toLowerCase()}`;
@@ -46,7 +46,7 @@ context('Creating a project by inserting labels from a task.', { browser: '!fire
         });
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Copying a labels from the task from the raw editor.', () => {
             cy.openTask(task.name);
             cy.contains('[role="tab"]', 'Raw').click();

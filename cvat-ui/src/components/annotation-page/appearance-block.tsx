@@ -191,7 +191,7 @@ function AppearanceBlock(props: Props): JSX.Element {
             items={[{
                 label: (
                     <Text strong className='cvat-objects-appearance-collapse-header'>
-                            Appearance
+                        Appearance
                     </Text>
                 ),
                 key: 'appearance',

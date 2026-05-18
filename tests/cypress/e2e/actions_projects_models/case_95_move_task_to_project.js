@@ -10,24 +10,24 @@
 import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Move a task to a project.', { browser: '!firefox' }, () => {
-    const caseID = '95';
+    const caseId = '95';
     const task = {
-        name: `Case ${caseID}`,
+        name: `Case ${caseId}`,
         label: 'Tree',
         attrName: 'Kind',
         attrValue: 'Oak',
-        nameSecond: `Case ${caseID} second`,
+        nameSecond: `Case ${caseId} second`,
         labelSecond: 'Tree',
         attrNameSecond: 'Kind',
         attrValueSecond: 'Oak',
-        name3d: `Case ${caseID} 3D`,
+        name3d: `Case ${caseId} 3D`,
         label3d: 'Bus',
         attrName3d: 'Type',
         attrValue3d: 'City bus',
     };
 
     const project = {
-        name: `Case ${caseID}`,
+        name: `Case ${caseId}`,
         label: 'Tree',
         attrName: 'Kind',
         attrValue: 'Oak',
@@ -80,7 +80,7 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         cy.deleteProjectViaActions(project.name);
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Move a task from task list.', () => {
             cy.openProject(project.name);
             cy.get('.cvat-tasks-list-item').should('not.exist');
