@@ -52,7 +52,7 @@ import { Request, RequestOperation } from 'cvat-core/src/request';
 import { ImageProcessing, BaseImageFilter, SerializedImageFilter } from 'cvat-core/src/opencv/image-processing';
 import AboutData from 'cvat-core/src/about';
 import { MinimalShape, TrackerResults, InteractorResults } from 'cvat-core/src/lambda-manager';
-import { fetchAndAssembleAudio } from 'cvat-core/src/audio-data';
+import { fetchAndAssembleAudio } from 'cvat-core/src/audio';
 
 const cvat: CVATCore = _cvat;
 

@@ -1,5 +1,5 @@
 import { ChunkQuality } from 'cvat-data';
-import serverProxy from './server-proxy';
+import serverProxy from '../server-proxy';
 
 function encodeWav(buffer: AudioBuffer): Blob {
     const { numberOfChannels, sampleRate, length } = buffer;
