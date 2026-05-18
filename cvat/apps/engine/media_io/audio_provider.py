@@ -9,7 +9,7 @@ import math
 from abc import ABCMeta, abstractmethod
 from bisect import bisect
 from collections.abc import Iterable, Sequence
-from io import BytesIO
+from io import IOBase, BytesIO
 
 import av
 import av.audio
@@ -214,13 +214,31 @@ class TaskAudioProvider(IAudioProvider):
             # ~113 ms @ 44.1 kHz, ~104 ms @ 48 kHz, 625 ms @ 8 kHz.
             #
             # Left padding is 0: libmp3lame writes a Xing/Info+LAME header in the first
-            # MPEG frame, describing the ~1102-sample builtin encoder delay. Decoders that honor
+            # MPEG frame describing the ~1102-sample encoder delay. Decoders that honor
             # the tag skip those samples, so payload aligns at sample 0 without any
-            # extra leading padding. It includes all mainstream browsers after 2020,
-            # ffmpeg and the wavesurfer.js library we use.
-            # If we reuse the input file and it misses the tag, recoding would not make it
-            # any better - we just treat the padding as a part of the file itself.
-            # https://wiki.hydrogenaudio.org/index.php?title=Gapless_playback
+            # extra leading padding. This holds for:
+            #   - ffmpeg/libavcodec (server-side reads, all browser <audio> playback
+            #     paths: Chrome/Edge, Firefox, Safari);
+            #   - Web Audio decodeAudioData (used by wavesurfer.js to compute peaks):
+            #     Chrome >= M62 (2017), Firefox >= 66 (2019), Safari/iOS >= 14 (2020).
+            # Older Safari (<14) would include the 1102 prefix samples in decoded PCM,
+            # causing a ~25 ms visual offset between waveform peaks and playback cursor.
+            # If that becomes a concern, serve precomputed peaks from the server instead
+            # of relying on client-side decodeAudioData.
+            # NOTE: assumes the MP3 encoder is libmp3lame (used here via PyAV/ffmpeg).
+            # Other encoders (Fraunhofer FhG, BladeEnc, Shine, etc.) may write a Xing/Info
+            # VBR header but omit the LAME-extension fields that carry the encoder delay,
+            # in which case left padding would be needed to avoid a leading offset.
+            # iTunes/CoreAudio uses a separate iTunSMPB ID3v2 atom instead of LAME tag.
+            # References:
+            #   - LAME/Xing tag and gapless playback:
+            #     https://wiki.hydrogenaudio.org/index.php?title=Gapless_playback
+            #     https://wiki.hydrogenaudio.org/index.php?title=MP3#The_LAME_tag
+            #     https://lame.sourceforge.io/tech-FAQ.txt
+            #   - Browser handling of MP3 priming samples in decodeAudioData:
+            #     https://github.com/WebAudio/web-audio-api/issues/1091
+            #     https://bugzilla.mozilla.org/show_bug.cgi?id=1566389 (Firefox fix)
+            #     https://jakearchibald.com/2016/sounds-fun/ (overview)
             right_padding = 5000
         else:
             chunk_info_created = False
@@ -602,6 +620,66 @@ def add_padding(
     yield from output_frames
 
 
+def _mp3_has_lame_tag(source_path) -> bool:
+    """
+    Returns True if the MP3 file at `source_path` contains a Xing/Info VBR header
+    immediately followed by a LAME-style extension carrying the encoder delay/padding.
+    Decoders that honor the tag drop the priming samples, so the payload aligns at
+    sample 0 without an extra leading padding frame.
+
+    The extension's first 9 bytes are an encoder short-version string. libmp3lame
+    writes "LAMEx.yz" / "LAMEx.yyr"; ffmpeg's mp3 muxer writes "Lavfx.y.z" while still
+    populating the delay/padding fields; lame-forks may write "Lame"/"lame". Files
+    without a recognizable extension (Fraunhofer FhG, BladeEnc, Shine, iTunes' iTunSMPB-
+    only output, etc.) return False and the caller should re-encode.
+
+    Specifications:
+      - ID3v2 header + synchsafe integer size field (10-byte header, last 4 bytes
+        are a 28-bit big-endian synchsafe integer):
+        https://id3.org/id3v2.4.0-structure (sections 3.1 and 6.2)
+      - Xing/Info VBR header (4-byte magic + 4-byte flags + optional frames/bytes/
+        TOC/quality fields, total up to 120 bytes):
+        https://wiki.hydrogenaudio.org/index.php?title=MP3#VBRI.2C_XING_headers
+      - LAME extension layout (encoder short-version string at offset +120, then
+        encoder delay/padding at +141..143):
+        https://wiki.hydrogenaudio.org/index.php?title=MP3#The_LAME_tag
+        https://gabriel.mp3-tech.org/mp3infotag.html
+    """
+    with source_path.open("rb") as f:
+        return has_mp3_lame_tag(f)
+
+
+def has_mp3_lame_tag(stream: IOBase) -> bool:
+    head = stream.read(10)
+
+    # Skip an ID3v2 tag if present so we land on the first MPEG audio frame,
+    # otherwise embedded artwork can push the Xing tag past our read window.
+    # Tag size lives in the last 4 bytes of the 10-byte header as a synchsafe
+    # 28-bit big-endian int (high bit of each byte is reserved and must be 0).
+    if len(head) >= 10 and head[:3] == b"ID3":
+        b0, b1, b2, b3 = head[6:10]
+        id3_size = (b0 << 21) | (b1 << 14) | (b2 << 7) | b3
+        stream.seek(10 + id3_size)
+
+    frame = stream.read(4096)
+
+    # Known encoder short-version-string prefixes used in the LAME extension block.
+    encoder_signatures = (b"LAME", b"Lame", b"lame", b"Lavf", b"Lavc")
+
+    for magic in (b"Xing", b"Info"):
+        pos = frame.find(magic)
+        if pos == -1:
+            continue
+        # The Xing block is at most 120 bytes (magic + flags + frames + bytes + TOC +
+        # quality); the extension's encoder string starts right after. Search a window
+        # generous enough to cover both the maximal and reduced Xing blocks.
+        ext_window = frame[pos + 8 : pos + 256]
+        if any(sig in ext_window for sig in encoder_signatures):
+            return True
+
+    return False
+
+
 def prepare_audio_chunk(
     db_data: models.Data,
     payload_reader: AudioReader,
@@ -624,8 +702,15 @@ def prepare_audio_chunk(
         and right_padding == 0
         and payload_reader.start == 0
         and (payload_reader.stop is None or payload_reader.length <= payload_reader.stop)
+        and _mp3_has_lame_tag(payload_reader._source_path)
     ):
         # Reuse the source file, if it matches the output format.
+        # We additionally require the Xing/Info + LAME tag to be present so that decoders
+        # skip the encoder delay and the payload aligns at sample 0 (matches the
+        # left_padding=0 contract used for re-encoded chunks). Files produced by encoders
+        # that omit the LAME-extension fields (Fraunhofer FhG, BladeEnc, Shine, iTunes'
+        # iTunSMPB-only output, etc.) fall through to the re-encoding path so that an
+        # explicit left padding can be computed instead.
         chunk_data = BytesIO()
         with payload_reader._source_path.open("rb") as f:
             chunk_data.write(f.read())
