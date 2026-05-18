@@ -37,7 +37,8 @@ Usage:
     # preserving volatile fields from the existing file.
     python tests/python/shared/utils/dump_test_db.py
 
-    # read pre-existing dump from a file instead of running docker exec
+    # read pre-existing dump from a file (or stdin via "-") instead of
+    # running docker exec
     python tests/python/shared/utils/dump_test_db.py --from-file dump.json
 
     # also refresh volatile fields (don't preserve from existing output)
@@ -64,8 +65,7 @@ The extra config file has up to three optional sections:
 
 Field maps union with the built-in entries per model;
 ``extra_excludes`` append to ``DUMPDATA_EXCLUDES`` (and are ignored
-when ``--from-file`` / ``--from-stdin`` is used, since the dump is
-already produced).
+when ``--from-file`` is used, since the dump is already produced).
 """
 
 from __future__ import annotations
@@ -100,22 +100,18 @@ DUMPDATA_EXCLUDES = (
 VOLATILE_FIELDS: dict[str, frozenset[str]] = {
     "auth.user": frozenset({"last_login"}),
     "engine.profile": frozenset({"last_activity_date"}),
-    "engine.project": frozenset({"updated_date", "assignee_updated_date"}),
-    "engine.task": frozenset({"updated_date", "assignee_updated_date"}),
-    "engine.job": frozenset({"updated_date", "assignee_updated_date"}),
-    "engine.issue": frozenset({"updated_date", "assignee_updated_date"}),
-    "engine.comment": frozenset({"updated_date"}),
-    "engine.segment": frozenset({"chunks_updated_date"}),
-    "engine.cloudstorage": frozenset({"updated_date"}),
-    "webhooks.webhook": frozenset({"updated_date"}),
-    "webhooks.webhookdelivery": frozenset({"updated_date"}),
-    "quality_control.qualitysettings": frozenset({"updated_date"}),
     "quality_control.qualityreport": frozenset(
         {"assignee_last_updated", "gt_last_updated", "target_last_updated"}
     ),
-    "access_tokens.accesstoken": frozenset({"last_used_date", "updated_date"}),
-    "organizations.organization": frozenset({"updated_date"}),
+    "access_tokens.accesstoken": frozenset({"last_used_date"}),
 }
+
+# Any field whose name is exactly ``updated_date`` or ends with
+# ``_updated_date`` is treated as volatile for every model. ``auto_now``
+# timestamps drift on every save and the exact value is not relevant for
+# tests, so we don't track the per-model list of such fields explicitly.
+def _is_blanket_volatile(field_name: str) -> bool:
+    return field_name == "updated_date" or field_name.endswith("_updated_date")
 
 # Fields holding many-to-many references whose element order is not
 # semantically meaningful. Sorting them stabilizes the dump even if the
@@ -195,17 +191,16 @@ def _preserve_volatile(
 
     for record in records:
         model = record.get("model", "")
-        volatile = volatile_fields.get(model)
-        if not volatile:
-            continue
-
         ref_fields = ref_index.get((model, _pk_sort_key(record.get("pk"))))
         if ref_fields is None:
             continue
 
+        explicit = volatile_fields.get(model, frozenset())
         fields = record.get("fields", {})
-        for name in volatile:
-            if name in fields and name in ref_fields:
+        for name in fields:
+            if name not in ref_fields:
+                continue
+            if name in explicit or _is_blanket_volatile(name):
                 fields[name] = ref_fields[name]
 
     return records
@@ -368,18 +363,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help=f'Output file (default: %(default)s). Use "{STDOUT_SENTINEL}" for stdout.',
     )
 
-    source_group = parser.add_mutually_exclusive_group()
-    source_group.add_argument(
+    parser.add_argument(
         "--from-file",
-        type=Path,
-        help="Read pre-existing dumpdata JSON from this file instead of running docker exec.",
+        type=str,
+        help='Read pre-existing dumpdata JSON from this file instead of running docker exec. '
+        'Use "-" to read from stdin.',
     )
-    source_group.add_argument(
-        "--from-stdin",
-        action="store_true",
-        help="Read pre-existing dumpdata JSON from stdin.",
-    )
-
     parser.add_argument(
         "--container",
         default=DEFAULT_CONTAINER_NAME,
@@ -399,7 +388,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "extra_volatile_fields, extra_sortable_list_fields, extra_excludes. "
         "Field maps union with the built-in entries per model; "
         "extra_excludes append to the built-in DUMPDATA_EXCLUDES (and are "
-        "ignored when --from-file/--from-stdin is used).",
+        "ignored when --from-file is used).",
     )
     return parser
 
@@ -426,17 +415,17 @@ def main(argv: list[str] | None = None) -> int:
     excludes = list(DUMPDATA_EXCLUDES) + [
         ex for ex in extra["extra_excludes"] if ex not in DUMPDATA_EXCLUDES
     ]
-    if extra["extra_excludes"] and (parsed_args.from_file or parsed_args.from_stdin):
+    if extra["extra_excludes"] and parsed_args.from_file:
         print(
             "warning: extra_excludes is ignored when reading the dump from "
-            "--from-file/--from-stdin (the dump is already produced).",
+            "--from-file (the dump is already produced).",
             file=sys.stderr,
         )
 
-    if parsed_args.from_file:
-        records = json.loads(parsed_args.from_file.read_text())
-    elif parsed_args.from_stdin:
+    if parsed_args.from_file == "-":
         records = json.loads(sys.stdin.read())
+    elif parsed_args.from_file:
+        records = json.loads(Path(parsed_args.from_file).read_text())
     else:
         records = dump_from_container(parsed_args.container, excludes=excludes)
 

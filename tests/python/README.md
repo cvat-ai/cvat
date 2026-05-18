@@ -87,14 +87,6 @@ python shared/utils/dump_test_db.py
 docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
 ```
 
-`dump_test_db.py` runs `manage.py dumpdata` inside the test container and
-post-processes the output for stable diffs: records are sorted by
-`(model, pk)`, field keys are sorted alphabetically, and volatile
-timestamp fields (`last_login`, `*_updated_date`, ...) are preserved from
-the existing `data.json` so a re-dump after a no-op test run produces zero
-diff. Pass `--refresh-volatile` to take new timestamps from the dump
-instead, or `--help` for other options.
-
 ## How to update *.json files in the assets directory?
 
 If you have updated the test database and want to update the assets/*.json
