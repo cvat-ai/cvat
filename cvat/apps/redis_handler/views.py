@@ -137,7 +137,6 @@ class RequestViewSet(viewsets.GenericViewSet):
         for job in queue.job_class.fetch_many(job_ids, queue.connection):
             if job and is_rq_job_owner(job, user_id):
                 if job.get_status(refresh=False) in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
-                    job.delete()
                     continue
 
                 job = cast(CustomRQJob, job)
@@ -284,10 +283,8 @@ class RequestViewSet(viewsets.GenericViewSet):
         self.check_object_permissions(request, rq_job)
         rq_job_status = rq_job.get_status(refresh=False)
 
-        # Terminal canceled jobs are not useful for users in the requests API. Remove them when
-        # they are observed after RQ has already finished cancellation handling.
+        # Terminal canceled jobs are not useful for users in the requests API.
         if rq_job_status in {RQJobStatus.CANCELED, RQJobStatus.STOPPED}:
-            rq_job.delete()
             return HttpResponseNotFound("There is no request with specified id")
 
         # Jobs that have not started yet are safe to cancel directly. RQ will also enqueue
