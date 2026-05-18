@@ -38,22 +38,23 @@ cmd_init() {
 }
 
 _load_component_config() {
-    declare -A merged_config
-    for config in ~/backend_entrypoint.d/*.conf; do
-        declare -A config=$(cat $config)
+    declare -gA merged_config=()
+    for config_file in ~/backend_entrypoint.d/*.conf; do
+        declare -A config=$(cat $config_file)
         for key in "${!config[@]}"; do
-            if [ -v merged_config[$key] ]; then
+            if [[ -n ${merged_config[$key]+_} ]]; then
                 fail "Duplicated component definition: $key"
             fi
             merged_config[$key]=${config[$key]}
         done
+        unset config
     done
 }
 
 _get_includes() {
     extra_configs=()
     for key in "$@"; do
-        if ! [ -v merged_config[$key] ]; then
+        if [[ -z ${merged_config[$key]+_} ]]; then
             fail "Unexpected component: $key"
         fi
 
@@ -124,7 +125,7 @@ cmd_run() {
     supervisord_includes=""
     postgres_app_name="cvat:$component"
     if [ "$component" = "server" ]; then
-        supervisord_includes="$(_get_includes "server:includes")$(_get_reusable_includes "${@:2}")"
+        supervisord_includes="$(_get_includes "server")$(_get_reusable_includes "${@:2}")"
     elif [ "$component" = "worker"  ]; then
         if [ "$#" -eq 1 ]; then
             fail "run worker: expected at least 1 queue name"
@@ -154,12 +155,7 @@ cmd_run() {
 
         postgres_app_name+=":${queue_list// /+}"
 
-        queue_keys=()
-        for queue in $queue_list; do
-            queue_keys+=("worker:$queue")
-        done
-
-        supervisord_includes=$(_get_includes "${queue_keys[@]}")
+        supervisord_includes=$(_get_includes "${queues[@]}")
     fi
     echo "Additional supervisor configs that will be included: $supervisord_includes"
 
