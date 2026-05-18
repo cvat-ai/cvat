@@ -37,7 +37,7 @@ cmd_init() {
     fi
 }
 
-_get_includes() {
+_load_component_config() {
     declare -A merged_config
     for config in ~/backend_entrypoint.d/*.conf; do
         declare -A config=$(cat $config)
@@ -48,19 +48,38 @@ _get_includes() {
             merged_config[$key]=${config[$key]}
         done
     done
+}
 
+_get_includes() {
     extra_configs=()
-    for component in "$@"; do
-        if ! [ -v merged_config[$component] ]; then
-            fail "Unexpected worker: $component"
+    for key in "$@"; do
+        if ! [ -v merged_config[$key] ]; then
+            fail "Unexpected component: $key"
         fi
 
-        for include in ${merged_config["$component"]}; do
+        for include in ${merged_config["$key"]}; do
             if ! [[ ${extra_configs[@]} =~ $include ]] && \
                 ( ! [[ "$include" == "clamav" ]] || [[ "${CLAM_AV:-}" == "yes" ]] ); then
                 extra_configs+=("$include")
             fi
         done
+    done
+
+    if [ ${#extra_configs[@]} -gt 0 ]; then
+        printf 'reusable/%s.conf ' "${extra_configs[@]}"
+    fi
+}
+
+_get_reusable_includes() {
+    extra_configs=()
+    for include in "$@"; do
+        if ! [ -r "$HOME/supervisord/reusable/$include.conf" ]; then
+            fail "Unexpected supervisor include: $include"
+        fi
+
+        if ! [[ ${extra_configs[@]} =~ $include ]]; then
+            extra_configs+=("$include")
+        fi
     done
 
     if [ ${#extra_configs[@]} -gt 0 ]; then
@@ -74,6 +93,16 @@ cmd_run() {
     fi
 
     component="$1"
+    _load_component_config
+
+    case "$component" in
+        server|worker|nginx) ;;
+        *) fail "Unexpected run component: $component" ;;
+    esac
+
+    if [ "$component" = "nginx" ]; then
+        exec supervisord -c "supervisord/nginx.conf"
+    fi
 
     if [ "$component" = "server" ]; then
         ~/manage.py collectstatic --no-input
@@ -95,7 +124,7 @@ cmd_run() {
     supervisord_includes=""
     postgres_app_name="cvat:$component"
     if [ "$component" = "server" ]; then
-        supervisord_includes=$(_get_includes "$component")
+        supervisord_includes="$(_get_includes "server:includes")$(_get_reusable_includes "${@:2}")"
     elif [ "$component" = "worker"  ]; then
         if [ "$#" -eq 1 ]; then
             fail "run worker: expected at least 1 queue name"
@@ -125,7 +154,12 @@ cmd_run() {
 
         postgres_app_name+=":${queue_list// /+}"
 
-        supervisord_includes=$(_get_includes $queue_list)
+        queue_keys=()
+        for queue in $queue_list; do
+            queue_keys+=("worker:$queue")
+        done
+
+        supervisord_includes=$(_get_includes "${queue_keys[@]}")
     fi
     echo "Additional supervisor configs that will be included: $supervisord_includes"
 
@@ -141,7 +175,8 @@ if [ $# -eq 0 ]; then
     echo >&2 "available subcommands:"
     echo >&2 "    bash <bash args...>"
     echo >&2 "    init"
-    echo >&2 "    run server"
+    echo >&2 "    run server [additional components]"
+    echo >&2 "    run nginx"
     echo >&2 "    run worker <list of queues>"
     exit 1
 fi
