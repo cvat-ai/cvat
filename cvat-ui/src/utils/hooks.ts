@@ -38,7 +38,7 @@ export function useIsMounted(): () => boolean {
 }
 
 export type Plugin = {
-    component: any;
+    component: CallableFunction;
     weight: number;
 };
 
@@ -50,7 +50,7 @@ export function usePlugins(
     const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
     const mappedComponents = filteredComponents
         .map(({ component, data }): {
-            component: any;
+            component: CallableFunction;
             weight: number;
         } => ({
             component,

@@ -9,8 +9,10 @@ const MAX_HISTORY_LENGTH = 32;
 
 interface ActionItem {
     action: HistoryActions;
-    undo: () => void | Promise<void>;
-    redo: () => void | Promise<void>;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+    undo: Function;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+    redo: Function;
     clientIDs: number[];
     frame: number;
 }
@@ -36,13 +38,8 @@ export default class AnnotationHistory {
         };
     }
 
-    public do(
-        action: HistoryActions,
-        undo: () => void | Promise<void>,
-        redo: () => void | Promise<void>,
-        clientIDs: number[],
-        frame: number,
-    ): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+    public do(action: HistoryActions, undo: Function, redo: Function, clientIDs: number[], frame: number): void {
         if (this.frozen) return;
         const actionItem = {
             clientIDs,

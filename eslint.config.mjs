@@ -341,7 +341,7 @@ export default [
                 caughtErrorsIgnorePattern: '^_',
             }],
             '@typescript-eslint/default-param-last': 'off',
-            '@typescript-eslint/no-unsafe-function-type': 'off',
+            '@typescript-eslint/no-unsafe-function-type': 'error',
             'lines-between-class-members': 'off',
             '@typescript-eslint/lines-between-class-members': 'off',
             'default-param-last': 'off',

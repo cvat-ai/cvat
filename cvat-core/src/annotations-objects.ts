@@ -2269,8 +2269,10 @@ export class MaskShape extends Shape {
     public removeUnderlyingPixels(frame: number):
     {
         clientIDs: number[],
-        undo: () => void,
-        redo: () => void,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+        undo: Function,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+        redo: Function,
         emptyMaskOccurred: boolean,
     } {
         if (frame !== this.frame) {
