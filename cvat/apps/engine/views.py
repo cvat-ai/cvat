@@ -629,8 +629,8 @@ class _DataGetter(metaclass=ABCMeta):
         data_num: str | int | None,
         data_quality: str,
     ) -> None:
-        possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
-        possible_quality_values = ('compressed', 'original')
+        possible_data_type_values = ("chunk", "frame", "preview", "context_image")
+        possible_quality_values = ("compressed", "original")
 
         if not data_type or data_type not in possible_data_type_values:
             raise ValidationError("Data type not specified or has wrong value")
@@ -642,8 +642,9 @@ class _DataGetter(metaclass=ABCMeta):
 
         self.type = data_type
         self.number = int(data_num) if data_num is not None else None
-        self.quality = FrameQuality.COMPRESSED \
-            if data_quality == 'compressed' else FrameQuality.ORIGINAL
+        self.quality = (
+            FrameQuality.COMPRESSED if data_quality == "compressed" else FrameQuality.ORIGINAL
+        )
         self._request = request
 
     @abstractmethod
@@ -651,16 +652,16 @@ class _DataGetter(metaclass=ABCMeta):
 
     @staticmethod
     def _parse_range(range_header: str, content_size: int) -> tuple[int, int]:
-        range_unit, separator, ranges = range_header.partition('=')
-        if range_unit.strip().lower() != 'bytes' or separator != '=' or ',' in ranges:
-            raise ValidationError('Invalid Range header')
+        range_unit, separator, ranges = range_header.partition("=")
+        if range_unit.strip().lower() != "bytes" or separator != "=" or "," in ranges:
+            raise ValidationError("Invalid Range header")
 
-        start_text, separator, end_text = ranges.strip().partition('-')
-        if separator != '-':
-            raise ValidationError('Invalid Range header')
+        start_text, separator, end_text = ranges.strip().partition("-")
+        if separator != "-":
+            raise ValidationError("Invalid Range header")
 
         if not start_text and not end_text:
-            raise ValidationError('Invalid Range header')
+            raise ValidationError("Invalid Range header")
 
         try:
             if start_text:
@@ -669,14 +670,14 @@ class _DataGetter(metaclass=ABCMeta):
             else:
                 suffix_length = int(end_text)
                 if suffix_length <= 0:
-                    raise ValidationError('Invalid Range header')
+                    raise ValidationError("Invalid Range header")
                 start = max(content_size - suffix_length, 0)
                 end = content_size - 1
         except ValueError as ex:
-            raise ValidationError('Invalid Range header') from ex
+            raise ValidationError("Invalid Range header") from ex
 
         if start < 0 or end < start or start >= content_size:
-            raise ValidationError('Invalid Range header')
+            raise ValidationError("Invalid Range header")
 
         return start, min(end, content_size - 1)
 
@@ -685,10 +686,10 @@ class _DataGetter(metaclass=ABCMeta):
         content_size = len(data)
         chunk_headers = {
             **self._get_chunk_response_headers(chunk_data),
-            'Accept-Ranges': 'bytes',
+            "Accept-Ranges": "bytes",
         }
 
-        range_header = self._request.headers.get('Range')
+        range_header = self._request.headers.get("Range")
         if not range_header:
             return HttpResponse(data, content_type=chunk_data.mime, headers=chunk_headers)
 
@@ -699,19 +700,19 @@ class _DataGetter(metaclass=ABCMeta):
                 status=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
                 headers={
                     **chunk_headers,
-                    'Content-Range': f'bytes */{content_size}',
+                    "Content-Range": f"bytes */{content_size}",
                 },
             )
 
-        partial_data = data[start:end + 1]
+        partial_data = data[start : end + 1]
         return HttpResponse(
             partial_data,
             content_type=chunk_data.mime,
             status=status.HTTP_206_PARTIAL_CONTENT,
             headers={
                 **chunk_headers,
-                'Content-Range': f'bytes {start}-{end}/{content_size}',
-                'Content-Length': str(len(partial_data)),
+                "Content-Range": f"bytes {start}-{end}/{content_size}",
+                "Content-Length": str(len(partial_data)),
             },
         )
 
@@ -721,7 +722,7 @@ class _DataGetter(metaclass=ABCMeta):
         if self.type == "chunk":
             data = frame_provider.get_chunk(self.number, quality=self.quality)
             return self._make_ranged_chunk_response(data)
-        elif self.type == 'frame':
+        elif self.type == "frame":
             data = frame_provider.get_frame(self.number, quality=self.quality)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == "preview":
@@ -777,7 +778,7 @@ class _DataGetter(metaclass=ABCMeta):
 
     def _make_chunk_response_headers(self, checksum: str, updated_date: datetime) -> dict[str, str]:
         return {
-            _DATA_CHECKSUM_HEADER_NAME: str(checksum or ''),
+            _DATA_CHECKSUM_HEADER_NAME: str(checksum or ""),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(
                 updated_date
             ),
@@ -1444,38 +1445,66 @@ class TaskViewSet(
         methods=["GET"],
         summary="Get data of a task",
         parameters=[
-            OpenApiParameter('type', location=OpenApiParameter.QUERY, required=True,
-                type=OpenApiTypes.STR, enum=['chunk', 'frame', 'context_image'],
-                description='Specifies the type of the requested data'),
-            OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
-                type=OpenApiTypes.STR, enum=['compressed', 'original'],
-                description="Specifies the quality level of the requested data"),
-            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
-                description="A unique number value identifying chunk or frame"),
-            OpenApiParameter('Range', location=OpenApiParameter.HEADER, required=False,
+            OpenApiParameter(
+                "type",
+                location=OpenApiParameter.QUERY,
+                required=True,
+                type=OpenApiTypes.STR,
+                enum=["chunk", "frame", "context_image"],
+                description="Specifies the type of the requested data",
+            ),
+            OpenApiParameter(
+                "quality",
+                location=OpenApiParameter.QUERY,
+                required=False,
+                type=OpenApiTypes.STR,
+                enum=["compressed", "original"],
+                description="Specifies the quality level of the requested data",
+            ),
+            OpenApiParameter(
+                "number",
+                location=OpenApiParameter.QUERY,
+                required=False,
+                type=OpenApiTypes.INT,
+                description="A unique number value identifying chunk or frame",
+            ),
+            OpenApiParameter(
+                "Range",
+                location=OpenApiParameter.HEADER,
+                required=False,
                 type=OpenApiTypes.STR,
                 description="Byte range to return, applicable for chunks only. "
-                    "Example: 'bytes=0-1023'"),
+                "Example: 'bytes=0-1023'",
+            ),
             OpenApiParameter(
                 _DATA_CHECKSUM_HEADER_NAME,
-                location=OpenApiParameter.HEADER, type=OpenApiTypes.STR, required=False,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.STR,
+                required=False,
                 response=[200, 206],
                 description="Data checksum, applicable for chunks only",
             ),
             OpenApiParameter(
                 _DATA_UPDATED_DATE_HEADER_NAME,
-                location=OpenApiParameter.HEADER, type=OpenApiTypes.DATETIME, required=False,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.DATETIME,
+                required=False,
                 response=[200, 206],
                 description="Data update date, applicable for chunks only",
             ),
         ],
         responses={
-            '200': OpenApiResponse(description='Data of a specific type'),
-            '206': OpenApiResponse(description='Partial chunk data'),
-            '416': OpenApiResponse(description='Requested range is not satisfiable'),
-        })
-    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$',
-        parser_classes=_UPLOAD_PARSER_CLASSES)
+            "200": OpenApiResponse(description="Data of a specific type"),
+            "206": OpenApiResponse(description="Partial chunk data"),
+            "416": OpenApiResponse(description="Requested range is not satisfiable"),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["OPTIONS", "POST", "GET"],
+        url_path=r"data/?$",
+        parser_classes=_UPLOAD_PARSER_CLASSES,
+    )
     def data(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object()  # call check_object_permissions as well
         if request.method == "POST" or request.method == "OPTIONS":
@@ -2412,23 +2441,35 @@ class JobViewSet(
                 required=False,
                 type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame. "
-                    "The numbers are the same as for the task. "
-                    "Deprecated for chunks in favor of 'index'"),
-            OpenApiParameter('index',
-                location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
-                description="A unique number value identifying chunk, starts from 0 for each job"),
-            OpenApiParameter('Range', location=OpenApiParameter.HEADER, required=False,
+                "The numbers are the same as for the task. "
+                "Deprecated for chunks in favor of 'index'",
+            ),
+            OpenApiParameter(
+                "index",
+                location=OpenApiParameter.QUERY,
+                required=False,
+                type=OpenApiTypes.INT,
+                description="A unique number value identifying chunk, starts from 0 for each job",
+            ),
+            OpenApiParameter(
+                "Range",
+                location=OpenApiParameter.HEADER,
+                required=False,
                 type=OpenApiTypes.STR,
                 description="Byte range to return, applicable for chunks only. "
-                    "Example: 'bytes=0-1023'"),
-            ],
+                "Example: 'bytes=0-1023'",
+            ),
+        ],
         responses={
-            '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
-            '206': OpenApiResponse(OpenApiTypes.BINARY, description='Partial chunk data'),
-            '416': OpenApiResponse(description='Requested range is not satisfiable'),
-        })
-    @action(detail=True, methods=['GET'],
-        simple_filters=[] # type query parameter conflicts with the filter
+            "200": OpenApiResponse(OpenApiTypes.BINARY, description="Data of a specific type"),
+            "206": OpenApiResponse(OpenApiTypes.BINARY, description="Partial chunk data"),
+            "416": OpenApiResponse(description="Requested range is not satisfiable"),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["GET"],
+        simple_filters=[],  # type query parameter conflicts with the filter
     )
     def data(self, request: ExtendedRequest, pk: int):
         db_job = self.get_object()  # call check_object_permissions as well
@@ -2440,8 +2481,10 @@ class JobViewSet(
         data_getter = _JobDataGetter(
             request=request,
             db_job=db_job,
-            data_type=data_type, data_quality=data_quality,
-            data_index=data_index, data_num=data_num
+            data_type=data_type,
+            data_quality=data_quality,
+            data_index=data_index,
+            data_num=data_num,
         )
         return data_getter()
 
