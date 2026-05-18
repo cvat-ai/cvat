@@ -173,7 +173,7 @@
     width: 100%;
     margin: 0;
     padding: $grid-unit-size;
-    border: 1px solid rgba(0, 0, 0, 8%);
+    border: 2px solid rgba(0, 0, 0, 8%);
     border-left: 3px solid #ff7300;
     border-radius: $border-radius-base;
     background: rgba(255, 255, 255, 82%);
@@ -210,7 +210,7 @@
     width: 100%;
     margin: 0;
     padding: $grid-unit-size;
-    border: 1px solid rgba(0, 0, 0, 8%);
+    border: 2px solid rgba(0, 0, 0, 8%);
     border-left: 3px solid #e10602;
     border-radius: $border-radius-base;
     background: rgba(255, 255, 255, 82%);
@@ -238,8 +238,8 @@
 }
 
 .cvat-objects-sidebar-item-active {
-    border-color: rgba(0, 0, 0, 42%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 12%);
+    border: 2px solid rgba(0, 0, 0, 66%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
 }
 
 .cvat-objects-sidebar-issue-resolved {
@@ -343,7 +343,17 @@
 }
 
 .cvat-objects-sidebar-z-layers-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     padding: 0 0 $grid-unit-size;
+}
+
+.cvat-objects-sidebar-z-layers-stack {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .cvat-objects-sidebar-z-layers-title {
@@ -389,6 +399,11 @@
     margin: -$grid-unit-size * 0.5 0;
     border-radius: $border-radius-base;
     transition: background-color $box-shadow-transition, box-shadow $box-shadow-transition;
+}
+
+.cvat-objects-sidebar-z-layer-topmost-drop-area {
+    flex: 1;
+    min-height: $grid-unit-size * 8;
 }
 
 .cvat-objects-sidebar-z-layer-move-drop-area-active {
@@ -506,14 +521,14 @@
 
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {
     box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
-    border: 1px solid rgba(0, 0, 0, 42%);
+    border: 2px solid rgba(0, 0, 0, 66%);
 }
 
 .cvat-objects-sidebar-state-item {
     width: 100%;
     background-color: rgba(var(--state-item-background), 1);
     transition: border-color $box-shadow-transition, box-shadow $box-shadow-transition;
-    border: 1px solid rgba(0, 0, 0, 8%);
+    border: 2px solid rgba(0, 0, 0, 8%);
     border-radius: $border-radius-base;
     padding: $grid-unit-size * 0.75;
     margin-left: 0;
@@ -689,14 +704,14 @@
 
 .cvat-objects-sidebar-label-active-item {
     background: rgba(255, 255, 255, 92%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 12%);
-    border: 1px solid rgba(0, 0, 0, 24%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
+    border: 2px solid rgba(0, 0, 0, 66%);
 }
 
 .cvat-objects-sidebar-label-item {
     min-height: $grid-unit-size * 5;
     transition: border-color $box-shadow-transition, box-shadow $box-shadow-transition, background-color $box-shadow-transition;
-    border: 1px solid rgba(0, 0, 0, 8%);
+    border: 2px solid rgba(0, 0, 0, 8%);
     border-radius: $border-radius-base;
     padding: $grid-unit-size * 0.5 $grid-unit-size * 0.75;
     margin-left: $grid-unit-size * 0.5;

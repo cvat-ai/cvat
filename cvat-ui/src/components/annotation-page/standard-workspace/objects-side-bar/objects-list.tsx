@@ -18,6 +18,7 @@ import { StatesOrdering, Workspace } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { ObjectState, ObjectType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 import ObjectListHeader from './objects-list-header';
 
 const OBJECT_DRAG_ID_PREFIX = 'object:';
@@ -236,10 +237,11 @@ function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
 
 interface ZLayerInsertDropAreaProps {
     zOrder: number;
+    topmost?: boolean;
 }
 
 function ZLayerInsertDropArea(props: ZLayerInsertDropAreaProps): JSX.Element {
-    const { zOrder } = props;
+    const { zOrder, topmost = false } = props;
     const { isOver, setNodeRef } = useDroppable({ id: layerInsertDropID(zOrder) });
 
     return (
@@ -247,6 +249,7 @@ function ZLayerInsertDropArea(props: ZLayerInsertDropAreaProps): JSX.Element {
             ref={setNodeRef}
             className={`cvat-objects-sidebar-z-layer-move-drop-area${
                 isOver ? ' cvat-objects-sidebar-z-layer-move-drop-area-active' : ''
+            }${topmost ? ' cvat-objects-sidebar-z-layer-topmost-drop-area' : ''
             }`}
         />
     );
@@ -255,6 +258,15 @@ function ZLayerInsertDropArea(props: ZLayerInsertDropAreaProps): JSX.Element {
 function getZLayers(objectStates: ObjectState[]): number[] {
     return Array.from(new Set(objectStates.map((state: ObjectState): number => state.zOrder)))
         .sort((left: number, right: number): number => left - right);
+}
+
+function getInsertZOrder(zLayers: number[], index: number): number {
+    if (index === 0) {
+        return zLayers[0] - 1;
+    }
+
+    // Prefer an existing gap. The container shifts layers only when this value is already occupied.
+    return zLayers[index - 1] + 1;
 }
 
 function ObjectListComponent(props: Props): JSX.Element {
@@ -297,6 +309,26 @@ function ObjectListComponent(props: Props): JSX.Element {
             current.filter((zOrder: number): boolean => zLayers.includes(zOrder))
         ));
     }, [zLayers.join(',')]);
+    useEffect((): () => void => {
+        const onExpandZLayer = (event: Event): void => {
+            const { clientID, parentID } = (event as CustomEvent<{ clientID: number; parentID: number | null }>).detail;
+            const expandedState = objectStates.find((state: ObjectState): boolean => (
+                state.clientID === (parentID ?? clientID)
+            ));
+
+            if (expandedState) {
+                setCollapsedZLayers((current: number[]): number[] => (
+                    current.filter((zOrder: number): boolean => zOrder !== expandedState.zOrder)
+                ));
+            }
+        };
+
+        window.addEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandZLayer);
+
+        return (): void => {
+            window.removeEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandZLayer);
+        };
+    }, [objectStates]);
     const zLayerIDs = zLayers.reduce((acc: Record<number, number[]>, zOrder: number): Record<number, number[]> => {
         acc[zOrder] = [];
         return acc;
@@ -325,13 +357,13 @@ function ObjectListComponent(props: Props): JSX.Element {
             // Dropping an object onto an existing layer moves it into that layer.
             moveObjectToLayer(clientID, zOrder);
         } else if (clientID !== null && insertZOrder !== null) {
-            // Dropping an object between layers creates a new layer and shifts following layers.
+            // Dropping an object between layers creates a new layer, shifting only if the index is occupied.
             moveObjectToNewLayer(clientID, insertZOrder);
         } else if (sourceZOrder !== null && zOrder !== null) {
             // Dropping a layer onto an existing layer merges both layers.
             moveLayer(sourceZOrder, zOrder, 'merge');
         } else if (sourceZOrder !== null && insertZOrder !== null) {
-            // Dropping a layer between layers moves it there and shifts intervening layers.
+            // Dropping a layer between layers uses a free gap or shifts occupied upper layers.
             moveLayer(sourceZOrder, insertZOrder, 'move');
         }
     };
@@ -392,21 +424,23 @@ function ObjectListComponent(props: Props): JSX.Element {
                             </CVATTooltip>
                         </div>
                         <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
-                            {zLayers.map((zOrder: number): JSX.Element => (
-                                <React.Fragment key={zOrder}>
-                                    <ZLayerInsertDropArea zOrder={zOrder} />
-                                    <ZLayerSection
-                                        zOrder={zOrder}
-                                        objectIDs={zLayerIDs[zOrder] || []}
-                                        objectStates={objectStates}
-                                        collapsed={collapsedZLayers.includes(zOrder)}
-                                        toggleLayerCollapsed={toggleLayerCollapsed}
-                                    />
-                                </React.Fragment>
-                            ))}
-                            {!!zLayers.length && (
-                                <ZLayerInsertDropArea zOrder={zLayers[zLayers.length - 1] + 1} />
-                            )}
+                            <div className='cvat-objects-sidebar-z-layers-stack'>
+                                {zLayers.map((zOrder: number, index: number): JSX.Element => (
+                                    <React.Fragment key={zOrder}>
+                                        <ZLayerInsertDropArea zOrder={getInsertZOrder(zLayers, index)} />
+                                        <ZLayerSection
+                                            zOrder={zOrder}
+                                            objectIDs={zLayerIDs[zOrder] || []}
+                                            objectStates={objectStates}
+                                            collapsed={collapsedZLayers.includes(zOrder)}
+                                            toggleLayerCollapsed={toggleLayerCollapsed}
+                                        />
+                                    </React.Fragment>
+                                ))}
+                                {!!zLayers.length && (
+                                    <ZLayerInsertDropArea zOrder={zLayers[zLayers.length - 1] + 1} topmost />
+                                )}
+                            </div>
                         </DndContext>
                     </div>
                 ) : sortedStatesID.map((id: number): JSX.Element => (

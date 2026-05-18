@@ -340,6 +340,20 @@ function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): numb
 
 type Props = StateToProps & DispatchToProps;
 
+function isLayerState(state: ObjectState): boolean {
+    return state.objectType !== ObjectType.TAG;
+}
+
+function isZOrderBetweenSourceAndTarget(zOrder: number, sourceZOrder: number, targetZOrder: number): boolean {
+    return sourceZOrder > targetZOrder ?
+        zOrder >= targetZOrder && zOrder < sourceZOrder :
+        zOrder > sourceZOrder && zOrder <= targetZOrder;
+}
+
+function getShiftedZOrder(zOrder: number, sourceZOrder: number, targetZOrder: number): number {
+    return sourceZOrder > targetZOrder ? zOrder + 1 : zOrder - 1;
+}
+
 interface State {
     statesOrdering: StatesOrdering;
     objectStates: ObjectState[];
@@ -441,23 +455,31 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const { filteredStates } = this.state;
         const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
 
-        if (!objectState || objectState.objectType === ObjectType.TAG) {
+        if (!objectState || !isLayerState(objectState) || objectState.zOrder === targetZOrder) {
             return;
         }
 
-        const statesToUpdate = filteredStates.filter((state: ObjectState): boolean => (
-            state.objectType !== ObjectType.TAG && (
-                state.clientID === clientID || state.zOrder >= targetZOrder
-            )
+        const sourceZOrder = objectState.zOrder;
+        const targetOccupied = filteredStates.some((state: ObjectState): boolean => (
+            isLayerState(state) && state.clientID !== clientID && state.zOrder === targetZOrder
         ));
+
+        const statesToUpdate = targetOccupied ?
+            filteredStates.filter((state: ObjectState): boolean => (
+                isLayerState(state) && (
+                    state.clientID === clientID ||
+                    isZOrderBetweenSourceAndTarget(state.zOrder, sourceZOrder, targetZOrder)
+                )
+            )) :
+            [objectState];
 
         for (const state of statesToUpdate) {
             // The dragged object owns the newly inserted layer.
             if (state.clientID === clientID) {
                 state.zOrder = targetZOrder;
-            } else {
-                // Existing layers at or above the insertion point move forward by one layer.
-                state.zOrder += 1;
+            } else if (targetOccupied) {
+                // Shift only layers between the source and target positions.
+                state.zOrder = getShiftedZOrder(state.zOrder, sourceZOrder, targetZOrder);
             }
         }
 
@@ -472,13 +494,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return;
         }
 
+        const targetOccupied = filteredStates.some((state: ObjectState): boolean => (
+            isLayerState(state) && state.zOrder === targetZOrder && state.zOrder !== sourceZOrder
+        ));
         const statesToUpdate = filteredStates.filter((state: ObjectState): boolean => (
-            state.objectType !== ObjectType.TAG && (
+            isLayerState(state) && (
                 state.zOrder === sourceZOrder ||
-                (mode === 'move' && (
-                    sourceZOrder < targetZOrder ?
-                        state.zOrder > sourceZOrder && state.zOrder <= targetZOrder :
-                        state.zOrder >= targetZOrder && state.zOrder < sourceZOrder
+                (mode === 'move' && targetOccupied && (
+                    isZOrderBetweenSourceAndTarget(state.zOrder, sourceZOrder, targetZOrder)
                 ))
             )
         ));
@@ -486,10 +509,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         for (const state of statesToUpdate) {
             if (state.zOrder === sourceZOrder) {
                 state.zOrder = targetZOrder;
-            } else if (sourceZOrder < targetZOrder) {
-                state.zOrder -= 1;
-            } else {
-                state.zOrder += 1;
+            } else if (targetOccupied) {
+                // Move only layers between the source and target positions.
+                state.zOrder = getShiftedZOrder(state.zOrder, sourceZOrder, targetZOrder);
             }
         }
 

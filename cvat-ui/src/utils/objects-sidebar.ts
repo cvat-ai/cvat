@@ -1,5 +1,7 @@
 import { ObjectState } from 'cvat-core-wrapper';
 
+export const OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT = 'cvat.objects-sidebar.expand-z-layer';
+
 function getSidebarItemId(state: ObjectState): string {
     const { clientID, parentID } = state as any;
 
@@ -25,4 +27,10 @@ export function scrollAndExpandState(
     const sidebarItemId = getSidebarItemId(state);
     scrollSidebarItemIntoViewById(sidebarItemId);
     expandObject(state);
+    window.dispatchEvent(new CustomEvent(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, {
+        detail: {
+            clientID: state.clientID,
+            parentID: state.parentID,
+        },
+    }));
 }
