@@ -625,7 +625,10 @@ class MediaCache:
     @staticmethod
     def read_raw_audio(db_task: models.Task) -> tuple[Openable, str]:
         db_data = db_task.require_data()
-        assert db_data.storage == models.StorageChoice.LOCAL, db_data.storage
+        assert db_data.storage in (
+            models.StorageChoice.LOCAL,
+            models.StorageChoice.SHARE,
+        ), db_data.storage
 
         filename = str(db_data.audio.path)
         data_dir = db_data.get_raw_data_dirname()
