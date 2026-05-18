@@ -2160,8 +2160,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -2186,6 +2187,7 @@ paths:
           enum:
           - image
           - point_cloud
+          - audio
       - name: mode
         in: query
         description: A simple equality filter for the mode field
@@ -2562,6 +2564,15 @@ paths:
           type: integer
         description: A unique integer value identifying this job.
         required: true
+      - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
       - in: query
         name: location
         schema:
@@ -5184,8 +5195,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -5217,6 +5229,7 @@ paths:
           enum:
           - image
           - point_cloud
+          - audio
       - name: mode
         in: query
         description: A simple equality filter for the mode field
@@ -5569,6 +5582,15 @@ paths:
           type: integer
         description: A unique integer value identifying this task.
         required: true
+      - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
       - in: query
         name: location
         schema:
@@ -7188,6 +7210,10 @@ components:
           items:
             type: string
             maxLength: 200
+        deleted:
+          type: boolean
+          writeOnly: true
+          description: Delete the attribute and all related annotation values.
       required:
       - input_type
       - mutable
@@ -7585,7 +7611,6 @@ components:
       - chunks_updated_date
       - deleted_frames
       - frames
-      - image_quality
     DataRequest:
       type: object
       description: |-
@@ -7601,8 +7626,9 @@ components:
         image_quality:
           type: integer
           maximum: 100
-          minimum: 0
-          description: Image quality to use during annotation
+          minimum: 1
+          description: Image quality to use during annotation, required for image
+            and video-based tasks
         start_frame:
           type: integer
           maximum: 2147483647
@@ -7758,8 +7784,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ValidationParamsRequest'
           nullable: true
-      required:
-      - image_quality
     DataResponse:
       oneOf:
       - $ref: '#/components/schemas/RqId'
@@ -7944,7 +7968,9 @@ components:
       - webhook_type
     EventsEnum:
       enum:
+      - create:backup
       - create:comment
+      - create:export
       - create:invitation
       - create:issue
       - create:job
@@ -7968,7 +7994,9 @@ components:
       - update:task
       type: string
       description: |-
+        * `create:backup` - CREATE:BACKUP
         * `create:comment` - CREATE:COMMENT
+        * `create:export` - CREATE:EXPORT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
@@ -8029,10 +8057,8 @@ components:
           type: boolean
           readOnly: true
       required:
-      - height
       - name
       - related_files
-      - width
     FrameSelectionMethod:
       enum:
       - random_uniform
@@ -8558,8 +8584,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -9745,8 +9772,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         deleted:
           type: boolean
           writeOnly: true
@@ -11115,8 +11143,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -11168,8 +11197,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'

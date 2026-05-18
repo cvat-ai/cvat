@@ -35,6 +35,7 @@ from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_sc
 from numpy import random
 from PIL import Image
 from rest_framework import exceptions, serializers
+from rest_framework.reverse import reverse
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
@@ -44,8 +45,8 @@ from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance,
     get_cloud_storage_instance,
 )
-from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
@@ -60,7 +61,6 @@ from cvat.apps.engine.utils import (
     get_path_size,
     grouped,
     parse_specific_attributes,
-    reverse,
     take_by,
 )
 from cvat.apps.iam.permissions import get_iam_context
@@ -143,11 +143,14 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
             return None
 
         return serializers.Hyperlink(
-            reverse(self.view_name, request=request,
-                query_params=build_field_filter_params(
+            reverse(
+                self.view_name,
+                request=request,
+                query=build_field_filter_params(
                     self.filter_key, getattr(instance, self.key_field)
-            )),
-            instance
+                ),
+            ),
+            instance,
         )
 
 
@@ -203,8 +206,7 @@ class LabelsSummarySerializer(serializers.Serializer):
 
     def get_url(self, request, instance):
         filter_key = instance.__class__.__name__.lower() + '_id'
-        return reverse('label-list', request=request,
-            query_params={ filter_key: instance.id })
+        return reverse('label-list', request=request, query={filter_key: instance.id})
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -220,8 +222,7 @@ class IssuesSummarySerializer(serializers.Serializer):
     count = serializers.IntegerField(read_only=True)
 
     def get_url(self, request, instance):
-        return reverse('issue-list', request=request,
-            query_params={ 'job_id': instance.id })
+        return reverse('issue-list', request=request, query={'job_id': instance.id})
 
     def get_count(self, instance):
         return getattr(instance, 'issue__count', 0)
@@ -350,21 +351,32 @@ class DelimitedStringListField(serializers.ListField):
 
 class AttributeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
+    deleted = serializers.BooleanField(required=False, write_only=True,
+        help_text='Delete the attribute and all related annotation values.')
     values = DelimitedStringListField(allow_empty=True,
-        child=serializers.CharField(allow_blank=True, max_length=200),
-    )
+        child=serializers.CharField(allow_blank=True, max_length=200))
 
     class Meta:
         model = models.AttributeSpec
-        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
+        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values', 'deleted')
+        extra_kwargs = {
+            'default_value': { 'required': False },
+        }
+
+    def validate(self, attrs):
+        if attrs.get('deleted'):
+            if attrs.get('id') is None:
+                raise serializers.ValidationError('Deleted attribute must have an ID')
+
+        return attrs
 
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[],
         help_text="The list of attributes. "
-        "If you want to remove an attribute, you need to recreate the label "
-        "and specify the remaining attributes.")
+        "To remove an attribute, pass the full attribute body with deleted=true. "
+        "Related annotation attribute values will be deleted.")
     color = serializers.CharField(allow_blank=True, required=False,
         help_text="The hex value for the RGB color. "
         "Will be generated automatically, unless specified explicitly.")
@@ -446,11 +458,74 @@ class LabelSerializer(SublabelSerializer):
     def check_attribute_names_unique(attrs):
         encountered_names = set()
         for attribute in attrs:
+            if attribute.get('deleted'):
+                continue
+
             attr_name = attribute.get('name')
+            if attr_name is None:
+                continue
+
             if attr_name in encountered_names:
                 raise serializers.ValidationError(f"Duplicate attribute with name '{attr_name}' exists")
             else:
                 encountered_names.add(attr_name)
+
+    @staticmethod
+    def _split_attribute_values(values: str) -> list[str]:
+        return values.split('\n') if values else []
+
+    @classmethod
+    def _validate_attribute_value(
+        cls, input_type: str, value: str, values: str
+    ) -> None:
+        if input_type == str(models.AttributeType.TEXT):
+            return
+        if input_type == str(models.AttributeType.CHECKBOX):
+            valid = value.lower() in {'true', 'false'}
+        elif input_type == str(models.AttributeType.NUMBER):
+            attr_values = cls._split_attribute_values(values)
+            try:
+                valid = float(attr_values[0]) <= float(value) <= float(attr_values[1])
+            except (IndexError, ValueError):
+                valid = False
+        else:
+            valid = value in cls._split_attribute_values(values)
+
+        if not valid:
+            raise serializers.ValidationError(
+                'Attribute field "default_value" is invalid for attribute input type'
+            )
+
+    @classmethod
+    def _update_attribute(cls, db_attr: models.AttributeSpec, attr: dict[str, Any]) -> None:
+        for field_name in ('mutable', 'input_type'):
+            if field_name in attr and attr[field_name] != getattr(db_attr, field_name):
+                raise serializers.ValidationError(
+                    f'Attribute field "{field_name}" cannot be changed'
+                )
+
+        new_values = attr.get('values', db_attr.values)
+        if new_values != db_attr.values:
+            if db_attr.input_type in (str(models.AttributeType.RADIO), str(models.AttributeType.SELECT)):
+                old_values_list = cls._split_attribute_values(db_attr.values)
+                new_values_list = cls._split_attribute_values(new_values)
+                if not set(old_values_list).issubset(new_values_list):
+                    raise serializers.ValidationError(
+                        'Attribute field "values" can only be appended for radio and select attributes'
+                    )
+            elif db_attr.input_type == str(models.AttributeType.NUMBER):
+                raise serializers.ValidationError(
+                    'Attribute field "values" cannot be changed for number attributes'
+                )
+
+        new_default_value = attr.get('default_value', db_attr.default_value)
+        if new_default_value != db_attr.default_value:
+            cls._validate_attribute_value(db_attr.input_type, new_default_value, new_values)
+
+        db_attr.name = attr.get('name', db_attr.name)
+        db_attr.default_value = new_default_value
+        db_attr.values = new_values
+        db_attr.save()
 
     @classmethod
     @transaction.atomic
@@ -469,9 +544,16 @@ class LabelSerializer(SublabelSerializer):
 
         cls.check_attribute_names_unique(attributes)
 
-        if validated_data.get('id') is not None:
+        label_exists = validated_data.get('id') is not None
+        if label_exists:
+            label_filter = dict(parent_info)
+            if parent_label is not None:
+                # Enforce nested update scope: a sublabel ID must belong to the
+                # parent skeleton label currently being patched.
+                label_filter['parent'] = parent_label
+
             try:
-                db_label = models.Label.objects.get(id=validated_data['id'], **parent_info)
+                db_label = models.Label.objects.get(id=validated_data['id'], **label_filter)
             except models.Label.DoesNotExist as exc:
                 raise exceptions.NotFound(
                     detail='Not found label with id #{} to change'.format(validated_data['id'])
@@ -538,15 +620,36 @@ class LabelSerializer(SublabelSerializer):
         except models.InvalidLabel as exc:
             raise exceptions.ValidationError(str(exc)) from exc
 
-        for attr in attributes:
+        if label_exists:
+            cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
+
+        deleted_attributes = [attr for attr in attributes if attr.get('deleted')]
+        upserted_attributes = [attr for attr in attributes if not attr.get('deleted')]
+
+        def get_db_attr(attr_id: int) -> models.AttributeSpec:
+            try:
+                return models.AttributeSpec.objects.get(id=attr_id, label=db_label)
+            except models.AttributeSpec.DoesNotExist as ex:
+                raise exceptions.NotFound(
+                    f'Attribute with id #{attr_id} does not exist'
+                ) from ex
+
+        # Apply deletions before creates/updates. This keeps an atomic request valid
+        # when an attribute is renamed to a name released by another deleted attribute.
+        for attr in deleted_attributes:
+            attr_id = attr.get('id')
+            if attr_id is None:
+                raise serializers.ValidationError('Deleted attribute must have an ID')
+
+            db_attr = get_db_attr(attr_id)
+            logger.info("{} attribute for {} label was deleted"
+                .format(db_attr.name, db_label.name))
+            db_attr.delete()
+
+        for attr in upserted_attributes:
             attr_id = attr.get('id', None)
             if attr_id is not None:
-                try:
-                    db_attr = models.AttributeSpec.objects.get(id=attr_id, label=db_label)
-                except models.AttributeSpec.DoesNotExist as ex:
-                    raise exceptions.NotFound(
-                        f'Attribute with id #{attr_id} does not exist'
-                    ) from ex
+                db_attr = get_db_attr(attr_id)
                 created = False
             else:
                 (db_attr, created) = models.AttributeSpec.objects.get_or_create(
@@ -559,13 +662,7 @@ class LabelSerializer(SublabelSerializer):
                 logger.info("{} attribute for {} label was updated"
                     .format(db_attr.name, db_label.name))
 
-                # FIXME: need to update only "safe" fields
-                db_attr.name = attr.get('name', db_attr.name)
-                db_attr.default_value = attr.get('default_value', db_attr.default_value)
-                db_attr.mutable = attr.get('mutable', db_attr.mutable)
-                db_attr.input_type = attr.get('input_type', db_attr.input_type)
-                db_attr.values = attr.get('values', db_attr.values)
-                db_attr.save()
+                cls._update_attribute(db_attr, attr)
 
         return db_label
 
@@ -665,25 +762,25 @@ class LabelSerializer(SublabelSerializer):
         if not self._local:
             return super().update(instance, validated_data)
 
-        # Here we reuse the parent entity logic to make sure everything is done
-        # like these entities expect. Initial data (unprocessed) is used to
-        # avoid introducing premature changes.
-        data = copy(self.initial_data)
+        if isinstance(instance.project, models.Project):
+            parent_instance = instance.project
+            parent_serializer = ProjectWriteSerializer(parent_instance)
+        elif isinstance(instance.task, models.Task):
+            parent_instance = instance.task
+            parent_serializer = TaskWriteSerializer(parent_instance)
+        else:
+            raise serializers.ValidationError('Label must belong to a project or a task')
+
+        data = copy(validated_data)
         data['id'] = instance.id
         data.setdefault('name', instance.name)
-        parent_query = { 'labels': [data] }
+        sublabels = data.pop('sublabels', [])
+        svg = data.pop('svg', '')
 
-        if isinstance(instance.project, models.Project):
-            parent_serializer = ProjectWriteSerializer(
-                instance=instance.project, data=parent_query, partial=True,
-            )
-        elif isinstance(instance.task, models.Task):
-            parent_serializer = TaskWriteSerializer(
-                instance=instance.task, data=parent_query, partial=True,
-            )
+        self.update_label(data, svg, sublabels, parent_instance=parent_instance)
 
-        parent_serializer.is_valid(raise_exception=True)
-        parent_serializer.save()
+        parent_instance.touch()
+        parent_serializer.update_child_objects_on_labels_update(parent_instance)
 
         self.instance = models.Label.objects.get(pk=instance.pk)
         return self.instance
@@ -842,8 +939,14 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
-    data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
-    data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
+    data_original_chunk_type = serializers.ChoiceField(
+        source='segment.task.data.original_chunk_type', choices=models.DataChoice.choices(),
+        allow_blank=False, read_only=True,
+    )
+    data_compressed_chunk_type = serializers.ChoiceField(
+        source='segment.task.data.compressed_chunk_type', choices=models.DataChoice.choices(),
+        allow_blank=False, read_only=True,
+    )
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
@@ -856,7 +959,9 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'task_id', 'task_name', 'project_id', 'project_name', 'assignee', 'guide_id',
+        fields = (
+            'url', 'id', 'task_id', 'task_name', 'project_id', 'project_name',
+            'assignee', 'guide_id',
             'dimension', 'mode', 'media_type',
             'bug_tracker', 'status', 'stage', 'state', 'frame_count',
             'start_frame', 'stop_frame',
@@ -908,6 +1013,10 @@ class JobReadSerializer(serializers.ModelSerializer):
 
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+
+        if instance.segment.task.media_type == models.MediaType.AUDIO:
+            data.pop("data_compressed_chunk_type", None)
+            data.pop("data_original_chunk_type", None)
 
         if 'replicas_count' in self.fields:
             data['replicas_count'] = getattr(instance, "child_jobs__count", 0)
@@ -1249,7 +1358,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             enqueue_create_chunk_job,
             wait_for_rq_job,
         )
-        from cvat.apps.engine.frame_provider import JobFrameProvider
+        from cvat.apps.engine.media_io.frame_provider import JobFrameProvider
 
         db_job = instance
         db_segment = db_job.segment
@@ -1516,7 +1625,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         frame_path_map: dict[int, str],
         segment_frame_map: dict[int,int],
     ):
-        from cvat.apps.engine.frame_provider import prepare_chunk
+        from cvat.apps.engine.media_io.frame_provider import prepare_chunk
 
         db_segment = models.Segment.objects.select_related("task").get(pk=db_segment_id)
         initial_chunks_updated_date = db_segment.chunks_updated_date
@@ -2245,8 +2354,9 @@ class DataSerializer(serializers.ModelSerializer):
     https://docs.cvat.ai/docs/manual/basics/create-annotation-task/#advanced-configuration
     """
 
-    image_quality = serializers.IntegerField(min_value=0, max_value=100,
-        help_text="Image quality to use during annotation")
+    image_quality = serializers.IntegerField(min_value=1, max_value=100, required=False,
+        help_text="Image quality to use during annotation, required for image and video-based tasks"
+        )
     use_zip_chunks = serializers.BooleanField(default=False,
         help_text=textwrap.dedent("""\
             When true, video chunks will be represented as zip archives with decoded video frames.
@@ -2557,8 +2667,10 @@ class TaskReadListSerializer(serializers.ListSerializer):
 @extend_schema_serializer(deprecate_fields=["organization"])
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
-    data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
-    data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
+    data_compressed_chunk_type = serializers.ChoiceField(source='data.compressed_chunk_type',
+        choices=models.DataChoice.choices(), required=False, allow_blank=False, read_only=True)
+    data_original_chunk_type = serializers.ChoiceField(source='data.original_chunk_type',
+        choices=models.DataChoice.choices(), required=False, allow_blank=False, read_only=True)
     data_cloud_storage_id = serializers.ReadOnlyField(source='data.cloud_storage_id', required=False)
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
@@ -2633,6 +2745,19 @@ class TaskReadSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['consensus_enabled'] = self.get_consensus_enabled(instance)
+
+        if instance.media_type not in (
+            models.MediaType.IMAGE,
+            # TODO: deprecated for 3d, remove later
+            models.MediaType.POINT_CLOUD,
+        ):
+            representation.pop("image_quality", None)
+
+        if not instance.media_type or instance.media_type == models.MediaType.AUDIO:
+            representation.pop("data_compressed_chunk_type", None)
+            representation.pop("data_original_chunk_type", None)
+            representation.pop("data_chunk_size", None)
+
         return representation
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransferableMixin):
@@ -3117,8 +3242,8 @@ class AboutSerializer(serializers.Serializer):
     subtitle = serializers.CharField(max_length=1024)
 
 class FrameMetaSerializer(serializers.Serializer):
-    width = serializers.IntegerField()
-    height = serializers.IntegerField()
+    width = serializers.IntegerField(required=False)
+    height = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
     related_files = serializers.IntegerField()
 
@@ -3145,7 +3270,7 @@ class PluginsSerializer(serializers.Serializer):
 class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
     chapters = ChapterSerializer(many=True, allow_null=True, required=False)
-    image_quality = serializers.IntegerField(min_value=0, max_value=100)
+    image_quality = serializers.IntegerField(min_value=0, max_value=100, required=False)
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
     included_frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0), allow_null=True, required=False,
@@ -3185,6 +3310,16 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
                 """)
             },
         }
+
+    def to_representation(self, instance):
+        serialized = super().to_representation(instance)
+
+        if (task := self._context.get("task")) and task.media_type == models.MediaType.AUDIO:
+            # Can also be checked via hasattr(instance, 'audio'), but it results in extra requests
+            # TODO: deprecated for 3d, remove later
+            serialized.pop('image_quality', None) # not relevant for audio
+
+        return serialized
 
 class DataMetaWriteSerializer(serializers.ModelSerializer):
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False)
