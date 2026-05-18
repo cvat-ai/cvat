@@ -445,6 +445,7 @@ class Data(models.Model):
         blank=True, default="")
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         blank=True, default="")
+    audio_chunks: models.manager.RelatedManager[AudioChunkInfo]
 
     # Storage descriptors
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
@@ -649,6 +650,26 @@ class Audio(models.Model):
     path = models.CharField(max_length=1024)
     sampling_rate = models.PositiveIntegerField()
     has_cover_image = models.BooleanField(default=False)
+
+    chunks: models.manager.RelatedManager[AudioChunkInfo]
+
+class AudioChunkInfo(TimestampedModel):
+    key = models.CharField(max_length=128, primary_key=True)
+
+    data = models.ForeignKey(
+        Data,
+        on_delete=models.CASCADE,
+        related_name="audio_chunks",
+        related_query_name="audio_chunk",
+    )
+    audio = models.ForeignKey(
+        Audio,
+        on_delete=models.CASCADE,
+        related_name="chunks",
+        related_query_name="chunk"
+    )
+
+    right_padding = models.PositiveIntegerField(default=0)
 
 
 class Image(models.Model):

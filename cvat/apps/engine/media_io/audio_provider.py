@@ -60,6 +60,10 @@ class IAudioProvider(IMediaProvider, metaclass=ABCMeta):
         return (abs_frame_number - db_data.start_frame) // db_data.get_frame_step()
 
 
+class _ChunkAlreadyExistsError(Exception):
+    pass
+
+
 class TaskAudioProvider(IAudioProvider):
     def __init__(self, db_task: models.Task) -> None:
         self._db_task = db_task
@@ -151,6 +155,7 @@ class TaskAudioProvider(IAudioProvider):
                 args=[
                     self._db_task,
                     (task_chunk_frame_range.start, task_chunk_frame_range.stop),
+                    chunk_number,
                     quality,
                 ],
             ),
@@ -168,16 +173,21 @@ class TaskAudioProvider(IAudioProvider):
         cls,
         db_task: models.Task | int,
         chunk_frames: tuple[int, int],
+        index: int,
         quality: models.FrameQuality,
     ) -> DataWithMime:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(id=db_task)
 
+        cache = MediaCache()
+        chunk_key = cache._make_chunk_key(db_task, chunk_number=index, quality=quality)
+
         return cls._build_audio_chunk(
             db_task=db_task,
             chunk_frames=chunk_frames,
             quality=quality,
-            cache=MediaCache(),
+            cache=cache,
+            chunk_key=chunk_key,
         )
 
     @classmethod
@@ -188,28 +198,56 @@ class TaskAudioProvider(IAudioProvider):
         *,
         quality: models.FrameQuality,
         cache: MediaCache,
+        chunk_key: str,
     ):
         db_data = db_task.require_data()
 
-        # Constant padding big enough for most cases.
-        # 5000 samples is comfortably above libmp3lame's tail-flush requirement
-        # (encoder delay + lookahead, ~1680 samples) at every common sample rate:
-        # ~113 ms @ 44.1 kHz, ~104 ms @ 48 kHz, 625 ms @ 8 kHz.
-        #
-        # Left padding is 0: libmp3lame writes a Xing/Info+LAME header in the first
-        # MPEG frame, describing the ~1102-sample builtin encoder delay. Decoders that honor
-        # the tag skip those samples, so payload aligns at sample 0 without any
-        # extra leading padding. It includes all mainstream browsers after 2020,
-        # ffmpeg and the wavesurfer.js library we use.
-        # If we reuse the input file and it misses the tag, recoding would not make it
-        # any better - we just treat the padding as a part of the file itself.
-        # https://wiki.hydrogenaudio.org/index.php?title=Gapless_playback
-        right_padding = 5000
+        try:
+            chunk_info = db_data.audio_chunks.get(key=chunk_key)
+        except models.AudioChunkInfo.DoesNotExist:
+            chunk_info = models.AudioChunkInfo(data=db_data, audio=db_data.audio, key=chunk_key)
+            chunk_info_created = True
+
+            # We use a constant padding big enough for most cases.
+            # 5000 samples is comfortably above libmp3lame's tail-flush requirement
+            # (encoder delay + lookahead, ~1680 samples) at every common sample rate:
+            # ~113 ms @ 44.1 kHz, ~104 ms @ 48 kHz, 625 ms @ 8 kHz.
+            #
+            # Left padding is 0: libmp3lame writes a Xing/Info+LAME header in the first
+            # MPEG frame, describing the ~1102-sample builtin encoder delay. Decoders that honor
+            # the tag skip those samples, so payload aligns at sample 0 without any
+            # extra leading padding. It includes all mainstream browsers after 2020,
+            # ffmpeg and the wavesurfer.js library we use.
+            # If we reuse the input file and it misses the tag, recoding would not make it
+            # any better - we just treat the padding as a part of the file itself.
+            # https://wiki.hydrogenaudio.org/index.php?title=Gapless_playback
+            right_padding = 5000
+        else:
+            chunk_info_created = False
+            right_padding = chunk_info.right_padding
 
         source_audio_file, _ = cache.read_raw_audio(db_task)
         reader = AudioReader([source_audio_file], start=chunk_frames[0], stop=chunk_frames[1])
 
-        return prepare_audio_chunk(db_data, reader, quality=quality, right_padding=right_padding)
+        chunk_data, right_padding = prepare_audio_chunk(
+            db_data, reader, quality=quality, right_padding=right_padding
+        )
+
+        if chunk_info_created:
+            chunk_info.right_padding = right_padding
+
+            try:
+                chunk_info.save(
+                    # Updates should not normally happen here.
+                    # If another thread created the same chunk concurrently,
+                    # we should fail chunk creation to avoid data duplication in the cache.
+                    # The client will have to retry their chunk request.
+                    force_insert=True,
+                )
+            except Exception as e:
+                raise _ChunkAlreadyExistsError() from e
+
+        return chunk_data
 
     def _get_segment(self, validated_frame_number: int) -> models.Segment:
         if not self._db_task.data or not self._db_task.data.size:
@@ -476,6 +514,7 @@ class JobAudioProvider(SegmentAudioProvider):
                 args=[
                     self._db_segment,
                     (segment_chunk_frame_ids[0], segment_chunk_frame_ids[-1]),
+                    chunk_number,
                     quality,
                 ],
             ),
@@ -487,6 +526,7 @@ class JobAudioProvider(SegmentAudioProvider):
     def _chunk_create_callback(
         db_segment: models.Segment | int,
         segment_chunk_frame_ids: tuple[int, int],
+        chunk_number: int,
         quality: models.FrameQuality,
     ) -> DataWithMime:
         if isinstance(db_segment, int):
@@ -496,11 +536,16 @@ class JobAudioProvider(SegmentAudioProvider):
             assert False
 
         cache = MediaCache()
+        chunk_key = (
+            cache._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality) + "-task"
+        )
+
         return cache.prepare_custom_range_segment_chunk(
             db_task=db_segment.task,
             frame_ids=segment_chunk_frame_ids,
             quality=quality,
             cache=cache,
+            chunk_key=chunk_key,
         )
 
 
@@ -563,7 +608,7 @@ def prepare_audio_chunk(
     *,
     quality: models.FrameQuality,
     right_padding: int = 0,
-) -> DataWithMime:
+) -> tuple[DataWithMime, int]:
     assert db_data.compressed_chunk_type == models.DataChoice.AUDIO_MP3
     assert db_data.original_chunk_type == models.DataChoice.AUDIO_MP3
 
@@ -589,7 +634,7 @@ def prepare_audio_chunk(
 
         # Writing still can fail with CacheTooLargeDataError.
         # TODO: add chunking for too large input files, when UI is able to render them
-        return chunk_data, writer.CHUNK_MIME_TYPE
+        return (chunk_data, writer.CHUNK_MIME_TYPE), 0
 
     payload = payload_reader.read_frames()
 
@@ -600,4 +645,6 @@ def prepare_audio_chunk(
     writer.save_as_chunk(payload, chunk_data)
 
     chunk_data.seek(0)
-    return chunk_data, writer.CHUNK_MIME_TYPE
+    mime = writer.CHUNK_MIME_TYPE
+
+    return (chunk_data, mime), right_padding
