@@ -106,12 +106,14 @@ VOLATILE_FIELDS: dict[str, frozenset[str]] = {
     "access_tokens.accesstoken": frozenset({"last_used_date"}),
 }
 
+
 # Any field whose name is exactly ``updated_date`` or ends with
 # ``_updated_date`` is treated as volatile for every model. ``auto_now``
 # timestamps drift on every save and the exact value is not relevant for
 # tests, so we don't track the per-model list of such fields explicitly.
 def _is_blanket_volatile(field_name: str) -> bool:
     return field_name == "updated_date" or field_name.endswith("_updated_date")
+
 
 # Fields holding many-to-many references whose element order is not
 # semantically meaningful. Sorting them stabilizes the dump even if the
@@ -366,7 +368,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--from-file",
         type=str,
-        help='Read pre-existing dumpdata JSON from this file instead of running docker exec. '
+        help="Read pre-existing dumpdata JSON from this file instead of running docker exec. "
         'Use "-" to read from stdin.',
     )
     parser.add_argument(
