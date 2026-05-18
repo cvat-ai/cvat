@@ -152,7 +152,8 @@ class TestAudioTasks:
             assert actual.size > (0, 0)
 
             if cover_image_path is None:
-                return  # noop, the file should just be a valid default image now
+                assert actual.format == "PNG"  # should return the default image
+                continue
 
             expected = Image.open(cover_image_path)
             expected.thumbnail((256, 256))

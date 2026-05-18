@@ -1161,18 +1161,20 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     def get_mime(format_name: str) -> str:
         return PIL.Image.MIME[format_name]
 
+    # format is erased by exif_transpose(), keep it if possible
+    image_format = image.format
     image = PIL.ImageOps.exif_transpose(image)
-
-    output_buf = io.BytesIO()
 
     if image.size != PREVIEW_SIZE:
         image.thumbnail(PREVIEW_SIZE)
 
-    if image.format not in ALLOWED_FORMATS:
+    output_buf = io.BytesIO()
+    if image_format in ALLOWED_FORMATS:
+        image.save(output_buf, format=image_format)
+        mime = get_mime(image_format)
+    else:
         image.convert("RGB").save(output_buf, format="JPEG")
         mime = get_mime("JPEG")
-    else:
-        image.save(output_buf)
-        mime = get_mime(image.format)
 
+    output_buf.seek(0)
     return output_buf, mime
