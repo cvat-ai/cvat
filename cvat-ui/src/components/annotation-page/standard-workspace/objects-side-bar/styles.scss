@@ -385,8 +385,8 @@
 }
 
 .cvat-objects-sidebar-z-layer-move-drop-area {
-    height: $grid-unit-size * 0.75;
-    margin: -$grid-unit-size * 0.25 0 $grid-unit-size * 0.25;
+    height: $grid-unit-size * 1.5;
+    margin: -$grid-unit-size * 0.5 0;
     border-radius: $border-radius-base;
     transition: background-color $box-shadow-transition, box-shadow $box-shadow-transition;
 }

@@ -436,6 +436,34 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         updateAnnotations([objectState]);
     };
 
+    private moveObjectToNewLayer = (clientID: number, targetZOrder: number): void => {
+        const { updateAnnotations } = this.props;
+        const { filteredStates } = this.state;
+        const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
+
+        if (!objectState || objectState.objectType === ObjectType.TAG) {
+            return;
+        }
+
+        const statesToUpdate = filteredStates.filter((state: ObjectState): boolean => (
+            state.objectType !== ObjectType.TAG && (
+                state.clientID === clientID || state.zOrder >= targetZOrder
+            )
+        ));
+
+        for (const state of statesToUpdate) {
+            // The dragged object owns the newly inserted layer.
+            if (state.clientID === clientID) {
+                state.zOrder = targetZOrder;
+            } else {
+                // Existing layers at or above the insertion point move forward by one layer.
+                state.zOrder += 1;
+            }
+        }
+
+        updateAnnotations(statesToUpdate);
+    };
+
     private moveLayer = (sourceZOrder: number, targetZOrder: number, mode: LayerDragMode): void => {
         const { updateAnnotations } = this.props;
         const { filteredStates } = this.state;
@@ -767,6 +795,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
                     moveObjectToLayer={this.moveObjectToLayer}
+                    moveObjectToNewLayer={this.moveObjectToNewLayer}
                     moveLayer={this.moveLayer}
                     compactLayers={this.compactLayers}
                     lockAllStates={this.onLockAllStates}

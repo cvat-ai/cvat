@@ -236,8 +236,31 @@ context('Actions on polygon', () => {
             cy.contains('.cvat-objects-sidebar-z-layer-mark', '3').should('not.exist');
         });
 
+        it('Moves an object to a new layer by dragging it between layers', () => {
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '2')
+                .parents('.cvat-objects-sidebar-z-layer')
+                .prev('.cvat-objects-sidebar-z-layer-move-drop-area')
+                .then(($dropArea) => {
+                    const targetRect = $dropArea[0].getBoundingClientRect();
+
+                    cy.get('#cvat-objects-sidebar-state-item-1')
+                        .trigger('pointerdown', { button: 0, isPrimary: true, pointerId: 1 });
+                    cy.get('body').trigger('pointermove', {
+                        clientX: targetRect.left + targetRect.width / 2,
+                        clientY: targetRect.top + targetRect.height / 2,
+                        button: 0,
+                        isPrimary: true,
+                        pointerId: 1,
+                    });
+                    cy.get('body').trigger('pointerup', { button: 0, isPrimary: true, pointerId: 1 });
+                });
+
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '2');
+            cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '3');
+        });
+
         it('Moves an object to another layer by dragging it to a layer section', () => {
-            cy.contains('.cvat-objects-sidebar-z-layer-mark', '2').then(($layer) => {
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '3').then(($layer) => {
                 const targetRect = $layer[0].getBoundingClientRect();
 
                 cy.get('#cvat-objects-sidebar-state-item-1')
@@ -252,7 +275,8 @@ context('Actions on polygon', () => {
                 cy.get('body').trigger('pointerup', { button: 0, isPrimary: true, pointerId: 1 });
             });
 
-            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '2');
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '3');
+            cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '3');
         });
 
         it('Compacts layers while preserving relative order', () => {
