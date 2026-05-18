@@ -17,6 +17,8 @@ class DownloadError extends Error {
     }
 }
 
+class DownloadReadError extends Error {}
+
 function sleep(timeout: number): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, timeout);
@@ -33,11 +35,19 @@ function getRetryDelay(response: Response | null, retry: number): number {
 }
 
 function shouldRetry(response: Response | null): boolean {
-    return !response || [408, 429, 502, 503, 504].includes(response.status);
+    const retryableStatuses = [
+        408, // Request Timeout: the server closed the request before completing the download.
+        429, // Too Many Requests: retry is allowed, especially when Retry-After is provided.
+        502, // Bad Gateway: a proxy/upstream failure may be temporary.
+        503, // Service Unavailable: the server may recover after a short delay.
+        504, // Gateway Timeout: a proxy/upstream timeout may be temporary.
+    ];
+
+    return !response || retryableStatuses.includes(response.status);
 }
 
-function shouldRetryError(response: Response | null): boolean {
-    return !response || response.ok || shouldRetry(response);
+function shouldRetryError(error: unknown, response: Response | null): boolean {
+    return !response || shouldRetry(response) || (response.ok && error instanceof DownloadReadError);
 }
 
 function appendParams(url: string, params: Record<string, string | number | boolean>): string {
@@ -69,6 +79,16 @@ function headersToObject(headers: Headers): Record<string, string> {
     return Object.fromEntries([...headers.entries()]);
 }
 
+function getContentLength(response: Response): number | null {
+    const contentLength = response.headers.get('content-length');
+    if (contentLength === null) {
+        return null;
+    }
+
+    const parsedContentLength = Number(contentLength);
+    return Number.isInteger(parsedContentLength) && parsedContentLength >= 0 ? parsedContentLength : null;
+}
+
 function mergeChunks(chunks: Uint8Array[], totalLength: number): ArrayBuffer {
     const data = new Uint8Array(totalLength);
     let offset = 0;
@@ -85,12 +105,6 @@ async function readResponse(
     chunks: Uint8Array[],
     receivedBytes: number,
 ): Promise<number> {
-    if (!response.body) {
-        const data = new Uint8Array(await response.arrayBuffer());
-        chunks.push(data);
-        return receivedBytes + data.byteLength;
-    }
-
     const reader = response.body.getReader();
     let nextReceivedBytes = receivedBytes;
 
@@ -110,7 +124,6 @@ async function fetchData(url: string, requestConfig): Promise<{
     headers: Record<string, string>;
 }> {
     const requestUrl = appendParams(url, requestConfig.params);
-    const requestHeaders = new Headers(requestConfig.headers || {});
     const chunks: Uint8Array[] = [];
     let receivedBytes = 0;
     let responseHeaders: Record<string, string> = {};
@@ -119,7 +132,7 @@ async function fetchData(url: string, requestConfig): Promise<{
     for (let retry = 0; retry <= MAX_RETRIES; retry++) {
         let response: Response | null = null;
         try {
-            const headers = new Headers(requestHeaders);
+            const headers = new Headers(requestConfig.headers ?? {});
             if (receivedBytes) {
                 headers.set('Range', `bytes=${receivedBytes}-`);
             }
@@ -149,20 +162,24 @@ async function fetchData(url: string, requestConfig): Promise<{
                     }
 
                     expectedSize = contentRange.total;
-                } else if (response.status === 200) {
-                    chunks.splice(0, chunks.length);
-                    receivedBytes = 0;
-                    expectedSize = null;
                 } else {
                     throw new Error(`Unexpected response status: ${response.status}`);
                 }
             } else {
-                expectedSize = +(response.headers.get('content-length') || 0) || null;
+                expectedSize = getContentLength(response);
             }
 
-            receivedBytes = await readResponse(response, chunks, receivedBytes);
+            try {
+                receivedBytes = await readResponse(response, chunks, receivedBytes);
+            } catch (error) {
+                throw new DownloadReadError(error instanceof Error ? error.message : `${error}`);
+            }
 
-            if (expectedSize === null || receivedBytes >= expectedSize) {
+            if (expectedSize !== null && receivedBytes > expectedSize) {
+                throw new Error(`Received more bytes than expected: ${receivedBytes}/${expectedSize}`);
+            }
+
+            if (expectedSize === null || receivedBytes === expectedSize) {
                 return {
                     data: mergeChunks(chunks, receivedBytes),
                     headers: {
@@ -172,7 +189,7 @@ async function fetchData(url: string, requestConfig): Promise<{
                 };
             }
         } catch (error) {
-            if (retry < MAX_RETRIES && shouldRetryError(response)) {
+            if (retry < MAX_RETRIES && shouldRetryError(error, response)) {
                 await sleep(getRetryDelay(response, retry));
                 continue;
             }
