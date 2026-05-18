@@ -46,6 +46,26 @@ Usage:
     # write to a custom location / stdout
     python tests/python/shared/utils/dump_test_db.py -o /tmp/data.json
     python tests/python/shared/utils/dump_test_db.py -o -
+
+    # extend the built-in volatile/sortable maps and dumpdata excludes
+    # from a JSON file (e.g. when running against a Django project that
+    # adds models beyond the OSS apps covered by this script or you want
+    # to customize the dump).
+    python tests/python/shared/utils/dump_test_db.py \\
+        --extra-config path/to/dump_extra_config.json
+
+The extra config file has up to three optional sections:
+
+    {
+      "extra_volatile_fields":      { "<model>": ["<field>", ...], ... },
+      "extra_sortable_list_fields": { "<model>": ["<field>", ...], ... },
+      "extra_excludes":             ["<app_or_app.model>", ...]
+    }
+
+Field maps union with the built-in entries per model;
+``extra_excludes`` append to ``DUMPDATA_EXCLUDES`` (and are ignored
+when ``--from-file`` / ``--from-stdin`` is used, since the dump is
+already produced).
 """
 
 from __future__ import annotations
@@ -132,10 +152,14 @@ def _pk_sort_key(pk: Any) -> tuple:
     return (2, str(pk))
 
 
-def _normalize_record(record: dict[str, Any]) -> dict[str, Any]:
+def _normalize_record(
+    record: dict[str, Any],
+    *,
+    sortable_list_fields: dict[str, frozenset[str]] = SORTABLE_LIST_FIELDS,
+) -> dict[str, Any]:
     model = record.get("model", "")
     fields = record.get("fields", {})
-    sortable = SORTABLE_LIST_FIELDS.get(model, frozenset())
+    sortable = sortable_list_fields.get(model, frozenset())
 
     new_fields: dict[str, Any] = {}
     for key in sorted(fields):
@@ -152,7 +176,10 @@ def _normalize_record(record: dict[str, Any]) -> dict[str, Any]:
 
 
 def _preserve_volatile(
-    records: list[dict[str, Any]], reference: list[dict[str, Any]]
+    records: list[dict[str, Any]],
+    reference: list[dict[str, Any]],
+    *,
+    volatile_fields: dict[str, frozenset[str]] = VOLATILE_FIELDS,
 ) -> list[dict[str, Any]]:
     ref_index = {
         (r.get("model", ""), _pk_sort_key(r.get("pk"))): r.get("fields", {}) for r in reference
@@ -160,7 +187,7 @@ def _preserve_volatile(
 
     for record in records:
         model = record.get("model", "")
-        volatile = VOLATILE_FIELDS.get(model)
+        volatile = volatile_fields.get(model)
         if not volatile:
             continue
 
@@ -180,13 +207,15 @@ def normalize(
     records: list[dict[str, Any]],
     *,
     reference: list[dict[str, Any]] | None = None,
+    volatile_fields: dict[str, frozenset[str]] = VOLATILE_FIELDS,
+    sortable_list_fields: dict[str, frozenset[str]] = SORTABLE_LIST_FIELDS,
 ) -> list[dict[str, Any]]:
     """Return ``records`` sorted and field-normalized, with volatile fields
     optionally preserved from ``reference``."""
-    normalized = [_normalize_record(r) for r in records]
+    normalized = [_normalize_record(r, sortable_list_fields=sortable_list_fields) for r in records]
 
     if reference is not None:
-        _preserve_volatile(normalized, reference=reference)
+        _preserve_volatile(normalized, reference=reference, volatile_fields=volatile_fields)
 
     # Sort alphabetically by model name (then by pk) so the committed file
     # has a layout that doesn't depend on Django's dependency sort. The
@@ -196,7 +225,11 @@ def normalize(
     return normalized
 
 
-def dump_from_container(container: str = DEFAULT_CONTAINER_NAME) -> list[dict[str, Any]]:
+def dump_from_container(
+    container: str = DEFAULT_CONTAINER_NAME,
+    *,
+    excludes: tuple[str, ...] | list[str] = DUMPDATA_EXCLUDES,
+) -> list[dict[str, Any]]:
     cmd = [
         "docker",
         "exec",
@@ -208,11 +241,104 @@ def dump_from_container(container: str = DEFAULT_CONTAINER_NAME) -> list[dict[st
         "2",
         "--natural-foreign",
     ]
-    for ex in DUMPDATA_EXCLUDES:
+    for ex in excludes:
         cmd.extend(["--exclude", ex])
 
     proc = run(cmd, check=True, stdout=PIPE)  # nosec
     return json.loads(proc.stdout)
+
+
+EXTRA_CONFIG_KEYS = ("extra_volatile_fields", "extra_sortable_list_fields", "extra_excludes")
+
+# Conventional Django ``app_label.modelname`` shape: lowercase identifier on
+# each side, joined by a single dot. Mismatch is a warning (not an error)
+# because the script doesn't load Django and can't authoritatively validate
+# model names — but the convention catches typos like ``engine.Task``.
+_MODEL_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$")
+
+
+class _ConfigError(ValueError):
+    """Raised when ``--extra-config`` content is malformed."""
+
+
+def _require_non_empty_str(value: Any, where: str) -> None:
+    if not isinstance(value, str):
+        raise _ConfigError(f"{where}: expected string, got {type(value).__name__}")
+    if not value:
+        raise _ConfigError(f"{where}: expected non-empty string")
+
+
+def _validate_field_map(section: Any, where: str) -> None:
+    if not isinstance(section, dict):
+        raise _ConfigError(f"{where}: expected object, got {type(section).__name__}")
+    for model, fields in section.items():
+        _require_non_empty_str(model, f"{where} key")
+        if not _MODEL_NAME_RE.match(model):
+            print(
+                f"warning: {where}.{model!r} does not match the conventional "
+                "<app_label>.<model_lowercase> shape",
+                file=sys.stderr,
+            )
+        if not isinstance(fields, list):
+            raise _ConfigError(f"{where}.{model}: expected list, got {type(fields).__name__}")
+        seen: set[str] = set()
+        for i, field in enumerate(fields):
+            _require_non_empty_str(field, f"{where}.{model}[{i}]")
+            if field in seen:
+                raise _ConfigError(f"{where}.{model}[{i}]: duplicate field {field!r}")
+            seen.add(field)
+
+
+def _validate_excludes(section: Any, where: str) -> None:
+    if not isinstance(section, list):
+        raise _ConfigError(f"{where}: expected list, got {type(section).__name__}")
+    seen: set[str] = set()
+    for i, item in enumerate(section):
+        _require_non_empty_str(item, f"{where}[{i}]")
+        if item in seen:
+            raise _ConfigError(f"{where}[{i}]: duplicate exclude {item!r}")
+        seen.add(item)
+
+
+def _load_extra_config(path: Path) -> dict[str, Any]:
+    """Read and validate an extension config file.
+
+    See ``EXTRA_CONFIG_KEYS`` for the allowed top-level sections; missing
+    sections default to empty. Malformed content raises ``_ConfigError``
+    with a JSON-pointer-style path so the offending entry is easy to find.
+    """
+    raw = json.loads(path.read_text())
+    if not isinstance(raw, dict):
+        raise _ConfigError(f"{path}: top-level must be an object, got {type(raw).__name__}")
+    unknown = sorted(set(raw) - set(EXTRA_CONFIG_KEYS))
+    if unknown:
+        raise _ConfigError(
+            f"{path}: unknown top-level keys: {unknown}. " f"valid keys: {list(EXTRA_CONFIG_KEYS)}"
+        )
+
+    extra_volatile = raw.get("extra_volatile_fields", {})
+    extra_sortable = raw.get("extra_sortable_list_fields", {})
+    extra_excludes = raw.get("extra_excludes", [])
+
+    _validate_field_map(extra_volatile, "extra_volatile_fields")
+    _validate_field_map(extra_sortable, "extra_sortable_list_fields")
+    _validate_excludes(extra_excludes, "extra_excludes")
+
+    return {
+        "extra_volatile_fields": extra_volatile,
+        "extra_sortable_list_fields": extra_sortable,
+        "extra_excludes": extra_excludes,
+    }
+
+
+def _merge_field_map(
+    base: dict[str, frozenset[str]],
+    extra: dict[str, list[str]],
+) -> dict[str, frozenset[str]]:
+    merged = dict(base)
+    for model, fields in extra.items():
+        merged[model] = merged.get(model, frozenset()) | frozenset(fields)
+    return merged
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -250,18 +376,54 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Take volatile timestamp fields from the new dump instead of "
         "preserving them from the existing output file.",
     )
+    parser.add_argument(
+        "--extra-config",
+        type=Path,
+        help="Path to a JSON file extending the built-in volatile/sortable "
+        "maps and dumpdata excludes. Sections (all optional): "
+        "extra_volatile_fields, extra_sortable_list_fields, extra_excludes. "
+        "Field maps union with the built-in entries per model; "
+        "extra_excludes append to the built-in DUMPDATA_EXCLUDES (and are "
+        "ignored when --from-file/--from-stdin is used).",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parsed_args = _build_parser().parse_args(argv)
 
+    if parsed_args.extra_config:
+        try:
+            extra = _load_extra_config(parsed_args.extra_config)
+        except _ConfigError as exc:
+            print(f"error: invalid --extra-config: {exc}", file=sys.stderr)
+            return 2
+    else:
+        extra = {
+            "extra_volatile_fields": {},
+            "extra_sortable_list_fields": {},
+            "extra_excludes": [],
+        }
+    volatile_fields = _merge_field_map(VOLATILE_FIELDS, extra["extra_volatile_fields"])
+    sortable_list_fields = _merge_field_map(
+        SORTABLE_LIST_FIELDS, extra["extra_sortable_list_fields"]
+    )
+    excludes = list(DUMPDATA_EXCLUDES) + [
+        ex for ex in extra["extra_excludes"] if ex not in DUMPDATA_EXCLUDES
+    ]
+    if extra["extra_excludes"] and (parsed_args.from_file or parsed_args.from_stdin):
+        print(
+            "warning: extra_excludes is ignored when reading the dump from "
+            "--from-file/--from-stdin (the dump is already produced).",
+            file=sys.stderr,
+        )
+
     if parsed_args.from_file:
         records = json.loads(parsed_args.from_file.read_text())
     elif parsed_args.from_stdin:
         records = json.loads(sys.stdin.read())
     else:
-        records = dump_from_container(parsed_args.container)
+        records = dump_from_container(parsed_args.container, excludes=excludes)
 
     reference_dump: list[dict[str, Any]] | None = None
     output_path: Path | None = (
@@ -270,7 +432,12 @@ def main(argv: list[str] | None = None) -> int:
     if not parsed_args.refresh_volatile and output_path is not None and output_path.exists():
         reference_dump = json.loads(output_path.read_text())
 
-    normalized = normalize(records, reference=reference_dump)
+    normalized = normalize(
+        records,
+        reference=reference_dump,
+        volatile_fields=volatile_fields,
+        sortable_list_fields=sortable_list_fields,
+    )
     serialized = json.dumps(normalized, indent=2, ensure_ascii=False)
 
     if output_path is None:
