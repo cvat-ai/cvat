@@ -64,6 +64,49 @@ export function drawWithClicks(pointsMap) {
     });
 }
 
+export function imagePointToCanvasCoordinates(point, {
+    content,
+    background,
+    container,
+}) {
+    const contentWidth = Number.parseFloat(content.style.width) || content.width.baseVal.value;
+    const contentHeight = Number.parseFloat(content.style.height) || content.height.baseVal.value;
+    const imageWidth = Number(background.getAttribute('width')) || background.width;
+    const imageHeight = Number(background.getAttribute('height')) || background.height;
+    const matrix = content.getScreenCTM();
+
+    if (!matrix) {
+        throw new Error('Canvas image coordinates cannot be converted without a screen matrix');
+    }
+
+    const svgPoint = content.createSVGPoint();
+    svgPoint.x = point.x + (contentWidth - imageWidth) / 2;
+    svgPoint.y = point.y + (contentHeight - imageHeight) / 2;
+
+    const screenPoint = svgPoint.matrixTransform(matrix);
+    const containerRect = container.getBoundingClientRect();
+
+    return {
+        x: screenPoint.x - containerRect.left,
+        y: screenPoint.y - containerRect.top,
+    };
+}
+
+export function clickCanvasImagePoint(point, options = {}) {
+    cy.get('#cvat_canvas_content').then(([content]) => {
+        const background = content.ownerDocument.getElementById('cvat_canvas_background');
+        const container = content.ownerDocument.querySelector('.cvat-canvas-container');
+
+        if (!background || !container) {
+            throw new Error('Canvas image or container was not found');
+        }
+
+        const { x, y } = imagePointToCanvasCoordinates(point, { content, background, container });
+
+        cy.get('.cvat-canvas-container').click(x, y, options);
+    });
+}
+
 /**
  * Draw a shape by clicking through an array of points
  * using cy.click

@@ -67,7 +67,7 @@ function getDimensions(
 }
 
 function convertAttributes(
-    attributes: Record<string, string> | SerializedCollection['shapes'][0]['attributes'],
+    attributes: SerializedData['attributes'] | SerializedCollection['shapes'][0]['attributes'],
     attributesSpec: Record<number, Attribute>,
 ): ConvertedAttributes {
     const entries: [number, string][] = Array.isArray(attributes) ?
@@ -87,15 +87,6 @@ function convertAttributes(
 
         return acc;
     }, {} as Record<string, ConvertedAttributeValue>);
-}
-
-function getTrackAttributes(
-    track: Pick<SerializedCollection['tracks'][0], 'attributes' | 'shapes'>,
-): SerializedCollection['tracks'][0]['attributes'] {
-    return [
-        ...track.attributes,
-        ...track.shapes.flatMap((shape) => shape.attributes),
-    ];
 }
 
 function buildAttributeMap(attributes: Attribute[]): Record<number, Attribute> {
@@ -332,7 +323,7 @@ export default class AnnotationsFilter {
             }),
             tracks: collection.tracks.map((track) => {
                 const label = labelByID[track.label_id];
-                const attributes = convertAttributes(getTrackAttributes(track), attributeByID);
+                const attributes = convertAttributes(track.attributes, attributeByID);
 
                 let elements: ConvertedElementData[] = [];
                 if (track.shapes[0]?.type === ShapeType.SKELETON && track.elements) {
@@ -343,7 +334,7 @@ export default class AnnotationsFilter {
                         }
 
                         const sublabelName = `${label.name} / ${elementLabel.name}`;
-                        const elementAttributes = convertAttributes(getTrackAttributes(element), attributeByID);
+                        const elementAttributes = convertAttributes(element.attributes, attributeByID);
 
                         return [{
                             width: null,

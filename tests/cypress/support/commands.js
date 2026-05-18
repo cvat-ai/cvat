@@ -25,6 +25,73 @@ require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
 
+Cypress.Commands.add('activateCanvasShape', (selector) => {
+    cy.get(selector).then(([shapeWrapper]) => {
+        const tagName = (element) => element.tagName.toLowerCase();
+        const centerPoint = (bbox) => ({
+            x: bbox.x + bbox.width / 2,
+            y: bbox.y + bbox.height / 2,
+        });
+        const getSVGPoint = (shape) => {
+            const shapeTagName = tagName(shape);
+            const bbox = shape.getBBox();
+
+            if (['polygon', 'polyline'].includes(shapeTagName) && shape.points.length) {
+                return {
+                    x: shape.points[0].x,
+                    y: shape.points[0].y,
+                };
+            }
+
+            if (shapeTagName === 'g') {
+                const pointCircle = shape.querySelector('circle');
+                if (pointCircle) {
+                    return {
+                        x: +pointCircle.getAttribute('cx'),
+                        y: +pointCircle.getAttribute('cy'),
+                    };
+                }
+
+                return centerPoint(bbox);
+            }
+
+            if (['rect', 'ellipse'].includes(shapeTagName)) {
+                return {
+                    x: bbox.x + bbox.width / 2,
+                    y: bbox.y + bbox.height / 2,
+                };
+            }
+
+            throw new Error(
+                `Unsupported canvas shape "${shapeTagName}" for cy.activateCanvasShape. ` +
+                'Support can be added later if this shape type needs it.',
+            );
+        };
+        const toClientCoordinates = (shape, svgPoint) => {
+            const bbox = shape.getBBox();
+            const renderedBox = shape.getBoundingClientRect();
+
+            return {
+                x: bbox.width ?
+                    renderedBox.left + ((svgPoint.x - bbox.x) / bbox.width) * renderedBox.width :
+                    renderedBox.left + renderedBox.width / 2,
+                y: bbox.height ?
+                    renderedBox.top + ((svgPoint.y - bbox.y) / bbox.height) * renderedBox.height :
+                    renderedBox.top + renderedBox.height / 2,
+            };
+        };
+
+        const svgPoint = getSVGPoint(shapeWrapper);
+        const point = toClientCoordinates(shapeWrapper, svgPoint);
+
+        cy.get('#cvat_canvas_wrapper').trigger('mousemove', {
+            clientX: point.x,
+            clientY: point.y,
+            bubbles: true,
+        });
+    });
+});
+
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
     cy.get('#credential').should('be.visible').type(username);
     cy.get('#password').should('be.visible').type(password);

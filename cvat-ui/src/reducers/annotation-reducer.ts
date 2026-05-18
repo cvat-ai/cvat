@@ -12,7 +12,7 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode, RenderData } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    DimensionType, getCore, JobStage, Label, LabelType, ObjectType, ShapeType,
+    DimensionType, getCore, JobStage, Label, LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
@@ -26,14 +26,15 @@ import {
 
 const cvat = getCore();
 
-function getAnnotationsRenderData(states: any[], filters: object[]): RenderData {
+function getAnnotationsRenderData(states: ObjectState[], filters: object[]): RenderData {
     return {
         visibleSkeletonElements: cvat.utils.getVisibleSkeletonElements(states, filters),
     };
 }
 
-function updateActivatedStateID(newStates: any[], prevActivatedStateID: number | null): number | null {
-    return prevActivatedStateID === null || newStates.some((_state: any) => _state.clientID === prevActivatedStateID) ?
+function updateActivatedStateID(newStates: ObjectState[], prevActivatedStateID: number | null): number | null {
+    return prevActivatedStateID === null ||
+        newStates.some((_state: ObjectState) => _state.clientID === prevActivatedStateID) ?
         prevActivatedStateID :
         null;
 }
@@ -252,7 +253,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     meta: jobMeta,
                     labels: job.labels,
                     attributes: job.labels
-                        .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {
+                        .reduce((acc: Record<number, Label['attributes']>, label: Label) => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
@@ -628,7 +629,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
 
-            const clientIDs = prevStates.map((prevState: any): number => prevState.clientID);
+            const clientIDs = prevStates.map((prevState: ObjectState): number => prevState.clientID);
             for (const updatedState of updatedStates) {
                 const index = clientIDs.indexOf(updatedState.clientID);
                 if (index !== -1) {
@@ -734,7 +735,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const contextMenuClientID = state.canvas.contextMenu.clientID;
             const contextMenuVisible = state.canvas.contextMenu.visible;
             const nextStates = state.annotations.states.filter(
-                (_objectState: any) => _objectState.clientID !== objectState.clientID,
+                (_objectState: ObjectState) => _objectState.clientID !== objectState.clientID,
             );
 
             return {
@@ -1018,7 +1019,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             let { activatedStateID } = state.annotations;
             if (activatedStateID !== null) {
-                const idx = state.annotations.states.map((_state: any) => _state.clientID).indexOf(activatedStateID);
+                const idx = state.annotations.states
+                    .map((_state: ObjectState) => _state.clientID)
+                    .indexOf(activatedStateID);
                 if (idx !== -1) {
                     if (state.annotations.states[idx].zOrder > cur) {
                         activatedStateID = null;
