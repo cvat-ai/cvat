@@ -834,8 +834,7 @@ class _JobDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data),
-            self._db_job.segment.chunks_updated_date,
+            self._get_chunk_checksum(chunk_data), self._db_job.segment.chunks_updated_date
         )
 
 
