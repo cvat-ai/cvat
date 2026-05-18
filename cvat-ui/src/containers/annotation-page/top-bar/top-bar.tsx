@@ -137,12 +137,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 navigationType,
                 hoveredChapter,
             },
-            audioPlayer: {
-                playing: audioPlaying,
-                currentTime: audioCurrentTime,
-                duration: audioDuration,
-                hasUnsavedChanges: audioHasUnsavedChanges,
-            },
             annotations: {
                 saving: { uploading: saving, forceExit },
                 history,
@@ -150,8 +144,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             job: { instance: jobInstance, queryParameters: { initialOpenGuide }, meta },
             canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
-            audioHistory,
             workspace,
+        },
+        audio: {
+            player: {
+                playing: audioPlaying,
+                currentTime: audioCurrentTime,
+                duration: audioDuration,
+                hasUnsavedChanges: audioHasUnsavedChanges,
+            },
+            history: audioHistory,
         },
         settings: {
             player: { frameSpeed, frameStep, showDeletedFrames },
@@ -300,8 +302,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onAudioPlayPause(): void {
             const store = getCVATStore();
-            const { audioPlayer } = store.getState().annotation;
-            dispatch(switchAudioPlay(!audioPlayer.playing));
+            const { player } = store.getState().audio;
+            dispatch(switchAudioPlay(!player.playing));
         },
         onAudioSeek(time: number): void {
             dispatch(setAudioCurrentTime(time));

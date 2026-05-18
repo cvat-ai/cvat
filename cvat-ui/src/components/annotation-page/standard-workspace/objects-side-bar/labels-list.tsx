@@ -86,7 +86,7 @@ function LabelsListComponent(): JSX.Element {
 
         if (isAudio) {
             const relevantAppState = getCVATStore().getState();
-            const { regions, activeRegionId } = relevantAppState.annotation.audioPlayer;
+            const { regions, activeRegionId } = relevantAppState.audio.player;
             if (activeRegionId) {
                 const labelObj = labels.find((l: any) => l.id === labelID);
                 const defaultAttrs: Record<number, string> = {};

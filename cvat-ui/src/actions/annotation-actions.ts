@@ -364,7 +364,7 @@ export function audioRedoAction(): AnyAction {
 
 export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const prevAudioUrl = getState().annotation.audioPlayer.audioUrl;
+        const prevAudioUrl = getState().audio.player.audioUrl;
         if (prevAudioUrl) {
             URL.revokeObjectURL(prevAudioUrl);
         }
@@ -451,10 +451,8 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
 export function saveAudioAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const state = getState();
-        const {
-            job: { instance: jobInstance },
-            audioPlayer: { regions, version },
-        } = state.annotation;
+        const { job: { instance: jobInstance } } = state.annotation;
+        const { regions, version } = state.audio.player;
         if (!jobInstance) return;
 
         const hasNoneLabels = regions.some((r: AudioRegion) => r.labelId === null);
@@ -510,7 +508,7 @@ export function updateAudioRegionAsync(
     patch: Partial<AudioRegion> | ((region: AudioRegion, regions: AudioRegion[]) => Partial<AudioRegion>),
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const { audioPlayer: { regions } } = getState().annotation;
+        const { regions } = getState().audio.player;
         const target = regions.find((r) => r.id === regionId);
         if (!target) return;
         const resolved = typeof patch === 'function' ? patch(target, regions) : patch;
@@ -520,7 +518,7 @@ export function updateAudioRegionAsync(
 
 export function copyAudioRegionAsync(regionId: string): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const { audioPlayer: { regions } } = getState().annotation;
+        const { regions } = getState().audio.player;
         const source = regions.find((r) => r.id === regionId);
         if (!source) return;
 
@@ -542,7 +540,7 @@ export function copyAudioRegionAsync(regionId: string): ThunkAction {
 
 export function extendAudioRegionFromLastAsync(labelId: number | null): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const { audioPlayer: { regions, currentTime, duration } } = getState().annotation;
+        const { regions, currentTime, duration } = getState().audio.player;
         const { labels } = getState().annotation.job;
 
         const lastRegion = regions.length > 0 ? regions[regions.length - 1] : null;

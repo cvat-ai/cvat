@@ -39,7 +39,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance,
                 labels,
             },
-            audioPlayer: {
+        },
+        audio: {
+            player: {
                 duration,
                 regions,
                 hasUnsavedChanges,

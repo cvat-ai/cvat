@@ -58,31 +58,31 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { audioPlayer } = state.annotation;
+    const { player } = state.audio;
     const { labels } = state.annotation.job;
     const { filters } = state.annotation.annotations;
     const visibleRegionIds = new Set(
-        filterAudioRegions(audioPlayer.regions, labels, filters).map((r) => r.id),
+        filterAudioRegions(player.regions, labels, filters).map((r) => r.id),
     );
     return {
-        isPlaying: audioPlayer.playing,
-        currentTime: audioPlayer.currentTime,
-        duration: audioPlayer.duration,
-        zoom: audioPlayer.zoom,
-        volume: audioPlayer.volume,
-        loop: audioPlayer.loop,
-        playbackRate: audioPlayer.playbackRate,
+        isPlaying: player.playing,
+        currentTime: player.currentTime,
+        duration: player.duration,
+        zoom: player.zoom,
+        volume: player.volume,
+        loop: player.loop,
+        playbackRate: player.playbackRate,
         activeControl: state.annotation.canvas.activeControl,
-        regions: audioPlayer.regions,
+        regions: player.regions,
         visibleRegionIds,
-        activeRegionId: audioPlayer.activeRegionId,
-        hoveredRegionId: audioPlayer.hoveredRegionId,
-        audioUrl: audioPlayer.audioUrl,
-        audioLoading: audioPlayer.audioLoading,
-        audioError: audioPlayer.audioError,
-        waveformReady: audioPlayer.waveformReady,
+        activeRegionId: player.activeRegionId,
+        hoveredRegionId: player.hoveredRegionId,
+        audioUrl: player.audioUrl,
+        audioLoading: player.audioLoading,
+        audioError: player.audioError,
+        waveformReady: player.waveformReady,
         labels,
-        activeLabelId: audioPlayer.activeLabelId,
+        activeLabelId: player.activeLabelId,
         colorBy: state.settings.shapes.colorBy,
         opacity: state.settings.shapes.opacity,
         selectedOpacity: state.settings.shapes.selectedOpacity,

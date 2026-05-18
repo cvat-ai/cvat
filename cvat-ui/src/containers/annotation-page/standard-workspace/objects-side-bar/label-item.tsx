@@ -35,11 +35,13 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             annotations: { states: objectStates },
-            audioPlayer: { regions: audioRegions },
             job: { labels, instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
             },
+        },
+        audio: {
+            player: { regions: audioRegions },
         },
     } = state;
 

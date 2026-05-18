@@ -94,16 +94,16 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { audioPlayer } = state.annotation;
+    const { player } = state.audio;
     const { labels } = state.annotation.job;
     const { filters } = state.annotation.annotations;
     const visibleRegionIds = new Set(
-        filterAudioRegions(audioPlayer.regions, labels, filters).map((r) => r.id),
+        filterAudioRegions(player.regions, labels, filters).map((r) => r.id),
     );
     return {
-        regions: audioPlayer.regions,
+        regions: player.regions,
         visibleRegionIds,
-        activeRegionId: audioPlayer.activeRegionId,
+        activeRegionId: player.activeRegionId,
         labels,
         colorBy: state.settings.shapes.colorBy,
         keyMap: state.shortcuts.keyMap,

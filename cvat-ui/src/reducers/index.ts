@@ -33,6 +33,44 @@ export interface AudioRegion {
     zOrder: number;
 }
 
+export type AudioRegionDiff =
+    | { kind: 'added'; region: AudioRegion }
+    | { kind: 'removed'; region: AudioRegion }
+    | { kind: 'updated'; before: AudioRegion; after: AudioRegion };
+
+export interface AudioHistoryEntry {
+    actionName: string;
+    diffs: AudioRegionDiff[];
+    activeRegionIdBefore: string | null;
+    activeRegionIdAfter: string | null;
+}
+
+export interface AudioState {
+    player: {
+        playing: boolean;
+        currentTime: number;
+        duration: number;
+        playbackRate: number;
+        zoom: number;
+        volume: number;
+        loop: boolean;
+        regions: AudioRegion[];
+        activeRegionId: string | null;
+        hoveredRegionId: string | null;
+        audioUrl: string | null;
+        audioLoading: boolean;
+        audioError: string | null;
+        waveformReady: boolean;
+        activeLabelId: number | null;
+        hasUnsavedChanges: boolean;
+        version: number;
+    };
+    history: {
+        undo: AudioHistoryEntry[];
+        redo: AudioHistoryEntry[];
+    };
+}
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
@@ -894,48 +932,6 @@ export interface AnnotationState {
         frameAngles: number[];
         hoveredChapter: number | null;
     };
-    audioPlayer: {
-        playing: boolean;
-        currentTime: number;
-        duration: number;
-        playbackRate: number;
-        zoom: number;
-        volume: number;
-        loop: boolean;
-        regions: AudioRegion[];
-        activeRegionId: string | null;
-        hoveredRegionId: string | null;
-        audioUrl: string | null;
-        audioLoading: boolean;
-        audioError: string | null;
-        waveformReady: boolean;
-        activeLabelId: number | null;
-        hasUnsavedChanges: boolean;
-        version: number;
-    };
-    audioHistory: {
-        undo: Array<{
-            actionName: string;
-            diffs: Array<
-                | { kind: 'added'; region: AudioRegion }
-                | { kind: 'removed'; region: AudioRegion }
-                | { kind: 'updated'; before: AudioRegion; after: AudioRegion }
-            >;
-            activeRegionIdBefore: string | null;
-            activeRegionIdAfter: string | null;
-        }>;
-        redo: Array<{
-            actionName: string;
-            diffs: Array<
-                | { kind: 'added'; region: AudioRegion }
-                | { kind: 'removed'; region: AudioRegion }
-                | { kind: 'updated'; before: AudioRegion; after: AudioRegion }
-            >;
-            activeRegionIdBefore: string | null;
-            activeRegionIdAfter: string | null;
-        }>;
-    };
-
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
         activeInteractorParameters: Partial<{
@@ -1234,6 +1230,7 @@ export interface CombinedState {
     models: ModelsState;
     notifications: NotificationsState;
     annotation: AnnotationState;
+    audio: AudioState;
     settings: SettingsState;
     shortcuts: ShortcutsState;
     review: ReviewState;

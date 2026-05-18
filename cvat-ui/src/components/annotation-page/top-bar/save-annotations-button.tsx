@@ -69,7 +69,7 @@ function SaveAnnotationsButton() {
         keyMap: state.shortcuts.keyMap,
         normKeyMap: state.shortcuts.normalizedKeyMap,
         workspace: state.annotation.workspace,
-        regions: state.annotation.audioPlayer.regions,
+        regions: state.audio.player.regions,
     }), shallowEqual);
 
     const trySave = useCallback(() => {

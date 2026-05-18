@@ -41,7 +41,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { activeControl },
-            audioPlayer: {
+        },
+        audio: {
+            player: {
                 zoom, volume, loop, playbackRate, duration,
             },
         },
@@ -57,7 +59,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         loop,
         playbackRate,
         labels: state.annotation.job.labels,
-        activeLabelId: state.annotation.audioPlayer.activeLabelId,
+        activeLabelId: state.audio.player.activeLabelId,
     };
 }
 
