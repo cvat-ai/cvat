@@ -13,7 +13,6 @@ import PickFromModelComponent from './pick-from-model';
 interface Props {
     labelNames: string[];
     creatorType: 'basic' | 'skeleton' | 'model';
-    hideLabelType?: boolean;
     onCreate: (label: LabelOptColor) => void;
     onCancel: () => void;
 }
@@ -23,7 +22,6 @@ function compareProps(prevProps: Props, nextProps: Props): boolean {
         prevProps.onCreate === nextProps.onCreate &&
         prevProps.onCancel === nextProps.onCancel &&
         prevProps.creatorType === nextProps.creatorType &&
-        prevProps.hideLabelType === nextProps.hideLabelType &&
         prevProps.labelNames.length === nextProps.labelNames.length &&
         prevProps.labelNames.every((value: string, index: number) => nextProps.labelNames[index] === value)
     );
@@ -31,7 +29,7 @@ function compareProps(prevProps: Props, nextProps: Props): boolean {
 
 function ConstructorCreator(props: Props): JSX.Element {
     const {
-        onCreate, onCancel, labelNames, creatorType, hideLabelType,
+        onCreate, onCancel, labelNames, creatorType,
     } = props;
     const skeletonConfiguratorRef = useRef<SkeletonConfigurator>(null);
 
@@ -62,7 +60,6 @@ function ConstructorCreator(props: Props): JSX.Element {
                     <LabelForm
                         label={null}
                         labelNames={labelNames}
-                        hideLabelType={hideLabelType}
                         onSubmit={onCreate}
                         onSkeletonSubmit={creatorType === 'skeleton' ? onSkeletonSubmit : undefined}
                         resetSkeleton={creatorType === 'skeleton' ? resetSkeleton : undefined}

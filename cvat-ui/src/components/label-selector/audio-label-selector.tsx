@@ -3,24 +3,34 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
-import Select, { SelectProps } from 'antd/lib/select';
+import React, { useEffect, useMemo, useState } from 'react';
+import Select, { SelectProps, DefaultOptionType } from 'antd/lib/select';
 
 interface Props extends SelectProps<string> {
     labels: any[];
     value: any | number | null;
     onChange: (label: any) => void;
     onEnterPress?: (labelID: number) => void;
+    withLabelColor?: boolean;
 }
 
-export default function LabelSelector(props: Props): JSX.Element {
+const LABEL_COLOR_FALLBACK = '#9CA3AF';
+
+function LabelColorDot({ color }: { color: string }): JSX.Element {
+    return (
+        <span
+            className='cvat-label-color-dot'
+            style={{ background: color || LABEL_COLOR_FALLBACK }}
+        />
+    );
+}
+
+export default function AudioLabelSelector(props: Props): JSX.Element {
     const {
-        labels, value, onChange, onEnterPress, ...rest
+        labels, value, onChange, onEnterPress, withLabelColor, ...rest
     } = props;
     const dynamicProps = value ?
-        {
-            value: typeof value === 'number' ? value : value.id,
-        } :
+        { value: typeof value === 'number' ? value : value.id } :
         {};
 
     const [enterPressed, setEnterPressed] = useState(false);
@@ -32,23 +42,28 @@ export default function LabelSelector(props: Props): JSX.Element {
         }
     }, [value, enterPressed]);
 
+    const options = useMemo<DefaultOptionType[]>(() => (
+        labels.map((label: any) => ({
+            value: label.id,
+            title: label.name,
+            label: withLabelColor ? (
+                <span className='cvat-label-selector-option'>
+                    <LabelColorDot color={label.color} />
+                    {label.name}
+                </span>
+            ) : label.name,
+        }))
+    ), [labels, withLabelColor]);
+
     return (
         <Select
             virtual={false}
             {...rest}
             {...dynamicProps}
             showSearch
-            filterOption={(input: string, option) => {
-                if (option) {
-                    const { children } = option.props;
-                    if (typeof children === 'string') {
-                        return children.toLowerCase().includes(input.toLowerCase());
-                    }
-                }
-
-                return false;
-            }}
+            optionFilterProp='title'
             defaultValue={labels[0].id}
+            options={options}
             onChange={(newValue: string) => {
                 const [label] = labels.filter((_label: any): boolean => _label.id === +newValue);
                 if (label) {
@@ -62,12 +77,6 @@ export default function LabelSelector(props: Props): JSX.Element {
                     setEnterPressed(event.key === 'Enter');
                 }
             }}
-        >
-            {labels.map((label: any) => (
-                <Select.Option title={label.name} key={label.id} value={label.id}>
-                    {label.name}
-                </Select.Option>
-            ))}
-        </Select>
+        />
     );
 }

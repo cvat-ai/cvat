@@ -9,7 +9,7 @@ import { Row, Col } from 'antd/lib/grid';
 import { ActiveControl, CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import LabelSelector from 'components/label-selector/label-selector';
+import LabelSelector from 'components/label-selector/audio-label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';

@@ -237,7 +237,6 @@ export default class AudioLabelsEditor extends
                     key='updater'
                     label={labelForUpdate}
                     labelNames={labels.map((l) => l.name)}
-                    hideLabelType
                     onUpdate={this.handleUpdate}
                     onCancel={this.handlerCancel}
                 />
@@ -248,7 +247,6 @@ export default class AudioLabelsEditor extends
                     key='creator'
                     creatorType={creatorType}
                     labelNames={labels.map((l) => l.name)}
-                    hideLabelType
                     onCreate={this.handleCreate}
                     onCancel={this.handlerCancel}
                 />
