@@ -15,7 +15,6 @@ import { Chapter } from 'cvat-core/src/frames';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
-import AudioPlayerNavigation from './audio-player-navigation';
 import RightGroup from './right-group';
 
 interface Props {
@@ -53,8 +52,6 @@ interface Props {
     keyMap: KeyMap;
     jobInstance: Job;
     ranges: string;
-    audioCurrentTime?: number;
-    audioDuration?: number;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
     showFilters(): void;
@@ -82,8 +79,6 @@ interface Props {
     switchNavigationBlocked(blocked: boolean): void;
     setNavigationType(navigationType: NavigationType): void;
     switchShowSearchPallet(visible: boolean): void;
-    onAudioPlayPause?(): void;
-    onAudioSeek?(time: number): void;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -121,8 +116,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         navigationType,
         jobInstance,
         keyMap,
-        audioCurrentTime,
-        audioDuration,
         showStatistics,
         showFilters,
         changeWorkspace,
@@ -151,84 +144,67 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         switchNavigationBlocked,
         switchShowSearchPallet,
         showSearchFrameByName,
-        onAudioPlayPause,
-        onAudioSeek,
     } = props;
 
     const playerItems: [JSX.Element, number][] = [];
 
-    if (workspace !== Workspace.AUDIO) {
-        playerItems.push([(
-            <PlayerButtons
-                key='player_buttons'
-                playing={playing}
-                playPauseShortcut={playPauseShortcut}
-                nextFrameShortcut={nextFrameShortcut}
-                previousFrameShortcut={previousFrameShortcut}
-                forwardShortcut={forwardShortcut}
-                backwardShortcut={backwardShortcut}
-                navigationType={navigationType}
-                chapters={chapters}
-                keyMap={keyMap}
-                workspace={workspace}
-                onPrevFrame={onPrevFrame}
-                onNextFrame={onNextFrame}
-                onForward={onForward}
-                onBackward={onBackward}
-                onFirstFrame={onFirstFrame}
-                onLastFrame={onLastFrame}
-                onSwitchPlay={onSwitchPlay}
-                onSearchAnnotations={onSearchAnnotations}
-                onSearchChapters={onSearchChapters}
-                onHoveredChapter={setHoveredChapter}
-                onSelectChapter={onSelectChapter}
-                setNavigationType={setNavigationType}
-            />
-        ), 0]);
+    playerItems.push([(
+        <PlayerButtons
+            key='player_buttons'
+            playing={playing}
+            playPauseShortcut={playPauseShortcut}
+            nextFrameShortcut={nextFrameShortcut}
+            previousFrameShortcut={previousFrameShortcut}
+            forwardShortcut={forwardShortcut}
+            backwardShortcut={backwardShortcut}
+            navigationType={navigationType}
+            chapters={chapters}
+            keyMap={keyMap}
+            workspace={workspace}
+            onPrevFrame={onPrevFrame}
+            onNextFrame={onNextFrame}
+            onForward={onForward}
+            onBackward={onBackward}
+            onFirstFrame={onFirstFrame}
+            onLastFrame={onLastFrame}
+            onSwitchPlay={onSwitchPlay}
+            onSearchAnnotations={onSearchAnnotations}
+            onSearchChapters={onSearchChapters}
+            onHoveredChapter={setHoveredChapter}
+            onSelectChapter={onSelectChapter}
+            setNavigationType={setNavigationType}
+        />
+    ), 0]);
 
-        playerItems.push([(
-            <PlayerNavigation
-                key='player_navigation'
-                startFrame={startFrame}
-                stopFrame={stopFrame}
-                playing={playing}
-                chapters={chapters}
-                hoveredChapter={hoveredChapter}
-                ranges={ranges}
-                frameNumber={frameNumber}
-                frameFilename={frameFilename}
-                frameDeleted={frameDeleted}
-                deleteFrameShortcut={deleteFrameShortcut}
-                focusFrameInputShortcut={focusFrameInputShortcut}
-                searchFrameByNameShortcut={searchFrameByNameShortcut}
-                inputFrameRef={inputFrameRef}
-                keyMap={keyMap}
-                workspace={workspace}
-                onSliderChange={onSliderChange}
-                onInputChange={onInputChange}
-                onURLIconClick={onURLIconClick}
-                onCopyFilenameIconClick={onCopyFilenameIconClick}
-                onDeleteFrame={onDeleteFrame}
-                onRestoreFrame={onRestoreFrame}
-                switchNavigationBlocked={switchNavigationBlocked}
-                switchShowSearchPallet={switchShowSearchPallet}
-                showSearchFrameByName={showSearchFrameByName}
-            />
-        ), 10]);
-    } else {
-        playerItems.push([(
-            <AudioPlayerNavigation
-                key='audio_player_navigation'
-                playing={playing}
-                currentTime={audioCurrentTime || 0}
-                duration={audioDuration || 0}
-                workspace={workspace}
-                keyMap={keyMap}
-                onPlayPause={onAudioPlayPause || (() => {})}
-                onSeek={onAudioSeek || (() => {})}
-            />
-        ), 5]);
-    }
+    playerItems.push([(
+        <PlayerNavigation
+            key='player_navigation'
+            startFrame={startFrame}
+            stopFrame={stopFrame}
+            playing={playing}
+            chapters={chapters}
+            hoveredChapter={hoveredChapter}
+            ranges={ranges}
+            frameNumber={frameNumber}
+            frameFilename={frameFilename}
+            frameDeleted={frameDeleted}
+            deleteFrameShortcut={deleteFrameShortcut}
+            focusFrameInputShortcut={focusFrameInputShortcut}
+            searchFrameByNameShortcut={searchFrameByNameShortcut}
+            inputFrameRef={inputFrameRef}
+            keyMap={keyMap}
+            workspace={workspace}
+            onSliderChange={onSliderChange}
+            onInputChange={onInputChange}
+            onURLIconClick={onURLIconClick}
+            onCopyFilenameIconClick={onCopyFilenameIconClick}
+            onDeleteFrame={onDeleteFrame}
+            onRestoreFrame={onRestoreFrame}
+            switchNavigationBlocked={switchNavigationBlocked}
+            switchShowSearchPallet={switchShowSearchPallet}
+            showSearchFrameByName={showSearchFrameByName}
+        />
+    ), 10]);
 
     return (
         <Row justify='space-between'>

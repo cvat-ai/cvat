@@ -21,8 +21,6 @@ export interface AudioWorkspaceProps {
 export default function AudioWorkspaceComponent(props: AudioWorkspaceProps): JSX.Element | null {
     const audioEnabled = useAudioAnnotationsEnabled();
     if (!audioEnabled) {
-        // Defense in depth: a parent switch (TICKET-06) should keep us out of the audio
-        // workspace when the feature is disabled, but render nothing if we still got here.
         return null;
     }
 

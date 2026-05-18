@@ -13,9 +13,7 @@ import notification from 'antd/lib/notification';
 
 import { FilterIcon, FullscreenIcon, GuideIcon } from 'icons';
 import config from 'config';
-import {
-    DimensionType, Job, JobStage, JobState,
-} from 'cvat-core-wrapper';
+import { Job, JobStage, JobState } from 'cvat-core-wrapper';
 import { Workspace } from 'reducers';
 
 import MDEditor from '@uiw/react-md-editor';
@@ -30,7 +28,7 @@ interface Props {
     initialOpenGuide: boolean;
 }
 
-function RightGroup(props: Props): JSX.Element {
+function AudioRightGroup(props: Props): JSX.Element {
     const {
         showStatistics,
         changeWorkspace,
@@ -79,7 +77,7 @@ function RightGroup(props: Props): JSX.Element {
                 jobInstance?.stage === JobStage.ANNOTATION &&
                 jobInstance?.state === JobState.NEW
             ) {
-                let seenGuides = [];
+                let seenGuides: number[] = [];
                 try {
                     seenGuides = JSON.parse(localStorage.getItem('seenGuides') || '[]');
                     if (!Array.isArray(seenGuides) || seenGuides.some((el) => !Number.isInteger(el))) {
@@ -90,7 +88,6 @@ function RightGroup(props: Props): JSX.Element {
                 }
 
                 if (!seenGuides.includes(jobInstance.guideId)) {
-                    // open guide if the user have not seen it yet
                     openGuide();
                     const updatedSeenGuides = Array
                         .from(new Set([
@@ -156,30 +153,13 @@ function RightGroup(props: Props): JSX.Element {
                     onChange={changeWorkspace}
                     value={workspace}
                 >
-                    {Object.values(Workspace).map((ws) => {
-                        if (jobInstance.dimension === DimensionType.DIMENSION_3D) {
-                            if (ws === Workspace.STANDARD) {
-                                return null;
-                            }
-                            return (
-                                <Select.Option disabled={ws !== Workspace.STANDARD3D} key={ws} value={ws}>
-                                    {ws}
-                                </Select.Option>
-                            );
-                        }
-                        if (ws !== Workspace.STANDARD3D) {
-                            return (
-                                <Select.Option key={ws} value={ws}>
-                                    {ws}
-                                </Select.Option>
-                            );
-                        }
-                        return null;
-                    })}
+                    <Select.Option key={Workspace.AUDIO} value={Workspace.AUDIO}>
+                        {Workspace.AUDIO}
+                    </Select.Option>
                 </Select>
             </div>
         </Col>
     );
 }
 
-export default React.memo(RightGroup);
+export default React.memo(AudioRightGroup);

@@ -22,7 +22,7 @@ import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'ac
 
 const { FieldDropdown } = AntdWidgets;
 
-const FILTERS_HISTORY = 'annotationFiltersHistory';
+const FILTERS_HISTORY = 'audioAnnotationFiltersHistory';
 const defaultTree = QbUtils.loadTree({ type: 'group', id: QbUtils.uuid() });
 
 interface StoredFilter {
@@ -30,25 +30,14 @@ interface StoredFilter {
     logic: JsonLogicTree;
 }
 
-const getConvertedInputType = (inputType: string): string => {
-    switch (inputType) {
-        case 'checkbox':
-            return 'boolean';
-        case 'radio':
-            return 'select';
-        default:
-            return inputType;
-    }
-};
-
-const adjustName = (name: string): string => name.replace(/\./g, '\u2219');
+const adjustName = (name: string): string => name.replace(/\./g, '∙');
 
 const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
     const subfields: Record<string, any> = {};
     labels.forEach((label: any): void => {
         const adjustedLabelName = adjustName(label.name);
         subfields[adjustedLabelName] = {
-            type: '!struct', // nested complex field
+            type: '!struct',
             label: label.name,
             subfields: {},
         };
@@ -58,7 +47,13 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
             const adjustedAttrName = adjustName(attr.name);
             labelSubfields[adjustedAttrName] = {
                 label: attr.name,
-                type: getConvertedInputType(attr.inputType),
+                type: ((): string => {
+                    switch (attr.inputType) {
+                        case 'checkbox': return 'boolean';
+                        case 'radio': return 'select';
+                        default: return attr.inputType;
+                    }
+                })(),
             };
             if (labelSubfields[adjustedAttrName].type === 'select') {
                 labelSubfields[adjustedAttrName] = {
@@ -74,7 +69,7 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
     return subfields;
 };
 
-function FiltersModalComponent(): JSX.Element {
+function AudioFiltersModalComponent(): JSX.Element {
     const { labels, activeFilters, visible } = useSelector(
         (state: CombinedState) => ({
             labels: state.annotation.job.labels,
@@ -90,104 +85,70 @@ function FiltersModalComponent(): JSX.Element {
     const [filters, setFilters] = useState([] as StoredFilter[]);
 
     useEffect(() => {
-        const initialConfig = {
-            ...AntdConfig,
-            fields: {
-                label: {
-                    label: 'Label',
-                    type: 'select',
-                    valueSources: ['value'] as ('value')[],
-                    fieldSettings: {
-                        listValues: labels.map((label: any) => ({
-                            value: label.name,
-                            title: label.name,
-                        })),
-                    },
-                },
-                type: {
-                    label: 'Type',
-                    type: 'select',
-                    fieldSettings: {
-                        listValues: [
-                            { value: 'shape', title: 'Shape' },
-                            { value: 'track', title: 'Track' },
-                            { value: 'tag', title: 'Tag' },
-                        ],
-                    },
-                },
-                shape: {
-                    label: 'Shape',
-                    type: 'select',
-                    fieldSettings: {
-                        listValues: [
-                            { value: 'rectangle', title: 'Rectangle' },
-                            { value: 'points', title: 'Points' },
-                            { value: 'polyline', title: 'Polyline' },
-                            { value: 'polygon', title: 'Polygon' },
-                            { value: 'cuboid', title: 'Cuboid' },
-                            { value: 'ellipse', title: 'Ellipse' },
-                            { value: 'skeleton', title: 'Skeleton' },
-                            { value: 'mask', title: 'Mask' },
-                        ],
-                    },
-                },
-                occluded: {
-                    label: 'Occluded',
-                    type: 'boolean',
-                },
-                width: {
-                    label: 'Width',
-                    type: 'number',
-                    fieldSettings: { min: 0 },
-                },
-                height: {
-                    label: 'Height',
-                    type: 'number',
-                    fieldSettings: { min: 0 },
-                },
-                rotation: {
-                    label: 'Rotation',
-                    type: 'number',
-                    fieldSettings: { min: 0 },
-                },
-                objectID: {
-                    label: 'ObjectID',
-                    type: 'number',
-                    hideForCompare: true,
-                    fieldSettings: { min: 0 },
-                },
-                serverID: {
-                    label: 'ServerID',
-                    type: 'number',
-                    hideForCompare: true,
-                    fieldSettings: { min: 0 },
-                },
-                score: {
-                    label: 'Score',
-                    type: 'number',
-                    fieldSettings: { min: 0, max: 1 },
-                },
-                votes: {
-                    label: 'Votes',
-                    type: 'number',
-                    fieldSettings: { min: 0 },
-                },
-                attr: {
-                    label: 'Attributes',
-                    type: '!struct',
-                    subfields: getAttributesSubfields(labels),
-                    fieldSettings: {
-                        treeSelectOnlyLeafs: true,
-                    },
+        const fields: Record<string, any> = {
+            label: {
+                label: 'Label',
+                type: 'select',
+                valueSources: ['value'] as ('value')[],
+                fieldSettings: {
+                    listValues: labels.map((label: any) => ({
+                        value: label.name,
+                        title: label.name,
+                    })),
                 },
             },
+            serverID: {
+                label: 'ServerID',
+                type: 'number',
+                hideForCompare: true,
+                fieldSettings: { min: 0 },
+            },
+            attr: {
+                label: 'Attributes',
+                type: '!struct',
+                subfields: getAttributesSubfields(labels),
+                fieldSettings: {
+                    treeSelectOnlyLeafs: true,
+                },
+            },
+            duration: {
+                label: 'Duration (ms)',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+            start: {
+                label: 'Start (ms)',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+            end: {
+                label: 'End (ms)',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+            source: {
+                label: 'Source',
+                type: 'select',
+                fieldSettings: {
+                    listValues: [
+                        { value: 'manual', title: 'manual' },
+                        { value: 'auto', title: 'auto' },
+                        { value: 'consensus', title: 'consensus' },
+                        { value: 'semi-auto', title: 'semi-auto' },
+                        { value: 'file', title: 'file' },
+                    ],
+                },
+            },
+        };
+
+        const initialConfig = {
+            ...AntdConfig,
+            fields,
             settings: {
                 ...AntdConfig.settings,
                 renderField: (_props) => (
                     <FieldDropdown {..._props} customProps={omit(_props.customProps, 'showSearch')} />
                 ),
-                // using FieldDropdown because we cannot use antd because of antd-related bugs
-                // https://github.com/ukrbublik/react-awesome-query-builder/issues/224
             },
         };
 
@@ -198,7 +159,7 @@ function FiltersModalComponent(): JSX.Element {
         } catch (_) {
             setFilters([]);
         }
-    }, []);
+    }, [labels]);
 
     useEffect(() => {
         window.localStorage.setItem(FILTERS_HISTORY, JSON.stringify(filters));
@@ -263,12 +224,6 @@ function FiltersModalComponent(): JSX.Element {
         <Menu>
             {filters
                 .map((filter: StoredFilter) => {
-                    // if a logic received from local storage does not correspond to current config
-                    // which depends on label specification
-                    // (it can be when history from another task with another specification or when label was removed)
-                    // loadFromJsonLogic() prints a warning to console
-                    // the are not ways to configure this behaviour
-
                     const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
                     if (tree) {
                         const queryString = QbUtils.queryString(tree, config);
@@ -357,4 +312,4 @@ function FiltersModalComponent(): JSX.Element {
     );
 }
 
-export default React.memo(FiltersModalComponent);
+export default React.memo(AudioFiltersModalComponent);
