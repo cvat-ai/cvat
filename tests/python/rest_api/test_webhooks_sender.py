@@ -9,8 +9,11 @@ from time import sleep, time
 import pytest
 from deepdiff import DeepDiff
 
+from shared.fixtures.data import Container
 from shared.fixtures.init import CVAT_ROOT_DIR
 from shared.utils.config import delete_method, get_method, patch_method, post_method
+
+from .utils import export_task_backup, export_task_dataset
 
 # Testing webhook functionality:
 #  - webhook_receiver container receive post request and return responses with the same body
@@ -24,12 +27,17 @@ from shared.utils.config import delete_method, get_method, patch_method, post_me
 pytestmark = [pytest.mark.with_external_services]
 
 
-def target_url():
+def _read_receiver_env():
     env_data = {}
     with open(CVAT_ROOT_DIR / "tests/python/webhook_receiver/.env", "r") as f:
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
+    return env_data
+
+
+def target_url():
+    env_data = _read_receiver_env()
     return (
         f'http://{env_data["SERVER_HOST"]}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
     )
@@ -72,7 +80,8 @@ def get_deliveries(webhook_id, expected_count=1, *, timeout: int = 60):
 
         deliveries = response.json()
         if deliveries["count"] == expected_count:
-            delivery_response = json.loads(deliveries["results"][0]["response"])
+            raw_deliver_response = deliveries["results"][0]["response"]
+            delivery_response = json.loads(raw_deliver_response) if raw_deliver_response else {}
             break
 
         if time() - start_time > timeout:
@@ -615,7 +624,7 @@ class TestWebhookCommentEvents:
         webhook_id = create_webhook(events, "organization", org_id=org_id)["id"]
 
         post_data = {"issue": issue["id"], "message": "new comment message"}
-        response = post_method("admin1", f"comments", post_data, org_id=org_id)
+        response = post_method("admin1", "comments", post_data, org_id=org_id)
         assert response.status_code == HTTPStatus.CREATED
 
         create_deliveries, create_payload = get_deliveries(webhook_id)
@@ -774,3 +783,47 @@ class TestWebhookRedelivery:
             user["username"], f"webhooks/{webhook['id']}/deliveries/{delivery_id}/redelivery", {}
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
+
+
+def _task_with_data_in_org(tasks: Container) -> dict:
+    return next(
+        t
+        for t in tasks
+        if t["mode"] in ("annotation", "interpolation")
+        and not t["validation_mode"]
+        and t["organization"] is not None
+    )
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookExportEvents:
+    def test_webhook_create_export_for_task(self, tasks: Container) -> None:
+        task = _task_with_data_in_org(tasks)
+        webhook_id = create_webhook(
+            events=["create:export"], webhook_type="organization", org_id=task["organization"]
+        )["id"]
+
+        export_task_dataset("admin1", id=task["id"], save_images=False, download_result=False)
+
+        _, payload = get_deliveries(webhook_id)
+        assert payload["event"] == "create:export"
+        assert payload["status"] == "completed"
+        assert payload["target"] == "task"
+        assert payload["target_id"] == task["id"]
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookBackupEvents:
+    def test_webhook_create_backup_for_task(self, tasks: Container) -> None:
+        task = _task_with_data_in_org(tasks)
+        webhook_id = create_webhook(
+            events=["create:backup"], webhook_type="organization", org_id=task["organization"]
+        )["id"]
+
+        export_task_backup("admin1", id=task["id"], download_result=False)
+
+        _, payload = get_deliveries(webhook_id)
+        assert payload["event"] == "create:backup"
+        assert payload["status"] == "completed"
+        assert payload["target"] == "task"
+        assert payload["target_id"] == task["id"]
