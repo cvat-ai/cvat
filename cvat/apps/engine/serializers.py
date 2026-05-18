@@ -1096,10 +1096,6 @@ class JobReadSerializer(serializers.ModelSerializer):
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data["data_compressed_chunk_type"] = models.DataChoice.IMAGESET
 
-        if instance.segment.task.media_type == models.MediaType.AUDIO:
-            data.pop("data_compressed_chunk_type", None)
-            data.pop("data_original_chunk_type", None)
-
         if "replicas_count" in self.fields:
             data["replicas_count"] = getattr(instance, "child_jobs__count", 0)
             data["consensus_replicas"] = data["replicas_count"]
