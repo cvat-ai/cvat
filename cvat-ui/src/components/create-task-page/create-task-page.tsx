@@ -10,6 +10,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
 import CreateTaskContent, { CreateTaskData } from './create-task-content';
+import AudioCreateTaskContent from './audio-create-task-content';
 
 interface Props {
     onCreate: (data: CreateTaskData, onProgress?: (status: string) => void) => Promise<any>;
@@ -33,12 +34,19 @@ export default function CreateTaskPage(props: Props): JSX.Element {
         <Row justify='center' align='top' className='cvat-create-work-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
                 <Text className='cvat-title'>{audio ? 'Create a new audio task' : 'Create a new task'}</Text>
-                <CreateTaskContent
-                    projectId={projectId}
-                    onCreate={handleCreate}
-                    many={many}
-                    audio={audio}
-                />
+                {audio ? (
+                    <AudioCreateTaskContent
+                        projectId={projectId}
+                        onCreate={handleCreate}
+                        many={many}
+                    />
+                ) : (
+                    <CreateTaskContent
+                        projectId={projectId}
+                        onCreate={handleCreate}
+                        many={many}
+                    />
+                )}
             </Col>
         </Row>
     );

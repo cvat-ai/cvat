@@ -16,7 +16,7 @@ import Space from 'antd/lib/space';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-import { JobType, MediaType } from 'cvat-core/src/enums';
+import { JobType } from 'cvat-core/src/enums';
 import { Task } from 'cvat-core-wrapper';
 import { createJobAsync } from 'actions/jobs-actions';
 
@@ -27,7 +27,7 @@ export enum FrameSelectionMethod {
 
 interface JobDataMutual {
     taskID: number;
-    frameSelectionMethod?: FrameSelectionMethod;
+    frameSelectionMethod: FrameSelectionMethod;
     type: JobType;
     randomSeed?: number;
 }
@@ -38,8 +38,8 @@ export interface JobData extends JobDataMutual {
 }
 
 export interface JobFormData extends JobDataMutual {
-    quantity?: number;
-    frameCount?: number;
+    quantity: number;
+    frameCount: number;
 }
 
 interface Props {
@@ -125,87 +125,62 @@ function JobForm(props: Props): JSX.Element {
 
     const description = 'A representative set, 5-15% of randomly chosen frames is recommended';
 
-    const visionGtForm = <>
-        <Form
-            form={form}
-            layout='vertical'
-            initialValues={{
-                type: JobType.GROUND_TRUTH,
-                frameSelectionMethod: FrameSelectionMethod.RANDOM,
-                quantity: defaultQuantity,
-                frameCount: frameCountFromQuantity(defaultQuantity),
-            }}
-            >
-            <Col>
-                <Form.Item
-                    name='type'
-                    label='Job type'
-                    rules={[{ required: true, message: 'Please, specify Job type' }]}
+    return (
+        <Row className='cvat-create-job-form-wrapper'>
+            <Col span={24}>
+                <Form
+                    form={form}
+                    layout='vertical'
+                    initialValues={{
+                        type: JobType.GROUND_TRUTH,
+                        frameSelectionMethod: FrameSelectionMethod.RANDOM,
+                        quantity: defaultQuantity,
+                        frameCount: frameCountFromQuantity(defaultQuantity),
+                    }}
                 >
-                    <Select
-                        virtual={false}
-                        className='cvat-select-job-type'
-                        >
-                        <Select.Option value={JobType.GROUND_TRUTH}>
-                            Ground truth
-                        </Select.Option>
-                    </Select>
-                </Form.Item>
-                <Form.Item
-                    name='frameSelectionMethod'
-                    label='Frame selection method'
-                    rules={[{ required: true, message: 'Please, specify frame selection method' }]}
-                    >
-                    <Select
-                        virtual={false}
-                        className='cvat-select-frame-selection-method'
-                        onChange={setFrameSelectionMethod}
-                        >
-                        <Select.Option value={FrameSelectionMethod.RANDOM}>
-                            Random
-                        </Select.Option>
-                        <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>
-                            Random per job
-                        </Select.Option>
-                    </Select>
-                </Form.Item>
-            </Col>
-            <Col>
-                <Row justify='space-between'>
                     <Col>
                         <Form.Item
-                            name='quantity'
-                            label={(
-                                <Space>
-                                    {frameSelectionMethod === FrameSelectionMethod.RANDOM ?
-                                        'Quantity' : 'Quantity per job'}
-                                    <CVATTooltip title={description}>
-                                        <QuestionCircleOutlined
-                                            style={{ opacity: 0.5 }}
-                                            />
-                                    </CVATTooltip>
-                                </Space>
-                            )}
-                            rules={[{ required: true, message: 'Please, specify quantity' }]}
+                            name='type'
+                            label='Job type'
+                            rules={[{ required: true, message: 'Please, specify Job type' }]}
                         >
-                            <InputNumber
-                                className='cvat-input-frame-quantity'
-                                min={1}
-                                max={100}
-                                size='middle'
-                                onChange={onQuantityChange}
-                                />
+                            <Select
+                                virtual={false}
+                                className='cvat-select-job-type'
+                            >
+                                <Select.Option value={JobType.GROUND_TRUTH}>
+                                    Ground truth
+                                </Select.Option>
+                            </Select>
                         </Form.Item>
-
+                        <Form.Item
+                            name='frameSelectionMethod'
+                            label='Frame selection method'
+                            rules={[{ required: true, message: 'Please, specify frame selection method' }]}
+                        >
+                            <Select
+                                virtual={false}
+                                className='cvat-select-frame-selection-method'
+                                onChange={setFrameSelectionMethod}
+                            >
+                                <Select.Option value={FrameSelectionMethod.RANDOM}>
+                                    Random
+                                </Select.Option>
+                                <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>
+                                    Random per job
+                                </Select.Option>
+                            </Select>
+                        </Form.Item>
                     </Col>
                     <Col>
-                        <Row>
+                        <Row justify='space-between'>
                             <Col>
                                 <Form.Item
-                                    name='frameCount'
+                                    name='quantity'
                                     label={(
                                         <Space>
-                                            Frame count
+                                            {frameSelectionMethod === FrameSelectionMethod.RANDOM ?
+                                                'Quantity' : 'Quantity per job'}
                                             <CVATTooltip title={description}>
                                                 <QuestionCircleOutlined
                                                     style={{ opacity: 0.5 }}
@@ -213,68 +188,60 @@ function JobForm(props: Props): JSX.Element {
                                             </CVATTooltip>
                                         </Space>
                                     )}
-                                    rules={[{ required: true, message: 'Please, specify frame count' }]}
-                                    >
+                                    rules={[{ required: true, message: 'Please, specify quantity' }]}
+                                >
                                     <InputNumber
-                                        className='cvat-input-frame-count'
+                                        className='cvat-input-frame-quantity'
                                         min={1}
-                                        max={taskSize}
+                                        max={100}
                                         size='middle'
-                                        onChange={onFrameCountChange}
-                                        />
+                                        onChange={onQuantityChange}
+                                    />
+                                </Form.Item>
+
+                            </Col>
+                            <Col>
+                                <Row>
+                                    <Col>
+                                        <Form.Item
+                                            name='frameCount'
+                                            label={(
+                                                <Space>
+                                                    Frame count
+                                                    <CVATTooltip title={description}>
+                                                        <QuestionCircleOutlined
+                                                            style={{ opacity: 0.5 }}
+                                                        />
+                                                    </CVATTooltip>
+                                                </Space>
+                                            )}
+                                            rules={[{ required: true, message: 'Please, specify frame count' }]}
+                                        >
+                                            <InputNumber
+                                                className='cvat-input-frame-count'
+                                                min={1}
+                                                max={taskSize}
+                                                size='middle'
+                                                onChange={onFrameCountChange}
+                                            />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                            </Col>
+                            <Col>
+                                <Form.Item
+                                    name='randomSeed'
+                                    label='Seed'
+                                >
+                                    <InputNumber
+                                        className='cvat-input-seed'
+                                        size='middle'
+                                    />
                                 </Form.Item>
                             </Col>
                         </Row>
                     </Col>
-                    <Col>
-                        <Form.Item
-                            name='randomSeed'
-                            label='Seed'
-                            >
-                            <InputNumber
-                                className='cvat-input-seed'
-                                size='middle'
-                                />
-                        </Form.Item>
-                    </Col>
-                </Row>
-            </Col>
-        </Form>
-    </>;
-
-    const audioGtForm = <>
-        <Form
-            form={form}
-            layout='vertical'
-            initialValues={{
-                type: JobType.GROUND_TRUTH,
-            }}
-            >
-            <Col>
-                <Form.Item
-                    name='type'
-                    label='Job type'
-                    rules={[{ required: true, message: 'Please, specify Job type' }]}
-                >
-                    <Select
-                        virtual={false}
-                        className='cvat-select-job-type'
-                        >
-                        <Select.Option value={JobType.GROUND_TRUTH}>
-                            Ground truth
-                        </Select.Option>
-                    </Select>
-                </Form.Item>
-            </Col>
-        </Form>
-    </>;
-
-    const gtJobForm = task.mediaType === MediaType.AUDIO ? audioGtForm : visionGtForm;
-
-    return (
-        <Row className='cvat-create-job-form-wrapper'>
-            <Col span={24}>
-                {gtJobForm}
+                </Form>
             </Col>
             <Col span={24} className='cvat-create-job-actions'>
                 <Row justify='end'>
