@@ -328,6 +328,10 @@
     overflow-y: auto;
     padding: $grid-unit-size * 0.5;
 
+    &:has(.cvat-objects-sidebar-z-layers-title) {
+        padding-top: 0;
+    }
+
     .cvat-objects-sidebar-state-item {
         // opacity 0.53 in sidebar to keep the same look as before on sidebar
         background-color: rgba(var(--state-item-background), 0.53);
@@ -339,39 +343,81 @@
 }
 
 .cvat-objects-sidebar-z-layers-panel {
-    padding: 0 $grid-unit-size * 0.5 $grid-unit-size;
+    padding: 0 0 $grid-unit-size;
 }
 
 .cvat-objects-sidebar-z-layers-title {
     align-items: center;
     display: flex;
-    justify-content: space-between;
-    min-height: $grid-unit-size * 4;
-    padding-left: $grid-unit-size * 0.5;
+    gap: $grid-unit-size * 0.5;
+    justify-content: flex-start;
+    margin: 0 (-$grid-unit-size * 0.5) $grid-unit-size * 0.75;
+    min-height: $grid-unit-size * 4.5;
+    padding: $grid-unit-size;
+    border: 1px solid rgba(0, 0, 0, 6%);
+    border-radius: 0;
+    background: $background-color-2;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 6%);
+
+    > .ant-typography {
+        flex: 1;
+        font-weight: 600;
+    }
 }
 
-.cvat-objects-sidebar-z-layer-mode-switcher {
-    margin-left: auto;
-    margin-right: $grid-unit-size * 0.5;
-}
-
-.cvat-objects-sidebar-z-layers-compact-button {
-    margin-right: $grid-unit-size * 0.25;
-}
-
+.cvat-objects-sidebar-z-layers-compact-button,
 .cvat-objects-sidebar-z-layers-collapse-all-button {
-    margin-right: $grid-unit-size * 0.25;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: $grid-unit-size * 3;
+    height: $grid-unit-size * 3;
+    border-radius: $border-radius-base;
+    color: $objects-bar-icons-color;
+
+    &:hover {
+        opacity: 0.82;
+    }
+}
+
+.cvat-objects-sidebar-z-layer-move-drop-area {
+    height: $grid-unit-size * 0.75;
+    margin: -$grid-unit-size * 0.25 0 $grid-unit-size * 0.25;
+    border-radius: $border-radius-base;
+    transition: background-color $box-shadow-transition, box-shadow $box-shadow-transition;
+}
+
+.cvat-objects-sidebar-z-layer-move-drop-area-active {
+    background: rgba($color: $completed-progress-color, $alpha: 18%);
+    box-shadow: inset 0 0 0 1px rgba($color: $completed-progress-color, $alpha: 35%);
 }
 
 .cvat-objects-sidebar-z-layer-mark {
     align-items: center;
-    background: $header-color;
+    background: rgba(255, 255, 255, 46%);
+    border-bottom: 1px solid rgba(0, 0, 0, 7%);
     display: flex;
     justify-content: space-between;
-    min-height: $grid-unit-size * 3.5;
-    padding-left: $grid-unit-size;
-    padding-right: $grid-unit-size;
+    min-height: $grid-unit-size * 4;
+    padding: $grid-unit-size * 0.5 $grid-unit-size;
     position: relative;
+
+    > .ant-typography {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: $grid-unit-size * 3;
+        height: $grid-unit-size * 2.5;
+        border-radius: $border-radius-base;
+        background: rgba(255, 255, 255, 72%);
+        color: $text-color;
+        font-weight: 600;
+        line-height: $grid-unit-size * 2.5;
+    }
 }
 
 .cvat-objects-sidebar-z-layer-mark-dragging {
@@ -382,10 +428,22 @@
 .cvat-objects-sidebar-z-layer-controls {
     align-items: center;
     display: flex;
+    gap: $grid-unit-size * 0.25;
 }
 
 .cvat-objects-sidebar-z-layer-collapse-button {
-    margin-left: -$grid-unit-size * 0.75;
+    margin-left: -$grid-unit-size * 0.25;
+}
+
+.cvat-objects-sidebar-z-layer-collapse-button,
+.cvat-objects-sidebar-z-layer-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: $grid-unit-size * 3;
+    height: $grid-unit-size * 3;
+    border-radius: $border-radius-base;
+    color: $objects-bar-icons-color;
 }
 
 .cvat-objects-sidebar-z-layer-drag-handle {
@@ -398,16 +456,33 @@
 }
 
 .cvat-objects-sidebar-z-layer {
-    border: 1px solid $border-color-1;
-    margin-bottom: $grid-unit-size;
+    border: 1px solid rgba(0, 0, 0, 8%);
+    border-radius: $border-radius-base;
+    margin-bottom: $grid-unit-size * 0.75;
     overflow: visible;
     position: relative;
-    transition: background-color $box-shadow-transition, border-color $box-shadow-transition;
+    background: rgba(255, 255, 255, 22%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 6%);
+    transition:
+        background-color $box-shadow-transition,
+        border-color $box-shadow-transition,
+        box-shadow $box-shadow-transition;
+
+    &:hover {
+        border-color: rgba(0, 0, 0, 18%);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 8%);
+    }
+
+    .cvat-objects-sidebar-state-item {
+        margin: $grid-unit-size * 0.5;
+        width: calc(100% - $grid-unit-size);
+    }
 }
 
 .cvat-objects-sidebar-z-layer-active {
     background-color: rgba($color: $completed-progress-color, $alpha: 8%);
     border-color: rgba($color: $completed-progress-color, $alpha: 35%);
+    box-shadow: 0 0 0 1px rgba($color: $completed-progress-color, $alpha: 10%);
 }
 
 .cvat-objects-sidebar-z-layer-dragging {

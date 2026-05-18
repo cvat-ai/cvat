@@ -12,7 +12,6 @@ import {
     CaretDownOutlined, CaretRightOutlined, HolderOutlined, VerticalAlignMiddleOutlined,
 } from '@ant-design/icons';
 import Button from 'antd/lib/button';
-import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Text from 'antd/lib/typography/Text';
 
 import { StatesOrdering, Workspace } from 'reducers';
@@ -24,6 +23,7 @@ import ObjectListHeader from './objects-list-header';
 const OBJECT_DRAG_ID_PREFIX = 'object:';
 const LAYER_DRAG_ID_PREFIX = 'drag-layer:';
 const LAYER_DROP_ID_PREFIX = 'layer:';
+const LAYER_MOVE_DROP_ID_PREFIX = 'move-layer:';
 
 type LayerDragMode = 'move' | 'merge';
 
@@ -37,6 +37,10 @@ function layerDragID(zOrder: number): string {
 
 function layerDropID(zOrder: number): string {
     return `${LAYER_DROP_ID_PREFIX}${zOrder}`;
+}
+
+function layerMoveDropID(zOrder: number): string {
+    return `${LAYER_MOVE_DROP_ID_PREFIX}${zOrder}`;
 }
 
 function parseObjectDragID(id: string): number | null {
@@ -63,6 +67,15 @@ function parseLayerDropID(id: string): number | null {
     }
 
     const zOrder = Number(id.slice(LAYER_DROP_ID_PREFIX.length));
+    return Number.isInteger(zOrder) ? zOrder : null;
+}
+
+function parseLayerMoveDropID(id: string): number | null {
+    if (!id.startsWith(LAYER_MOVE_DROP_ID_PREFIX)) {
+        return null;
+    }
+
+    const zOrder = Number(id.slice(LAYER_MOVE_DROP_ID_PREFIX.length));
     return Number.isInteger(zOrder) ? zOrder : null;
 }
 
@@ -220,6 +233,24 @@ function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
     );
 }
 
+interface ZLayerMoveDropAreaProps {
+    zOrder: number;
+}
+
+function ZLayerMoveDropArea(props: ZLayerMoveDropAreaProps): JSX.Element {
+    const { zOrder } = props;
+    const { isOver, setNodeRef } = useDroppable({ id: layerMoveDropID(zOrder) });
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={`cvat-objects-sidebar-z-layer-move-drop-area${
+                isOver ? ' cvat-objects-sidebar-z-layer-move-drop-area-active' : ''
+            }`}
+        />
+    );
+}
+
 function getZLayers(objectStates: ObjectState[]): number[] {
     return Array.from(new Set(objectStates.map((state: ObjectState): number => state.zOrder)))
         .sort((left: number, right: number): number => left - right);
@@ -255,7 +286,6 @@ function ObjectListComponent(props: Props): JSX.Element {
         },
     }));
     const [collapsedZLayers, setCollapsedZLayers] = useState<number[]>([]);
-    const [layerDragMode, setLayerDragMode] = useState<LayerDragMode>('move');
     const zLayers = getZLayers(objectStates);
     const allLayersCollapsed = !!zLayers.length && zLayers.every((zOrder: number): boolean => (
         collapsedZLayers.includes(zOrder)
@@ -287,15 +317,15 @@ function ObjectListComponent(props: Props): JSX.Element {
         const clientID = parseObjectDragID(String(active.id));
         const sourceZOrder = parseLayerDragID(String(active.id));
         const zOrder = parseLayerDropID(String(over.id));
+        const moveZOrder = parseLayerMoveDropID(String(over.id));
 
         if (clientID !== null && zOrder !== null) {
             moveObjectToLayer(clientID, zOrder);
         } else if (sourceZOrder !== null && zOrder !== null) {
-            moveLayer(sourceZOrder, zOrder, layerDragMode);
+            moveLayer(sourceZOrder, zOrder, 'merge');
+        } else if (sourceZOrder !== null && moveZOrder !== null) {
+            moveLayer(sourceZOrder, moveZOrder, 'move');
         }
-    };
-    const onLayerDragModeChange = (event: RadioChangeEvent): void => {
-        setLayerDragMode(event.target.value);
     };
     const toggleLayerCollapsed = (zOrder: number): void => {
         setCollapsedZLayers((current: number[]): number[] => (
@@ -334,17 +364,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                     <div className='cvat-objects-sidebar-z-layers-panel'>
                         <div className='cvat-objects-sidebar-z-layers-title'>
                             <Text strong>Layer stack</Text>
-                            <CVATTooltip title='Choose how dragged layers are applied'>
-                                <Radio.Group
-                                    className='cvat-objects-sidebar-z-layer-mode-switcher'
-                                    size='small'
-                                    value={layerDragMode}
-                                    onChange={onLayerDragModeChange}
-                                >
-                                    <Radio.Button value='move'>Move</Radio.Button>
-                                    <Radio.Button value='merge'>Merge</Radio.Button>
-                                </Radio.Group>
-                            </CVATTooltip>
                             <CVATTooltip title='Compact layers'>
                                 <Button
                                     className='cvat-objects-sidebar-z-layers-compact-button'
@@ -366,15 +385,20 @@ function ObjectListComponent(props: Props): JSX.Element {
                         </div>
                         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
                             {zLayers.map((zOrder: number): JSX.Element => (
-                                <ZLayerSection
-                                    key={zOrder}
-                                    zOrder={zOrder}
-                                    objectIDs={zLayerIDs[zOrder] || []}
-                                    objectStates={objectStates}
-                                    collapsed={collapsedZLayers.includes(zOrder)}
-                                    toggleLayerCollapsed={toggleLayerCollapsed}
-                                />
+                                <React.Fragment key={zOrder}>
+                                    <ZLayerMoveDropArea zOrder={zOrder} />
+                                    <ZLayerSection
+                                        zOrder={zOrder}
+                                        objectIDs={zLayerIDs[zOrder] || []}
+                                        objectStates={objectStates}
+                                        collapsed={collapsedZLayers.includes(zOrder)}
+                                        toggleLayerCollapsed={toggleLayerCollapsed}
+                                    />
+                                </React.Fragment>
                             ))}
+                            {!!zLayers.length && (
+                                <ZLayerMoveDropArea zOrder={zLayers[zLayers.length - 1]} />
+                            )}
                         </DndContext>
                     </div>
                 ) : sortedStatesID.map((id: number): JSX.Element => (
