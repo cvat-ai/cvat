@@ -372,6 +372,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         zOrder: zLayer || 0,
                     },
                     continue: continueDraw,
+                    simplifyPoly: data?.simplifyPoly || false,
                     duration,
                 },
             });

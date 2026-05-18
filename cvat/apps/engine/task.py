@@ -13,7 +13,7 @@ from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
+from typing import Any, NamedTuple, TypeAlias
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -29,6 +29,7 @@ from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
+    AudioReader,
     CachingMediaIterator,
     ImageListReader,
     IMediaReader,
@@ -36,14 +37,15 @@ from cvat.apps.engine.media_extractors import (
     Mpeg4CompressedChunkWriter,
     RandomAccessIterator,
     ValidateDimension,
+    VideoReader,
     ZipChunkWriter,
     ZipCompressedChunkWriter,
     get_mime,
     load_image,
     sort,
 )
-from cvat.apps.engine.media_providers.audio_provider import TaskAudioProvider
-from cvat.apps.engine.media_providers.frame_provider import TaskFrameProvider
+from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
@@ -54,10 +56,6 @@ from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manif
 from utils.dataset_manifest.utils import find_related_images
 
 from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_instance
-
-if TYPE_CHECKING:
-    from cvat.apps.engine.media_extractors import AudioReader, ImageListReader, VideoReader
-
 
 slogger = ServerLogManager(__name__)
 
@@ -635,7 +633,7 @@ def _find_and_filter_related_images(
     regular_images, related_images = find_related_images(
         extractor.absolute_source_paths,
         # backward compatibility
-        is_scene_path=(lambda p: not "related_images" in p.parts),
+        is_scene_path=(lambda p: "related_images" not in p.parts),
     )
 
     # extractor.filter() uses absolute paths, so we pass them
@@ -690,10 +688,10 @@ def _allocate_honeypots(
             )
         )
     else:
-        if db_task.mode != "annotation":
+        if db_task.mode != models.TaskMode.ANNOTATION:
             raise ValidationError(
                 f"validation mode '{models.ValidationMode.GT_POOL}' can only be used "
-                "with 'annotation' mode tasks"
+                f"with '{models.TaskMode.ANNOTATION}' mode tasks"
             )
 
         # 1. select pool frames
@@ -1201,22 +1199,18 @@ def _detect_media_type_and_dimension(
     return detected_media_type, detected_dimension
 
 
-def _validate_project_media_types(
-    db_project: models.Project, *, detected_media_type: models.MediaType
+def _validate_project_dimension(
+    db_project: models.Project, *, detected_dimension: models.DimensionType
 ):
-    existing_task = db_project.tasks.exclude(media_type__isnull=True).first()
-    if not existing_task:
-        return
+    # TODO: fix the race condition between concurrent task creations
+    project_dimension = next(
+        iter(db_project.tasks.exclude(dimension="").values_list("dimension", flat=True)[:1]), ""
+    )
 
-    project_media_type = existing_task.media_type
-
-    combined_media_types = {project_media_type, detected_media_type}
-    if len(combined_media_types) > 1 and combined_media_types.intersection(
-        [models.MediaType.AUDIO, models.MediaType.POINT_CLOUD]
-    ):
+    if project_dimension and project_dimension != detected_dimension:
         raise ValidationError(
-            f"Media types in a project are not compatible: "
-            f"existing media type: {project_media_type}, new: {detected_media_type}."
+            f"Dimension ({detected_dimension}) of the task must be the "
+            f"same as other tasks in the project ({project_dimension})"
         )
 
 
@@ -1225,13 +1219,12 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
 
     match db_task.media_type:
         case models.MediaType.AUDIO:
+            # Not supported yet
             db_data.compressed_chunk_type = models.DataChoice.AUDIO_MP3
             db_data.original_chunk_type = models.DataChoice.AUDIO_MP3
         case models.MediaType.VIDEO:
             db_data.compressed_chunk_type = (
-                models.DataChoice.VIDEO
-                if db_task.mode == "interpolation" and not data["use_zip_chunks"]
-                else models.DataChoice.IMAGESET
+                models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
             )
             db_data.original_chunk_type = models.DataChoice.VIDEO
         case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
@@ -1241,8 +1234,8 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
             assert False, f"Unexpected media type '{media_type}'"
 
 
-def _create_video_dataset_descriptors(
-    extractor: "VideoReader",
+def _collect_video_dataset_descriptors(
+    extractor: VideoReader,
     video_path: Path,
     *,
     db_data: models.Data,
@@ -1338,8 +1331,37 @@ def _create_video_dataset_descriptors(
     return video, video_length, manifest
 
 
-def _create_image_dataset_descriptors(
-    extractor: "ImageListReader",
+def _create_video_task_media_descriptors(
+    db_task: models.Task,
+    data: dict[str, Any],
+    *,
+    extractor: IMediaReader,
+    media: dict[str, Any],
+    upload_dir: Path,
+    manifest_file: str | None,
+    update_status: Callable[[str], None],
+) -> tuple[models.Video, VideoManifestManager]:
+    db_data = db_task.require_data()
+
+    video, video_length, manifest = _collect_video_dataset_descriptors(
+        extractor=extractor,
+        video_path=upload_dir / media["video"][0],
+        upload_dir=upload_dir,
+        db_data=db_data,
+        data=data,
+        manifest_file=manifest_file,
+        manifest_frame_alignment=db_data.chunk_size,
+        update_status=update_status,
+    )
+    db_data.size = video_length
+
+    video.save()
+
+    return video, manifest
+
+
+def _collect_image_dataset_descriptors(
+    extractor: ImageListReader,
     *,
     db_task: models.Task,
     upload_dir: Path,
@@ -1401,8 +1423,68 @@ def _create_image_dataset_descriptors(
     return images, manifest
 
 
-def _create_audio_dataset_descriptors(
-    extractor: "AudioReader", *, db_data: models.Data, upload_dir: Path, audio_path: Path
+def _create_image_task_media_descriptors(
+    db_task: models.Task,
+    *,
+    is_backup_restore: bool,
+    validation_params: dict[str, Any],
+    upload_dir: Path,
+    is_data_in_cloud: bool,
+    extractor: IMediaReader,
+    related_images: dict[str, Sequence[dict[str, Any]]],
+    job_file_mapping: JobFileMapping | None,
+) -> tuple[list[models.Image], ImageManifestManager, JobFileMapping | None]:
+    db_data = db_task.require_data()
+
+    images, manifest = _collect_image_dataset_descriptors(
+        extractor=extractor,
+        related_images=related_images,
+        upload_dir=upload_dir,
+        db_task=db_task,
+        is_data_in_cloud=is_data_in_cloud,
+    )
+    db_data.size = len(images)
+
+    job_file_mapping, images = _allocate_honeypots(
+        db_task,
+        validation_params,
+        images=images,
+        manifest=manifest,
+        job_file_mapping=job_file_mapping,
+        is_backup_restore=is_backup_restore,
+    )
+
+    images = bulk_create(models.Image, images)
+
+    db_related_files = [
+        models.RelatedFile(
+            data=db_data,
+            path=related_file_path,
+        )
+        for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
+    ]
+
+    db_related_files = bulk_create(models.RelatedFile, db_related_files)
+    db_related_files_by_path = {rf.path: rf for rf in db_related_files}
+
+    ThroughModel = models.RelatedFile.images.through
+    bulk_create(
+        ThroughModel,
+        (
+            ThroughModel(
+                relatedfile_id=db_related_files_by_path[related_file_path].id,
+                image_id=image.id,
+            )
+            for image in images
+            for related_file_path in related_images.get(image.path, [])
+        ),
+    )
+
+    return images, manifest, job_file_mapping
+
+
+def _collect_audio_dataset_descriptors(
+    extractor: AudioReader, *, db_data: models.Data, upload_dir: Path, audio_path: Path
 ) -> tuple[models.Audio, int]:
     audio = models.Audio(
         data=db_data,
@@ -1415,6 +1497,25 @@ def _create_audio_dataset_descriptors(
         raise ValidationError(f"Audio files longer than {MAX_AUDIO_DURATION} are not allowed")
 
     return audio, extractor.length
+
+
+def _create_audio_task_media_descriptors(
+    db_task: models.Task, *, extractor: AudioReader, upload_dir: Path, media: dict[str, Any]
+) -> models.Audio:
+    db_data = db_task.require_data()
+
+    audio, audio_length = _collect_audio_dataset_descriptors(
+        extractor=extractor,
+        audio_path=upload_dir / media["audio"][0],
+        upload_dir=upload_dir,
+        db_data=db_data,
+    )
+    db_data.size = audio_length
+    db_data.chunk_size = audio_length  # the UI can't handle chunks yet
+
+    audio.save()
+
+    return audio
 
 
 @transaction.atomic
@@ -1503,7 +1604,7 @@ def create_thread(
     media, task_mode = _validate_data(media, manifest_files=manifest_files)
     is_media_sorted = False
 
-    if job_file_mapping is not None and task_mode != "annotation":
+    if job_file_mapping is not None and task_mode != models.TaskMode.ANNOTATION:
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if (
@@ -1519,8 +1620,7 @@ def create_thread(
         )
         or (
             # TODO: Not supported yet, maybe implement later
-            db_task.media_type == models.MediaType.AUDIO
-            or media["audio"]
+            media["audio"]
         )
     ):
         db_data.storage_method = models.StorageMethodChoice.CACHE
@@ -1655,7 +1755,7 @@ def create_thread(
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
 
-        if MEDIA_TYPES[media_type]["mode"] == "annotation":
+        if MEDIA_TYPES[media_type]["mode"] == models.TaskMode.ANNOTATION:
             details["sorting_method"] = (
                 data["sorting_method"] if not is_media_sorted else models.SortingMethod.PREDEFINED
             )
@@ -1694,19 +1794,13 @@ def create_thread(
         extractor=extractor, source_dir=upload_dir, db_data=db_data
     )
 
-    if db_task.media_type is not None and db_task.media_type != detected_media_type:
-        # TODO: maybe not needed yet
-        raise ValidationError(
-            "Media files do not match the requested media type for the task: "
-            f"requested '{db_task.media_type}', detected '{detected_media_type}'"
-        )
-
     if db_task.project_id is not None:
-        _validate_project_media_types(db_task.project, detected_media_type)
+        _validate_project_dimension(db_task.project, detected_dimension=detected_dimension)
 
+    assert not db_task.media_type
     db_task.media_type = detected_media_type
-    db_task.dimension = detected_dimension  # backward compatibility; TODO: maybe remove
-    db_task.mode = task_mode  # backward compatibility; TODO: maybe change to "sequence"
+    db_task.dimension = detected_dimension
+    db_task.mode = task_mode
 
     if db_task.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
@@ -1822,7 +1916,7 @@ def create_thread(
                 w, h = img_properties["width"], img_properties["height"]
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
-        elif db_data.compressed_chunk_type != models.DataChoice.AUDIO_MP3:
+        else:
             db_data.chunk_size = 36
 
     if db_task.media_type in [models.MediaType.IMAGE, models.MediaType.VIDEO] and not data.get(
@@ -1833,79 +1927,38 @@ def create_thread(
         )
 
     # Create task media descriptors from the metadata collected
-    images = []
-    if db_task.media_type == models.MediaType.VIDEO:
-        video, video_length, _ = _create_video_dataset_descriptors(
-            extractor=extractor,
-            video_path=upload_dir / media["video"][0],
-            upload_dir=upload_dir,
-            db_data=db_data,
-            data=data,
-            manifest_file=manifest_file,
-            manifest_frame_alignment=db_data.chunk_size,
-            update_status=update_status,
-        )
-        db_data.size = video_length
-    elif db_task.media_type in [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
-        images, manifest = _create_image_dataset_descriptors(
-            extractor=extractor,
-            related_images=related_images,
-            upload_dir=upload_dir,
-            db_task=db_task,
-            is_data_in_cloud=is_data_in_cloud,
-        )
-        db_data.size = len(images)
-    elif db_task.media_type == models.MediaType.AUDIO:
-        audio, audio_length = _create_audio_dataset_descriptors(
-            extractor=extractor,
-            audio_path=upload_dir / media["audio"][0],
-            upload_dir=upload_dir,
-            db_data=db_data,
-        )
-        db_data.size = audio_length
-        db_data.chunk_size = audio_length  # the UI can't handle chunks yet
-    else:
-        assert False, f"Unexpected media type {db_task.media_type}"
-
-    if db_task.media_type in [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
-        job_file_mapping, images = _allocate_honeypots(
-            db_task,
-            validation_params,
-            images=images,
-            manifest=manifest,
-            job_file_mapping=job_file_mapping,
-            is_backup_restore=is_backup_restore,
-        )
-
-        images = bulk_create(models.Image, images)
-
-        db_related_files = [
-            models.RelatedFile(
-                data=db_data,
-                path=related_file_path,
+    images = None
+    match db_task.media_type:
+        case models.MediaType.VIDEO:
+            _create_video_task_media_descriptors(
+                db_task,
+                data,
+                extractor=extractor,
+                media=media,
+                upload_dir=upload_dir,
+                manifest_file=manifest_file,
+                update_status=update_status,
             )
-            for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
-        ]
-        db_related_files = bulk_create(models.RelatedFile, db_related_files)
-        db_related_files_by_path = {rf.path: rf for rf in db_related_files}
-
-        ThroughModel = models.RelatedFile.images.through
-        bulk_create(
-            ThroughModel,
-            (
-                ThroughModel(
-                    relatedfile_id=db_related_files_by_path[related_file_path].id, image_id=image.id
-                )
-                for image in images
-                for related_file_path in related_images.get(image.path, [])
-            ),
-        )
-    elif db_task.media_type == models.MediaType.VIDEO:
-        video.save()
-    elif db_task.media_type == models.MediaType.AUDIO:
-        audio.save()
-    else:
-        assert False, f"Unexpected media type {db_task.media_type}"
+        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+            images, _, job_file_mapping = _create_image_task_media_descriptors(
+                db_task,
+                extractor=extractor,
+                related_images=related_images,
+                validation_params=validation_params,
+                job_file_mapping=job_file_mapping,
+                upload_dir=upload_dir,
+                is_backup_restore=is_backup_restore,
+                is_data_in_cloud=is_data_in_cloud,
+            )
+        case models.MediaType.AUDIO:
+            _create_audio_task_media_descriptors(
+                db_task,
+                media=media,
+                extractor=extractor,
+                upload_dir=upload_dir,
+            )
+        case _ as media_type:
+            assert False, f"Unexpected media type '{media_type}'"
 
     # validate stop_frame
     if db_data.stop_frame == 0:
@@ -1938,6 +1991,8 @@ def create_thread(
 
     if not (is_data_in_cloud and is_backup_restore):
         _create_task_preview(db_task)
+
+    _move_to_backing_cs_if_configured(db_data)
 
 
 def _create_task_preview(db_task: models.Task):
@@ -2011,6 +2066,12 @@ def _create_static_chunks(
         )
 
         fs_original.result()
+
+    assert db_task.media_type in (
+        models.MediaType.IMAGE,
+        models.MediaType.POINT_CLOUD,
+        models.MediaType.VIDEO,
+    )
 
     db_data = db_task.require_data()
 
@@ -2104,3 +2165,16 @@ def _create_static_chunks(
                     save_chunks(executor, db_segment, chunk_idx, chunk_frame_ids)
 
                 progress_updater.update_progress(segment_idx / len(db_segments))
+
+
+def _move_to_backing_cs_if_configured(db_data):
+    backing_cs_id = settings.DEFAULT_BACKING_CS_ID
+    if backing_cs_id is not None and db_data.supports_backing_cs():
+        try:
+            backing_cs = models.CloudStorage.objects.get(pk=backing_cs_id)
+        except models.CloudStorage.DoesNotExist:
+            slogger.glob.warning(
+                f"Cloud storage #{backing_cs_id} (configured as default backing CS) does not exist"
+            )
+        else:
+            db_data.move_to_backing_cs(backing_cs)

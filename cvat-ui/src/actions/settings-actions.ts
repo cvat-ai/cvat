@@ -11,7 +11,8 @@ import {
     CombinedState,
 } from 'reducers';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
-import { ImageFilter, ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
+import { SerializedImageFilter } from 'cvat-core-wrapper';
+import { ImageFilter, ImageFilterAlias } from 'utils/image-processing';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correction';
 import { resolveConflicts } from 'utils/conflict-detector';
 import { shortcutsActions } from './shortcuts-actions';

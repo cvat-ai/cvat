@@ -289,6 +289,10 @@ const defaultState: AnnotationState = {
     propagate: {
         visible: false,
     },
+    simplify: {
+        objectState: null,
+        originalPoints: null,
+    },
     colors: [],
     sidebarCollapsed: false,
     appearanceCollapsed: false,
@@ -1237,6 +1241,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 propagate: {
                     visible,
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_SIMPLIFY_VISIBILITY: {
+            const { objectState, originalPoints } = action.payload;
+            return {
+                ...state,
+                simplify: {
+                    objectState,
+                    originalPoints,
                 },
             };
         }

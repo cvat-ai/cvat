@@ -88,6 +88,7 @@ class LabelType(str, Enum):
     POLYLINE = 'polyline'
     RECTANGLE = 'rectangle'
     SKELETON = 'skeleton'
+    INTERVAL = 'interval'
     TAG = 'tag'
 
     @classmethod
@@ -129,7 +130,6 @@ class StateChoice(str, Enum):
 class DataChoice(str, Enum):
     VIDEO = 'video'
     IMAGESET = 'imageset'
-    LIST = 'list' # TODO: check if ever used
     AUDIO_MP3 = 'audio_mp3'
 
     @classmethod
@@ -421,13 +421,6 @@ class FrameQuality(IntEnum):
     ORIGINAL = 100
 
 
-class MediaType(TextChoices):
-    IMAGE = "image"
-    VIDEO = "video"
-    POINT_CLOUD = "point_cloud"
-    AUDIO = "audio"
-
-
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
@@ -450,9 +443,9 @@ class Data(models.Model):
     chunk_size = models.PositiveIntegerField(null=True)
     image_quality = models.PositiveSmallIntegerField(default=0)
     compressed_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
-        null=True, default=None)
+        blank=True, default="")
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
-        null=True, default=None)
+        blank=True, default="")
     audio_chunks: models.manager.RelatedManager[AudioChunkInfo]
 
     # Storage descriptors
@@ -515,7 +508,7 @@ class Data(models.Model):
         elif chunk_type == DataChoice.IMAGESET:
             ext = 'zip'
         else:
-            ext = 'list'
+            assert False, f"Unexpected chunk type '{chunk_type}'"
 
         return 'segment_{}-{}.{}'.format(segment_id, chunk_number, ext)
 
@@ -643,7 +636,6 @@ class Data(models.Model):
         transaction.on_commit(clear_original_files, robust=True)
 
 
-
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
     path = models.CharField(max_length=1024, default='')
@@ -667,6 +659,8 @@ class Audio(models.Model):
 
 
 class AudioChunkInfo(TimestampedModel):
+    key = models.CharField(max_length=128, primary_key=True)
+
     data = models.ForeignKey(
         Data,
         on_delete=models.CASCADE,
@@ -679,8 +673,6 @@ class AudioChunkInfo(TimestampedModel):
         related_name="chunks",
         related_query_name="chunk"
     )
-
-    key = models.CharField(max_length=128, primary_key=True)
 
     left_padding = models.PositiveIntegerField(default=0)
     right_padding = models.PositiveIntegerField(default=0)
@@ -869,6 +861,19 @@ class TaskQuerySet(models.QuerySet):
             }
         )
 
+
+class TaskMode(TextChoices):
+    ANNOTATION = "annotation"
+    INTERPOLATION = "interpolation"
+
+
+class MediaType(TextChoices):
+    IMAGE = "image"
+    VIDEO = "video"
+    POINT_CLOUD = "point_cloud"
+    AUDIO = "audio"
+
+
 class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
@@ -892,9 +897,9 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     data = models.ForeignKey(
         Data, on_delete=models.CASCADE, null=True, related_name="tasks", related_query_name="task"
     )
-    mode = models.CharField(max_length=32, null=True, default=None)
-    dimension = models.CharField(max_length=2, null=True, choices=DimensionType.choices(), default=None)
-    media_type = models.CharField(max_length=32, null=True, choices=MediaType.choices, default=None)
+    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default="", blank=True)
+    mode = models.CharField(max_length=32, choices=TaskMode.choices, default="", blank=True)
+    media_type = models.CharField(max_length=32, choices=MediaType.choices, default="", blank=True)
 
     subset = models.CharField(max_length=64, blank=True, default="")
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
@@ -906,14 +911,7 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     consensus_replicas = models.IntegerField(default=0)
     "Per job consensus replica count"
 
-    total_jobs_count: MaybeUndefined[int]
-    "Can be defined by the fetching queryset"
-
-    completed_jobs_count: MaybeUndefined[int]
-    "Can be defined by the fetching queryset"
-
-    validation_jobs_count: MaybeUndefined[int]
-    "Can be defined by the fetching queryset"
+    segment_set: models.manager.RelatedManager[Segment]
 
     user_can_view_task: MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
@@ -945,6 +943,20 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     def require_data(self) -> Data:
         assert self.data is not None
         return self.data
+
+    @cached_property
+    def completed_jobs_count(self) -> int | None:
+        # Requires this field to be defined externally,
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
+        return None
+
+    @cached_property
+    def validation_jobs_count(self) -> int | None:
+        # Requires this field to be defined externally,
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
+        return None
 
     @cached_property
     def gt_job(self) -> Job | None:
@@ -1445,20 +1457,25 @@ class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.DO_NOTHING)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
-    group = models.PositiveIntegerField(default=0)
+    group = models.PositiveIntegerField(
+        # null is not used for anything.
+        # TODO: disallow null on the DB level,
+        # when there are other changes to the annotation tables
+        # https://github.com/cvat-ai/cvat/pull/10522.
+        # - it results in a long migration, that's undesirable if done alone.
+        null=True
+    )
     source = models.CharField(max_length=16, choices=SourceType.choices(),
-        default=str(SourceType.MANUAL))
+        default=str(SourceType.MANUAL), null=True)
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
 class FrameAnnotationMixin(models.Model):
     frame = models.PositiveIntegerField()
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
 class ShapeAnnotationMixin(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
@@ -1470,7 +1487,6 @@ class ShapeAnnotationMixin(models.Model):
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
 
 class ScoredAnnotationMixin(models.Model):
@@ -1478,7 +1494,6 @@ class ScoredAnnotationMixin(models.Model):
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
 
 class LabeledImage(Annotation, FrameAnnotationMixin):

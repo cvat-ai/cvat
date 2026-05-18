@@ -669,6 +669,8 @@ SPECTACULAR_SETTINGS = {
         "ShapeType": "cvat.apps.engine.models.ShapeType",
         "OperationStatus": "cvat.apps.engine.models.StateChoice",
         "ChunkType": "cvat.apps.engine.models.DataChoice",
+        "MediaType": "cvat.apps.engine.models.MediaType",
+        "Dimension": "cvat.apps.engine.models.Dimension",
         "StorageMethod": "cvat.apps.engine.models.StorageMethodChoice",
         "JobStatus": "cvat.apps.engine.models.StatusChoice",
         "JobStage": "cvat.apps.engine.models.StageChoice",
@@ -795,4 +797,4 @@ if ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
 USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)
 
 # Health check settings
-HEALTH_CHECK = {"DISK_USAGE_MAX": int(os.getenv("CVAT_HEALTH_DISK_USAGE_MAX", 90))}
+HEALTH_CHECK = {"DISK_USAGE_MAX": int(os.getenv("CVAT_HEALTH_DISK_USAGE_MAX", 100))}

@@ -50,7 +50,7 @@ from cvat.apps.dataset_manager.views import (
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import DataChoice, StorageChoice
+from cvat.apps.engine.models import DataChoice, StorageChoice, TaskMode
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -474,41 +474,47 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
 
-        if self._db_task.media_type == models.MediaType.AUDIO:
-            return  # there are no audio manifests
-        elif self._db_task.media_type == models.MediaType.VIDEO:
-            # No filtering necessary; just use the original manifest.
-            self._write_files(
-                source_dir=self._db_data.get_upload_dirname(),
-                zip_object=zip_object,
-                files=[self._db_data.get_manifest_path()],
-                target_dir=target_data_dir,
-            )
-            return
-        elif self._db_task.media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD):
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                present_frame_nums = {im.frame for im in self._db_data.images.all()}
-
-                filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
-
-                imm_original = ImageManifestManager(
-                    self._db_data.get_manifest_path(), create_index=False
-                )
-                imm_filtered = ImageManifestManager(filtered_manifest_path, create_index=False)
-                imm_filtered.create(
-                    entry for frame_num, entry in imm_original if frame_num in present_frame_nums
-                )
-
+        match (self._db_task.media_type, self._db_task.mode):
+            case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+                return  # there are no audio manifests
+            case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+                # No filtering necessary; just use the original manifest.
                 self._write_files(
-                    source_dir=tmp_dir,
+                    source_dir=self._db_data.get_upload_dirname(),
                     zip_object=zip_object,
-                    files=[filtered_manifest_path],
+                    files=[self._db_data.get_manifest_path()],
                     target_dir=target_data_dir,
                 )
+                return
+            case (
+                models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                models.TaskMode.ANNOTATION,
+            ):
+                with tempfile.TemporaryDirectory() as tmp_dir:
+                    present_frame_nums = {im.frame for im in self._db_data.images.all()}
 
-                self._manifest_was_filtered = True
-        else:
-            assert False, f"Unknown media type '{self._db_task.media_type}'"
+                    filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
+
+                    imm_original = ImageManifestManager(
+                        self._db_data.get_manifest_path(), create_index=False
+                    )
+                    imm_filtered = ImageManifestManager(filtered_manifest_path, create_index=False)
+                    imm_filtered.create(
+                        entry
+                        for frame_num, entry in imm_original
+                        if frame_num in present_frame_nums
+                    )
+
+                    self._write_files(
+                        source_dir=tmp_dir,
+                        zip_object=zip_object,
+                        files=[filtered_manifest_path],
+                        target_dir=target_data_dir,
+                    )
+
+                    self._manifest_was_filtered = True
+            case (media_type, mode):
+                assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
     def _write_data_from_cloud_storage(self, zip_object: ZipFile, target_dir: str) -> None:
         assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
@@ -601,12 +607,15 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
-            match self._db_task.media_type:
-                case models.MediaType.VIDEO:
+            match (self._db_task.media_type, self._db_task.mode):
+                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
                     media_files = (os.path.join(data_dir, self._db_data.video.path),)
-                case models.MediaType.AUDIO:
+                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
                     media_files = (os.path.join(data_dir, self._db_data.audio.path),)
-                case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+                case (
+                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                    models.TaskMode.ANNOTATION,
+                ):
                     media_files = (
                         os.path.join(data_dir, im.path) for im in self._db_data.images.all()
                     )
@@ -623,9 +632,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
 
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
-            if self._db_task.media_type not in (
-                models.MediaType.IMAGE,
-                models.MediaType.POINT_CLOUD,
+            if (self._db_task.media_type, self._db_task.mode) not in (
+                (models.MediaType.IMAGE, models.TaskMode.ANNOTATION),
+                (models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION),
             ):
                 raise AssertionError("Only images can be stored in cloud storage")
 
@@ -708,7 +717,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return serialized_jobs
 
         def serialize_segment_file_names(db_segment: models.Segment):
-            if self._db_task.mode == "annotation":
+            if self._db_task.mode == TaskMode.ANNOTATION:
                 files: Iterable[models.Image] = self._db_data.images.order_by("frame").all()
                 return {"files": [files[f].path for f in sorted(db_segment.frame_set)]}
             else:
@@ -923,6 +932,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         raise ValueError("Unsupported type of file argument")
 
     def _create_annotations(self, db_job, annotations):
+        for annotation_type in ("tags", "shapes", "tracks", "intervals"):
+            annotations.setdefault(annotation_type, [])
+
         self._prepare_annotations(annotations, self._labels_mapping)
 
         for annotation_type in ("tags", "shapes", "tracks", "intervals"):

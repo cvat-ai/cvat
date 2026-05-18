@@ -27,7 +27,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 2,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -54,7 +53,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 5,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -81,7 +79,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 6,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -108,7 +105,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 7,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -135,7 +131,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 8,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -162,7 +157,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 9,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -189,7 +183,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 11,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -216,7 +209,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 12,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -243,7 +235,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 13,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -270,7 +261,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 14,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -297,7 +287,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 15,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -324,7 +313,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 17,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -351,7 +339,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 18,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -378,7 +365,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 19,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -405,7 +391,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 20,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -432,7 +417,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 21,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -459,7 +443,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 22,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -486,7 +469,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 23,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -513,7 +495,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 24,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -540,7 +521,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 25,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -567,7 +547,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 26,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -594,7 +573,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 27,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -621,7 +599,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 28,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -648,7 +625,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 29,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -675,7 +651,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 30,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -702,7 +677,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 31,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:31.760000Z"
     },
     {
@@ -729,7 +703,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -756,7 +729,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -783,7 +755,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -810,7 +781,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -837,7 +807,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -864,7 +833,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -891,7 +859,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -918,7 +885,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -945,7 +911,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -972,7 +937,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -999,7 +963,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -1026,7 +989,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -1053,7 +1015,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -1080,7 +1041,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -1107,7 +1067,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-03-27T09:53:32.178000Z"
     },
     {
@@ -1134,7 +1093,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-05-05T15:35:00.096000Z"
     },
     {
@@ -1161,7 +1119,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 32,
-      "transcription_requirements": [],
       "updated_date": "2025-05-05T15:38:46.667000Z"
     },
     {
@@ -1188,7 +1145,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 33,
-      "transcription_requirements": [],
       "updated_date": "2025-05-05T15:36:34.347000Z"
     },
     {
@@ -1215,7 +1171,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 34,
-      "transcription_requirements": [],
       "updated_date": "2025-08-01T11:44:46.355000Z"
     },
     {
@@ -1242,7 +1197,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": null,
-      "transcription_requirements": [],
       "updated_date": "2025-11-13T11:32:07.595000Z"
     },
     {
@@ -1269,7 +1223,6 @@
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
       "task_id": 35,
-      "transcription_requirements": [],
       "updated_date": "2025-11-13T11:32:48.140000Z"
     },
     {
@@ -1277,10 +1230,10 @@
       "compare_attributes": true,
       "compare_groups": true,
       "compare_line_orientation": true,
-      "created_date": "2026-04-22T15:19:13.553000Z",
+      "created_date": "2026-05-11T17:25:43.435000Z",
       "empty_is_annotated": false,
       "group_match_threshold": 0.5,
-      "id": 49,
+      "id": 48,
       "inherit": true,
       "iou_threshold": 0.4,
       "job_filter": "",
@@ -1295,9 +1248,8 @@
       "project_id": null,
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 37,
-      "transcription_requirements": [],
-      "updated_date": "2026-04-22T15:19:13.553000Z"
+      "task_id": 36,
+      "updated_date": "2026-05-11T17:25:43.435000Z"
     }
   ]
 }

@@ -1068,7 +1068,7 @@
       "attributes": [
         {
           "default_value": "Alice",
-          "id": 21,
+          "id": 19,
           "input_type": "select",
           "mutable": false,
           "name": "speaker",
@@ -1079,7 +1079,7 @@
         },
         {
           "default_value": "",
-          "id": 22,
+          "id": 20,
           "input_type": "text",
           "mutable": true,
           "name": "tr-en",
@@ -1090,12 +1090,12 @@
       ],
       "color": "#d76534",
       "has_parent": false,
-      "id": 94,
+      "id": 93,
       "name": "event",
       "parent_id": null,
       "sublabels": [],
-      "task_id": 37,
-      "type": "any"
+      "task_id": 36,
+      "type": "interval"
     }
   ]
 }

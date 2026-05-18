@@ -35,7 +35,7 @@ from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.lazy_list import LazyList
-from cvat.apps.engine.media_providers.frame_provider import FrameOutputType, TaskFrameProvider
+from cvat.apps.engine.media_io.frame_provider import FrameOutputType, TaskFrameProvider
 from cvat.apps.engine.model_utils import add_prefetch_fields
 from cvat.apps.engine.models import (
     AttributeSpec,
@@ -1520,7 +1520,7 @@ class MediaSource:
 
     @property
     def is_video(self) -> bool:
-        return self.db_task.mode == 'interpolation'
+        return self.db_task.mode == models.TaskMode.INTERPOLATION
 
 
 class MediaProvider:
@@ -1818,7 +1818,7 @@ class CvatDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
         self._ext_per_task: dict[int, str] = {
             task.id: TaskFrameProvider.VIDEO_FRAME_EXT if is_video else ''
             for task in db_tasks
-            for is_video in [task.mode == 'interpolation']
+            for is_video in [task.mode == models.TaskMode.INTERPOLATION]
         }
 
         if isinstance(instance_data, ProjectData):
@@ -2190,7 +2190,7 @@ def match_dm_item(
     instance_data: ProjectData | CommonData,
     root_hint: str | None = None
 ) -> int:
-    is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
+    is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == models.TaskMode.INTERPOLATION
 
     frame_number = None
     if frame_number is None and isinstance(item.media, dm.Image):

@@ -5,63 +5,41 @@
 
 import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
 import config from 'config';
-import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
-import TrackerMImplementation from './tracker-mil';
-import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
-import { OpenCVTracker } from './opencv-interfaces';
 import TrackerMILAction from './annotations-actions/tracker-mil';
 
 const core = getCore();
 
-export interface Segmentation {
-    intelligentScissorsFactory: () => IntelligentScissors;
-}
+type OpenCVInterface = ReturnType<typeof core.opencv.createOpenCVInterface>;
+export type IntelligentScissors = ReturnType<OpenCVInterface['segmentation']['intelligentScissorsFactory']>;
 
-export interface MatSpace {
-    fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => any;
-}
-
-export interface MatVectorSpace {
-    empty: () => any;
-}
-
-export interface Contours {
-    convexHull: (src: [number, number][][]) => [number, number][];
-    findContours: (src: any) => [number, number][][];
-    approxPoly: (points: [number, number][], threshold: number, closed?: boolean) => [number, number][];
-}
-
-export interface ImgProc {
-    hist: () => HistogramEqualization;
-}
-
-export interface Tracking {
-    trackerMIL: OpenCVTracker;
-}
-
-export enum MatType {
-    CV_8UC1,
-    CV_8UC3,
-    CV_8UC4,
-}
+type OpenCVTrackingWrapper = OpenCVInterface['tracking'] & {
+    trackerMIL: {
+        model: () => ReturnType<OpenCVInterface['tracking']['trackerMIL']['model']>,
+        name: string,
+        description: string,
+        kind: string,
+    }
+};
+export type OpenCVTracker = OpenCVTrackingWrapper['trackerMIL'];
 
 export class OpenCVWrapper {
     private initialized: boolean;
-    private cv: any;
     private onProgress: ((percent: number) => void) | null;
     private injectionProcess: Promise<void> | null;
+    private cvInterface: OpenCVInterface | null;
 
     public constructor() {
         this.initialized = false;
-        this.cv = null;
         this.onProgress = null;
         this.injectionProcess = null;
+        this.cvInterface = null;
     }
 
-    private checkInitialization(): void {
-        if (!this.initialized) {
-            throw new Error('Need to initialize OpenCV first');
+    private getCVInterface(): OpenCVInterface {
+        if (!this.cvInterface) {
+            throw new Error('OpenCV is not initialized. Please call initialize() method first.');
         }
+        return this.cvInterface;
     }
 
     private async inject(): Promise<void> {
@@ -158,7 +136,7 @@ export class OpenCVWrapper {
             }
         });
 
-        this.cv = (window as any).cv;
+        this.cvInterface = core.opencv.createOpenCVInterface((window as any).cv);
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {
@@ -187,138 +165,20 @@ export class OpenCVWrapper {
         return !!this.injectionProcess;
     }
 
-    public get mat(): MatSpace {
-        const { cv } = this;
-        return {
-            fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => {
-                this.checkInitialization();
-                const typeToCVType = {
-                    [MatType.CV_8UC1]: cv.CV_8UC1,
-                    [MatType.CV_8UC3]: cv.CV_8UC3,
-                    [MatType.CV_8UC4]: cv.CV_8UC4,
-                };
-
-                const mat = cv.matFromArray(height, width, typeToCVType[type], data);
-                return mat;
-            },
-        };
+    public get mat(): OpenCVInterface['mat'] {
+        return this.getCVInterface().mat;
     }
 
-    public get matVector(): MatVectorSpace {
-        const { cv } = this;
-        return {
-            empty: () => {
-                this.checkInitialization();
-                return new cv.MatVector();
-            },
-        };
+    public get matVector(): OpenCVInterface['matVector'] {
+        return this.getCVInterface().matVector;
     }
 
-    public get contours(): Contours {
-        const { cv } = this;
-        return {
-            convexHull: (contours: [number, number][][]): [number, number][] => {
-                this.checkInitialization();
+    public get contours(): OpenCVInterface['contours'] {
+        return this.getCVInterface().contours;
+    }
 
-                const points = contours.flat(2) as number[];
-                const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
-                const output = new cv.Mat();
-                try {
-                    cv.convexHull(input, output, false, true);
-                    const result = Array.from(output.data32S as number[]);
-                    const converted: [number, number][] = [];
-                    for (let i = 0; i < result.length; i += 2) {
-                        converted.push([result[i], result[i + 1]]);
-                    }
-                    return converted;
-                } finally {
-                    output.delete();
-                    input.delete();
-                }
-            },
-            findContours: (src: any): [number, number][][] => {
-                type ArrayWithPixelLength = Array<Array<[number, number]> & { pixelLength?: number }>;
-                this.checkInitialization();
-
-                const contours = this.matVector.empty();
-                const hierarchy = new cv.Mat();
-                const expanded = new cv.Mat();
-                const kernel = cv.Mat.ones(2, 2, cv.CV_8U);
-                const anchor = new cv.Point(-1, -1);
-                const jsContours: ArrayWithPixelLength = [];
-                try {
-                    cv.copyMakeBorder(src, expanded, 1, 1, 1, 1, cv.BORDER_CONSTANT);
-                    // morpth transform to get better contour including all the pixels
-                    cv.dilate(
-                        expanded,
-                        expanded,
-                        kernel,
-                        anchor,
-                        1,
-                        cv.BORDER_CONSTANT,
-                        cv.morphologyDefaultBorderValue(),
-                    );
-
-                    cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
-                    for (let i = 0; i < contours.size(); i++) {
-                        const contour = contours.get(i);
-                        const converted: [number, number][] = [];
-
-                        let prevX = contour.data32S[0] - 1;
-                        let prevY = contour.data32S[1] - 1;
-                        let contourLength = 0;
-                        for (let j = 0; j < contour.data32S.length; j += 2) {
-                            // subtract offset we created when copied source image
-                            const x = contour.data32S[j] - 1;
-                            const y = contour.data32S[j + 1] - 1;
-                            converted.push([x, y]);
-                            contourLength += Math.hypot(x - prevX, y - prevY);
-                            prevX = x;
-                            prevY = y;
-                        }
-
-                        Object.defineProperty(converted, 'pixelLength', {
-                            value: contourLength,
-                            writable: false,
-                        });
-
-                        jsContours.push(converted);
-                        contour.delete();
-                    }
-                } finally {
-                    kernel.delete();
-                    expanded.delete();
-                    hierarchy.delete();
-                    contours.delete();
-                }
-
-                return jsContours.sort((arr1, arr2) => (arr2.pixelLength || 0) - (arr1.pixelLength || 0));
-            },
-            approxPoly: (points: [number, number][], threshold: number, closed = true): [number, number][] => {
-                this.checkInitialization();
-
-                if (points.length < 3) {
-                    // nothing to approximate
-                    return points;
-                }
-
-                const rows = points.length;
-                const cols = 2;
-                const approx = new cv.Mat();
-                const contour = cv.matFromArray(rows, cols, cv.CV_32FC1, points.flat());
-                try {
-                    cv.approxPolyDP(contour, approx, threshold, closed); // approx output type is CV_32F
-                    const result: [number, number][] = [];
-                    for (let row = 0; row < approx.rows; row++) {
-                        result.push([approx.floatAt(row, 0), approx.floatAt(row, 1)]);
-                    }
-                    return result;
-                } finally {
-                    approx.delete();
-                    contour.delete();
-                }
-            },
-        };
+    public get enums(): OpenCVInterface['enums'] {
+        return this.getCVInterface().enums;
     }
 
     public getContoursFromStateSync = (
@@ -334,7 +194,7 @@ export class OpenCVWrapper {
             const height = bottom - top + 1;
 
             const mask = core.utils.rle2Mask(state.points.subarray(0, -4), width, height);
-            const src = this.mat.fromData(width, height, MatType.CV_8UC1, mask);
+            const src = this.mat.fromData(width, height, this.enums.MatType.CV_8UC1, mask);
 
             try {
                 const contours = this.contours.findContours(src);
@@ -374,31 +234,22 @@ export class OpenCVWrapper {
         return contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
     };
 
-    public get segmentation(): Segmentation {
-        return {
-            intelligentScissorsFactory: () => {
-                this.checkInitialization();
-                return new IntelligentScissorsImplementation(this.cv);
-            },
-        };
+    public get segmentation(): OpenCVInterface['segmentation'] {
+        return this.getCVInterface().segmentation;
     }
 
-    public get imgproc(): ImgProc {
-        return {
-            hist: () => {
-                this.checkInitialization();
-                return new HistogramEqualizationImplementation(this.cv);
-            },
-        };
+    public get imgproc(): OpenCVInterface['imgproc'] {
+        return this.getCVInterface().imgproc;
     }
 
-    public get tracking(): Tracking {
+    public get utils(): OpenCVInterface['utils'] {
+        return this.getCVInterface().utils;
+    }
+
+    public get tracking(): OpenCVTrackingWrapper {
         return {
             trackerMIL: {
-                model: () => {
-                    this.checkInitialization();
-                    return new TrackerMImplementation(this.cv);
-                },
+                model: () => this.getCVInterface().tracking.trackerMIL.model(),
                 name: 'TrackerMIL',
                 description: 'Lightweight client-side algorithm, useful to track simple objects',
                 kind: 'opencv_tracker_mil',

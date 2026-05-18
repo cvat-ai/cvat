@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Generator
 from functools import partial
 from pathlib import PurePosixPath
 

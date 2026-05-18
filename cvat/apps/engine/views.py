@@ -23,7 +23,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
-from django.db.models import prefetch_related_objects
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.utils import timezone
@@ -60,13 +59,13 @@ from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
-from cvat.apps.engine.media_providers.audio_provider import (
+from cvat.apps.engine.media_io.audio_provider import (
     AudioDataWithMeta,
     IAudioProvider,
     JobAudioProvider,
     TaskAudioProvider,
 )
-from cvat.apps.engine.media_providers.frame_provider import (
+from cvat.apps.engine.media_io.frame_provider import (
     DataWithMeta,
     IFrameProvider,
     JobFrameProvider,
@@ -566,7 +565,6 @@ class _DataGetter(metaclass=ABCMeta):
             )
         elif self.type == 'frame':
             if isinstance(media_provider, IAudioProvider):
-                # TODO: refactor
                 raise ValidationError(
                     "Frame requests are not available for this data",
                     code=status.HTTP_400_BAD_REQUEST,
@@ -579,7 +577,6 @@ class _DataGetter(metaclass=ABCMeta):
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == 'context_image':
             if isinstance(media_provider, IAudioProvider):
-                # TODO: refactor
                 raise ValidationError(
                     "Context image requests are not available for this data",
                     code=status.HTTP_400_BAD_REQUEST,
@@ -925,23 +922,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
-            # with_job_summary() is optimized in the TaskReadListSerializer
+            # with_job_summary() is optimized in the serializer
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
         elif self.action == 'validation_layout':
             queryset = Task.objects.select_related('data', 'data__validation_layout')
-        elif self.action not in ('metadata', 'annotations'):
-            queryset = queryset.select_related(
-                'data',
-            )
-
-            if self.action in ('create', 'retrieve', 'update', 'partial_update'):
-                queryset = queryset.select_related(
-                    'target_storage',
-                    'source_storage',
-                    'annotation_guide',
-                )
-                queryset = queryset.with_job_summary()
+        else:
+            queryset = queryset.with_job_summary()
 
         return queryset
 
@@ -1515,39 +1502,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request: ExtendedRequest, pk: int):
-        db_task = self.get_object() #force to call check_object_permissions
-
-        def prefetch():
-            data_queryset = models.Data.objects.select_related("validation_layout")
-
-            match db_task.media_type:
-                case models.MediaType.AUDIO:
-                    data_queryset = data_queryset.select_related("audio")
-                case models.MediaType.VIDEO:
-                    data_queryset = data_queryset.select_related("video")
-                case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
-                    data_queryset = data_queryset.prefetch_related(
-                        Prefetch(
-                            'images',
-                            queryset=(
-                                models.Image.objects
-                                .prefetch_related('related_files')
-                                .order_by('frame')
-                            )
-                        )
-                    )
-                case None:
-                    pass # noop, nothing to load
-                case _ as media_type:
-                    assert False, f"Unknown media type '{media_type}'"
-
-            prefetch_related_objects(
-                [db_task],
-                "segment_set",
-                Prefetch("data", queryset=data_queryset)
-            )
-
-        prefetch()
+        self.get_object() #force to call check_object_permissions
+        db_task = models.Task.objects.prefetch_related(
+            'segment_set',
+            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
+            ))
+        ).get(pk=pk)
 
         if request.method == 'PATCH':
             if db_task.media_type == models.MediaType.AUDIO:
@@ -1594,8 +1555,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             for item in media
         ]
 
-        db_data.dimension = db_task.dimension
-        db_data.media_type = db_task.media_type
         db_data.frames = frame_meta
         db_data.chunks_updated_date = db_task.get_chunks_updated_date()
         db_data.chapters = chapters
@@ -1800,23 +1759,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
-
-            queryset = queryset.prefetch_related(
-                "segment__task__source_storage",
-                "segment__task__target_storage",
-            )
-            # with_issue_counts() is optimized in JobReadListSerializer
-        elif self.action not in ('annotations', 'metadata'):
-            queryset = queryset.select_related(
-                'segment__task__data',
-            )
-
-            if self.action in ('create', 'retrieve', 'update', 'partial_update'):
-                queryset = queryset.select_related(
-                    'segment__task__annotation_guide',
-                    'segment__task__project__annotation_guide',
-                )
-                queryset = queryset.with_issue_counts()
+            # with_* optimized in JobReadListSerializer
+        else:
+            queryset = queryset.with_issue_counts().with_child_jobs_counts()
 
         return queryset
 
@@ -2174,8 +2119,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             for item in media
         ]
 
-        db_data.dimension = db_task.dimension
-        db_data.media_type = db_task.media_type
         db_data.frames = frame_meta
         db_data.chapters = chapters
 

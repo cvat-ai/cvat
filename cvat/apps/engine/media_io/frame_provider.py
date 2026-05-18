@@ -23,15 +23,23 @@ from PIL import Image
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache, prepare_image_chunk
-from cvat.apps.engine.media_extractors import VideoReader, ZipReader
-from cvat.apps.engine.media_providers.media_chunks import (
+from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache
+from cvat.apps.engine.media_extractors import (
+    IChunkWriter,
+    Mpeg4ChunkWriter,
+    Mpeg4CompressedChunkWriter,
+    VideoReader,
+    ZipChunkWriter,
+    ZipCompressedChunkWriter,
+    ZipReader,
+)
+from cvat.apps.engine.media_io.media_chunks import (
     BufferChunkLoader,
     ChunkLoader,
     FileChunkLoader,
     ReaderFactory,
 )
-from cvat.apps.engine.media_providers.media_provider import DataWithMeta, IMediaProvider
+from cvat.apps.engine.media_io.media_provider import DataWithMeta, IMediaProvider
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.utils import take_by
 
@@ -696,3 +704,41 @@ def make_frame_provider(
         raise TypeError(f"Unexpected data source type {type(data_source)}")
 
     return frame_provider
+
+
+def prepare_image_chunk(
+    task_chunk_frames: Iterator[tuple[Any, str]],
+    *,
+    quality: models.FrameQuality,
+    db_task: models.Task,
+    dump_unchanged: bool = False,
+) -> DataWithMime:
+    db_data = db_task.require_data()
+
+    writer_classes: dict[models.FrameQuality, type[IChunkWriter]] = {
+        models.FrameQuality.COMPRESSED: (
+            Mpeg4CompressedChunkWriter
+            if db_data.compressed_chunk_type == models.DataChoice.VIDEO
+            else ZipCompressedChunkWriter
+        ),
+        models.FrameQuality.ORIGINAL: (
+            Mpeg4ChunkWriter
+            if db_data.original_chunk_type == models.DataChoice.VIDEO
+            else ZipChunkWriter
+        ),
+    }
+
+    writer_class = writer_classes[quality]
+
+    image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
+    writer = writer_class(quality=image_quality, dimension=db_task.dimension)
+
+    writer_kwargs = {}
+    if dump_unchanged and isinstance(writer, ZipCompressedChunkWriter):
+        writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
+
+    buffer = BytesIO()
+    writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
+
+    buffer.seek(0)
+    return buffer, writer.CHUNK_MIME_TYPE

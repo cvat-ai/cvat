@@ -3064,6 +3064,7 @@ paths:
           - polyline
           - rectangle
           - skeleton
+          - interval
           - tag
       tags:
       - labels
@@ -5178,6 +5179,9 @@ paths:
         description: A simple equality filter for the mode field
         schema:
           type: string
+          enum:
+          - annotation
+          - interpolation
       - name: name
         in: query
         description: A simple equality filter for the name field
@@ -6949,7 +6953,6 @@ components:
         frame:
           type: integer
           readOnly: true
-          nullable: true
         type:
           allOf:
           - $ref: '#/components/schemas/AnnotationConflictType'
@@ -6958,10 +6961,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AnnotationId'
-        attributes:
-          type: array
-          items:
-            type: string
         report_id:
           type: integer
           readOnly: true
@@ -6976,13 +6975,11 @@ components:
       - tag
       - shape
       - track
-      - interval
       type: string
       description: |-
         * `tag` - TAG
         * `shape` - SHAPE
         * `track` - TRACK
-        * `interval` - INTERVAL
     AnnotationConflictSeverity:
       enum:
       - warning
@@ -7257,13 +7254,11 @@ components:
       enum:
       - video
       - imageset
-      - list
       - audio_mp3
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
-        * `list` - LIST
         * `audio_mp3` - AUDIO_MP3
     ClientEvents:
       type: object
@@ -7494,10 +7489,6 @@ components:
     DataMetaRead:
       type: object
       properties:
-        dimension:
-          $ref: '#/components/schemas/Dimension'
-        media_type:
-          $ref: '#/components/schemas/MediaType'
         chapters:
           type: array
           items:
@@ -7557,9 +7548,7 @@ components:
       required:
       - chunks_updated_date
       - deleted_frames
-      - dimension
       - frames
-      - media_type
     DataRequest:
       type: object
       description: |-
@@ -7783,16 +7772,6 @@ components:
       required:
       - exporters
       - importers
-    Dimension:
-      enum:
-      - 1d
-      - 2d
-      - 3d
-      type: string
-      description: |-
-        * `1d` - DIM_1D
-        * `2d` - DIM_2D
-        * `3d` - DIM_3D
     Event:
       type: object
       properties:
@@ -8293,12 +8272,13 @@ components:
           readOnly: true
           nullable: true
         dimension:
-          allOf:
-          - $ref: '#/components/schemas/Dimension'
+          type: string
+          readOnly: true
+        mode:
+          type: string
           readOnly: true
         media_type:
-          allOf:
-          - $ref: '#/components/schemas/MediaType'
+          type: string
           readOnly: true
         bug_tracker:
           type: string
@@ -8316,10 +8296,6 @@ components:
         state:
           allOf:
           - $ref: '#/components/schemas/OperationStatus'
-          readOnly: true
-        mode:
-          type: string
-          nullable: true
           readOnly: true
         frame_count:
           type: integer
@@ -8341,17 +8317,13 @@ components:
           nullable: true
           readOnly: true
         data_compressed_chunk_type:
-          nullable: true
-          readOnly: true
-          oneOf:
+          allOf:
           - $ref: '#/components/schemas/ChunkType'
-          - $ref: '#/components/schemas/NullEnum'
+          readOnly: true
         data_original_chunk_type:
-          nullable: true
-          readOnly: true
-          oneOf:
+          allOf:
           - $ref: '#/components/schemas/ChunkType'
-          - $ref: '#/components/schemas/NullEnum'
+          readOnly: true
         created_date:
           type: string
           format: date-time
@@ -8560,6 +8532,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -8614,6 +8587,7 @@ components:
       - polyline
       - rectangle
       - skeleton
+      - interval
       - tag
       type: string
       description: |-
@@ -8626,6 +8600,7 @@ components:
         * `polyline` - POLYLINE
         * `rectangle` - RECTANGLE
         * `skeleton` - SKELETON
+        * `interval` - INTERVAL
         * `tag` - TAG
     LabeledData:
       type: object
@@ -8692,6 +8667,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -8719,6 +8695,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -8747,6 +8724,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -8785,6 +8763,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -8846,6 +8825,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -8906,6 +8886,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -8945,6 +8926,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -8981,6 +8963,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -9033,18 +9016,6 @@ components:
           minLength: 1
       required:
       - password
-    MediaType:
-      enum:
-      - image
-      - video
-      - point_cloud
-      - audio
-      type: string
-      description: |-
-        * `image` - Image
-        * `video` - Video
-        * `point_cloud` - Point Cloud
-        * `audio` - Audio
     MembershipRead:
       type: object
       properties:
@@ -9845,6 +9816,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -10087,10 +10059,6 @@ components:
             accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
-        transcription_requirements:
-          type: array
-          items:
-            $ref: '#/components/schemas/PatchedTranscriptionRequirementRequest'
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
@@ -10154,20 +10122,6 @@ components:
           type: integer
           writeOnly: true
           nullable: true
-    PatchedTranscriptionRequirementRequest:
-      type: object
-      properties:
-        attribute_id:
-          type: integer
-          description: |
-            The transcription (type 'text') attribute to apply the requirement to
-        metric:
-          $ref: '#/components/schemas/TranscriptionQualityMetric'
-        acceptance_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
     PatchedUserRequest:
       type: object
       properties:
@@ -10301,7 +10255,6 @@ components:
           type: string
           readOnly: true
           nullable: true
-          maxLength: 16
         organization:
           type: integer
           readOnly: true
@@ -10724,10 +10677,6 @@ components:
             accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
-        transcription_requirements:
-          type: array
-          items:
-            $ref: '#/components/schemas/TranscriptionRequirement'
         created_date:
           type: string
           format: date-time
@@ -11054,6 +11003,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -11110,6 +11060,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -11145,6 +11096,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
@@ -11177,6 +11129,7 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -11231,6 +11184,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11284,6 +11238,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11317,10 +11272,6 @@ components:
           type: string
           nullable: true
           readOnly: true
-        mode:
-          type: string
-          readOnly: true
-          nullable: true
         owner:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -11358,17 +11309,13 @@ components:
           nullable: true
           readOnly: true
         data_original_chunk_type:
-          nullable: true
-          readOnly: true
-          oneOf:
+          allOf:
           - $ref: '#/components/schemas/ChunkType'
-          - $ref: '#/components/schemas/NullEnum'
+          readOnly: true
         data_compressed_chunk_type:
-          nullable: true
-          readOnly: true
-          oneOf:
+          allOf:
           - $ref: '#/components/schemas/ChunkType'
-          - $ref: '#/components/schemas/NullEnum'
+          readOnly: true
         data_cloud_storage_id:
           type: integer
           nullable: true
@@ -11392,12 +11339,13 @@ components:
           readOnly: true
         dimension:
           type: string
-        media_type:
           readOnly: true
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/MediaType'
-          - $ref: '#/components/schemas/NullEnum'
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         subset:
           type: string
           readOnly: true
@@ -11629,30 +11577,6 @@ components:
       required:
       - frame
       - type
-    TranscriptionQualityMetric:
-      enum:
-      - wer
-      - cer
-      type: string
-      description: |-
-        * `wer` - WER
-        * `cer` - CER
-    TranscriptionRequirement:
-      type: object
-      properties:
-        attribute_id:
-          type: integer
-          description: |
-            The transcription (type 'text') attribute to apply the requirement to
-        metric:
-          $ref: '#/components/schemas/TranscriptionQualityMetric'
-        acceptance_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-      required:
-      - attribute_id
     User:
       type: object
       properties:
@@ -11786,7 +11710,6 @@ components:
             The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
       required:
-      - frame_selection_method
       - mode
     WebhookContentType:
       enum:

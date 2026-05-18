@@ -31,13 +31,13 @@ from cvat.apps.engine.media_extractors import (
     IMediaReader,
     Mp3ChunkWriter,
 )
-from cvat.apps.engine.media_providers.media_chunks import (
+from cvat.apps.engine.media_io.media_chunks import (
     BufferChunkLoader,
     ChunkLoader,
     FileChunkLoader,
     ReaderFactory,
 )
-from cvat.apps.engine.media_providers.media_provider import DataWithMeta, IMediaProvider
+from cvat.apps.engine.media_io.media_provider import DataWithMeta, IMediaProvider
 from cvat.apps.engine.utils import take_by
 from utils.dataset_manifest.utils import MemOpenable
 
@@ -238,8 +238,8 @@ class TaskAudioProvider(IAudioProvider):
             chunk_info_created = True
 
             # TODO: use padding = PaddingType.auto, when its performance is good enough.
-            # Currently, it can work quite a while for big files. PyAV encoding works ~3x slower
-            # than pure ffmpeg calls, which makes the situation even worse.
+            # Currently, it can work for several minutes for big files.
+            # PyAV works ~3x slower than pure ffmpeg calls, which makes the situation even worse.
             # For now, just use a constant padding big enough for most cases.
             padding = (0, 500)
         else:
@@ -249,7 +249,7 @@ class TaskAudioProvider(IAudioProvider):
         source_audio_file, _ = cache.read_raw_audio(db_task)
         reader = AudioReader([source_audio_file], start=chunk_frames[0], stop=chunk_frames[1])
 
-        chunk_data, padding = create_audio_chunk(db_data, reader, quality=quality, padding=padding)
+        chunk_data, padding = prepare_audio_chunk(db_data, reader, quality=quality, padding=padding)
 
         if chunk_info_created:
             chunk_info.left_padding = padding[0]
@@ -520,6 +520,7 @@ class JobAudioProvider(SegmentAudioProvider):
     ) -> DataWithMeta[BytesIO]:
         # Backward compatibility for the "number" parameter
         # Reproduce the task chunks, limited by this job
+
         return_type = DataWithMeta[BytesIO]
 
         cache = MediaCache()
@@ -616,6 +617,7 @@ def add_padding(
     payload_iter = iter(payload_frames)
 
     first_frame = next(payload_iter)[0]
+    assert first_frame.layout.nb_channels == 1 or first_frame.format.is_planar
     payload_format = first_frame.format
     payload_layout = first_frame.layout
 
@@ -665,7 +667,7 @@ class PaddingType(str, Enum):
         return self.value
 
 
-def create_audio_chunk(
+def prepare_audio_chunk(
     db_data: models.Data,
     payload_reader: AudioReader,
     *,
@@ -695,7 +697,8 @@ def create_audio_chunk(
 
         chunk_data.seek(0)
 
-        # Writing still can fail with CacheTooLargeDataError
+        # Writing still can fail with CacheTooLargeDataError.
+        # TODO: add chunking for too large input files, when UI is able to render them
         return (chunk_data, writer.CHUNK_MIME_TYPE), (0, 0, 0)
 
     if padding == PaddingType.auto:
@@ -768,12 +771,18 @@ def find_best_padding(
     writer: IChunkWriter,
     payload_start: int | None = None,
     payload_stop: int | None = None,
-    step: int = 20,
+    step: int = 100,
     min_left_padding: int = 0,
     min_right_padding: int = 0,
     max_left_padding: int = 1000,
     max_right_padding: int = 1000,
 ) -> tuple[int, int]:
+    """
+    Lossy formats may reduce file duration on encoding. This function helps to find
+    the size of extra zero padding for the payload to be fully present in the output data.
+    The amount of padding may vary depending on the file contents, encoder, and format.
+    """
+
     assert max_left_padding >= 0 and max_right_padding >= 0
     assert min_left_padding >= 0 and min_right_padding >= 0
 
@@ -903,8 +912,8 @@ def match_samples(
     if max_offset is not None:
         max_window_pos = max(0, min(max_window_pos, max_offset))
 
+    # can also be done via np.convolve, but it requires normalization
     for offset in range(0, max_window_pos + 1):
-        # TODO: maybe downsample, but it can lead to inaccurate results
         haystack_frame = haystack[..., offset : offset + window_size]
         score = np.sum(np.abs(haystack_frame - needle))
 

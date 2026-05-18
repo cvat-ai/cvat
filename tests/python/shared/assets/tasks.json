@@ -8,23 +8,23 @@
       "assignee_updated_date": null,
       "bug_tracker": "",
       "consensus_enabled": false,
-      "created_date": "2026-04-22T15:19:13.508000Z",
-      "data": 36,
+      "created_date": "2026-05-11T17:25:43.375000Z",
+      "data": 35,
       "data_chunk_size": 6914,
       "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "audio_mp3",
       "data_original_chunk_type": "audio_mp3",
       "dimension": "1d",
       "guide_id": null,
-      "id": 37,
+      "id": 36,
       "jobs": {
         "completed": 0,
         "count": 2,
-        "url": "http://localhost:8080/api/jobs?task_id=37",
+        "url": "http://localhost:8080/api/jobs?task_id=36",
         "validation": 0
       },
       "labels": {
-        "url": "http://localhost:8080/api/labels?task_id=37"
+        "url": "http://localhost:8080/api/labels?task_id=36"
       },
       "media_type": "audio",
       "mode": "interpolation",
@@ -40,14 +40,15 @@
         "username": "user2"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 6914,
       "size": 6914,
       "source_storage": null,
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2026-04-22T15:19:13.713000Z",
-      "url": "http://localhost:8080/api/tasks/37",
+      "updated_date": "2026-05-11T17:25:43.643000Z",
+      "url": "http://localhost:8080/api/tasks/36",
       "validation_mode": "gt"
     },
     {
@@ -1279,7 +1280,7 @@
       "consensus_enabled": false,
       "created_date": "2022-03-14T13:24:05.852000Z",
       "data": null,
-      "dimension": "2d",
+      "dimension": "",
       "guide_id": null,
       "id": 12,
       "jobs": {
@@ -1291,7 +1292,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=12"
       },
-      "media_type": null,
+      "media_type": "",
       "mode": "",
       "name": "task_without_data",
       "organization": null,
@@ -1557,6 +1558,7 @@
       "dimension": "3d",
       "guide_id": null,
       "id": 6,
+      "image_quality": 70,
       "jobs": {
         "completed": 0,
         "count": 1,

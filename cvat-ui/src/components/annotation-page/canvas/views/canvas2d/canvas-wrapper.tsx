@@ -48,6 +48,7 @@ import {
     canvasErrorOccurred,
     updateEditedStateAsync,
     collapseObjectItems,
+    AnnotationSource,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -132,7 +133,7 @@ interface DispatchToProps {
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateAnnotations(states: ObjectState[]): void;
-    onCreateAnnotations(states: ObjectState[]): void;
+    onCreateAnnotations(states: ObjectState[], source?: AnnotationSource): void;
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
@@ -317,8 +318,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        onCreateAnnotations(states: ObjectState[]): void {
-            dispatch(createAnnotationsAsync(states));
+        onCreateAnnotations(
+            states: ObjectState[],
+            source: AnnotationSource = AnnotationSource.OTHER,
+        ): void {
+            dispatch(createAnnotationsAsync(states, source));
         },
         onMergeAnnotations(states: ObjectState[]): void {
             dispatch(mergeAnnotationsAsync(states));
@@ -695,7 +699,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             updateActiveControl(ActiveControl.CURSOR);
         }
 
-        const { state, duration } = event.detail;
+        const { state, duration, simplifyPoly } = event.detail;
         const isDrawnFromScratch = !state.label;
 
         state.objectType = state.shapeType === ShapeType.MASK ?
@@ -723,9 +727,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         } else {
             jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration });
         }
-
         const objectState = new cvat.classes.ObjectState(state);
-        onCreateAnnotations([objectState]);
+
+        const source = simplifyPoly && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType) ?
+            AnnotationSource.DRAW_SIMPLIFIED_POLY : AnnotationSource.OTHER;
+
+        onCreateAnnotations([objectState], source);
         onUpdateEditedObject(null);
     };
 

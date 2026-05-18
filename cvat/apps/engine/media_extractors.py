@@ -22,20 +22,19 @@ from fractions import Fraction
 from functools import cached_property
 from pathlib import Path, PurePath
 from random import shuffle
-from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
+from typing import ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
 
 import av
 import av.codec
 import av.container
 import av.video.stream
 import numpy as np
-import PIL.Image
 from natsort import os_sorted
 from PIL import Image, ImageFile, ImageOps
 from pyunpack import Archive
 from rest_framework.exceptions import ValidationError
 
-from cvat.apps.engine.models import DimensionType, SortingMethod
+from cvat.apps.engine.models import DimensionType, SortingMethod, TaskMode
 from cvat.apps.engine.utils import rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
@@ -1033,7 +1032,7 @@ class AudioReader(IMediaReader):
 
         return self._frame_count
 
-    def get_preview_image(self) -> PIL.Image.Image | None:
+    def get_preview_image(self) -> Image.Image | None:
         with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
             if not container.streams.video:
                 return None
@@ -1054,6 +1053,10 @@ class AudioReader(IMediaReader):
 class IChunkWriter(ABC):
     CHUNK_MIME_TYPE: ClassVar[str]
 
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
+        self._quality = quality
+        self._dimension = dimension
+
     @abstractmethod
     def save_as_chunk(self, images, chunk_path: str | io.IOBase):
         pass
@@ -1064,8 +1067,13 @@ class ZipChunkWriter(IChunkWriter):
     IMAGE_EXT = "jpeg"
     POINT_CLOUD_EXT = "pcd"
 
-    def __init__(self, *, dimension: DimensionType) -> None:
-        self._dimension = dimension
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
+        super().__init__(quality=quality, dimension=dimension)
+        self._validate_configuration()
+
+    def _validate_configuration(self):
+        assert self._dimension in (DimensionType.DIM_2D, DimensionType.DIM_3D)
+        assert self._quality == 100
 
     def _write_pcd_file(self, image: str | Path | io.BytesIO) -> tuple[io.BytesIO, str]:
         with ExitStack() as es:
@@ -1130,9 +1138,8 @@ class ZipChunkWriter(IChunkWriter):
 
 
 class ZipCompressedChunkWriter(ZipChunkWriter):
-    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
-        super().__init__(dimension=dimension)
-        self._image_quality = quality
+    def _validate_configuration(self):
+        assert self._dimension in (DimensionType.DIM_2D, DimensionType.DIM_3D)
 
     @staticmethod
     def _compress_image(
@@ -1199,7 +1206,7 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
                         try:
-                            image_buf = self._compress_image(image, self._image_quality)
+                            image_buf = self._compress_image(image, self._quality)
                         except Exception as ex:
                             if path is None:
                                 raise
@@ -1227,9 +1234,12 @@ class Mpeg4ChunkWriter(IChunkWriter):
     FORMAT = "mp4"
     MAX_MBS_PER_FRAME = 36864
 
-    def __init__(self, *, quality: int) -> None:
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
+        assert dimension == DimensionType.DIM_2D
+
         # translate inversed range [1:100] to [0:51]
-        self._image_quality = round(51 * (100 - quality) / 99)
+        quality = round(51 * (100 - quality) / 99)
+        super().__init__(quality=quality, dimension=dimension)
 
         self._output_fps = 25
         try:
@@ -1237,15 +1247,15 @@ class Mpeg4ChunkWriter(IChunkWriter):
             self._codec_name = codec.name
             self._codec_opts = {
                 "profile": "constrained_baseline",
-                "qmin": str(self._image_quality),
-                "qmax": str(self._image_quality),
+                "qmin": str(self._quality),
+                "qmax": str(self._quality),
                 "rc_mode": "buffer",
             }
         except av.codec.codec.UnknownCodecError:
             codec = av.codec.Codec("libx264", "w")
             self._codec_name = codec.name
             self._codec_opts = {
-                "crf": str(self._image_quality),
+                "crf": str(self._quality),
                 "preset": "ultrafast",
             }
 
@@ -1280,11 +1290,9 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
-    FrameDescriptor: TypeAlias = tuple[av.VideoFrame, Any]
-
     def _peek_first_frame(
-        self, frame_iter: Iterator[FrameDescriptor]
-    ) -> tuple[FrameDescriptor | None, Iterator[FrameDescriptor]]:
+        self, frame_iter: Iterator[IMediaReader.VideoFrame]
+    ) -> tuple[IMediaReader.VideoFrame | None, Iterator[IMediaReader.VideoFrame]]:
         "Gets the first frame and returns the same full iterator"
 
         if not hasattr(frame_iter, "__next__"):
@@ -1293,7 +1301,11 @@ class Mpeg4ChunkWriter(IChunkWriter):
         first_frame = next(frame_iter, None)
         return first_frame, itertools.chain((first_frame,), frame_iter)
 
-    def save_as_chunk(self, images: Iterator[FrameDescriptor], chunk_path: str | io.IOBase) -> None:
+    def save_as_chunk(
+        self,
+        images: Iterator[IMediaReader.VideoFrame],
+        chunk_path: str | io.IOBase,
+    ) -> None:
         first_frame, images = self._peek_first_frame(images)
         if not first_frame:
             raise Exception("no images to save")
@@ -1330,18 +1342,19 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, *, quality):
-        super().__init__(quality=quality)
+    def __init__(self, *, quality, dimension):
+        super().__init__(quality=quality, dimension=dimension)
+
         if self._codec_name == "libx264":
             self._codec_opts = {
                 "profile": "baseline",
                 "coder": "0",
-                "crf": str(self._image_quality),
+                "crf": str(self._quality),
                 "wpredp": "0",
                 "flags": "-loop",
             }
 
-    def save_as_chunk(self, images, chunk_path: str | io.IOBase):
+    def save_as_chunk(self, images, chunk_path):
         first_frame, images = self._peek_first_frame(images)
         if not first_frame:
             raise Exception("no images to save")
@@ -1519,43 +1532,43 @@ MEDIA_TYPES = {
     "image": {
         "has_mime_type": _is_image,
         "extractor": ImageListReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": False,
     },
     "video": {
         "has_mime_type": _is_video,
         "extractor": VideoReader,
-        "mode": "interpolation",
+        "mode": TaskMode.INTERPOLATION,
         "unique": True,
     },
     "audio": {
         "has_mime_type": _is_audio,
         "extractor": AudioReader,
-        "mode": "interpolation",
+        "mode": TaskMode.INTERPOLATION,
         "unique": True,
     },
     "archive": {
         "has_mime_type": _is_archive,
         "extractor": ArchiveReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": True,
     },
     "directory": {
         "has_mime_type": _is_dir,
         "extractor": DirectoryReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": False,
     },
     "pdf": {
         "has_mime_type": _is_pdf,
         "extractor": PdfReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": True,
     },
     "zip": {
         "has_mime_type": _is_zip,
         "extractor": ZipReader,
-        "mode": "annotation",
+        "mode": TaskMode.ANNOTATION,
         "unique": True,
     },
 }

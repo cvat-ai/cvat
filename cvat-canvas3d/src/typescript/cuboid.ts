@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { OrientationVisibility, ViewType } from './canvas3dModel';
 import constants from './consts';
-import controlPointTexture from './controlPointTexture';
+import getCircleTexture from './controlPointTexture';
 import { disposeObject3D, disposeObjectResources } from './utils';
 
 export interface Indexable {
@@ -284,7 +284,7 @@ export function createResizeHelper(cuboid: CuboidModel, viewType: ViewType): voi
     const material = new THREE.SpriteMaterial({
         color: '#ff0000',
         opacity: 1,
-        map: controlPointTexture,
+        map: getCircleTexture,
     });
 
     const positions = cuboid.getResizeHelperPositions();
@@ -315,7 +315,7 @@ export function createRotationHelper(cuboid: CuboidModel, viewType: ViewType): v
         const rotationHelper = new THREE.Sprite(new THREE.SpriteMaterial({
             color: '#33b864',
             opacity: 1,
-            map: controlPointTexture,
+            map: getCircleTexture,
         }));
         rotationHelper.renderOrder = Number.MAX_SAFE_INTEGER;
         rotationHelper.name = constants.ROTATION_HELPER_NAME;

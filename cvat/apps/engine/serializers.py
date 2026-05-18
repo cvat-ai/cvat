@@ -44,7 +44,7 @@ from cvat.apps.engine.cloud_provider import (
     get_cloud_storage_instance,
 )
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.media_providers.frame_provider import TaskFrameProvider
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
@@ -179,9 +179,9 @@ class _CollectionSummarySerializer(serializers.Serializer):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
-    count = serializers.IntegerField(source='total_jobs_count')
-    completed = serializers.IntegerField(source='completed_jobs_count')
-    validation = serializers.IntegerField(source='validation_jobs_count')
+    count = serializers.IntegerField(source='total_jobs_count', default=0)
+    completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
+    validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
@@ -821,17 +821,24 @@ class JobReadSerializer(serializers.ModelSerializer):
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     frame_count = serializers.ReadOnlyField(source="segment.frame_count")
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
-    dimension = serializers.ChoiceField(
-        source='segment.task.dimension', choices=models.DimensionType.choices(), read_only=True
-    )
-    media_type = serializers.ChoiceField(
-        source='segment.task.media_type', choices=models.MediaType.choices, read_only=True
-    )
+
+    # We're using CharField to produce simple strings instead of enums in the generated SDK.
+    # SDK enums require explicit .value calls to access the string representation.
+    # TODO: move to ChoicesField when SDK supports seamless transition from string to enum
+    dimension = serializers.CharField(source='segment.task.dimension', read_only=True)
+    mode = serializers.CharField(source='segment.task.mode', read_only=True)
+    media_type = serializers.CharField(source='segment.task.media_type', read_only=True)
+
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
-    data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
-    data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
-    mode = serializers.ReadOnlyField(source='segment.task.mode')
+    data_original_chunk_type = serializers.ChoiceField(
+        source='segment.task.data.original_chunk_type', choices=models.DataChoice.choices(),
+        allow_blank=False, read_only=True,
+    )
+    data_compressed_chunk_type = serializers.ChoiceField(
+        source='segment.task.data.compressed_chunk_type', choices=models.DataChoice.choices(),
+        allow_blank=False, read_only=True,
+    )
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
@@ -847,8 +854,8 @@ class JobReadSerializer(serializers.ModelSerializer):
         fields = (
             'url', 'id', 'task_id', 'task_name', 'project_id', 'project_name',
             'assignee', 'guide_id',
-            'dimension', 'media_type',
-            'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
+            'dimension', 'mode', 'media_type',
+            'bug_tracker', 'status', 'stage', 'state', 'frame_count',
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
@@ -1251,7 +1258,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             enqueue_create_chunk_job,
             wait_for_rq_job,
         )
-        from cvat.apps.engine.media_providers.frame_provider import JobFrameProvider
+        from cvat.apps.engine.media_io.frame_provider import JobFrameProvider
 
         db_job = instance
         db_segment = db_job.segment
@@ -1518,7 +1525,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         frame_path_map: dict[int, str],
         segment_frame_map: dict[int,int],
     ):
-        from cvat.apps.engine.media_providers.frame_provider import prepare_image_chunk
+        from cvat.apps.engine.media_io.frame_provider import prepare_image_chunk
 
         db_segment = models.Segment.objects.select_related("task").get(pk=db_segment_id)
         initial_chunks_updated_date = db_segment.chunks_updated_date
@@ -2185,25 +2192,27 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
         else:
             assert False, f"Unknown validation mode {attrs['mode']}"
 
-        if "frame_selection_method" in attrs:
-            if attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                field_validation.require_one_of_fields(attrs, ['frame_count', 'frame_share'])
-            elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
-                field_validation.require_one_of_fields(
-                    attrs, ['frames_per_job_count', 'frames_per_job_share']
-                )
-            elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
-                field_validation.require_field(attrs, "frames")
+        if "frame_selection_method" not in attrs:
+            return super().validate(attrs)
 
-            if (
-                'frames' in attrs and
-                attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL
-            ):
-                raise serializers.ValidationError(
-                    '"frames" can only be used when "frame_selection_method" is "{}"'.format(
-                        models.JobFrameSelectionMethod.MANUAL
-                    )
+        if attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            field_validation.require_one_of_fields(attrs, ['frame_count', 'frame_share'])
+        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+            field_validation.require_one_of_fields(
+                attrs, ['frames_per_job_count', 'frames_per_job_share']
+            )
+        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
+            field_validation.require_field(attrs, "frames")
+
+        if (
+            'frames' in attrs and
+            attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL
+        ):
+            raise serializers.ValidationError(
+                '"frames" can only be used when "frame_selection_method" is "{}"'.format(
+                    models.JobFrameSelectionMethod.MANUAL
                 )
+            )
 
         if frames := attrs.get('frames'):
             unique_frames = set(frames)
@@ -2522,8 +2531,10 @@ class TaskReadListSerializer(serializers.ListSerializer):
 @extend_schema_serializer(deprecate_fields=["organization"])
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
-    data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
-    data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
+    data_compressed_chunk_type = serializers.ChoiceField(source='data.compressed_chunk_type',
+        choices=models.DataChoice.choices(), required=False, allow_blank=False, read_only=True)
+    data_original_chunk_type = serializers.ChoiceField(source='data.original_chunk_type',
+        choices=models.DataChoice.choices(), required=False, allow_blank=False, read_only=True)
     data_cloud_storage_id = serializers.ReadOnlyField(source='data.cloud_storage_id', required=False)
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
@@ -2534,7 +2545,14 @@ class TaskReadSerializer(serializers.ModelSerializer):
     project_name = serializers.SerializerMethodField()
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     organization_id = serializers.IntegerField(required=False, read_only=True, allow_null=True)
-    dimension = serializers.CharField(allow_blank=True, required=False)
+
+    # We're using CharField to produce simple strings instead of enums in the generated SDK.
+    # SDK enums require explicit .value calls to access the string representation.
+    # TODO: move to ChoicesField when SDK supports seamless transition from string to enum
+    dimension = serializers.CharField(allow_blank=True, required=False, read_only=True)
+    mode = serializers.CharField(allow_blank=True, required=False, read_only=True)
+    media_type = serializers.CharField(allow_blank=True, required=False, read_only=True)
+
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
@@ -2549,11 +2567,11 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'project_name', 'mode', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'project_id', 'project_name', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_original_chunk_type', 'data_compressed_chunk_type',
             'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data',
-            'dimension', 'media_type',
+            'dimension', 'mode', 'media_type',
             'subset', 'organization_id',
             'organization', # deprecated field
             'target_storage', 'source_storage', 'jobs', 'labels',
@@ -2592,15 +2610,17 @@ class TaskReadSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         representation['consensus_enabled'] = self.get_consensus_enabled(instance)
 
-        # TODO: decide about this, backward compatibility breaks if null is returned
-        if "mode" in representation:
-            representation["mode"] = representation["mode"] or ""
-        if "dimension" in representation:
-            representation["dimension"] = representation["dimension"] or ""
-
-        # TODO: decide about point clouds
-        if instance.media_type not in (models.MediaType.IMAGE, models.MediaType.VIDEO):
+        if instance.media_type not in (
+            models.MediaType.IMAGE, models.MediaType.VIDEO,
+            # TODO: deprecated for 3d, remove later
+            models.MediaType.POINT_CLOUD,
+        ):
             representation.pop("image_quality", None)
+
+        if not instance.media_type:
+            representation.pop("data_compressed_chunk_type", None)
+            representation.pop("data_original_chunk_type", None)
+            representation.pop("data_chunk_size", None)
 
         return representation
 
@@ -2905,7 +2925,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
-    dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
+    dimension = serializers.CharField(required=False, allow_null=True, read_only=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     tasks = TasksSummarySerializer(models.Task, url_filter_key='project_id')
@@ -2928,7 +2948,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
         task_dimension = next(
             (task.dimension for task in instance.tasks.all() if task.dimension),
-            None
+            None # backward compatibility; TODO: migrate to "" for consistency with tasks
         )
         response['task_subsets'] = list(task_subsets)
         response['dimension'] = task_dimension
@@ -3122,14 +3142,10 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         A list of valid frame ids. The None value means all frames are included.
         """))
     chunks_updated_date = serializers.DateTimeField()
-    dimension = serializers.ChoiceField(choices=models.DimensionType.choices())
-    media_type = serializers.ChoiceField(choices=models.MediaType.choices)
 
     class Meta:
         model = models.Data
         fields = (
-            'dimension',
-            'media_type',
             'chapters',
             'chunks_updated_date',
             'chunk_size',
@@ -3163,6 +3179,7 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         serialized = super().to_representation(instance)
 
         if hasattr(instance, 'audio'):
+            # TODO: deprecated for 3d, remove later
             serialized.pop('image_quality', None) # not relevant for audio
 
         return serialized
@@ -3332,9 +3349,7 @@ class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, default=0, allow_null=True)
-    source = serializers.ChoiceField(
-        choices=models.SourceType.choices(), default=models.SourceType.MANUAL
-    )
+    source = serializers.CharField(default=models.SourceType.MANUAL)
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3347,7 +3362,7 @@ class AnnotationSerializer(serializers.Serializer):
         return value
 
     def validate_group(self, value):
-        return value or 0 # backward compatibility for API
+        return value or 0 # backward compatibility; TODO: disallow on the DB level
 
     @cached_property
     def validate_id(self):

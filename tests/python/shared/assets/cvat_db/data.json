@@ -1009,7 +1009,7 @@
   "model": "engine.validationlayout",
   "pk": 8,
   "fields": {
-    "task_data": 36,
+    "task_data": 35,
     "mode": "gt",
     "frames_per_job_count": null,
     "frames": "[]",
@@ -1597,7 +1597,7 @@
 },
 {
   "model": "engine.data",
-  "pk": 36,
+  "pk": 35,
   "fields": {
     "content_size": 56401,
     "size": 6914,
@@ -1647,9 +1647,9 @@
 },
 {
   "model": "engine.audio",
-  "pk": 2,
+  "pk": 1,
   "fields": {
-    "data": 36,
+    "data": 35,
     "path": "sample2_with_cover.mp3",
     "sampling_rate": 24000,
     "has_cover_image": true
@@ -4808,8 +4808,8 @@
     "segment_size": 0,
     "status": "annotation",
     "data": null,
-    "dimension": "2d",
-    "media_type": null,
+    "dimension": "",
+    "media_type": "",
     "subset": "",
     "organization": null,
     "source_storage": null,
@@ -5443,10 +5443,10 @@
 },
 {
   "model": "engine.task",
-  "pk": 37,
+  "pk": 36,
   "fields": {
-    "created_date": "2026-04-22T15:19:13.508Z",
-    "updated_date": "2026-04-22T15:19:13.713Z",
+    "created_date": "2026-05-11T17:25:43.375Z",
+    "updated_date": "2026-05-11T17:25:43.643Z",
     "assignee": null,
     "assignee_updated_date": null,
     "project": null,
@@ -5458,9 +5458,9 @@
     "status": "annotation",
     "overlap": 0,
     "segment_size": 6914,
-    "data": 36,
-    "mode": "interpolation",
+    "data": 35,
     "dimension": "1d",
+    "mode": "interpolation",
     "media_type": "audio",
     "subset": "",
     "organization": 2,
@@ -7074,24 +7074,24 @@
 },
 {
   "model": "engine.segment",
-  "pk": 57,
+  "pk": 56,
   "fields": {
-    "task": 37,
+    "task": 36,
     "start_frame": 0,
     "stop_frame": 6913,
-    "chunks_updated_date": "2026-04-22T15:19:13.590Z",
+    "chunks_updated_date": "2026-05-11T17:25:43.503Z",
     "type": "range",
     "frames": "[]"
   }
 },
 {
   "model": "engine.segment",
-  "pk": 58,
+  "pk": 57,
   "fields": {
-    "task": 37,
+    "task": 36,
     "start_frame": 0,
     "stop_frame": 6913,
-    "chunks_updated_date": "2026-04-22T15:19:13.635Z",
+    "chunks_updated_date": "2026-05-11T17:25:43.566Z",
     "type": "range",
     "frames": "[]"
   }
@@ -8004,13 +8004,13 @@
 },
 {
   "model": "engine.job",
-  "pk": 65,
+  "pk": 64,
   "fields": {
-    "created_date": "2026-04-22T15:19:13.594Z",
-    "updated_date": "2026-04-22T15:19:13.690Z",
+    "created_date": "2026-05-11T17:25:43.509Z",
+    "updated_date": "2026-05-11T17:25:43.621Z",
     "assignee": null,
     "assignee_updated_date": null,
-    "segment": 57,
+    "segment": 56,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -8020,13 +8020,13 @@
 },
 {
   "model": "engine.job",
-  "pk": 66,
+  "pk": 65,
   "fields": {
-    "created_date": "2026-04-22T15:19:13.637Z",
-    "updated_date": "2026-04-22T15:19:13.711Z",
+    "created_date": "2026-05-11T17:25:43.568Z",
+    "updated_date": "2026-05-11T17:25:43.641Z",
     "assignee": null,
     "assignee_updated_date": null,
-    "segment": 58,
+    "segment": 57,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -9056,13 +9056,13 @@
 },
 {
   "model": "engine.label",
-  "pk": 94,
+  "pk": 93,
   "fields": {
-    "task": 37,
+    "task": 36,
     "project": null,
     "name": "event",
     "color": "#d76534",
-    "type": "any",
+    "type": "interval",
     "parent": null
   }
 },
@@ -9336,9 +9336,9 @@
 },
 {
   "model": "engine.attributespec",
-  "pk": 21,
+  "pk": 19,
   "fields": {
-    "label": 94,
+    "label": 93,
     "name": "speaker",
     "mutable": false,
     "input_type": "select",
@@ -9348,9 +9348,9 @@
 },
 {
   "model": "engine.attributespec",
-  "pk": 22,
+  "pk": 20,
   "fields": {
-    "label": 94,
+    "label": 93,
     "name": "tr-en",
     "mutable": true,
     "input_type": "text",
@@ -12214,7 +12214,7 @@
     "label": 73,
     "frame": 4,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12233,7 +12233,7 @@
     "label": 73,
     "frame": 5,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12252,7 +12252,7 @@
     "label": 73,
     "frame": 6,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12271,7 +12271,7 @@
     "label": 73,
     "frame": 7,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12290,7 +12290,7 @@
     "label": 73,
     "frame": 8,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12309,7 +12309,7 @@
     "label": 73,
     "frame": 9,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12328,7 +12328,7 @@
     "label": 73,
     "frame": 10,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12651,7 +12651,7 @@
     "label": 77,
     "frame": 23,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12670,7 +12670,7 @@
     "label": 77,
     "frame": 24,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12689,7 +12689,7 @@
     "label": 77,
     "frame": 24,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12708,7 +12708,7 @@
     "label": 77,
     "frame": 25,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12727,7 +12727,7 @@
     "label": 77,
     "frame": 27,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12746,7 +12746,7 @@
     "label": 77,
     "frame": 27,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "polygon",
     "occluded": false,
     "outside": false,
@@ -12765,7 +12765,7 @@
     "label": 78,
     "frame": 8,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12784,7 +12784,7 @@
     "label": 78,
     "frame": 8,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -12803,7 +12803,7 @@
     "label": 78,
     "frame": 9,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -13677,7 +13677,7 @@
     "label": 81,
     "frame": 1,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -13696,7 +13696,7 @@
     "label": 81,
     "frame": 1,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -13715,7 +13715,7 @@
     "label": 81,
     "frame": 1,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -13734,7 +13734,7 @@
     "label": 81,
     "frame": 3,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -13829,7 +13829,7 @@
     "label": 81,
     "frame": 8,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -13848,7 +13848,7 @@
     "label": 81,
     "frame": 8,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -13867,7 +13867,7 @@
     "label": 81,
     "frame": 9,
     "group": 0,
-    "source": "manual",
+    "source": "Ground truth",
     "type": "rectangle",
     "occluded": false,
     "outside": false,
@@ -16549,8 +16549,8 @@
   "model": "engine.labeledinterval",
   "pk": 1,
   "fields": {
-    "job": 65,
-    "label": 94,
+    "job": 64,
+    "label": 93,
     "group": 0,
     "source": "manual",
     "score": 1.0,
@@ -16562,8 +16562,8 @@
   "model": "engine.labeledinterval",
   "pk": 2,
   "fields": {
-    "job": 65,
-    "label": 94,
+    "job": 64,
+    "label": 93,
     "group": 0,
     "source": "manual",
     "score": 1.0,
@@ -16575,8 +16575,8 @@
   "model": "engine.labeledinterval",
   "pk": 3,
   "fields": {
-    "job": 66,
-    "label": 94,
+    "job": 65,
+    "label": 93,
     "group": 0,
     "source": "manual",
     "score": 1.0,
@@ -16588,8 +16588,8 @@
   "model": "engine.labeledinterval",
   "pk": 4,
   "fields": {
-    "job": 66,
-    "label": 94,
+    "job": 65,
+    "label": 93,
     "group": 0,
     "source": "manual",
     "score": 1.0,
@@ -16601,8 +16601,8 @@
   "model": "engine.labeledintervalattributeval",
   "pk": 1,
   "fields": {
-    "spec": 21,
-    "job": 65,
+    "spec": 19,
+    "job": 64,
     "value": "Bob",
     "interval": 1
   }
@@ -16611,8 +16611,8 @@
   "model": "engine.labeledintervalattributeval",
   "pk": 2,
   "fields": {
-    "spec": 22,
-    "job": 65,
+    "spec": 20,
+    "job": 64,
     "value": "",
     "interval": 1
   }
@@ -16621,8 +16621,8 @@
   "model": "engine.labeledintervalattributeval",
   "pk": 3,
   "fields": {
-    "spec": 21,
-    "job": 65,
+    "spec": 19,
+    "job": 64,
     "value": "Bob",
     "interval": 2
   }
@@ -16631,8 +16631,8 @@
   "model": "engine.labeledintervalattributeval",
   "pk": 4,
   "fields": {
-    "spec": 22,
-    "job": 65,
+    "spec": 20,
+    "job": 64,
     "value": "",
     "interval": 2
   }
@@ -16641,8 +16641,8 @@
   "model": "engine.labeledintervalattributeval",
   "pk": 5,
   "fields": {
-    "spec": 21,
-    "job": 66,
+    "spec": 19,
+    "job": 65,
     "value": "Bob",
     "interval": 3
   }
@@ -16651,8 +16651,8 @@
   "model": "engine.labeledintervalattributeval",
   "pk": 6,
   "fields": {
-    "spec": 22,
-    "job": 66,
+    "spec": 20,
+    "job": 65,
     "value": "",
     "interval": 3
   }
@@ -16661,8 +16661,8 @@
   "model": "engine.labeledintervalattributeval",
   "pk": 7,
   "fields": {
-    "spec": 21,
-    "job": 66,
+    "spec": 19,
+    "job": 65,
     "value": "Bob",
     "interval": 4
   }
@@ -16671,8 +16671,8 @@
   "model": "engine.labeledintervalattributeval",
   "pk": 8,
   "fields": {
-    "spec": 22,
-    "job": 66,
+    "spec": 20,
+    "job": 65,
     "value": "",
     "interval": 4
   }
@@ -18274,8 +18274,7 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18285,8 +18284,7 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18296,8 +18294,7 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18307,8 +18304,7 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18318,8 +18314,7 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18329,8 +18324,7 @@
     "report": 2,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18340,8 +18334,7 @@
     "report": 2,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18351,8 +18344,7 @@
     "report": 2,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18362,8 +18354,7 @@
     "report": 2,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18373,8 +18364,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18384,8 +18374,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18395,8 +18384,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18406,8 +18394,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18417,8 +18404,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18428,8 +18414,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18439,8 +18424,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18450,8 +18434,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18461,8 +18444,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18472,8 +18454,7 @@
     "report": 2,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18483,8 +18464,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18494,8 +18474,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18505,8 +18484,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18516,8 +18494,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_direction",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18527,8 +18504,7 @@
     "report": 2,
     "frame": 0,
     "type": "covered_annotation",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18538,8 +18514,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_attributes",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18549,8 +18524,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18560,8 +18534,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18571,8 +18544,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18582,8 +18554,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18593,8 +18564,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18604,8 +18574,7 @@
     "report": 2,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18615,8 +18584,7 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18626,8 +18594,7 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18637,8 +18604,7 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18648,8 +18614,7 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18659,8 +18624,7 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18670,8 +18634,7 @@
     "report": 2,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18681,8 +18644,7 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18692,8 +18654,7 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18703,8 +18664,7 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18714,8 +18674,7 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18725,8 +18684,7 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18736,8 +18694,7 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18747,8 +18704,7 @@
     "report": 4,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18758,8 +18714,7 @@
     "report": 4,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18769,8 +18724,7 @@
     "report": 4,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18780,8 +18734,7 @@
     "report": 4,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18791,8 +18744,7 @@
     "report": 4,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18802,8 +18754,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18813,8 +18764,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18824,8 +18774,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18835,8 +18784,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18846,8 +18794,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18857,8 +18804,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18868,8 +18814,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18879,8 +18824,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18890,8 +18834,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18901,8 +18844,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18912,8 +18854,7 @@
     "report": 4,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18923,8 +18864,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18934,8 +18874,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18945,8 +18884,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -18956,8 +18894,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_direction",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18967,8 +18904,7 @@
     "report": 4,
     "frame": 0,
     "type": "covered_annotation",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18978,8 +18914,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_attributes",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -18989,8 +18924,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19000,8 +18934,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19011,8 +18944,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19022,8 +18954,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19033,8 +18964,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19044,8 +18974,7 @@
     "report": 4,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19055,8 +18984,7 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19066,8 +18994,7 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19077,8 +19004,7 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19088,8 +19014,7 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19099,8 +19024,7 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19110,8 +19034,7 @@
     "report": 4,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19121,8 +19044,7 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19132,8 +19054,7 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19143,8 +19064,7 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19154,8 +19074,7 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19165,8 +19084,7 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19176,8 +19094,7 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19187,8 +19104,7 @@
     "report": 6,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19198,8 +19114,7 @@
     "report": 6,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19209,8 +19124,7 @@
     "report": 6,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19220,8 +19134,7 @@
     "report": 6,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19231,8 +19144,7 @@
     "report": 6,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19242,8 +19154,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19253,8 +19164,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19264,8 +19174,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19275,8 +19184,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19286,8 +19194,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19297,8 +19204,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19308,8 +19214,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19319,8 +19224,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19330,8 +19234,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19341,8 +19244,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19352,8 +19254,7 @@
     "report": 6,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19363,8 +19264,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19374,8 +19274,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19385,8 +19284,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19396,8 +19294,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_direction",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19407,8 +19304,7 @@
     "report": 6,
     "frame": 0,
     "type": "covered_annotation",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19418,8 +19314,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_attributes",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19429,8 +19324,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19440,8 +19334,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19451,8 +19344,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19462,8 +19354,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19473,8 +19364,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19484,8 +19374,7 @@
     "report": 6,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19495,8 +19384,7 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19506,8 +19394,7 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19517,8 +19404,7 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19528,8 +19414,7 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19539,8 +19424,7 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19550,8 +19434,7 @@
     "report": 6,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19561,8 +19444,7 @@
     "report": 9,
     "frame": 5,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19572,8 +19454,7 @@
     "report": 10,
     "frame": 4,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19583,8 +19464,7 @@
     "report": 10,
     "frame": 4,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19594,8 +19474,7 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19605,8 +19484,7 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19616,8 +19494,7 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19627,8 +19504,7 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19638,8 +19514,7 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19649,8 +19524,7 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19660,8 +19534,7 @@
     "report": 12,
     "frame": 0,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19671,8 +19544,7 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19682,8 +19554,7 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19693,8 +19564,7 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19704,8 +19574,7 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19715,8 +19584,7 @@
     "report": 12,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19726,8 +19594,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19737,8 +19604,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19748,8 +19614,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19759,8 +19624,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19770,8 +19634,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19781,8 +19644,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19792,8 +19654,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19803,8 +19664,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19814,8 +19674,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19825,8 +19684,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19836,8 +19694,7 @@
     "report": 12,
     "frame": 0,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19847,8 +19704,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19858,8 +19714,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19869,8 +19724,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_label",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19880,8 +19734,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_direction",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19891,8 +19744,7 @@
     "report": 12,
     "frame": 0,
     "type": "covered_annotation",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19902,8 +19754,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_attributes",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19913,8 +19764,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19924,8 +19774,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19935,8 +19784,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19946,8 +19794,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19957,8 +19804,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19968,8 +19814,7 @@
     "report": 12,
     "frame": 0,
     "type": "mismatching_groups",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -19979,8 +19824,7 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -19990,8 +19834,7 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20001,8 +19844,7 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20012,8 +19854,7 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20023,8 +19864,7 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20034,8 +19874,7 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20045,8 +19884,7 @@
     "report": 12,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20056,8 +19894,7 @@
     "report": 14,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20067,8 +19904,7 @@
     "report": 14,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20078,8 +19914,7 @@
     "report": 14,
     "frame": 1,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20089,8 +19924,7 @@
     "report": 14,
     "frame": 3,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -20100,8 +19934,7 @@
     "report": 16,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20111,8 +19944,7 @@
     "report": 16,
     "frame": 0,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20122,8 +19954,7 @@
     "report": 16,
     "frame": 2,
     "type": "low_overlap",
-    "severity": "warning",
-    "attributes": ""
+    "severity": "warning"
   }
 },
 {
@@ -20133,8 +19964,7 @@
     "report": 17,
     "frame": 6,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20144,8 +19974,7 @@
     "report": 17,
     "frame": 6,
     "type": "missing_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -20155,8 +19984,7 @@
     "report": 17,
     "frame": 5,
     "type": "extra_annotation",
-    "severity": "error",
-    "attributes": ""
+    "severity": "error"
   }
 },
 {
@@ -24230,11 +24058,11 @@
 },
 {
   "model": "quality_control.qualitysettings",
-  "pk": 49,
+  "pk": 48,
   "fields": {
-    "created_date": "2026-04-22T15:19:13.553Z",
-    "updated_date": "2026-04-22T15:19:13.553Z",
-    "task": 37,
+    "created_date": "2026-05-11T17:25:43.435Z",
+    "updated_date": "2026-05-11T17:25:43.435Z",
+    "task": 36,
     "project": null,
     "inherit": true,
     "job_filter": "",
