@@ -10,7 +10,7 @@ import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 
 import './styles.scss';
-import { DimensionType, Job } from 'cvat-core-wrapper';
+import { Job } from 'cvat-core-wrapper';
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
 import SingleShapeWorkspace from 'components/annotation-page/single-shape-workspace/single-shape-workspace';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
@@ -28,6 +28,7 @@ import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 import { EventScope } from 'cvat-core/src/enums';
+import { useAudioAnnotationsEnabled } from 'utils/feature-flags';
 import SearchFramesModal from './top-bar/search-modal';
 
 interface Props {
@@ -137,9 +138,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         }
     }, [job, workspace]);
 
-    const isAudioJob = !!job && job.dimension === DimensionType.DIMENSION_1D;
+    // Audio master switch: feature flag can disable audio workspace even when state asks for it.
+    const audioEnabled = useAudioAnnotationsEnabled();
+    const isAudio = workspace === Workspace.AUDIO && audioEnabled;
 
-    if (job === null || (!annotationsInitialized && !isAudioJob)) {
+    if (job === null || (!annotationsInitialized && !isAudio)) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
@@ -159,14 +162,10 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 {workspace === Workspace.ATTRIBUTES && <AttributeAnnotationWorkspace />}
                 {workspace === Workspace.TAGS && <TagAnnotationWorkspace />}
                 {workspace === Workspace.REVIEW && <ReviewAnnotationsWorkspace />}
-                {workspace === Workspace.AUDIO && <AudioWorkspaceContainer />}
+                {isAudio && <AudioWorkspaceContainer />}
             </Layout.Content>
             <FiltersModalComponent />
-            {workspace === Workspace.AUDIO ? (
-                <AudioStatisticsModalComponent />
-            ) : (
-                <StatisticsModalComponent />
-            )}
+            {isAudio ? <AudioStatisticsModalComponent /> : <StatisticsModalComponent />}
             <SearchFramesModal />
         </Layout>
     );
