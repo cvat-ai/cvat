@@ -1096,10 +1096,6 @@ class JobReadSerializer(serializers.ModelSerializer):
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data["data_compressed_chunk_type"] = models.DataChoice.IMAGESET
 
-        if instance.segment.task.media_type == models.MediaType.AUDIO:
-            data.pop("data_compressed_chunk_type", None)
-            data.pop("data_original_chunk_type", None)
-
         if "replicas_count" in self.fields:
             data["replicas_count"] = getattr(instance, "child_jobs__count", 0)
             data["consensus_replicas"] = data["replicas_count"]
@@ -1724,7 +1720,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         frame_path_map: dict[int, str],
         segment_frame_map: dict[int, int],
     ):
-        from cvat.apps.engine.media_io.frame_provider import prepare_chunk
+        from cvat.apps.engine.media_io.frame_provider import prepare_image_chunk
 
         db_segment = models.Segment.objects.select_related("task").get(pk=db_segment_id)
         initial_chunks_updated_date = db_segment.chunks_updated_date
@@ -1742,7 +1738,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 )
 
         with closing(_iterate_chunk_frames()) as frame_iter:
-            chunk, _ = prepare_chunk(
+            chunk, _ = prepare_image_chunk(
                 frame_iter,
                 quality=quality,
                 db_task=db_task,
@@ -2977,7 +2973,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         ):
             representation.pop("image_quality", None)
 
-        if not instance.media_type or instance.media_type == models.MediaType.AUDIO:
+        if not instance.media_type:
             representation.pop("data_compressed_chunk_type", None)
             representation.pop("data_original_chunk_type", None)
             representation.pop("data_chunk_size", None)
