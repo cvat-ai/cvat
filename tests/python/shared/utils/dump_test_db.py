@@ -134,6 +134,8 @@ SORTABLE_LIST_FIELDS: dict[str, frozenset[str]] = {
 # round-trip is idempotent.
 ZERO_MS_PATTERN = r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.000(Z|[+-]\d{2}:\d{2})$"
 
+_DEFAULT = object()
+
 
 def _strip_zero_milliseconds(value: Any) -> Any:
     if not isinstance(value, str):
@@ -155,8 +157,11 @@ def _pk_sort_key(pk: Any) -> tuple:
 def _normalize_record(
     record: dict[str, Any],
     *,
-    sortable_list_fields: dict[str, frozenset[str]] = SORTABLE_LIST_FIELDS,
+    sortable_list_fields: dict[str, frozenset[str]] | Any = _DEFAULT,
 ) -> dict[str, Any]:
+    if sortable_list_fields is _DEFAULT:
+        sortable_list_fields = SORTABLE_LIST_FIELDS
+
     model = record.get("model", "")
     fields = record.get("fields", {})
     sortable = sortable_list_fields.get(model, frozenset())
@@ -179,8 +184,11 @@ def _preserve_volatile(
     records: list[dict[str, Any]],
     reference: list[dict[str, Any]],
     *,
-    volatile_fields: dict[str, frozenset[str]] = VOLATILE_FIELDS,
+    volatile_fields: dict[str, frozenset[str]] | Any = _DEFAULT,
 ) -> list[dict[str, Any]]:
+    if volatile_fields is _DEFAULT:
+        volatile_fields = VOLATILE_FIELDS
+
     ref_index = {
         (r.get("model", ""), _pk_sort_key(r.get("pk"))): r.get("fields", {}) for r in reference
     }
@@ -207,11 +215,18 @@ def normalize(
     records: list[dict[str, Any]],
     *,
     reference: list[dict[str, Any]] | None = None,
-    volatile_fields: dict[str, frozenset[str]] = VOLATILE_FIELDS,
-    sortable_list_fields: dict[str, frozenset[str]] = SORTABLE_LIST_FIELDS,
+    volatile_fields: dict[str, frozenset[str]] | Any = _DEFAULT,
+    sortable_list_fields: dict[str, frozenset[str]] | Any = _DEFAULT,
 ) -> list[dict[str, Any]]:
     """Return ``records`` sorted and field-normalized, with volatile fields
     optionally preserved from ``reference``."""
+
+    if volatile_fields is _DEFAULT:
+        volatile_fields = VOLATILE_FIELDS
+
+    if sortable_list_fields is _DEFAULT:
+        sortable_list_fields = _DEFAULT
+
     normalized = [_normalize_record(r, sortable_list_fields=sortable_list_fields) for r in records]
 
     if reference is not None:
