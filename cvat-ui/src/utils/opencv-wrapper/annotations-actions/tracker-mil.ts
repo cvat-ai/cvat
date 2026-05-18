@@ -22,13 +22,9 @@ function imageBitmapToImageData(imageBitmap: ImageBitmap): ImageData {
 
 export default class OpenCVTrackerMIL extends BaseCollectionAction {
     #instance: Job | Task | null;
-
     #targetFrame: number;
-
     #convertRectangleShapesToTracks: boolean;
-
     readonly #openCVWrapper: any;
-
     readonly #name: string;
 
     public constructor(openCVWrapper: any) {

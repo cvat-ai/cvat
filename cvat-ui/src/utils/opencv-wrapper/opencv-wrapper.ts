@@ -24,11 +24,8 @@ export type OpenCVTracker = OpenCVTrackingWrapper['trackerMIL'];
 
 export class OpenCVWrapper {
     private initialized: boolean;
-
     private onProgress: ((percent: number) => void) | null;
-
     private injectionProcess: Promise<void> | null;
-
     private cvInterface: OpenCVInterface | null;
 
     public constructor() {
@@ -42,16 +39,13 @@ export class OpenCVWrapper {
         if (!this.cvInterface) {
             throw new Error('OpenCV is not initialized. Please call initialize() method first.');
         }
-
         return this.cvInterface;
     }
 
     private async inject(): Promise<void> {
         let cacheStore: Cache | null = null;
-
         try {
             const CACHE_NAME = 'cached_assets';
-
             cacheStore = 'caches' in window ? await caches?.open(CACHE_NAME) : null;
         } catch {
             // cache not available, do nothing
@@ -69,7 +63,6 @@ export class OpenCVWrapper {
         }
 
         let bytes: Uint8Array;
-
         if (fromCache) {
             bytes = new Uint8Array(await response.arrayBuffer());
             this.onProgress?.(100);
@@ -85,10 +78,8 @@ export class OpenCVWrapper {
 
             const reader = response.body.getReader();
             const chunks: Uint8Array[] = [];
-
             while (!received) {
                 const { done, value } = await reader.read();
-
                 received = done;
 
                 if (value instanceof Uint8Array) {
@@ -98,14 +89,12 @@ export class OpenCVWrapper {
                     // Cypress workaround: content-length is always zero in cypress, it is done optional here
                     // Just progress bar will be disabled
                     const percentage = contentLength ? (receivedLength * 100) / contentLength : 0;
-
                     this.onProgress?.(+percentage.toFixed(0));
                 }
             }
 
             let offset = 0;
             bytes = new Uint8Array(receivedLength);
-
             for (const chunk of chunks) {
                 bytes.set(chunk, offset);
                 offset += chunk.length;
@@ -116,13 +105,10 @@ export class OpenCVWrapper {
                     // content may be gzip-encoded, but we store decoded version
                     // so, need to remove irrelevant headers
                     const headers = new Headers(response.headers);
-
                     headers.delete('Content-Encoding');
                     headers.delete('Content-Length');
                     headers.set('Content-Length', bytes.length.toString());
-
                     const cachedResponse = new Response(bytes.slice(), { headers });
-
                     await cacheStore.put(config.OPENCV_PATH, cachedResponse);
                 } catch {
                     // could not write to cache, but ok, do nothing
@@ -131,7 +117,6 @@ export class OpenCVWrapper {
         }
 
         const decodedScript = new TextDecoder('utf-8').decode(bytes);
-
         await new Promise<void>((resolve, reject) => {
             (window as any).Module = {
                 onRuntimeInitialized: () => {
@@ -144,7 +129,6 @@ export class OpenCVWrapper {
                 // Inject OpenCV to DOM
                 // eslint-disable-next-line no-new-func
                 const OpenCVConstructor = new Function(decodedScript);
-
                 OpenCVConstructor();
             } catch (error: unknown) {
                 delete (window as any).Module;
@@ -219,7 +203,6 @@ export class OpenCVWrapper {
                         [val[0] + left, val[1] + top]
                     )));
                 }
-
                 throw new Error('Empty contour received from state');
             } finally {
                 src.delete();
@@ -248,7 +231,6 @@ export class OpenCVWrapper {
             points: Int32Array.from(state.points!),
             shapeType: state.shapeType,
         });
-
         return contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
     };
 
@@ -278,5 +260,4 @@ export class OpenCVWrapper {
 
 const openCVWrapper = new OpenCVWrapper();
 await core.actions.register(new TrackerMILAction(openCVWrapper));
-
 export default openCVWrapper;
