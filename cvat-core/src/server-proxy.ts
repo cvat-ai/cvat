@@ -1629,7 +1629,7 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
     }
 }
 
-async function getData(jid: number, chunk: number, quality: ChunkQuality, retry = 0): Promise<ArrayBuffer> {
+async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
     try {
@@ -1642,28 +1642,6 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
             },
             responseType: 'arraybuffer',
         });
-
-        const contentLength = +(response.headers || {})['content-length'];
-        if (Number.isInteger(contentLength) && response.data.byteLength < +contentLength) {
-            if (retry < 10) {
-                // corrupted zip tmp workaround
-                // if content length more than received byteLength, request the chunk again
-                // and log this error
-                setTimeout(() => {
-                    throw new Error(
-                        `Truncated chunk, try: ${retry}. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
-                        `Body size: ${response.data.byteLength}`,
-                    );
-                });
-                return await getData(jid, chunk, quality, retry + 1);
-            }
-
-            // not to try anymore, throw explicit error
-            throw new Error(
-                `Truncated chunk. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
-                `Body size: ${response.data.byteLength}`,
-            );
-        }
 
         return response.data;
     } catch (errorData) {
