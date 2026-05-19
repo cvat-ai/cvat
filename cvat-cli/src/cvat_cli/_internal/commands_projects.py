@@ -3,14 +3,18 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
-import os
 import textwrap
 
 from cvat_sdk import Client, models
-from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
-from cvat_sdk.core.proxies.types import Location
 
-from .command_base import CommandGroup, GenericCommand, GenericDeleteCommand, GenericListCommand
+from .command_base import (
+    CommandGroup,
+    GenericCommand,
+    GenericCreateFromBackupCommand,
+    GenericDeleteCommand,
+    GenericDownloadBackupCommand,
+    GenericListCommand,
+)
 from .parsers import parse_label_arg
 
 COMMANDS = CommandGroup(description="Perform operations on CVAT projects.")
@@ -93,61 +97,10 @@ class ProjectDelete(GenericDeleteCommand, GenericProjectCommand):
 
 
 @COMMANDS.command_class("backup")
-class ProjectBackup:
-    description = """Download a project backup."""
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("project_id", type=int, help="project ID")
-        parser.add_argument(
-            "filename",
-            type=str,
-            nargs="?",
-            default="",
-            help="output file or directory (default: current directory)",
-        )
-        parser.add_argument(
-            "--completion_verification_period",
-            dest="status_check_period",
-            default=2,
-            type=float,
-            help="time interval between checks if archive building has been finished, in seconds",
-        )
-
-    def execute(
-        self, client: Client, *, project_id: int, filename: str, status_check_period: int
-    ) -> None:
-        if not filename:
-            filename = os.getcwd()
-
-        if filename.endswith((os.sep, os.altsep or os.sep)):
-            os.makedirs(filename, exist_ok=True)
-
-        client.projects.retrieve(obj_id=project_id).download_backup(
-            filename=filename,
-            status_check_period=status_check_period,
-            pbar=DeferredTqdmProgressReporter(),
-            location=Location.LOCAL,
-        )
+class ProjectBackup(GenericDownloadBackupCommand, GenericProjectCommand):
+    pass
 
 
 @COMMANDS.command_class("create-from-backup")
-class ProjectCreateFromBackup:
-    description = """Create a project from a backup file."""
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("filename", type=str, help="upload file")
-        parser.add_argument(
-            "--completion_verification_period",
-            dest="status_check_period",
-            default=2,
-            type=float,
-            help="time interval between checks if archive processing was finished, in seconds",
-        )
-
-    def execute(self, client: Client, *, filename: str, status_check_period: int) -> None:
-        project = client.projects.create_from_backup(
-            filename=filename,
-            status_check_period=status_check_period,
-            pbar=DeferredTqdmProgressReporter(),
-        )
-        print(project.id)
+class ProjectCreateFromBackup(GenericCreateFromBackupCommand, GenericProjectCommand):
+    pass

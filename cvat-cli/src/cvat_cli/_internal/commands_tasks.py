@@ -16,7 +16,14 @@ from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
 from cvat_sdk.core.proxies.types import Location
 
-from .command_base import CommandGroup, GenericCommand, GenericDeleteCommand, GenericListCommand
+from .command_base import (
+    CommandGroup,
+    GenericCommand,
+    GenericCreateFromBackupCommand,
+    GenericDeleteCommand,
+    GenericDownloadBackupCommand,
+    GenericListCommand,
+)
 from .common import FunctionLoader, configure_function_implementation_arguments
 from .parsers import parse_label_arg, parse_resource_type, parse_threshold
 
@@ -350,64 +357,13 @@ class TaskImportDataset:
 
 
 @COMMANDS.command_class("backup")
-class TaskBackup:
-    description = """Download a task backup."""
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("task_id", type=int, help="task ID")
-        parser.add_argument(
-            "filename",
-            type=str,
-            nargs="?",
-            default="",
-            help="output file or directory (default: current directory)",
-        )
-        parser.add_argument(
-            "--completion_verification_period",
-            dest="status_check_period",
-            default=2,
-            type=float,
-            help="time interval between checks if archive building has been finished, in seconds",
-        )
-
-    def execute(
-        self, client: Client, *, task_id: int, filename: str, status_check_period: int
-    ) -> None:
-        if not filename:
-            filename = os.getcwd()
-
-        if filename.endswith((os.sep, os.altsep or os.sep)):
-            os.makedirs(filename, exist_ok=True)
-
-        client.tasks.retrieve(obj_id=task_id).download_backup(
-            filename=filename,
-            status_check_period=status_check_period,
-            pbar=DeferredTqdmProgressReporter(),
-            location=Location.LOCAL,
-        )
+class TaskBackup(GenericDownloadBackupCommand, GenericTaskCommand):
+    pass
 
 
 @COMMANDS.command_class("create-from-backup")
-class TaskCreateFromBackup:
-    description = """Create a task from a backup file."""
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("filename", type=str, help="upload file")
-        parser.add_argument(
-            "--completion_verification_period",
-            dest="status_check_period",
-            default=2,
-            type=float,
-            help="time interval between checks if archive processing was finished, in seconds",
-        )
-
-    def execute(self, client: Client, *, filename: str, status_check_period: int) -> None:
-        task = client.tasks.create_from_backup(
-            filename=filename,
-            status_check_period=status_check_period,
-            pbar=DeferredTqdmProgressReporter(),
-        )
-        print(task.id)
+class TaskCreateFromBackup(GenericCreateFromBackupCommand, GenericTaskCommand):
+    pass
 
 
 @COMMANDS.command_class("auto-annotate")

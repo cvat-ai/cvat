@@ -38,23 +38,10 @@ the repository. To get the full package, one need to generate missing package fi
    If you want to edit package files, install them with `-e`:
 
    ```bash
-   python -m pip install -e ./cvat-sdk -e ./cvat-cli
+   pip install -e ./cvat-sdk -e ./cvat-cli
    ```
-
-   Make sure that you run `cvat-cli` from the same Python environment where
-   the packages were installed. For example, when using a virtual environment
-   in the repository root:
-
-   ```bash
-   source .venv/bin/activate
-   cvat-cli --help
    ```
-
-   You can also run the entry point directly without activating the
-   environment:
-
-   ```bash
-   ./.venv/bin/cvat-cli --help
+   pip install -e ./cvat-sdk -e ./cvat-cli
    ```
 
 ## How to edit templates

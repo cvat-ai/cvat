@@ -75,10 +75,3 @@ cvat-cli --auth admin:password \
     --server-host cvat.my.server.com --server-port 30123 \
     task ls
 ```
-
-Back up and restore a project:
-
-```bash
-cvat-cli --auth user project backup 42 project-42.zip
-cvat-cli --auth user project create-from-backup project-42.zip
-```
