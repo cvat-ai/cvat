@@ -5,12 +5,12 @@
 
 import csv
 import json
+import math
 import uuid
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from io import StringIO
-import math
 from time import sleep
 
 import pytest
@@ -67,7 +67,9 @@ class TestGetAuditEvents:
         return project.id, response.headers.get("X-Request-Id")
 
     @staticmethod
-    def _expected_job_count(*, task_size: int, segment_size: int, consensus_replicas: int = 0) -> int:
+    def _expected_job_count(
+        *, task_size: int, segment_size: int, consensus_replicas: int = 0
+    ) -> int:
         segments_count = math.ceil(task_size / segment_size)
         return segments_count * (consensus_replicas + 1)
 
