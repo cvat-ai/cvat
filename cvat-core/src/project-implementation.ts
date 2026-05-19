@@ -7,48 +7,63 @@ import serverProxy from './server-proxy';
 import { decodePreview } from './frames';
 import ProjectClass from './project';
 import { exportDataset, importDataset } from './annotations';
-import { SerializedLabel } from './server-response-types';
-import { Label } from './labels';
+import { getUpdatedLabels } from './labels';
 import AnnotationGuide from './guide';
 
 export default function implementProject(Project: typeof ProjectClass): typeof ProjectClass {
     Object.defineProperty(Project.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: ProjectClass,
+            fields: Parameters<typeof ProjectClass.prototype.save>[0],
         ): ReturnType<typeof ProjectClass.prototype.save> {
             if (typeof this.id !== 'undefined') {
                 const projectData = this._updateTrigger.getUpdated(this, {
                     bugTracker: 'bug_tracker',
                     assignee: 'assignee_id',
-                });
+                    organizationId: 'organization_id',
+                    sourceStorage: 'source_storage',
+                    targetStorage: 'target_storage',
+                }) as Record<string, unknown> & {
+                    assignee_id?: { id: number } | null;
+                };
 
-                if (projectData.assignee_id) {
-                    projectData.assignee_id = projectData.assignee_id.id;
+                const updatedLabels = fields?.labels ? getUpdatedLabels(this.labels, fields.labels) : [];
+
+                // TODO: update assignee via "fields" instead
+                // It would be better implementation
+                let newAssigneeId: number | null;
+                if ('assignee_id' in projectData) {
+                    newAssigneeId = projectData.assignee_id?.id ?? null;
+                    delete projectData.assignee_id;
                 }
 
-                await Promise.all((projectData.labels || []).map((label: Label): Promise<unknown> => {
+                for await (const label of updatedLabels) {
                     if (label.deleted) {
-                        return serverProxy.labels.delete(label.id);
+                        await serverProxy.labels.delete(label.id);
                     }
 
                     if (label.patched) {
-                        return serverProxy.labels.update(label.id, label.toJSON());
+                        await serverProxy.labels.update(label.id, label.toJSON());
                     }
-
-                    return Promise.resolve();
-                }));
-
-                // leave only new labels to create them via project PATCH request
-                projectData.labels = (projectData.labels || [])
-                    .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
-                if (!projectData.labels.length) {
-                    delete projectData.labels;
                 }
 
+                // leave only new labels to create them via project PATCH request
+                const labelsToCreate = updatedLabels
+                    .filter((label) => !Number.isInteger(label.id))
+                    .map((el) => el.toJSON());
                 this._updateTrigger.reset();
+
                 let serializedProject = null;
-                if (Object.keys(projectData).length) {
-                    serializedProject = await serverProxy.projects.save(this.id, projectData);
+                if (
+                    Object.keys(projectData).length ||
+                    labelsToCreate.length ||
+                    typeof newAssigneeId !== 'undefined'
+                ) {
+                    serializedProject = await serverProxy.projects.save(this.id, {
+                        ...projectData,
+                        ...(typeof newAssigneeId !== 'undefined' ? { assignee_id: newAssigneeId } : {}),
+                        ...(labelsToCreate.length ? { labels: labelsToCreate } : {}),
+                    });
                 } else {
                     [serializedProject] = (await serverProxy.projects.get({ id: this.id }));
                 }
@@ -140,8 +155,15 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             targetStorage: Parameters<typeof ProjectClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof ProjectClass.prototype.backup>[1],
             fileName: Parameters<typeof ProjectClass.prototype.backup>[2],
+            lightweight: Parameters<typeof ProjectClass.prototype.backup>[3],
         ): ReturnType<typeof ProjectClass.prototype.backup> {
-            const rqID = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            const rqID = await serverProxy.projects.backup(
+                this.id,
+                targetStorage,
+                useDefaultSettings,
+                fileName,
+                lightweight,
+            );
             return rqID;
         },
     });

@@ -6,10 +6,14 @@
 import re
 import textwrap
 
-from drf_spectacular.authentication import SessionScheme, TokenScheme
+from drf_spectacular.authentication import BasicScheme, SessionScheme, TokenScheme
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.openapi import AutoSchema
 from rest_framework import serializers
+
+
+class BasicAuthenticationScheme(BasicScheme):
+    target_class = "cvat.apps.iam.authentication.BasicAuthenticationEx"
 
 
 class SignatureAuthenticationScheme(OpenApiAuthenticationExtension):
@@ -42,14 +46,12 @@ class TokenAuthenticationScheme(TokenScheme):
     def get_security_definition(self, auto_schema):
         schema = super().get_security_definition(auto_schema)
         schema["x-token-prefix"] = self.target.keyword
-        schema["description"] = textwrap.dedent(
-            f"""\
+        schema["description"] = textwrap.dedent(f"""\
             Deprecated.
 
             You can obtain an API key (the token) from the server response on
             the /api/auth/login/ endpoint.
-        """
-        )
+        """)
         return schema
 
 
@@ -65,13 +67,11 @@ class SessionAuthenticationScheme(SessionScheme):
     def get_security_definition(self, auto_schema):
         sessionid_schema = super().get_security_definition(auto_schema)
 
-        csrf_token_description = textwrap.dedent(
-            """\
+        csrf_token_description = textwrap.dedent("""\
             A CSRF protection token. Can be received in the 'csrftoken' cookie in the
             server response on the /api/auth/login endpoint. The 'Origin' header
             must also be specified in the request.
-        """
-        )
+        """)
 
         csrftoken_cookie_schema = {
             "type": "apiKey",

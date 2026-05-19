@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
@@ -19,7 +19,7 @@ const core = getCore();
 
 interface DetailsComponentProps {
     project: Project;
-    onUpdateProject: (project: Project) => void;
+    onUpdateProject: (project: Project, fields?: Parameters<Project['save']>[0]) => Promise<Project>;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
@@ -50,7 +50,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                     <Text type='secondary'>
                         {`Project #${project.id} created`}
                         {project.owner ? ` by ${project.owner.username}` : null}
-                        {` on ${moment(project.createdDate).format('MMMM Do YYYY')}`}
+                        {` on ${dayjs(project.createdDate).format('MMMM Do YYYY')}`}
                     </Text>
                     <MdGuideControl instanceType='project' id={project.id} />
                     <BugTrackerEditor
@@ -73,10 +73,11 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 </Col>
             </Row>
             <LabelsEditor
-                labels={project.labels.map((label: any): string => label.toJSON())}
+                labels={project.labels.map((label) => label.toJSON())}
                 onSubmit={(labels: any[]): void => {
-                    project.labels = labels.map((labelData): any => new core.classes.Label(labelData));
-                    onUpdateProject(project);
+                    onUpdateProject(project, {
+                        labels: labels.map((labelData): any => new core.classes.Label(labelData)),
+                    });
                 }}
             />
         </div>

@@ -57,11 +57,12 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
         cy.get(modalWindowClassName)
             .should('be.visible')
             .within(() => {
-                cy.contains('button', 'Update').click();
+                cy.contains('button', 'Replace annotations').click();
             });
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleTrack2Points);
     });

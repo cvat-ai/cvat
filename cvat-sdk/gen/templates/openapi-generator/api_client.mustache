@@ -484,10 +484,21 @@ class ApiClient(object):
 
         return self.pool.apply_async(self.__call_api, (), kwds=params)
 
-    def request(self, method, url, query_params=None, headers=None,
-                post_params=None, body=None, *, _parse_response=True,
-                _request_timeout=None, _check_status=True):
+    def request(
+        self,
+        method: str,
+        url: str,
+        query_params: typing.Optional[list[tuple[str, typing.Any]]] = None,
+        headers: typing.Optional[dict[str, typing.Any]] = None,
+        post_params: typing.Optional[typing.Union[list, dict]] = None,
+        body: typing.Optional[typing.Any] = None,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Optional[typing.Union[float, tuple[float, float]]] = None,
+        _check_status: bool = True,
+    ):
         """Makes the HTTP request using RESTClient."""
+
         if method == "GET":
             return self.rest_client.GET(url,
                                         query_params=query_params,
@@ -676,36 +687,48 @@ class ApiClient(object):
 
         return origin
 
-    def update_params_for_auth(self, headers, queries, auth_settings,
-                               resource_path, method, body, request_host: str, request_auths=None):
-        """Updates header and query params based on authentication setting.
+    def update_params_for_auth(
+        self,
+        headers: dict[str, str],
+        queries: list[tuple[str, typing.Any]],
+        auth_settings: typing.Optional[typing.Iterable[str]] = None,
+        resource_path: typing.Optional[str] = None,
+        method: str = "GET",
+        body: typing.Optional[typing.Any] = None,
+        request_host: typing.Optional[str] = None,
+        request_auths: typing.Optional[list[dict[str, typing.Any]]] = None,
+    ):
+        """Updates header and query params based on authentication settings.
 
-        :param headers: Header parameters dict to be updated.
+        :param headers: Headers dict to be updated.
         :param queries: Query parameters tuple list to be updated.
-        :param auth_settings: Authentication setting identifiers list.
+        :param auth_settings: Names of the authentication settings from the configuration
+            to use for the request. Can be overridden by passing "request_auths".
+            Different resources can have different authentication requirements
+            (e.g. allow unauthenticated requests or require a specific authentication token).
+            Passing "None" means use any configured authentication from the configuration.
         :param resource_path: A string representation of the HTTP request resource path.
         :param method: A string representation of the HTTP request method.
         :param body: A object representing the body of the HTTP request.
             The object type is the return value of _encoder.default().
         :param request_host: request host[:port]
-        :param request_auths: if set, the provided settings will
-            override the token in the configuration.
+        :param request_auths: The authentication settings to use instead of the configured ones.
         """
-        if not auth_settings:
-            return
-
         if request_auths:
             for auth_setting in request_auths:
                 self._apply_auth_params(headers, queries, resource_path, method, body, auth_setting)
             return
 
-        for auth in auth_settings:
-            auth_setting = self.configuration.auth_settings().get(auth)
+        if auth_settings is None:
+            auth_settings = self.configuration.auth_settings()
+
+        for auth_key in auth_settings:
+            auth_setting = self.configuration.auth_settings().get(auth_key)
             if auth_setting:
                 self._apply_auth_params(headers, queries, resource_path, method, body, auth_setting)
 
                 # A custom extension for CSRF HTTPS headers - add related headers automatically
-                if auth == 'csrfAuth' and 'Origin' not in headers:
+                if auth_key in ('csrfAuth', 'csrfHeaderAuth') and 'Origin' not in headers:
                     headers['Origin'] = self.build_origin_header(request_host)
 
     def _apply_auth_params(self, headers, queries, resource_path, method, body, auth_setting):

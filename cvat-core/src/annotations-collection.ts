@@ -68,12 +68,15 @@ export default class Collection {
         dimension: DimensionType;
         framesInfo: BasicInjection['framesInfo'];
         jobType: JobType;
+        replicasCount?: number;
     }) {
         this.stopFrame = data.stopFrame;
 
         this.labels = data.labels.reduce((labelAccumulator, label) => {
+            // eslint-disable-next-line no-param-reassign
             labelAccumulator[label.id] = label;
             (label?.structure?.sublabels || []).forEach((sublabel) => {
+                // eslint-disable-next-line no-param-reassign
                 labelAccumulator[sublabel.id] = sublabel;
             });
 
@@ -102,6 +105,7 @@ export default class Collection {
             nextClientID: () => ++config.globalObjectsCounter,
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
+            replicasCount: data.replicasCount,
         };
     }
 
@@ -334,7 +338,7 @@ export default class Collection {
                     keyframes[object.frame + 1].outside = true;
                     keyframes[object.frame + 1].frame++;
                     keyframes[object.frame + 1].attributes = [];
-                    (keyframes[object.frame + 1].elements || []).forEach((el) => {
+                    ((keyframes[object.frame + 1] as any).elements || []).forEach((el) => {
                         el.outside = keyframes[object.frame + 1].outside;
                         el.frame = keyframes[object.frame + 1].frame;
                     });
@@ -386,8 +390,7 @@ export default class Collection {
                 }
             } else {
                 throw new ArgumentError(
-                    `Trying to merge unknown object type: ${object.constructor.name}. ` +
-                        'Only shapes and tracks are expected.',
+                    'Trying to merge unknown object type. Only shapes and tracks are expected.',
                 );
             }
 
@@ -460,10 +463,10 @@ export default class Collection {
     }
 
     public merge(objectStates: ObjectState[]): void {
-        checkObjectType('shapes to merge', objectStates, null, Array);
+        checkObjectType('shapes to merge', objectStates, null, { cls: Array, name: 'Array' });
         if (!objectStates.length) return;
         const objectsForMerge = objectStates.map((state) => {
-            checkObjectType('object state', state, null, ObjectState);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
             const object = this.objects[state.clientID];
             if (typeof object === 'undefined') {
                 throw new ArgumentError(
@@ -585,7 +588,7 @@ export default class Collection {
     }
 
     public split(objectState: ObjectState, frame: number): void {
-        checkObjectType('object state', objectState, null, ObjectState);
+        checkObjectType('object state', objectState, null, { cls: ObjectState, name: 'ObjectState' });
         checkObjectType('frame', frame, 'integer', null);
 
         const object = this.objects[objectState.clientID] as Track;
@@ -626,10 +629,10 @@ export default class Collection {
     }
 
     public group(objectStates: ObjectState[], reset: boolean): number {
-        checkObjectType('shapes to group', objectStates, null, Array);
+        checkObjectType('shapes to group', objectStates, null, { cls: Array, name: 'Array' });
 
         const objectsForGroup = objectStates.map((state) => {
-            checkObjectType('object state', state, null, ObjectState);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
             const object = this.objects[state.clientID];
             if (typeof object === 'undefined') {
                 throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
@@ -666,9 +669,8 @@ export default class Collection {
         return groupIdx;
     }
 
-    public join(objectStates: ObjectState[], points: number[]): void {
-        checkObjectType('shapes to join', objectStates, null, Array);
-        checkObjectType('joined rle mask', points, null, Array);
+    public join(objectStates: ObjectState[], points: number[][]): void {
+        checkObjectType('shapes to join', objectStates, null, { cls: Array, name: 'Array' });
 
         if (objectStates.some((state, idx) => idx && state.frame !== objectStates[idx - 1].frame)) {
             throw new ArgumentError('All joined objects must be placed on the same frame');
@@ -678,24 +680,32 @@ export default class Collection {
         }
 
         const objectsToJoin = objectStates.map((state) => {
-            checkObjectType('object state', state, null, ObjectState);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
 
             const object = this.objects[state.clientID];
             if (typeof object === 'undefined') {
                 throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
             }
 
-            if (!(object instanceof MaskShape)) {
-                throw new ArgumentError(
-                    `Only shape masks can be joined. Found instance of: "${object.constructor.name}"`,
-                );
-            }
-
             return object;
         });
 
+        const isPolygonJoin = objectsToJoin[0] instanceof PolygonShape;
+        const isMaskJoin = objectsToJoin[0] instanceof MaskShape;
+
+        if (!isPolygonJoin && !isMaskJoin) {
+            throw new ArgumentError('Only polygons and masks can be joined');
+        }
+
+        if (isPolygonJoin && objectsToJoin.some((obj) => !(obj instanceof PolygonShape))) {
+            throw new ArgumentError('Cannot join polygons with other shape types');
+        }
+
+        if (isMaskJoin && objectsToJoin.some((obj) => !(obj instanceof MaskShape))) {
+            throw new ArgumentError('Cannot join masks with other shape types');
+        }
+
         if (objectsToJoin.length > 1) {
-            const rle = points;
             const labelAttributes = labelAttributesAsDict(objectsToJoin[0].label);
             const attrValues = validateAttributesList(objectAttributesAsList(objectStates[0]));
             for (const attr of attrValues) {
@@ -704,22 +714,31 @@ export default class Collection {
                 }
             }
 
-            // Append newly created object to the collection
-            const imported = this.import({
-                shapes: [{
+            const shapesToCreate = [];
+
+            for (const shapePoints of points) {
+                checkObjectType('joined shape points', shapePoints, null, { cls: Array, name: 'Array' });
+                const shapeType = isMaskJoin ? ShapeType.MASK : ShapeType.POLYGON;
+
+                shapesToCreate.push({
                     attributes: attrValues,
                     frame: objectsToJoin[0].frame,
                     group: 0,
                     label_id: objectsToJoin[0].label.id,
                     outside: false,
-                    occluded: objectsToJoin.some((object: MaskShape) => object.occluded),
-                    points: rle,
+                    occluded: objectsToJoin.some((object: any) => object.occluded),
+                    points: shapePoints,
                     rotation: 0,
-                    type: ShapeType.MASK,
-                    z_order: Math.max(...objectsToJoin.map((object: MaskShape) => object.zOrder)),
+                    type: shapeType,
+                    z_order: Math.max(...objectsToJoin.map((object: any) => object.zOrder)),
                     source: Source.MANUAL,
                     elements: [],
-                }],
+                });
+            }
+
+            // Append newly created object(s) to the collection
+            const imported = this.import({
+                shapes: shapesToCreate,
                 tracks: [],
                 tags: [],
             });
@@ -730,22 +749,29 @@ export default class Collection {
             }
 
             // handle history actions
-            const [importedShape] = imported.shapes;
+            const importedShapes = imported.shapes;
             this.history.do(
                 HistoryActions.JOINED_OBJECTS,
                 () => {
-                    importedShape.removed = true;
+                    for (const importedShape of importedShapes) {
+                        importedShape.removed = true;
+                    }
                     for (const object of objectsToJoin) {
                         object.removed = false;
                     }
                 },
                 () => {
-                    importedShape.removed = false;
+                    for (const importedShape of importedShapes) {
+                        importedShape.removed = false;
+                    }
                     for (const object of objectsToJoin) {
                         object.removed = true;
                     }
                 },
-                [...objectsToJoin.map((object) => object.clientID), importedShape.clientID],
+                [
+                    ...objectsToJoin.map((object) => object.clientID),
+                    ...importedShapes.map((shape) => shape.clientID),
+                ],
                 objectsToJoin[0].frame,
             );
         }
@@ -757,9 +783,9 @@ export default class Collection {
         }
 
         const [points1, points2] = results;
-        checkObjectType('sliced object id', state, null, ObjectState);
-        checkObjectType('first slicing contour', points1, null, Array);
-        checkObjectType('second slicing contour', points2, null, Array);
+        checkObjectType('sliced object', state, null, { cls: ObjectState, name: 'ObjectState' });
+        checkObjectType('first slicing contour', points1, null, { cls: Array, name: 'Array' });
+        checkObjectType('second slicing contour', points2, null, { cls: Array, name: 'Array' });
 
         points1.forEach(
             (el: number) => checkObjectType('first slicing contour element', el, 'number'),
@@ -770,9 +796,7 @@ export default class Collection {
 
         const slicedObject = this.objects[state.clientID];
         if (!(slicedObject instanceof PolygonShape || slicedObject instanceof MaskShape)) {
-            throw new ArgumentError(
-                `Only polygon shape or mask shape can be sliced. Got "${slicedObject.constructor.name}"`,
-            );
+            throw new ArgumentError('Only polygon shape or mask shape can be sliced');
         }
 
         const { width, height } = this.injection.framesInfo[slicedObject.frame];
@@ -864,6 +888,7 @@ export default class Collection {
                     if (delTrackKeyframesOnly) {
                         for (const keyframe of Object.keys(track.shapes)) {
                             if (+keyframe >= from && +keyframe <= to) {
+                                // eslint-disable-next-line no-param-reassign
                                 delete track.shapes[keyframe];
                                 if (track instanceof SkeletonTrack) {
                                     track.elements.forEach((element) => {
@@ -873,6 +898,7 @@ export default class Collection {
                                         }
                                     });
                                 }
+                                // eslint-disable-next-line no-param-reassign
                                 track.updated = Date.now();
                             }
                         }
@@ -941,6 +967,10 @@ export default class Collection {
                 .sort((a, b) => +a - +b)
                 .map((el) => +el)
                 .filter((frame) => !this.injection.framesInfo.isFrameDeleted(frame));
+
+            if (!keyframes.length) {
+                return;
+            }
 
             let prevKeyframe = keyframes[0];
             let visible = false;
@@ -1029,7 +1059,7 @@ export default class Collection {
     }
 
     public put(objectStates: ObjectState[]): number[] {
-        checkObjectType('shapes for put', objectStates, null, Array);
+        checkObjectType('shapes for put', objectStates, null, { cls: Array, name: 'Array' });
         const constructed = {
             shapes: [],
             tracks: [],
@@ -1037,12 +1067,14 @@ export default class Collection {
         };
 
         for (const state of objectStates) {
-            checkObjectType('object state', state, null, ObjectState);
-            checkObjectType('state client ID', state.clientID, null, null);
-            checkObjectType('state frame', state.frame, 'integer', null);
-            checkObjectType('state rotation', state.rotation || 0, 'number', null);
-            checkObjectType('state attributes', state.attributes, null, Object);
-            checkObjectType('state label', state.label, null, Label);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
+            if (state.clientID !== null) {
+                throw new ArgumentError('ObjectState.clientID must be null when adding new objects');
+            }
+            checkObjectType('state frame', state.frame, 'integer');
+            checkObjectType('state rotation', state.rotation ?? 0, 'number');
+            checkObjectType('state attributes', state.attributes, null, { cls: Object, name: 'Object' });
+            checkObjectType('state label', state.label, null, { cls: Label, name: 'Label' });
 
             const attributes = validateAttributesList(objectAttributesAsList(state));
             const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
@@ -1060,14 +1092,14 @@ export default class Collection {
                     source: state.source,
                 });
             } else {
-                checkObjectType('state occluded', state.occluded, 'boolean', null);
-                checkObjectType('state points', state.points, null, Array);
-                checkObjectType('state zOrder', state.zOrder, 'integer', null);
-                checkObjectType('state descriptions', state.descriptions, null, Array);
+                checkObjectType('state occluded', state.occluded, 'boolean');
+                checkObjectType('state points', state.points, null, { cls: Array, name: 'Array' });
+                checkObjectType('state zOrder', state.zOrder, 'integer');
+                checkObjectType('state descriptions', state.descriptions, null, { cls: Array, name: 'Array' });
                 state.descriptions.forEach((desc) => checkObjectType('state description', desc, 'string'));
 
                 for (const coord of state.points) {
-                    checkObjectType('point coordinate', coord, 'number', null);
+                    checkObjectType('point coordinate', coord, 'number');
                 }
 
                 if (!Object.values(ShapeType).includes(state.shapeType)) {
@@ -1166,21 +1198,22 @@ export default class Collection {
         }
 
         // Add constructed objects to a collection
-        // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
-        const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+        const importedArray = ([] as (Tag | Track | Shape)[])
+            .concat(imported.tags, imported.tracks, imported.shapes);
         const additionalUndo = [];
         const additionalRedo = [];
         const additionalClientIDs = [];
         let globalEmptyMaskOccurred = false;
         for (const object of importedArray) {
-            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels.enabled) {
+            if (object instanceof MaskShape && config.removeUnderlyingMaskPixels.enabled) {
                 const {
                     clientIDs,
                     emptyMaskOccurred,
                     undo: undoWithUnderlyingPixels,
                     redo: redoWithUnderlyingPixels,
-                } = (object as MaskShape).removeUnderlyingPixels(object.frame);
+                } = object.removeUnderlyingPixels(object.frame);
+
                 additionalUndo.push(undoWithUnderlyingPixels);
                 additionalRedo.push(redoWithUnderlyingPixels);
                 additionalClientIDs.push(clientIDs);
@@ -1223,14 +1256,14 @@ export default class Collection {
         state: ObjectState,
         distance: number | null,
     } {
-        checkObjectType('shapes for select', objectStates, null, Array);
+        checkObjectType('shapes for select', objectStates, null, { cls: Array, name: 'Array' });
         checkObjectType('x coordinate', x, 'number', null);
         checkObjectType('y coordinate', y, 'number', null);
 
         let minimumDistance = null;
         let minimumState = null;
         for (const state of objectStates) {
-            checkObjectType('object state', state, null, ObjectState);
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
             if (state.outside || state.hidden || state.objectType === ObjectType.TAG) {
                 continue;
             }
@@ -1375,7 +1408,9 @@ export default class Collection {
         }
 
         const filtersStr = JSON.stringify(annotationsFilters);
-        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+        const linearSearch = filtersStr.match(/"var":"width"/) ||
+            filtersStr.match(/"var":"height"/) ||
+            filtersStr.match(/"var":"rotation"/);
 
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
             if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {

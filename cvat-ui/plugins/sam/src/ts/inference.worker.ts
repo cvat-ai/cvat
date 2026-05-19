@@ -18,23 +18,23 @@ export interface InitBody {
 }
 
 export interface DecodeBody {
-    image_embeddings: Tensor;
-    point_coords: Tensor;
-    point_labels: Tensor;
-    orig_im_size: Tensor;
-    mask_input: Tensor;
-    has_mask_input: Tensor;
-    readonly [name: string]: Tensor;
-}
-
-export interface WorkerOutput {
-    action: WorkerAction;
-    error?: string;
+    imageEmbeddings: Float32Array;
+    pointCoords: Float32Array;
+    pointLabels: Float32Array;
+    maskInput: Float32Array | null;
+    width: number;
+    height: number;
 }
 
 export interface WorkerInput {
     action: WorkerAction;
     payload: InitBody | DecodeBody;
+}
+
+export interface SAMOutputItem {
+    mask_input: Float32Array;
+    points: Uint8ClampedArray;
+    bounds: [number, number, number, number];
 }
 
 const errorToMessage = (error: unknown): string => {
@@ -70,17 +70,38 @@ if ((self as any).importScripts) {
                 error: 'Worker was not initialized',
             });
         } else if (e.data.action === WorkerAction.DECODE) {
-            decoder.run((e.data.payload as DecodeBody)).then((results) => {
+            const body = e.data.payload as DecodeBody;
+            const inputs: Record<string, Tensor> = {
+                image_embeddings: new Tensor('float32', body.imageEmbeddings, [1, 256, 64, 64]),
+                point_coords: new Tensor('float32', body.pointCoords, [1, body.pointCoords.length / 2, 2]),
+                point_labels: new Tensor('float32', body.pointLabels, [1, body.pointLabels.length]),
+                orig_im_size: new Tensor('float32', [body.height, body.width]),
+                mask_input: body.maskInput ?
+                    new Tensor('float32', body.maskInput, [1, 1, 256, 256]) :
+                    new Tensor('float32', new Float32Array(256 * 256), [1, 1, 256, 256]),
+                has_mask_input: new Tensor('float32', [body.maskInput ? 1 : 0]),
+            };
+
+            decoder.run(inputs).then((results) => (
+                Promise.all([
+                    results.xtl.getData(),
+                    results.ytl.getData(),
+                    results.xbr.getData(),
+                    results.ybr.getData(),
+                    results.masks.getData(),
+                    results.low_res_masks.getData(),
+                ])
+            )).then((
+                [xtl, ytl, xbr, ybr, mask, lowResMask]:
+                [Int32Array, Int32Array, Int32Array, Int32Array, Float32Array, Float32Array],
+            ) => {
                 postMessage({
                     action: WorkerAction.DECODE,
-                    payload: {
-                        masks: results.masks,
-                        lowResMasks: results.low_res_masks,
-                        xtl: Number(results.xtl.data[0]),
-                        ytl: Number(results.ytl.data[0]),
-                        xbr: Number(results.xbr.data[0]),
-                        ybr: Number(results.ybr.data[0]),
-                    },
+                    payload: [{
+                        mask_input: lowResMask as Float32Array,
+                        points: new Uint8ClampedArray(mask.buffer, mask.byteOffset, mask.length),
+                        bounds: [Number(xtl[0]), Number(ytl[0]), Number(xbr[0]), Number(ybr[0])] as const,
+                    }] as SAMOutputItem[],
                 });
             }).catch((error: unknown) => {
                 postMessage({ action: WorkerAction.DECODE, error: errorToMessage(error) });

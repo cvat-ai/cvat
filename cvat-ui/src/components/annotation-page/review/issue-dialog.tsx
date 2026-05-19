@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
+import dayjs from 'dayjs';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined } from '@ant-design/icons';
@@ -15,10 +16,10 @@ import { Comment } from '@ant-design/compatible';
 import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
-import moment from 'moment';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Issue, Comment as CommentModel } from 'cvat-core-wrapper';
 import { deleteIssueAsync } from 'actions/review-actions';
+import { useDialogPositioning } from './use-dialog-positioning';
 
 interface Props {
     issue: Issue;
@@ -28,6 +29,8 @@ interface Props {
     isFetching: boolean;
     angle: number;
     scale: number;
+    clientCoordinates: [number, number];
+    canvasRect: DOMRect | null;
     collapse: () => void;
     resolve: () => void;
     reopen: () => void;
@@ -54,9 +57,21 @@ export default function IssueDialog(props: Props): JSX.Element {
         comment,
         highlight,
         blur,
+        clientCoordinates,
+        canvasRect,
     } = props;
 
     const { id, comments } = issue;
+
+    const position = useDialogPositioning({
+        ref,
+        top,
+        left,
+        scale,
+        angle,
+        clientCoordinates,
+        canvasRect,
+    });
 
     useEffect(() => {
         if (!resolved) {
@@ -82,8 +97,9 @@ export default function IssueDialog(props: Props): JSX.Element {
     }, [ref.current]);
 
     const onDeleteIssue = useCallback((): void => {
+        const issueNumber = typeof id === 'number' ? ` #${id}` : '';
         Modal.confirm({
-            title: `The issue${typeof id === 'number' ? ` #${id}` : ''} will be deleted.`,
+            title: `The issue${issueNumber} will be deleted.`,
             className: 'cvat-modal-confirm-remove-issue',
             onOk: () => {
                 collapse();
@@ -95,11 +111,11 @@ export default function IssueDialog(props: Props): JSX.Element {
             autoFocusButton: 'cancel',
             okText: 'Delete',
         });
-    }, []);
+    }, [id, collapse, dispatch]);
 
     const lines = comments.map(
         (_comment: CommentModel): JSX.Element => {
-            const created = _comment.createdDate ? moment(_comment.createdDate) : moment(moment.now());
+            const created = dayjs(_comment.createdDate ?? undefined);
             const diff = created.fromNow();
 
             return (
@@ -130,7 +146,7 @@ export default function IssueDialog(props: Props): JSX.Element {
 
     return ReactDOM.createPortal(
         <div
-            style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
+            style={{ top: position.top, left: position.left, transform: `scale(${scale}) rotate(${angle}deg)` }}
             ref={ref}
             className='cvat-issue-dialog'
         >

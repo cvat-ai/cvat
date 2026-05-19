@@ -67,6 +67,18 @@
         align-items: center;
         line-height: 14px;
     }
+
+    .cvat-task-details-cloud-storage {
+        margin-top: $grid-unit-size * 0.5;
+
+        .ant-form-item .ant-form-item-label >label::after {
+            display: none;
+        }
+
+        label span {
+            margin-right: $grid-unit-size;
+        }
+    }
 }
 
 .cvat-task-page {
@@ -140,7 +152,7 @@
     }
 }
 
-.cvat-jobs-list-filters-wrapper {
+.cvat-jobs-list-wrapper {
     display: flex;
     justify-content: space-between;
     margin-top: $grid-unit-size * 2;
@@ -150,6 +162,11 @@
     }
 
     .cvat-resource-page-filters {
-        margin-right: $grid-unit-size * 4;
+        margin-right: $grid-unit-size;
     }
+}
+
+.cvat-jobs-list-filters-wrapper {
+    margin-right: $grid-unit-size * 4;
+    display: flex;
 }

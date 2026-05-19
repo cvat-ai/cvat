@@ -1,6 +1,8 @@
+data_dir = "/vector-data-dir"
+
 [sources.http-events]
 type = "http_server"
-address = "0.0.0.0:80"
+address = "0.0.0.0:8282"
 encoding = "json"
 
 # Uncomment for debug
@@ -40,4 +42,5 @@ encoding.only_fields = [
     "org_id",
     "org_slug",
     "payload",
+    "access_token_id",
 ]

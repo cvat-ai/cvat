@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping, Sequence
-from typing import Callable, Optional, Union
+from collections.abc import Callable, Mapping, Sequence
+from typing import TypeAlias, cast
 
 import attrs
-from typing_extensions import TypeAlias
 
 import cvat_sdk.models as models
 from cvat_sdk.core import Client
@@ -18,7 +17,12 @@ from cvat_sdk.datasets.task_dataset import TaskDataset
 
 from ..attributes import attribute_value_validator
 from .exceptions import BadFunctionError
-from .interface import DetectionFunction, DetectionFunctionContext, DetectionFunctionSpec
+from .interface import (
+    DetectionAnnotation,
+    DetectionFunction,
+    DetectionFunctionContext,
+    DetectionFunctionSpec,
+)
 
 
 @attrs.frozen
@@ -29,11 +33,9 @@ class _AttributeNameMapping:
 @attrs.frozen
 class _SublabelNameMapping:
     name: str
-    attributes: Optional[Mapping[str, _AttributeNameMapping]] = attrs.field(
-        kw_only=True, default=None
-    )
+    attributes: Mapping[str, _AttributeNameMapping] | None = attrs.field(kw_only=True, default=None)
 
-    def map_attribute(self, name: str) -> Optional[_AttributeNameMapping]:
+    def map_attribute(self, name: str) -> _AttributeNameMapping | None:
         if self.attributes is None:
             return _AttributeNameMapping(name)
 
@@ -53,11 +55,9 @@ class _SublabelNameMapping:
 
 @attrs.frozen
 class _LabelNameMapping(_SublabelNameMapping):
-    sublabels: Optional[Mapping[str, _SublabelNameMapping]] = attrs.field(
-        kw_only=True, default=None
-    )
+    sublabels: Mapping[str, _SublabelNameMapping] | None = attrs.field(kw_only=True, default=None)
 
-    def map_sublabel(self, name: str) -> Optional[_SublabelNameMapping]:
+    def map_sublabel(self, name: str) -> _SublabelNameMapping | None:
         if self.sublabels is None:
             return _SublabelNameMapping(name)
 
@@ -77,9 +77,9 @@ class _LabelNameMapping(_SublabelNameMapping):
 
 @attrs.frozen
 class _SpecNameMapping:
-    labels: Optional[Mapping[str, _LabelNameMapping]] = attrs.field(kw_only=True, default=None)
+    labels: Mapping[str, _LabelNameMapping] | None = attrs.field(kw_only=True, default=None)
 
-    def map_label(self, name: str) -> Optional[_LabelNameMapping]:
+    def map_label(self, name: str) -> _LabelNameMapping | None:
         if self.labels is None:
             return _LabelNameMapping(name)
 
@@ -99,15 +99,15 @@ class _AnnotationMapper:
     @attrs.frozen
     class _SublabelIdMapping:
         id: int
-        attributes: Mapping[int, Optional[_AnnotationMapper._AttributeIdMapping]]
+        attributes: Mapping[int, _AnnotationMapper._AttributeIdMapping | None]
 
     @attrs.frozen
     class _LabelIdMapping(_SublabelIdMapping):
-        sublabels: Mapping[int, Optional[_AnnotationMapper._SublabelIdMapping]]
+        sublabels: Mapping[int, _AnnotationMapper._SublabelIdMapping | None]
         expected_num_elements: int
         expected_type: str
 
-    _SpecIdMapping: TypeAlias = Mapping[int, Optional[_LabelIdMapping]]
+    _SpecIdMapping: TypeAlias = Mapping[int, _LabelIdMapping | None]
 
     _spec_id_mapping: _SpecIdMapping
 
@@ -169,7 +169,7 @@ class _AnnotationMapper:
 
         def attribute_mapping(
             fun_attr: models.IAttribute,
-        ) -> Optional[_AnnotationMapper._AttributeIdMapping]:
+        ) -> _AnnotationMapper._AttributeIdMapping | None:
             attr_desc = f"attribute {fun_attr.name!r} of {sl_desc}"
 
             attr_nm = sl_nm.map_attribute(fun_attr.name)
@@ -216,7 +216,7 @@ class _AnnotationMapper:
 
         def sublabel_mapping(
             fun_sl: models.ISublabel,
-        ) -> Optional[_AnnotationMapper._SublabelIdMapping]:
+        ) -> _AnnotationMapper._SublabelIdMapping | None:
             sl_desc = f"sublabel {fun_sl.name!r} of {label_desc}"
 
             sublabel_nm = label_nm.map_sublabel(fun_sl.name)
@@ -263,7 +263,7 @@ class _AnnotationMapper:
 
         def label_id_mapping(
             fun_label: models.ILabel,
-        ) -> Optional[_AnnotationMapper._LabelIdMapping]:
+        ) -> _AnnotationMapper._LabelIdMapping | None:
             label_desc = f"label {fun_label.name!r}"
 
             label_nm = spec_nm.map_label(fun_label.name)
@@ -340,15 +340,15 @@ class _AnnotationMapper:
 
     def _remap_attributes(
         self,
-        shape: Union[models.LabeledShapeRequest, models.SubLabeledShapeRequest],
+        annotation: DetectionAnnotation | models.SubLabeledShapeRequest,
         label_id_mapping: _SublabelIdMapping,
     ) -> None:
         seen_attr_ids = set()
 
-        if hasattr(shape, "attributes"):
-            shape.attributes[:] = [
+        if hasattr(annotation, "attributes"):
+            annotation.attributes[:] = [
                 attribute
-                for attribute in shape.attributes
+                for attribute in annotation.attributes
                 if self._remap_attribute(attribute, label_id_mapping, seen_attr_ids)
             ]
 
@@ -427,50 +427,84 @@ class _AnnotationMapper:
             if getattr(shape, "elements", None):
                 raise BadFunctionError("function output non-skeleton shape with elements")
 
-    def _remap_shape(self, shape: models.LabeledShapeRequest, ds_frame: int) -> bool:
-        if hasattr(shape, "id"):
-            raise BadFunctionError("function output shape with preset id")
+    def _remap_annotation(
+        self, annotation: DetectionAnnotation, ds_frame: int, object_type: str
+    ) -> bool:
+        if hasattr(annotation, "id"):
+            raise BadFunctionError(f"function output {object_type} with preset id")
 
-        if hasattr(shape, "source"):
-            raise BadFunctionError("function output shape with preset source")
-        shape.source = "auto"
+        if hasattr(annotation, "source"):
+            raise BadFunctionError(f"function output {object_type} with preset source")
+        annotation.source = "auto"
 
-        if shape.frame != 0:
+        if annotation.frame != 0:
             raise BadFunctionError(
-                f"function output shape with unexpected frame number ({shape.frame})"
+                f"function output {object_type} with unexpected frame number ({annotation.frame})"
             )
 
-        shape.frame = ds_frame
+        annotation.frame = ds_frame
 
         try:
-            label_id_mapping = self._spec_id_mapping[shape.label_id]
+            label_id_mapping = self._spec_id_mapping[annotation.label_id]
         except KeyError:
             raise BadFunctionError(
-                f"function output shape with unknown label ID ({shape.label_id})"
+                f"function output {object_type} with unknown label ID ({annotation.label_id})"
             )
 
         if not label_id_mapping:
             return False
 
-        shape.label_id = label_id_mapping.id
+        annotation.label_id = label_id_mapping.id
 
-        if not self._are_label_types_compatible(shape.type.value, label_id_mapping.expected_type):
-            raise BadFunctionError(
-                f"function output shape of type {shape.type.value!r}"
-                f" (expected {label_id_mapping.expected_type!r})"
-            )
+        self._remap_attributes(annotation, label_id_mapping)
 
-        if shape.type.value == "mask" and self._conv_mask_to_poly:
-            raise BadFunctionError("function output mask shape despite conv_mask_to_poly=True")
+        if object_type == "shape":
+            shape = cast(models.LabeledShapeRequest, annotation)
 
-        self._remap_attributes(shape, label_id_mapping)
+            if not self._are_label_types_compatible(
+                shape.type.value, label_id_mapping.expected_type
+            ):
+                raise BadFunctionError(
+                    f"function output shape of type {shape.type.value!r}"
+                    f" (expected {label_id_mapping.expected_type!r})"
+                )
 
-        self._remap_elements(shape, ds_frame, label_id_mapping)
+            if annotation.type.value == "mask" and self._conv_mask_to_poly:
+                raise BadFunctionError("function output mask shape despite conv_mask_to_poly=True")
+
+            self._remap_elements(shape, ds_frame, label_id_mapping)
+        else:
+            if not self._are_label_types_compatible("tag", label_id_mapping.expected_type):
+                raise BadFunctionError(
+                    f"function output tag"
+                    f" (expected shape of type {label_id_mapping.expected_type!r})"
+                )
 
         return True
 
-    def validate_and_remap(self, shapes: list[models.LabeledShapeRequest], ds_frame: int) -> None:
-        shapes[:] = [shape for shape in shapes if self._remap_shape(shape, ds_frame)]
+    def validate_and_remap(
+        self,
+        annotations: Sequence[DetectionAnnotation],
+        ds_frame: int,
+    ) -> tuple[list[models.LabeledImageRequest], list[models.LabeledShapeRequest]]:
+        tags = []
+        shapes = []
+
+        for annotation in annotations:
+            if isinstance(annotation, models.LabeledImageRequest):
+                if self._remap_annotation(annotation, ds_frame, "tag"):
+                    tags.append(annotation)
+            elif isinstance(annotation, models.LabeledShapeRequest):
+                if self._remap_annotation(annotation, ds_frame, "shape"):
+                    shapes.append(annotation)
+            else:
+                raise BadFunctionError(
+                    f"function output an object of type {type(annotation).__name__!r} "
+                    f"(expected {models.LabeledImageRequest.__name__!r} "
+                    f"or {models.LabeledShapeRequest.__name__!r})"
+                )
+
+        return tags, shapes
 
     @staticmethod
     def _are_label_types_compatible(source_type: str, destination_type: str) -> bool:
@@ -481,7 +515,7 @@ class _AnnotationMapper:
 @attrs.frozen(kw_only=True)
 class _DetectionFunctionContextImpl(DetectionFunctionContext):
     frame_name: str
-    conf_threshold: Optional[float] = None
+    conf_threshold: float | None = None
     conv_mask_to_poly: bool = False
 
 
@@ -490,10 +524,10 @@ def annotate_task(
     task_id: int,
     function: DetectionFunction,
     *,
-    pbar: Optional[ProgressReporter] = None,
+    pbar: ProgressReporter | None = None,
     clear_existing: bool = False,
     allow_unmatched_labels: bool = False,
-    conf_threshold: Optional[float] = None,
+    conf_threshold: float | None = None,
     conv_mask_to_poly: bool = False,
 ) -> None:
     """
@@ -555,11 +589,12 @@ def annotate_task(
         conv_mask_to_poly=conv_mask_to_poly,
     )
 
+    tags = []
     shapes = []
 
     with pbar.task(total=len(dataset.samples), unit="samples"):
         for sample in pbar.iter(dataset.samples):
-            frame_shapes = function.detect(
+            frame_annotations = function.detect(
                 # https://github.com/pylint-dev/pylint/issues/9013
                 # pylint: disable-next=abstract-class-instantiated
                 _DetectionFunctionContextImpl(
@@ -569,20 +604,23 @@ def annotate_task(
                 ),
                 sample.media.load_image(),
             )
-            mapper.validate_and_remap(frame_shapes, sample.frame_index)
+            frame_tags, frame_shapes = mapper.validate_and_remap(
+                frame_annotations, sample.frame_index
+            )
+            tags.extend(frame_tags)
             shapes.extend(frame_shapes)
 
     client.logger.info("Uploading annotations to task %d...", task_id)
 
     if clear_existing:
         client.tasks.api.update_annotations(
-            task_id, labeled_data_request=models.LabeledDataRequest(shapes=shapes)
+            task_id, labeled_data_request=models.LabeledDataRequest(tags=tags, shapes=shapes)
         )
     else:
         client.tasks.api.partial_update_annotations(
             "create",
             task_id,
-            patched_labeled_data_request=models.PatchedLabeledDataRequest(shapes=shapes),
+            patched_labeled_data_request=models.PatchedLabeledDataRequest(tags=tags, shapes=shapes),
         )
 
     client.logger.info("Upload complete")

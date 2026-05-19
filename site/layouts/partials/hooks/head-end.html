@@ -1,0 +1,74 @@
+<style>
+    /* Docs content links */
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline; /* keep if you want hover underline */
+    }
+  </style>
+<style>
+    /* === Breadcrumbs (top) === */
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+    /* === Left sidebar (section tree) === */
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+    /* Optional: also tint the currently active item */
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+    /* === Right sidebar (Table of Contents) === */
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+    /* Page meta links (View source / Edit this page) in right sidebar */
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline; /* keep underline here if you like */
+    }
+    /* Hide the page-meta block but keep the ToC */
+    .td-page-meta { display: none !important; }
+
+    /* Add a visible title above the ToC without touching templates */
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";   /* or "In this article" */
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>

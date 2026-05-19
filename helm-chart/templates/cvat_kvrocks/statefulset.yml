@@ -84,6 +84,12 @@ spec:
           {{- with .Values.cvat.kvrocks.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          securityContext:
+            runAsNonRoot: true
+
+            # Workaround for <https://github.com/apache/kvrocks/issues/3135>.
+            # Can be removed after updating to Kvrocks 2.14+.
+            runAsUser: 999
       {{- with .Values.cvat.kvrocks.additionalVolumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
@@ -100,6 +106,9 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: "OnRootMismatch"
   {{- if .Values.cvat.kvrocks.defaultStorage.enabled }}
   volumeClaimTemplates:
   - metadata:
@@ -108,8 +117,15 @@ spec:
       labels:
         {{- include "cvat.labels" . | nindent 8 }}
         app: cvat-app
-        tier: kvroocks
+        tier: kvrocks
+      {{- with .Values.cvat.kvrocks.defaultStorage.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
+      {{- if .Values.cvat.kvrocks.defaultStorage.volumeAttributesClass.create }}
+      volumeAttributesClassName: {{ .Values.cvat.kvrocks.defaultStorage.volumeAttributesClass.name }}
+      {{- end }}
       accessModes:
       {{- if .Values.cvat.kvrocks.defaultStorage.accessModes }}
       {{ .Values.cvat.kvrocks.defaultStorage.accessModes | toYaml | nindent 6 }}

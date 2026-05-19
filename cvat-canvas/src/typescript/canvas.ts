@@ -11,7 +11,7 @@ import {
     CanvasModel, CanvasModelImpl, RectDrawingMethod,
     CuboidDrawingMethod, Configuration, Geometry, Mode,
     HighlightSeverity as _HighlightSeverity, CanvasHint as _CanvasHint,
-    PolyEditData,
+    PolyEditData, RenderData as _RenderData,
 } from './canvasModel';
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
@@ -21,8 +21,9 @@ import '../scss/canvas.scss';
 
 interface Canvas {
     html(): HTMLDivElement;
-    setup(frameData: any, objectStates: any[], zLayer?: number): void;
+    setup(frameData: any, objectStates: any[], zLayer?: number, renderData?: RenderData): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
+    translateFromSVG(points: number[]): number[];
     setupConflictRegions(clientID: number): number[];
     activate(clientID: number | null, attributeID?: number): void;
     highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void;
@@ -71,12 +72,16 @@ class CanvasImpl implements Canvas {
         return this.view.html();
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer = 0): void {
-        this.model.setup(frameData, objectStates, zLayer);
+    public setup(frameData: any, objectStates: any[], zLayer = 0, renderData?: RenderData): void {
+        this.model.setup(frameData, objectStates, zLayer, renderData);
     }
 
     public setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void {
         this.model.setupIssueRegions(issueRegions);
+    }
+
+    public translateFromSVG(points: number[]): number[] {
+        return this.view.translateFromSVG(points);
     }
 
     public setupConflictRegions(clientID: number): number[] {
@@ -192,6 +197,7 @@ export type InteractionData = _InteractionData;
 export type CanvasHint = _CanvasHint;
 export type InteractionResult = _InteractionResult;
 export type HighlightSeverity = _HighlightSeverity;
+export type RenderData = _RenderData;
 
 export {
     CanvasImpl as Canvas, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,

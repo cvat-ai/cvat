@@ -3,9 +3,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Callable
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -149,11 +150,6 @@ class TestExportResourceToS3(_S3ResourceTest):
 
         task_spec = {
             "name": f"Task with files from foreign cloud storage {storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
         data_spec = {
             "image_quality": 75,
@@ -161,7 +157,7 @@ class TestExportResourceToS3(_S3ResourceTest):
             "server_files": ["images/image_1.jpg"],
             "project_id": project_id,
         }
-        (task_id, _) = create_task(user, task_spec, data_spec)
+        task_id, _ = create_task(user, task_spec, data_spec)
 
         jobs = get_method(user, "jobs", task_id=task_id).json()["results"]
         job_id = jobs[0]["id"]
@@ -310,11 +306,6 @@ class TestImportResourceFromS3(_S3ResourceTest):
 
         task_spec = {
             "name": f"Task with files from foreign cloud storage {storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
         data_spec = {
             "image_quality": 75,
@@ -322,7 +313,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
             "server_files": ["images/image_1.jpg"],
             "project_id": project_id,
         }
-        (task_id, _) = create_task(user, task_spec, data_spec)
+        task_id, _ = create_task(user, task_spec, data_spec)
 
         jobs = get_method(user, "jobs", task_id=task_id).json()["results"]
         job_id = jobs[0]["id"]
@@ -407,8 +398,8 @@ class TestUploads:
         users: Container,
         *,
         get_owner_func: Callable = lambda r: r["owner"],
-        user_to_skip: Optional[int] = None,
-    ) -> Tuple[dict, int]:
+        user_to_skip: int | None = None,
+    ) -> tuple[dict, int]:
         for resource in resources:
             malefactor = get_owner_func(resource)
             if not users[malefactor["id"]]["is_superuser"] and malefactor["id"] != user_to_skip:
@@ -629,13 +620,13 @@ class TestUploads:
     )
     def test_user_can_use_only_own_uploads(
         self,
-        src_resource_id: Optional[int],
+        src_resource_id: int | None,
         archive_path: Path,
         owner: dict,
         malefactor: dict,
-        dst_resource_id: Optional[str],
+        dst_resource_id: str | None,
         endpoint_path: str,
-        query_params: Optional[dict],
+        query_params: dict | None,
     ):
         with (
             make_sdk_client(owner["username"]) as owner_client,
@@ -654,7 +645,6 @@ class TestUploads:
                     url,
                     archive_path,
                     meta=params,
-                    logger=owner_client.logger.debug,
                     pbar=pbar,
                 )
 

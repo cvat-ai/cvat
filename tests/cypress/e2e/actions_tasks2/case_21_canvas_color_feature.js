@@ -11,6 +11,7 @@ context('Canvas color feature', () => {
     const caseId = '21';
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

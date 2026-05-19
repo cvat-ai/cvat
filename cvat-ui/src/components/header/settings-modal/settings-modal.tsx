@@ -6,6 +6,7 @@
 import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal/Modal';
@@ -27,8 +28,10 @@ interface SettingsModalProps {
 function SettingsModal(props: SettingsModalProps): JSX.Element {
     const { visible, onClose } = props;
 
-    const settings = useSelector((state: CombinedState) => state.settings);
-    const shortcuts = useSelector((state: CombinedState) => state.shortcuts);
+    const { settings, shortcuts } = useSelector((state: CombinedState) => ({
+        settings: state.settings,
+        shortcuts: state.shortcuts,
+    }), shallowEqual);
     const [settingsInitialized, setSettingsInitialized] = useState(false);
     const dispatch = useDispatch();
 

@@ -11,23 +11,4 @@ extend_skip=[
 
 [tool.black]
 line-length = 100
-target-version = ['py39']
-extend-exclude = """
-# TODO: get rid of these
-^/cvat/apps/(
-    dataset_manager/bindings.py
-    |engine/(
-        admin.py
-        |backup.py
-        |cloud_provider.py
-        |media_extractors.py
-        |mixins.py
-        |models.py
-        |permissions.py
-        |serializers.py
-        |task.py
-        |views.py
-    )
-)
-| ^/serverless/
-"""
+target-version = ['py310']

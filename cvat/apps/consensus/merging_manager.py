@@ -2,9 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import math
-from typing import Type
-
 import datumaro as dm
 from django.conf import settings
 from django.db import transaction
@@ -112,10 +109,10 @@ class _TaskMerger:
         merger = IntersectMerge(
             conf=IntersectMerge.Conf(
                 pairwise_dist=self._settings.iou_threshold,
-                quorum=math.ceil(self._settings.quorum * len(consensus_datasets)),
                 sigma=comparison_parameters.oks_sigma,
                 torso_r=comparison_parameters.line_thickness,
                 included_annotation_types=comparison_parameters.included_annotation_types,
+                ignored_attributes={"track_id", "keyframe"},
             )
         )
         merged_dataset = merger(*consensus_datasets)
@@ -196,7 +193,7 @@ class MergingManager(AbstractRequestManager):
 
     @classmethod
     @silk_profile()
-    def _merge(cls, *, target_type: Type[Task | Job], target_id: int) -> int:
+    def _merge(cls, *, target_type: type[Task | Job], target_id: int) -> int:
         if issubclass(target_type, Task):
             return _TaskMerger(task=target_id).merge_all_consensus_jobs()
         elif issubclass(target_type, Job):

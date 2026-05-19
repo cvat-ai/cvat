@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import configparser
+import re
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+RE_PLACEHOLDER_PR_URL = re.compile(r"//github\.com/[\w.-]+/[\w.-]+/pull/X")
 
 
 def main():
@@ -51,6 +54,9 @@ def main():
                     else:
                         # All headers should be of the same level.
                         complain(f"header should start with {md_header_prefix!r}")
+
+                if RE_PLACEHOLDER_PR_URL.search(line):
+                    complain("pull request number should be filled in")
 
     sys.exit(0 if success else 1)
 

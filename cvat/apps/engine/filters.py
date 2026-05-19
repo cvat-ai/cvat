@@ -8,7 +8,7 @@ import operator
 from collections.abc import Iterable, Iterator
 from functools import reduce
 from textwrap import dedent
-from typing import Any, Optional
+from typing import Any, TypeAlias
 
 from django.db import models
 from django.db.models import Q
@@ -28,7 +28,7 @@ DEFAULT_FILTER_FIELDS_ATTR = "filter_fields"
 DEFAULT_LOOKUP_MAP_ATTR = "lookup_fields"
 
 
-def get_lookup_fields(view, fields: Optional[Iterator[str]] = None) -> dict[str, str]:
+def get_lookup_fields(view, fields: Iterator[str] | None = None) -> dict[str, str]:
     if fields is None:
         fields = getattr(view, DEFAULT_FILTER_FIELDS_ATTR, None) or []
 
@@ -46,7 +46,7 @@ class SearchFilter(filters.SearchFilter):
         raise NotImplementedError("coreapi is not supported")
 
     def get_schema_operation_parameters(self, view):
-        search_fields = getattr(view, "search_fields", [])
+        search_fields = sorted(getattr(view, "search_fields", []) or [])
         full_description = self.search_description + f" Available search_fields: {search_fields}"
 
         return (
@@ -91,7 +91,7 @@ class OrderingFilter(filters.OrderingFilter):
         raise NotImplementedError("coreapi is not supported")
 
     def get_schema_operation_parameters(self, view):
-        ordering_fields = getattr(view, "ordering_fields", [])
+        ordering_fields = sorted(getattr(view, "ordering_fields", []) or [])
         full_description = (
             self.ordering_description + f" Available ordering_fields: {ordering_fields}"
         )
@@ -113,52 +113,84 @@ class OrderingFilter(filters.OrderingFilter):
         )
 
 
+class FilterParsingError(Exception):
+    pass
+
+
 class JsonLogicFilter(filters.BaseFilterBackend):
-    Rules = dict[str, Any]
+    Rules: TypeAlias = dict[str, Any]
     filter_param = "filter"
     filter_title = _("Filter")
-    filter_description = _(
-        dedent(
-            """
-            JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
-            For example, using such a filter you can get all resources created by you:\n
-                - {"and":[{"==":[{"var":"owner"},"<user>"]}]}\n
-            Details about the syntax used can be found at the link: https://jsonlogic.com/\n
-            """
-        )
-    )
+    filter_description = _(dedent("""
+        JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
+        For example, using such a filter you can get all resources created by you:\n
+            - {"and":[{"==":[{"var":"owner"},"<user>"]}]}\n
+        Details about the syntax used can be found at the link: https://jsonlogic.com/\n
+        """))
 
-    def _build_Q(self, rules, lookup_fields):
+    def _build_Q(self, rules, lookup_fields, *, parent_op: str | None = None):
+        def _validate_arg(arg: Any, *, allowed_type: type):
+            assert allowed_type in (list, dict)
+
+            if isinstance(arg, allowed_type) and bool(arg):
+                return
+
+            allowed_type_suffix = allowed_type.__name__
+            non_empty_suffix = "non-empty "
+            invalid_value_suffix = f"got '{arg}' of type '{type(arg).__name__}'"
+
+            if parent_op:
+                message = (
+                    f"operation '{op}' requires "
+                    f"a {non_empty_suffix}{allowed_type_suffix} argument, "
+                    f"{invalid_value_suffix}"
+                )
+            else:
+                message = (
+                    f"expected a {non_empty_suffix}{allowed_type_suffix} value, "
+                    f"{invalid_value_suffix}"
+                )
+
+            raise FilterParsingError(message)
+
+        def _get_lookup_field(filter_term: str) -> str:
+            try:
+                return lookup_fields[filter_term]
+            except KeyError:
+                raise FilterParsingError(f"term '{filter_term}' is not supported")
+
+        _validate_arg(rules, allowed_type=dict)
         op, args = next(iter(rules.items()))
+
         if op in ["or", "and"]:
+            _validate_arg(args, allowed_type=list)
             return reduce(
                 {"or": operator.or_, "and": operator.and_}[op],
-                [self._build_Q(arg, lookup_fields) for arg in args],
+                [self._build_Q(arg, lookup_fields, parent_op=op) for arg in args],
             )
         elif op == "!":
-            return ~self._build_Q(args, lookup_fields)
+            return ~self._build_Q(args, lookup_fields, parent_op=op)
         elif op == "!!":
-            return self._build_Q(args, lookup_fields)
+            return self._build_Q(args, lookup_fields, parent_op=op)
         elif op == "var":
             return Q(**{args + "__isnull": False})
         elif op in ["==", "<", ">", "<=", ">="] and len(args) == 2:
-            var = lookup_fields[args[0]["var"]]
+            var = _get_lookup_field(args[0]["var"])
             q_var = var + {"==": "", "<": "__lt", "<=": "__lte", ">": "__gt", ">=": "__gte"}[op]
             return Q(**{q_var: args[1]})
         elif op == "in":
             if isinstance(args[0], dict):
-                var = lookup_fields[args[0]["var"]]
+                var = _get_lookup_field(args[0]["var"])
                 return Q(**{var + "__in": args[1]})
             else:
-                var = lookup_fields[args[1]["var"]]
+                var = _get_lookup_field(args[1]["var"])
                 return Q(**{var + "__contains": args[0]})
         elif op == "<=" and len(args) == 3:
-            var = lookup_fields[args[1]["var"]]
+            _validate_arg(args, allowed_type=list)
+            var = _get_lookup_field(args[1]["var"])
             return Q(**{var + "__gte": args[0]}) & Q(**{var + "__lte": args[2]})
         else:
-            raise ValidationError(
-                f"filter: {op} operation with {args} arguments is not implemented"
-            )
+            raise FilterParsingError(f"operation '{op}' with arguments '{args}' is not supported")
 
     def parse_query(self, json_rules: str, *, raise_on_empty: bool = True) -> Rules:
         try:
@@ -175,8 +207,8 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     ) -> QuerySet:
         try:
             q_object = self._build_Q(parsed_rules, lookup_fields)
-        except KeyError as ex:
-            raise ValidationError(f"filter: {str(ex)} term is not supported")
+        except FilterParsingError as e:
+            raise ValidationError(f"filter: {str(e)}") from e
 
         return queryset.filter(q_object)
 
@@ -193,7 +225,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         raise NotImplementedError("coreapi is not supported")
 
     def get_schema_operation_parameters(self, view):
-        filter_fields = getattr(view, "filter_fields", [])
+        filter_fields = sorted(getattr(view, "filter_fields", []) or [])
         filter_description = getattr(view, "filter_description", "")
         full_description = (
             self.filter_description
@@ -312,7 +344,7 @@ class SimpleFilter(DjangoFilterBackend):
             return []
 
         parameters = []
-        for field_name, filter_ in filterset_class.base_filters.items():
+        for field_name, filter_ in sorted(filterset_class.base_filters.items()):
             if isinstance(filter_, djf.BooleanFilter):
                 parameter_schema = {"type": "boolean"}
             elif isinstance(filter_, (djf.NumberFilter, djf.ModelChoiceFilter)):
@@ -382,7 +414,7 @@ class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
     """
 
     def get_schema_operation_parameters(self, view):
-        simple_filters = getattr(view, self.filter_fields_attr, None)
+        simple_filters = sorted(getattr(view, self.filter_fields_attr, []) or [])
         simple_filters_schema = getattr(view, "simple_filters_schema", None)
 
         parameters = []
@@ -474,14 +506,10 @@ class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
 
 
 class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
-    filter_description = _(
-        dedent(
-            """
-            JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
-            Details about the syntax used can be found at the link: https://jsonlogic.com/\n
-            """
-        )
-    )
+    filter_description = _(dedent("""
+        JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
+        Details about the syntax used can be found at the link: https://jsonlogic.com/\n
+        """))
 
     def _apply_filter(self, rules, lookup_fields, obj):
         op, args = next(iter(rules.items()))

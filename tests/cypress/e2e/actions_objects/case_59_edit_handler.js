@@ -46,6 +46,7 @@ context('Edit handler.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
@@ -120,6 +121,11 @@ context('Edit handler.', () => {
         it('Edit handler for the polyline.', () => {
             cy.createPolyline(createPolylinesShape);
             cy.get('.cvat-canvas-container').trigger('mousemove', 800, 400);
+
+            cy.get('.cvat-snap-tools-control').click();
+            cy.get('.cvat-snap-to-contour-button').click();
+            cy.get('.cvat-snap-to-contour-button').should('have.class', 'cvat-snap-tool-active');
+
             cy.get('#cvat_canvas_shape_2')
                 .should('have.class', 'cvat_canvas_shape_activated')
                 .invoke('attr', 'points')
@@ -130,7 +136,7 @@ context('Edit handler.', () => {
                         cy.get('.cvat_canvas_shape_drawing')
                             .should('exist')
                             .and('have.attr', 'data-origin-client-id', '2');
-                        cy.get('body').type('{Ctrl}a');
+
                         cy.get('.cvat_canvas_autoborder_point')
                             .should('exist')
                             .and('be.visible')
@@ -163,14 +169,14 @@ context('Edit handler.', () => {
             });
             cy.get('.cvat-canvas-container').click(200, 300);
             cy.get('.cvat-canvas-container').find('circle')
-                .then(($circleEditHanlerProgress) => {
+                .then(($circleEditHandlerProgress) => {
                     // rightclick() on canvas to check canceling draw a additional point
                     cy.get('.cvat-canvas-container').rightclick();
                     cy.get('.cvat-canvas-container')
                         .find('circle')
-                        .then(($circleEditHanlerProgressCancelDrawPoint) => {
-                            expect($circleEditHanlerProgress.length).not.equal(
-                                $circleEditHanlerProgressCancelDrawPoint.length,
+                        .then(($circleEditHandlerProgressCancelDrawPoint) => {
+                            expect($circleEditHandlerProgress.length).not.equal(
+                                $circleEditHandlerProgressCancelDrawPoint.length,
                             ); // expected 4 to not equal 3
                         });
                 });
@@ -178,40 +184,9 @@ context('Edit handler.', () => {
             cy.get('.cvat-canvas-container').click(200, 400); // Click on the first points shape to finish the change
             cy.get('#cvat_canvas_shape_3')
                 .find('circle')
-                .then(($circleCountAfterHanlerEditing) => {
-                    expect($circleCountAfterHanlerEditing.length).to.be.equal(2);
+                .then(($circleCountAfterHandlerEditing) => {
+                    expect($circleCountAfterHandlerEditing.length).to.be.equal(2);
                 });
-        });
-
-        it('Combining polygon and points.', () => {
-            testActivatingShape(520, 400, '#cvat_canvas_shape_1');
-
-            // Draw line with shift key held down
-            cy.get('.cvat-canvas-container').click(550, 450, { shiftKey: true });
-            cy.get('.cvat-canvas-container').trigger('mousemove', 530, 450, { shiftKey: true });
-            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 450, { shiftKey: true });
-            cy.get('.cvat-canvas-container').trigger('mousemove', 200, 400, { shiftKey: true });
-
-            // Coverage "!pointsCriteria && !lengthCriteria"
-            cy.get('.cvat-canvas-container').click(200, 400);
-            cy.get('.cvat-canvas-container').click(200, 300);
-            cy.get('.cvat_canvas_autoborder_point_direction').should('exist');
-            cy.get('.cvat-canvas-container').dblclick(200, 300);
-            cy.get('.cvat_canvas_autoborder_point_direction').should('not.exist');
-            cy.get('.cvat-canvas-container').click(450, 350);
-            cy.get('#cvat_canvas_shape_1')
-                .invoke('attr', 'points')
-                .then(($points) => {
-                    expect(
-                        $points.split(' ').filter((el) => el.length !== 0).length,
-                    ).to.be.equal(11);
-                });
-            testActivatingShape(750, 500, '#cvat_canvas_shape_2');
-            // Coverage "circle.on('mousedown', (e: MouseEvent): void => {"
-            cy.get('.cvat-canvas-container').click(750, 500, { shiftKey: true });
-            cy.get('.cvat-canvas-container').click(450, 350);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 450, 370);
-            cy.get('.cvat-canvas-container').click(450, 350);
         });
     });
 });

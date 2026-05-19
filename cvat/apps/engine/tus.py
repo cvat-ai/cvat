@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import shutil
 from functools import cached_property
 from pathlib import Path
 from types import NoneType
@@ -15,6 +16,7 @@ from uuid import UUID, uuid4
 
 import attrs
 from django.conf import settings
+from rest_framework import serializers
 
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.types import ExtendedRequest
@@ -35,10 +37,18 @@ class TusTooLargeFileError(Exception):
 
 
 class TusChunk:
+
     def __init__(self, request: ExtendedRequest):
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
-        self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
-        self.content = request.body
+        try:
+            self.size = int(request.META["CONTENT_LENGTH"])
+        except KeyError as ex:
+            raise serializers.ValidationError("Content-Length header is missing") from ex
+        self.request = request
+
+    @property
+    def end_offset(self) -> int:
+        return self.offset + self.size
 
 
 @attrs.define()
@@ -206,8 +216,8 @@ class TusFile:
     def write_chunk(self, chunk: TusChunk):
         with open(self.file_path, "r+b") as file:
             file.seek(chunk.offset)
-            file.write(chunk.content)
-        self.meta_file.meta.offset += chunk.size
+            shutil.copyfileobj(chunk.request, file)
+            self.meta_file.meta.offset = file.tell()
         self.meta_file.dump()
 
     def is_complete(self):

@@ -1,10 +1,11 @@
 # Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
-
+from datumaro.components.errors import AnnotationExportError
 from datumaro.components.project import Environment
 
-from cvat.apps.engine.models import DimensionType
+from cvat.apps.dataset_manager.bindings import CvatExportError
+from cvat.apps.engine.models import DimensionType, TaskMode
 
 dm_env = Environment()
 
@@ -40,7 +41,12 @@ def _wrap_format(
 
         class wrapper(klass):
             def __call__(self, *args, **kwargs):
-                f_or_cls(*args, **kwargs)
+                try:
+                    f_or_cls(*args, **kwargs)
+                except AnnotationExportError as e:
+                    if isinstance(e.__cause__, CvatExportError):
+                        raise e.__cause__
+                    raise
 
         wrapper.__name__ = f_or_cls.__name__
         wrapper.__module__ = f_or_cls.__module__
@@ -65,7 +71,7 @@ EXPORT_FORMATS = {}
 def format_for(export_format, mode):
     format_name = export_format
     if export_format not in EXPORT_FORMATS:
-        if mode == "annotation":
+        if mode == TaskMode.ANNOTATION:
             format_name = "CVAT for images 1.1"
         else:
             format_name = "CVAT for video 1.1"

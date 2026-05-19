@@ -1,0 +1,13 @@
+<div class="cvat-card">
+    <a class="cvat-card-link" href="{{ .Get "url" }}">
+      <div class="cvat-card-icon">
+        <i class="{{ .Get "icon" }}"></i>
+      </div>
+      <div class="cvat-card-title">
+        {{ .Get "title" }}
+      </div>
+      <div class="cvat-card-desc">
+        {{ .Inner }}
+      </div>
+    </a>
+  </div>

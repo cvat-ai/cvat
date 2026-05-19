@@ -6,7 +6,6 @@
 
 import copy
 import itertools
-import os
 import os.path as osp
 import tempfile
 import xml.etree.ElementTree as ET
@@ -22,6 +21,7 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.tests.utils import (
+    ASSETS_DIR,
     ExportApiTestBase,
     ForceLogin,
     ImportApiTestBase,
@@ -42,8 +42,8 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
 
     @classmethod
     def create_db_users(cls):
-        (group_admin, _) = Group.objects.get_or_create(name="admin")
-        (group_user, _) = Group.objects.get_or_create(name="user")
+        group_admin, _ = Group.objects.get_or_create(name="admin")
+        group_user, _ = Group.objects.get_or_create(name="user")
 
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
         user_admin.groups.add(group_admin)
@@ -68,7 +68,10 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _patch_api_v2_task_id_annotations(self, tid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/tasks/{}/annotations?action={}".format(tid, action), data=data, format="json"
+                "/api/tasks/{}/annotations".format(tid),
+                query_params={"action": action},
+                data=data,
+                format="json",
             )
 
         return response
@@ -76,7 +79,10 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _patch_api_v2_job_id_annotations(self, jid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/jobs/{}/annotations?action={}".format(jid, action), data=data, format="json"
+                "/api/jobs/{}/annotations".format(jid),
+                query_params={"action": action},
+                data=data,
+                format="json",
             )
 
         return response
@@ -100,7 +106,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -146,7 +154,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
-                lambda page: self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+                lambda page: self.client.get(
+                    "/api/jobs", query_params={"task_id": task_id, "page": page}
+                )
             )
         return values
 
@@ -239,16 +249,15 @@ class Task3DTest(_DbTestBase):
         cls.format_names = ["Sly Point Cloud Format 1.0", "Kitti Raw Format 1.0"]
         cls._image_sizes = {}
         cls.pointcloud_pcd_filename = "test_canvas3d.zip"
-        cls.pointcloud_pcd_path = osp.join(
-            os.path.dirname(__file__), "assets", cls.pointcloud_pcd_filename
-        )
+        cls.pointcloud_pcd_path = ASSETS_DIR / cls.pointcloud_pcd_filename
+
         image_sizes = []
         zip_file = zipfile.ZipFile(cls.pointcloud_pcd_path)
         for info in zip_file.namelist():
-            if info.rsplit(".", maxsplit=1)[-1] == "pcd":
-                with zip_file.open(info, "r") as file:
-                    data = ValidateDimension.get_pcd_properties(file)
-                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+            if info.endswith(".pcd"):
+                data = ValidateDimension.get_pcd_properties(zipfile.Path(zip_file, info))
+                image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+
         cls.task = {
             "name": "main task",
             "owner_id": 2,
@@ -344,6 +353,7 @@ class Task3DTest(_DbTestBase):
                     "label_id": None,
                     "group": 0,
                     "source": "manual",
+                    "score": 1.0,
                     "elements": [],
                     "attributes": [],
                 },

@@ -41,9 +41,12 @@ def _generate_shapes(
             if len(contour) < 3 or _is_positively_oriented(contour):
                 continue
 
-            contour = measure.approximate_polygon(contour, tolerance=2.5)
+            approx_contour = measure.approximate_polygon(contour, tolerance=2.5)
 
-            yield cvataa.polygon(label.item(), contour[:, ::-1].ravel().tolist())
+            if len(approx_contour) < 3:
+                approx_contour = contour
+
+            yield cvataa.polygon(label.item(), approx_contour[:, ::-1].ravel().tolist())
 
     else:
         yield cvataa.mask(label.item(), encode_mask(mask[0] >= LEVEL, box.tolist()))

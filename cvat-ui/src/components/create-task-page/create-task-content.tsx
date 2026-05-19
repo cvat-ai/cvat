@@ -206,11 +206,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }));
     };
 
-    private validateLabelsOrProject = (): boolean => {
-        const { projectId, labels } = this.state;
-        return !!labels.length || !!projectId;
-    };
-
     private validateFiles = (): boolean => {
         const { activeFileManagerTab, files } = this.state;
 
@@ -442,15 +437,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
         const { projectId } = this.state;
-        if (!this.validateLabelsOrProject()) {
-            notification.error({
-                message: 'Could not create a task',
-                description: 'A task must contain at least one label or belong to some project',
-                className: 'cvat-notification-create-task-fail',
-            });
-            reject();
-            return;
-        }
 
         if (!this.validateFiles()) {
             notification.error({
@@ -616,7 +602,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const promises = Array(queueSize)
             .fill(undefined)
             .map(async (): Promise<void> => {
-                // eslint-disable-next-line no-constant-condition
                 while (true) {
                     index++; // preliminary increase is needed to avoid using the same index when queueSize > 1
                     if (index > length) break;
@@ -859,7 +844,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         return (
             <Col span={24}>
-                <Text type='danger'>* </Text>
                 <Text className='cvat-text-color'>Labels</Text>
                 <LabelsEditor
                     labels={labels}

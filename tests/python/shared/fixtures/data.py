@@ -5,12 +5,13 @@
 import json
 import operator
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
-from shared.utils.config import ASSETS_DIR
+from shared.utils.config import ASSETS_DIR, SHARE_DIR
 
 
 class Container:
@@ -65,6 +66,7 @@ def tasks():
 def filter_assets(resources: Iterable, **kwargs):
     filtered_resources = []
     exclude_prefix = "exclude_"
+    filter_operator = lambda arg, func: bool(func(arg))
 
     for resource in resources:
         is_matched = True
@@ -76,6 +78,8 @@ def filter_assets(resources: Iterable, **kwargs):
             if key.startswith(exclude_prefix):
                 key = key[len(exclude_prefix) :]
                 op = operator.ne
+            elif callable(value):
+                op = filter_operator
 
             cur_value, rest = resource, key
             while rest:
@@ -84,8 +88,9 @@ def filter_assets(resources: Iterable, **kwargs):
                     field, rest = field_and_rest
                 else:
                     field, rest = field_and_rest[0], None
-                cur_value = cur_value[field]
+                cur_value = cur_value.get(field, None)
                 # e.g. task has null target_storage
+                # or there are mutexed project_id, task_id
                 if not cur_value:
                     break
 
@@ -246,6 +251,7 @@ def users_by_name(users):
 
 @pytest.fixture(scope="session")
 def jobs_by_org(tasks, jobs):
+    # FUTURE-FIXME: should be based on organizations to include orgs without jobs too
     data = {}
     for job in jobs:
         data.setdefault(tasks[job["task_id"]]["organization"], []).append(job)
@@ -495,6 +501,22 @@ def find_issue_staff_user(is_issue_staff, is_issue_admin):
 
 
 @pytest.fixture(scope="session")
+def filter_jobs(jobs):
+    def filter_(**kwargs):
+        return filter_assets(jobs, **kwargs)
+
+    return filter_
+
+
+@pytest.fixture(scope="session")
+def filter_labels(labels):
+    def filter_(**kwargs):
+        return filter_assets(labels, **kwargs)
+
+    return filter_
+
+
+@pytest.fixture(scope="session")
 def filter_jobs_with_shapes(annotations):
     def find(jobs):
         return list(filter(lambda j: annotations["job"].get(str(j["id"]), {}).get("shapes"), jobs))
@@ -555,3 +577,52 @@ def job_has_annotations(annotations) -> bool:
         )
 
     return check_has_annotations
+
+
+@pytest.fixture(scope="session")
+def access_tokens(access_tokens_by_username):
+    "Private keys are available in the 'private_key' field."
+
+    return sorted(
+        (t for user_tokens in access_tokens_by_username.values() for t in user_tokens),
+        key=lambda t: t["id"],
+    )
+
+
+@pytest.fixture(scope="session")
+def raw_access_tokens_by_username():
+    with open(ASSETS_DIR / "access_tokens.json") as f:
+        return json.load(f)["user"]
+
+
+@pytest.fixture(scope="session")
+def access_tokens_by_username(raw_access_tokens_by_username):
+    "Private keys are available in the 'private_key' field."
+
+    private_keys = {
+        3: "XQRwNl8D.N5EYCzdyWdroeVVfJylkquAmBqgt9Kw2",  # nosec
+        4: "waUchCLi.wWxJTdYBt6R8auMse86bwHobMomjQvEB",  # nosec
+        5: "2HVbBoWR.ZJqJtm3TEKEkjqZwyoL7Ig71LVvKRj79",  # nosec
+        7: "gIUANJCa.W4Y101GNS8wOyFcncvxMZjTEnU7dzAUF",  # nosec
+    }
+
+    data = {}
+    for username, user_tokens in raw_access_tokens_by_username.items():
+        if not user_tokens:
+            continue
+
+        extended_user_tokens = []
+
+        for access_token in user_tokens:
+            access_token = access_token.copy()
+            access_token["private_key"] = private_keys[access_token["id"]]
+            extended_user_tokens.append(access_token)
+
+        data[username] = extended_user_tokens
+
+    return data
+
+
+@pytest.fixture(scope="session")
+def fxt_local_audio_file_path() -> Generator[Path, None, None]:
+    yield SHARE_DIR / "audio" / "sample1.mp3"

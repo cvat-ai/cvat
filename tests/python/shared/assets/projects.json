@@ -1,8 +1,48 @@
 {
-  "count": 16,
+  "count": 17,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "created_date": "2025-11-13T11:32:07.581000Z",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 18,
+      "labels": {
+        "url": "http://localhost:8080/api/labels?project_id=18"
+      },
+      "name": "project with tags",
+      "organization": null,
+      "organization_id": null,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 57,
+        "location": "local"
+      },
+      "status": "annotation",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 58,
+        "location": "local"
+      },
+      "task_subsets": [],
+      "tasks": {
+        "count": 1,
+        "url": "http://localhost:8080/api/tasks?project_id=18"
+      },
+      "updated_date": "2025-11-13T11:32:48.144000Z",
+      "url": "http://localhost:8080/api/projects/18"
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,
@@ -16,6 +56,7 @@
       },
       "name": "project 4",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "User",
         "id": 3,
@@ -53,6 +94,7 @@
       },
       "name": "project assigned to org owner",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -98,6 +140,7 @@
       },
       "name": "project assigned to user4",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -137,6 +180,7 @@
       },
       "name": "project with subsets",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -156,8 +200,8 @@
         "location": "local"
       },
       "task_subsets": [
-        "Validation",
-        "Train"
+        "Train",
+        "Validation"
       ],
       "tasks": {
         "count": 2,
@@ -179,6 +223,7 @@
       },
       "name": "project with attributes 2",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -218,6 +263,7 @@
       },
       "name": "project with attributes",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -257,6 +303,7 @@
       },
       "name": "project7",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -302,6 +349,7 @@
       },
       "name": "project 6",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "User",
         "id": 4,
@@ -341,6 +389,7 @@
       },
       "name": "project with video data",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -386,6 +435,7 @@
       },
       "name": "admin1_project",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -431,6 +481,7 @@
       },
       "name": "user1_project",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "User",
         "id": 2,
@@ -470,6 +521,7 @@
       },
       "name": "project5",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -509,6 +561,7 @@
       },
       "name": "project4",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -546,6 +599,7 @@
       },
       "name": "project 3",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "User",
         "id": 3,
@@ -583,6 +637,7 @@
       },
       "name": "project2",
       "organization": 2,
+      "organization_id": 2,
       "owner": {
         "first_name": "User",
         "id": 10,
@@ -630,6 +685,7 @@
       },
       "name": "project1",
       "organization": null,
+      "organization_id": null,
       "owner": {
         "first_name": "User",
         "id": 10,

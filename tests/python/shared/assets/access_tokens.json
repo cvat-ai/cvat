@@ -1,0 +1,87 @@
+{
+  "user": {
+    "admin1": [],
+    "admin2": [
+      {
+        "created_date": "2025-07-17T16:17:35.436000Z",
+        "expiry_date": null,
+        "id": 3,
+        "last_used_date": null,
+        "name": "test key",
+        "owner": {
+          "first_name": "Admin",
+          "id": 18,
+          "last_name": "Second",
+          "url": "http://localhost:8080/api/users/18",
+          "username": "admin2"
+        },
+        "read_only": false,
+        "updated_date": "2025-07-17T16:17:35.436000Z"
+      },
+      {
+        "created_date": "2025-08-12T10:30:10.206000Z",
+        "expiry_date": null,
+        "id": 7,
+        "last_used_date": null,
+        "name": "test readonly key",
+        "owner": {
+          "first_name": "Admin",
+          "id": 18,
+          "last_name": "Second",
+          "url": "http://localhost:8080/api/users/18",
+          "username": "admin2"
+        },
+        "read_only": true,
+        "updated_date": "2025-08-12T10:30:10.206000Z"
+      }
+    ],
+    "lonely_user": [],
+    "user1": [
+      {
+        "created_date": "2025-07-17T16:19:18.229000Z",
+        "expiry_date": null,
+        "id": 4,
+        "last_used_date": null,
+        "name": "test readonly key",
+        "owner": {
+          "first_name": "User",
+          "id": 2,
+          "last_name": "First",
+          "url": "http://localhost:8080/api/users/2",
+          "username": "user1"
+        },
+        "read_only": true,
+        "updated_date": "2025-07-17T16:19:18.229000Z"
+      },
+      {
+        "created_date": "2025-07-17T16:19:46.576000Z",
+        "expiry_date": null,
+        "id": 5,
+        "last_used_date": null,
+        "name": "test readwrite key",
+        "owner": {
+          "first_name": "User",
+          "id": 2,
+          "last_name": "First",
+          "url": "http://localhost:8080/api/users/2",
+          "username": "user1"
+        },
+        "read_only": false,
+        "updated_date": "2025-07-17T16:19:46.576000Z"
+      }
+    ],
+    "user10": [],
+    "user2": [],
+    "user3": [],
+    "user4": [],
+    "user5": [],
+    "user6": [],
+    "user7": [],
+    "user8": [],
+    "user9": [],
+    "worker1": [],
+    "worker2": [],
+    "worker3": [],
+    "worker4": []
+  }
+}

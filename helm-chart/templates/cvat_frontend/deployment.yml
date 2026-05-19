@@ -39,7 +39,7 @@ spec:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
-          - containerPort: 80
+          - containerPort: 8000
           {{- with .Values.cvat.frontend.additionalEnv }}
           env:
           {{- toYaml . | nindent 10 }}
@@ -47,19 +47,21 @@ spec:
           {{- if .Values.cvat.frontend.readinessProbe.enabled }}
           readinessProbe:
             tcpSocket:
-              port: 80
+              port: 8000
             {{- toYaml (omit .Values.cvat.frontend.readinessProbe "enabled") | nindent 12 }}
           {{- end }}
           {{- if .Values.cvat.frontend.livenessProbe.enabled }}
           livenessProbe:
             tcpSocket:
-              port: 80
+              port: 8000
             {{- toYaml (omit .Values.cvat.frontend.livenessProbe "enabled") | nindent 12 }}
           {{- end }}
           {{- with .Values.cvat.frontend.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          securityContext:
+            runAsNonRoot: true
       {{- with .Values.cvat.frontend.additionalVolumes }}
       volumes:
       {{- toYaml . | nindent 8 }}

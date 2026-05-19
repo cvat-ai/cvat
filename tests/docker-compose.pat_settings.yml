@@ -1,0 +1,6 @@
+services:
+  cvat_server: &pat-config
+    environment:
+      CVAT_ACCESS_TOKEN_STALE_PERIOD: 3153600000 # ~100 years
+
+  cvat_worker_utils: *pat-config

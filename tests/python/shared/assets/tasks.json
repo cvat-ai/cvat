@@ -1,5 +1,5 @@
 {
-  "count": 28,
+  "count": 30,
   "next": null,
   "previous": null,
   "results": [
@@ -8,9 +8,124 @@
       "assignee_updated_date": null,
       "bug_tracker": "",
       "consensus_enabled": false,
+      "created_date": "2025-11-13T11:32:48.132000Z",
+      "data": 34,
+      "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 35,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 1,
+        "url": "http://localhost:8080/api/jobs?task_id=35",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=35"
+      },
+      "media_type": "image",
+      "mode": "annotation",
+      "name": "task with tags",
+      "organization": null,
+      "organization_id": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": 18,
+      "project_name": "project with tags",
+      "segment_size": 2,
+      "size": 2,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 59,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 60,
+        "location": "local"
+      },
+      "updated_date": "2025-11-13T11:32:48.543000Z",
+      "url": "http://localhost:8080/api/tasks/35",
+      "validation_mode": null
+    },
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_enabled": false,
+      "created_date": "2025-08-01T11:44:46.343000Z",
+      "data": 33,
+      "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "video",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 34,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 4,
+        "url": "http://localhost:8080/api/jobs?task_id=34",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=34"
+      },
+      "media_type": "image",
+      "mode": "interpolation",
+      "name": "task with frame step and gt job",
+      "organization": 2,
+      "organization_id": 2,
+      "overlap": 5,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "project_id": null,
+      "project_name": null,
+      "segment_size": 10,
+      "size": 20,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 55,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 56,
+        "location": "local"
+      },
+      "updated_date": "2025-08-01T11:45:33.361000Z",
+      "url": "http://localhost:8080/api/tasks/34",
+      "validation_mode": "gt"
+    },
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_enabled": false,
       "created_date": "2025-05-05T15:35:00.337000Z",
       "data": 32,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -26,9 +141,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=33"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with honeypots",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -38,6 +155,7 @@
         "username": "user2"
       },
       "project_id": 17,
+      "project_name": "project 4",
       "segment_size": 0,
       "size": 10,
       "source_storage": null,
@@ -56,6 +174,7 @@
       "created_date": "2025-05-05T15:35:00.112000Z",
       "data": 31,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -71,9 +190,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=32"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with gt job",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -83,6 +204,7 @@
         "username": "user2"
       },
       "project_id": 17,
+      "project_name": "project 4",
       "segment_size": 4,
       "size": 4,
       "source_storage": null,
@@ -101,6 +223,7 @@
       "created_date": "2025-01-27T16:42:31.302000Z",
       "data": 30,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -116,9 +239,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=31"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "sandbox task with consensus",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -128,6 +253,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 3,
       "size": 3,
       "source_storage": {
@@ -154,6 +280,7 @@
       "created_date": "2025-01-14T17:19:03.665000Z",
       "data": 29,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -169,9 +296,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=30"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with consensus and honeypots",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -181,6 +310,7 @@
         "username": "user2"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 0,
       "size": 10,
       "source_storage": {
@@ -207,6 +337,7 @@
       "created_date": "2024-10-01T12:36:21.364000Z",
       "data": 28,
       "data_chunk_size": 3,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -222,9 +353,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=29"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with honeypots",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -234,6 +367,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 0,
       "size": 29,
       "source_storage": null,
@@ -252,6 +386,7 @@
       "created_date": "2024-09-23T21:42:22.676000Z",
       "data": 27,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -267,9 +402,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=28"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task 1",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -279,6 +416,7 @@
         "username": "user4"
       },
       "project_id": 10,
+      "project_name": "project 6",
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -311,6 +449,7 @@
       "created_date": "2024-09-23T10:52:04.357000Z",
       "data": 26,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -326,9 +465,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=27"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task assigned to maintainer",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -338,6 +479,7 @@
         "username": "user3"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -370,6 +512,7 @@
       "created_date": "2024-09-23T10:51:32.778000Z",
       "data": 25,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -385,9 +528,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=26"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task assigned to owner",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -397,6 +542,7 @@
         "username": "user3"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -423,6 +569,7 @@
       "created_date": "2024-07-15T15:34:53.156000Z",
       "data": 24,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -438,9 +585,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=25"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task-validation",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -450,6 +599,7 @@
         "username": "admin1"
       },
       "project_id": 14,
+      "project_name": "project with subsets",
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -476,6 +626,7 @@
       "created_date": "2024-07-15T15:33:10.135000Z",
       "data": 23,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -491,9 +642,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=24"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task_train",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -503,6 +656,7 @@
         "username": "admin1"
       },
       "project_id": 14,
+      "project_name": "project with subsets",
       "segment_size": 1,
       "size": 1,
       "source_storage": {
@@ -529,6 +683,7 @@
       "created_date": "2024-03-21T20:50:05.694000Z",
       "data": 22,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -544,9 +699,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=23"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with several jobs and ground truth job",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -556,6 +713,7 @@
         "username": "admin2"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 5,
       "size": 11,
       "source_storage": null,
@@ -574,6 +732,7 @@
       "created_date": "2023-05-26T16:11:23.540000Z",
       "data": 21,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -589,9 +748,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=22"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task3_with_gt_job",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -601,6 +762,7 @@
         "username": "user2"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 11,
       "size": 11,
       "source_storage": null,
@@ -619,6 +781,7 @@
       "created_date": "2023-03-27T19:08:07.649000Z",
       "data": 20,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -634,9 +797,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=21"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with several jobs",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -646,6 +811,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 6,
       "size": 10,
       "source_storage": {
@@ -672,6 +838,7 @@
       "created_date": "2023-03-10T11:57:31.614000Z",
       "data": 19,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -687,9 +854,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=20"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task in project with attributes",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -699,6 +868,7 @@
         "username": "admin1"
       },
       "project_id": 12,
+      "project_name": "project with attributes",
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -725,6 +895,7 @@
       "created_date": "2023-03-10T11:56:33.757000Z",
       "data": 18,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -740,9 +911,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=19"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task with attributes",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -752,6 +925,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -778,6 +952,7 @@
       "created_date": "2023-03-01T15:36:26.668000Z",
       "data": 17,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -793,9 +968,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=18"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task in project7",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -805,6 +982,7 @@
         "username": "admin1"
       },
       "project_id": 11,
+      "project_name": "project7",
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -837,6 +1015,7 @@
       "created_date": "2023-02-10T14:05:25.947000Z",
       "data": 16,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -852,9 +1031,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=17"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task_3_org2",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -864,6 +1045,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 5,
       "size": 5,
       "source_storage": null,
@@ -882,6 +1064,7 @@
       "created_date": "2022-12-01T12:53:10.425000Z",
       "data": 14,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "video",
       "dimension": "2d",
@@ -897,9 +1080,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=15"
       },
+      "media_type": "image",
       "mode": "interpolation",
       "name": "task with video data",
       "organization": null,
+      "organization_id": null,
       "overlap": 5,
       "owner": {
         "first_name": "Admin",
@@ -909,6 +1094,7 @@
         "username": "admin1"
       },
       "project_id": 8,
+      "project_name": "project with video data",
       "segment_size": 25,
       "size": 25,
       "source_storage": {
@@ -935,6 +1121,7 @@
       "created_date": "2022-09-22T14:22:25.820000Z",
       "data": 13,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -950,9 +1137,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=14"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1 in project5",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -962,6 +1151,7 @@
         "username": "admin1"
       },
       "project_id": 5,
+      "project_name": "project5",
       "segment_size": 8,
       "size": 8,
       "source_storage": {
@@ -994,6 +1184,7 @@
       "created_date": "2022-06-08T08:33:06.505000Z",
       "data": 12,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -1009,9 +1200,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=13"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1_in_project4",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -1021,6 +1214,7 @@
         "username": "admin1"
       },
       "project_id": 4,
+      "project_name": "project4",
       "segment_size": 5,
       "size": 5,
       "source_storage": null,
@@ -1037,7 +1231,8 @@
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-03-14T13:24:05.852000Z",
-      "dimension": "2d",
+      "data": null,
+      "dimension": "",
       "guide_id": null,
       "id": 12,
       "jobs": {
@@ -1049,9 +1244,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=12"
       },
+      "media_type": "",
       "mode": "",
       "name": "task_without_data",
       "organization": null,
+      "organization_id": null,
       "overlap": null,
       "owner": {
         "first_name": "Admin",
@@ -1061,6 +1258,7 @@
         "username": "admin1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 0,
       "source_storage": null,
       "status": "annotation",
@@ -1084,6 +1282,7 @@
       "created_date": "2022-03-05T10:32:19.149000Z",
       "data": 11,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -1099,9 +1298,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=11"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1_in_project2",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -1111,6 +1312,7 @@
         "username": "user7"
       },
       "project_id": 2,
+      "project_name": "project2",
       "segment_size": 11,
       "size": 11,
       "source_storage": {
@@ -1143,6 +1345,7 @@
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data": 9,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -1158,9 +1361,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=9"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1_in_project1",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -1170,6 +1375,7 @@
         "username": "user7"
       },
       "project_id": 1,
+      "project_name": "project1",
       "segment_size": 5,
       "size": 20,
       "source_storage": null,
@@ -1194,6 +1400,7 @@
       "created_date": "2022-03-05T08:30:48.612000Z",
       "data": 8,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -1209,9 +1416,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=8"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task1",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -1221,6 +1430,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 14,
       "size": 14,
       "source_storage": null,
@@ -1245,6 +1455,7 @@
       "created_date": "2022-02-21T10:31:52.429000Z",
       "data": 7,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -1260,9 +1471,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=7"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task_2_org2",
       "organization": 2,
+      "organization_id": 2,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -1272,6 +1485,7 @@
         "username": "user8"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 11,
       "size": 11,
       "source_storage": null,
@@ -1290,6 +1504,7 @@
       "created_date": "2022-02-16T06:26:54.631000Z",
       "data": 6,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "3d",
@@ -1305,9 +1520,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=6"
       },
+      "media_type": "point_cloud",
       "mode": "annotation",
       "name": "task3",
       "organization": null,
+      "organization_id": null,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -1317,6 +1534,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 1,
       "size": 1,
       "source_storage": null,
@@ -1341,6 +1559,7 @@
       "created_date": "2022-02-16T06:25:48.168000Z",
       "data": 5,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "video",
       "dimension": "2d",
@@ -1356,9 +1575,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=5"
       },
+      "media_type": "image",
       "mode": "interpolation",
       "name": "task2",
       "organization": null,
+      "organization_id": null,
       "overlap": 5,
       "owner": {
         "first_name": "User",
@@ -1368,6 +1589,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 25,
       "size": 25,
       "source_storage": null,
@@ -1392,6 +1614,7 @@
       "created_date": "2021-12-14T18:50:29.458000Z",
       "data": 2,
       "data_chunk_size": 72,
+      "data_cloud_storage_id": null,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -1407,9 +1630,11 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?task_id=2"
       },
+      "media_type": "image",
       "mode": "annotation",
       "name": "task2",
       "organization": 1,
+      "organization_id": 1,
       "overlap": 0,
       "owner": {
         "first_name": "User",
@@ -1419,6 +1644,7 @@
         "username": "user1"
       },
       "project_id": null,
+      "project_name": null,
       "segment_size": 23,
       "size": 23,
       "source_storage": null,

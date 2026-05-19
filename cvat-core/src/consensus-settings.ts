@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { SerializedConsensusSettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -11,14 +12,12 @@ export default class ConsensusSettings {
     #id: number;
     #task: number;
     #iouThreshold: number;
-    #quorum: number;
     #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedConsensusSettingsData) {
         this.#id = initialData.id;
         this.#task = initialData.task;
         this.#iouThreshold = initialData.iou_threshold;
-        this.#quorum = initialData.quorum;
         this.#descriptions = initialData.descriptions;
     }
 
@@ -38,14 +37,6 @@ export default class ConsensusSettings {
         this.#iouThreshold = newVal;
     }
 
-    get quorum(): number {
-        return this.#quorum;
-    }
-
-    set quorum(newVal: number) {
-        this.#quorum = newVal;
-    }
-
     get descriptions(): Record<string, string> {
         const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
             const camelCaseKey = _.camelCase(key);
@@ -59,7 +50,6 @@ export default class ConsensusSettings {
     public toJSON(): SerializedConsensusSettingsData {
         const result: SerializedConsensusSettingsData = {
             iou_threshold: this.#iouThreshold,
-            quorum: this.#quorum,
         };
 
         return result;

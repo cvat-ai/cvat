@@ -13,12 +13,18 @@ import { LoadingOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import { importActions } from 'actions/import-actions';
-import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import {
+    SortingComponent,
+    ResourceFilterHOC,
+    defaultVisibility,
+    ResourceSelectionInfo,
+} from 'components/resource-sorting-filtering';
 import { TasksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import { MultiPlusIcon } from 'icons';
 import dimensions from 'utils/dimensions';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
+import TasksCSVExportButton from './tasks-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
@@ -33,12 +39,15 @@ interface VisibleTopBarProps {
     onApplySearch(search: string | null): void;
     query: TasksQuery;
     importing: boolean;
+    selectedCount: number;
+    onSelectAll: () => void;
 }
 
-export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
+export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JSX.Element {
     const dispatch = useDispatch();
     const {
         importing, query, onApplyFilter, onApplySorting, onApplySearch,
+        selectedCount, onSelectAll,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const history = useHistory();
@@ -51,18 +60,21 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
     }, [importing]);
 
     return (
-        <Row className='cvat-tasks-page-top-bar' justify='center' align='middle'>
+        <Row className='cvat-tasks-page-top-bar cvat-resource-top-bar-wrapper' justify='center' align='middle'>
             <Col {...dimensions}>
                 <div className='cvat-tasks-page-filters-wrapper'>
-                    <Input.Search
-                        enterButton
-                        onSearch={(phrase: string) => {
-                            onApplySearch(phrase);
-                        }}
-                        defaultValue={query.search || ''}
-                        className='cvat-tasks-page-search-bar'
-                        placeholder='Search ...'
-                    />
+                    <div>
+                        <Input.Search
+                            enterButton
+                            onSearch={(phrase: string) => {
+                                onApplySearch(phrase);
+                            }}
+                            defaultValue={query.search ?? ''}
+                            className='cvat-tasks-page-search-bar'
+                            placeholder='Search ...'
+                        />
+                        <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
+                    </div>
                     <div>
                         <SortingComponent
                             visible={visibility.sorting}
@@ -70,7 +82,8 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}
                             defaultFields={query.sort?.split(',') || ['-ID']}
-                            sortingFields={['ID', 'Owner', 'Status', 'Assignee', 'Updated date', 'Subset', 'Mode', 'Dimension', 'Project ID', 'Name', 'Project name']}
+                            sortingFields={['ID', 'Owner', 'Status', 'Assignee', 'Updated date', 'Subset',
+                                'Mode', 'Dimension', 'Project ID', 'Name', 'Project name']}
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent
@@ -89,6 +102,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                             )}
                             onApplyFilter={onApplyFilter}
                         />
+                        <TasksCSVExportButton query={query} />
                     </div>
                 </div>
                 <div>

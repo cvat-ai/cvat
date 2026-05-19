@@ -19,6 +19,7 @@ import {
     restoreFrame,
     getCachedChunks,
     getJobFrameNumbers,
+    getFramesMeta,
     clear as clearFrames,
     findFrame,
     getContextImage,
@@ -27,9 +28,9 @@ import {
 } from './frames';
 import Issue from './issue';
 import {
-    SerializedLabel, SerializedTask, SerializedJobValidationLayout,
-    SerializedTaskValidationLayout,
+    SerializedTask, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
+import { getUpdatedLabels } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -78,7 +79,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 };
 
                 if (jobData.assignee) {
-                    checkObjectType('job assignee', jobData.assignee, null, User);
+                    checkObjectType('job assignee', jobData.assignee, null, { cls: User, name: 'User' });
                     jobData.assignee = jobData.assignee.id;
                 }
 
@@ -98,7 +99,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             const jobSpec = {
                 ...(this.assignee ? { assignee: this.assignee.id } : {}),
                 ...(this.stage ? { stage: this.stage } : {}),
-                ...(this.state ? { stage: this.state } : {}),
+                ...(this.state ? { state: this.state } : {}),
                 type: this.type,
                 task_id: this.taskId,
             };
@@ -135,7 +136,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             issue: Parameters<typeof JobClass.prototype.openIssue>[0],
             message: Parameters<typeof JobClass.prototype.openIssue>[1],
         ): ReturnType<typeof JobClass.prototype.openIssue> {
-            checkObjectType('issue', issue, null, Issue);
+            checkObjectType('issue', issue, null, { cls: Issue, name: 'Issue' });
             checkObjectType('message', message, 'string');
             const result = await serverProxy.issues.create({
                 ...issue.serialize(),
@@ -285,12 +286,21 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.frames.contextImageData, 'implementation', {
+        value: function contextImageDataImplementation(
+            this: JobClass,
+            frameId: Parameters<typeof JobClass.prototype.frames.contextImageData>[0],
+        ): ReturnType<typeof JobClass.prototype.frames.contextImageData> {
+            return serverProxy.frames.getImageContext(this.id, frameId);
+        },
+    });
+
     Object.defineProperty(Job.prototype.frames.contextImage, 'implementation', {
         value: function contextImageImplementation(
             this: JobClass,
             frameId: Parameters<typeof JobClass.prototype.frames.contextImage>[0],
         ): ReturnType<typeof JobClass.prototype.frames.contextImage> {
-            return getContextImage(this.id, frameId);
+            return getContextImage(this.id, frameId, (frame) => this.frames.contextImageData(frame));
         },
     });
 
@@ -680,14 +690,25 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         bugTracker: 'bug_tracker',
                         projectId: 'project_id',
                         assignee: 'assignee_id',
+                        organizationId: 'organization_id',
+                        sourceStorage: 'source_storage',
+                        targetStorage: 'target_storage',
                     }),
+                } as Record<string, unknown> & {
+                    assignee_id?: { id: number } | null;
                 };
 
-                if (taskData.assignee_id) {
-                    taskData.assignee_id = taskData.assignee_id.id;
+                const updatedLabels = fields?.labels ? getUpdatedLabels(this.labels, fields.labels) : [];
+
+                // TODO: update assignee via "fields" instead
+                // It would be better implementation
+                let newAssigneeId: number | null;
+                if ('assignee_id' in taskData) {
+                    newAssigneeId = taskData.assignee_id?.id ?? null;
+                    delete taskData.assignee_id;
                 }
 
-                for await (const label of taskData.labels || []) {
+                for await (const label of updatedLabels) {
                     if (label.deleted) {
                         await serverProxy.labels.delete(label.id);
                     } else if (label.patched) {
@@ -696,20 +717,30 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 }
 
                 // leave only new labels to create them via task PATCH request
-                taskData.labels = (taskData.labels || [])
-                    .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
-                if (!taskData.labels.length) {
-                    delete taskData.labels;
-                }
-
+                const labelsToCreate = updatedLabels
+                    .filter((label) => !Number.isInteger(label.id))
+                    .map((el) => el.toJSON());
                 this._updateTrigger.reset();
 
                 let serializedTask: SerializedTask = null;
-                if (Object.keys(taskData).length) {
-                    serializedTask = await serverProxy.tasks.save(this.id, taskData);
+                if (
+                    Object.keys(taskData).length ||
+                    labelsToCreate.length ||
+                    typeof newAssigneeId !== 'undefined'
+                ) {
+                    serializedTask = await serverProxy.tasks.save(this.id, {
+                        ...taskData,
+                        ...(typeof newAssigneeId !== 'undefined' ? { assignee_id: newAssigneeId } : {}),
+                        ...(labelsToCreate.length ? { labels: labelsToCreate } : {}),
+                    });
                 } else {
                     [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
                 }
+
+                // TODO: optimize labels fetch
+                // We already have patched labels, we may exclude deleted labels
+                // We only need to fetch labels if they have been created
+                // We do not need to perform any logic above if taskData is empty in the beginning of if branch
 
                 const labels = await serverProxy.labels.get({ task_id: this.id });
                 const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
@@ -729,17 +760,25 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (typeof this.bugTracker !== 'undefined') {
                 taskSpec.bug_tracker = this.bugTracker;
             }
+
             if (typeof this.segmentSize !== 'undefined') {
                 taskSpec.segment_size = this.segmentSize;
             }
+
             if (typeof this.overlap !== 'undefined') {
                 taskSpec.overlap = this.overlap;
             }
+
             if (typeof this.projectId !== 'undefined') {
                 taskSpec.project_id = this.projectId;
             }
+
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
+            }
+
+            if (typeof this.organizationId !== 'undefined') {
+                taskSpec.organization_id = this.organizationId;
             }
 
             if (this.targetStorage) {
@@ -750,25 +789,25 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
-            if (fields.consensus_replicas) {
+            if (fields?.consensus_replicas) {
                 taskSpec.consensus_replicas = fields.consensus_replicas;
             }
 
             const taskDataSpec = {
-                client_files: this.clientFiles,
-                server_files: this.serverFiles,
-                remote_files: this.remoteFiles,
                 image_quality: this.imageQuality,
                 use_zip_chunks: this.useZipChunks,
                 use_cache: this.useCache,
                 sorting_method: this.sortingMethod,
+                client_files: fields?.clientFiles ?? [],
+                server_files: fields?.serverFiles ?? [],
+                remote_files: fields?.remoteFiles ?? [],
                 ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
                 ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
                 ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
                 ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
                 ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
-                ...(fields.validation_params ? { validation_params: fields.validation_params } : {}),
+                ...(fields?.validation_params ? { validation_params: fields.validation_params } : {}),
             };
 
             const { taskID, rqID } = await serverProxy.tasks.create(
@@ -848,8 +887,15 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             targetStorage: Parameters<typeof TaskClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof TaskClass.prototype.backup>[1],
             fileName: Parameters<typeof TaskClass.prototype.backup>[2],
+            lightweight: Parameters<typeof TaskClass.prototype.backup>[3],
         ): ReturnType<typeof TaskClass.prototype.backup> {
-            const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            const rqID = await serverProxy.tasks.backup(
+                this.id,
+                targetStorage,
+                useDefaultSettings,
+                fileName,
+                lightweight,
+            );
             return rqID;
         },
     });
@@ -978,6 +1024,23 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.meta.get, 'implementation', {
+        value: async function saveFramesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.meta.get> {
+            return getFramesMeta('task', this.id).then((_meta) => _meta);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.meta.save, 'implementation', {
+        value: async function saveFramesImplementation(
+            this: TaskClass,
+            meta: Parameters<typeof TaskClass.prototype.meta.save>[0],
+        ): ReturnType<typeof TaskClass.prototype.meta.save> {
+            return patchMeta(this.id, meta, 'task').then((_meta) => _meta);
+        },
+    });
+
     Object.defineProperty(Task.prototype.frames.search, 'implementation', {
         value: async function searchFrameImplementation(
             this: TaskClass,
@@ -1016,6 +1079,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             return null;
+        },
+    });
+
+    Object.defineProperty(Task.prototype.frames.contextImageData, 'implementation', {
+        value: function contextImageDataImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.contextImageData> {
+            throw new Error('Not implemented for Task');
         },
     });
 

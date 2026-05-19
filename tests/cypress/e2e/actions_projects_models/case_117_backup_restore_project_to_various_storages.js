@@ -6,7 +6,7 @@
 
 context('Tests source & target storage for backups.', () => {
     const backupArchiveName = 'project_backup';
-    let projectID = '';
+    let projectId = '';
     let createdCloudStorageId;
     const caseId = '117';
     const taskName = `Case ${caseId}`;
@@ -28,7 +28,7 @@ context('Tests source & target storage for backups.', () => {
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
-        manifest: 'manifest.jsonl',
+        manifest: 'images_with_manifest/manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
 
@@ -79,9 +79,9 @@ context('Tests source & target storage for backups.', () => {
         },
     };
 
-    function getProjectID() {
+    function getProjectId() {
         cy.url().then((url) => {
-            projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+            projectId = Number(url.split('/').slice(-1)[0].split('?')[0]);
         });
     }
 
@@ -118,15 +118,15 @@ context('Tests source & target storage for backups.', () => {
             task.projectName,
         );
         cy.openProject(project.name);
-        getProjectID();
+        getProjectId();
     });
 
     after(() => {
         cy.goToCloudStoragesPage();
         cy.deleteCloudStorage(cloudStorageData.displayName);
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteProjects(authKey, [project.name]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteProjects(authHeaders, [project.name]);
         });
     });
 
@@ -153,7 +153,7 @@ context('Tests source & target storage for backups.', () => {
                 project.advancedConfiguration.targetStorage,
             );
             cy.waitForFileUploadToCloudStorage();
-            cy.deleteProject(project.name, projectID);
+            cy.deleteProject(project.name, projectId);
         });
 
         it('Import project from minio bucket', () => {

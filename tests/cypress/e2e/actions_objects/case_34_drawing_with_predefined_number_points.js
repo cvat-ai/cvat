@@ -41,6 +41,7 @@ context('Drawing with predefined number of points.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
@@ -58,7 +59,7 @@ context('Drawing with predefined number of points.', () => {
     function tryDeletePoint(successful = true) {
         const svgJsCircleId = [];
         const updatedSvgJsCircleId = [];
-        cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true });
+        cy.activateCanvasShape('#cvat_canvas_shape_1');
         cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         cy.get('circle').then((circle) => {
             for (let i = 0; i < circle.length; i++) {

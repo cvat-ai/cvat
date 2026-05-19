@@ -15,6 +15,7 @@ import Notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Input from 'antd/lib/input/Input';
+import Radio from 'antd/lib/radio';
 import {
     UploadOutlined, InboxOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
@@ -25,7 +26,8 @@ import { importActions, importDatasetAsync } from 'actions/import-actions';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import {
-    getCore, Storage, StorageData, StorageLocation,
+    getCore, Job, Loader, Project, Storage, StorageData, StorageLocation,
+    Task,
 } from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
 import { createAction, ActionUnion } from 'utils/redux';
@@ -34,11 +36,14 @@ const { confirm } = Modal;
 
 const core = getCore();
 
+type AnnotationImportMode = 'replace' | 'append';
+
 type FormValues = {
     selectedFormat: string | undefined;
     fileName?: string | undefined;
     sourceStorage: StorageData;
     useDefaultSettings: boolean;
+    importMode: AnnotationImportMode;
 };
 
 const initialValues: FormValues = {
@@ -49,6 +54,7 @@ const initialValues: FormValues = {
         cloudStorageId: undefined,
     },
     useDefaultSettings: true,
+    importMode: 'replace',
 };
 
 interface UploadParams {
@@ -57,6 +63,7 @@ interface UploadParams {
     useDefaultSettings: boolean;
     sourceStorage: Storage;
     selectedFormat: string | null;
+    importMode: AnnotationImportMode;
     file: File | null;
     fileName: string | null;
 }
@@ -66,7 +73,7 @@ interface State {
     file: File | null;
     selectedLoader: any;
     useDefaultSettings: boolean;
-    defaultStorageLocation: string;
+    defaultStorageLocation: StorageLocation | null;
     defaultStorageCloudId?: number;
     helpMessage: string;
     selectedSourceStorageLocation: StorageLocation;
@@ -85,6 +92,7 @@ enum ReducerActionType {
     SET_SELECTED_SOURCE_STORAGE_LOCATION = 'SET_SELECTED_SOURCE_STORAGE_LOCATION',
     SET_FILE_NAME = 'SET_FILE_NAME',
     SET_SELECTED_FORMAT = 'SET_SELECTED_FORMAT',
+    SET_IMPORT_MODE = 'SET_IMPORT_MODE',
     SET_CONV_MASK_TO_POLY = 'SET_CONV_MASK_TO_POLY',
     SET_SOURCE_STORAGE = 'SET_SOURCE_STORAGE',
     SET_RESOURCE = 'SET_RESOURCE',
@@ -103,7 +111,7 @@ export const reducerActions = {
     setUseDefaultSettings: (useDefaultSettings: boolean) => (
         createAction(ReducerActionType.SET_USE_DEFAULT_SETTINGS, { useDefaultSettings })
     ),
-    setDefaultStorageLocation: (defaultStorageLocation: string) => (
+    setDefaultStorageLocation: (defaultStorageLocation: StorageLocation | null) => (
         createAction(ReducerActionType.SET_DEFAULT_STORAGE_LOCATION, { defaultStorageLocation })
     ),
     setDefaultStorageCloudId: (defaultStorageCloudId?: number) => (
@@ -120,6 +128,9 @@ export const reducerActions = {
     ),
     setSelectedFormat: (selectedFormat: string) => (
         createAction(ReducerActionType.SET_SELECTED_FORMAT, { selectedFormat })
+    ),
+    setImportMode: (importMode: AnnotationImportMode) => (
+        createAction(ReducerActionType.SET_IMPORT_MODE, { importMode })
     ),
     setConvMaskToPoly: (convMaskToPoly: boolean) => (
         createAction(ReducerActionType.SET_CONV_MASK_TO_POLY, { convMaskToPoly })
@@ -239,6 +250,16 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
+    if (action.type === ReducerActionType.SET_IMPORT_MODE) {
+        return {
+            ...state,
+            uploadParams: {
+                ...state.uploadParams,
+                importMode: action.payload.importMode,
+            },
+        };
+    }
+
     if (action.type === ReducerActionType.SET_CONV_MASK_TO_POLY) {
         return {
             ...state,
@@ -301,6 +322,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 cloudStorageId: undefined,
             }),
             selectedFormat: null,
+            importMode: 'replace',
             file: null,
             fileName: null,
         },
@@ -450,11 +472,14 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         form.resetFields();
         dispatch(reducerActions.setFile(null));
         dispatch(reducerActions.setFileName(''));
-        appDispatch(importActions.closeImportDatasetModal(instance));
+        dispatch(reducerActions.setImportMode('replace'));
+        if (instance) {
+            appDispatch(importActions.closeImportDatasetModal(instance));
+        }
     }, [form, instance]);
 
     const onUpload = (): void => {
-        if (uploadParams && uploadParams.resource) {
+        if (instance && uploadParams && uploadParams.resource) {
             appDispatch(
                 importDatasetAsync(
                     instance,
@@ -463,6 +488,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                     uploadParams.sourceStorage,
                     uploadParams.file || uploadParams.fileName as string,
                     uploadParams.convMaskToPoly,
+                    uploadParams.importMode,
                 ));
             const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             const description = `${resToPrint} import was started for ${instanceType}.` +
@@ -478,9 +504,18 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     };
 
     const confirmUpload = (): void => {
+        const isAppend = uploadParams.importMode === 'append';
+        const annotationEntity = isTask() ? 'task' : 'job';
+        const title = isAppend ? 'Append annotations?' : 'Replace existing annotations?';
+        const content = isAppend ?
+            `Uploaded annotations will be added to the existing annotations in this ${annotationEntity}. ` +
+                'Existing annotations will not be removed.' :
+            `This will remove the current annotations in this ${annotationEntity} and ` +
+                'upload annotations from the selected file instead.';
+
         confirm({
-            title: 'Current annotation will be lost',
-            content: `You are going to upload new annotations to ${instanceType}. Continue?`,
+            title,
+            content,
             className: `cvat-modal-content-load-${instanceType.split(' ')[0]}-annotation`,
             onOk: () => {
                 onUpload();
@@ -489,7 +524,8 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 type: 'primary',
                 danger: true,
             },
-            okText: 'Update',
+            okText: isAppend ? 'Append annotations' : 'Replace annotations',
+            cancelText: 'Cancel',
         });
     };
 
@@ -622,6 +658,38 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         <QuestionCircleOutlined />
                     </CVATTooltip>
                 </Space>
+                {isAnnotation() && (
+                    <Form.Item
+                        name='importMode'
+                        label={(
+                            <Space className='cvat-modal-import-mode-label' size={4}>
+                                <Text strong>Import mode</Text>
+                                <CVATTooltip
+                                    title={(
+                                        <div>
+                                            <div>Choose what to do with existing annotations.</div>
+                                            <div>Replace: remove existing annotations before import.</div>
+                                            <div>Append: keep existing annotations and add imported ones.</div>
+                                        </div>
+                                    )}
+                                >
+                                    <QuestionCircleOutlined />
+                                </CVATTooltip>
+                            </Space>
+                        )}
+                        className='cvat-modal-import-mode'
+                    >
+                        <Radio.Group
+                            buttonStyle='solid'
+                            onChange={(event) => {
+                                dispatch(reducerActions.setImportMode(event.target.value));
+                            }}
+                        >
+                            <Radio.Button value='replace'>Replace</Radio.Button>
+                            <Radio.Button value='append'>Append</Radio.Button>
+                        </Radio.Group>
+                    </Form.Item>
+                )}
                 {!useDefaultSettings && (
                     <StorageField
                         locationName={['sourceStorage', 'location']}
@@ -646,16 +714,16 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 }
 
 interface StateToProps {
-    importers: any;
+    importers: Loader[];
     instanceT: 'project' | 'task' | 'job' | null;
-    instance: any;
+    instance: Project | Task | Job | null;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { instanceType } = state.import;
 
     return {
-        importers: state.formats.annotationFormats.loaders,
+        importers: state.formats.annotationFormats?.loaders ?? [],
         instanceT: instanceType,
         instance: !instanceType ? null : (
             state.import[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']

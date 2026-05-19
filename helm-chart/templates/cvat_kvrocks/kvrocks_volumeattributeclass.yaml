@@ -1,0 +1,9 @@
+{{- if .Values.cvat.kvrocks.defaultStorage.volumeAttributesClass.create }}
+apiVersion: storage.k8s.io/v1beta1
+kind: VolumeAttributesClass
+metadata:
+  name: {{ .Values.cvat.kvrocks.defaultStorage.volumeAttributesClass.name }}
+driverName: {{ .Values.cvat.kvrocks.defaultStorage.volumeAttributesClass.provider }}
+parameters:
+{{- toYaml .Values.cvat.kvrocks.defaultStorage.volumeAttributesClass.parameters | nindent 2 }}
+{{- end }}

@@ -4,10 +4,11 @@
 
 import os.path as osp
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 from dataclasses import asdict as dataclass_asdict
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 from urllib.parse import quote
 
 import django_rq

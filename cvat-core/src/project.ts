@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
 import { DimensionType, ProjectStatus, StorageLocation } from './enums';
 import { Storage } from './storage';
 import { SerializedLabel, SerializedProject } from './server-response-types';
@@ -16,20 +15,21 @@ import AnnotationGuide from './guide';
 
 export default class Project {
     public readonly id: number;
+    public readonly _updateTrigger: FieldUpdateTrigger;
     public name: string;
-    public assignee: User;
+    public organizationId: number | null;
+    public assignee: User | null;
     public bugTracker: string;
+    public sourceStorage: Storage;
+    public targetStorage: Storage;
     public readonly status: ProjectStatus;
     public readonly guideId: number | null;
-    public readonly organization: string | null;
     public readonly owner: User;
     public readonly createdDate: string;
     public readonly updatedDate: string;
     public readonly subsets: string[];
     public readonly dimension: DimensionType;
-    public readonly sourceStorage: Storage;
-    public readonly targetStorage: Storage;
-    public labels: Label[];
+    public readonly labels: Label[];
     public annotations: {
         exportDataset: (
             format: string,
@@ -57,7 +57,7 @@ export default class Project {
             status: undefined,
             assignee: undefined,
             guide_id: undefined,
-            organization: undefined,
+            organization_id: undefined,
             owner: undefined,
             bug_tracker: undefined,
             created_date: undefined,
@@ -129,8 +129,16 @@ export default class Project {
                 guideId: {
                     get: () => data.guide_id,
                 },
-                organization: {
-                    get: () => data.organization,
+                organizationId: {
+                    get: () => data.organization_id,
+                    set: (organizationId) => {
+                        if ((Number.isInteger(organizationId) && organizationId > 0) || organizationId === null) {
+                            updateTrigger.update('organizationId');
+                            data.organization_id = organizationId;
+                        } else {
+                            throw new ArgumentError('Value must be a positive integer or null');
+                        }
+                    },
                 },
                 bugTracker: {
                     get: () => data.bug_tracker,
@@ -150,58 +158,29 @@ export default class Project {
                 },
                 labels: {
                     get: () => [...data.labels],
-                    set: (labels: Label[]) => {
-                        if (!Array.isArray(labels)) {
-                            throw new ArgumentError('Value must be an array of Labels');
-                        }
-
-                        if (!Array.isArray(labels) || labels.some((label) => !(label instanceof Label))) {
-                            throw new ArgumentError(
-                                'Each array value must be an instance of Label',
-                            );
-                        }
-
-                        const oldIDs = data.labels.map((_label) => _label.id);
-                        const newIDs = labels.map((_label) => _label.id);
-
-                        // find any deleted labels and mark them
-                        data.labels.filter((_label) => !newIDs.includes(_label.id))
-                            .forEach((_label) => {
-                                // for deleted labels let's specify that they are deleted
-                                _label.deleted = true;
-                            });
-
-                        // find any patched labels and mark them
-                        labels.forEach((_label) => {
-                            const { id } = _label;
-                            if (oldIDs.includes(id)) {
-                                const oldLabelIndex = data.labels.findIndex((__label) => __label.id === id);
-                                if (oldLabelIndex !== -1) {
-                                    // replace current label by the patched one
-                                    const oldLabel = data.labels[oldLabelIndex];
-                                    data.labels.splice(oldLabelIndex, 1, _label);
-                                    if (!_.isEqual(_label.toJSON(), oldLabel.toJSON())) {
-                                        _label.patched = true;
-                                    }
-                                }
-                            }
-                        });
-
-                        // find new labels to append them to the end
-                        const newLabels = labels.filter((_label) => !Number.isInteger(_label.id));
-                        data.labels = [...data.labels, ...newLabels];
-
-                        updateTrigger.update('labels');
-                    },
                 },
                 subsets: {
                     get: () => [...data.task_subsets],
                 },
                 sourceStorage: {
                     get: () => data.source_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('sourceStorage');
+                        data.source_storage = storage;
+                    },
                 },
                 targetStorage: {
                     get: () => data.target_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('targetStorage');
+                        data.target_storage = storage;
+                    },
                 },
                 _internalData: {
                     get: () => data,
@@ -225,8 +204,8 @@ export default class Project {
         return result;
     }
 
-    async save(): Promise<Project> {
-        const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.save);
+    async save(fields?: { labels?: Label[] }): Promise<Project> {
+        const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.save, fields);
         return result;
     }
 
@@ -235,13 +214,19 @@ export default class Project {
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string): Promise<string | void> {
+    async backup(
+        targetStorage: Storage,
+        useDefaultSettings: boolean,
+        fileName?: string,
+        lightweight?: boolean,
+    ): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Project.prototype.backup,
             targetStorage,
             useDefaultSettings,
             fileName,
+            lightweight,
         );
         return result;
     }

@@ -45,6 +45,8 @@ export interface SerializedData {
     color?: string;
     updated?: number;
     source?: Source;
+    score?: number;
+    votes?: number;
     zOrder?: number;
     points?: number[];
     occluded?: boolean;
@@ -88,6 +90,8 @@ export default class ObjectState {
         next: number | null;
         last: number | null;
     } | null;
+    public readonly score: number | undefined;
+    public readonly votes: number | undefined;
     public label: Label;
     public color: string;
     public hidden: boolean;
@@ -180,6 +184,9 @@ export default class ObjectState {
             objectType: serialized.objectType,
             shapeType: serialized.shapeType || null,
             updateFlags,
+            // score and votes are only available for shapes (not tracks or tags)
+            score: serialized.objectType === ObjectType.SHAPE ? (serialized.score ?? 1.0) : undefined,
+            votes: serialized.objectType === ObjectType.SHAPE ? (serialized.votes ?? 0) : undefined,
         };
 
         Object.defineProperties(
@@ -203,6 +210,12 @@ export default class ObjectState {
                 },
                 isGroundTruth: {
                     get: () => data.source === Source.GT,
+                },
+                score: {
+                    get: () => data.score,
+                },
+                votes: {
+                    get: () => data.votes,
                 },
                 clientID: {
                     get: () => data.clientID,
@@ -260,12 +273,7 @@ export default class ObjectState {
                     },
                     set: (points) => {
                         if (!Array.isArray(points) || points.some((coord) => typeof coord !== 'number')) {
-                            throw new ArgumentError(
-                                'Points are expected to be an array of numbers ' +
-                                    `but got ${
-                                        typeof points === 'object' ? points.constructor.name : typeof points
-                                    }`,
-                            );
+                            throw new ArgumentError('Points are expected to be an array of numbers.');
                         }
 
                         if (data.shapeType === ShapeType.SKELETON) {
@@ -296,11 +304,7 @@ export default class ObjectState {
                             data.updateFlags.rotation = true;
                             data.rotation = rotation;
                         } else {
-                            throw new ArgumentError(
-                                `Rotation is expected to be a number, but got ${
-                                    typeof rotation === 'object' ? rotation.constructor.name : typeof rotation
-                                }`,
-                            );
+                            throw new ArgumentError('Rotation is expected to be a number.');
                         }
                     },
                 },
@@ -506,6 +510,56 @@ export default class ObjectState {
             /* eslint-disable-next-line no-underscore-dangle */
             this.__internal = serialized.__internal;
         }
+    }
+
+    public serialize(): SerializedData {
+        const serialized: SerializedData = {
+            objectType: this.objectType,
+            label: this.label,
+            frame: this.frame,
+            lock: this.lock,
+            hidden: this.hidden,
+            pinned: this.pinned,
+            attributes: this.attributes,
+            color: this.color,
+            updated: this.updated,
+            source: this.source,
+            score: this.score,
+            votes: this.votes,
+            zOrder: this.zOrder,
+            occluded: this.occluded,
+            outside: this.outside,
+            keyframe: this.keyframe,
+            descriptions: this.descriptions,
+            elements: this.elements.map((element: ObjectState): SerializedData => element.serialize()),
+        };
+
+        if (this.shapeType) {
+            serialized.shapeType = this.shapeType;
+        }
+        if (typeof this.clientID === 'number') {
+            serialized.clientID = this.clientID;
+        }
+        if (typeof this.serverID === 'number') {
+            serialized.serverID = this.serverID;
+        }
+        if (typeof this.parentID === 'number') {
+            serialized.parentID = this.parentID;
+        }
+        if (this.group) {
+            serialized.group = this.group;
+        }
+        if (this.points) {
+            serialized.points = this.points;
+        }
+        if (typeof this.rotation === 'number') {
+            serialized.rotation = this.rotation;
+        }
+        if (this.keyframes) {
+            serialized.keyframes = this.keyframes;
+        }
+
+        return serialized;
     }
 
     async save(): Promise<ObjectState> {

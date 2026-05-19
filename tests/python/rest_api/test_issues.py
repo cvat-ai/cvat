@@ -22,7 +22,7 @@ from .utils import CollectionSimpleFilterTestBase
 class TestPostIssues:
     def _test_check_response(self, user, data, is_allow, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.issues_api.create(
+            _, response = client.issues_api.create(
                 models.IssueWriteRequest(**data),
                 **kwargs,
                 _parse_response=False,
@@ -35,7 +35,7 @@ class TestPostIssues:
             assert user == response_json["owner"]["username"]
 
             with make_api_client(user) as client:
-                (comments, _) = client.comments_api.list(issue_id=response_json["id"])
+                comments, _ = client.comments_api.list(issue_id=response_json["id"])
             assert data["message"] == comments.results[0].message
 
             assert (
@@ -130,7 +130,7 @@ class TestPatchIssues:
     def _test_check_response(self, user, issue_id, data, is_allow, **kwargs):
         request_data, expected_response_data = data
         with make_api_client(user) as client:
-            (_, response) = client.issues_api.partial_update(
+            _, response = client.issues_api.partial_update(
                 issue_id,
                 patched_issue_write_request=models.PatchedIssueWriteRequest(**request_data),
                 **kwargs,
@@ -248,7 +248,7 @@ class TestPatchIssues:
 class TestDeleteIssues:
     def _test_check_response(self, user, issue_id, expect_success, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.issues_api.destroy(
+            _, response = client.issues_api.destroy(
                 issue_id,
                 **kwargs,
                 _parse_response=False,
@@ -258,7 +258,7 @@ class TestDeleteIssues:
         if expect_success:
             assert response.status == HTTPStatus.NO_CONTENT
 
-            (_, response) = client.issues_api.retrieve(
+            _, response = client.issues_api.retrieve(
                 issue_id, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.NOT_FOUND

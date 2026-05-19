@@ -27,7 +27,9 @@ import { RequestsActionsTypes } from 'actions/requests-actions';
 import { ImportActionTypes } from 'actions/import-actions';
 import { ExportActionTypes } from 'actions/export-actions';
 import { ConsensusActionTypes } from 'actions/consensus-actions';
+import { BulkActionsTypes } from 'actions/bulk-actions';
 import { getInstanceType } from 'actions/common';
+import { ResourceUpdateTypes } from 'utils/enums';
 
 import config from 'config';
 import { NotificationsState } from '.';
@@ -51,6 +53,11 @@ const defaultState: NotificationsState = {
             changePassword: null,
             requestPasswordReset: null,
             resetPassword: null,
+            updateUser: null,
+            getApiTokens: null,
+            createApiToken: null,
+            updateApiToken: null,
+            revokeApiToken: null,
         },
         serverAPI: {
             fetching: null,
@@ -192,6 +199,9 @@ const defaultState: NotificationsState = {
             canceling: null,
             deleting: null,
         },
+        bulkOperation: {
+            processing: null,
+        },
     },
     messages: {
         tasks: {
@@ -299,7 +309,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case AuthActionTypes.REGISTER_SUCCESS: {
-            if (!action.payload.user.isVerified) {
+            if (!action.payload.isVerified) {
                 return {
                     ...state,
                     messages: {
@@ -308,7 +318,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             ...state.messages.auth,
                             registerDone: {
                                 message: `To use your account, you need to confirm the email address. \
-                                We have sent an email with a confirmation link to ${action.payload.user.email}.`,
+                                We have sent an email with a confirmation link to ${action.payload.userEmail}.`,
                             },
                         },
                     },
@@ -328,6 +338,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages.auth,
                         changePasswordDone: {
                             message: 'New password has been saved.',
+                            className: 'cvat-notification-notice-change-password-success',
                         },
                     },
                 },
@@ -404,6 +415,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.auth,
                         resetPassword: {
                             message: 'Could not set new password on the server.',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.UPDATE_USER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        updateUser: {
+                            message: 'Could not update user information.',
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },
@@ -565,6 +592,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         dataset: {
                             message: 'Export is finished',
                             duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-finished`,
                             description,
                         },
                     },
@@ -739,7 +767,13 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case TasksActionTypes.UPDATE_TASK_FAILED: {
-            const { taskId } = action.payload;
+            const { taskId, error, updateType } = action.payload;
+            let message = `Could not update the [task #${taskId}](/tasks/${taskId})`;
+
+            if (updateType === ResourceUpdateTypes.UPDATE_ORGANIZATION) {
+                message = `Could not transfer the [task #${taskId}](/tasks/${taskId}) to the new workspace`;
+            }
+
             return {
                 ...state,
                 errors: {
@@ -747,8 +781,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         updating: {
-                            message: `Could not update the [task #${taskId}](/tasks/${taskId})`,
-                            reason: action.payload.error.toString(),
+                            message,
+                            reason: error.toString(),
+                            shouldLog: shouldLog(error),
                             className: 'cvat-notification-notice-update-task-failed',
                         },
                     },
@@ -873,7 +908,13 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
-            const { projectId } = action.payload;
+            const { projectId, error, updateType } = action.payload;
+            let message = `Could not update the [project #${projectId}](/projects/${projectId})`;
+
+            if (updateType === ResourceUpdateTypes.UPDATE_ORGANIZATION) {
+                message = `Could not transfer the [project #${projectId}](/projects/${projectId}) to the new workspace`;
+            }
+
             return {
                 ...state,
                 errors: {
@@ -881,9 +922,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         creating: {
-                            message: `Could not update [project #${projectId}](/project/${projectId})`,
-                            reason: action.payload.error,
+                            message,
+                            reason: error.toString(),
                             className: 'cvat-notification-notice-update-project-failed',
+                            shouldLog: shouldLog(error),
                         },
                     },
                 },
@@ -1080,23 +1122,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.UPDATE_CURRENT_JOB_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        saving: {
-                            message: 'Could not update annotation job',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-update-current-job-failed',
-                        },
-                    },
-                },
-            };
-        }
         case AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
@@ -1178,7 +1203,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.SLICE_ANNOTATIONS_FAILED:
+        case AnnotationActionTypes.SLICE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 errors: {
@@ -1193,6 +1218,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     },
                 },
             };
+        }
         case AnnotationActionTypes.SPLIT_ANNOTATIONS_FAILED: {
             return {
                 ...state,
@@ -1915,6 +1941,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
+            const { error } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        fetching: {
+                            message: 'Could not fetch the list of organizations',
+                            reason: error,
+                            shouldLog: shouldLog(error),
+                        },
+                    },
+                },
+            };
+        }
         case JobsActionTypes.GET_JOBS_FAILED: {
             return {
                 ...state,
@@ -2046,6 +2089,94 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-webhook-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case BulkActionsTypes.BULK_OPERATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    bulkOperation: {
+                        ...state.errors.bulkOperation,
+                        processing: {
+                            message: 'Bulk operation failed.',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-bulk-operation-failed',
+                            remainingItemsCount: action.payload.remainingItemsCount,
+                            retryPayload: action.payload.retryPayload,
+                            ignore: true,
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.GET_API_TOKENS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        getApiTokens: {
+                            message: 'Could not get API tokens',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-get-api-tokens-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.CREATE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        createApiToken: {
+                            message: 'Could not create API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-create-api-token-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.UPDATE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        updateApiToken: {
+                            message: 'Could not update API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-update-api-token-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.REVOKE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        revokeApiToken: {
+                            message: 'Could not revoke API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-revoke-api-token-failed',
                         },
                     },
                 },

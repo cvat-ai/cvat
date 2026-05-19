@@ -24,8 +24,8 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
     const directoryToArchive = imagesFolder;
     const secondUserName = 'Seconduser';
     const thirdUserName = 'Thirduser';
-    let taskID;
-    let jobID;
+    let taskId;
+    let jobId;
 
     const secondUser = {
         firstName: `${secondUserName} fitstname`,
@@ -40,19 +40,35 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         password: 'Fv5Df3#f55g',
     };
 
-    let authKey;
-    const isStaff = false;
-    const isSuperuser = false;
-    const isActive = false;
+    function deactivateUserOpenTask(userName) {
+        cy.task('getAuthHeaders').then((authHeaders) => cy.task('nodeJSONRequest', {
+            url: '/api/users?page_size=all',
+            options: {
+                headers: authHeaders,
+            },
+        }).then((response) => {
+            const responseResult = response.body.results;
+            responseResult.forEach((user) => {
+                if (user.username === userName) {
+                    return cy.task('nodeJSONRequest', {
+                        url: `/api/users/${user.id}`,
+                        options: {
+                            method: 'PATCH',
+                            headers: authHeaders,
+                            body: { is_active: false },
+                        },
+                    });
+                }
 
-    function changeCheckUserStatusOpenTask(userName) {
-        cy.changeUserActiveStatus(authKey, userName, isActive);
-        cy.checkUserStatuses(authKey, userName, isStaff, isSuperuser, isActive);
-        cy.intercept('GET', `/api/users*${thirdUserName}*`).as('users');
-        cy.openTask(taskName);
-        cy.wait('@users');
-        cy.get('.cvat-global-boundary').should('not.exist');
-        cy.contains('.cvat-task-details-task-name', taskName).should('exist');
+                return null;
+            });
+        })).then(() => {
+            cy.intercept('GET', `/api/users*${thirdUserName}*`).as('users');
+            cy.openTask(taskName);
+            cy.wait('@users');
+            cy.get('.cvat-global-boundary').should('not.exist');
+            cy.contains('.cvat-task-details-task-name', taskName).should('exist');
+        });
     }
 
     before(() => {
@@ -62,9 +78,9 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then(($authKey) => {
-            cy.deleteUsers($authKey, [secondUserName, thirdUserName]);
-            cy.deleteTasks($authKey, [taskName, secondTaskName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteUsers(authHeaders, [secondUserName, thirdUserName]);
+            cy.deleteTasks(authHeaders, [taskName, secondTaskName]);
         });
     });
 
@@ -115,12 +131,12 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
-            cy.getJobIDFromIdx(0).then((_jobID) => cy.assignJobToUser(_jobID, secondUserName));
+            cy.getJobIdFromIdx(0).then((_jobId) => cy.assignJobToUser(_jobId, secondUserName));
             cy.openJob();
             // Getting the task and job id
             cy.url().then((url) => {
-                jobID = Number(url.split('/').slice(-1)[0]);
-                taskID = Number(url.split('/').slice(-3)[0]);
+                jobId = Number(url.split('/').slice(-1)[0]);
+                taskId = Number(url.split('/').slice(-3)[0]);
             });
             cy.logout();
         });
@@ -129,7 +145,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.login(secondUserName, secondUser.password);
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
-            cy.getJobIDFromIdx(0).then((_jobID) => cy.assignJobToUser(_jobID, null));
+            cy.getJobIdFromIdx(0).then((_jobId) => cy.assignJobToUser(_jobId, null));
             cy.logout();
         });
 
@@ -142,14 +158,14 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
             cy.openTask(taskName);
-            cy.getJobIDFromIdx(0).then((_jobID) => cy.assignJobToUser(_jobID, thirdUserName));
+            cy.getJobIdFromIdx(0).then((_jobId) => cy.assignJobToUser(_jobId, thirdUserName));
             cy.logout();
         });
 
         it('The third user can not open the task, but can open the job by a direct link.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.get('.cvat-item-task-name').should('not.exist');
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
 
             // Check issue "Info modal does not work if a job assigneed to somebody (4140)"
@@ -161,21 +177,17 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.logout();
         });
 
-        it('First user login. Getting authKey.', () => {
-            cy.intercept('POST', '/api/auth/login**').as('login');
+        it('First user login.', () => {
             cy.login();
-            cy.wait('@login').then((response) => {
-                authKey = response.response.body.key;
-            });
         });
 
         it('Deactivate the second user (task assigned). Trying to open the task. Should be successful.', () => {
-            changeCheckUserStatusOpenTask(secondUserName);
+            deactivateUserOpenTask(secondUserName);
             cy.goToTaskList();
         });
 
         it('Deactivate the third user (job assigned). Trying to open the task. Should be successful.', () => {
-            changeCheckUserStatusOpenTask(thirdUserName);
+            deactivateUserOpenTask(thirdUserName);
         });
     });
 });

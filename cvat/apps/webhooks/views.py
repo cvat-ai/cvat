@@ -26,7 +26,7 @@ from .serializers import (
     WebhookReadSerializer,
     WebhookWriteSerializer,
 )
-from .signals import signal_ping, signal_redelivery
+from .services import ping, redeliver
 
 
 @extend_schema(tags=["webhooks"])
@@ -65,12 +65,13 @@ class WebhookViewSet(viewsets.ModelViewSet):
     ordering = "-id"
     http_method_names = ["get", "post", "delete", "patch", "put"]
 
-    search_fields = ("target_url", "owner", "type", "description")
-    filter_fields = list(search_fields) + ["id", "project_id", "updated_date"]
-    simple_filters = list(set(search_fields) - {"description"} | {"project_id"})
+    search_fields = ("target_url", "owner", "description")
+    simple_filters = ("target_url", "owner", "type", "project_id")
+    filter_fields = (*simple_filters, "id", "updated_date", "description")
     ordering_fields = list(filter_fields)
     lookup_fields = {"owner": "owner__username"}
-    iam_organization_field = "organization"
+    iam_supports_organization_params = True
+    iam_permission_class = WebhookPermission
 
     def get_serializer_class(self):
         if self.request.path.endswith("redelivery") or self.request.path.endswith("ping"):
@@ -172,8 +173,9 @@ class WebhookViewSet(viewsets.ModelViewSet):
         serializer_class=None,
     )
     def redelivery(self, request, pk, delivery_id):
-        delivery = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
-        signal_redelivery.send(sender=self, data=delivery.request)
+        webhook = self.get_object()
+        delivery = webhook.deliveries.get(id=delivery_id)
+        redeliver(webhook=webhook, data=delivery.request)
         return Response({}, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -186,6 +188,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
         instance = self.get_object()  # force call of check_object_permissions()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
-        delivery = signal_ping.send(sender=self, serializer=serializer)[0][1]
+        delivery = ping(serializer=serializer)
         serializer = WebhookDeliveryReadSerializer(delivery, context={"request": request})
         return Response(serializer.data)

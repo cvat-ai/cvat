@@ -4,13 +4,12 @@
 
 import math
 from collections.abc import Sequence
-from typing import Optional
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 
-def encode_mask(bitmap: ArrayLike, /, bbox: Optional[Sequence[float]] = None) -> list[float]:
+def encode_mask(bitmap: ArrayLike, /, bbox: Sequence[float] | None = None) -> list[float]:
     """
     Encodes an image mask into an array of numbers suitable for the "points"
     attribute of a LabeledShapeRequest object of type "mask".

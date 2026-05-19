@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
@@ -14,17 +14,19 @@ import Title from 'antd/lib/typography/Title';
 import Meta from 'antd/lib/card/Meta';
 import Divider from 'antd/lib/divider';
 import Card from 'antd/lib/card';
-import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 
 import Preview from 'components/common/preview';
-import { useCardHeightHOC, usePlugins } from 'utils/hooks';
+import { useCardHeightHOC, useContextMenuClick, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { MLModel, ModelProviders } from 'cvat-core-wrapper';
+import ModelActionsComponent from './actions-menu';
 
 interface Props {
     model: MLModel;
+    selected: boolean;
+    onClick: (event: React.MouseEvent) => boolean;
 }
 
 const useCardHeight = useCardHeightHOC({
@@ -35,37 +37,33 @@ const useCardHeight = useCardHeightHOC({
     numberOfRows: 3,
 });
 
-export default function DeployedModelItem(props: Props): JSX.Element {
-    const { model } = props;
+function DeployedModelItem(props: Readonly<Props>): JSX.Element {
+    const { model, selected, onClick } = props;
     const [isModalShown, setIsModalShown] = useState(false);
     const height = useCardHeight();
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
     const style: React.CSSProperties = { height };
 
-    const onOpenModel = (): void => {
-        setIsModalShown(true);
+    const systemModel = model.provider === ModelProviders.CVAT;
+    const onOpenModel = (event: React.MouseEvent): void => {
+        const cancel = !systemModel ? onClick(event) : false;
+        if (!cancel) {
+            setIsModalShown(true);
+        }
     };
     const onCloseModel = (): void => {
         setIsModalShown(false);
     };
 
-    const created = moment(model.createdDate).fromNow();
-    const modelDescription = model.provider !== ModelProviders.CVAT ?
+    const created = dayjs(model.createdDate).fromNow();
+    const modelDescription = !systemModel ?
         <Text type='secondary'>{`Added ${created}`}</Text> :
         <Text type='secondary'>System model</Text>;
-    console.log(modelDescription);
 
-    const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
     const topBarItems: [JSX.Element, number][] = [];
 
-    const menuPlugins = usePlugins(
-        (state: CombinedState) => state.plugins.components.modelsPage.modelItem.menu.items, props,
-    );
     const topBarPlugins = usePlugins(
         (state: CombinedState) => state.plugins.components.modelsPage.modelItem.topBar.menu.items, props,
-    );
-
-    menuItems.push(...menuPlugins
-        .map(({ component, weight }): typeof menuItems[0] => [component({ targetProps: props }), weight]),
     );
 
     topBarItems.push(
@@ -78,6 +76,63 @@ export default function DeployedModelItem(props: Props): JSX.Element {
             {topBarItems.sort((item1, item2) => item1[1] - item2[1])
                 .map((item) => item[0])}
         </div>
+    );
+
+    const cardClassName = `cvat-models-item-card${selected ? ' cvat-item-selected' : ''}`;
+
+    const card = (menuItems: NonNullable<MenuProps['items']>): JSX.Element => (
+        <Card
+            ref={itemRef}
+            cover={(
+                <Preview
+                    model={model}
+                    loadingClassName='cvat-model-item-loading-preview'
+                    emptyPreviewClassName='cvat-model-item-empty-preview'
+                    previewWrapperClassName='cvat-models-item-card-preview-wrapper'
+                    previewClassName='cvat-models-item-card-preview'
+                    onClick={onOpenModel}
+                />
+            )}
+            style={style}
+            size='small'
+            className={cardClassName}
+            hoverable
+            onContextMenuCapture={handleContextMenuCapture}
+        >
+            <Meta
+                title={(
+                    <Text ellipsis={{ tooltip: model.name }} onClick={onOpenModel} className='cvat-models-item-title' aria-hidden>
+                        {model.provider !== ModelProviders.CVAT && `#${model.id}: `}
+                        {model.name}
+                    </Text>
+                )}
+                description={(
+                    <div className='cvat-models-item-description'>
+                        <Row onClick={onOpenModel} className='cvat-models-item-text-description'>
+                            {model.owner && (
+                                <>
+                                    <Text type='secondary'>{`Created by ${model.owner}`}</Text>
+                                    <br />
+                                </>
+                            )}
+                            {modelDescription}
+                        </Row>
+                        {
+                            (menuItems.length > 0) ? (
+                                <Button
+                                    className='cvat-deployed-model-details-button cvat-actions-menu-button'
+                                    type='link'
+                                    size='large'
+                                    icon={<MoreOutlined />}
+                                    onClick={handleContextMenuClick}
+                                />
+                            ) : null
+                        }
+                    </div>
+                )}
+            />
+            { modelTopBar }
+        </Card>
     );
 
     return (
@@ -153,60 +208,13 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                     )}
                 </Row>
             </Modal>
-            <Card
-                cover={(
-                    <Preview
-                        model={model}
-                        loadingClassName='cvat-model-item-loading-preview'
-                        emptyPreviewClassName='cvat-model-item-empty-preview'
-                        previewWrapperClassName='cvat-models-item-card-preview-wrapper'
-                        previewClassName='cvat-models-item-card-preview'
-                        onClick={onOpenModel}
-                    />
-                )}
-                style={style}
-                size='small'
-                className='cvat-models-item-card'
-                hoverable
-            >
-                <Meta
-                    title={(
-                        <Text ellipsis={{ tooltip: model.name }} onClick={onOpenModel} className='cvat-models-item-title' aria-hidden>
-                            {model.provider !== ModelProviders.CVAT && `#${model.id}: `}
-                            {model.name}
-                        </Text>
-                    )}
-                    description={(
-                        <div className='cvat-models-item-description'>
-                            <Row onClick={onOpenModel} className='cvat-models-item-text-description'>
-                                {model.owner && (
-                                    <>
-                                        <Text type='secondary'>{`Created by ${model.owner}`}</Text>
-                                        <br />
-                                    </>
-                                )}
-                                {modelDescription}
-                            </Row>
-                            {
-                                menuItems.length !== 0 && (
-                                    <Dropdown
-                                        trigger={['click']}
-                                        destroyPopupOnHide
-                                        menu={{
-                                            items: menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
-                                                .map((menuItem) => menuItem[0]),
-                                            triggerSubMenuAction: 'click',
-                                        }}
-                                    >
-                                        <Button className='cvat-deployed-model-details-button' type='link' size='large' icon={<MoreOutlined />} />
-                                    </Dropdown>
-                                )
-                            }
-                        </div>
-                    )}
-                />
-                { modelTopBar }
-            </Card>
+            <ModelActionsComponent
+                model={model}
+                dropdownTrigger={['contextMenu']}
+                triggerElement={card}
+            />
         </>
     );
 }
+
+export default React.memo(DeployedModelItem);

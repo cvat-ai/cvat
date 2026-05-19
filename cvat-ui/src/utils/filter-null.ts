@@ -4,7 +4,7 @@
 
 import { Indexable } from 'reducers';
 
-type NonNullableProperties<T> = {
+export type NonNullableProperties<T> = {
     [K in keyof T]: NonNullable<T[K]>;
 };
 

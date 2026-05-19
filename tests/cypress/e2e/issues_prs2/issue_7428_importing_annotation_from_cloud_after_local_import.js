@@ -25,7 +25,7 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
-        manifest: 'manifest.jsonl',
+        manifest: 'images_with_manifest/manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
 
@@ -63,7 +63,7 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
         cy.get('.cvat-modal-content-load-task-annotation')
             .should('be.visible')
             .within(() => {
-                cy.contains('button', 'Update').click();
+                cy.contains('button', 'Replace annotations').click();
             });
         cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
         cy.closeNotification('.cvat-notification-notice-import-annotation-start');
@@ -72,6 +72,7 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         createdCloudStorageId = cy.attachS3Bucket(cloudStorageData);
         cy.goToTaskList();
         cy.openTaskJob(taskName);

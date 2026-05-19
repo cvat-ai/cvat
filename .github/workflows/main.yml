@@ -72,7 +72,8 @@ jobs:
 
       - name: Instrumentation of the code then rebuilding the CVAT UI
         run: |
-          yarn --frozen-lockfile
+          corepack enable yarn
+          yarn --immutable
           yarn run coverage
 
       - name: CVAT UI. Build and push
@@ -112,6 +113,11 @@ jobs:
           docker run --rm "cvat/server:${CVAT_VERSION}" bash \
             -c 'python manage.py makemigrations --check'
 
+      - name: Verify redis migration filenames
+        run: |
+          docker run --rm "cvat/server:${CVAT_VERSION}" bash \
+            -c 'python manage.py checkredismigrations'
+
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v4
         with:
@@ -143,13 +149,15 @@ jobs:
             allow_cache: 'no'
           - pattern: "not test_task_data"
             allow_cache: 'no'
+          - pattern: "not test_task_data"
+            allow_cache: 'true'
     name: rest_api_testing [${{ matrix.pattern }}, cache-${{ matrix.allow_cache }}]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v4
@@ -187,21 +195,15 @@ jobs:
           CVAT_ALLOW_STATIC_CACHE: ${{ matrix.allow_cache }}
         run: |
           pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
-          ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py --cov --cov-report=json
-
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{
-            contains(matrix.pattern, 'not')
-              && 'coverage_results_rest_api'
-              || format(
-                  'coverage_results_rest_api-{0}-cache-{1}',
-                  matrix.pattern, matrix.allow_cache
-                )
-            }}
+          name: ${{format(
+            'coverage_results_rest_api-{0}-cache-{1}',
+            matrix.pattern, matrix.allow_cache
+            )}}
           path: |
             coverage*.json
 
@@ -220,28 +222,20 @@ jobs:
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{
-            contains(matrix.pattern, 'not')
-              && 'rest_api_container_logs'
-              || format(
-                  'rest_api_container_logs-{0}-cache-{1}',
-                  matrix.pattern, matrix.allow_cache
-                )
-            }}
+          name: ${{format(
+              'rest_api_container_logs-{0}-cache-{1}',
+              matrix.pattern, matrix.allow_cache
+            )}}
           path: "${{ github.workspace }}/rest_api_testing"
 
       - name: Upload allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{
-            contains(matrix.pattern, 'not')
-              && 'allure-results-tests-api'
-              || format(
-                  'allure-results-tests-api-{0}-cache-{1}',
-                  matrix.pattern, matrix.allow_cache
-                )
-            }}
+          name: ${{format(
+              'allure-results-tests-api-{0}-cache-{1}',
+              matrix.pattern,matrix.allow_cache
+            )}}
           path: tests/python/allure-results
 
   unit_testing:
@@ -278,7 +272,8 @@ jobs:
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml \
+            run --env PYTHONDEVMODE=1 cvat_ci /bin/bash \
             -c 'coverage run -a manage.py test -v 2 cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
 
       - name: Uploading code coverage results as an artifact
@@ -311,16 +306,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
-                'issues_prs', 'issues_prs2', 'features']
+                'actions_projects_models', 'canvas3d_functionality',
+                'issues_prs', 'issues_prs2', 'features', 'features2']
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
             node-version: '22.x'
+            # NOTE: corepack is not bundled after Node 25
+            # https://nodejs.org/docs/v22.18.0/api/corepack.html#corepack
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v4
@@ -370,21 +367,23 @@ jobs:
           DJANGO_SU_NAME: 'admin'
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
+
         run: |
           docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
-          yarn --frozen-lockfile
+          corepack enable yarn
+          yarn --immutable
 
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \
               --headed \
               --browser chrome \
               --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
           mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
 
@@ -508,8 +507,8 @@ jobs:
         # We don't have external services in Helm tests, so we ignore corresponding cases
         # They are still tested without Helm
         run: |
-          kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
-          kubectl cp tests/mounted_file_share/videos $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+          kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
+          kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
           pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-cli-level DEBUG
 
       - name: Creating a log file from "cvat" container logs
@@ -518,8 +517,9 @@ jobs:
             LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
           mkdir ${LOGS_DIR}
-          kubectl logs $(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_server.log
-          kubectl logs $(kubectl get pods -l component=worker-utils -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_workers.log
+          for backend_pod in $(kubectl get pods -l tier=backend -o 'jsonpath={.items[*].metadata.name}'); do
+            kubectl logs ${backend_pod} >${LOGS_DIR}/${backend_pod}.log
+          done
           kubectl logs $(kubectl get pods -l app.kubernetes.io/name=traefik -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/traefik.log
 
       - name: Uploading "cvat" container logs as an artifact
@@ -573,7 +573,10 @@ jobs:
   generate_report:
     name: Generate Allure Report and Upload to S3
     needs: [rest_api_testing, e2e_testing]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop' && github.repository == 'cvat.ai/cvat'
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/generate-allure-report.yml
     secrets:
       AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}

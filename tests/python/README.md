@@ -45,11 +45,6 @@ which are used by containers for the testing system.
   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
   to get more information about tests running.
 
-- Run tests to check the functionality of limiting active jobs in a queue per user:
-
-  ```shell
-  ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
-  ```
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already
@@ -87,15 +82,10 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign \
-    --exclude=admin --exclude=auth.permission --exclude=authtoken --exclude=contenttypes \
-    --exclude=django_rq --exclude=sessions \
-    > shared/assets/cvat_db/data.json
+cd tests/python
+python shared/utils/dump_test_db.py
 docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
 ```
-
-> Note: if you won't be use --indent options or will be use with other value
-> it potentially will lead to problems with merging of this file with other branch.
 
 ## How to update *.json files in the assets directory?
 
@@ -113,7 +103,7 @@ python shared/utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-cat shared/assets/cvat_db/data.json | docker exec -i test_cvat_server_1 python manage.py loaddata --format=json -
+cat shared/assets/cvat_db/data.json | docker exec -i test_cvat_server_1 python manage.py loaddata_sorted
 cat shared/assets/cvat_db/cvat_data.tar.bz2 | docker exec -i test_cvat_server_1 tar --strip 3 -C /home/django/data/ -xj
 ```
 
@@ -169,15 +159,6 @@ Assets directory has two parts:
    then better to choose `admin1` user for creating new resource.
 
 ## Troubleshooting
-
-1. If your test session was exit with message:
-   ```
-   _pytest.outcomes.Exit: Command failed: ... Add `-s` option to see more details.
-   ```
-   Rerun tests to see error messages:
-   ```
-   pytest ./tests/python/rest_api -s
-   ```
 
 1. If your tests was failed due to date field incompatibility and you have
    error message like this:

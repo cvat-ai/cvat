@@ -14,8 +14,8 @@ import { CombinedState, PluginComponent, InstanceType } from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
+import { dispatchContextMenuEvent } from './context-menu-helper';
 
-// eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
     const ref = useRef<T>();
     useEffect(() => {
@@ -38,7 +38,7 @@ export function useIsMounted(): () => boolean {
 }
 
 export type Plugin = {
-    component: CallableFunction;
+    component: any; // TODO: research which type should be here
     weight: number;
 };
 
@@ -50,7 +50,7 @@ export function usePlugins(
     const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
     const mappedComponents = filteredComponents
         .map(({ component, data }): {
-            component: CallableFunction;
+            component: any; // TODO: research which type should be here
             weight: number;
         } => ({
             component,
@@ -254,15 +254,18 @@ export function useDropdownEditField(): DropdownEditField {
 interface ResourceQueryDefaultParams {
     page?: number;
     pageSize?: number;
+    filter?: string | null;
 }
 
 export function useResourceQuery<QueryType extends {
     page: number;
     pageSize: number;
+    filter?: string;
 }>(query: QueryType, defaultParams: ResourceQueryDefaultParams = {}): QueryType {
     const {
         page = 1,
         pageSize = 10,
+        filter = null,
     } = defaultParams;
 
     const history = useHistory();
@@ -277,6 +280,46 @@ export function useResourceQuery<QueryType extends {
         if (key === 'pageSize') {
             updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : pageSize;
         }
+        if (key === 'filter') {
+            updatedQuery.filter = updatedQuery.filter ? updatedQuery.filter : filter;
+        }
     }
     return updatedQuery;
+}
+
+export interface ContextMenuClick<T extends HTMLElement = HTMLElement> {
+    itemRef: React.RefObject<T>;
+    handleContextMenuClick: (e: React.MouseEvent) => void;
+    handleContextMenuCapture: (e: React.MouseEvent) => void;
+}
+
+export function useContextMenuClick<T extends HTMLElement = HTMLElement>(
+    preventSelectors: string[] = [
+        'a',
+        'input',
+        '.ant-dropdown-menu-item',
+        '.ant-select-item-option',
+        '.ant-select-selector',
+    ],
+): ContextMenuClick<T> {
+    const itemRef = useRef<T>(null);
+
+    const handleContextMenuClick = useCallback((e: React.MouseEvent) => {
+        if (itemRef.current) {
+            dispatchContextMenuEvent(itemRef.current, e);
+        }
+    }, []);
+
+    const shouldPreventContextMenu = useCallback((target: EventTarget | null): boolean => {
+        if (!target || !(target instanceof Element)) return false;
+        return preventSelectors.some((selector) => target.closest(selector) !== null);
+    }, [preventSelectors]);
+
+    const handleContextMenuCapture = useCallback((e: React.MouseEvent) => {
+        if (shouldPreventContextMenu(e.target)) {
+            e.stopPropagation();
+        }
+    }, [shouldPreventContextMenu]);
+
+    return { itemRef, handleContextMenuClick, handleContextMenuCapture };
 }

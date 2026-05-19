@@ -4,16 +4,18 @@
 
 import {
     AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, ConsensusSettingsFilter,
+    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
-import { AnnotationFormats } from './annotation-formats';
+import AnnotationFormats from './annotation-formats';
 import logger from './logger';
 import * as enums from './enums';
 import config from './config';
-import { mask2Rle, rle2Mask, propagateShapes } from './object-utils';
+import { mask2Rle, rle2Mask } from './rle-utils';
+import { getVisibleSkeletonElements, propagateShapes, validateAttributeValue } from './object-utils';
+import { createOpenCVInterface } from './opencv/opencv-interface';
 import User from './user';
 import Project from './project';
 import { Job, Task } from './session';
@@ -33,6 +35,7 @@ import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import ConsensusSettings from './consensus-settings';
 import AnnotationGuide from './guide';
+import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import AboutData from './about';
@@ -65,24 +68,29 @@ export default interface CVATCore {
     };
     server: {
         about: () => Promise<AboutData>;
-        share: (dir: string) => Promise<{
+        share: (
+            ...args: Parameters<typeof serverProxy.server.share>
+        ) => Promise<{
             mimeType: string;
             name: string;
             type: enums.ShareFileType;
         }[]>;
         formats: () => Promise<AnnotationFormats>;
         userAgreements: typeof serverProxy.server.userAgreements,
-        register: any; // TODO: add types later
-        login: any;
-        logout: any;
-        changePassword: any;
-        requestPasswordReset: any;
-        resetPassword: any;
-        authenticated: any;
-        healthCheck: any;
-        request: any;
-        setAuthData: any;
-        installedApps: any;
+        register: (
+            ...args: Parameters<typeof serverProxy.server.register>
+        ) => ReturnType<typeof serverProxy.server.register>;
+        login: typeof serverProxy.server.login;
+        logout: typeof serverProxy.server.logout;
+        changePassword: typeof serverProxy.server.changePassword;
+        requestPasswordReset: typeof serverProxy.server.requestPasswordReset;
+        resetPassword: typeof serverProxy.server.resetPassword;
+        authenticated: typeof serverProxy.server.authenticated;
+        healthCheck: typeof serverProxy.server.healthCheck;
+        request: <T = unknown>(
+            ...args: Parameters<typeof serverProxy.server.request>
+        ) => Promise<T>;
+        installedApps: () => Promise<Record<string, boolean>>;
         apiSchema: typeof serverProxy.server.apiSchema;
     };
     assets: {
@@ -90,6 +98,9 @@ export default interface CVATCore {
     };
     users: {
         get: any;
+    };
+    apiTokens: {
+        get: (filter: ApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
     };
     jobs: {
         get: (filter: {
@@ -165,7 +176,7 @@ export default interface CVATCore {
         };
     };
     frames: {
-        getMeta: any;
+        getMeta: (type: 'task' | 'job', id: number) => Promise<FramesMetaData>;
     };
     requests: {
         list: () => Promise<PaginatedResource<Request>>;
@@ -190,6 +201,7 @@ export default interface CVATCore {
         backendAPI: typeof config.backendAPI;
         origin: typeof config.origin;
         uploadChunkSize: typeof config.uploadChunkSize;
+        opencvPath: typeof config.opencvPath;
         removeUnderlyingMaskPixels: {
             enabled: boolean;
             onEmptyMaskOccurrence: () => void | null;
@@ -230,6 +242,7 @@ export default interface CVATCore {
         QualityReport: typeof QualityReport;
         QualityConflict: typeof QualityConflict;
         QualitySettings: typeof QualitySettings;
+        ApiToken: typeof ApiToken;
         Request: typeof Request;
         FramesMetaData: typeof FramesMetaData;
         JobValidationLayout: typeof JobValidationLayout;
@@ -239,5 +252,11 @@ export default interface CVATCore {
         mask2Rle: typeof mask2Rle;
         rle2Mask: typeof rle2Mask;
         propagateShapes: typeof propagateShapes;
+        validateAttributeValue: typeof validateAttributeValue;
+        getVisibleSkeletonElements: typeof getVisibleSkeletonElements;
     };
+    opencv: {
+        createOpenCVInterface: typeof createOpenCVInterface;
+    };
+// eslint-disable-next-line semi
 }

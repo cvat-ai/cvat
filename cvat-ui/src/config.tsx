@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-
 const NO_BREAK_SPACE = '\u00a0';
 const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
 const CHANGELOG_URL = 'https://github.com/cvat-ai/cvat/blob/develop/CHANGELOG.md';
@@ -32,7 +30,7 @@ const CANVAS_WORKSPACE_MARGIN = 8;
 const CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT = 4;
 const CANVAS_WORKSPACE_PADDING = CANVAS_WORKSPACE_MARGIN / 2;
 const OUTSIDE_PIC_URL = 'https://docs.cvat.ai/images/image019.jpg';
-const DEFAULT_AWS_S3_REGIONS: string[][] = [
+const DEFAULT_AWS_REGIONS: string[][] = [
     ['us-east-1', 'US East (N. Virginia)'],
     ['us-east-2', 'US East (Ohio)'],
     ['us-west-1', 'US West (N. California)'],
@@ -51,23 +49,6 @@ const DEFAULT_AWS_S3_REGIONS: string[][] = [
     ['eu-north-1', 'Europe (Stockholm)'],
     ['sa-east-1', 'South America (São Paulo)'],
 ];
-
-const SERVER_UNAVAILABLE_COMPONENT = (
-    <>
-        Make sure the CVAT backend and all necessary services
-        (Database, Redis and Open Policy Agent) are running and available.
-        If you upgraded from version 2.2.0 or earlier, manual actions may be needed,
-        see the&nbsp;
-        <a
-            target='_blank'
-            rel='noopener noreferrer'
-            href={UPGRADE_GUIDE_URL}
-        >
-            Upgrade Guide
-        </a>
-        .
-    </>
-);
 
 const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
     ['NORTHAMERICA-NORTHEAST1', 'Montréal'],
@@ -175,14 +156,13 @@ export default {
     QUICK_ISSUE_INCORRECT_POSITION_TEXT,
     QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
     DEFAULT_PROJECT_SUBSETS,
-    DEFAULT_AWS_S3_REGIONS,
+    DEFAULT_AWS_REGIONS,
     DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS,
     OUTSIDE_PIC_URL,
     DATASET_MANIFEST_GUIDE_URL,
     HEALTH_CHECK_RETRIES,
     HEALTH_CHECK_PERIOD,
     HEALTH_CHECK_REQUEST_TIMEOUT,
-    SERVER_UNAVAILABLE_COMPONENT,
     CANVAS_WORKSPACE_ROWS,
     CANVAS_WORKSPACE_COLS,
     CANVAS_WORKSPACE_MARGIN,

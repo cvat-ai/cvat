@@ -5,22 +5,31 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
+import { CombinedState, SelectedResourceType } from 'reducers';
+import BulkWrapper from 'components/bulk-wrapper';
+import dimensions from 'utils/dimensions';
 import WebhookItem from './webhook-item';
 
 function WebhooksList(): JSX.Element {
     const webhooks = useSelector((state: CombinedState) => state.webhooks.current);
+
     return (
         <Row justify='center' align='middle' className='cvat-resource-list-wrapper'>
-            <Col className='cvat-webhooks-list' md={22} lg={18} xl={16} xxl={14}>
-                {webhooks.map(
-                    (webhook: any): JSX.Element => (
-                        <WebhookItem
-                            key={webhook.id}
-                            webhookInstance={webhook}
-                        />
-                    ),
-                )}
+            <Col className='cvat-webhooks-list' {...dimensions}>
+                <BulkWrapper
+                    currentResourceIds={webhooks.map((webhook) => webhook.id)}
+                    resourceType={SelectedResourceType.WEBHOOKS}
+                >
+                    {(selectProps) => (
+                        webhooks.map((webhook, idx) => (
+                            <WebhookItem
+                                key={webhook.id}
+                                webhookInstance={webhook}
+                                {...selectProps(webhook.id, idx)}
+                            />
+                        ))
+                    )}
+                </BulkWrapper>
             </Col>
         </Row>
     );

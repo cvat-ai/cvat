@@ -13,11 +13,13 @@ import secrets
 import shutil
 import tempfile
 import threading
+import time
 from collections import OrderedDict
-from collections.abc import Generator, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
+from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
@@ -49,10 +51,25 @@ REQUEST_CATEGORIES_WITH_DECREASING_PRIORITY = (REQUEST_CATEGORY_INTERACTIVE, REQ
 _POLLING_INTERVAL_MEAN_FREQUENT = timedelta(seconds=60)
 _POLLING_INTERVAL_MEAN_RARE = timedelta(minutes=10)
 _JITTER_AMOUNT = 0.15
+_DEFAULT_RETRY_DELAY = timedelta(seconds=5)
 
 _UPDATE_INTERVAL = timedelta(seconds=30)
 
 _MAX_AGE_OF_TRACKING_STATE = timedelta(hours=8)
+
+
+class _ExponentialBackoff:
+    def __init__(self, max_delay: timedelta, current_delay: timedelta) -> None:
+        self._max_delay = max_delay
+        self._current_delay = current_delay
+
+    def reset(self, current_delay: timedelta) -> None:
+        self._current_delay = current_delay
+
+    def next(self) -> timedelta:
+        delay = self._current_delay
+        self._current_delay = min(self._current_delay * 2, self._max_delay)
+        return delay
 
 
 class _RecoverableExecutor:
@@ -90,6 +107,20 @@ class _RecoverableExecutor:
             raise
 
 
+_TrackingStateIdGenerator: TypeAlias = Callable[[], str]
+
+
+def _default_tracking_state_id_generator() -> str:
+    # This is defined as a separate function so that tests can monkeypatch it
+    # in order to get deterministic state IDs.
+    return secrets.token_urlsafe(32)
+
+
+_current_function: cvataa.AutoAnnotationFunction
+_tracking_states: _TrackingStateContainer
+_tracking_state_id_generator: _TrackingStateIdGenerator
+
+
 @attrs.define
 class _ExtendedTrackingState:
     inner_state: Any  # the state produced by the AA function
@@ -104,7 +135,7 @@ class _TrackingStateContainer:
         self._id_to_ext_state: OrderedDict[str, _ExtendedTrackingState] = OrderedDict()
 
     def store(self, state: Any, shape_type: str, task_id: int, image_dims: tuple[int, int]) -> str:
-        state_id = secrets.token_urlsafe(32)
+        state_id = _tracking_state_id_generator()
         self._id_to_ext_state[state_id] = _ExtendedTrackingState(
             inner_state=state,
             original_shape_type=shape_type,
@@ -143,17 +174,16 @@ class _TrackingStateContainer:
             self._id_to_ext_state.popitem(last=False)
 
 
-_current_function: cvataa.AutoAnnotationFunction
-_tracking_states: _TrackingStateContainer
-
-
-def _worker_init(function_loader: FunctionLoader):
+def _worker_init(function_loader: FunctionLoader, state_id_generator):
     global _current_function
     _current_function = function_loader.load()
 
     if isinstance(_current_function.spec, cvataa.TrackingFunctionSpec):
         global _tracking_states
         _tracking_states = _TrackingStateContainer()
+
+        global _tracking_state_id_generator
+        _tracking_state_id_generator = state_id_generator
 
 
 def _worker_job_get_function_spec():
@@ -162,7 +192,7 @@ def _worker_job_get_function_spec():
 
 def _worker_job_detect(
     context: _DetectionFunctionContextImpl, image: PIL.Image.Image
-) -> list[models.LabeledShapeRequest]:
+) -> list[cvataa.DetectionAnnotation]:
     return _current_function.detect(context, image)
 
 
@@ -193,7 +223,7 @@ def _worker_job_init_tracking(
 
 def _worker_job_track(
     task_id: int, image: PIL.Image.Image, states: list[str]
-) -> list[Optional[cvataa.TrackableShape]]:
+) -> list[cvataa.TrackableShape | None]:
     _tracking_states.prune()
 
     pp_image = _current_function.preprocess_image(_TrackingFunctionContextImpl(), image)
@@ -299,7 +329,7 @@ class _TaskCacheLimiter:
 
 def _parse_event_stream(
     stream: SupportsReadline[bytes],
-) -> Iterator[Union[_Event, _NewReconnectionDelay]]:
+) -> Iterator[_Event | _NewReconnectionDelay]:
     # https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation
 
     event_type = event_data = ""
@@ -401,7 +431,9 @@ class _Agent:
         # In this case, it doesn't make sense to continue trying to connect frequently,
         # although we should still be trying occasionally in case the error is transient.
         # Once we're successful, we'll rely on the server to set a new reconnection delay.
-        self._queue_reconnection_delay = _POLLING_INTERVAL_MEAN_RARE
+        self._queue_reconnection_delay = _ExponentialBackoff(
+            _POLLING_INTERVAL_MEAN_RARE, _POLLING_INTERVAL_MEAN_RARE
+        )
 
     def _validate_function_compatibility(self, remote_function: dict) -> None:
         function_id = remote_function["id"]
@@ -448,10 +480,10 @@ class _Agent:
                 self._validate_sublabel_compatibility(remote_sl, sl, sl_desc)
 
     def _validate_sublabel_compatibility(
-        self, remote_sl: dict, sl: Optional[models.Sublabel], sl_desc: str
+        self, remote_sl: dict, sl: models.Sublabel | None, sl_desc: str
     ):
         if not sl:
-            raise CriticalError(f"{sl_desc} is not supported.")
+            raise _IncompatibleFunctionError(f"{sl_desc} is not supported.")
 
         if remote_sl["type"] not in {"any", "unknown"} and remote_sl["type"] != sl.type:
             raise _IncompatibleFunctionError(
@@ -539,12 +571,7 @@ class _Agent:
     def _wait_before_reconnecting_to_queue(self):
         delay_multiplier = self._rng.uniform(1, 1 + _JITTER_AMOUNT)
         self._queue_watcher_should_stop.wait(
-            timeout=self._queue_reconnection_delay.total_seconds() * delay_multiplier
-        )
-
-        # Apply exponential backoff.
-        self._queue_reconnection_delay = min(
-            self._queue_reconnection_delay * 2, _POLLING_INTERVAL_MEAN_RARE
+            timeout=self._queue_reconnection_delay.next().total_seconds() * delay_multiplier
         )
 
     def _watch_queue(self) -> None:
@@ -580,10 +607,10 @@ class _Agent:
                     if isinstance(message, _Event):
                         self._dispatch_queue_event(message)
                     elif isinstance(message, _NewReconnectionDelay):
-                        self._queue_reconnection_delay = message.delay
+                        self._queue_reconnection_delay.reset(message.delay)
                         self._client.logger.info(
                             "New queue event stream reconnection delay is %fs",
-                            self._queue_reconnection_delay.total_seconds(),
+                            message.delay.total_seconds(),
                         )
                     else:
                         assert False, f"unexpected message type {type(message)}"
@@ -642,6 +669,7 @@ class _Agent:
                             # most users should not be affected. For the ones that are, shutdown
                             # will be broken, but everything else should still work fine.
                             # This should be revisited once we drop Python 3.9 support.
+                            # TODO: check in newer versions
                             self._queue_watch_response.shutdown()
 
                 watcher.join()
@@ -676,14 +704,7 @@ class _Agent:
         try:
             result = self._calculate_result_for_ar(ar_id, ar_params)
 
-            self._client.logger.info("Submitting result for AR %r...", ar_id)
-            self._client.api_client.call_api(
-                "/api/functions/queues/{queue_id}/requests/{request_id}/complete",
-                "POST",
-                path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
-                body={"agent_id": self._agent_id, **result},
-            )
-            self._client.logger.info("AR %r completed", ar_id)
+            self._complete_ar(ar_id, result)
         except Exception as ex:
             self._client.logger.error("Failed to process AR %r", ar_id, exc_info=True)
 
@@ -728,7 +749,45 @@ class _Agent:
             else:
                 self._client.logger.info("AR %r failed", ar_id)
 
-    def _poll_for_ar(self, category: str) -> Optional[dict]:
+    def _handle_retryable_post_error(self, ex: Exception, delay: _ExponentialBackoff) -> bool:
+        # Normally, urllib3 handles retries for HTTP requests,
+        # but it only does it for idempotent ones.
+        # So for POST requests that are safe to retry, we have to do it ourselves.
+        # This function must be called from an exception handler.
+        # It will return True if the operation should be retried,
+        # or False if the exception should be re-raised.
+
+        is_rate_limit = False
+        delay_sec = None
+
+        if isinstance(ex, ApiException):
+            try:
+                delay_sec = int(ex.headers["Retry-After"])
+            except (KeyError, ValueError):
+                pass
+
+            if ex.status == HTTPStatus.TOO_MANY_REQUESTS:
+                is_rate_limit = True
+            elif ex.status and 400 <= ex.status < 500:
+                # We did something wrong; no point in retrying.
+                return False
+
+        if delay_sec is None:
+            delay_multiplier = self._rng.uniform(1, 1 + _JITTER_AMOUNT)
+            delay_sec = delay.next().total_seconds() * delay_multiplier
+
+        if is_rate_limit:
+            self._client.logger.warning("Rate limited; will retry in %.2fs", delay_sec)
+        else:
+            self._client.logger.error(
+                "Request failed; will retry in %.2fs", delay_sec, exc_info=True
+            )
+        time.sleep(delay_sec)
+        return True
+
+    def _poll_for_ar(self, category: str) -> dict | None:
+        retry_delay = _ExponentialBackoff(_POLLING_INTERVAL_MEAN_RARE, _DEFAULT_RETRY_DELAY)
+
         while True:
             self._client.logger.info(
                 "Trying to acquire an annotation request of category %r...", category
@@ -742,12 +801,8 @@ class _Agent:
                 )
                 break
             except (urllib3.exceptions.HTTPError, ApiException) as ex:
-                if isinstance(ex, ApiException) and ex.status and 400 <= ex.status < 500:
-                    # We did something wrong; no point in retrying.
+                if not self._handle_retryable_post_error(ex, retry_delay):
                     raise
-
-                self._client.logger.error("Acquire request failed; will retry", exc_info=True)
-                self._wait_between_polls()
 
         response_data = json.loads(response.data)
         return response_data["ar_assignment"]
@@ -802,15 +857,16 @@ class _Agent:
 
         mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds.labels)
 
-        all_annotations = models.PatchedLabeledDataRequest(shapes=[])
+        all_annotations = models.PatchedLabeledDataRequest(tags=[], shapes=[])
 
         for sample_index, sample in enumerate(ds.samples):
             context = self._create_detection_function_context(ar_params, sample.frame_name)
-            shapes = self._executor.result(
+            annotations = self._executor.result(
                 self._executor.submit(_worker_job_detect, context, sample.media.load_image())
             )
 
-            mapper.validate_and_remap(shapes, sample.frame_index)
+            tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
+            all_annotations.tags.extend(tags)
             all_annotations.shapes.extend(shapes)
 
             current_timestamp = datetime.now(tz=timezone.utc)
@@ -832,12 +888,12 @@ class _Agent:
 
         context = self._create_detection_function_context(ar_params, sample.frame_name)
 
-        shapes = self._executor.result(
+        annotations = self._executor.result(
             self._executor.submit(_worker_job_detect, context, sample.media.load_image())
         )
 
-        mapper.validate_and_remap(shapes, sample.frame_index)
-        return {"annotations": models.PatchedLabeledDataRequest(shapes=shapes)}
+        tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
+        return {"annotations": models.PatchedLabeledDataRequest(tags=tags, shapes=shapes)}
 
     def _calculate_result_for_tracking_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         if ar_params["type"] == "init_tracking":
@@ -910,20 +966,59 @@ class _Agent:
         return sample, ds.labels
 
     def _update_ar(self, ar_id: str, progress: float) -> None:
-        self._client.logger.info("Updating AR %r progress to %.2f%%", ar_id, progress * 100)
-        self._client.api_client.call_api(
-            "/api/functions/queues/{queue_id}/requests/{request_id}/update",
-            "POST",
-            path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
-            body={"agent_id": self._agent_id, "progress": progress},
-        )
+        self._client.logger.info("Updating AR %r progress to %.2f%%...", ar_id, progress * 100)
+
+        try:
+            self._client.api_client.call_api(
+                "/api/functions/queues/{queue_id}/requests/{request_id}/update",
+                "POST",
+                path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
+                body={"agent_id": self._agent_id, "progress": progress},
+            )
+        except (urllib3.exceptions.HTTPError, ApiException):
+            # Updating the progress is not critical, so log and continue onwards.
+            self._client.logger.error("Failed to update AR %r progress", ar_id, exc_info=True)
+
+    def _complete_ar(self, ar_id: str, result: dict) -> None:
+        # It would be frustrating for the user if we calculate the result of an AR and then fail
+        # due to a transient error when submitting it, so we should retry at least a couple times.
+
+        delay = _ExponentialBackoff(_POLLING_INTERVAL_MEAN_RARE, _DEFAULT_RETRY_DELAY)
+        attempt_num = 0
+
+        while True:
+            self._client.logger.info("Submitting result for AR %r...", ar_id)
+            try:
+                self._client.api_client.call_api(
+                    "/api/functions/queues/{queue_id}/requests/{request_id}/complete",
+                    "POST",
+                    path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
+                    body={"agent_id": self._agent_id, **result},
+                )
+                break
+            except (urllib3.exceptions.HTTPError, ApiException) as ex:
+                if attempt_num >= 3:
+                    self._client.logger.error(
+                        "Exceeded maximum retries for submitting AR %r", ar_id
+                    )
+                    raise
+
+                if not self._handle_retryable_post_error(ex, delay):
+                    raise
+
+            attempt_num += 1
+
+        self._client.logger.info("AR %r completed", ar_id)
 
 
 def run_agent(
     client: Client, function_loader: FunctionLoader, function_id: int, *, burst: bool
 ) -> None:
     with (
-        _RecoverableExecutor(initializer=_worker_init, initargs=[function_loader]) as executor,
+        _RecoverableExecutor(
+            initializer=_worker_init,
+            initargs=[function_loader, _default_tracking_state_id_generator],
+        ) as executor,
         tempfile.TemporaryDirectory() as cache_dir,
     ):
         client.config.cache_dir = Path(cache_dir, "cache")

@@ -6,7 +6,7 @@
 
 import textwrap
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from django.db.models import Manager, QuerySet
 from django.http import HttpResponseGone
@@ -28,9 +28,9 @@ def make_paginated_response(
     queryset: QuerySet,
     *,
     viewset: GenericViewSet,
-    response_type: Optional[type[HttpResponse]] = None,
-    serializer_type: Optional[type[Serializer]] = None,
-    request: Optional[type[ExtendedRequest]] = None,
+    response_type: type[HttpResponse] | None = None,
+    serializer_type: type[Serializer] | None = None,
+    request: type[ExtendedRequest] | None = None,
     **serializer_params,
 ):
     # Adapted from the mixins.ListModelMixin.list()
@@ -104,29 +104,21 @@ def tus_chunk_action(*, detail: bool, suffix_base: str):
 
 
 def get_410_response_for_export_api(path: str) -> HttpResponseGone:
-    return HttpResponseGone(
-        textwrap.dedent(
-            f"""\
-            This endpoint is no longer supported.
-            To initiate the export process, use POST {path}.
-            To check the process status, use GET /api/requests/rq_id,
-            where rq_id is obtained from the response of the previous request.
-            To download the prepared file, use the result_url obtained from the response of the previous request.
-            """
-        )
-    )
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint is no longer supported.
+        To initiate the export process, use POST {path}.
+        To check the process status, use GET /api/requests/rq_id,
+        where rq_id is obtained from the response of the previous request.
+        To download the prepared file, use the result_url obtained from the response of the previous request.
+        """))
 
 
 def get_410_response_when_checking_process_status(process_type: str, /) -> HttpResponseGone:
-    return HttpResponseGone(
-        textwrap.dedent(
-            f"""\
-            This endpoint no longer supports checking the status of the {process_type} process.
-            The common requests API should be used instead: GET /api/requests/rq_id,
-            where rq_id is obtained from the response of the initializing request.
-            """
-        )
-    )
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint no longer supports checking the status of the {process_type} process.
+        The common requests API should be used instead: GET /api/requests/rq_id,
+        where rq_id is obtained from the response of the initializing request.
+        """))
 
 
 def deprecate_response(response: Response, *, deprecation_date: datetime) -> None:

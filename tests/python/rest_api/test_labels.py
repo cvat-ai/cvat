@@ -7,7 +7,7 @@ import json
 from copy import deepcopy
 from http import HTTPStatus
 from types import SimpleNamespace
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from cvat_sdk import exceptions, models
@@ -17,7 +17,13 @@ from dateutil.parser import isoparse as parse_datetime
 from deepdiff import DeepDiff
 from pytest_cases import fixture, fixture_ref, parametrize
 
-from shared.utils.config import delete_method, get_method, make_api_client, patch_method
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 
 from .utils import CollectionSimpleFilterTestBase, build_exclude_paths_expr, get_attrs
 
@@ -69,7 +75,7 @@ class _TestLabelsPermissionsBase:
 
         return labels_by_source
 
-    def _get_source_info(self, source: str, *, org_id: Optional[int] = None):
+    def _get_source_info(self, source: str, *, org_id: int | None = None):
         if source == "task":
             sources = self.tasks_by_org
             is_source_staff = self.is_task_staff
@@ -343,7 +349,7 @@ class TestListLabels(_TestLabelsPermissionsBase):
 
     def _test_list_denied(self, user, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.list(
+            _, response = client.labels_api.list(
                 **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -498,7 +504,7 @@ class TestGetLabels(_TestLabelsPermissionsBase):
 
     def _test_get_ok(self, user, lid, data):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.retrieve(lid)
+            _, response = client.labels_api.retrieve(lid)
             assert response.status == HTTPStatus.OK
             assert (
                 DeepDiff(
@@ -512,7 +518,7 @@ class TestGetLabels(_TestLabelsPermissionsBase):
 
     def _test_get_denied(self, user, lid):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.retrieve(
+            _, response = client.labels_api.retrieve(
                 lid, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -556,7 +562,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
 
     def _test_update_ok(self, user, lid, data, *, expected_data=None, ignore_fields=None, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.partial_update(
+            _, response = client.labels_api.partial_update(
                 lid, patched_label_request=models.PatchedLabelRequest(**deepcopy(data)), **kwargs
             )
             assert response.status == HTTPStatus.OK
@@ -573,7 +579,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
 
     def _test_update_denied(self, user, lid, data, expected_status=HTTPStatus.FORBIDDEN, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.partial_update(
+            _, response = client.labels_api.partial_update(
                 lid,
                 patched_label_request=models.PatchedLabelRequest(**deepcopy(data)),
                 **kwargs,
@@ -702,6 +708,407 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             ignore_fields=ignore_fields,
         )
 
+    def _create_label_with_attribute_types(self, admin_user: str):
+        response = post_method(
+            admin_user,
+            "projects",
+            {
+                "name": "test attribute safe updates",
+                "labels": [
+                    {
+                        "name": "test",
+                        "attributes": [
+                            {
+                                "name": "1",
+                                "input_type": "select",
+                                "mutable": False,
+                                "values": ["1", "2", "3"],
+                                "default_value": "1",
+                            },
+                            {
+                                "name": "2",
+                                "input_type": "radio",
+                                "mutable": False,
+                                "values": ["1", "2", "3"],
+                                "default_value": "1",
+                            },
+                            {
+                                "name": "3",
+                                "input_type": "checkbox",
+                                "mutable": False,
+                                "values": ["true"],
+                                "default_value": "true",
+                            },
+                            {
+                                "name": "4",
+                                "input_type": "text",
+                                "mutable": False,
+                                "values": ["default text"],
+                                "default_value": "default text",
+                            },
+                            {
+                                "name": "5",
+                                "input_type": "number",
+                                "mutable": False,
+                                "values": ["0", "100", "1"],
+                                "default_value": "0",
+                            },
+                        ],
+                    },
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        project = response.json()
+        label = get_method(admin_user, "labels", project_id=project["id"]).json()["results"][0]
+        return label, {attr["name"]: attr for attr in label["attributes"]}
+
+    def _patch_attribute(self, admin_user: str, label_id: int, attribute: dict[str, Any], **fields):
+        payload = deepcopy(attribute)
+        payload.update(fields)
+        return patch_method(admin_user, f"labels/{label_id}", {"attributes": [payload]})
+
+    @pytest.mark.parametrize(
+        "attribute_name, fields, expected_fields",
+        [
+            ("1", {"default_value": "2"}, {"default_value": "2"}),
+            ("1", {"values": ["1", "2", "3", "4"]}, {"values": ["1", "2", "3", "4"]}),
+            ("1", {"values": ["3", "2", "1", "4"]}, {"values": ["3", "2", "1", "4"]}),
+            ("2", {"values": ["1", "2", "3", "4"]}, {"values": ["1", "2", "3", "4"]}),
+            ("3", {"values": ["false"]}, {"values": ["false"]}),
+            (
+                "4",
+                {"default_value": "updated", "values": ["updated"]},
+                {
+                    "default_value": "updated",
+                    "values": ["updated"],
+                },
+            ),
+        ],
+    )
+    def test_can_patch_safe_attribute_fields(
+        self,
+        admin_user: str,
+        attribute_name: str,
+        fields: dict[str, Any],
+        expected_fields: dict[str, Any],
+    ):
+        label, attrs = self._create_label_with_attribute_types(admin_user)
+
+        response = self._patch_attribute(admin_user, label["id"], attrs[attribute_name], **fields)
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        updated_attr = next(
+            attr for attr in response.json()["attributes"] if attr["name"] == attribute_name
+        )
+        assert {key: updated_attr[key] for key in expected_fields} == expected_fields
+
+    @pytest.mark.parametrize(
+        "attribute_name, fields, error",
+        [
+            ("1", {"values": ["1", "2"]}, 'Attribute field "values" can only be appended'),
+            ("1", {"values": ["1", "2", "4"]}, 'Attribute field "values" can only be appended'),
+            ("5", {"values": ["0", "200", "1"]}, 'Attribute field "values" cannot be changed'),
+            ("1", {"mutable": True}, 'Attribute field "mutable" cannot be changed'),
+            ("1", {"input_type": "text"}, 'Attribute field "input_type" cannot be changed'),
+            ("1", {"default_value": "4"}, 'Attribute field "default_value" is invalid'),
+        ],
+    )
+    def test_cannot_patch_unsafe_attribute_fields(
+        self, admin_user: str, attribute_name: str, fields: dict[str, Any], error: str
+    ):
+        label, attrs = self._create_label_with_attribute_types(admin_user)
+
+        response = self._patch_attribute(admin_user, label["id"], attrs[attribute_name], **fields)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST, response.content
+        assert any(error in message for message in response.json())
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_can_delete_attribute(self, source: str, admin_user: str):
+        source_key = self._get_source_info(source).label_source_key
+        label = next(
+            l
+            for l in self.labels
+            if l.get(source_key) and not l["has_parent"] and l.get("attributes")
+        )
+        attribute = label["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {"attributes": [{**attribute, "deleted": True}]},
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert attribute["id"] not in {attr["id"] for attr in response.json()["attributes"]}
+
+        response = get_method(admin_user, f'labels/{label["id"]}')
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert attribute["id"] not in {attr["id"] for attr in response.json()["attributes"]}
+
+    def test_can_rename_attribute_to_deleted_attribute_name(self, admin_user: str):
+        task_spec = {
+            "name": "test rename attribute to deleted attribute name",
+            "labels": [
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "mazda",
+                            "values": ["mazda"],
+                        },
+                        {
+                            "name": "brand",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "toyota",
+                            "values": ["toyota"],
+                        },
+                    ],
+                },
+            ],
+        }
+        response = post_method(admin_user, "tasks", task_spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        task = response.json()
+
+        with make_api_client(admin_user) as client:
+            labels = get_paginated_collection(
+                client.labels_api.list_endpoint, task_id=task["id"], return_json=True
+            )
+
+        label = next(label for label in labels if label["name"] == "car")
+        model_attribute = next(attr for attr in label["attributes"] if attr["name"] == "model")
+        brand_attribute = next(attr for attr in label["attributes"] if attr["name"] == "brand")
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {
+                "attributes": [
+                    {**model_attribute, "name": "brand"},
+                    {**brand_attribute, "deleted": True},
+                ]
+            },
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        attributes = response.json()["attributes"]
+        assert {attr["name"] for attr in attributes} == {"brand"}
+        assert brand_attribute["id"] not in {attr["id"] for attr in attributes}
+        assert model_attribute["id"] in {attr["id"] for attr in attributes}
+
+    def test_can_delete_skeleton_root_attribute(self, admin_user: str):
+        task_spec = {
+            "name": "test delete skeleton root attribute via label patch",
+            "labels": [
+                {
+                    "name": "skeleton",
+                    "attributes": [
+                        {
+                            "name": "pose",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "standing",
+                            "values": ["standing", "sitting"],
+                        }
+                    ],
+                    "type": "skeleton",
+                    "sublabels": [
+                        {"name": "1", "type": "points"},
+                        {"name": "2", "type": "points"},
+                    ],
+                    "svg": '<circle r="1.5" cx="20" cy="20" data-type="element node" '
+                    'data-element-id="1" data-node-id="1" data-label-name="1"></circle>'
+                    '<circle r="1.5" cx="40" cy="40" data-type="element node" '
+                    'data-element-id="2" data-node-id="2" data-label-name="2"></circle>',
+                }
+            ],
+        }
+        response = post_method(admin_user, "tasks", task_spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        task = response.json()
+
+        with make_api_client(admin_user) as client:
+            labels = get_paginated_collection(
+                client.labels_api.list_endpoint, task_id=task["id"], return_json=True
+            )
+
+        label = next(l for l in labels if l["name"] == "skeleton")
+        attribute = label["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {
+                "name": label["name"],
+                "attributes": [{**attribute, "deleted": True}],
+                "type": label["type"],
+                "color": label["color"],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert attribute["id"] not in {attr["id"] for attr in response.json()["attributes"]}
+
+    def test_can_delete_skeleton_sublabel_attribute(self, admin_user: str):
+        task_spec = {
+            "name": "test delete skeleton sublabel attribute via label patch",
+            "labels": [
+                {
+                    "name": "skeleton",
+                    "type": "skeleton",
+                    "sublabels": [
+                        {
+                            "name": "1",
+                            "type": "points",
+                            "attributes": [
+                                {
+                                    "name": "pose",
+                                    "mutable": False,
+                                    "input_type": "select",
+                                    "default_value": "standing",
+                                    "values": ["standing", "sitting"],
+                                }
+                            ],
+                        },
+                    ],
+                    "svg": '<circle r="1.5" cx="20" cy="20" data-type="element node" '
+                    'data-element-id="1" data-node-id="1" data-label-name="1"></circle>',
+                }
+            ],
+        }
+        response = post_method(admin_user, "tasks", task_spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        task = response.json()
+
+        with make_api_client(admin_user) as client:
+            labels = get_paginated_collection(
+                client.labels_api.list_endpoint, task_id=task["id"], return_json=True
+            )
+
+        label = next(l for l in labels if l["name"] == "skeleton")
+        sublabel = label["sublabels"][0]
+        attribute = sublabel["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {
+                "name": label["name"],
+                "attributes": label["attributes"],
+                "type": label["type"],
+                "color": label["color"],
+                "sublabels": [
+                    {
+                        "id": sublabel["id"],
+                        "name": sublabel["name"],
+                        "attributes": [{**attribute, "deleted": True}],
+                        "type": sublabel["type"],
+                        "color": sublabel["color"],
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        response_sublabel = response.json()["sublabels"][0]
+        assert attribute["id"] not in {attr["id"] for attr in response_sublabel["attributes"]}
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_cannot_delete_attribute_without_id(self, source: str, admin_user: str):
+        source_key = self._get_source_info(source).label_source_key
+        label = next(
+            l
+            for l in self.labels
+            if l.get(source_key) and not l["has_parent"] and l.get("attributes")
+        )
+        deleted_attribute = {
+            key: value for key, value in label["attributes"][0].items() if key != "id"
+        }
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {"attributes": [{**deleted_attribute, "deleted": True}]},
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST, response.content
+        assert "Deleted attribute must have an ID" in response.text
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_cannot_delete_unknown_attribute(self, source: str, admin_user: str):
+        source_key = self._get_source_info(source).label_source_key
+        label = next(l for l in self.labels if l.get(source_key) and not l["has_parent"])
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label["id"]}',
+            {
+                "attributes": [
+                    {
+                        "id": 2147483647,
+                        "name": "unknown",
+                        "mutable": False,
+                        "input_type": "text",
+                        "default_value": "",
+                        "values": [],
+                        "deleted": True,
+                    }
+                ]
+            },
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND, response.content
+        assert "Attribute with id #2147483647 does not exist" in response.text
+
+    def test_cannot_delete_attribute_from_another_label(self, admin_user):
+        task_spec = {
+            "name": "test cannot delete attribute from another label",
+            "labels": [
+                {
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "mazda",
+                            "values": ["mazda"],
+                        }
+                    ],
+                    "name": "car",
+                },
+                {
+                    "name": "person",
+                },
+            ],
+        }
+        response = post_method(admin_user, "tasks", task_spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        task = response.json()
+
+        with make_api_client(admin_user) as client:
+            labels = get_paginated_collection(
+                client.labels_api.list_endpoint, task_id=task["id"], return_json=True
+            )
+
+        label_with_attribute = next(label for label in labels if label["name"] == "car")
+        label_without_attribute = next(label for label in labels if label["name"] == "person")
+        attribute = label_with_attribute["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'labels/{label_without_attribute["id"]}',
+            {"attributes": [{**attribute, "deleted": True}]},
+        )
+
+        assert response.status_code == HTTPStatus.NOT_FOUND, response.content
+        assert f'Attribute with id #{attribute["id"]} does not exist' in response.text
+
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_patch_sublabel_directly(self, admin_user, source):
         user = admin_user
@@ -715,7 +1122,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         )
 
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.partial_update(
+            _, response = client.labels_api.partial_update(
                 label["id"],
                 patched_label_request=models.PatchedLabelRequest(**label),
                 _parse_response=False,
@@ -787,12 +1194,12 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
 
     def _test_delete_ok(self, user, lid, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.destroy(lid, **kwargs)
+            _, response = client.labels_api.destroy(lid, **kwargs)
             assert response.status == HTTPStatus.NO_CONTENT
 
     def _test_delete_denied(self, user, lid, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.partial_update(
+            _, response = client.labels_api.partial_update(
                 lid,
                 **kwargs,
                 _check_status=False,
@@ -812,10 +1219,10 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
         )[0]
 
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.destroy(label["id"])
+            _, response = client.labels_api.destroy(label["id"])
             assert response.status == HTTPStatus.NO_CONTENT
 
-            (_, response) = client.labels_api.retrieve(
+            _, response = client.labels_api.retrieve(
                 label["id"], _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.NOT_FOUND
@@ -833,7 +1240,7 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
         )
 
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.destroy(label["id"], _check_status=False)
+            _, response = client.labels_api.destroy(label["id"], _check_status=False)
 
         assert response.status == HTTPStatus.BAD_REQUEST
         assert "Sublabels cannot be deleted this way." in response.data.decode()

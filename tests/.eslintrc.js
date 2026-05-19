@@ -4,6 +4,10 @@
 
 const globalConfig = require('../.eslintrc.cjs');
 
+const globalRulesWithoutTypescript = Object.fromEntries(
+    Object.entries(globalConfig.rules).filter(([ruleName]) => !ruleName.startsWith('@typescript-eslint')),
+);
+
 module.exports = {
     root: true,
     parserOptions: {
@@ -14,15 +18,17 @@ module.exports = {
         '.eslintrc.js',
         'lint-staged.config.js',
     ],
-    plugins: ['security', 'no-unsanitized', 'import'],
+    plugins: ['security', 'no-unsanitized', 'import', 'cypress'],
     extends: [
-        'eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM', 'plugin:cypress/recommended',
-        'airbnb-base', 'plugin:import/errors', 'plugin:import/warnings',
+        'eslint:recommended',
+        'plugin:security/recommended',
+        'plugin:no-unsanitized/DOM',
+        'airbnb-base',
+        'plugin:import/errors',
+        'plugin:import/warnings',
     ],
     rules: {
-        ...Object.fromEntries(Object.entries(globalConfig.rules).filter(([key]) => {
-            return !key.startsWith('@typescript-eslint')
-        })),
-        "cypress/no-unnecessary-waiting": "off",
+        ...globalRulesWithoutTypescript,
+        'cypress/no-unnecessary-waiting': 'off',
     },
 };

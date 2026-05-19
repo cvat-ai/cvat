@@ -5,6 +5,8 @@
 
 /// <reference types="cypress" />
 
+/* eslint-disable cypress/no-unnecessary-waiting */
+
 import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Cuboid propagate.', () => {
@@ -17,6 +19,7 @@ context('Canvas 3D functionality. Cuboid propagate.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display

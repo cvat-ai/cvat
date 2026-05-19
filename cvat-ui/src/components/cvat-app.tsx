@@ -30,6 +30,7 @@ import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
 import UploadFileStatusModal from 'components/common/upload-file-status-modal';
+import SelectCSUpdatingSchemeModal from 'components/update-linked-cs-modal/select-cs-updating-scheme-modal';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
 import ModelsPageComponent from 'components/models-page/models-page';
@@ -83,6 +84,10 @@ import QualityControlPage from './quality-control/quality-control-page';
 import AnalyticsReportPage from './analytics-report/analytics-report-page';
 import ConsensusManagementPage from './consensus-management-page/consensus-management-page';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
+import SelectOrganizationModal from './select-organization-modal/select-organization-modal';
+import BulkProgress from './bulk-progress';
+import ProfilePageComponent from './profile-page/profile-page';
+import ServerUnavailableComponent from './server-unavailable/server-unavailable';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -114,7 +119,6 @@ interface CVATAppProps {
     userAgreementsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
-    isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
@@ -129,6 +133,7 @@ interface CVATAppProps {
 interface CVATAppState {
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
+    healthCheckError: string | null;
 }
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
     constructor(props: CVATAppProps & RouteComponentProps) {
@@ -137,6 +142,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         this.state = {
             healthIinitialized: false,
             backendIsHealthy: false,
+            healthCheckError: null,
         };
     }
 
@@ -145,7 +151,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const { history, onChangeLocation } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
-            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
+            RESET_NOTIFICATIONS_PATHS,
         } = appConfig;
 
         // Logger configuration
@@ -216,22 +222,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             this.setState({
                 healthIinitialized: true,
                 backendIsHealthy: true,
+                healthCheckError: null,
             });
         })
-            .catch(() => {
+            .catch((error: unknown) => {
+                const healthCheckError = error instanceof Error ? error.message : 'The CVAT server is not reachable.';
+
                 this.setState({
                     healthIinitialized: true,
                     backendIsHealthy: false,
-                });
-
-                Modal.error({
-                    title: 'Cannot connect to the server',
-                    className: 'cvat-modal-cannot-connect-server',
-                    closable: false,
-                    content:
-    <Text>
-        {SERVER_UNAVAILABLE_COMPONENT}
-    </Text>,
+                    healthCheckError,
                 });
             });
 
@@ -305,7 +305,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
-            isModelPluginActive,
             invitationsInitialized,
             invitationsFetching,
             initInvitations,
@@ -353,7 +352,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (user == null || !user.isVerified || !user.id) {
+        if (user == null || !user.isVerified || !user?.id) {
             return;
         }
 
@@ -369,7 +368,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             initRequests();
         }
 
-        if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
+        if (!modelsInitialized && !modelsFetching) {
             initModels();
         }
 
@@ -384,7 +383,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     private showMessages(): void {
         const { notifications, resetMessages, history } = this.props;
-
         function showMessage(notificationState: NotificationState): void {
             notification.info({
                 message: (
@@ -393,7 +391,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 description: notificationState?.description && (
                     <CVATMarkdown history={history}>{notificationState?.description}</CVATMarkdown>
                 ),
-                duration: notificationState.duration || null,
+                duration: notificationState.duration ?? null,
+                className: notificationState.className,
             });
         }
 
@@ -451,12 +450,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             for (const what of Object.keys((notifications as any).errors[where])) {
                 const error = (notifications as any).errors[where][what] as ErrorState;
                 shown = shown || !!error;
-                if (error) {
+                if (error && !error.ignore) {
                     showError(error.message, error.reason, error.shouldLog, error.className);
                 }
             }
         }
-
         if (shown) {
             resetErrors();
         }
@@ -484,23 +482,21 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginComponents,
             user,
             location,
-            isModelPluginActive,
             isPasswordResetEnabled,
             isRegistrationEnabled,
         } = this.props;
 
-        const { healthIinitialized, backendIsHealthy } = this.state;
+        const { healthIinitialized, backendIsHealthy, healthCheckError } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
-        let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized;
+        let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized && aboutInitialized;
         readyForRender = readyForRender && (notRegisteredUserInitialized ||
             (
                 userInitialized &&
                 formatsInitialized &&
                 pluginsInitialized &&
-                aboutInitialized &&
                 organizationInitialized &&
-                (!isModelPluginActive || modelsInitialized)
+                modelsInitialized
             )
         );
 
@@ -562,20 +558,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/invitations' component={InvitationsPage} />
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
+                                        <Route exact path='/profile' component={ProfilePageComponent} />
                                         { routesToRender }
-                                        {isModelPluginActive && (
-                                            <Route
-                                                path='/models'
-                                            >
-                                                <Switch>
-                                                    <Route exact path='/models' component={ModelsPageComponent} />
-                                                </Switch>
-                                            </Route>
-                                        )}
+                                        <Route
+                                            path='/models'
+                                        >
+                                            <Switch>
+                                                <Route exact path='/models' component={ModelsPageComponent} />
+                                            </Switch>
+                                        </Route>
                                         <Redirect
                                             push
                                             to={{
-                                                pathname: queryParams.get('next') || '/tasks',
+                                                pathname: queryParams.get('next') ?? '/tasks',
                                                 search: authParams ? new URLSearchParams(authParams).toString() : '',
                                             }}
                                         />
@@ -586,6 +581,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ImportBackupModal />
                                     <InvitationWatcher />
                                     <UploadFileStatusModal />
+                                    <SelectCSUpdatingSchemeModal />
+                                    <SelectOrganizationModal />
+                                    <BulkProgress />
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>
@@ -630,9 +628,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (healthIinitialized && !backendIsHealthy) {
             return (
-                <Space align='center' direction='vertical' className='cvat-spinner'>
+                <Space align='center' direction='vertical' className='cvat-spinner cvat-server-unavailable'>
                     <DisconnectOutlined className='cvat-disconnected' />
-                    Cannot connect to the server.
+                    <Text className='cvat-server-unavailable-title' strong>
+                        Cannot connect to the server
+                    </Text>
+                    <ServerUnavailableComponent details={healthCheckError} />
                 </Space>
             );
         }

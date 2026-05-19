@@ -5,14 +5,14 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
+import dayjs from 'dayjs';
 
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
-import moment from 'moment';
 
 import {
-    User, getCore, Project, Task,
+    User, getCore, Project, Task, FramesMetaData, CloudStorage,
 } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
@@ -22,12 +22,16 @@ import { CombinedState, ActiveInference } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
+import CloudStorageEditor from './cloud-storage-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
 
 interface OwnProps {
     task: Task;
-    onUpdateTask: (task: Task) => Promise<void>;
+    onUpdateTask: (task: Task, fields?: Parameters<Task['save']>[0]) => Promise<Task>;
+    taskMeta: FramesMetaData;
+    cloudStorageInstance: CloudStorage | null;
+    onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
 }
 
 interface StateToProps {
@@ -42,7 +46,7 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & OwnProps {
     return {
         ...own,
-        activeInference: state.models.inferences[own.task.id] || null,
+        activeInference: state.models.inferences[own.task.id] ?? null,
         project: state.projects.current.find((project) => project.id === own.task.projectId),
     };
 }
@@ -116,11 +120,17 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderDescription(): JSX.Element {
-        const { task: taskInstance, onUpdateTask } = this.props;
+        const {
+            task: taskInstance,
+            onUpdateTask,
+            taskMeta,
+            cloudStorageInstance,
+            onUpdateTaskMeta,
+        } = this.props;
         const { consensusEnabled } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
-        const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
+        const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
         const assigneeSelect = (
             <UserSelector
                 value={assignee}
@@ -133,22 +143,31 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         );
 
         return (
-            <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
-                <Col span={12}>
-                    {owner && (
-                        <div>
-                            <Text type='secondary'>
-                                {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
-                            </Text>
-                        </div>
-                    )}
-                    {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
-                </Col>
-                <Col>
-                    <Text type='secondary'>Assigned to</Text>
-                    {assigneeSelect}
-                </Col>
-            </Row>
+            <>
+                <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
+                    <Col span={12}>
+                        {owner && (
+                            <div>
+                                <Text type='secondary'>
+                                    {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
+                                </Text>
+                            </div>
+                        )}
+                        {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
+                    </Col>
+                    <Col>
+                        <Text type='secondary'>Assigned to</Text>
+                        {assigneeSelect}
+                    </Col>
+                </Row>
+                <Row justify='end' className='cvat-task-details-cloud-storage'>
+                    <CloudStorageEditor
+                        taskMeta={taskMeta}
+                        cloudStorageInstance={cloudStorageInstance}
+                        onUpdateTaskMeta={onUpdateTaskMeta}
+                    />
+                </Row>
+            </>
         );
     }
 
@@ -159,10 +178,11 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             <Row>
                 <Col span={24}>
                     <LabelsEditorComponent
-                        labels={taskInstance.labels.map((label: any): string => label.toJSON())}
+                        labels={taskInstance.labels.map((label) => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
-                            taskInstance.labels = labels.map((labelData): any => new core.classes.Label(labelData));
-                            onUpdateTask(taskInstance);
+                            onUpdateTask(taskInstance, {
+                                labels: labels.map((labelData): any => new core.classes.Label(labelData)),
+                            });
                         }}
                     />
                 </Col>

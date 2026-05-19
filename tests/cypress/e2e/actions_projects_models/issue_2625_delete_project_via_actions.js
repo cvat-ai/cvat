@@ -4,16 +4,22 @@
 
 /// <reference types="cypress" />
 
-import { projectName } from '../../support/const_project';
+import { projectDeleteSpec } from '../../support/const_project';
 
 context('Delete a project via actions.', () => {
-    const issueID = 2625;
+    const projectName = projectDeleteSpec.name;
+    const issueId = 2625;
 
     before(() => {
+        cy.prepareUserSession('/projects');
         cy.openProject(projectName);
     });
+    after(() => {
+        // restore deleted project
+        cy.headlessCreateProject(projectDeleteSpec);
+    });
 
-    describe(`Testing "Issue ${issueID}"`, () => {
+    describe(`Testing "Issue ${issueId}"`, () => {
         it('Delete a project via actions.', () => {
             cy.deleteProjectViaActions(projectName);
         });

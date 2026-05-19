@@ -49,6 +49,7 @@ export enum RQStatus {
     QUEUED = 'queued',
     STARTED = 'started',
     FINISHED = 'finished',
+    CANCELED = 'canceled',
     FAILED = 'failed',
     UNKNOWN = 'unknown',
 }
@@ -89,6 +90,7 @@ export enum Source {
     AUTO = 'auto',
     FILE = 'file',
     GT = 'Ground truth',
+    CONSENSUS = 'consensus',
 }
 
 export enum EventScope {
@@ -207,6 +209,7 @@ export enum CloudStorageCredentialsType {
     KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR',
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR',
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS',
+    CONNECTION_STRING = 'CONNECTION_STRING',
     KEY_FILE_PATH = 'KEY_FILE_PATH',
 }
 
@@ -233,6 +236,12 @@ export enum SortingMethod {
 export enum StorageLocation {
     LOCAL = 'local',
     CLOUD_STORAGE = 'cloud_storage',
+}
+
+export enum DataStorageLocation {
+    LOCAL = StorageLocation.LOCAL,
+    CLOUD_STORAGE = StorageLocation.CLOUD_STORAGE,
+    SHARE = 'share',
 }
 
 export enum WebhookSourceType {

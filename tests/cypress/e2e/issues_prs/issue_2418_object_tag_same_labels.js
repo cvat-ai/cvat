@@ -19,6 +19,7 @@ context('Check hide/unhide functionality from label tab for object and tag with 
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

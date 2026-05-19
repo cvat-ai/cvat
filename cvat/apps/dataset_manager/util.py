@@ -15,7 +15,7 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from threading import Lock
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 from uuid import UUID
 
 import attrs
@@ -27,7 +27,15 @@ from pottery import Redlock
 
 
 def current_function_name(depth=1):
-    return inspect.getouterframes(inspect.currentframe())[depth].function
+    frame = inspect.currentframe()
+    if frame is None:
+        return "[unknown]"
+
+    for _ in range(depth):
+        frame = frame.f_back
+        assert frame is not None, "not enough stack frames"
+
+    return frame.f_code.co_name
 
 
 def make_zip_archive(src_path, dst_path):
@@ -272,6 +280,7 @@ class ExportCacheManager:
         instance_type: str,
         instance_id: int,
         instance_timestamp: float,
+        lightweight: bool,
     ) -> str:
         instance_type = InstanceType(instance_type.lower())
         filename = cls.FILE_NAME_TEMPLATE_WITH_INSTANCE.format(
@@ -279,7 +288,7 @@ class ExportCacheManager:
             instance_id=instance_id,
             file_type=ExportFileType.BACKUP,
             instance_timestamp=instance_timestamp,
-            optional_suffix="",
+            optional_suffix=cls.SPLITTER + "lightweight" if lightweight else "",
             file_ext="zip",
         )
         return osp.join(cls.ROOT, filename)
@@ -335,6 +344,11 @@ class ExportCacheManager:
                 # The "format" is a part of file id, but there is actually
                 # no need to use it after filename parsing, so just drop it.
                 instance_timestamp, _ = unparsed.split(cls.SPLITTER, maxsplit=1)
+            elif fragments["file_type"] == ExportFileType.BACKUP:
+                # Backup filename may have "lightweight" suffix
+                split_unparsed = unparsed.split(cls.SPLITTER, maxsplit=1)
+                if len(split_unparsed) > 1:
+                    instance_timestamp, _ = split_unparsed
 
             parsed_file_name = ParsedExportFilename(
                 file_type=fragments.pop("file_type"),
@@ -375,3 +389,30 @@ def linear_sort_shapes(shapes: Iterable) -> list:
             if i in d:
                 sorted_shapes.append(d[i])
     return sorted_shapes
+
+
+def make_getter_by_frame_for_annotation_stream(
+    gen: Iterable[dict],
+) -> Callable[[int], Generator[dict, None, None]]:
+    if isinstance(gen, list):
+        gen = iter(gen)
+    ann = None
+
+    def get(frame_index: int) -> Generator[dict, None, None]:
+        nonlocal ann
+
+        while True:
+            if ann is None:
+                try:
+                    ann = next(gen)
+                except StopIteration:
+                    break
+
+            assert ann["frame"] >= frame_index
+            if ann["frame"] == frame_index:
+                yield ann
+                ann = None
+            else:
+                break
+
+    return get

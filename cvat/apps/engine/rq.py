@@ -5,19 +5,24 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 import attrs
+import django_rq
 from django.conf import settings
 from django.db.models import Model
 from django.utils import timezone
-from django_rq.queues import DjangoRQ
+from django_rq.queues import DjangoRQ, get_redis_connection
+from redis.client import Pipeline
 from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
 from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.engine.utils import take_by
+from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
 from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresource
 
 if TYPE_CHECKING:
@@ -153,9 +158,12 @@ class AbstractRQMeta(metaclass=ABCMeta):
     def for_meta(cls, meta: dict[str, Any]):
         return cls(meta=meta)
 
-    def save(self) -> None:
+    def save(self, *, pipeline: Pipeline | None = None) -> None:
         assert isinstance(self._job, RQJob), "To save meta, rq job must be set"
-        self._job.save_meta()
+        # TODO: send PR to the upstream repo to support pipelines
+        meta = self._job.serializer.dumps(self._job.meta)
+        connection = pipeline if pipeline else self._job.connection
+        connection.hset(self._job.key, "meta", meta)
 
     @staticmethod
     @abstractmethod
@@ -202,8 +210,6 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     # - [annotation queue] Some jobs may have no user/request info
     # - [chunks queue] Each job has no user/request info
     # - [import queue] Jobs running to cleanup uploaded files have no user/request info
-    # - [export queue] Jobs preparing events have no user/request info.
-    # - [export queue] Jobs running to cleanup csv files with events have no user/request info
 
     @property
     def user(self):
@@ -220,13 +226,17 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         return None
 
     # immutable && optional fields
-    org_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.ORG_ID, optional=True)
-    org_slug: int | None = ImmutableRQMetaAttribute(RQJobMetaField.ORG_SLUG, optional=True)
     project_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.PROJECT_ID, optional=True)
     task_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.TASK_ID, optional=True)
     job_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.JOB_ID, optional=True)
 
     # mutable && optional fields
+    org_id: int | None = MutableRQMetaAttribute(
+        RQJobMetaField.ORG_ID, validator=lambda x: isinstance(x, int), optional=True
+    )
+    org_slug: int | None = MutableRQMetaAttribute(
+        RQJobMetaField.ORG_SLUG, validator=lambda x: isinstance(x, str), optional=True
+    )
     progress: float | None = MutableRQMetaAttribute(
         RQJobMetaField.PROGRESS, validator=lambda x: isinstance(x, float), optional=True
     )
@@ -249,8 +259,13 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         db_obj: Model | None,
     ):
         # to prevent circular import
-        from cvat.apps.events.handlers import job_id, organization_slug, task_id
-        from cvat.apps.webhooks.signals import organization_id, project_id
+        from cvat.apps.events.handlers import (
+            job_id,
+            organization_id,
+            organization_slug,
+            project_id,
+            task_id,
+        )
 
         oid = organization_id(db_obj)
         oslug = organization_slug(db_obj)
@@ -336,9 +351,17 @@ class RequestIdWithOptionalFormat(RequestId):
 
 
 @attrs.frozen(kw_only=True, slots=False)
+class RequestIdWithOptionalLightweight(RequestId):
+    lightweight: bool | None = attrs.field(
+        converter=lambda x: x if x is None else bool(x), default=None
+    )
+
+
+@attrs.frozen(kw_only=True, slots=False)
 class ExportRequestId(
     RequestIdWithOptionalSubresource,  # subresource is optional because export queue works also with events
     RequestIdWithOptionalFormat,
+    RequestIdWithOptionalLightweight,
 ):
     ACTION_DEFAULT_VALUE: ClassVar[str] = "export"
     ACTION_ALLOWED_VALUES: ClassVar[tuple[str]] = (ACTION_DEFAULT_VALUE,)
@@ -376,7 +399,7 @@ def define_dependent_job(
     user_id: int,
     should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
     *,
-    rq_id: Optional[str] = None,
+    rq_id: str | None = None,
 ) -> RQDependency:
     if not should_be_dependent:
         return None
@@ -426,3 +449,72 @@ def define_dependent_job(
         if all_user_jobs
         else None
     )
+
+
+class RunningBackgroundProcessesError(Exception):
+    def __init__(self, queue_name: str, *args):
+        self.queue_name = queue_name
+        super().__init__(*args)
+
+
+def update_org_related_data_in_rq_jobs(
+    new_org_id: int | None,
+    new_org_slug: str | None,
+    *,
+    project_id: int | None = None,
+    task_id: int | None = None,
+):
+    def is_rq_job_related(job_meta: BaseRQMeta):
+        return (
+            project_id
+            and job_meta.project_id == project_id
+            or task_id
+            and job_meta.task_id == task_id
+        )
+
+    assert (project_id or task_id) and not (project_id and task_id)
+
+    queues: list[django_rq.queues.DjangoRQ] = [
+        django_rq.get_queue(queue_name) for queue_name in set(SELECTOR_TO_QUEUE.values())
+    ]
+
+    # prohibit moving resources if there is at least one
+    # running background job related to the resource
+    for queue in queues:
+        job_ids = set(
+            queue.get_job_ids()
+            + queue.deferred_job_registry.get_job_ids()
+            + queue.started_job_registry.get_job_ids()
+        )
+        for batched_job_ids in take_by(job_ids, chunk_size=1000):
+            for job in queue.job_class.fetch_many(batched_job_ids, queue.connection):
+                if not job:
+                    continue
+
+                if is_rq_job_related(BaseRQMeta.for_job(job)):
+                    raise RunningBackgroundProcessesError(queue_name=queue.name)
+
+    conn = get_redis_connection(settings.REDIS_INMEM_SETTINGS)
+    with conn.pipeline() as pipe:
+        for queue in queues:
+            job_ids = set(
+                queue.finished_job_registry.get_job_ids() + queue.failed_job_registry.get_job_ids()
+            )
+
+            for batched_job_ids in take_by(job_ids, chunk_size=1000):
+                for job in queue.job_class.fetch_many(batched_job_ids, queue.connection):
+                    if not job:
+                        continue
+
+                    job_meta = BaseRQMeta.for_job(job)
+
+                    if not is_rq_job_related(job_meta):
+                        continue
+
+                    job_meta.org_id = new_org_id
+                    job_meta.org_slug = new_org_slug
+                    job_meta.save(pipeline=pipe)
+
+        # FUTURE-TODO: probably need to move it into a background process
+        # and update RQ jobs in batches with rollback support.
+        pipe.execute()  # it handles empty pipe.command_stack too

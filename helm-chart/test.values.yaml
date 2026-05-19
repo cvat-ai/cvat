@@ -9,12 +9,16 @@ cvat:
         name: cvat-backend-data
         subPath: share
       additionalEnv:
-        - name: DJANGO_SETTINGS_MODULE
-          value: cvat.settings.testing_rest
+      - name: DJANGO_SETTINGS_MODULE
+        value: cvat.settings.testing_rest
+      - name: CVAT_ACCESS_TOKEN_STALE_PERIOD
+        value: "3153600000" # ~100 years
     worker:
       additionalEnv:
       - name: DJANGO_SETTINGS_MODULE
         value: cvat.settings.testing_rest
+      - name: CVAT_ACCESS_TOKEN_STALE_PERIOD
+        value: "3153600000" # ~100 years
       annotation:
         replicas: 0
       chunks:
@@ -28,7 +32,7 @@ cvat:
       qualityreports:
         replicas: 0
       webhooks:
-        replicas: 0
+        replicas: 1
       utils:
         replicas: 1
         additionalVolumeMounts:
@@ -42,7 +46,6 @@ cvat:
         - "export"
         - "import"
         - "quality_reports"
-        - "webhooks"
 
     # Images are already present in the node
     imagePullPolicy: Never

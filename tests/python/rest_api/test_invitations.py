@@ -106,6 +106,7 @@ class TestCreateInvitations:
 class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
         "owner": ["owner", "username"],
+        "user_id": ["user", "id"],
     }
 
     @pytest.fixture(autouse=True)
@@ -118,7 +119,7 @@ class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.mark.parametrize(
         "field",
-        ("owner",),
+        ("owner", "user_id", "accepted"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
@@ -156,7 +157,7 @@ class TestGetInvitations:
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_inv["owner"]["id"])
 
-            (_, response) = api_client.invitations_api.retrieve(source_inv["key"])
+            _, response = api_client.invitations_api.retrieve(source_inv["key"])
             fetched_inv = json.loads(response.data)
 
         source_inv["owner"] = None

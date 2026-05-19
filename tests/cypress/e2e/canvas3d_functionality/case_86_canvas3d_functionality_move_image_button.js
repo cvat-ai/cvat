@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-/* eslint-disable cypress/no-unnecessary-waiting */
-
 /// <reference types="cypress" />
 
 import { taskName, labelName } from '../../support/const_canvas3d';
@@ -20,8 +18,10 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
     });

@@ -11,7 +11,7 @@ import Input from 'antd/lib/input';
 import { RcFile } from 'antd/lib/upload';
 import { FormInstance } from 'antd/lib/form';
 
-import { CloudStorage } from 'reducers';
+import { CloudStorage } from 'cvat-core-wrapper';
 import CloudStorageTab from './cloud-storages-tab';
 import LocalFiles from './local-files';
 import RemoteBrowser, { RemoteFile } from './remote-browser';

@@ -18,7 +18,6 @@ import ColorPicker from './color-picker';
 
 interface Props {
     jobInstance: any;
-    readonly: boolean;
     clientID: number;
     serverID: number | null;
     labelID: number;
@@ -36,6 +35,8 @@ interface Props {
     propagateShortcut: string;
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
+    toOneLayerBackwardShortcut: string;
+    toOneLayerForwardShortcut: string;
     removeShortcut: string;
     sliceShortcut: string;
     runAnnotationsActionShortcut: string;
@@ -47,16 +48,18 @@ interface Props {
     createURL(): void;
     switchOrientation(): void;
     toBackground(): void;
+    toOneLayerBackward(): void;
     toForeground(): void;
+    toOneLayerForward(): void;
     resetCuboidPerspective(): void;
     runAnnotationAction(): void;
     edit(): void;
     slice(): void;
+    simplify(): void;
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
     const {
-        readonly,
         clientID,
         serverID,
         labelID,
@@ -73,6 +76,8 @@ function ItemTopComponent(props: Props): JSX.Element {
         propagateShortcut,
         toBackgroundShortcut,
         toForegroundShortcut,
+        toOneLayerBackwardShortcut,
+        toOneLayerForwardShortcut,
         removeShortcut,
         sliceShortcut,
         runAnnotationsActionShortcut,
@@ -86,10 +91,13 @@ function ItemTopComponent(props: Props): JSX.Element {
         switchOrientation,
         toBackground,
         toForeground,
+        toOneLayerBackward,
+        toOneLayerForward,
         resetCuboidPerspective,
         runAnnotationAction,
         edit,
         slice,
+        simplify,
         jobInstance,
     } = props;
 
@@ -112,7 +120,7 @@ function ItemTopComponent(props: Props): JSX.Element {
             <Col span={12}>
                 <CVATTooltip title='Change current label'>
                     <LabelSelector
-                        disabled={readonly || shapeType === ShapeType.SKELETON}
+                        disabled={locked || shapeType === ShapeType.SKELETON}
                         size='small'
                         labels={labels}
                         value={labelID}
@@ -143,9 +151,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                         className='cvat-object-item-menu-button'
                         menu={ItemMenu({
                             jobInstance,
-                            readonly,
-                            serverID,
                             locked,
+                            serverID,
                             shapeType,
                             objectType,
                             color,
@@ -157,6 +164,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                             propagateShortcut,
                             toBackgroundShortcut,
                             toForegroundShortcut,
+                            toOneLayerBackwardShortcut,
+                            toOneLayerForwardShortcut,
                             removeShortcut,
                             sliceShortcut,
                             runAnnotationsActionShortcut,
@@ -168,10 +177,13 @@ function ItemTopComponent(props: Props): JSX.Element {
                             switchOrientation,
                             toBackground,
                             toForeground,
+                            toOneLayerBackward,
+                            toOneLayerForward,
                             resetCuboidPerspective,
                             setColorPickerVisible,
                             edit,
                             slice,
+                            simplify,
                             runAnnotationAction,
                         })}
                     >

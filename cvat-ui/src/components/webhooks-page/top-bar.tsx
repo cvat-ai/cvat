@@ -8,8 +8,14 @@ import { PlusOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 
-import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import {
+    SortingComponent,
+    ResourceFilterHOC,
+    defaultVisibility,
+    ResourceSelectionInfo,
+} from 'components/resource-sorting-filtering';
 import { WebhooksQuery } from 'reducers';
+import dimensions from 'utils/dimensions';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, config,
 } from './webhooks-filter-configuration';
@@ -25,33 +31,38 @@ interface VisibleTopBarProps {
     query: WebhooksQuery;
     onCreateWebhook(): void;
     goBackContent: JSX.Element;
+    selectedCount: number;
+    onSelectAll: () => void;
 }
 
-export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
+export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JSX.Element {
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch, onCreateWebhook, goBackContent,
+        query, onApplyFilter, onApplySorting, onApplySearch, onCreateWebhook, goBackContent, selectedCount, onSelectAll,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     return (
         <>
             <Row justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
+                <Col {...dimensions}>
                     {goBackContent}
                 </Col>
             </Row>
-            <Row className='cvat-webhooks-page-top-bar' justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
+            <Row className='cvat-webhooks-page-top-bar cvat-resource-top-bar-wrapper' justify='center' align='middle'>
+                <Col {...dimensions}>
                     <div className='cvat-webhooks-page-filters-wrapper'>
-                        <Input.Search
-                            enterButton
-                            onSearch={(phrase: string) => {
-                                onApplySearch(phrase);
-                            }}
-                            defaultValue={query.search || ''}
-                            className='cvat-webhooks-page-search-bar'
-                            placeholder='Search ...'
-                        />
+                        <div>
+                            <Input.Search
+                                enterButton
+                                onSearch={(phrase: string) => {
+                                    onApplySearch(phrase);
+                                }}
+                                defaultValue={query.search ?? ''}
+                                className='cvat-webhooks-page-search-bar'
+                                placeholder='Search ...'
+                            />
+                            <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
+                        </div>
                         <div>
                             <SortingComponent
                                 visible={visibility.sorting}

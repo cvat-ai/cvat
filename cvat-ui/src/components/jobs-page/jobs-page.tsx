@@ -3,19 +3,23 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
+
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import { CombinedState, JobsQuery } from 'reducers';
+import { CombinedState, JobsQuery, SelectedResourceType } from 'reducers';
 import { getJobsAsync } from 'actions/jobs-actions';
 import { anySearch } from 'utils/any-search';
 import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
@@ -25,9 +29,28 @@ function JobsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
     const [isMounted, setIsMounted] = useState(false);
-    const query = useSelector((state: CombinedState) => state.jobs.query);
-    const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
-    const count = useSelector((state: CombinedState) => state.jobs.count);
+    const {
+        query,
+        fetching,
+        count,
+        currentJobs,
+        selectedCount,
+        bulkFetching,
+    } = useSelector((state: CombinedState) => ({
+        query: state.jobs.query,
+        fetching: state.jobs.fetching,
+        count: state.jobs.count,
+        currentJobs: state.jobs.current,
+        selectedCount: state.jobs.selected.length,
+        bulkFetching: state.bulkActions.fetching,
+    }), shallowEqual);
+
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectResources(
+            currentJobs.map((j) => j.id),
+            SelectedResourceType.JOBS,
+        ));
+    }, [currentJobs]);
 
     const updatedQuery = useResourceQuery<JobsQuery>(query, { pageSize: 12 });
 
@@ -37,28 +60,52 @@ function JobsPageComponent(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        if (isMounted) {
-            history.replace({
-                search: updateHistoryFromQuery(query),
-            });
+        if (isMounted && !_.isEqual(query, updatedQuery)) {
+            dispatch(getJobsAsync({ ...updatedQuery }));
         }
-    }, [query]);
+    }, [updatedQuery, query, isMounted]);
+
+    const setQuery = useCallback((nextQuery: JobsQuery) => {
+        if (isMounted) {
+            const nextSearch = updateHistoryFromQuery(nextQuery);
+
+            if (nextSearch === (history.location.search || '')) return;
+
+            if (
+                updatedQuery.filter === nextQuery.filter &&
+                updatedQuery.sort === nextQuery.sort &&
+                updatedQuery.search === nextQuery.search
+            ) {
+                history.replace({ search: nextSearch });
+            } else {
+                history.push({ ...history.location, search: nextSearch });
+            }
+        }
+    }, [history.location, updatedQuery, isMounted]);
+
+    const onApplyFilter = (filter: string | null) => {
+        setQuery({
+            ...query,
+            filter,
+            page: 1,
+        });
+    };
 
     const isAnySearch = anySearch<JobsQuery>(query);
 
     const content = count ? (
         <>
-            <JobsContentComponent />
+            <JobsContentComponent onApplyFilter={onApplyFilter} />
             <Row justify='space-around' about='middle' className='cvat-resource-pagination-wrapper'>
                 <Col md={22} lg={18} xl={16} xxl={16}>
                     <Pagination
                         className='cvat-jobs-page-pagination'
                         onChange={(page: number, pageSize: number) => {
-                            dispatch(getJobsAsync({
+                            setQuery({
                                 ...query,
                                 page,
                                 pageSize,
-                            }));
+                            });
                         }}
                         total={count}
                         pageSizeOptions={[12, 24, 48, 96]}
@@ -78,35 +125,25 @@ function JobsPageComponent(): JSX.Element {
         <div className='cvat-jobs-page'>
             <TopBarComponent
                 query={updatedQuery}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
                 onApplySearch={(search: string | null) => {
-                    dispatch(
-                        getJobsAsync({
-                            ...query,
-                            search,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...query,
+                        search,
+                        page: 1,
+                    });
                 }}
-                onApplyFilter={(filter: string | null) => {
-                    dispatch(
-                        getJobsAsync({
-                            ...query,
-                            filter,
-                            page: 1,
-                        }),
-                    );
-                }}
+                onApplyFilter={onApplyFilter}
                 onApplySorting={(sorting: string | null) => {
-                    dispatch(
-                        getJobsAsync({
-                            ...query,
-                            sort: sorting,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...query,
+                        sort: sorting,
+                        page: 1,
+                    });
                 }}
             />
-            {fetching ? <Spin size='large' className='cvat-spinner' /> : content}
+            {fetching && !bulkFetching ? <Spin size='large' className='cvat-spinner' /> : content}
         </div>
     );
 }

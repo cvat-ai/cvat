@@ -4,14 +4,13 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import timedelta, timezone
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
 import rq.defaults as rq_defaults
 from django.db.models import TextChoices
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rq.job import JobStatus as RQJobStatus
@@ -53,8 +52,10 @@ class RequestDataOperationSerializer(serializers.Serializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     task_id = serializers.IntegerField(required=False, allow_null=True)
     job_id = serializers.IntegerField(required=False, allow_null=True)
+    org_id = serializers.IntegerField(required=False, allow_null=True)
     format = serializers.CharField(required=False, allow_null=True)
     function_id = serializers.CharField(required=False, allow_null=True)
+    lightweight = serializers.BooleanField(required=False, allow_null=True)
 
     def to_representation(self, rq_job: CustomRQJob) -> dict[str, Any]:
         parsed_request_id: RequestId = rq_job.parsed_id
@@ -66,11 +67,13 @@ class RequestDataOperationSerializer(serializers.Serializer):
             "project_id": base_rq_job_meta.project_id,
             "task_id": base_rq_job_meta.task_id,
             "job_id": base_rq_job_meta.job_id,
+            "org_id": base_rq_job_meta.org_id,
         }
         if parsed_request_id.action == RequestAction.AUTOANNOTATE:
             representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
         elif isinstance(parsed_request_id, RequestIdWithOptionalFormat):
             representation["format"] = parsed_request_id.format
+        representation["lightweight"] = getattr(parsed_request_id, "lightweight", None)
 
         return representation
 

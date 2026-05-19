@@ -15,6 +15,7 @@ const defaultState: InvitationsState = {
     count: 0,
     query: {
         page: 1,
+        pageSize: 10,
     },
 };
 

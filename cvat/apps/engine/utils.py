@@ -16,12 +16,12 @@ import sys
 import traceback
 import urllib.parse
 from collections import defaultdict, namedtuple
-from collections.abc import Generator, Iterable, Mapping, Sequence
-from contextlib import nullcontext, suppress
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
+from contextlib import contextmanager, nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 import cv2 as cv
 from attr.converters import to_bool
@@ -29,12 +29,11 @@ from av import VideoFrame
 from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.utils.http import urlencode
+from django.db import connection, transaction
 from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
 from PIL import Image
 from redis.lock import Lock
-from rest_framework.reverse import reverse as _reverse
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.types import ExtendedRequest
@@ -173,9 +172,9 @@ def get_rq_lock_by_user(
     queue: DjangoRQ,
     user_id: int,
     *,
-    timeout: Optional[int] = 30,
-    blocking_timeout: Optional[int] = None,
-) -> Union[Lock, nullcontext]:
+    timeout: int | None = 30,
+    blocking_timeout: int | None = None,
+) -> Lock | nullcontext:
     if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
         return queue.connection.lock(
             name=f"{queue.name}-lock-{user_id}",
@@ -199,32 +198,6 @@ def get_rq_lock_for_job(
     )
 
 
-def reverse(
-    viewname,
-    *,
-    args=None,
-    kwargs=None,
-    query_params: Optional[dict[str, str]] = None,
-    request: ExtendedRequest | None = None,
-) -> str:
-    """
-    The same as rest_framework's reverse(), but adds custom query params support.
-    The original request can be passed in the 'request' parameter to
-    return absolute URLs.
-    """
-
-    url = _reverse(viewname, args, kwargs, request)
-
-    if query_params:
-        return f"{url}?{urlencode(query_params)}"
-
-    return url
-
-
-def get_server_url(request: ExtendedRequest) -> str:
-    return request.build_absolute_uri("/")
-
-
 def build_field_filter_params(field: str, value: Any) -> dict[str, str]:
     """
     Builds a collection filter query params for a single field and value.
@@ -243,7 +216,7 @@ def get_list_view_name(model):
 
 
 def import_resource_with_clean_up_after(
-    func: Union[Callable[[str, int, int], int], Callable[[str, int, str, bool], None]],
+    func: Callable[[str, int, int], int] | Callable[[str, int, str, bool], None],
     filename: str,
     *args,
     **kwargs,
@@ -263,17 +236,31 @@ def get_cpu_number() -> int:
             # we cannot use just multiprocessing.cpu_count because when it runs
             # inside a docker container, it will just return the number of CPU cores
             # for the physical machine the container runs on
+
+            # cgroups v1
             cfs_quota_us_path = Path("/sys/fs/cgroup/cpu/cpu.cfs_quota_us")
             cfs_period_us_path = Path("/sys/fs/cgroup/cpu/cpu.cfs_period_us")
+
+            # cgroup v2
+            cpu_max_path = Path("/sys/fs/cgroup/cpu.max")
 
             if cfs_quota_us_path.exists() and cfs_period_us_path.exists():
                 with open(cfs_quota_us_path) as fp:
                     cfs_quota_us = int(fp.read())
                 with open(cfs_period_us_path) as fp:
                     cfs_period_us = int(fp.read())
-                container_cpu_number = cfs_quota_us // cfs_period_us
-                # For physical machine, the `cfs_quota_us` could be '-1'
-                cpu_number = cpu_count() if container_cpu_number < 1 else container_cpu_number
+                if cfs_quota_us == -1:  # No quota
+                    cpu_number = cpu_count()
+                else:
+                    cpu_number = max(cfs_quota_us // cfs_period_us, 1)
+            elif cpu_max_path.exists():
+                with open(cpu_max_path) as fp:
+                    quota_str, period_str = fp.read().strip().split()
+                if quota_str == "max":  # No quota
+                    cpu_number = cpu_count()
+                else:
+                    cpu_number = max(int(quota_str) // int(period_str), 1)
+
         cpu_number = cpu_number or cpu_count()
     except NotImplementedError:
         # the number of cpu cannot be determined
@@ -335,11 +322,13 @@ def build_backup_file_name(
     class_name: str,
     identifier: str | int,
     timestamp: str,
+    lightweight: bool,
 ) -> str:
     # "<project|task>_<name>_backup_<timestamp>.zip"
-    return "{}_{}_backup_{}.zip".format(
+    return "{}_{}_backup{}_{}.zip".format(
         class_name,
         identifier,
+        ("-lightweight" if lightweight else ""),
         timestamp,
     ).lower()
 
@@ -422,7 +411,7 @@ Controls maximum rendered list items. The remainder is appended as ' (and X more
 
 
 def format_list(
-    items: Sequence[str], *, max_items: Optional[int] = None, separator: str = ", "
+    items: Sequence[str], *, max_items: int | None = None, separator: str = ", "
 ) -> str:
     if max_items is None:
         max_items = FORMATTED_LIST_DISPLAY_THRESHOLD
@@ -467,3 +456,12 @@ def defaultdict_to_regular(d):
     if isinstance(d, defaultdict):
         d = {k: defaultdict_to_regular(v) for k, v in d.items()}
     return d
+
+
+@contextmanager
+def transaction_with_repeatable_read():
+    with transaction.atomic():
+        if connection.vendor != "sqlite":
+            connection.cursor().execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
+            connection.cursor().execute("SET TRANSACTION READ ONLY;")
+        yield

@@ -76,21 +76,28 @@ class OrganizationViewSet(
     mixins.DestroyModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = Organization.objects.select_related("owner").all()
+    queryset = Organization.objects.all()
     search_fields = ("name", "owner", "slug")
-    filter_fields = list(search_fields) + ["id"]
-    simple_filters = list(search_fields)
+    simple_filters = search_fields
+    filter_fields = (*simple_filters, "id")
     lookup_fields = {"owner": "owner__username"}
     ordering_fields = list(filter_fields)
     ordering = "-id"
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    iam_organization_field = None
+    iam_supports_organization_params = False
+    iam_permission_class = OrganizationPermission
 
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        permission = OrganizationPermission.create_scope_list(self.request)
-        return permission.filter(queryset)
+        if self.action == "list":
+            queryset = queryset.prefetch_related("owner")
+            permission = OrganizationPermission.create_scope_list(self.request)
+            queryset = permission.filter(queryset)
+        else:
+            queryset = queryset.select_related("owner")
+
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -144,15 +151,16 @@ class MembershipViewSet(
     PartialUpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Membership.objects.select_related("invitation", "user").all()
+    queryset = Membership.objects.all()
     ordering = "-id"
     http_method_names = ["get", "patch", "delete", "head", "options"]
-    search_fields = ("user", "role")
-    filter_fields = list(search_fields) + ["id"]
-    simple_filters = list(search_fields)
+    search_fields = ("user",)
+    simple_filters = (*search_fields, "role")
+    filter_fields = (*simple_filters, "id")
     ordering_fields = list(filter_fields)
     lookup_fields = {"user": "user__username"}
-    iam_organization_field = "organization"
+    iam_supports_organization_params = True
+    iam_permission_class = MembershipPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -164,8 +172,11 @@ class MembershipViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
+            queryset = queryset.prefetch_related("invitation", "user")
             permission = MembershipPermission.create_scope_list(self.request)
             queryset = permission.filter(queryset)
+        else:
+            queryset = queryset.select_related("invitation", "user")
 
         return queryset
 
@@ -244,11 +255,12 @@ class InvitationViewSet(
 ):
     queryset = Invitation.objects.all()
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    iam_organization_field = "membership__organization"
+    iam_supports_organization_params = True
+    iam_permission_class = InvitationPermission
 
     search_fields = ("owner",)
-    filter_fields = list(search_fields) + ["user_id", "accepted"]
-    simple_filters = list(search_fields)
+    simple_filters = (*search_fields, "user_id", "accepted")
+    filter_fields = (*simple_filters, "id")
     ordering_fields = list(simple_filters) + ["created_date"]
     ordering = "-created_date"
     lookup_fields = {
@@ -265,9 +277,16 @@ class InvitationViewSet(
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        related = ("owner", "membership__user", "membership__organization")
 
-        permission = InvitationPermission.create_scope_list(self.request)
-        return permission.filter(queryset)
+        if self.action == "list":
+            queryset = queryset.prefetch_related(*related)
+            permission = InvitationPermission.create_scope_list(self.request)
+            queryset = permission.filter(queryset)
+        else:
+            queryset = queryset.select_related(*related)
+
+        return queryset
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)

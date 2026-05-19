@@ -8,6 +8,7 @@ import React, {
     useState, useEffect, useCallback, useRef,
 } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
@@ -27,11 +28,13 @@ const core = getCore();
 function MoveTaskModal({
     onUpdateTask,
 }: {
-    onUpdateTask?: (task: Task) => Promise<void>,
+    onUpdateTask?: (task: Task, fields?: Parameters<Task['save']>[0]) => Promise<Task>;
 }): JSX.Element {
     const dispatch = useDispatch();
-    const visible = useSelector((state: CombinedState) => state.tasks.moveTask.modalVisible);
-    const taskId = useSelector((state: CombinedState) => state.tasks.moveTask.taskId);
+    const { visible, taskId } = useSelector((state: CombinedState) => ({
+        visible: state.tasks.moveTask.modalVisible,
+        taskId: state.tasks.moveTask.taskId,
+    }), shallowEqual);
     const mounted = useRef(false);
 
     const [taskFetching, setTaskFetching] = useState(false);
@@ -85,24 +88,26 @@ function MoveTaskModal({
         }
 
         taskInstance.projectId = projectId;
-        taskInstance.labels = Object.values(labelMap).map((mapper) => ({
+        const labels = Object.values(labelMap).map((mapper) => ({
             id: mapper.labelId,
             name: mapper.newLabelName,
         })).map(({ id, name }) => {
             const [label] = taskInstance.labels.filter((_label: Label) => _label.id === id);
-            (label as Label).name = name as string;
-            return label;
+            return new core.classes.Label({
+                ...label.toJSON(),
+                name: name as string,
+            });
         });
 
         setIsUpdating(true);
         if (onUpdateTask) {
-            onUpdateTask(taskInstance).finally(() => {
+            onUpdateTask(taskInstance, { labels }).finally(() => {
                 if (mounted.current) {
                     setIsUpdating(false);
                 }
             });
         } else {
-            taskInstance.save().finally(() => {
+            taskInstance.save({ labels }).finally(() => {
                 if (mounted.current) {
                     setIsUpdating(false);
                 }

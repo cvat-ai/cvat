@@ -8,6 +8,7 @@ import {
     ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
+    DataStorageLocation, RQStatus,
 } from './enums';
 import { Camelized, CamelizedV2 } from './type-utils';
 
@@ -40,6 +41,18 @@ export interface ProjectsFilter extends APICommonFilterParams {
     id?: number;
 }
 
+export interface APIApiTokensFilter extends APICommonFilterParams {
+    id?: number;
+    owner?: number;
+    created_date?: string;
+    updated_date?: string;
+    expiry_date?: string;
+    last_used_date?: string;
+    read_only?: boolean;
+    name?: string;
+}
+export type ApiTokensFilter = CamelizedV2<APIApiTokensFilter>;
+
 export interface SerializedUser {
     url: string;
     id: number;
@@ -71,7 +84,7 @@ export interface SerializedProject {
     updated_date: string;
     dimension: DimensionType;
     name: string;
-    organization: number | null;
+    organization_id: number | null;
     guide_id: number | null;
     owner: SerializedUser;
     source_storage: SerializedStorage | null;
@@ -96,6 +109,7 @@ export interface SerializedTask {
     data_chunk_size: number | null;
     data_compressed_chunk_type: ChunkType
     data_original_chunk_type: ChunkType;
+    data_cloud_storage_id: number | null;
     dimension: DimensionType;
     id: number;
     image_quality: number;
@@ -108,10 +122,11 @@ export interface SerializedTask {
     labels: { count: number; url: string; };
     mode: TaskMode | '';
     name: string;
-    organization: number | null;
+    organization_id: number | null;
     overlap: number | null;
     owner: SerializedUser;
     project_id: number | null;
+    project_name: string | null;
     guide_id: number | null;
     segment_size: number;
     size: number;
@@ -135,6 +150,7 @@ export interface SerializedJob {
     labels: { count: number; url: string };
     mode: TaskMode;
     project_id: number | null;
+    project_name: string | null;
     guide_id: number | null;
     stage: JobStage;
     state: JobState;
@@ -143,13 +159,14 @@ export interface SerializedJob {
     start_frame: number;
     stop_frame: number;
     task_id: number;
+    task_name: string;
     updated_date: string;
     created_date: string;
     url: string;
     source_storage: SerializedStorage | null;
     target_storage: SerializedStorage | null;
     parent_job_id: number | null;
-    consensus_replicas: number;
+    replicas_count: number;
 }
 
 export type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
@@ -160,6 +177,7 @@ export interface SerializedAttribute {
     default_value: string;
     values: string[];
     id?: number;
+    deleted?: boolean;
 }
 
 export interface SerializedLabel {
@@ -225,18 +243,18 @@ export interface SerializedAsset {
 export interface SerializedOrganizationContact {
     email?: string;
     location?: string;
-    phoneNumber?: string
+    phoneNumber?: string;
 }
 
 export interface SerializedOrganization {
-    id?: number,
-    slug?: string,
-    name?: string,
-    description?: string,
-    created_date?: string,
-    updated_date?: string,
-    owner?: any,
-    contact?: SerializedOrganizationContact,
+    id?: number;
+    slug?: string;
+    name?: string;
+    description?: string;
+    created_date?: string;
+    updated_date?: string;
+    owner?: any;
+    contact?: SerializedOrganizationContact;
 }
 
 export interface APIQualitySettingsFilter extends APICommonFilterParams {
@@ -363,7 +381,6 @@ export interface SerializedQualityReportData {
 export interface SerializedConsensusSettingsData {
     id?: number;
     task?: number;
-    quorum?: number;
     iou_threshold?: number;
     descriptions?: Record<string, string>;
 }
@@ -390,6 +407,18 @@ export interface SerializedInvitationData {
     organization_info: SerializedOrganization;
 }
 
+export interface SerializedApiToken {
+    id?: number;
+    name: string;
+    created_date?: string;
+    updated_date?: string;
+    expiry_date: string | null;
+    last_used_date?: string | null;
+    read_only: boolean;
+    owner?: SerializedUser;
+    value?: string;
+}
+
 export interface SerializedShape {
     id?: number;
     clientID?: number;
@@ -397,6 +426,7 @@ export interface SerializedShape {
     group: number;
     frame: number;
     source: Source;
+    score?: number;
     attributes: { spec_id: number; value: string }[];
     elements: Omit<SerializedShape, 'elements'>[];
     occluded: boolean;
@@ -467,8 +497,20 @@ export interface SerializedCloudStorage {
     manifests?: string[];
 }
 
+export interface SerializedChapterMetaData {
+    title: string;
+}
+
+export interface SerializedChapter {
+    id: number;
+    start: number;
+    end: number;
+    metadata: SerializedChapterMetaData;
+}
+
 export interface SerializedFramesMetaData {
     chunk_size: number;
+    chapters: SerializedChapter[] | null
     deleted_frames: number[];
     included_frames: number[] | null;
     frame_filter: string;
@@ -483,6 +525,8 @@ export interface SerializedFramesMetaData {
     size: number;
     start_frame: number;
     stop_frame: number;
+    storage: DataStorageLocation;
+    cloud_storage_id: number | null;
 }
 
 export interface SerializedAPISchema {
@@ -527,6 +571,7 @@ export interface SerializedRequest {
         task_id: number | null;
         project_id: number | null;
         function_id: string | null;
+        lightweight?: boolean | null;
     };
     progress?: number;
     result_url?: string;
@@ -536,6 +581,20 @@ export interface SerializedRequest {
     finished_date?: string;
     expiry_date?: string;
     owner: any;
+}
+
+export interface SerializedFunctionRequest {
+    id: string;
+    status: RQStatus;
+    enqueued: string;
+    started: string | null;
+    ended: string | null;
+    exc_info: string;
+    progress: number | null;
+    function: {
+        id: number | string;
+        task: number;
+    };
 }
 
 export interface SerializedJobValidationLayout {
@@ -550,5 +609,5 @@ export interface SerializedTaskValidationLayout extends SerializedJobValidationL
     disabled_frames?: number[];
 }
 
-export interface APIOrganizationMembersFilter extends APICommonFilterParams {}
+export type APIOrganizationMembersFilter = APICommonFilterParams;
 export type OrganizationMembersFilter = Camelized<APIOrganizationMembersFilter>;

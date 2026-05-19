@@ -12,7 +12,7 @@ import textwrap
 from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
-from typing import Any, Optional
+from typing import Any
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
@@ -35,11 +35,12 @@ from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.task import PatchAction
-from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.models import (
     Job,
     Label,
+    MediaType,
     RequestAction,
     RequestTarget,
     ShapeType,
@@ -298,10 +299,10 @@ class LambdaFunction:
         db_task: Task,
         data: dict[str, Any],
         *,
-        db_job: Optional[Job] = None,
-        is_interactive: Optional[bool] = False,
-        request: Optional[ExtendedRequest] = None,
-        converter: Optional[DetectionResultConverter] = None,
+        db_job: Job | None = None,
+        is_interactive: bool | None = False,
+        request: ExtendedRequest | None = None,
+        converter: DetectionResultConverter | None = None,
     ):
         if db_job is not None and db_job.get_task_id() != db_task.id:
             raise ValidationError(
@@ -476,6 +477,9 @@ class LambdaFunction:
                     "obj_bbox": data.get("obj_bbox", None),
                 }
             )
+            text_prompts = data.get("text_prompts", None)
+            if text_prompts:
+                payload["text_prompts"] = text_prompts
         elif self.kind == FunctionKind.REID:
             payload.update(
                 {
@@ -682,7 +686,7 @@ class LambdaQueue:
         max_distance,
         request,
         *,
-        job: Optional[int] = None,
+        job: int | None = None,
     ) -> LambdaJob:
         queue = self._get_queue()
         rq_id = RequestId(
@@ -783,7 +787,7 @@ class DetectionResultConverter:
 
     def _parse_anno(
         self, *, labels: dict, conv_mask_to_poly: bool, frame: int, anno: dict
-    ) -> Optional[dict]:
+    ) -> dict | None:
         label = labels.get(anno["label"])
         if label is None:
             # Invalid label provided
@@ -878,7 +882,7 @@ class DetectionResultConverter:
 
 
 class DetectionResultCollector:
-    def __init__(self, task: Task, job: Optional[Job]) -> None:
+    def __init__(self, task: Task, job: Job | None) -> None:
         self._task = task
         self._job = job
 
@@ -982,10 +986,10 @@ class LambdaJob:
         function: LambdaFunction,
         db_task: Task,
         threshold: float,
-        mapping: Optional[dict[str, str]],
+        mapping: dict[str, str] | None,
         conv_mask_to_poly: bool,
         *,
-        db_job: Optional[Job] = None,
+        db_job: Job | None = None,
     ):
         collector = DetectionResultCollector(db_task, db_job)
 
@@ -1036,7 +1040,7 @@ class LambdaJob:
         return job.get_status()
 
     @classmethod
-    def _get_frame_set(cls, db_task: Task, db_job: Optional[Job]):
+    def _get_frame_set(cls, db_task: Task, db_job: Job | None):
         if db_job:
             task_data = db_task.data
             data_start_frame = task_data.start_frame
@@ -1057,7 +1061,7 @@ class LambdaJob:
         threshold: float,
         max_distance: int,
         *,
-        db_job: Optional[Job] = None,
+        db_job: Job | None = None,
     ):
         if db_job:
             data = dm.task.get_job_data(db_job.id)
@@ -1243,7 +1247,8 @@ def return_response(success_code=status.HTTP_200_OK):
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = "[a-zA-Z0-9_.-]+"
     lookup_field = "func_id"
-    iam_organization_field = None
+    iam_supports_organization_params = False
+    iam_permission_class = LambdaPermission
     serializer_class = None
 
     @return_response()
@@ -1258,17 +1263,15 @@ class FunctionViewSet(viewsets.ViewSet):
         return gateway.get(func_id).to_dict()
 
     @extend_schema(
-        description=textwrap.dedent(
-            """\
-        Allows to execute a function for immediate computation.
+        description=textwrap.dedent("""\
+            Allows to execute a function for immediate computation.
 
-        Intended for short-lived executions, useful for interactive calls.
+            Intended for short-lived executions, useful for interactive calls.
 
-        When executed for interactive annotation, the job id must be specified
-        in the 'job' input field. The task id is not required in this case,
-        but if it is specified, it must match the job task id.
-        """
-        ),
+            When executed for interactive annotation, the job id must be specified
+            in the 'job' input field. The task id is not required in this case,
+            but if it is specified, it must match the job task id.
+        """),
         request=inline_serializer(
             "OnlineFunctionCall",
             fields={
@@ -1297,6 +1300,9 @@ class FunctionViewSet(viewsets.ViewSet):
                 + "with wrong arguments ({})".format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST,
             )
+
+        if db_task.media_type == MediaType.AUDIO:
+            raise serializers.ValidationError("Auto-annotation is not available in audio tasks")
 
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
@@ -1370,7 +1376,8 @@ class FunctionViewSet(viewsets.ViewSet):
     ),
 )
 class RequestViewSet(viewsets.ViewSet):
-    iam_organization_field = None
+    iam_supports_organization_params = False
+    iam_permission_class = LambdaPermission
     serializer_class = None
 
     @return_response()
@@ -1414,6 +1421,9 @@ class RequestViewSet(viewsets.ViewSet):
                 + "with wrong arguments ({})".format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST,
             )
+
+        if Task.objects.get(pk=task).media_type == MediaType.AUDIO:
+            raise serializers.ValidationError("Auto-annotation is not available in audio tasks")
 
         gateway = LambdaGateway()
         queue = LambdaQueue()

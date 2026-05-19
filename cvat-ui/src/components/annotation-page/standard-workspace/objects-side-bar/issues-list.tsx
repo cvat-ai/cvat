@@ -5,6 +5,8 @@
 
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
+import dayjs from 'dayjs';
 import Icon, {
     LeftOutlined, RightOutlined, EyeInvisibleFilled, EyeOutlined,
     CheckCircleFilled, CheckCircleOutlined,
@@ -18,7 +20,6 @@ import {
 import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ActiveControl, CombinedState, Workspace } from 'reducers';
-import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import { ConflictSeverity, QualityConflict, Issue } from 'cvat-core-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
@@ -26,18 +27,33 @@ import { ShowGroundTruthIcon } from 'icons';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const frame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
-    const frameIssues = useSelector((state: CombinedState): Issue[] => state.review.frameIssues);
-    const frameConflicts = useSelector((state: CombinedState) => state.review.frameConflicts);
-    const showGroundTruth = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
-    const issues = useSelector((state: CombinedState): Issue[] => state.review.issues);
-    const conflicts = useSelector((state: CombinedState) => state.review.conflicts);
-    const issuesHidden = useSelector((state: CombinedState) => state.review.issuesHidden);
-    const issuesResolvedHidden = useSelector((state: CombinedState) => state.review.issuesResolvedHidden);
-    const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
-    const workspace = useSelector((state: CombinedState) => state.annotation.workspace);
-    const ready = useSelector((state: CombinedState) => state.annotation.canvas.ready);
-    const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
+    const {
+        frame,
+        frameIssues,
+        frameConflicts,
+        showGroundTruth,
+        issues,
+        conflicts,
+        issuesHidden,
+        issuesResolvedHidden,
+        highlightedConflict,
+        workspace,
+        ready,
+        activeControl,
+    } = useSelector((state: CombinedState) => ({
+        frame: state.annotation.player.frame.number,
+        frameIssues: state.review.frameIssues,
+        frameConflicts: state.review.frameConflicts,
+        showGroundTruth: state.settings.shapes.showGroundTruth,
+        issues: state.review.issues,
+        conflicts: state.review.conflicts,
+        issuesHidden: state.review.issuesHidden,
+        issuesResolvedHidden: state.review.issuesResolvedHidden,
+        highlightedConflict: state.annotation.annotations.highlightedConflict,
+        workspace: state.annotation.workspace,
+        ready: state.annotation.canvas.ready,
+        activeControl: state.annotation.canvas.activeControl,
+    }), shallowEqual);
 
     let frames = issues
         .filter((issue: Issue) => !issuesResolvedHidden || !issue.resolved)
@@ -76,69 +92,77 @@ export default function LabelsListComponent(): JSX.Element {
     return (
         <>
             <div className='cvat-objects-sidebar-issues-list-header'>
-                <Row justify='start' align='middle'>
-                    <Col>
+                <Row justify='space-between' align='middle'>
+                    <Col span={24}>
                         <Text>{`Items: ${frameIssues.length}`}</Text>
                     </Col>
-                    <Col offset={1}>
-                        <CVATTooltip title='Find the previous frame with issues'>
-                            <LeftOutlined className='cvat-issues-sidebar-previous-frame' {...dynamicLeftProps} />
-                        </CVATTooltip>
-                    </Col>
-                    <Col offset={1}>
-                        <CVATTooltip title='Find the next frame with issues'>
-                            <RightOutlined className='cvat-issues-sidebar-next-frame' {...dynamicRightProps} />
-                        </CVATTooltip>
-                    </Col>
-                    <Col offset={2}>
-                        <CVATTooltip title='Show/hide all issues'>
-                            {issuesHidden ? (
-                                <EyeInvisibleFilled
-                                    className='cvat-issues-sidebar-hidden-issues'
-                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(false))}
-                                />
-                            ) : (
-                                <EyeOutlined
-                                    className='cvat-issues-sidebar-shown-issues'
-                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(true))}
-                                />
-                            )}
-                        </CVATTooltip>
-                    </Col>
-                    <Col offset={2}>
-                        <CVATTooltip title='Show/hide resolved issues'>
-                            { issuesResolvedHidden ? (
-                                <CheckCircleFilled
-                                    className='cvat-issues-sidebar-hidden-resolved-status'
-                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenResolvedFlag(false))}
-                                />
-                            ) : (
-                                <CheckCircleOutlined
-                                    className='cvat-issues-sidebar-hidden-resolved-status'
-                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenResolvedFlag(true))}
-                                />
-
-                            )}
-                        </CVATTooltip>
-                    </Col>
-                    {
-                        workspace === Workspace.REVIEW ? (
-                            <Col offset={2}>
-                                <CVATTooltip title='Show Ground truth annotations and conflicts'>
-                                    <Icon
-                                        className={
-                                            `cvat-objects-sidebar-show-ground-truth ${showGroundTruth ? 'cvat-objects-sidebar-show-ground-truth-active' : ''}`
-                                        }
-                                        component={ShowGroundTruthIcon}
-                                        onClick={() => {
-                                            dispatch(changeShowGroundTruth(!showGroundTruth));
-                                            dispatch(fetchAnnotationsAsync());
-                                        }}
-                                    />
+                    <Col span={24}>
+                        <Row className='cvat-objects-sidebar-issues-toolbar' justify='space-around' align='middle'>
+                            <Col>
+                                <CVATTooltip title='Find the previous frame with issues'>
+                                    <LeftOutlined className='cvat-issues-sidebar-previous-frame' {...dynamicLeftProps} />
                                 </CVATTooltip>
                             </Col>
-                        ) : null
-                    }
+                            <Col>
+                                <CVATTooltip title='Find the next frame with issues'>
+                                    <RightOutlined className='cvat-issues-sidebar-next-frame' {...dynamicRightProps} />
+                                </CVATTooltip>
+                            </Col>
+                            <Col>
+                                <CVATTooltip title='Show/hide all issues'>
+                                    {issuesHidden ? (
+                                        <EyeInvisibleFilled
+                                            className='cvat-issues-sidebar-hidden-issues'
+                                            onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(false))}
+                                        />
+                                    ) : (
+                                        <EyeOutlined
+                                            className='cvat-issues-sidebar-shown-issues'
+                                            onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(true))}
+                                        />
+                                    )}
+                                </CVATTooltip>
+                            </Col>
+                            <Col>
+                                <CVATTooltip title='Show/hide resolved issues'>
+                                    { issuesResolvedHidden ? (
+                                        <CheckCircleFilled
+                                            className='cvat-issues-sidebar-hidden-resolved-status'
+                                            onClick={() => (
+                                                dispatch(reviewActions.switchIssuesHiddenResolvedFlag(false))
+                                            )}
+                                        />
+                                    ) : (
+                                        <CheckCircleOutlined
+                                            className='cvat-issues-sidebar-hidden-resolved-status'
+                                            onClick={() => (
+                                                dispatch(reviewActions.switchIssuesHiddenResolvedFlag(true))
+                                            )}
+                                        />
+
+                                    )}
+                                </CVATTooltip>
+                            </Col>
+                            {
+                                workspace === Workspace.REVIEW ? (
+                                    <Col>
+                                        <CVATTooltip title='Show Ground truth annotations and conflicts'>
+                                            <Icon
+                                                className={
+                                                    `cvat-objects-sidebar-show-ground-truth ${showGroundTruth ? 'cvat-objects-sidebar-show-ground-truth-active' : ''}`
+                                                }
+                                                component={ShowGroundTruthIcon}
+                                                onClick={() => {
+                                                    dispatch(changeShowGroundTruth(!showGroundTruth));
+                                                    dispatch(fetchAnnotationsAsync());
+                                                }}
+                                            />
+                                        </CVATTooltip>
+                                    </Col>
+                                ) : null
+                            }
+                        </Row>
+                    </Col>
                 </Row>
             </div>
             <div className='cvat-objects-sidebar-issues-list'>
@@ -179,7 +203,7 @@ export default function LabelsListComponent(): JSX.Element {
                                     </Col>
                                     <Col offset={1}>
                                         <Text type='secondary'>
-                                            {`created ${moment(frameIssue.createdDate).fromNow()}`}
+                                            {`created ${dayjs(frameIssue.createdDate).fromNow()}`}
                                         </Text>
                                     </Col>
                                 </Row>

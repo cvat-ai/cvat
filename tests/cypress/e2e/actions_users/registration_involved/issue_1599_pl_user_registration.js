@@ -19,8 +19,8 @@ context('Issue 1599 (Polish alphabet).', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [userName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteUsers(authHeaders, [userName]);
         });
     });
 

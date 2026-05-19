@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.db.models import Q
 from django.http import HttpResponse
-from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -25,9 +24,12 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_server_url
 from cvat.apps.engine.view_utils import deprecate_response, get_or_404
 from cvat.apps.quality_control import quality_reports as qc
+from cvat.apps.quality_control.export import (
+    QualityReportExportFormat,
+    prepare_report_for_downloading,
+)
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
@@ -70,23 +72,12 @@ from cvat.apps.redis_handler.serializers import RqIdSerializer
 class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = AnnotationConflict.objects.prefetch_related("annotation_ids")
 
-    iam_organization_field = [
-        "report__job__segment__task__organization",
-        "report__task__organization",
-        "report__project__organization",
-    ]
+    iam_supports_organization_params = True
+    iam_permission_class = AnnotationConflictPermission
 
     search_fields = []
-    filter_fields = list(search_fields) + [
-        "id",
-        "frame",
-        "type",
-        "job_id",
-        "task_id",
-        "project_id",
-        "severity",
-    ]
-    simple_filters = set(filter_fields) - {"id"}
+    simple_filters = ("frame", "type", "job_id", "task_id", "project_id", "severity")
+    filter_fields = (*simple_filters, "id")
     lookup_fields = {
         "job_id": "report__job__id",
         "task_id": "report__job__segment__task__id",  # task reports do not have own conflicts
@@ -122,6 +113,8 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                     queryset = queryset.filter(report__parents__parents=report)
                 else:
                     assert False
+
+                queryset = AnnotationConflictPermission.add_org_filter_proof(queryset)
             else:
                 perm = AnnotationConflictPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
@@ -143,8 +136,7 @@ REPORT_TARGET_PARAM_NAME = "target"
     ),
     list=extend_schema(
         summary="Method returns a paginated list of quality reports.",
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Please note that children reports are included by default
             if the "task_id", "project_id" filters are used.
             If you want to restrict the list of results to a specific report type,
@@ -158,8 +150,7 @@ REPORT_TARGET_PARAM_NAME = "target"
             but the "parent_id" field in responses will include only the first parent report id.
             The "parent_id" filter still returns all the relevant nested reports,
             even though the response "parent_id" values may be different from the requested one.
-        """
-        ).format(REPORT_TARGET_PARAM_NAME),
+        """).format(REPORT_TARGET_PARAM_NAME),
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -195,23 +186,20 @@ class QualityReportViewSet(
 ):
     queryset = QualityReport.objects.prefetch_related("assignee")
 
-    iam_organization_field = [
-        "job__segment__task__organization",
-        "task__organization",
-        "project__organization",
-    ]
+    iam_supports_organization_params = True
+    iam_permission_class = QualityReportPermission
 
     search_fields = []
-    filter_fields = list(search_fields) + [
+    simple_filters = ["job_id"]
+    filter_fields = (
+        *simple_filters,
         "id",
-        "job_id",
         "task_id",
         "project_id",
         "created_date",
         "gt_last_updated",
         "target_last_updated",
-    ]
-    simple_filters = ["job_id"]
+    )
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
@@ -298,22 +286,18 @@ class QualityReportViewSet(
     @extend_schema(
         operation_id="quality_create_report",
         summary="Create a quality report",
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Deprecation warning: Utilizing this endpoint to check the computation status is no longer possible.
             Consider using common requests API: GET /api/requests/<rq_id>
-            """
-        ),
+            """),
         parameters=[
             OpenApiParameter(
                 CREATE_REPORT_RQ_ID_PARAMETER,
                 type=str,
-                description=textwrap.dedent(
-                    """\
+                description=textwrap.dedent("""\
                     The report creation request id. Can be specified to check the report
                     creation status.
-                """
-                ),
+                """),
                 deprecated=True,
             )
         ],
@@ -322,16 +306,12 @@ class QualityReportViewSet(
             "201": QualityReportSerializer,
             "202": OpenApiResponse(
                 RqIdSerializer,
-                description=textwrap.dedent(
-                    """\
+                description=textwrap.dedent("""\
                     A quality report request has been enqueued, the request id is returned.
                     The request status can be checked at this endpoint by passing the {}
                     as the query parameter. If the request id is specified, this response
                     means the quality report request is queued or is being processed.
-                """.format(
-                        CREATE_REPORT_RQ_ID_PARAMETER
-                    )
-                ),
+                """.format(CREATE_REPORT_RQ_ID_PARAMETER)),
             ),
             "400": OpenApiResponse(
                 description="Invalid or failed request, check the response data for details"
@@ -433,13 +413,26 @@ class QualityReportViewSet(
     @extend_schema(
         operation_id="quality_retrieve_report_data",
         summary="Get quality report contents",
-        responses={"200": OpenApiTypes.OBJECT},
+        parameters=[
+            OpenApiParameter(
+                "format",
+                type=OpenApiTypes.STR,
+                enum=QualityReportExportFormat.values,
+                default=QualityReportExportFormat.JSON.value,
+            ),
+        ],
+        responses={"200": OpenApiTypes.BINARY},
     )
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
-    def data(self, request, pk):
+    def data(self, request: ExtendedRequest, pk):
         report = self.get_object()  # check permissions
-        json_report = qc.prepare_report_for_downloading(report, host=get_server_url(request))
-        return HttpResponse(json_report.encode(), content_type="application/json")
+        format_name = QualityReportExportFormat(
+            request.query_params.get("format", default=QualityReportExportFormat.JSON.value)
+        )
+        report_data, content_type = prepare_report_for_downloading(
+            report, host=request.build_absolute_uri("/"), export_format=format_name
+        )
+        return HttpResponse(report_data, content_type=content_type)
 
 
 SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
@@ -449,13 +442,11 @@ SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
 @extend_schema_view(
     list=extend_schema(
         summary="List quality settings instances",
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Please note that child task settings are included by default
             if the "project_id" filter is used.
             If you want to restrict results only to a specific parent type, use the "{}" parameter.
-        """
-        ).format(SETTINGS_PARENT_TYPE_PARAM_NAME),
+        """).format(SETTINGS_PARENT_TYPE_PARAM_NAME),
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -512,11 +503,12 @@ class QualitySettingsViewSet(
 ):
     queryset = QualitySettings.objects
 
-    iam_organization_field = ["task__organization", "project__organization"]
+    iam_supports_organization_params = True
+    iam_permission_class = QualitySettingPermission
 
     search_fields = []
-    filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]
-    simple_filters = ["task_id", "inherit"]
+    simple_filters = ("task_id", "inherit")
+    filter_fields = (*simple_filters, "id", "project_id", "created_date", "updated_date")
     ordering_fields = list(filter_fields)
     ordering = "id"
 

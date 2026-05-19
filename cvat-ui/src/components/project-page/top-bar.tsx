@@ -15,10 +15,11 @@ import ActionsMenu from 'components/projects-page/actions-menu';
 
 interface DetailsComponentProps {
     projectInstance: Project;
+    onUpdateProject: (project: Project) => Promise<Project>;
 }
 
 export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element {
-    const { projectInstance } = props;
+    const { projectInstance, onUpdateProject } = props;
 
     const history = useHistory();
 
@@ -38,6 +39,7 @@ export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element
             <Col className='cvat-project-top-bar-actions'>
                 <ActionsMenu
                     projectInstance={projectInstance}
+                    onUpdateProject={onUpdateProject}
                     triggerElement={(
                         <Button size='middle' className='cvat-project-page-actions-button'>
                             <Text className='cvat-text-color'>Actions</Text>

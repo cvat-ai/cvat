@@ -12,6 +12,7 @@ import os.path as osp
 import random
 import xml.etree.ElementTree as ET
 import zipfile
+from collections.abc import Callable
 from contextlib import ExitStack, contextmanager
 from datetime import timedelta
 from functools import partial
@@ -19,11 +20,12 @@ from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import sleep
-from typing import Any, Callable, ClassVar, Optional, overload
+from typing import Any, ClassVar, overload
 from unittest.mock import DEFAULT as MOCK_DEFAULT
 from unittest.mock import MagicMock, patch
 
 import av
+import datumaro
 import numpy as np
 from attr import define, field
 from datumaro.components.comparator import EqualityComparator
@@ -33,7 +35,7 @@ from PIL import Image
 from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
+from cvat.apps.dataset_manager.bindings import CvatDataExtractor, TaskData
 from cvat.apps.dataset_manager.cron import clear_export_cache
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import (
@@ -155,8 +157,8 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
 
     @classmethod
     def create_db_users(cls):
-        (group_admin, _) = Group.objects.get_or_create(name="admin")
-        (group_user, _) = Group.objects.get_or_create(name="user")
+        group_admin, _ = Group.objects.get_or_create(name="admin")
+        group_user, _ = Group.objects.get_or_create(name="user")
 
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
         user_admin.groups.add(group_admin)
@@ -209,23 +211,28 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
             response = self.client.post("/api/tasks", data=data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
             response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
-            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json()["rq_id"]
 
             response = self.client.get(f"/api/requests/{rq_id}")
-            assert response.status_code == status.HTTP_200_OK, response.status_code
-            assert response.json()["status"] == "finished", response.json().get("status")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            response_json = response.json()
+            self.assertEqual(
+                response_json["status"], "finished", msg=f"Message: {response_json['message']}"
+            )
 
             response = self.client.get("/api/tasks/%s" % tid)
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -237,7 +244,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _create_project(self, data):
         with ForceLogin(self.user, self.client):
             response = self.client.post("/api/projects", data=data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             project = response.data
 
         return project
@@ -245,7 +252,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
-                lambda page: self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+                lambda page: self.client.get(
+                    "/api/jobs", query_params={"task_id": task_id, "page": page}
+                )
             )
         return values
 
@@ -253,7 +262,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
                 lambda page: self.client.get(
-                    "/api/tasks", data={"project_id": project_id, "page": page}
+                    "/api/tasks", query_params={"project_id": project_id, "page": page}
                 )
             )
         return values
@@ -262,7 +271,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
         task_ann = TaskAnnotation(task_id)
         task_ann.init_from_db()
         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-        extractor = CvatTaskOrJobDataExtractor(task_data, include_images=include_images)
+        extractor = CvatDataExtractor(task_data, include_images=include_images)
         return Dataset.from_extractors(extractor)
 
     def _delete_request(self, path, user):
@@ -1525,7 +1534,7 @@ class ExportBehaviorTest(_DbTestBase):
             var.condition.notify()
 
     @classmethod
-    def wait_condition(cls, var: SharedBase, timeout: Optional[int] = 5):
+    def wait_condition(cls, var: SharedBase, timeout: int | None = 5):
         with var.condition:
             if not var.get() and not var.condition.wait(timeout):
                 raise cls._LockTimeoutError
@@ -1564,7 +1573,7 @@ class ExportBehaviorTest(_DbTestBase):
 
     @staticmethod
     @contextmanager
-    def process_closing(process: multiprocessing.Process, *, timeout: Optional[int] = 10):
+    def process_closing(process: multiprocessing.Process, *, timeout: int | None = 10):
         try:
             yield process
         finally:
@@ -2454,8 +2463,10 @@ class ProjectDumpUpload(_DbTestBase):
         user = self.admin
 
         with TestDir() as test_dir:
-            # Dump annotations with objects type is track
-            # create task with annotations
+            # Clean up from previous tests and iterations
+            self._clear_rq_jobs()
+
+            # Create task with annotations
             project_dict = copy.deepcopy(projects["main"])
             task_dict = copy.deepcopy(tasks[dump_format_name])
             project_dict["labels"] = task_dict["labels"]
@@ -2477,9 +2488,8 @@ class ProjectDumpUpload(_DbTestBase):
             task = self._create_task(task_dict, video)
             task_id = task["id"]
             self._create_annotations(task, "skeleton track", "default")
-            # dump annotations
-            self._clear_rq_jobs()  # clean up from previous tests and iterations
 
+            # Export annotations
             file_zip_name = osp.join(test_dir, f"{test_name}_{dump_format_name}.zip")
             self._export_project_dataset(
                 user,
@@ -2491,7 +2501,7 @@ class ProjectDumpUpload(_DbTestBase):
 
             data_from_task_before_upload = self._get_data_from_task(task_id, True)
 
-            # Upload annotations with objects type is track
+            # Import annotations
             project = self._create_project(project_dict)
 
             with open(file_zip_name, "rb") as binary_file:
@@ -2502,7 +2512,23 @@ class ProjectDumpUpload(_DbTestBase):
                     query_params={"format": upload_format_name},
                 )
 
-            # equals annotations
+            # Check annotations
+            expected_dataset = datumaro.Dataset(data_from_task_before_upload)
+            expected_dataset.init_cache()
+
+            # The imported annotations are expected to contain only keyframes in tracks,
+            # even if the annotations were interpolated originally.
+            self.assertEqual(len(expected_dataset), task["size"])
+            for item in expected_dataset:
+                for ann in item.annotations:
+                    if "keyframe" in ann.attributes:
+                        ann.attributes["keyframe"] = True
+
+                    if isinstance(ann, datumaro.Skeleton):
+                        for point in ann.elements:
+                            if "keyframe" in ann.attributes:
+                                point.attributes["keyframe"] = True
+
             new_task = self._get_tasks(project["id"])[0]
             data_from_task_after_upload = self._get_data_from_task(new_task["id"], True)
-            compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
+            compare_datasets(expected_dataset, data_from_task_after_upload)

@@ -21,10 +21,12 @@ import {
     MasksEditData,
     HighlightedElements,
     PolyEditData,
+    RenderData,
 } from './canvasModel';
 
 export interface CanvasController {
     readonly objects: any[];
+    readonly renderData: RenderData;
     readonly issueRegions: Record<number, { hidden: boolean; points: number[] }>;
     readonly zLayer: number | null;
     readonly focusData: FocusData;
@@ -50,6 +52,7 @@ export interface CanvasController {
     drag(x: number, y: number): void;
     disableDrag(): void;
     fit(): void;
+    focus(clientId: number, padding: number): void;
 }
 
 export class CanvasControllerImpl implements CanvasController {
@@ -101,6 +104,10 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.edit(editData);
     }
 
+    public focus(clientID: number, padding: number): void {
+        this.model.focus(clientID, padding);
+    }
+
     public get geometry(): Geometry {
         return this.model.geometry;
     }
@@ -119,6 +126,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get objects(): any[] {
         return this.model.objects;
+    }
+
+    public get renderData(): RenderData {
+        return this.model.renderData;
     }
 
     public get focusData(): FocusData {

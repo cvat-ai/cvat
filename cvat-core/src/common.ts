@@ -66,7 +66,15 @@ export function checkExclusiveFields(obj, exclusive, ignore): void {
     }
 }
 
-export function checkObjectType(name, value, type, instance?): boolean {
+export function checkObjectType(
+    name: string,
+    value: unknown,
+    type: 'string' | 'number' | 'boolean' | 'integer' | null,
+    constructor?: {
+        cls: new (...args: any[]) => unknown,
+        name: string,
+    },
+): boolean {
     if (type) {
         if (typeof value !== type) {
             // specific case for integers which aren't native type in JS
@@ -76,16 +84,13 @@ export function checkObjectType(name, value, type, instance?): boolean {
 
             throw new ArgumentError(`"${name}" is expected to be "${type}", but "${typeof value}" received.`);
         }
-    } else if (instance) {
-        if (!(value instanceof instance)) {
+    } else if (constructor) {
+        if (!(value instanceof constructor.cls)) {
             if (value !== undefined) {
-                throw new ArgumentError(
-                    `"${name}" is expected to be ${instance.name}, but ` +
-                        `"${value.constructor.name}" received`,
-                );
+                throw new ArgumentError(`"${name}" is expected to be instance of ${constructor.name}.`);
             }
 
-            throw new ArgumentError(`"${name}" is expected to be ${instance.name}, but "undefined" received`);
+            throw new ArgumentError(`"${name}" is expected to be ${constructor.name}, but "undefined" received`);
         }
     }
 
@@ -121,16 +126,13 @@ export class FieldUpdateTrigger {
     }
 
     getUpdated(data: object, propMap: Record<string, string> = {}): Record<string, unknown> {
-        const result = {};
+        const source = data as Record<string, unknown>;
+        const result: Record<string, unknown> = {};
         for (const updatedField of Object.keys(this.#updatedFlags)) {
-            result[propMap[updatedField] || updatedField] = data[updatedField];
+            result[propMap[updatedField] || updatedField] = source[updatedField];
         }
         return result;
     }
-}
-
-export function clamp(value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), max);
 }
 
 export function camelToSnakeCase(str: string): string {
@@ -172,7 +174,7 @@ export function filterFieldsToSnakeCase(
         }
     }
 
-    if (searchParams.filter) {
+    if (typeof searchParams.filter === 'string') {
         const parsed = JSON.parse(searchParams.filter);
         searchParams.filter = JSON.stringify({ and: [parsed, ...filtersGroup] });
     } else if (filtersGroup.length) {

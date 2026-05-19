@@ -24,7 +24,7 @@ export default function S3Region(props: Props): JSX.Element {
             selectedRegion={selectedRegion}
             onSelectRegion={onSelectRegion}
             internalCommonProps={internalCommonProps}
-            values={config.DEFAULT_AWS_S3_REGIONS}
+            values={config.DEFAULT_AWS_REGIONS}
             name='region'
             label='Region'
             href='https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions'

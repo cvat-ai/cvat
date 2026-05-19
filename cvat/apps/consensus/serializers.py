@@ -26,7 +26,6 @@ class ConsensusSettingsSerializer(serializers.ModelSerializer):
             "id",
             "task_id",
             "iou_threshold",
-            "quorum",
         )
         read_only_fields = (
             "id",
@@ -37,15 +36,12 @@ class ConsensusSettingsSerializer(serializers.ModelSerializer):
 
         for field_name, help_text in {
             "iou_threshold": "Pairwise annotation matching IoU threshold",
-            "quorum": """
-                Minimum required share of sources having an annotation for it to be accepted
-            """,
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))
             )
 
         for field_name in fields:
-            if field_name.endswith("_threshold") or field_name == "quorum":
+            if field_name.endswith("_threshold"):
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)

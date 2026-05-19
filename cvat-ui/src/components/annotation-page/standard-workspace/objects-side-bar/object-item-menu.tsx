@@ -13,6 +13,7 @@ import Icon, {
 
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
+    OneLayerBackwardIcon, OneLayerForwardIcon, SimplifyIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ColorBy } from 'reducers';
@@ -21,9 +22,8 @@ import {
 } from 'cvat-core-wrapper';
 
 interface Props {
-    readonly: boolean;
-    serverID: number | null;
     locked: boolean;
+    serverID: number | null;
     shapeType: ShapeType;
     objectType: ObjectType;
     color: string;
@@ -36,6 +36,8 @@ interface Props {
     propagateShortcut: string;
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
+    toOneLayerBackwardShortcut: string;
+    toOneLayerForwardShortcut: string;
     removeShortcut: string;
     runAnnotationsActionShortcut: string;
     changeColor(value: string): void;
@@ -46,10 +48,13 @@ interface Props {
     switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
+    toOneLayerBackward(): void;
+    toOneLayerForward(): void;
     resetCuboidPerspective(): void;
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
+    simplify(): void;
     runAnnotationAction(): void;
     jobInstance: Job;
 }
@@ -125,6 +130,23 @@ function SliceItem(props: ItemProps): JSX.Element {
     );
 }
 
+function SimplifyItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { simplify } = toolProps;
+    return (
+        <CVATTooltip title='Reduce the number of polygon points'>
+            <Button
+                type='link'
+                icon={<Icon component={SimplifyIcon} />}
+                onClick={simplify}
+                className='cvat-object-item-menu-simplify-object'
+            >
+                Simplify
+            </Button>
+        </CVATTooltip>
+    );
+}
+
 function PropagateItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
     const { propagateShortcut, propagate } = toolProps;
@@ -180,7 +202,7 @@ function ToBackgroundItem(props: ItemProps): JSX.Element {
             <Button
                 type='link'
                 onClick={toBackground}
-                className='cvat-object-item-menu-to-background'
+                className='cvat-object-item-menu-to-layer-background'
             >
                 <Icon component={BackgroundIcon} />
                 To background
@@ -197,10 +219,44 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
             <Button
                 type='link'
                 onClick={toForeground}
-                className='cvat-object-item-menu-to-foreground'
+                className='cvat-object-item-menu-to-layer-foreground'
             >
                 <Icon component={ForegroundIcon} />
                 To foreground
+            </Button>
+        </CVATTooltip>
+    );
+}
+
+function ToOneLayerBackwardItem(props: Readonly<ItemProps>): JSX.Element {
+    const { toolProps } = props;
+    const { toOneLayerBackwardShortcut, toOneLayerBackward } = toolProps;
+    return (
+        <CVATTooltip title={`${toOneLayerBackwardShortcut}`}>
+            <Button
+                type='link'
+                onClick={toOneLayerBackward}
+                className='cvat-object-item-menu-to-one-layer-backward'
+            >
+                <Icon component={OneLayerBackwardIcon} />
+                To one layer backward
+            </Button>
+        </CVATTooltip>
+    );
+}
+
+function ToOneLayerForwardItem(props: Readonly<ItemProps>): JSX.Element {
+    const { toolProps } = props;
+    const { toOneLayerForwardShortcut, toOneLayerForward } = toolProps;
+    return (
+        <CVATTooltip title={`${toOneLayerForwardShortcut}`}>
+            <Button
+                type='link'
+                onClick={toOneLayerForward}
+                className='cvat-object-item-menu-to-one-layer-forward'
+            >
+                <Icon component={OneLayerForwardIcon} />
+                To one layer forward
             </Button>
         </CVATTooltip>
     );
@@ -256,7 +312,7 @@ function RunAnnotationActionItem(props: ItemProps): JSX.Element {
 
 export default function ItemMenu(props: Props): MenuProps {
     const {
-        readonly, shapeType, objectType, colorBy, jobInstance,
+        locked, shapeType, objectType, colorBy, jobInstance,
     } = props;
 
     enum MenuKeys {
@@ -267,10 +323,13 @@ export default function ItemMenu(props: Props): MenuProps {
         RESET_PERSPECTIVE = 'reset_perspective',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
+        TO_ONE_LAYER_BACKWARD = 'to_one_layer_backward',
+        TO_ONE_LAYER_FORWARD = 'to_one_layer_forward',
         SWITCH_COLOR = 'switch_color',
         REMOVE_ITEM = 'remove_item',
         EDIT_MASK = 'edit_mask',
         SLICE_ITEM = 'slice_item',
+        SIMPLIFY_ITEM = 'simplify_item',
         RUN_ANNOTATION_ACTION = 'run_annotation_action',
     }
 
@@ -281,49 +340,60 @@ export default function ItemMenu(props: Props): MenuProps {
         label: <CreateURLItem toolProps={props} />,
     }];
 
-    if (!readonly && objectType !== ObjectType.TAG) {
+    if (objectType !== ObjectType.TAG) {
         items.push({
             key: MenuKeys.COPY,
             label: <MakeCopyItem toolProps={props} />,
         });
     }
 
-    if (!readonly && shapeType === ShapeType.MASK) {
+    if (!locked && shapeType === ShapeType.MASK) {
         items.push({
             key: MenuKeys.EDIT_MASK,
             label: <EditMaskItem toolProps={props} />,
         });
     }
 
-    if (!readonly && objectType === ObjectType.SHAPE && [ShapeType.MASK, ShapeType.POLYGON].includes(shapeType)) {
+    if (
+        !locked && objectType === ObjectType.SHAPE &&
+        [ShapeType.MASK, ShapeType.POLYGON].includes(shapeType)
+    ) {
         items.push({
             key: MenuKeys.SLICE_ITEM,
             label: <SliceItem key={MenuKeys.SLICE_ITEM} toolProps={props} />,
         });
     }
 
-    if (!readonly) {
+    if (
+        !locked && objectType === ObjectType.SHAPE &&
+        [ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType)
+    ) {
         items.push({
-            key: MenuKeys.PROPAGATE,
-            label: <PropagateItem toolProps={props} />,
+            key: MenuKeys.SIMPLIFY_ITEM,
+            label: <SimplifyItem key={MenuKeys.SIMPLIFY_ITEM} toolProps={props} />,
         });
     }
 
-    if (is2D && !readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType)) {
+    items.push({
+        key: MenuKeys.PROPAGATE,
+        label: <PropagateItem toolProps={props} />,
+    });
+
+    if (is2D && !locked && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType)) {
         items.push({
             key: MenuKeys.SWITCH_ORIENTATION,
             label: <SwitchOrientationItem toolProps={props} />,
         });
     }
 
-    if (is2D && !readonly && shapeType === ShapeType.CUBOID) {
+    if (is2D && !locked && shapeType === ShapeType.CUBOID) {
         items.push({
             key: MenuKeys.RESET_PERSPECTIVE,
             label: <ResetPerspectiveItem toolProps={props} />,
         });
     }
 
-    if (is2D && !readonly && objectType !== ObjectType.TAG) {
+    if (is2D && !locked && objectType !== ObjectType.TAG) {
         items.push({
             key: MenuKeys.TO_BACKGROUND,
             label: <ToBackgroundItem toolProps={props} />,
@@ -333,28 +403,34 @@ export default function ItemMenu(props: Props): MenuProps {
             key: MenuKeys.TO_FOREGROUND,
             label: <ToForegroundItem toolProps={props} />,
         });
+
+        items.push({
+            key: MenuKeys.TO_ONE_LAYER_BACKWARD,
+            label: <ToOneLayerBackwardItem toolProps={props} />,
+        });
+
+        items.push({
+            key: MenuKeys.TO_ONE_LAYER_FORWARD,
+            label: <ToOneLayerForwardItem toolProps={props} />,
+        });
     }
 
-    if ([ColorBy.INSTANCE, ColorBy.GROUP].includes(colorBy)) {
+    if (!locked && [ColorBy.INSTANCE, ColorBy.GROUP].includes(colorBy)) {
         items.push({
             key: MenuKeys.SWITCH_COLOR,
             label: <SwitchColorItem toolProps={props} />,
         });
     }
 
-    if (!readonly) {
-        items.push({
-            key: MenuKeys.REMOVE_ITEM,
-            label: <RemoveItem toolProps={props} />,
-        });
-    }
+    items.push({
+        key: MenuKeys.REMOVE_ITEM,
+        label: <RemoveItem toolProps={props} />,
+    });
 
-    if (!readonly) {
-        items.push({
-            key: MenuKeys.RUN_ANNOTATION_ACTION,
-            label: <RunAnnotationActionItem toolProps={props} />,
-        });
-    }
+    items.push({
+        key: MenuKeys.RUN_ANNOTATION_ACTION,
+        label: <RunAnnotationActionItem toolProps={props} />,
+    });
 
     return {
         items,

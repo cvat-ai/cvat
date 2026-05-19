@@ -7,15 +7,14 @@ import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
+from cvat_sdk.api_client.rest import RESTClientObject
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.proxies.types import Location
-from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
@@ -59,12 +58,7 @@ class TestTaskUsecases(TestDatasetExport):
 
     @pytest.fixture
     def fxt_new_task_without_data(self):
-        task = self.client.tasks.create(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
-        )
+        task = self.client.tasks.create(spec={"name": "test_task"})
 
         return task
 
@@ -92,21 +86,6 @@ class TestTaskUsecases(TestDatasetExport):
 
         task_spec = {
             "name": f"test {self.user} to create a task with local data",
-            "labels": [
-                {
-                    "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [
-                        {
-                            "name": "a",
-                            "mutable": True,
-                            "input_type": "number",
-                            "default_value": "5",
-                            "values": ["4", "5", "6"],
-                        }
-                    ],
-                }
-            ],
         }
 
         data_params = {
@@ -153,10 +132,7 @@ class TestTaskUsecases(TestDatasetExport):
 
     def test_can_create_task_with_remote_data(self):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task"},
             resource_type=ResourceType.SHARE,
             resources=["images/image_1.jpg", "images/image_2.jpg"],
             # make sure string fields are transferred correctly;
@@ -174,11 +150,6 @@ class TestTaskUsecases(TestDatasetExport):
 
         task_spec = {
             "name": f"test {self.user} to create a task with no data",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         with pytest.raises(BackgroundRequestException) as capture:
@@ -199,7 +170,6 @@ class TestTaskUsecases(TestDatasetExport):
         task = self.client.tasks.create(
             {
                 "name": f"test task",
-                "labels": [{"name": "car"}],
             }
         )
 
@@ -303,7 +273,7 @@ class TestTaskUsecases(TestDatasetExport):
         format_name: str,
         include_images: bool,
         task: Task,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):
@@ -326,13 +296,29 @@ class TestTaskUsecases(TestDatasetExport):
             path = self.tmp_path / f"dataset-{i}.zip"
             fxt_new_task.export_dataset(
                 format_name="CVAT for images 1.1",
-                filename=self.tmp_path / f"dataset-{i}.zip",
+                filename=path,
                 include_images=False,
                 pbar=pbar,
             )
             assert self.stdout.getvalue() == ""
             assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
             assert path.is_file()
+
+    def test_can_download_dataset_with_server_filename(self, fxt_new_task: Task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        output_dir = self.tmp_path
+        output_path = fxt_new_task.export_dataset(
+            format_name="CVAT for images 1.1",
+            filename=output_dir,
+            include_images=False,
+            pbar=pbar,
+        )
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert output_path.is_relative_to(output_dir)
+        assert output_path.is_file()
+        assert self.stdout.getvalue() == ""
 
     def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
@@ -347,9 +333,23 @@ class TestTaskUsecases(TestDatasetExport):
         assert path.is_file()
         assert self.stdout.getvalue() == ""
 
+    def test_can_download_backup_with_server_filename(self, fxt_new_task: Task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task_id = fxt_new_task.id
+        output_dir = self.tmp_path
+        task = self.client.tasks.retrieve(task_id)
+        output_path = task.download_backup(filename=output_dir, pbar=pbar)
+
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert output_path.is_relative_to(output_dir)
+        assert output_path.is_file()
+        assert self.stdout.getvalue() == ""
+
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_preview()
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
@@ -357,7 +357,7 @@ class TestTaskUsecases(TestDatasetExport):
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     def test_can_download_frame(self, fxt_new_task: Task, quality: str):
         frame_encoded = fxt_new_task.get_frame(0, quality=quality)
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
@@ -365,7 +365,7 @@ class TestTaskUsecases(TestDatasetExport):
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     @pytest.mark.parametrize("image_extension", (None, "bmp"))
     def test_can_download_frames(
-        self, fxt_new_task: Task, quality: str, image_extension: Optional[str]
+        self, fxt_new_task: Task, quality: str, image_extension: str | None
     ):
         fxt_new_task.download_frames(
             [0],
@@ -440,17 +440,18 @@ class TestTaskUsecases(TestDatasetExport):
     def test_can_create_from_backup_in_chunks(
         self, monkeypatch: pytest.MonkeyPatch, fxt_new_task: Task, fxt_backup_file: Path
     ):
-        monkeypatch.setattr(Uploader, "_CHUNK_SIZE", 100)
+        monkeypatch.setattr("cvat_sdk.core.uploading.TUS_CHUNK_SIZE", 100)
 
         num_requests = 0
-        original_do_request = _MyTusUploader._do_request
+        original_request = RESTClientObject.request
 
-        def counting_do_request(uploader):
+        def counting_request(self, method, *args, headers, **kwargs):
             nonlocal num_requests
-            num_requests += 1
-            original_do_request(uploader)
+            if method.upper() == "PATCH" and "Upload-Offset" in headers:
+                num_requests += 1
+            return original_request(self, method, *args, headers=headers, **kwargs)
 
-        monkeypatch.setattr(_MyTusUploader, "_do_request", counting_do_request)
+        monkeypatch.setattr(RESTClientObject, "request", counting_request)
 
         self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
 

@@ -69,11 +69,17 @@ allow if {
     utils.has_perm(utils.USER)
 }
 
-filter := [] if { # Django Q object to filter list of entries
+filter := {} if { # Django Q object to filter list of entries
     utils.is_admin
 } else := qobject if {
     user := input.auth.user
-    qobject := [{"members__user_id": user.id}, {"members__is_active": true}, "&", {"owner_id": user.id}, "|" ]
+    qobject := ["|",
+        ["&",
+            {"members__user_id": user.id},
+            {"members__is_active": true},
+        ],
+        {"owner_id": user.id},
+    ]
 }
 
 allow if {

@@ -5,7 +5,8 @@
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 
 import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
 
@@ -14,7 +15,6 @@ import {
     AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-
 import { highlightConflict, updateActiveControl } from 'actions/annotation-actions';
 import CreateIssueDialog from './create-issue-dialog';
 import HiddenIssueLabel from './hidden-issue-label';
@@ -67,7 +67,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
 
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
-
+    const [canvasRect, setCanvasRect] = useState<DOMRect | null>(null);
     const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
         ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
 
@@ -101,6 +101,11 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         if (canvasReady) {
             const { geometry: updatedGeometry } = canvasInstance;
             setGeometry(updatedGeometry);
+
+            const canvasElement = window.document.getElementById('cvat_canvas_wrapper');
+            if (canvasElement) {
+                setCanvasRect(canvasElement.getBoundingClientRect());
+            }
 
             const geometryListener = (): void => {
                 setGeometry(canvasInstance.geometry);
@@ -228,6 +233,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     resolved={issueResolved}
                     highlight={highlight}
                     blur={blur}
+                    clientCoordinates={canvasInstance.translateFromSVG([minX, minY]) as [number, number]}
+                    canvasRect={canvasRect}
                     collapse={() => {
                         setExpandedIssue(null);
                     }}
@@ -300,6 +307,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     angle={-geometry.angle}
                     scale={1 / geometry.scale}
                     onCreateIssue={onCreateIssue}
+                    canvasRect={canvasRect}
+                    clientCoordinates={canvasInstance.translateFromSVG([createLeft, createTop]) as [number, number]}
                 />
             ) : null}
             {issueDialogs}

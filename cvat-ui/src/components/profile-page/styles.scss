@@ -1,0 +1,93 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+@import '../../styles';
+
+.cvat-profile-page {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .cvat-profile-page-wrapper {
+        flex-grow: 1;
+        overflow-y: auto;
+        align-items: start;
+    }
+}
+
+.cvat-change-password-form-button {
+    margin-left: $grid-unit-size;
+}
+
+.cvat-profile-page-navigation-menu {
+    position: sticky;
+    top: 0;
+    border-radius: $grid-unit-size;
+}
+
+.cvat-profile-page-content {
+    padding-left: $grid-unit-size * 3;
+    padding-bottom: $grid-unit-size * 2;
+
+    .ant-form {
+        >.ant-form-item:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+.cvat-api-token-form {
+    h4 {
+        margin: 0;
+        margin-bottom: $grid-unit-size;
+    }
+
+    .cvat-api-token-form-expiration-date {
+        margin-bottom: $grid-unit-size * 5;
+    }
+}
+
+.cvat-api-token-created-modal-content {
+    .ant-typography, .cvat-api-token-value-input {
+        display: block;
+        margin-bottom: $grid-unit-size * 3;
+    }
+
+    .ant-typography {
+        margin-top: $grid-unit-size;
+    }
+}
+
+.cvat-security-api-tokens-card {
+    h5 {
+        margin-top: $grid-unit-size;
+    }
+
+    .cvat-security-api-tokens-card-title > div:first-child {
+        display: flex;
+        align-items: center;
+
+        span[role="img"] {
+            margin-left: $grid-unit-size;
+        }
+    }
+
+    .ant-pagination {
+        margin-bottom: 0;
+    }
+
+    .ant-card-body {
+        padding-bottom: $grid-unit-size;
+    }
+}
+
+.cvat-api-tokens-tooltip-inner {
+    @extend .cvat-settings-tooltip-inner;
+
+    > div:not(:last-child) {
+        margin-bottom: $grid-unit-size;
+    }
+}

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.41.1
+  version: 2.64.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -26,7 +26,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -54,7 +54,7 @@ paths:
       - assets
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -77,7 +77,7 @@ paths:
       - assets
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -85,6 +85,202 @@ paths:
       responses:
         '204':
           description: The asset has been deleted
+  /api/auth/access_tokens:
+    get:
+      operationId: auth_list_access_tokens
+      summary: List tokens
+      parameters:
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['created_date', 'expiry_date', 'id', 'last_used_date', 'name', 'read_only', 'updated_date'].
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: A simple equality filter for the name field
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: read_only
+        in: query
+        description: A simple equality filter for the read_only field
+        schema:
+          type: boolean
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: [''name'']'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''created_date'', ''expiry_date'', ''id'', ''last_used_date'', ''name'',
+          ''read_only'', ''updated_date'']'
+        schema:
+          type: string
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAccessTokenReadList'
+          description: ''
+    post:
+      operationId: auth_create_access_tokens
+      summary: Create a token
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessTokenWriteRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenRead'
+          description: ''
+  /api/auth/access_tokens/{id}:
+    get:
+      operationId: auth_retrieve_access_tokens
+      summary: Get token details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this API Access Token.
+        required: true
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenRead'
+          description: ''
+    patch:
+      operationId: auth_partial_update_access_tokens
+      summary: Update a token
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this API Access Token.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAccessTokenWriteRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenRead'
+          description: ''
+    delete:
+      operationId: auth_destroy_access_tokens
+      summary: Revoke token
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this API Access Token.
+        required: true
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The token was successfully revoked
+  /api/auth/access_tokens/self:
+    get:
+      operationId: auth_retrieve_access_tokens_self
+      description: |
+        Get details of the token used for the current request.
+        This endpoint is only allowed if the request is performed using an access token.
+      summary: Get current token details
+      tags:
+      - auth
+      security:
+      - accessTokenAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenRead'
+          description: ''
   /api/auth/login:
     post:
       operationId: auth_create_login
@@ -108,7 +304,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -133,7 +329,7 @@ paths:
       - auth
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -164,7 +360,6 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -194,7 +389,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -227,7 +422,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -253,7 +448,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -276,34 +471,6 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/auth/signing:
-    post:
-      operationId: auth_create_signing
-      description: Signed URL contains a token which authenticates a user on the server.Signed
-        URL is valid during 30 seconds since signing.
-      summary: This method signs URL for access to the server
-      tags:
-      - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SigningRequest'
-        required: true
-      security:
-      - tokenAuth: []
-      - signatureAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-          description: text URL
   /api/cloudstorages:
     get:
       operationId: cloudstorages_list
@@ -338,7 +505,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['provider_type', 'name', 'resource', 'credentials_type', 'owner', 'description', 'id'].
+           Available filter_fields: ['credentials_type', 'description', 'id', 'name', 'owner', 'provider_type', 'resource'].
         schema:
           type: string
       - name: name
@@ -381,7 +548,6 @@ paths:
           enum:
           - AWS_S3_BUCKET
           - AZURE_CONTAINER
-          - GOOGLE_DRIVE
           - GOOGLE_CLOUD_STORAGE
       - name: resource
         in: query
@@ -391,23 +557,23 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''provider_type'',
-          ''name'', ''resource'', ''credentials_type'', ''owner'', ''description'')'
+        description: 'A search term. Available search_fields: [''description'', ''name'',
+          ''owner'', ''resource'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''provider_type'', ''name'', ''resource'', ''credentials_type'', ''owner'',
-          ''description'', ''id'']'
+          [''credentials_type'', ''description'', ''id'', ''name'', ''owner'', ''provider_type'',
+          ''resource'']'
         schema:
           type: string
       tags:
       - cloudstorages
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -446,7 +612,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CloudStorageWriteRequest'
             examples:
-              CreateAWSS3CloudStorageWithCredentials:
+              CreateAmazonS3CloudStorageWithCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -458,8 +624,8 @@ paths:
                   description: Some description
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage with credentials
-              CreateAWSS3CloudStorageWithoutCredentials:
+                summary: Create Amazon S3 cloud storage with credentials
+              CreateAmazonS3CloudStorageWithoutCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -467,7 +633,7 @@ paths:
                   credentials_type: ANONYMOUS_ACCESS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage without credentials
+                summary: Create Amazon S3 cloud storage without credentials
               CreateAzureCloudStorage:
                 value:
                   provider_type: AZURE_CONTAINER
@@ -495,7 +661,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -522,7 +688,7 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -552,7 +718,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
             examples:
-              CreateAWSS3CloudStorageWithCredentials:
+              CreateAmazonS3CloudStorageWithCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -564,8 +730,8 @@ paths:
                   description: Some description
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage with credentials
-              CreateAWSS3CloudStorageWithoutCredentials:
+                summary: Create Amazon S3 cloud storage with credentials
+              CreateAmazonS3CloudStorageWithoutCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -573,7 +739,7 @@ paths:
                   credentials_type: ANONYMOUS_ACCESS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage without credentials
+                summary: Create Amazon S3 cloud storage without credentials
               CreateAzureCloudStorage:
                 value:
                   provider_type: AZURE_CONTAINER
@@ -600,7 +766,7 @@ paths:
               $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -626,7 +792,7 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -651,7 +817,7 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -697,7 +863,7 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -724,7 +890,7 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -751,7 +917,7 @@ paths:
       - cloudstorages
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -762,7 +928,11 @@ paths:
             application/vnd.cvat+json:
               schema:
                 type: string
-          description: Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)
+                enum:
+                - AVAILABLE
+                - NOT_FOUND
+                - FORBIDDEN
+          description: Cloud Storage Status
   /api/comments:
     get:
       operationId: comments_list
@@ -786,7 +956,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner', 'id', 'issue_id', 'frame_id', 'job_id'].
+           Available filter_fields: ['frame_id', 'id', 'issue_id', 'job_id', 'owner'].
         schema:
           type: string
       - name: frame_id
@@ -834,21 +1004,21 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''owner'',)'
+        description: 'A search term. Available search_fields: [''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''owner'', ''id'', ''issue_id'', ''frame_id'', ''job_id'']'
+          [''frame_id'', ''id'', ''issue_id'', ''job_id'', ''owner'']'
         schema:
           type: string
       tags:
       - comments
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -889,7 +1059,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -916,7 +1086,7 @@ paths:
       - comments
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -947,7 +1117,7 @@ paths:
               $ref: '#/components/schemas/PatchedCommentWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -973,7 +1143,7 @@ paths:
       - comments
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -994,7 +1164,7 @@ paths:
               $ref: '#/components/schemas/ConsensusMergeCreateRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1074,7 +1244,7 @@ paths:
       - consensus
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1101,7 +1271,7 @@ paths:
       - consensus
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1132,7 +1302,7 @@ paths:
               $ref: '#/components/schemas/PatchedConsensusSettingsRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1210,7 +1380,7 @@ paths:
       - events
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1253,7 +1423,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1330,7 +1500,7 @@ paths:
       - events
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1357,7 +1527,7 @@ paths:
               $ref: '#/components/schemas/AnnotationGuideWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1384,7 +1554,7 @@ paths:
       - guides
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1415,7 +1585,7 @@ paths:
               $ref: '#/components/schemas/PatchedAnnotationGuideWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1442,7 +1612,7 @@ paths:
       - guides
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1460,6 +1630,11 @@ paths:
         description: Organization unique slug
         schema:
           type: string
+      - name: accepted
+        in: query
+        description: A simple equality filter for the accepted field
+        schema:
+          type: boolean
       - name: filter
         required: false
         in: query
@@ -1473,7 +1648,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner', 'user_id', 'accepted'].
+           Available filter_fields: ['accepted', 'id', 'owner', 'user_id'].
         schema:
           type: string
       - name: org
@@ -1506,21 +1681,26 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''owner'',)'
+        description: 'A search term. Available search_fields: [''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''owner'', ''created_date'']'
+          [''accepted'', ''created_date'', ''owner'', ''user_id'']'
         schema:
           type: string
+      - name: user_id
+        in: query
+        description: A simple equality filter for the user_id field
+        schema:
+          type: integer
       tags:
       - invitations
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1561,7 +1741,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1588,7 +1768,7 @@ paths:
       - invitations
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1619,7 +1799,7 @@ paths:
               $ref: '#/components/schemas/PatchedInvitationWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1645,7 +1825,7 @@ paths:
       - invitations
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1668,7 +1848,7 @@ paths:
       - invitations
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1697,7 +1877,7 @@ paths:
       - invitations
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1720,7 +1900,7 @@ paths:
       - invitations
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1758,7 +1938,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved', 'frame_id'].
+           Available filter_fields: ['assignee', 'frame_id', 'id', 'job_id', 'owner', 'resolved', 'task_id'].
         schema:
           type: string
       - name: frame_id
@@ -1806,15 +1986,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''owner'', ''assignee'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''owner'', ''assignee'', ''id'', ''job_id'', ''task_id'', ''resolved'',
-          ''frame_id'']'
+          [''assignee'', ''frame_id'', ''id'', ''job_id'', ''owner'', ''resolved'',
+          ''task_id'']'
         schema:
           type: string
       - name: task_id
@@ -1826,7 +2006,7 @@ paths:
       - issues
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1867,7 +2047,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1894,7 +2074,7 @@ paths:
       - issues
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1925,7 +2105,7 @@ paths:
               $ref: '#/components/schemas/PatchedIssueWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1951,7 +2131,7 @@ paths:
       - issues
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -1980,8 +2160,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -1995,9 +2176,26 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id'].
+           Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'parent_job_id', 'project_id', 'project_name', 'stage', 'state', 'task_id', 'task_name', 'type', 'updated_date'].
         schema:
           type: string
+      - name: media_type
+        in: query
+        description: A simple equality filter for the media_type field
+        schema:
+          type: string
+          enum:
+          - image
+          - point_cloud
+          - audio
+      - name: mode
+        in: query
+        description: A simple equality filter for the mode field
+        schema:
+          type: string
+          enum:
+          - annotation
+          - interpolation
       - name: org
         in: query
         description: Organization unique slug
@@ -2038,17 +2236,17 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''task_name'', ''project_name'',
-          ''assignee'', ''state'', ''stage'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''project_name'',
+          ''task_name'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''task_name'', ''project_name'', ''assignee'', ''state'', ''stage'', ''id'',
-          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'',
-          ''parent_job_id'']'
+          [''assignee'', ''dimension'', ''id'', ''media_type'', ''mode'', ''parent_job_id'',
+          ''project_id'', ''project_name'', ''stage'', ''state'', ''task_id'', ''task_name'',
+          ''type'', ''updated_date'']'
         schema:
           type: string
       - name: stage
@@ -2093,7 +2291,7 @@ paths:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2162,7 +2360,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2189,7 +2387,7 @@ paths:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2220,7 +2418,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2251,7 +2449,7 @@ paths:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2319,7 +2517,7 @@ paths:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2367,6 +2565,15 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
+      - in: query
         name: location
         schema:
           type: string
@@ -2393,7 +2600,7 @@ paths:
               $ref: '#/components/schemas/AnnotationFileRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2431,7 +2638,7 @@ paths:
               $ref: '#/components/schemas/LabeledDataRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2470,7 +2677,7 @@ paths:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2492,7 +2699,7 @@ paths:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2540,11 +2747,12 @@ paths:
           - context_image
           - frame
         description: Specifies the type of the requested data
+        required: true
       tags:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2572,7 +2780,7 @@ paths:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2603,7 +2811,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobDataMetaWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2667,7 +2875,7 @@ paths:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2702,7 +2910,7 @@ paths:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2725,7 +2933,7 @@ paths:
       - jobs
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2774,7 +2982,7 @@ paths:
                 summary: set honeypots manually
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2814,7 +3022,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'parent', 'id', 'type', 'color', 'parent_id'].
+           Available filter_fields: ['color', 'id', 'name', 'parent', 'parent_id', 'type'].
         schema:
           type: string
       - in: query
@@ -2867,14 +3075,14 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''parent'')'
+        description: 'A search term. Available search_fields: [''name'', ''parent'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''parent'', ''id'', ''type'', ''color'', ''parent_id'']'
+          [''color'', ''id'', ''name'', ''parent'', ''parent_id'', ''type'']'
         schema:
           type: string
       - in: query
@@ -2902,7 +3110,7 @@ paths:
       - labels
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2929,7 +3137,7 @@ paths:
       - labels
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2962,7 +3170,7 @@ paths:
               $ref: '#/components/schemas/PatchedLabelRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -2990,7 +3198,7 @@ paths:
       - labels
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3006,7 +3214,7 @@ paths:
       - lambda
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3029,7 +3237,7 @@ paths:
       - lambda
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3067,7 +3275,7 @@ paths:
               $ref: '#/components/schemas/OnlineFunctionCallRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3083,7 +3291,7 @@ paths:
       - lambda
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3126,7 +3334,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3153,7 +3361,7 @@ paths:
       - lambda
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3179,7 +3387,7 @@ paths:
       - lambda
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3210,7 +3418,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['user', 'role', 'id'].
+           Available filter_fields: ['id', 'role', 'user'].
         schema:
           type: string
       - name: org
@@ -3248,14 +3456,14 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''user'', ''role'')'
+        description: 'A search term. Available search_fields: [''user'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''user'', ''role'', ''id'']'
+          [''id'', ''role'', ''user'']'
         schema:
           type: string
       - name: user
@@ -3267,7 +3475,7 @@ paths:
       - memberships
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3294,7 +3502,7 @@ paths:
       - memberships
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3325,7 +3533,7 @@ paths:
               $ref: '#/components/schemas/PatchedMembershipWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3351,7 +3559,7 @@ paths:
       - memberships
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3377,7 +3585,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'slug', 'id'].
+           Available filter_fields: ['id', 'name', 'owner', 'slug'].
         schema:
           type: string
       - name: name
@@ -3405,8 +3613,8 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'',
-          ''slug'')'
+        description: 'A search term. Available search_fields: [''name'', ''owner'',
+          ''slug'']'
         schema:
           type: string
       - name: slug
@@ -3418,14 +3626,14 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''slug'', ''id'']'
+          [''id'', ''name'', ''owner'', ''slug'']'
         schema:
           type: string
       tags:
       - organizations
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3450,7 +3658,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3477,7 +3685,7 @@ paths:
       - organizations
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3508,7 +3716,7 @@ paths:
               $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3534,7 +3742,7 @@ paths:
       - organizations
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3570,7 +3778,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date'].
+           Available filter_fields: ['assignee', 'id', 'name', 'owner', 'status', 'updated_date'].
         schema:
           type: string
       - name: name
@@ -3608,15 +3816,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'',
-          ''assignee'', ''status'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''name'',
+          ''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''assignee'', ''status'', ''id'', ''updated_date'']'
+          [''assignee'', ''id'', ''name'', ''owner'', ''status'', ''updated_date'']'
         schema:
           type: string
       - name: status
@@ -3632,7 +3840,7 @@ paths:
       - projects
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3673,7 +3881,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3700,7 +3908,7 @@ paths:
       - projects
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3731,7 +3939,7 @@ paths:
               $ref: '#/components/schemas/PatchedProjectWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3757,7 +3965,7 @@ paths:
       - projects
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3791,6 +3999,13 @@ paths:
         description: A unique integer value identifying this project.
         required: true
       - in: query
+        name: lightweight
+        schema:
+          type: boolean
+          default: true
+        description: Makes a lightweight backup (without media files) for tasks whose
+          media is located in cloud storage
+      - in: query
         name: location
         schema:
           type: string
@@ -3802,7 +4017,7 @@ paths:
       - projects
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3877,7 +4092,7 @@ paths:
               $ref: '#/components/schemas/DatasetFileRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3945,7 +4160,7 @@ paths:
       - projects
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -3980,7 +4195,7 @@ paths:
       - projects
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4053,7 +4268,7 @@ paths:
               $ref: '#/components/schemas/ProjectFileRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4088,7 +4303,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'project_id', 'severity'].
+           Available filter_fields: ['frame', 'id', 'job_id', 'project_id', 'severity', 'task_id', 'type'].
         schema:
           type: string
       - name: frame
@@ -4145,7 +4360,8 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''project_id'', ''severity'']'
+          [''frame'', ''id'', ''job_id'', ''project_id'', ''severity'', ''task_id'',
+          ''type'']'
         schema:
           type: string
       - name: task_id
@@ -4171,7 +4387,7 @@ paths:
       - quality
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4220,7 +4436,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'job_id', 'task_id', 'project_id', 'created_date', 'gt_last_updated', 'target_last_updated'].
+           Available filter_fields: ['created_date', 'gt_last_updated', 'id', 'job_id', 'project_id', 'target_last_updated', 'task_id'].
         schema:
           type: string
       - name: job_id
@@ -4264,8 +4480,8 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''job_id'', ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
-          ''target_last_updated'']'
+          [''created_date'', ''gt_last_updated'', ''id'', ''job_id'', ''project_id'',
+          ''target_last_updated'', ''task_id'']'
         schema:
           type: string
       - in: query
@@ -4286,7 +4502,7 @@ paths:
       - quality
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4322,7 +4538,7 @@ paths:
               $ref: '#/components/schemas/QualityReportCreateRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4361,7 +4577,7 @@ paths:
       - quality
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4378,6 +4594,14 @@ paths:
       operationId: quality_retrieve_report_data
       summary: Get quality report contents
       parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+          default: json
       - in: path
         name: id
         schema:
@@ -4388,7 +4612,7 @@ paths:
       - quality
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4398,7 +4622,8 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                type: object
+                type: string
+                format: binary
           description: ''
   /api/quality/settings:
     get:
@@ -4427,7 +4652,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'task_id', 'project_id', 'inherit', 'created_date', 'updated_date'].
+           Available filter_fields: ['created_date', 'id', 'inherit', 'project_id', 'task_id', 'updated_date'].
         schema:
           type: string
       - name: inherit
@@ -4474,7 +4699,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''task_id'', ''project_id'', ''inherit'', ''created_date'', ''updated_date'']'
+          [''created_date'', ''id'', ''inherit'', ''project_id'', ''task_id'', ''updated_date'']'
         schema:
           type: string
       - name: task_id
@@ -4486,7 +4711,7 @@ paths:
       - quality
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4513,7 +4738,7 @@ paths:
       - quality
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4544,7 +4769,7 @@ paths:
               $ref: '#/components/schemas/PatchedQualitySettingsRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4575,7 +4800,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'target', 'subresource', 'format'].
+           Available filter_fields: ['action', 'format', 'job_id', 'org', 'org_id', 'project_id', 'status', 'subresource', 'target', 'task_id'].
         schema:
           type: string
       - name: format
@@ -4593,6 +4818,11 @@ paths:
         description: A simple equality filter for the org field
         schema:
           type: string
+      - name: org_id
+        in: query
+        description: A simple equality filter for the org_id field
+        schema:
+          type: integer
       - name: page
         required: false
         in: query
@@ -4614,7 +4844,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''created_date'', ''status'', ''action'']'
+          [''action'', ''created_date'', ''status'']'
         schema:
           type: string
       - name: status
@@ -4646,7 +4876,7 @@ paths:
       - requests
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4672,7 +4902,7 @@ paths:
       - requests
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4698,7 +4928,7 @@ paths:
       - requests
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4812,6 +5042,7 @@ paths:
           - tr
           - tt
           - udm
+          - ug
           - uk
           - ur
           - uz
@@ -4829,7 +5060,7 @@ paths:
       - schema
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4858,7 +5089,7 @@ paths:
       - server
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4878,7 +5109,7 @@ paths:
       - server
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4898,7 +5129,7 @@ paths:
       - server
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4929,7 +5160,7 @@ paths:
       - server
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -4964,8 +5195,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -4979,7 +5211,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'name', 'owner', 'project_id', 'project_name', 'status', 'subset', 'tracker_link', 'updated_date', 'validation_mode'].
 
           There are few examples for complex filtering tasks:
 
@@ -4989,11 +5221,23 @@ paths:
 
         schema:
           type: string
+      - name: media_type
+        in: query
+        description: A simple equality filter for the media_type field
+        schema:
+          type: string
+          enum:
+          - image
+          - point_cloud
+          - audio
       - name: mode
         in: query
         description: A simple equality filter for the mode field
         schema:
           type: string
+          enum:
+          - annotation
+          - interpolation
       - name: name
         in: query
         description: A simple equality filter for the name field
@@ -5039,18 +5283,17 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''project_name'', ''name'',
-          ''owner'', ''status'', ''assignee'', ''subset'', ''mode'', ''dimension'',
-          ''tracker_link'', ''validation_mode'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''name'',
+          ''owner'', ''project_name'', ''subset'', ''tracker_link'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''project_name'', ''name'', ''owner'', ''status'', ''assignee'', ''subset'',
-          ''mode'', ''dimension'', ''tracker_link'', ''validation_mode'', ''id'',
-          ''project_id'', ''updated_date'']'
+          [''assignee'', ''dimension'', ''id'', ''media_type'', ''mode'', ''name'',
+          ''owner'', ''project_id'', ''project_name'', ''status'', ''subset'', ''tracker_link'',
+          ''updated_date'', ''validation_mode'']'
         schema:
           type: string
       - name: status
@@ -5084,7 +5327,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5128,7 +5371,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5155,7 +5398,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5184,9 +5427,63 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
+            examples:
+              UpdateTaskProperties:
+                value:
+                  name: string
+                  owner_id: 0
+                  assignee_id: 0
+                  bug_tracker: string
+                  subset: string
+                  target_storage:
+                    location: cloud_storage
+                    cloud_storage_id: 0
+                  source_storage:
+                    location: cloud_storage
+                    cloud_storage_id: 0
+                summary: Update task properties
+              UpdateTaskLabels:
+                value:
+                  labels:
+                  - name: string
+                    color: string
+                    attributes: []
+                    deleted: false
+                    type: any
+                    svg: string
+                    sublabels:
+                    - name: string
+                      color: string
+                      attributes: []
+                      type: any
+                      has_parent: true
+                summary: Update task labels
+              MoveTaskToAProject:
+                value:
+                  project_id: 0
+                summary: Move task to a project
+              TransferTaskToPersonalSandbox:
+                value:
+                  organization_id: null
+                summary: Transfer task to personal sandbox
+              TransferTaskToOrganization:
+                value:
+                  organization_id: 1
+                summary: Transfer task to organization
+              TransferAStorageLinkedTaskToAnOrganizationAndDetachStorages:
+                value:
+                  organization_id: 1
+                  source_storage:
+                    location: local
+                    cloud_storage_id: null
+                  target_storage:
+                    location: local
+                    cloud_storage_id: null
+                summary: Transfer a storage linked task to an organization and detach
+                  storages
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5213,7 +5510,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5236,7 +5533,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5286,6 +5583,15 @@ paths:
         description: A unique integer value identifying this task.
         required: true
       - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
+      - in: query
         name: location
         schema:
           type: string
@@ -5312,7 +5618,7 @@ paths:
               $ref: '#/components/schemas/AnnotationFileRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5350,7 +5656,7 @@ paths:
               $ref: '#/components/schemas/LabeledDataRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5389,7 +5695,7 @@ paths:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5415,7 +5721,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5449,6 +5755,13 @@ paths:
         description: A unique integer value identifying this task.
         required: true
       - in: query
+        name: lightweight
+        schema:
+          type: boolean
+          default: true
+        description: Makes a lightweight backup (without media files) for tasks whose
+          media is located in cloud storage
+      - in: query
         name: location
         schema:
           type: string
@@ -5460,7 +5773,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5514,11 +5827,12 @@ paths:
           - context_image
           - frame
         description: Specifies the type of the requested data
+        required: true
       tags:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5628,7 +5942,7 @@ paths:
               $ref: '#/components/schemas/DataRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5655,7 +5969,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5686,7 +6000,7 @@ paths:
               $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5750,7 +6064,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5785,7 +6099,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5813,7 +6127,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5841,7 +6155,7 @@ paths:
       - tasks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5901,7 +6215,7 @@ paths:
                 summary: restore all validation frames
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -5976,7 +6290,7 @@ paths:
               $ref: '#/components/schemas/TaskFileRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6011,7 +6325,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['username', 'first_name', 'last_name', 'id', 'is_active'].
+           Available filter_fields: ['first_name', 'id', 'is_active', 'last_name', 'username'].
         schema:
           type: string
       - name: first_name
@@ -6054,15 +6368,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''username'', ''first_name'',
-          ''last_name'')'
+        description: 'A search term. Available search_fields: [''first_name'', ''last_name'',
+          ''username'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''username'', ''first_name'', ''last_name'', ''id'', ''is_active'']'
+          [''first_name'', ''id'', ''is_active'', ''last_name'', ''username'']'
         schema:
           type: string
       - name: username
@@ -6074,7 +6388,7 @@ paths:
       - users
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6101,7 +6415,7 @@ paths:
       - users
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6132,7 +6446,7 @@ paths:
               $ref: '#/components/schemas/PatchedUserRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6158,7 +6472,7 @@ paths:
       - users
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6175,7 +6489,7 @@ paths:
       - users
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6210,7 +6524,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['target_url', 'owner', 'type', 'description', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['description', 'id', 'owner', 'project_id', 'target_url', 'type', 'updated_date'].
         schema:
           type: string
       - name: org
@@ -6248,15 +6562,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''target_url'', ''owner'',
-          ''type'', ''description'')'
+        description: 'A search term. Available search_fields: [''description'', ''owner'',
+          ''target_url'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''target_url'', ''owner'', ''type'', ''description'', ''id'', ''project_id'',
+          [''description'', ''id'', ''owner'', ''project_id'', ''target_url'', ''type'',
           ''updated_date'']'
         schema:
           type: string
@@ -6277,7 +6591,7 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6318,7 +6632,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6345,7 +6659,7 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6377,7 +6691,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6408,7 +6722,7 @@ paths:
               $ref: '#/components/schemas/PatchedWebhookWriteRequest'
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6434,7 +6748,7 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6469,7 +6783,7 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6502,7 +6816,7 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6535,7 +6849,7 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6558,7 +6872,7 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6584,7 +6898,7 @@ paths:
       - webhooks
       security:
       - tokenAuth: []
-      - signatureAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
         csrfHeaderAuth: []
@@ -6628,6 +6942,68 @@ components:
           type: string
       required:
       - organization_slug
+    AccessTokenRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          description: A free-form name for the token.
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+        expiry_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Expires
+          description: Once the token expires, clients cannot use it anymore.
+        last_used_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: |
+            The last use date of the token. This field is NOT updated after each
+            user request. The minimum expected resolution should be 1 day.
+        read_only:
+          type: boolean
+          readOnly: true
+        owner:
+          $ref: '#/components/schemas/BasicUser'
+        value:
+          type: string
+          description: The raw value of the token. Must be saved by the user, returned
+            only once
+    AccessTokenWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: A free-form name for the token. Doesn't have to be unique
+          maxLength: 50
+        expiry_date:
+          type: string
+          format: date-time
+          nullable: true
+          title: Expires
+          description: |
+            Once the token expires, clients cannot use it anymore.
+            If not set, the token will not expire.
+        read_only:
+          type: boolean
+      required:
+      - name
     AnnotationConflict:
       type: object
       properties:
@@ -6834,6 +7210,10 @@ components:
           items:
             type: string
             maxLength: 200
+        deleted:
+          type: boolean
+          writeOnly: true
+          description: Delete the attribute and all related annotation values.
       required:
       - input_type
       - mutable
@@ -6913,16 +7293,37 @@ components:
           maxLength: 150
       required:
       - username
+    Chapter:
+      type: object
+      properties:
+        id:
+          type: integer
+        start:
+          type: integer
+        stop:
+          type: integer
+        metadata:
+          $ref: '#/components/schemas/ChapterMetadata'
+      required:
+      - id
+      - metadata
+      - start
+      - stop
+    ChapterMetadata:
+      type: object
+      properties:
+        title:
+          type: string
     ChunkType:
       enum:
       - video
       - imageset
-      - list
+      - audio_mp3
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
-        * `list` - LIST
+        * `audio_mp3` - AUDIO_MP3
     ClientEvents:
       type: object
       properties:
@@ -7135,13 +7536,6 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
-        quorum:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Minimum required share of sources having an annotation for it to be accepted
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -7159,6 +7553,11 @@ components:
     DataMetaRead:
       type: object
       properties:
+        chapters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chapter'
+          nullable: true
         chunks_updated_date:
           type: string
           format: date-time
@@ -7202,11 +7601,18 @@ components:
           nullable: true
           description: |
             A list of valid frame ids. The None value means all frames are included.
+        storage:
+          allOf:
+          - $ref: '#/components/schemas/StorageType'
+          readOnly: true
+        cloud_storage_id:
+          type: integer
+          nullable: true
+          readOnly: true
       required:
       - chunks_updated_date
       - deleted_frames
       - frames
-      - image_quality
     DataRequest:
       type: object
       description: |-
@@ -7222,8 +7628,9 @@ components:
         image_quality:
           type: integer
           maximum: 100
-          minimum: 0
-          description: Image quality to use during annotation
+          minimum: 1
+          description: Image quality to use during annotation, required for image
+            and video-based tasks
         start_frame:
           type: integer
           maximum: 2147483647
@@ -7321,8 +7728,6 @@ components:
             the file share availability
         storage_method:
           $ref: '#/components/schemas/StorageMethod'
-        storage:
-          $ref: '#/components/schemas/StorageType'
         sorting_method:
           $ref: '#/components/schemas/SortingMethod'
         filename_pattern:
@@ -7381,8 +7786,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ValidationParamsRequest'
           nullable: true
-      required:
-      - image_quality
     DataResponse:
       oneOf:
       - $ref: '#/components/schemas/RqId'
@@ -7567,7 +7970,9 @@ components:
       - webhook_type
     EventsEnum:
       enum:
+      - create:backup
       - create:comment
+      - create:export
       - create:invitation
       - create:issue
       - create:job
@@ -7591,7 +7996,9 @@ components:
       - update:task
       type: string
       description: |-
+        * `create:backup` - CREATE:BACKUP
         * `create:comment` - CREATE:COMMENT
+        * `create:export` - CREATE:EXPORT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
@@ -7652,10 +8059,8 @@ components:
           type: boolean
           readOnly: true
       required:
-      - height
       - name
       - related_files
-      - width
     FrameSelectionMethod:
       enum:
       - random_uniform
@@ -7800,6 +8205,9 @@ components:
           type: boolean
           readOnly: true
           nullable: true
+        accepted:
+          type: boolean
+          readOnly: true
         organization_info:
           $ref: '#/components/schemas/BasicOrganization'
       required:
@@ -7913,10 +8321,18 @@ components:
         task_id:
           type: integer
           readOnly: true
+        task_name:
+          type: string
+          nullable: true
+          readOnly: true
         project_id:
           type: integer
           readOnly: true
           nullable: true
+        project_name:
+          type: string
+          nullable: true
+          readOnly: true
         assignee:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -7929,7 +8345,12 @@ components:
         dimension:
           type: string
           readOnly: true
-          maxLength: 2
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         bug_tracker:
           type: string
           readOnly: true
@@ -7946,9 +8367,6 @@ components:
         state:
           allOf:
           - $ref: '#/components/schemas/OperationStatus'
-          readOnly: true
-        mode:
-          type: string
           readOnly: true
         frame_count:
           type: integer
@@ -8015,6 +8433,10 @@ components:
           nullable: true
           readOnly: true
         consensus_replicas:
+          type: integer
+          readOnly: true
+          deprecated: true
+        replicas_count:
           type: integer
           readOnly: true
       required:
@@ -8118,10 +8540,6 @@ components:
             The same value will produce the same frame sets.
             Applicable only to random frame selection methods.
             By default, a random value is used.
-        seed:
-          type: integer
-          minimum: 0
-          description: Deprecated. Use random_seed instead.
         frames:
           type: array
           items:
@@ -8168,8 +8586,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -8300,9 +8719,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8310,9 +8726,13 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8327,9 +8747,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8337,10 +8754,14 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8377,9 +8798,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8387,14 +8805,24 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
         elements:
           type: array
           items:
@@ -8431,9 +8859,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8441,15 +8866,25 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
         elements:
           type: array
           items:
@@ -8464,9 +8899,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8474,18 +8906,22 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
         elements:
           type: array
           items:
@@ -8500,9 +8936,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8510,19 +8943,23 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
         elements:
           type: array
           items:
@@ -8664,6 +9101,29 @@ components:
           type: object
       required:
       - slug
+    PaginatedAccessTokenReadList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessTokenRead'
     PaginatedAnnotationConflictList:
       type: object
       required:
@@ -9083,16 +9543,18 @@ components:
       properties:
         old_password:
           type: string
+          writeOnly: true
           minLength: 1
-          maxLength: 128
         new_password1:
           type: string
-          minLength: 1
-          maxLength: 128
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
         new_password2:
           type: string
-          minLength: 1
-          maxLength: 128
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
       required:
       - new_password1
       - new_password2
@@ -9103,12 +9565,14 @@ components:
       properties:
         new_password1:
           type: string
-          minLength: 1
-          maxLength: 128
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
         new_password2:
           type: string
-          minLength: 1
-          maxLength: 128
+          writeOnly: true
+          minLength: 8
+          maxLength: 256
         uid:
           type: string
           minLength: 1
@@ -9130,6 +9594,24 @@ components:
           minLength: 1
       required:
       - email
+    PatchedAccessTokenWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: A free-form name for the token. Doesn't have to be unique
+          maxLength: 50
+        expiry_date:
+          type: string
+          format: date-time
+          nullable: true
+          title: Expires
+          description: |
+            Once the token expires, clients cannot use it anymore.
+            If not set, the token will not expire.
+        read_only:
+          type: boolean
     PatchedAnnotationGuideWriteRequest:
       type: object
       properties:
@@ -9203,13 +9685,6 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
-        quorum:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Minimum required share of sources having an annotation for it to be accepted
     PatchedDataMetaWriteRequest:
       type: object
       properties:
@@ -9218,6 +9693,9 @@ components:
           items:
             type: integer
             minimum: 0
+        cloud_storage_id:
+          type: integer
+          nullable: true
     PatchedInvitationWriteRequest:
       type: object
       properties:
@@ -9296,8 +9774,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         deleted:
           type: boolean
           writeOnly: true
@@ -9398,6 +9877,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
+        organization_id:
+          type: integer
+          writeOnly: true
+          nullable: true
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -9607,12 +10090,12 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
+          $ref: '#/components/schemas/StorageRequest'
+        organization_id:
+          type: integer
+          writeOnly: true
           nullable: true
     PatchedUserRequest:
       type: object
@@ -9682,19 +10165,13 @@ components:
     Plugins:
       type: object
       properties:
-        GIT_INTEGRATION:
-          type: boolean
         ANALYTICS:
           type: boolean
         MODELS:
           type: boolean
-        PREDICT:
-          type: boolean
       required:
       - ANALYTICS
-      - GIT_INTEGRATION
       - MODELS
-      - PREDICT
     ProjectFileRequest:
       type: object
       properties:
@@ -9753,8 +10230,12 @@ components:
           type: string
           readOnly: true
           nullable: true
-          maxLength: 16
         organization:
+          type: integer
+          readOnly: true
+          nullable: true
+          deprecated: true
+        organization_id:
           type: integer
           readOnly: true
           nullable: true
@@ -9818,14 +10299,12 @@ components:
       enum:
       - AWS_S3_BUCKET
       - AZURE_CONTAINER
-      - GOOGLE_DRIVE
       - GOOGLE_CLOUD_STORAGE
       type: string
       description: |-
-        * `AWS_S3_BUCKET` - AWS_S3
-        * `AZURE_CONTAINER` - AZURE_CONTAINER
-        * `GOOGLE_DRIVE` - GOOGLE_DRIVE
-        * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
+        * `AWS_S3_BUCKET` - Amazon S3
+        * `AZURE_CONTAINER` - Azure Blob Storage
+        * `GOOGLE_CLOUD_STORAGE` - Google Cloud Storage
     QualityPointSizeBase:
       enum:
       - image_size
@@ -10201,10 +10680,13 @@ components:
         email:
           type: string
           format: email
+          maxLength: 254
         first_name:
           type: string
+          maxLength: 150
         last_name:
           type: string
+          maxLength: 150
         email_verification_required:
           type: boolean
           readOnly: true
@@ -10225,20 +10707,25 @@ components:
           type: string
           format: email
           minLength: 1
+          maxLength: 254
         password1:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
+          maxLength: 256
         password2:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
+          maxLength: 256
         first_name:
           type: string
           minLength: 1
+          maxLength: 150
         last_name:
           type: string
           minLength: 1
+          maxLength: 150
       required:
       - password1
       - password2
@@ -10310,11 +10797,17 @@ components:
         job_id:
           type: integer
           nullable: true
+        org_id:
+          type: integer
+          nullable: true
         format:
           type: string
           nullable: true
         function_id:
           type: string
+          nullable: true
+        lightweight:
+          type: boolean
           nullable: true
       required:
       - target
@@ -10404,14 +10897,6 @@ components:
         * `cuboid` - CUBOID
         * `mask` - MASK
         * `skeleton` - SKELETON
-    SigningRequest:
-      type: object
-      properties:
-        url:
-          type: string
-          minLength: 1
-      required:
-      - url
     SortingMethod:
       enum:
       - lexicographical
@@ -10489,9 +10974,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10499,14 +10981,24 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
       required:
       - frame
       - label_id
@@ -10539,9 +11031,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10549,15 +11038,25 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
       required:
       - frame
       - label_id
@@ -10568,9 +11067,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10578,18 +11074,22 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
       required:
       - frame
       - label_id
@@ -10600,9 +11100,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10610,19 +11107,23 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
       required:
       - frame
       - label_id
@@ -10644,8 +11145,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -10697,8 +11199,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -10743,8 +11246,9 @@ components:
         project_id:
           type: integer
           nullable: true
-        mode:
+        project_name:
           type: string
+          nullable: true
           readOnly: true
         owner:
           allOf:
@@ -10782,17 +11286,21 @@ components:
           minimum: 0
           nullable: true
           readOnly: true
-        data_compressed_chunk_type:
-          allOf:
-          - $ref: '#/components/schemas/ChunkType'
-          readOnly: true
-        guide_id:
-          type: integer
-          nullable: true
         data_original_chunk_type:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
+        data_compressed_chunk_type:
+          allOf:
+          - $ref: '#/components/schemas/ChunkType'
+          readOnly: true
+        data_cloud_storage_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        guide_id:
+          type: integer
+          nullable: true
         size:
           type: integer
           maximum: 2147483647
@@ -10805,16 +11313,29 @@ components:
           readOnly: true
         data:
           type: integer
+          nullable: true
           readOnly: true
         dimension:
           type: string
+          readOnly: true
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         subset:
           type: string
           readOnly: true
+        organization_id:
+          type: integer
+          readOnly: true
+          nullable: true
         organization:
           type: integer
           readOnly: true
           nullable: true
+          deprecated: true
         target_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'
@@ -10925,13 +11446,9 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         consensus_replicas:
           type: integer
           minimum: 0
@@ -10985,17 +11502,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeVal'
-          default: []
       required:
       - frame
       - type
@@ -11024,17 +11541,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeValRequest'
-          default: []
       required:
       - frame
       - type
@@ -11171,7 +11688,6 @@ components:
             The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
       required:
-      - frame_selection_method
       - mode
     WebhookContentType:
       enum:
@@ -11320,6 +11836,15 @@ components:
       - target_url
       - type
   securitySchemes:
+    accessTokenAuth:
+      type: http
+      scheme: bearer
+      description: |
+        To authenticate using an API Access token, you need to include
+        the 'Authentication' header with the 'Bearer ' prefix
+
+        An API Access token has to be issued in the user profile section of the UI or
+        via the /auth/access_tokens API before this authentication method can be used.
     basicAuth:
       type: http
       scheme: basic
@@ -11343,11 +11868,6 @@ components:
       type: apiKey
       in: cookie
       name: sessionid
-    signatureAuth:
-      type: apiKey
-      in: query
-      name: sign
-      description: Can be used to share URLs to private links
     tokenAuth:
       type: apiKey
       in: header

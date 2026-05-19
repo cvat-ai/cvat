@@ -20,6 +20,7 @@ context('Settings. "Player speed" option.', () => {
         cy.openSettings();
         cy.get('.cvat-player-settings-speed').within(() => {
             cy.get('.cvat-player-settings-speed-select').click();
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
             cy.wait(300); // Wait for the dropdown menu transition.
         });
         cy.get(`.cvat-player-settings-speed-${speed}`).click();
@@ -31,6 +32,7 @@ context('Settings. "Player speed" option.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

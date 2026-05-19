@@ -13,6 +13,7 @@ import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
 import { getCore, Project } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
+import { ResourceUpdateTypes } from 'utils/enums';
 
 const cvat = getCore();
 
@@ -69,7 +70,9 @@ const projectActions = {
     updateProjectSuccess: (project: Project) => (
         createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project })
     ),
-    updateProjectFailed: (error: any) => createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { error }),
+    updateProjectFailed: (projectId: number, error: any, updateType?: ResourceUpdateTypes) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { projectId, error, updateType })
+    ),
 };
 
 export type ProjectActions = ActionUnion<typeof projectActions>;
@@ -133,8 +136,8 @@ export function getProjectsAsync(
     };
 }
 
-export function createProjectAsync(data: any): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+export function createProjectAsync(data: any): ThunkAction<Promise<Project>> {
+    return async (dispatch: ThunkDispatch): Promise<Project> => {
         const projectInstance = new cvat.classes.Project(data);
 
         dispatch(projectActions.createProject());
@@ -173,15 +176,17 @@ export const getProjectsPreviewAsync = (project: any): ThunkAction => async (dis
 
 export function updateProjectAsync(
     projectInstance: Project,
+    fields?: Parameters<Project['save']>[0],
+    updateType?: ResourceUpdateTypes,
 ): ThunkAction<Promise<Project>> {
     return async (dispatch: ThunkDispatch): Promise<Project> => {
         dispatch(projectActions.updateProject(projectInstance.id));
         try {
-            const updatedProject = await projectInstance.save();
+            const updatedProject = await projectInstance.save(fields);
             dispatch(projectActions.updateProjectSuccess(updatedProject));
             return updatedProject;
         } catch (error) {
-            dispatch(projectActions.updateProjectFailed(error));
+            dispatch(projectActions.updateProjectFailed(projectInstance.id, error, updateType));
             throw error;
         }
     };

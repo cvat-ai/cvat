@@ -46,7 +46,7 @@ context('Filtering, sorting jobs.', () => {
     }
 
     function checkContentsRow(index, stage, state, assignee) {
-        cy.getJobIDFromIdx(index).then(($job) => {
+        cy.getJobIdFromIdx(index).then(($job) => {
             cy.get('.cvat-task-job-list')
                 .contains('a', `Job #${$job}`)
                 .parents('.cvat-job-item').within(() => {
@@ -130,21 +130,21 @@ context('Filtering, sorting jobs.', () => {
         );
 
         cy.openTask(taskName);
-        cy.getJobIDFromIdx(0).then((jobID) => cy.assignJobToUser(jobID, secondUserName));
-        cy.getJobIDFromIdx(1).then((jobID) => cy.assignJobToUser(jobID, secondUserName));
+        cy.getJobIdFromIdx(0).then((jobId) => cy.assignJobToUser(jobId, secondUserName));
+        cy.getJobIdFromIdx(1).then((jobId) => cy.assignJobToUser(jobId, secondUserName));
 
         // The first job - stage "validation"
-        cy.getJobIDFromIdx(0).then((jobID) => cy.setJobStage(jobID, 'validation'));
+        cy.getJobIdFromIdx(0).then((jobId) => cy.setJobStage(jobId, 'validation'));
 
         // The second job - status "completed"
-        cy.getJobIDFromIdx(1).then((jobID) => cy.setJobState(jobID, 'completed'));
+        cy.getJobIdFromIdx(1).then((jobId) => cy.setJobState(jobId, 'completed'));
     });
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [secondUserName]);
-            cy.deleteTasks(authKey, [taskName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteUsers(authHeaders, [secondUserName]);
+            cy.deleteTasks(authHeaders, [taskName]);
         });
     });
 

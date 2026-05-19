@@ -8,7 +8,13 @@ import Input from 'antd/lib/input';
 
 import { JobsQuery } from 'reducers';
 import dimensions from 'utils/dimensions';
-import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import {
+    SortingComponent,
+    ResourceFilterHOC,
+    defaultVisibility,
+    ResourceSelectionInfo,
+} from 'components/resource-sorting-filtering';
+import JobsCSVExportButton from './jobs-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -22,27 +28,32 @@ interface Props {
     onApplyFilter(filter: string | null): void;
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
+    selectedCount: number;
+    onSelectAll: () => void;
 }
 
-function TopBarComponent(props: Props): JSX.Element {
+function TopBarComponent(props: Readonly<Props>): JSX.Element {
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch,
+        query, onApplyFilter, onApplySorting, onApplySearch, selectedCount, onSelectAll,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     return (
-        <Row className='cvat-jobs-page-top-bar' justify='center' align='middle'>
+        <Row className='cvat-jobs-page-top-bar cvat-resource-top-bar-wrapper' justify='center' align='middle'>
             <Col {...dimensions}>
                 <div>
-                    <Input.Search
-                        enterButton
-                        onSearch={(phrase: string) => {
-                            onApplySearch(phrase);
-                        }}
-                        defaultValue={query.search || ''}
-                        className='cvat-jobs-page-search-bar'
-                        placeholder='Search ...'
-                    />
+                    <div>
+                        <Input.Search
+                            enterButton
+                            onSearch={(phrase: string) => {
+                                onApplySearch(phrase);
+                            }}
+                            defaultValue={query.search ?? ''}
+                            className='cvat-jobs-page-search-bar'
+                            placeholder='Search ...'
+                        />
+                        <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
+                    </div>
                     <div>
                         <SortingComponent
                             visible={visibility.sorting}
@@ -69,6 +80,7 @@ function TopBarComponent(props: Props): JSX.Element {
                             )}
                             onApplyFilter={onApplyFilter}
                         />
+                        <JobsCSVExportButton query={query} />
                     </div>
                 </div>
             </Col>

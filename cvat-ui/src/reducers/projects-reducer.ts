@@ -9,7 +9,8 @@ import { omit } from 'lodash';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-import { ProjectsState } from '.';
+import { SelectionActionsTypes } from 'actions/selection-actions';
+import { ProjectsState, SelectedResourceType } from '.';
 
 const defaultState: ProjectsState = {
     fetchingTimestamp: Date.now(),
@@ -17,6 +18,7 @@ const defaultState: ProjectsState = {
     fetching: false,
     count: 0,
     current: [],
+    selected: [],
     previews: {},
     gettingQuery: {
         page: 1,
@@ -251,6 +253,27 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                     updates: omit(updates, projectId),
                 },
             };
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.PROJECTS) {
+                return {
+                    ...state,
+                    selected: state.selected.filter((id: number) => !action.payload.resourceIds.includes(id)),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.PROJECTS) {
+                return {
+                    ...state,
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selected: [] };
         }
         default:
             return state;

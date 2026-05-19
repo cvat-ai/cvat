@@ -58,8 +58,8 @@ context('New organization pipeline.', () => {
     const taskName = `New annotation task for ${labelName}`;
     const newTaskName = labelName;
     const serverFiles = ['archive.zip'];
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     const createCuboidShape2Points = {
         points: 'From rectangle',
@@ -72,15 +72,16 @@ context('New organization pipeline.', () => {
     };
 
     function capitalizeEmail(email) {
-        return email.split('@').map((part) => `${part.toUpperCase()[0]}${part.slice(1)}`).join('@');
+        return email.split('@').map(Cypress._.capitalize).join('@');
     }
     function tearDown() {
         cy.headlessLogout().then(() => {
-            cy.getAuthKey().then((authKey) => {
-                cy.deleteUsers(authKey, [firstUserName, secondUserName, thirdUserName]);
-                cy.deleteTasks(authKey, [newTaskName]);
-                cy.deleteProjects(authKey, [project.name]);
-                cy.deleteOrganizations(authKey, [organizationParams.shortName]);
+            cy.task('getAuthHeaders').then((authHeaders) => {
+                cy.deleteUsers(authHeaders, [firstUserName, secondUserName, thirdUserName]);
+                cy.deleteTasks(authHeaders, [newTaskName]);
+                cy.deleteProjects(authHeaders, [project.name]);
+                cy.deleteOrganizations(authHeaders, [organizationParams.shortName]);
+                cy.headlessLogout();
             });
         });
     }
@@ -187,16 +188,16 @@ context('New organization pipeline.', () => {
                         values: [project.attrValue],
                     }],
                 }],
-            }).then(({ projectID }) => {
+            }).then(({ projectId }) => {
                 const { taskSpec, dataSpec, extras } = defaultTaskSpec({
                     labelName, taskName, serverFiles,
                 });
                 delete taskSpec.labels;
-                taskSpec.project_id = projectID;
+                taskSpec.project_id = projectId;
                 cy.headlessCreateTask(
                     taskSpec, dataSpec, extras,
                 ).then((taskResponse) => {
-                    taskID = taskResponse.taskID;
+                    taskId = taskResponse.taskId;
                 });
             });
             cy.goToProjectsList();
@@ -258,9 +259,9 @@ context('New organization pipeline.', () => {
         it('Open the task, assign one of jobs to the third user. Rename the task.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
-            cy.getJobIDFromIdx(0).then((_jobID) => {
-                jobID = _jobID;
-                cy.assignJobToUser(_jobID, thirdUserName);
+            cy.getJobIdFromIdx(0).then((_jobId) => {
+                jobId = _jobId;
+                cy.assignJobToUser(_jobId, thirdUserName);
             });
             cy.renameTask(taskName, newTaskName);
         });
@@ -273,7 +274,7 @@ context('New organization pipeline.', () => {
         });
 
         it('User can open the job using direct link. Organization is set automatically. Create an object, save annotations.', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat-header-menu-user-dropdown-organization').should('have.text', organizationParams.shortName);
             cy.createCuboid(createCuboidShape2Points);
@@ -300,8 +301,8 @@ context('New organization pipeline.', () => {
 
         it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
             cy.headlessLogout();
-            cy.getAuthKey().then((authKey) => {
-                cy.deleteUsers(authKey, [firstUserName, secondUserName]);
+            cy.task('getAuthHeaders').then((authHeaders) => {
+                cy.deleteUsers(authHeaders, [firstUserName, secondUserName]);
             });
         });
 
@@ -311,7 +312,7 @@ context('New organization pipeline.', () => {
             cy.visit('/organization');
             cy.checkOrganizationParams(organizationParams);
             cy.checkOrganizationMembers(1, [thirdUserName]);
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
         });

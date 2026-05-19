@@ -8,9 +8,10 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { ProjectsActionTypes } from 'actions/projects-actions';
+import { SelectionActionsTypes } from 'actions/selection-actions';
 import { omit } from 'lodash';
 
-import { TasksState } from '.';
+import { TasksState, SelectedResourceType } from '.';
 
 const defaultState: TasksState = {
     fetchingTimestamp: Date.now(),
@@ -22,6 +23,7 @@ const defaultState: TasksState = {
     },
     count: 0,
     current: [],
+    selected: [],
     previews: {},
     gettingQuery: {
         page: 1,
@@ -226,7 +228,29 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     updates: omit(updates, taskId),
                 },
+                fetching: false,
             };
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.TASKS) {
+                return {
+                    ...state,
+                    selected: state.selected.filter((id: number) => !action.payload.resourceIds.includes(id)),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.TASKS) {
+                return {
+                    ...state,
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selected: [] };
         }
         default:
             return state;

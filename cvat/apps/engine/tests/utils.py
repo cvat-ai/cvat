@@ -6,33 +6,36 @@ import itertools
 import logging
 import os
 import shutil
-from collections.abc import Iterator, Sequence
+import unittest
+import unittest.mock
+from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Collection, NoReturn, Protocol, TypeVar
+from typing import Any, NoReturn, Protocol, TypeVar
 from unittest import TestCase
-from urllib.parse import urlencode
 
 import av
+import django.test
 import django_rq
 import numpy as np
 from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
+from django.utils.module_loading import import_string
 from PIL import Image
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from scipy.optimize import linear_sum_assignment
 
+from cvat.apps.engine.models import User
+
 T = TypeVar("T")
 
-
-class OrderStrategy(Protocol):
-    def __call__(self, key_path: list[str]) -> bool: ...
+ASSETS_DIR = Path(__file__).parent / "assets"
 
 
 @contextmanager
@@ -47,7 +50,7 @@ def logging_disabled():
 
 
 class ForceLogin:
-    def __init__(self, user, client):
+    def __init__(self, user: User, client: django.test.Client):
         self.user = user
         self.client = client
 
@@ -120,7 +123,7 @@ class ApiTestBase(APITestCase):
         self._clear_rq_jobs()
 
         # clear cache files created after previous exports
-        export_cache_dir = Path(settings.EXPORT_CACHE_ROOT)
+        export_cache_dir = settings.EXPORT_CACHE_ROOT
         for child in export_cache_dir.iterdir():
             if child.is_dir():
                 shutil.rmtree(child)
@@ -137,13 +140,13 @@ class ApiTestBase(APITestCase):
         self.client = self.client_class()
 
     def _get_request(
-        self, path: str, user: str, *, query_params: dict[str, Any] | None = None
+        self, path: str, user: User, *, query_params: dict[str, Any] | None = None
     ) -> Response:
         with ForceLogin(user, self.client):
-            response = self.client.get(path, data=query_params)
+            response = self.client.get(path, query_params=query_params)
         return response
 
-    def _delete_request(self, path: str, user: str):
+    def _delete_request(self, path: str, user: User):
         with ForceLogin(user, self.client):
             response = self.client.delete(path)
         return response
@@ -151,19 +154,14 @@ class ApiTestBase(APITestCase):
     def _post_request(
         self,
         path: str,
-        user: str,
+        user: User,
         *,
         format: str = "json",  # pylint: disable=redefined-builtin
-        query_params: dict[str, Any] = None,
+        query_params: dict[str, Any] | None = None,
         data: dict[str, Any] | None = None,
     ):
-        if query_params:
-            # Note: once we upgrade to Django 5.1+, this should be changed to pass query_params
-            # directly to self.client.
-            assert "?" not in path
-            path += "?" + urlencode(query_params)
         with ForceLogin(user, self.client):
-            response = self.client.post(path, data=data, format=format)
+            response = self.client.post(path, data=data, format=format, query_params=query_params)
         return response
 
     def _patch_request(self, path: str, user: str, *, data: dict[str, Any] | None = None):
@@ -174,7 +172,7 @@ class ApiTestBase(APITestCase):
     def _put_request(
         self,
         url: str,
-        user: str,
+        user: User,
         *,
         format: str = "json",  # pylint: disable=redefined-builtin
         data: dict[str, Any] | None = None,
@@ -185,7 +183,7 @@ class ApiTestBase(APITestCase):
 
     def _check_request_status(
         self,
-        user: str,
+        user: User,
         rq_id: str,
         *,
         expected_4xx_status_code: int | None = None,
@@ -195,15 +193,16 @@ class ApiTestBase(APITestCase):
         if expected_4xx_status_code is not None:
             return
 
-        request_status = response.json()["status"]
-        assert request_status == "finished", f"The last request status was {request_status}"
+        response_json = response.json()
+        request_status = response_json["status"]
+        self.assertEqual(request_status, "finished", "Message:\n" + response_json["message"])
         return response
 
 
 class ImportApiTestBase(ApiTestBase):
     def _import(
         self,
-        user: str,
+        user: User,
         api_path: str,
         file_content: BytesIO,
         *,
@@ -229,15 +228,15 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_project_dataset(
         self,
-        user: str,
-        projetc_id: int,
+        user: User,
+        project_id: int,
         file_content: BytesIO,
         query_params: str = None,
         expected_4xx_status_code: int | None = None,
     ):
         return self._import(
             user,
-            f"/api/projects/{projetc_id}/dataset",
+            f"/api/projects/{project_id}/dataset",
             file_content,
             through_field="dataset_file",
             query_params=query_params,
@@ -246,7 +245,7 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_task_annotations(
         self,
-        user: str,
+        user: User,
         task_id: int,
         file_content: BytesIO,
         query_params: str = None,
@@ -263,7 +262,7 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_job_annotations(
         self,
-        user: str,
+        user: User,
         job_id: int,
         file_content: BytesIO,
         query_params: str = None,
@@ -280,7 +279,7 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_project_backup(
         self,
-        user: str,
+        user: User,
         file_content: BytesIO,
         query_params: str = None,
         expected_4xx_status_code: int | None = None,
@@ -300,7 +299,7 @@ class ImportApiTestBase(ApiTestBase):
 
     def _import_task_backup(
         self,
-        user: str,
+        user: User,
         file_content: BytesIO,
         query_params: str = None,
         expected_4xx_status_code: int | None = None,
@@ -322,7 +321,7 @@ class ImportApiTestBase(ApiTestBase):
 class ExportApiTestBase(ApiTestBase):
     def _export(
         self,
-        user: str,
+        user: User,
         api_path: str,
         *,
         query_params: dict[str, Any] | None = None,
@@ -367,7 +366,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_task_backup(
         self,
-        user: str,
+        user: User,
         task_id: int,
         *,
         query_params: dict | None = None,
@@ -386,7 +385,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_project_backup(
         self,
-        user: str,
+        user: User,
         project_id: int,
         *,
         query_params: dict | None = None,
@@ -405,7 +404,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_project_dataset(
         self,
-        user: str,
+        user: User,
         project_id: int,
         *,
         query_params: dict,
@@ -426,7 +425,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_project_annotations(
         self,
-        user: str,
+        user: User,
         project_id: int,
         *,
         query_params: dict,
@@ -447,7 +446,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_task_dataset(
         self,
-        user: str,
+        user: User,
         task_id: int,
         *,
         query_params: dict,
@@ -468,7 +467,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_task_annotations(
         self,
-        user: str,
+        user: User,
         task_id: int,
         *,
         query_params: dict,
@@ -489,7 +488,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_job_dataset(
         self,
-        user: str,
+        user: User,
         job_id: int,
         *,
         query_params: dict,
@@ -510,7 +509,7 @@ class ExportApiTestBase(ApiTestBase):
 
     def _export_job_annotations(
         self,
-        user: str,
+        user: User,
         job_id: int,
         *,
         query_params: dict,
@@ -643,28 +642,61 @@ def _match_lists(
     return matches, a_unmatched, b_unmatched
 
 
-def _format_key(key: list[str]) -> str:
-    return ".".join([] + key) or ""
+ObjectKey = Sequence[str | int]
+"""
+A path to the object in the JSON-like document.
+
+Dictionary (object) keys are included as strings. List (array) elements are represented as numbers.
+
+Example:
+
+The path ['foo', 2, 'bar'] can be the item key in the document like this:
+
+{
+    'foo': [
+        {'bar': 0},
+        {'bar': 1},
+        {'bar': 2}, <--
+        {'bar': 3},
+    ]
+}
+"""
+
+
+class OrderStrategy(Protocol):
+    def __call__(self, key_path: ObjectKey) -> bool: ...
+
+
+def format_key(key: ObjectKey, *, index_placeholder: str | None = None) -> str:
+    def _convert_item(item: str | int) -> str:
+        if index_placeholder is not None and isinstance(item, int):
+            item = index_placeholder
+        return str(item)
+
+    return ".".join([""] + list(map(_convert_item, key))) or ""
 
 
 def compare_objects(
     self: TestCase,
     obj1: Any,
     obj2: Any,
-    ignore_keys: Collection[str],
     *,
-    defaults: dict[str, Any] | Callable[[list[str]], dict | None] | None = None,
+    ignore_keys: Collection[str] | None = None,
+    defaults: dict[str, Any] | Callable[[ObjectKey], dict[str, Any] | None] | None = None,
     fp_tolerance: float = 0.001,
-    current_key: list[str] | str | None = None,
+    current_key: ObjectKey | str | None = None,
     check_order: bool | OrderStrategy = True,
-) -> bool | NoReturn:
+) -> None | NoReturn:
     if isinstance(current_key, str):
         current_key = [current_key]
     elif not current_key:
         current_key = []
 
-    key_info = f"{_format_key(current_key)}: "
-    error_msg = "{}{} != {}"
+    if ignore_keys is None:
+        ignore_keys = tuple()
+
+    key_info = format_key(current_key)
+    error_msg = "{}: {} != {}"
 
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), error_msg.format(key_info, obj1, obj2))
@@ -679,9 +711,9 @@ def compare_objects(
         for k in keys_to_check:
             compare_objects(
                 self,
-                obj1[k] if not k in current_key_defaults else obj1.get(k, current_key_defaults[k]),
-                obj2[k] if not k in current_key_defaults else obj2.get(k, current_key_defaults[k]),
-                ignore_keys,
+                obj1[k] if k not in current_key_defaults else obj1.get(k, current_key_defaults[k]),
+                obj2[k] if k not in current_key_defaults else obj2.get(k, current_key_defaults[k]),
+                ignore_keys=ignore_keys,
                 defaults=defaults,
                 current_key=current_key + [k],
                 fp_tolerance=fp_tolerance,
@@ -696,14 +728,14 @@ def compare_objects(
         )
 
         if check_order is True or check_order(current_key):
-            for v1, v2 in zip(obj1, obj2):
+            for i, (v1, v2) in enumerate(zip(obj1, obj2)):
                 compare_objects(
                     self,
                     v1,
                     v2,
-                    ignore_keys,
+                    ignore_keys=ignore_keys,
                     defaults=defaults,
-                    current_key=current_key,
+                    current_key=current_key + [i],
                     fp_tolerance=fp_tolerance,
                     check_order=check_order,
                 )
@@ -715,7 +747,7 @@ def compare_objects(
                         self,
                         a,
                         b,
-                        ignore_keys,
+                        ignore_keys=ignore_keys,
                         defaults=defaults,
                         current_key=current_key,
                         fp_tolerance=fp_tolerance,
@@ -736,9 +768,9 @@ def compare_objects(
                 )
 
     elif isinstance(obj1, float) or isinstance(obj2, float):
-        self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
+        self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=key_info)
     else:
-        self.assertEqual(obj1, obj2, msg=current_key)
+        self.assertEqual(obj1, obj2, msg=key_info)
 
 
 def check_annotation_response(
@@ -757,6 +789,7 @@ def check_annotation_response(
         rotation=0,
         attributes=[],
         elements=[],
+        score=1.0,
     )  # if omitted, are set by the server
     # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
 
@@ -779,10 +812,10 @@ def check_annotation_response(
 
         data = put_expected_values(deepcopy(data))
 
-    def _check_order_in_annotations(key_path: list[str]) -> bool:
+    def _check_order_in_annotations(key_path: ObjectKey) -> bool:
         return "points" in key_path
 
-    def _key_defaults(key_path: list[str]) -> dict | None:
+    def _key_defaults(key_path: ObjectKey) -> dict[str, Any] | None:
         if key_path and key_path[-1] == "tags":
             return filter_dict(optional_fields, keep=["source", "attributes"])
         if key_path and key_path[-1] == "shapes":
@@ -796,15 +829,29 @@ def check_annotation_response(
                     "source",
                     "attributes",
                     "elements",
+                    "score",
                 ],
             )
         if key_path and key_path[-1] == "tracks":
             return filter_dict(optional_fields, keep=["source", "attributes", "elements"])
-        if key_path and _format_key(key_path).endswith("tracks.elements"):
+        if format_key(key_path, index_placeholder="*").endswith("tracks.*.elements"):
             return filter_dict(optional_fields, keep=["source", "attributes"])
-        if key_path and _format_key(key_path).endswith("tracks.elements.shapes"):
+        if format_key(key_path, index_placeholder="*").endswith("tracks.*.elements.*.shapes"):
             return filter_dict(
                 optional_fields, keep=["occluded", "outside", "z_order", "rotation", "attributes"]
+            )
+        if format_key(key_path, index_placeholder="*").endswith("shapes.*.elements"):
+            return filter_dict(
+                optional_fields,
+                keep=[
+                    "occluded",
+                    "outside",
+                    "z_order",
+                    "rotation",
+                    "source",
+                    "attributes",
+                    "score",
+                ],
             )
 
         return None
@@ -828,3 +875,38 @@ def check_annotation_response(
         )
         print(e)
         raise
+
+
+@contextmanager
+def mock_method(
+    obj: str | Any, attr: str, *, new: Callable | Any = unittest.mock.DEFAULT
+) -> Generator[unittest.mock.Mock, None, None]:
+    """
+    Allows to mock a class instance method, while still be able to call the original implementation.
+
+    If 'new' is unittest.mock.DEFAULT, the original implementation is called.
+    Otherwise, the replacement is called. The mocked function returns the value of the new or
+    the original method call.
+    """
+    # With unittest.mock.Mock, using "wraps" or other callable binding options results in "self"
+    # being consumed by the mock. This disallows using it for, e.g., transparent call recording.
+
+    if isinstance(obj, str):
+        obj = import_string(obj)
+
+    old_method = getattr(obj, attr)
+
+    if new is unittest.mock.DEFAULT:
+        new = old_method
+
+    m = unittest.mock.Mock(spec=old_method)
+
+    def call_wrapper(self, *args, **kwargs):
+        m(*args, **kwargs)
+        return new(self, *args, **kwargs)
+
+    try:
+        setattr(obj, attr, call_wrapper)
+        yield m
+    finally:
+        setattr(obj, attr, old_method)

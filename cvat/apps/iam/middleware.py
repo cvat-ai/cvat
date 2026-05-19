@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Callable
 from datetime import timedelta
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
@@ -24,6 +25,7 @@ def get_organization(request: HttpRequest):
     privilege = groups[0] if groups else None
 
     organization = None
+    organization_specified = False
 
     try:
         org_slug = request.GET.get("org")
@@ -44,6 +46,9 @@ def get_organization(request: HttpRequest):
 
         org_slug = org_slug if org_slug is not None else org_header
 
+        if org_slug is not None or org_id is not None:
+            organization_specified = True
+
         if org_slug:
             organization = Organization.objects.select_related("owner").get(slug=org_slug)
         elif org_id:
@@ -51,7 +56,11 @@ def get_organization(request: HttpRequest):
     except Organization.DoesNotExist:
         raise NotFound(f"{org_slug or org_id} organization does not exist.")
 
-    context = {"organization": organization, "privilege": getattr(privilege, "name", None)}
+    context = {
+        "organization": organization,
+        "organization_specified": organization_specified,
+        "privilege": getattr(privilege, "name", None),
+    }
 
     return context
 

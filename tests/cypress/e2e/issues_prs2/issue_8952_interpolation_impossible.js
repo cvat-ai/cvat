@@ -50,7 +50,7 @@ context('Create any track, check if track works correctly after deleting some fr
     }
 
     describe('Description: user error, Could not receive frame 43 No one left position or right position was found. Interpolation impossible', () => {
-        let jobID = null;
+        let jobId = null;
         const delta = 300;
         before(() => {
             cy.visit('/auth/login');
@@ -65,7 +65,7 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.openTaskJob(taskName);
             cy.url().should('contain', 'jobs').then((url) => {
                 const last = url.lastIndexOf('/');
-                jobID = parseInt(url.slice(last + 1), 10);
+                jobId = parseInt(url.slice(last + 1), 10);
             }).then(() => {
                 // Remove all annotations and draw a track rect
                 const points0 = rect;
@@ -93,17 +93,16 @@ context('Create any track, check if track works correctly after deleting some fr
                     labelName,
                     objectType: 'track',
                 };
-                cy.headlessCreateObjects([track], jobID);
+                cy.headlessCreateObjects([track], jobId);
             });
         });
 
         beforeEach(() => {
-            cy.headlessRestoreAllFrames(jobID);
-
+            cy.headlessRestoreAllFrames(jobId);
             // Get job meta updates from the server and reload page to bring changes to UI
             cy.reload();
-
-            cy.saveJob();
+            cy.get('.cvat-canvas-container').should('exist');
+            cy.get('.cvat-spinner').should('not.exist');
             cy.get('.cvat-player-first-button').click();
         });
 
@@ -144,6 +143,8 @@ context('Create any track, check if track works correctly after deleting some fr
                 pos1 = posOnFrame1;
             });
             cy.reload().then(() => {
+                cy.get('.cvat-canvas-container').should('exist');
+                cy.get('.cvat-spinner').should('not.exist');
                 cy.goToNextFrame(1).then(() => validateShapeCoords(pos1));
                 cy.goToNextFrame(3).then(() => validateShapeCoords(pos3));
             });

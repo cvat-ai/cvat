@@ -5,9 +5,10 @@
 
 /// <reference types="cypress" />
 
-import { projectName } from '../../../support/const_project';
+import { projectNameDelete } from '../../../support/const_project';
 
 context('Base actions on the project', () => {
+    const projectName = projectNameDelete;
     const labelName = `Base label for ${projectName}`;
     const taskName = {
         firstTask: `First task for ${projectName}`,
@@ -42,25 +43,26 @@ context('Base actions on the project', () => {
     const userName = 'Seconduser';
     const emailAddr = `${userName}@local.local`;
     const password = 'GDrb41RguF!';
-    let projectID = '';
+    let projectId = '';
     const projectSubsetFieldValue = 'Test';
 
-    function getProjectID(myProjectName) {
+    function getProjectId(myProjectName) {
         cy.contains('.cvat-project-name', myProjectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'data-cvat-project-id')
-            .then(($projectID) => {
-                projectID = $projectID;
+            .then(($projectId) => {
+                projectId = $projectId;
             });
     }
 
     before(() => {
+        cy.prepareUserSession('/projects');
         cy.openProject(projectName);
     });
 
     after(() => {
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [userName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteUsers(authHeaders, [userName]);
         });
     });
 
@@ -108,7 +110,7 @@ context('Base actions on the project', () => {
         it('The task is successfully opened. No label editor on task page.', () => {
             cy.goToProjectsList();
             cy.openProject(projectName);
-            getProjectID(projectName);
+            getProjectId(projectName);
             cy.get('.cvat-tasks-list-item').then((countTasks) => {
                 // The number of created tasks is greater than zero
                 expect(countTasks.length).to.be.gt(0);
@@ -135,7 +137,7 @@ context('Base actions on the project', () => {
             cy.login(userName, password);
             cy.goToProjectsList();
             // tries to delete project
-            cy.deleteProject(projectName, projectID, 'fail');
+            cy.deleteProject(projectName, projectId, 'fail');
             cy.closeNotification('.cvat-notification-notice-delete-project-failed');
             cy.openProject(projectName);
             cy.goToTaskList();
@@ -146,7 +148,7 @@ context('Base actions on the project', () => {
         it('Delete the project. Deleted project not exist. Checking the availability of tasks.', () => {
             cy.login();
             cy.goToProjectsList();
-            cy.deleteProject(projectName, projectID);
+            cy.deleteProject(projectName, projectId);
             cy.goToTaskList();
             cy.contains('strong', taskName.firstTask).should('not.exist');
             cy.contains('strong', taskName.secondTask).should('not.exist');

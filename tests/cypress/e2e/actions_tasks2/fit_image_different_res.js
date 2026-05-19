@@ -8,8 +8,8 @@ context('Correct behaviour of fit when navigating between frames with different 
     const taskName = 'Fit different resolutions';
     const serverFiles = ['test_different_resolutions/image_1.jpg', 'test_different_resolutions/image_2.jpg'];
 
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     before(() => {
         cy.visit('/auth/login');
@@ -28,28 +28,25 @@ context('Correct behaviour of fit when navigating between frames with different 
             use_cache: true,
             sorting_method: 'lexicographical',
         }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
         });
     });
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((response) => {
-            const authKey = response.body.key;
+        cy.task('getAuthHeaders').then((authHeaders) => {
             cy.request({
                 method: 'DELETE',
-                url: `/api/tasks/${taskID}`,
-                headers: {
-                    Authorization: `Token ${authKey}`,
-                },
+                url: `/api/tasks/${taskId}`,
+                headers: authHeaders,
             });
         });
     });
 
     beforeEach(() => {
-        cy.intercept('GET', `/tasks/${taskID}/jobs/${jobID}`).as('visitAnnotationView');
-        cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+        cy.intercept('GET', `/tasks/${taskId}/jobs/${jobId}`).as('visitAnnotationView');
+        cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
         cy.wait('@visitAnnotationView');
         cy.get('.cvat-canvas-container').should('exist').and('be.visible');
     });

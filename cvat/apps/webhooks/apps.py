@@ -9,8 +9,16 @@ class WebhooksConfig(AppConfig):
     name = "cvat.apps.webhooks"
 
     def ready(self):
-        from cvat.apps.iam.permissions import load_app_permissions
+        from django.conf import settings
 
-        load_app_permissions(self)
+        from . import default_settings
 
-        from . import signals  # pylint: disable=unused-import
+        for key in dir(default_settings):
+            if key.isupper() and not hasattr(settings, key):
+                setattr(settings, key, getattr(default_settings, key))
+
+        from cvat.apps.iam.permissions import load_app_iam_rules
+
+        load_app_iam_rules(self)
+
+        from . import event_handlers, signals  # pylint: disable=unused-import

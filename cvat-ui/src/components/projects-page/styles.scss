@@ -8,22 +8,6 @@
 .cvat-projects-page {
     @include cvat-resource-page;
 
-    .cvat-projects-page-top-bar {
-        > div:nth-child(1) {
-            > div:nth-child(1) {
-                width: 100%;
-
-                > div:nth-child(1) {
-                    display: flex;
-
-                    span {
-                        margin-right: $grid-unit-size;
-                    }
-                }
-            }
-        }
-    }
-
     > div:nth-child(1) {
         padding-bottom: $grid-unit-size;
 
@@ -198,7 +182,7 @@
     display: flex;
     flex-wrap: wrap;
 
-    > div {
+    .cvat-projects-list-row {
         width: 100%;
         margin-bottom: $grid-unit-size;
 

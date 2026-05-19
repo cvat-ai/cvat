@@ -29,7 +29,7 @@ interface JobDataMutual {
     taskID: number;
     frameSelectionMethod: FrameSelectionMethod;
     type: JobType;
-    seed?: number;
+    randomSeed?: number;
 }
 
 export interface JobData extends JobDataMutual {
@@ -64,7 +64,7 @@ function JobForm(props: Props): JSX.Element {
                 taskID: task.id,
                 frameSelectionMethod: values.frameSelectionMethod,
                 type: values.type,
-                seed: values.seed,
+                randomSeed: values.randomSeed,
                 ...(values.frameSelectionMethod === FrameSelectionMethod.RANDOM ?
                     { frameCount: values.frameCount } : { framesPerJobCount: values.frameCount }
                 ),
@@ -72,7 +72,7 @@ function JobForm(props: Props): JSX.Element {
 
             const createdJob = await dispatch(createJobAsync(data));
             return createdJob;
-        } catch (e) {
+        } catch (_e) {
             return false;
         }
     }, [task]);
@@ -230,7 +230,7 @@ function JobForm(props: Props): JSX.Element {
                             </Col>
                             <Col>
                                 <Form.Item
-                                    name='seed'
+                                    name='randomSeed'
                                     label='Seed'
                                 >
                                     <InputNumber

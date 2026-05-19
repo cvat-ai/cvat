@@ -7,6 +7,15 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { connect, Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
+import dayjs from 'dayjs';
+import advancedFormat from 'dayjs/plugin/advancedFormat';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import localeData from 'dayjs/plugin/localeData';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import weekday from 'dayjs/plugin/weekday';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+import weekYear from 'dayjs/plugin/weekYear';
+import duration from 'dayjs/plugin/duration';
 
 import { getAboutAsync } from 'actions/about-actions';
 import { authenticatedAsync } from 'actions/auth-actions';
@@ -27,10 +36,20 @@ import { getRequestsAsync } from 'actions/requests-async-actions';
 import { getServerAPISchemaAsync } from 'actions/server-actions';
 import { navigationActions } from 'actions/navigation-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
+import './utils/dayjs-wrapper';
 
 createCVATStore(createRootReducer);
 
 const cvatStore = getCVATStore();
+
+dayjs.extend(customParseFormat);
+dayjs.extend(advancedFormat);
+dayjs.extend(relativeTime);
+dayjs.extend(weekday);
+dayjs.extend(localeData);
+dayjs.extend(weekOfYear);
+dayjs.extend(weekYear);
+dayjs.extend(duration);
 
 interface StateToProps {
     pluginsInitialized: boolean;
@@ -49,7 +68,6 @@ interface StateToProps {
     userAgreementsFetching: boolean;
     notifications: NotificationsState;
     user: any;
-    isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
@@ -100,7 +118,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         notifications: state.notifications,
         user: auth.user,
         pluginComponents: plugins.components,
-        isModelPluginActive: plugins.list.MODELS,
         invitationsFetching: invitations.fetching,
         invitationsInitialized: invitations.initialized,
         requestsFetching: requests.fetching,
@@ -123,8 +140,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
-        initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
-        initRequests: (): void => dispatch(getRequestsAsync({ page: 1 })),
+        initInvitations: (): void => dispatch(getInvitationsAsync({}, true)),
+        initRequests: (): void => dispatch(getRequestsAsync()),
         loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
         onChangeLocation: (from: string, to: string): void => dispatch(navigationActions.changeLocation(from, to)),
     };

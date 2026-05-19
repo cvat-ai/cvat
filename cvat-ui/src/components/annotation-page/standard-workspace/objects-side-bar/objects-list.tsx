@@ -14,13 +14,13 @@ import ObjectListHeader from './objects-list-header';
 
 interface Props {
     workspace: Workspace;
-    readonly: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
     sortedStatesID: number[];
     objectStates: any[];
+    visibleSkeletonElements: Record<number, number[]>;
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
     showGroundTruth: boolean;
@@ -36,7 +36,6 @@ interface Props {
 
 function ObjectListComponent(props: Props): JSX.Element {
     const {
-        readonly,
         workspace,
         statesHidden,
         statesLocked,
@@ -44,6 +43,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesOrdering,
         sortedStatesID,
         objectStates,
+        visibleSkeletonElements,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
         showGroundTruth,
@@ -61,7 +61,6 @@ function ObjectListComponent(props: Props): JSX.Element {
     return (
         <>
             <ObjectListHeader
-                readonly={readonly}
                 workspace={workspace}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
@@ -101,9 +100,10 @@ function ObjectListComponent(props: Props): JSX.Element {
                                     </div>
                                 )}
                                 <ObjectItemContainer
-                                    readonly={readonly}
                                     objectStates={objectStates}
                                     clientID={id}
+                                    visibleSkeletonElements={visibleSkeletonElements}
+                                    allowSimplifyLifecycle
                                 />
                             </React.Fragment>
                         );

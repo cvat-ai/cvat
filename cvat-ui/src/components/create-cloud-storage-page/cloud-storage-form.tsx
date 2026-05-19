@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
@@ -14,7 +15,7 @@ import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 
-import { CombinedState, CloudStorage } from 'reducers';
+import { CombinedState } from 'reducers';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';
@@ -27,7 +28,7 @@ import GCSLocation from './gcs-locatiion';
 import ManifestsManager from './manifests-manager';
 
 export interface Props {
-    cloudStorage?: CloudStorage;
+    cloudStorage?: CombinedState['cloudStorages']['current'][number];
 }
 
 type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'connection_string';
@@ -66,12 +67,18 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [providerType, setProviderType] = useState<ProviderType | null>(null);
     const [credentialsType, setCredentialsType] = useState<CredentialsType | null>(null);
     const [selectedRegion, setSelectedRegion] = useState<string | undefined>(undefined);
-    const newCloudStorageId = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.id);
-    const attaching = useSelector((state: CombinedState) => state.cloudStorages.activities.creates.attaching);
-    const updating = useSelector((state: CombinedState) => state.cloudStorages.activities.updates.updating);
-    const updatedCloudStorageId = useSelector(
-        (state: CombinedState) => state.cloudStorages.activities.updates.cloudStorageID,
-    );
+    const {
+        newCloudStorageId,
+        attaching,
+        updating,
+        updatedCloudStorageId,
+    } = useSelector((state: CombinedState) => ({
+        newCloudStorageId: state.cloudStorages.activities.creates.id,
+        attaching: state.cloudStorages.activities.creates.attaching,
+        updating: state.cloudStorages.activities.updates.updating,
+        updatedCloudStorageId: state.cloudStorages.activities.updates.cloudStorageID,
+    }), shallowEqual);
+
     const loading = cloudStorage ? updating : attaching;
     const fakeCredentialsData = {
         accountName: 'X'.repeat(24),
@@ -519,7 +526,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                 {credentialsBlock()}
                 <Form.Item
                     label='Endpoint URL'
-                    help='You can specify an endpoint for your storage when using the AWS S3 cloud storage compatible API'
+                    help='You can specify an endpoint for your storage when using an S3-compatible cloud storage API'
                     name='endpoint_url'
                     {...internalCommonProps}
                 >
@@ -650,13 +657,13 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Select.Option value={ProviderType.AWS_S3_BUCKET}>
                         <span className='cvat-cloud-storage-select-provider'>
                             <S3Provider />
-                            AWS S3
+                            Amazon S3
                         </span>
                     </Select.Option>
                     <Select.Option value={ProviderType.AZURE_CONTAINER}>
                         <span className='cvat-cloud-storage-select-provider'>
                             <AzureProvider />
-                            Azure Blob Container
+                            Azure Blob Storage
                         </span>
                     </Select.Option>
                     <Select.Option value={ProviderType.GOOGLE_CLOUD_STORAGE}>

@@ -62,7 +62,7 @@
         position: absolute;
         right: 0;
         top: 50%;
-        transform: translateY(-100%);
+        transform: translateY(-75%);
         font-size: 16px;
         margin-top: $grid-unit-size;
         padding: 0 $grid-unit-size * 2;
@@ -70,14 +70,6 @@
 
     .cvat-job-item-dates-info {
         margin-top: $grid-unit-size;
-    }
-
-    .cvat-consensus-job-collapse {
-        margin-top: $grid-unit-size * 1.5;
-
-        .ant-collapse-item > .ant-collapse-header {
-            align-items: center;
-        }
     }
 
     .job-actions-menu {

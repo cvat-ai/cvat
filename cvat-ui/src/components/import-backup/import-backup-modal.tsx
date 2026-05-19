@@ -15,6 +15,7 @@ import { InboxOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { importActions, importBackupAsync } from 'actions/import-actions';
 import SourceStorageField from 'components/storage/source-storage-field';
+import { shallowEqual } from 'utils/redux';
 import Input from 'antd/lib/input/Input';
 
 import { Storage, StorageData, StorageLocation } from 'cvat-core-wrapper';
@@ -35,13 +36,21 @@ const initialValues: FormValues = {
 function ImportBackupModal(): JSX.Element {
     const [form] = Form.useForm();
     const [file, setFile] = useState<File | null>(null);
-    const instanceType = useSelector((state: CombinedState) => state.import.instanceType);
-    const modalVisible = useSelector((state: CombinedState) => {
-        if (instanceType && ['project', 'task'].includes(instanceType)) {
-            return state.import[`${instanceType}s` as 'projects' | 'tasks'].backup.modalVisible;
+    const { instanceType, modalVisible } = useSelector((state: CombinedState) => {
+        const instanceT = state.import.instanceType;
+        let visible = false;
+
+        if (instanceT === 'project') {
+            visible = state.import.projects.backup.modalVisible;
         }
-        return false;
-    });
+
+        if (instanceT === 'task') {
+            visible = state.import.tasks.backup.modalVisible;
+        }
+
+        return { instanceType: instanceT, modalVisible: visible };
+    }, shallowEqual);
+
     const dispatch = useDispatch();
     const [selectedSourceStorage, setSelectedSourceStorage] = useState<StorageData>({
         location: StorageLocation.LOCAL,
@@ -127,7 +136,13 @@ function ImportBackupModal(): JSX.Element {
                 cloudStorageId: values.sourceStorage?.cloudStorageId,
             });
 
-            dispatch(importBackupAsync(instanceType, sourceStorage, file || (values.fileName) as string));
+            dispatch(
+                importBackupAsync(
+                    instanceType as 'project' | 'task',
+                    sourceStorage,
+                    file || (values.fileName) as string,
+                ),
+            );
 
             Notification.info({
                 message: `The ${instanceType} creating from the backup has been started`,

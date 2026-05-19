@@ -63,9 +63,9 @@ context('Webhooks pipeline.', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteProjects(authKey, [project.name]);
-            cy.deleteOrganizations(authKey, [organizationParams.shortName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteProjects(authHeaders, [project.name]);
+            cy.deleteOrganizations(authHeaders, [organizationParams.shortName]);
         });
     });
 

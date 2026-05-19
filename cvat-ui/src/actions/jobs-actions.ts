@@ -29,11 +29,11 @@ export enum JobsActionTypes {
     DELETE_JOB_FAILED = 'DELETE_JOB_FAILED',
 }
 
-interface JobsList extends Array<any> {
+export interface JobsList extends Array<Job> {
     count: number;
 }
 
-const jobsActions = {
+export const jobsActions = {
     getJobs: (query: Partial<JobsQuery>, fetchingTimestamp: number) => (
         createAction(JobsActionTypes.GET_JOBS, { query, fetchingTimestamp })
     ),
@@ -117,7 +117,7 @@ export const createJobAsync = (data: JobData): ThunkAction<Promise<Job>> => asyn
     try {
         const extras = {
             frame_selection_method: data.frameSelectionMethod,
-            seed: data.seed,
+            random_seed: data.randomSeed,
             frame_count: data.frameCount,
             frames_per_job_count: data.framesPerJobCount,
         };

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
@@ -11,7 +11,7 @@ import Descriptions from 'antd/lib/descriptions';
 import { MoreOutlined } from '@ant-design/icons';
 
 import { Job, JobType } from 'cvat-core-wrapper';
-import { useCardHeightHOC } from 'utils/hooks';
+import { useCardHeightHOC, useContextMenuClick } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import { CombinedState } from 'reducers';
 import JobActionsComponent from './actions-menu';
@@ -26,24 +26,33 @@ const useCardHeight = useCardHeightHOC({
 
 interface Props {
     job: Job;
+    selected: boolean;
+    onClick: (event: React.MouseEvent) => boolean;
+    onApplyFilter?: (filter: string | null) => void;
 }
 
-function JobCardComponent(props: Props): JSX.Element {
-    const { job } = props;
+function JobCardComponent(props: Readonly<Props>): JSX.Element {
+    const {
+        job, selected, onClick, onApplyFilter,
+    } = props;
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
 
     const history = useHistory();
     const height = useCardHeight();
-    const onClick = (event: React.MouseEvent): void => {
-        const url = `/tasks/${job.taskId}/jobs/${job.id}`;
-        if (event.ctrlKey) {
-            window.open(url, '_blank', 'noopener noreferrer');
-        } else {
-            history.push(url);
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
+    const handleCardClick = useCallback((event: React.MouseEvent): void => {
+        const cancel = onClick(event);
+        if (!cancel) {
+            const url = `/tasks/${job.taskId}/jobs/${job.id}`;
+            if (event.ctrlKey) {
+                window.open(url, '_blank', 'noopener noreferrer');
+            } else {
+                history.push(url);
+            }
         }
-    };
+    }, [job, onClick]);
 
     const style = {};
     if (deleted) {
@@ -54,19 +63,25 @@ function JobCardComponent(props: Props): JSX.Element {
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
         tag = 'Ground truth';
-    } else if (job.type === JobType.ANNOTATION && job.consensusReplicas > 0) {
-        tag = 'Consensus';
+    } else if (job.replicasCount > 0) {
+        tag = 'Parent';
+    } else if (job.parentJobId !== null) {
+        tag = 'Replica';
     }
 
-    return (
+    const cardClassName = `cvat-job-page-list-item${selected ? ' cvat-item-selected' : ''}`;
+
+    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
+    const card = (
         <Card
+            ref={itemRef}
             style={{ ...style, height }}
-            className='cvat-job-page-list-item'
+            className={cardClassName}
             cover={(
                 <>
                     <Preview
                         job={job}
-                        onClick={onClick}
+                        onClick={handleCardClick}
                         loadingClassName='cvat-job-item-loading-preview'
                         emptyPreviewClassName='cvat-job-item-empty-preview'
                         previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
@@ -81,6 +96,8 @@ function JobCardComponent(props: Props): JSX.Element {
                 </>
             )}
             hoverable
+            onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
         >
             <Descriptions column={1} size='small'>
                 <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>
@@ -91,14 +108,22 @@ function JobCardComponent(props: Props): JSX.Element {
                     <Descriptions.Item label='Assignee'> </Descriptions.Item>
                 )}
             </Descriptions>
-            <JobActionsComponent
-                jobInstance={job}
-                consensusJobsPresent={false} // consensus merging is not allowed from jobs page
-                triggerElement={
-                    <MoreOutlined className='cvat-job-card-more-button' />
-                }
-            />
+            <div
+                onClick={handleContextMenuClick}
+                className='cvat-job-card-more-button cvat-actions-menu-button'
+            >
+                <MoreOutlined className='cvat-menu-icon' />
+            </div>
         </Card>
+    );
+
+    return (
+        <JobActionsComponent
+            jobInstance={job}
+            dropdownTrigger={['contextMenu']}
+            triggerElement={card}
+            onApplyFilter={onApplyFilter}
+        />
     );
 }
 

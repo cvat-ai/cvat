@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    shallowEqual, useDispatch, useSelector, useStore,
+    useDispatch, useSelector, useStore,
 } from 'react-redux';
 import React, {
     useCallback, useEffect, useReducer, useRef,
@@ -17,6 +17,7 @@ import Select from 'antd/lib/select';
 import Alert from 'antd/lib/alert';
 import Button from 'antd/lib/button';
 import message from 'antd/lib/message';
+import { shallowEqual, ActionUnion, createAction } from 'utils/redux';
 
 import {
     ActiveControl, CombinedState, NavigationType,
@@ -26,7 +27,6 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
     Job, Label, LabelType, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
-import { ActionUnion, createAction } from 'utils/redux';
 import {
     rememberObject, changeFrameAsync, setNavigationType,
     removeObjectAsync, finishCurrentJobAsync,
@@ -304,14 +304,14 @@ function SingleShapeSidebar(): JSX.Element {
 
             savingRef.current = true;
 
-            appDispatch(finishCurrentJobAsync()).then(() => {
+            appDispatch(finishCurrentJobAsync(() => {
                 message.open({
                     duration: 1,
                     type: 'success',
                     content: 'You tagged the job as completed',
                     className: 'cvat-annotation-job-finished-success',
                 });
-            }).finally(() => {
+            })).finally(() => {
                 appDispatch(setNavigationType(NavigationType.REGULAR));
                 dispatch(actionCreators.switchAutoNextFrame(false));
                 savingRef.current = false;
@@ -393,7 +393,7 @@ function SingleShapeSidebar(): JSX.Element {
     const siderProps: SiderProps = {
         className: 'cvat-single-shape-annotation-sidebar',
         theme: 'light',
-        width: 300,
+        width: 320,
         collapsedWidth: 0,
         reverseArrow: true,
         collapsible: true,

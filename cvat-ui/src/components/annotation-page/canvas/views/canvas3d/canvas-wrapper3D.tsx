@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useRef } from 'react';
-import { connect, useSelector } from 'react-redux';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { connect, useDispatch, useSelector } from 'react-redux';
 import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
@@ -23,11 +23,15 @@ import {
     updateActiveControl as updateActiveControlAction,
     updateAnnotationsAsync,
     updateCanvasContextMenu,
+    getDataFailed,
+    canvasErrorOccurred,
+    collapseObjectItems,
 } from 'actions/annotation-actions';
 import {
     ActiveControl,
     ColorBy, CombinedState, ContextMenuType, Workspace,
 } from 'reducers';
+import { shallowEqual } from 'utils/redux';
 import {
     OrientationVisibility, CameraAction, Canvas3d, ViewsDOM,
 } from 'cvat-canvas3d-wrapper';
@@ -41,6 +45,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { scrollAndExpandState } from 'utils/objects-sidebar';
 
 const cvat = getCore();
 
@@ -105,6 +110,18 @@ const componentShortcuts = {
         sequences: ['alt+k'],
         scope: ShortcutScope['3D_ANNOTATION_WORKSPACE'],
     },
+    NEXT_OBJECT: {
+        name: 'Next object',
+        description: 'Go to the next object and center it on the canvas',
+        sequences: ['tab'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+    PREVIOUS_OBJECT: {
+        name: 'Previous object',
+        description: 'Go to the previous object and center it on the canvas',
+        sequences: ['shift+tab'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -116,11 +133,13 @@ interface StateToProps {
     outlineColor: string;
     colorBy: ColorBy;
     orientationVisibility: OrientationVisibility;
+    controlPointsSize: number;
+    focusedObjectPadding: number;
     frameFetching: boolean;
     canvasInstance: Canvas3d;
     jobInstance: Job;
     frameData: any;
-    annotations: any[];
+    annotations: ObjectState[];
     contextMenuVisibility: boolean;
     activeLabelID: number | null;
     activatedStateID: number | null;
@@ -139,8 +158,11 @@ interface DispatchToProps {
     onSplitAnnotations(state: ObjectState): void;
     onUpdateAnnotations(states: ObjectState[]): void;
     onActivateObject: (activatedStateID: number | null) => void;
+    onExpandObject(objectState: ObjectState): void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
+    onGetDataFailed(error: Error): void;
+    onCanvasErrorOccurred(error: Error): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -165,6 +187,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 resetZoom,
             },
+            workspace: {
+                controlPointsSize,
+                focusedObjectPadding,
+            },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, orientationVisibility,
             },
@@ -185,6 +211,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         outlined,
         outlineColor,
         orientationVisibility,
+        controlPointsSize,
+        focusedObjectPadding,
         activeLabelID,
         activatedStateID,
         activeObjectType,
@@ -220,6 +248,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
             dispatch(activateObject(activatedStateID, null, null));
         },
+        onExpandObject(objectState: ObjectState): void {
+            dispatch(collapseObjectItems([objectState], false));
+        },
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
@@ -235,6 +266,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateActiveControl(activeControl: ActiveControl): void {
             dispatch(updateActiveControlAction(activeControl));
         },
+        onGetDataFailed(error: Error): void {
+            dispatch(getDataFailed(error));
+        },
+        onCanvasErrorOccurred(error: Error): void {
+            dispatch(canvasErrorOccurred(error));
+        },
     };
 }
 
@@ -249,25 +286,87 @@ const Spinner = React.memo(() => (
 export const PerspectiveViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
-        const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
+        const dispatch = useDispatch();
+        const {
+            canvas,
+            canvasIsReady,
+            keyMap,
+            normalizedKeyMap,
+            annotations,
+            activatedStateID,
+            curZLayer,
+        } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+            keyMap: state.shortcuts.keyMap,
+            normalizedKeyMap: state.shortcuts.normalizedKeyMap,
+            annotations: state.annotation.annotations.states as ObjectState[],
+            activatedStateID: state.annotation.annotations.activatedStateID,
+            curZLayer: state.annotation.annotations.zLayer.cur,
+        }), shallowEqual);
 
         const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
             canvas.keyControls(new KeyboardEvent('keydown', { code, altKey, shiftKey }));
         };
 
+        const navigateObject = (step: number): void => {
+            const filteredStates = annotations.filter(
+                (state) => !state.outside && !state.hidden && state.zOrder <= curZLayer,
+            );
+
+            if (!filteredStates.length) {
+                return;
+            }
+
+            const currentIndex = filteredStates.findIndex((state) => state.clientID === activatedStateID);
+            let nextIndex = currentIndex + step;
+
+            if (nextIndex > filteredStates.length - 1) {
+                nextIndex = 0;
+            } else if (nextIndex < 0) {
+                nextIndex = filteredStates.length - 1;
+            }
+
+            const nextState = filteredStates[nextIndex];
+
+            if (!nextState || nextState.clientID === null || nextState.clientID === activatedStateID) {
+                return;
+            }
+
+            dispatch(activateObject(nextState.clientID, null, null));
+            canvas.activate(nextState.clientID);
+
+            // Center camera on the selected object in 3D workspace
+            canvas.focus(nextState.clientID);
+
+            scrollAndExpandState(nextState, (state) => {
+                dispatch(collapseObjectItems([state], false));
+            });
+        };
+
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-            TILT_UP: () => {}, // Handled by CVAT 3D Independently
-            TILT_DOWN: () => {},
-            ROTATE_LEFT: () => {},
-            ROTATE_RIGHT: () => {},
-            MOVE_UP: () => {},
-            MOVE_DOWN: () => {},
-            MOVE_LEFT: () => {},
-            MOVE_RIGHT: () => {},
-            ZOOM_IN: () => {},
-            ZOOM_OUT: () => {},
+            TILT_UP: () => { }, // Handled by CVAT 3D Independently
+            TILT_DOWN: () => { },
+            ROTATE_LEFT: () => { },
+            ROTATE_RIGHT: () => { },
+            MOVE_UP: () => { },
+            MOVE_DOWN: () => { },
+            MOVE_LEFT: () => { },
+            MOVE_RIGHT: () => { },
+            ZOOM_IN: () => { },
+            ZOOM_OUT: () => { },
+            NEXT_OBJECT: (event?: KeyboardEvent) => {
+                if (event) {
+                    event.preventDefault();
+                }
+                navigateObject(1);
+            },
+            PREVIOUS_OBJECT: (event?: KeyboardEvent) => {
+                if (event) {
+                    event.preventDefault();
+                }
+                navigateObject(-1);
+            },
         };
 
         function ArrowGroup(): JSX.Element {
@@ -387,7 +486,7 @@ export const PerspectiveViewComponent = React.memo(
 
         return (
             <div className='cvat-canvas3d-perspective'>
-                { !canvasIsReady && <Spinner /> }
+                {!canvasIsReady && <Spinner />}
                 <div
                     className='cvat-canvas-container cvat-canvas-container-overflow'
                     ref={ref}
@@ -403,8 +502,10 @@ export const PerspectiveViewComponent = React.memo(
 export const TopViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+        const { canvas, canvasIsReady } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+        }), shallowEqual);
 
         useEffect(() => {
             if (ref.current) {
@@ -414,7 +515,7 @@ export const TopViewComponent = React.memo(
 
         return (
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-topview'>
-                { !canvasIsReady && <Spinner /> }
+                {!canvasIsReady && <Spinner />}
                 <div className='cvat-canvas3d-header'>Top</div>
                 <div
                     className='cvat-canvas3d-fullsize'
@@ -428,8 +529,10 @@ export const TopViewComponent = React.memo(
 export const SideViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+        const { canvas, canvasIsReady } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+        }), shallowEqual);
 
         useEffect(() => {
             if (ref.current) {
@@ -439,7 +542,7 @@ export const SideViewComponent = React.memo(
 
         return (
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-sideview'>
-                { !canvasIsReady && <Spinner /> }
+                {!canvasIsReady && <Spinner />}
                 <div className='cvat-canvas3d-header'>Side</div>
                 <div
                     className='cvat-canvas3d-fullsize'
@@ -453,8 +556,10 @@ export const SideViewComponent = React.memo(
 export const FrontViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+        const { canvas, canvasIsReady } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+        }), shallowEqual);
 
         useEffect(() => {
             if (ref.current) {
@@ -464,7 +569,7 @@ export const FrontViewComponent = React.memo(
 
         return (
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-frontview'>
-                { !canvasIsReady && <Spinner /> }
+                {!canvasIsReady && <Spinner />}
                 <div className='cvat-canvas3d-header'>Front</div>
                 <div
                     className='cvat-canvas3d-fullsize'
@@ -483,6 +588,8 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         outlined,
         outlineColor,
         orientationVisibility,
+        controlPointsSize,
+        focusedObjectPadding,
         selectedOpacity,
         colorBy,
         contextMenuVisibility,
@@ -501,6 +608,10 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         onMergeAnnotations,
         onSplitAnnotations,
         onGroupAnnotations,
+        onGetDataFailed,
+        onCanvasErrorOccurred,
+        onActivateObject,
+        onUpdateContextMenu,
     } = props;
 
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
@@ -516,6 +627,15 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     const onCanvasDragDone = (): void => {
         updateActiveControl(ActiveControl.CURSOR);
     };
+
+    const onCanvasErrorOccurrence = useCallback((event: any): void => {
+        const { exception, domain } = event.detail;
+        if (domain === 'data fetching') {
+            onGetDataFailed(exception);
+        } else {
+            onCanvasErrorOccurred(exception);
+        }
+    }, [onGetDataFailed, onCanvasErrorOccurred]);
 
     const animateCanvas = (): void => {
         canvasInstance.render();
@@ -558,7 +678,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     };
 
     const onCanvasClick = (e: MouseEvent): void => {
-        const { onUpdateContextMenu } = props;
         if (contextMenuVisibility) {
             onUpdateContextMenu(false, e.clientX, e.clientY, ContextMenuType.CANVAS_SHAPE);
         }
@@ -586,10 +705,26 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     };
 
     const onCanvasShapeSelected = (event: any): void => {
-        const { onActivateObject } = props;
         const { clientID } = event.detail;
         onActivateObject(clientID);
         canvasInstance.activate(clientID);
+    };
+
+    const onCanvasShapeClicked = (event: CustomEvent<{ clientID: number | null }>): void => {
+        const { onExpandObject } = props;
+        const { clientID } = event.detail;
+
+        if (clientID === null) {
+            return;
+        }
+
+        const objectState = annotations.find((state) => state.clientID === clientID);
+
+        if (!objectState) {
+            return;
+        }
+
+        scrollAndExpandState(objectState, onExpandObject);
     };
 
     const onCanvasEditDone = (event: any): void => {
@@ -621,6 +756,15 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     }, []);
 
     useEffect(() => {
+        const canvasInstanceDOM = canvasInstance.html();
+        canvasInstanceDOM.perspective.addEventListener('canvas.error', onCanvasErrorOccurrence);
+
+        return () => {
+            canvasInstanceDOM.perspective.removeEventListener('canvas.error', onCanvasErrorOccurrence);
+        };
+    }, [onCanvasErrorOccurrence, canvasInstance]);
+
+    useEffect(() => {
         canvasInstance.activate(activatedStateID);
     }, [activatedStateID]);
 
@@ -638,19 +782,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         };
     }, [resetZoom]);
 
-    const updateShapesView = (): void => {
-        canvasInstance.configureShapes({
-            opacity,
-            outlined,
-            outlineColor,
-            selectedOpacity,
-            colorBy,
-            orientationVisibility,
-        });
-    };
-
     const onContextMenu = (event: any): void => {
-        const { onUpdateContextMenu, onActivateObject } = props;
         onActivateObject(event.detail.clientID);
         onUpdateContextMenu(
             event.detail.clientID !== null,
@@ -676,31 +808,63 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         onSplitAnnotations(state);
     };
 
+    const onCanvasDoubleClicked = (event: CustomEvent<{ clientID: number | null }>): void => {
+        const { clientID } = event.detail;
+
+        if (clientID === null) {
+            return;
+        }
+
+        onActivateObject(clientID);
+        canvasInstance.activate(clientID);
+
+        if (contextMenuVisibility) {
+            onUpdateContextMenu(false, 0, 0, ContextMenuType.CANVAS_SHAPE);
+        }
+    };
+
     useEffect(() => {
-        updateShapesView();
-    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy, orientationVisibility]);
+        canvasInstance.configure({
+            colorBy,
+            shapeOpacity: opacity,
+            selectedShapeOpacity: selectedOpacity,
+            orientationVisibility,
+            outlinedBorders: outlined ? outlineColor : false,
+            controlPointsSize,
+            focusedObjectPadding,
+        });
+    }, [
+        opacity, outlined, outlineColor,
+        selectedOpacity, colorBy, focusedObjectPadding,
+        orientationVisibility, controlPointsSize,
+
+    ]);
 
     useEffect(() => {
         const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;
         updateCanvas();
         canvasInstanceDOM.perspective.addEventListener('canvas.drawn', onCanvasShapeDrawn);
         canvasInstanceDOM.perspective.addEventListener('canvas.selected', onCanvasShapeSelected);
+        canvasInstanceDOM.perspective.addEventListener('canvas.clicked', onCanvasShapeClicked as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
         canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
         canvasInstanceDOM.perspective.addEventListener('canvas.grouped', onCanvasObjectsGrouped as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
+        canvasInstanceDOM.perspective.addEventListener('canvas.doubleclicked', onCanvasDoubleClicked as EventListener);
 
         return () => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.drawn', onCanvasShapeDrawn);
             canvasInstanceDOM.perspective.removeEventListener('canvas.selected', onCanvasShapeSelected);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.clicked', onCanvasShapeClicked as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
             canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
             canvasInstanceDOM.perspective.removeEventListener('canvas.grouped', onCanvasObjectsGrouped as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.doubleclicked', onCanvasDoubleClicked as EventListener);
         };
     }, [frameData, annotations, activeLabelID, contextMenuVisibility, activeObjectType]);
 

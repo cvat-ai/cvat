@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import Callable, Generic, Iterable, Mapping, Sequence, TypeVar
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Generic, TypeVar
 
 import attrs
 import numpy as np

@@ -15,6 +15,10 @@ wait_for_redis_inmem() {
     wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
 }
 
+wait_for_clickhouse() {
+    wait-for-it "${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT:-8123}" -t 0
+}
+
 cmd_bash() {
     exec bash "$@"
 }
@@ -26,6 +30,11 @@ cmd_init() {
     wait_for_redis_inmem
     ~/manage.py migrateredis
     ~/manage.py syncperiodicjobs
+
+    if [[ "${CVAT_ANALYTICS:-0}" == "1" ]]; then
+        wait_for_clickhouse
+        python components/analytics/clickhouse/init.py
+    fi
 }
 
 _get_includes() {
@@ -92,9 +101,27 @@ cmd_run() {
             fail "run worker: expected at least 1 queue name"
         fi
 
-        queue_list="${@:2}"
+        queues=()
+        extra_flags=()
+        for arg in "${@:2}"; do
+            if [[ "$arg" == --* ]]; then
+                extra_flags+=("$arg")
+            else
+                queues+=("$arg")
+            fi
+        done
+
+        if [ ${#queues[@]} -eq 0 ]; then
+            fail "run worker: expected at least 1 queue name"
+        fi
+
+        queue_list="${queues[*]}"
         echo "Workers to run: $queue_list"
+        if [ ${#extra_flags[@]} -gt 0 ]; then
+            echo "Extra rqworker flags: ${extra_flags[*]}"
+        fi
         export CVAT_QUEUES=$queue_list
+        export CVAT_RQWORKER_EXTRA_FLAGS="${extra_flags[*]:-}"
 
         postgres_app_name+=":${queue_list// /+}"
 

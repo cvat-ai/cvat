@@ -85,6 +85,7 @@ class Invitation(models.Model):
         return None
 
     @property
+    @extend_schema_field(OpenApiTypes.BOOL)
     def accepted(self):
         return self.membership.is_active
 

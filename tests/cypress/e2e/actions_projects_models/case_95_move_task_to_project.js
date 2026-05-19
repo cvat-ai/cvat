@@ -7,25 +7,27 @@
 // Temporarily disabling the test for Firefox browser
 // Cypress issue: https://github.com/cypress-io/cypress/issues/18325
 
+import { defaultTaskSpec } from '../../support/default-specs';
+
 context('Move a task to a project.', { browser: '!firefox' }, () => {
-    const caseID = '95';
+    const caseId = '95';
     const task = {
-        name: `Case ${caseID}`,
+        name: `Case ${caseId}`,
         label: 'Tree',
         attrName: 'Kind',
         attrValue: 'Oak',
-        nameSecond: `Case ${caseID} second`,
+        nameSecond: `Case ${caseId} second`,
         labelSecond: 'Tree',
         attrNameSecond: 'Kind',
         attrValueSecond: 'Oak',
-        name3d: `Case ${caseID} 3D`,
+        name3d: `Case ${caseId} 3D`,
         label3d: 'Bus',
         attrName3d: 'Type',
         attrValue3d: 'City bus',
     };
 
     const project = {
-        name: `Case ${caseID}`,
+        name: `Case ${caseId}`,
         label: 'Tree',
         attrName: 'Kind',
         attrValue: 'Oak',
@@ -39,7 +41,7 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
     const posY = 10;
     const color = 'gray';
     const archiveName = `${imageFileName}.zip`;
-    const archiveName3d = '../../cypress/e2e/canvas3d_functionality/assets/test_canvas3d.zip';
+    const archiveName3d = 'test_canvas3d.zip';
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
@@ -47,13 +49,22 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
     before(() => {
         cy.visit('/auth/login');
         cy.login();
+        cy.then(() => {
+            // create 3d task from share
+            const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+                taskName: task.name3d,
+                labelName: task.label3d,
+                attributes: [{ name: task.attrName3d, values: task.attrValue3d, type: 'text' }],
+                serverFiles: [archiveName3d],
+            });
+            cy.headlessCreateTask(taskSpec, dataSpec, extras);
+        });
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, task.name, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.goToTaskList();
         cy.createAnnotationTask(
             task.nameSecond, task.labelSecond, task.attrNameSecond, task.attrValueSecond, archiveName,
         );
-        cy.createAnnotationTask(task.name3d, task.label3d, task.attrName3d, task.attrValue3d, archiveName3d);
     });
 
     beforeEach(() => {
@@ -69,7 +80,7 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         cy.deleteProjectViaActions(project.name);
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Move a task from task list.', () => {
             cy.openProject(project.name);
             cy.get('.cvat-tasks-list-item').should('not.exist');
@@ -83,7 +94,7 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
             cy.get('.cvat-tasks-list-item').should('exist').and('have.length', 2);
         });
 
-        it('Move a task from task. Attempt to add a 3D task to a project with a 2D task.', () => {
+        it('Move a task from task view. Attempt to add a 3D task to a 2D task project. Fail.', () => {
             cy.openProject(project.name);
             cy.get('.cvat-tasks-list-item').should('not.exist');
             cy.goToTaskList();
