@@ -8,9 +8,12 @@ from django.db import transaction
 from django.http import HttpRequest
 from rest_framework.renderers import JSONRenderer
 from rest_framework.request import Request
+from rest_framework.settings import api_settings
 from rest_framework.throttling import BaseThrottle
 
-from cvat.apps.engine.log import vlogger
+from cvat.apps.engine.log import ServerLogManager, vlogger
+
+slogger = ServerLogManager(__name__)
 
 
 def event_scope(action, resource):
@@ -54,9 +57,21 @@ def get_remote_addr(request) -> str | None:
         return None
 
     try:
-        return BaseThrottle().get_ident(request)
+        remote_addr = BaseThrottle().get_ident(request)
     except Exception:
+        slogger.glob.debug("Failed to resolve remote address", exc_info=True)
         return None
+
+    if not remote_addr:
+        slogger.glob.debug(
+            "Resolved empty remote address. "
+            "X-Forwarded-For=%r, REMOTE_ADDR=%r, NUM_PROXIES=%r",
+            request.META.get("HTTP_X_FORWARDED_FOR"),
+            request.META.get("REMOTE_ADDR"),
+            api_settings.NUM_PROXIES,
+        )
+
+    return remote_addr
 
 
 def record_server_event(
