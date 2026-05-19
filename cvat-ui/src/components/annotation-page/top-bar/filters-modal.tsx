@@ -53,23 +53,21 @@ const getConvertedInputType = (inputType: string): string => {
 
 const adjustName = (name: string): string => name.replace(/\./g, '\u2219');
 
-const addAttributeSubfields = (
-    subfields: Record<string, any>,
-    key: string,
+const buildAttributeSubfield = (
     displayLabel: string,
     attributes: any[],
-): void => {
+): Record<string, any> | null => {
     if (!attributes.length) {
-        return;
+        return null;
     }
 
-    subfields[key] = {
+    const attributeSubfield: Record<string, any> = {
         type: '!struct',
         label: displayLabel,
         subfields: {},
     };
 
-    const attrSubfields = subfields[key].subfields;
+    const attrSubfields = attributeSubfield.subfields;
     attributes.forEach((attr: any): void => {
         const adjustedAttrName = adjustName(attr.name);
         attrSubfields[adjustedAttrName] = {
@@ -85,17 +83,17 @@ const addAttributeSubfields = (
             };
         }
     });
+
+    return attributeSubfield;
 };
 
 const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
     const subfields: Record<string, any> = {};
     labels.forEach((label: any): void => {
-        addAttributeSubfields(
-            subfields,
-            adjustName(label.name),
-            label.name,
-            label.attributes,
-        );
+        const attributeSubfield = buildAttributeSubfield(label.name, label.attributes);
+        if (attributeSubfield) {
+            subfields[adjustName(label.name)] = attributeSubfield;
+        }
     });
 
     return subfields;
@@ -124,7 +122,10 @@ const getKeypointAttributesSubfields = (labels: Label[]): Record<string, any> =>
             label.structure.sublabels.forEach((sublabel: any): void => {
                 const sublabelDisplayLabel = `${label.name} / ${sublabel.name}`;
                 const sublabelKey = adjustName(sublabelDisplayLabel);
-                addAttributeSubfields(subfields, sublabelKey, sublabelDisplayLabel, sublabel.attributes);
+                const attributeSubfield = buildAttributeSubfield(sublabelDisplayLabel, sublabel.attributes);
+                if (attributeSubfield) {
+                    subfields[sublabelKey] = attributeSubfield;
+                }
             });
         }
     });
