@@ -139,9 +139,21 @@ def _validate_input_annotations(
         task_start = db_data.start_frame
         task_stop = db_data.stop_frame
         for interval in annotations.intervals:
-            if not annotations.is_interval_inside(interval, task_start, task_stop):
+            if interval["stop"] is not None and interval["start"] > interval["stop"]:
+                interval_ref = (
+                    f"Interval {interval['id']}" if interval.get("id") is not None else "Interval"
+                )
                 raise ValidationError(
-                    f"Interval cannot be outside the task boundaries"
+                    f"{interval_ref} start must be <= stop, got "
+                    f"[{interval['start']}, {interval['stop']}]"
+                )
+
+            if not annotations.is_interval_inside(interval, task_start, task_stop):
+                interval_ref = (
+                    f"Interval {interval['id']}" if interval.get("id") is not None else "Interval"
+                )
+                raise ValidationError(
+                    f"{interval_ref} cannot be outside the task boundaries"
                     f"[{task_start}, {task_stop}], got "
                     f"[{interval['start']}, {interval['stop']}]"
                 )

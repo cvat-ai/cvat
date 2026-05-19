@@ -8,6 +8,7 @@ import time
 from contextlib import closing
 from datetime import timedelta
 
+import datumaro.util
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.dataset_manager.bindings import CommonData
@@ -55,12 +56,17 @@ def _export(dst_file, temp_dir, instance_data: CommonData, save_images=False):
             csv_writer.writerow(row_dict)
 
 
-def parse_time(v: str) -> timedelta:
+def parse_time(v: str) -> timedelta | None:
+    if v == "":
+        return None
+
     for fmt_string in ("%H:%M:%S.%f", "%H:%M:%S"):
         try:
             parsed_time = time.strptime(v, fmt_string)
             if fmt_string.endswith(".%f"):
-                microseconds = int(v.split(".", maxsplit=1)[-1])
+                # time.strptime drops sub-second precision, so recover it from the raw string.
+                frac = v.split(".", maxsplit=1)[-1]
+                microseconds = int(frac.ljust(6, "0")[:6])
             else:
                 microseconds = 0
         except ValueError:
@@ -93,8 +99,9 @@ def _import(src_file, temp_dir, instance_data: CommonData, load_data_callback=No
                 start=parse_time(row.pop("start")),
                 stop=parse_time(row.pop("stop")),
                 label=row.pop("label"),
-                group=int(row.pop("group", 0)),
-                source=SourceType.FILE.value,
+                group=datumaro.util.cast(row.pop("group", 0), int, default=0),
+                source=SourceType.FILE,
+                score=datumaro.util.cast(row.pop("score", 1), float, default=1),
                 attributes=[CommonData.Attribute(name=k, value=v) for k, v in row.items()],
             )
             instance_data.add_interval(interval)

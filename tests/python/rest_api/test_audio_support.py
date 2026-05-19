@@ -332,6 +332,40 @@ class TestAudioAnnotations:
         assert server_annotations.intervals[0].stop == payload.intervals[0].stop
 
     @parametrize("instance_type", ["task", "job"])
+    def test_can_save_interval_with_null_stop(self, tasks, instance_type: str):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+
+        task = self.client.tasks.retrieve(task_id)
+        task.update({"labels": [{"name": "test", "type": "interval"}]})
+        label = task.get_labels()[-1]
+
+        payload = models.LabeledDataRequest(
+            intervals=[
+                models.LabeledIntervalRequest(
+                    label_id=label.id,
+                    start=0,
+                    stop=None,
+                ),
+            ]
+        )
+
+        if instance_type == "task":
+            instance = task
+        elif instance_type == "job":
+            instance = task.get_jobs()[0]
+        else:
+            assert False, instance_type
+
+        instance.set_annotations(payload)
+
+        server_annotations = instance.get_annotations()
+
+        assert len(server_annotations.intervals) == 1
+        assert server_annotations.intervals[0].label_id == payload.intervals[0].label_id
+        assert server_annotations.intervals[0].start == payload.intervals[0].start
+        assert server_annotations.intervals[0].stop is None
+
+    @parametrize("instance_type", ["task", "job"])
     def test_cant_save_intervals_outside_range(self, tasks, instance_type: str):
         task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
 

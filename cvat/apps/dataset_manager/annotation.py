@@ -11,6 +11,7 @@ from itertools import chain
 from typing import Any
 
 import numpy as np
+from rest_framework import serializers
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
@@ -201,7 +202,9 @@ class AnnotationIR:
         if self.intervals:
             for interval in self.intervals:
                 if not self.is_interval_inside(interval, start, stop):
-                    raise Exception(
+                    # Not necessarily a user issue, but report it to allow easier troubleshooting
+                    # by the calling user.
+                    raise serializers.ValidationError(
                         f"Interval {interval['id']} cannot be sliced to the [{start}, {stop}] range"
                     )
             splitted_data.intervals = deepcopy(self.intervals)

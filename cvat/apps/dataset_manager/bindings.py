@@ -298,7 +298,7 @@ class CommonData(InstanceLabelData):
 
     class LabeledInterval(NamedTuple):
         start: timedelta
-        stop: timedelta
+        stop: timedelta | None
         label: int
         attributes: Sequence[CommonData.Attribute]
         group: int = 0
@@ -556,10 +556,15 @@ class CommonData(InstanceLabelData):
         return CommonData.LabeledInterval(
             id=interval["id"],
             start=frame_to_timestamp(self.abs_frame_id(interval["start"])),
-            stop=frame_to_timestamp(self.abs_frame_id(interval["stop"])),
+            stop=(
+                frame_to_timestamp(self.abs_frame_id(interval["stop"]))
+                if interval["stop"] is not None
+                else None
+            ),
             label=self._get_label_name(interval["label_id"]),
             group=interval.get("group", 0),
             source=interval["source"],
+            score=interval["score"],
             attributes=self._export_attributes(interval["attributes"]),
         )
 
@@ -757,7 +762,11 @@ class CommonData(InstanceLabelData):
         _interval = interval._asdict()
         label_id = self._get_label_id(_interval.pop("label"))
         _interval["start"] = self.rel_frame_id(timestamp_to_frame(_interval["start"]))
-        _interval["stop"] = self.rel_frame_id(timestamp_to_frame(_interval["stop"]))
+        _interval["stop"] = (
+            self.rel_frame_id(timestamp_to_frame(_interval["stop"]))
+            if _interval["stop"] is not None
+            else None
+        )
         _interval["label_id"] = label_id
         _interval["attributes"] = [
             self._import_attribute(label_id, attrib)
