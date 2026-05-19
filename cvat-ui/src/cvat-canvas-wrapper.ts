@@ -11,6 +11,7 @@ import {
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
     HighlightSeverity as _HighlightSeverity,
+    RenderData as _RenderData,
 } from 'cvat-canvas/src/typescript/canvas';
 
 export function convertShapesForInteractor(
@@ -37,6 +38,7 @@ export type InteractionData = _InteractionData;
 export type InteractionResult = _InteractionResult;
 export type HighlightSeverity = _HighlightSeverity;
 export type CanvasHint = _CanvasHint;
+export type RenderData = _RenderData;
 
 export {
     Canvas, CanvasMode, RectDrawingMethod, CuboidDrawingMethod,
