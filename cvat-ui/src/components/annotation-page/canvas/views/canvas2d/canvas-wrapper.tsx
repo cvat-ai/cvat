@@ -10,6 +10,9 @@ import { connect } from 'react-redux';
 import Slider from 'antd/lib/slider';
 import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
+import Button from 'antd/lib/button';
+import { Row, Col } from 'antd/lib/grid';
+import Text from 'antd/lib/typography/Text';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
@@ -408,6 +411,13 @@ interface State {
     // Used by Cancel to revert in-canvas state to whatever was active before
     // the user started dragging sliders.
     lensCalibrationSnapshot: any | null;
+    // Last calibration values used while lens calibration was on. Remembered
+    // when the user turns calibration off so it can be restored when they
+    // turn it back on.
+    lastLensValues: any | null;
+    // Whether the small "Turn On" prompt is open (shown when the user clicks
+    // the red OFF indicator).
+    turnOnPromptOpen: boolean;
 }
 
 // Default fisheye lens calibration applied automatically to cuboid shapes so
@@ -419,13 +429,71 @@ const DEFAULT_FISHEYE_LENS = {
     c: 0.448,
     HFOVInRadians: 3.1799898972,
     aspectRatio: 1.0,
-    horizontalResolution: 2992,
+    horizontalResolution: 1280,
     lensType: 'Equidistant' as const,
+};
+
+// Builds the default fisheye lens preset, substituting the detected video
+// frame size for the hard-coded fallback (1280 × 1.0). If width/height are
+// not yet known (e.g. frames meta still loading), falls back to the static
+// defaults so cuboid rendering still works on first paint.
+const defaultLensForSize = (
+    width?: number | null,
+    height?: number | null,
+): typeof DEFAULT_FISHEYE_LENS => {
+    const w = typeof width === 'number' && Number.isFinite(width) && width > 0 ?
+        Math.round(width) :
+        DEFAULT_FISHEYE_LENS.horizontalResolution;
+    const h = typeof height === 'number' && Number.isFinite(height) && height > 0 ?
+        Math.round(height) :
+        Math.round(w / DEFAULT_FISHEYE_LENS.aspectRatio);
+    return {
+        ...DEFAULT_FISHEYE_LENS,
+        horizontalResolution: w,
+        aspectRatio: h > 0 ? w / h : DEFAULT_FISHEYE_LENS.aspectRatio,
+    };
+};
+
+interface PersistedLensState {
+    enabled: boolean;
+    values: any | null;
+}
+
+// Per-job UI state for lens calibration is stored in localStorage so the
+// on/off toggle (and the last-used values) survive page refreshes.
+const lensStorageKey = (jobId: number | undefined): string | null => (
+    typeof jobId === 'number' ? `cvat-lens-calibration-job-${jobId}` : null
+);
+
+const loadLensFromStorage = (jobId: number | undefined): PersistedLensState | null => {
+    const key = lensStorageKey(jobId);
+    if (!key) return null;
+    try {
+        const raw = window.localStorage.getItem(key);
+        return raw ? JSON.parse(raw) as PersistedLensState : null;
+    } catch {
+        return null;
+    }
+};
+
+const saveLensToStorage = (jobId: number | undefined, data: PersistedLensState): void => {
+    const key = lensStorageKey(jobId);
+    if (!key) return;
+    try {
+        window.localStorage.setItem(key, JSON.stringify(data));
+    } catch {
+        // ignore quota/serialization errors
+    }
 };
 
 class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
+    // Most recently detected video frame size (width, height), populated
+    // asynchronously in componentDidMount from frames metadata. Used as the
+    // fallback when no prior calibration is available (e.g. on first Turn On
+    // after Turn Off, before lastLensValues has been populated).
+    private detectedSize: { w: number; h: number } | null = null;
 
     constructor(props: Props) {
         super(props);
@@ -438,6 +506,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             lensPanelOpen: false,
             lensCalibrationDraft: null,
             lensCalibrationSnapshot: null,
+            lastLensValues: { ...DEFAULT_FISHEYE_LENS },
+            turnOnPromptOpen: false,
         };
     }
 
@@ -477,7 +547,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         //       a: 0.11, b: -0.283, c: 0.448,
         //       HFOVInRadians: 3.1799898972,
         //       aspectRatio: 1.0,
-        //       horizontalResolution: 2992,
+        //       horizontalResolution: 1280,
         //       lensType: 'Equidistant',
         //   });
         //   window.cvatSetLensCalibration(null);  // disable
@@ -488,23 +558,89 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             await this.persistCalibration(next);
         };
 
-        // Load any persisted task-level calibration so reopening the job
-        // shows the value last saved through the API. Runs in the background
-        // so it doesn't block initial canvas setup.
+        // Load any persisted lens-calibration state for this job. We first
+        // check per-job localStorage (which carries the on/off toggle and the
+        // last-used values across page refreshes) and fall back to the
+        // task-level value otherwise. If neither exists, the default preset
+        // is initialized with the detected video frame size (from frames
+        // metadata) instead of the static 1280 × 1.0 fallback. Persisted
+        // values are never mutated. Runs in the background so it doesn't
+        // block initial canvas setup.
         (async () => {
             try {
                 const { jobInstance } = this.props;
+                const jobId = jobInstance?.id;
                 const taskId = jobInstance?.taskId;
+
+                // Resolve detected video size (frame 0). Done in parallel
+                // with the task fetch below so it doesn't add latency.
+                // Errors are swallowed — we just fall back to
+                // DEFAULT_FISHEYE_LENS.
+                const detectedSizePromise: Promise<{ w: number; h: number } | null> = (async () => {
+                    if (typeof jobId !== 'number') return null;
+                    try {
+                        const meta = await cvat.frames.getMeta('job', jobId);
+                        const f0 = meta?.frames?.[0];
+                        if (f0?.width && f0?.height) {
+                            return { w: f0.width, h: f0.height };
+                        }
+                    } catch {
+                        // ignore — fall back to static defaults
+                    }
+                    return null;
+                })();
+                detectedSizePromise.then((detected) => {
+                    if (detected) this.detectedSize = detected;
+                });
+
+                const stored = loadLensFromStorage(jobId);
+                if (stored) {
+                    // Persisted localStorage wins — never mutate user data.
+                    if (stored.enabled && stored.values) {
+                        canvasInstance.configure({ lensCalibration: stored.values });
+                        this.setState({
+                            lensCalibration: { ...stored.values },
+                            lastLensValues: { ...stored.values },
+                        });
+                    } else {
+                        canvasInstance.configure({ lensCalibration: null });
+                        const detected = await detectedSizePromise;
+                        const fallback = stored.values ?
+                            { ...stored.values } :
+                            defaultLensForSize(detected?.w, detected?.h);
+                        this.setState({
+                            lensCalibration: null,
+                            lastLensValues: fallback,
+                        });
+                    }
+                    return;
+                }
+
                 if (typeof taskId !== 'number') return;
                 const [task] = await cvat.tasks.get({ id: taskId });
                 const persisted = task?.lensCalibration ?? null;
                 if (persisted) {
+                    // Task-saved value wins — never mutate user data.
                     canvasInstance.configure({ lensCalibration: persisted });
-                    this.setState({ lensCalibration: { ...persisted } });
+                    this.setState({
+                        lensCalibration: { ...persisted },
+                        lastLensValues: { ...persisted },
+                    });
+                    return;
                 }
+
+                // No persisted state anywhere → use detected video size as
+                // the default preset for this job.
+                const detected = await detectedSizePromise;
+                const sized = defaultLensForSize(detected?.w, detected?.h);
+                canvasInstance.configure({ lensCalibration: sized });
+                this.setState({
+                    lensCalibration: { ...sized },
+                    lastLensValues: { ...sized },
+                });
             } catch (error) {
                 // eslint-disable-next-line no-console
-                console.warn('Failed to load lens calibration from task', error);
+                console.warn('Failed to load lens calibration', error);
             }
         })();
 
@@ -753,9 +889,18 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     };
 
     // Open the lens-calibration tuning panel (capturing a snapshot for
-    // Cancel) or close it (reverting to that snapshot).
+    // Cancel) or close it (reverting to that snapshot). When calibration is
+    // currently OFF, this instead toggles the small "Turn On" prompt.
     private toggleLensPanel = (): void => {
-        const { lensPanelOpen, lensCalibration, lensCalibrationSnapshot } = this.state;
+        const {
+            lensPanelOpen, lensCalibration, lensCalibrationSnapshot, turnOnPromptOpen,
+        } = this.state;
+
+        if (!lensCalibration) {
+            this.setState({ turnOnPromptOpen: !turnOnPromptOpen });
+            return;
+        }
+
         if (lensPanelOpen) {
             if (lensCalibrationSnapshot) {
                 this.applyCalibrationLive(lensCalibrationSnapshot);
@@ -768,18 +913,25 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         } else {
             this.setState({
                 lensPanelOpen: true,
-                lensCalibrationDraft: lensCalibration ? { ...lensCalibration } : null,
-                lensCalibrationSnapshot: lensCalibration ? { ...lensCalibration } : null,
+                lensCalibrationDraft: { ...lensCalibration },
+                lensCalibrationSnapshot: { ...lensCalibration },
             });
         }
     };
 
     // Persists the given calibration to the parent task so the next CVAT-XML
-    // export carries it under <meta>/<task>/<lens_calibration>. Failures are
-    // logged but do not throw.
+    // export carries it under <meta>/<task>/<lens_calibration>, and also
+    // mirrors the on/off + last-used values to per-job localStorage so the UI
+    // state survives page refreshes. Failures are logged but do not throw.
     private persistCalibration = async (params: any | null): Promise<void> => {
+        const { jobInstance } = this.props;
+        const jobId = jobInstance?.id;
+        const { lastLensValues } = this.state;
+        const enabled = params !== null;
+        const valuesToRemember = enabled ? params : (lastLensValues ?? null);
+        saveLensToStorage(jobId, { enabled, values: valuesToRemember });
+
         try {
-            const { jobInstance } = this.props;
             const taskId = jobInstance?.taskId;
             if (typeof taskId !== 'number') return;
             const [task] = await cvat.tasks.get({ id: taskId });
@@ -791,6 +943,42 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             // eslint-disable-next-line no-console
             console.warn('Failed to persist lens calibration to task', error);
         }
+    };
+
+    // Turns lens calibration off, remembering the previously active values so
+    // they can be restored later via turnOnLens.
+    private turnOffLens = async (): Promise<void> => {
+        const { lensCalibration, lensCalibrationDraft, lastLensValues } = this.state;
+        const valuesToRemember = lensCalibrationDraft || lensCalibration || lastLensValues;
+        if (valuesToRemember) {
+            this.setState({ lastLensValues: { ...valuesToRemember } });
+        }
+        this.applyCalibrationLive(null);
+        this.setState({
+            lensPanelOpen: false,
+            lensCalibrationDraft: null,
+            lensCalibrationSnapshot: null,
+            turnOnPromptOpen: false,
+        });
+        await this.persistCalibration(null);
+    };
+
+    // Turns lens calibration back on using the last-used values (or the
+    // default Cam360 preset if none have been recorded yet) and opens the
+    // tuning panel so the user can immediately adjust the sliders.
+    private turnOnLens = async (): Promise<void> => {
+        const { lastLensValues } = this.state;
+        const valuesToUse = lastLensValues ?
+            { ...lastLensValues } :
+            defaultLensForSize(this.detectedSize?.w, this.detectedSize?.h);
+        this.applyCalibrationLive(valuesToUse);
+        this.setState({
+            lensPanelOpen: true,
+            lensCalibrationDraft: { ...valuesToUse },
+            lensCalibrationSnapshot: { ...valuesToUse },
+            turnOnPromptOpen: false,
+        });
+        await this.persistCalibration(valuesToUse);
     };
 
     private onCanvasErrorOccurrence = (event: any): void => {
@@ -1286,7 +1474,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             onExpandObject,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        const { lensCalibration, lensPanelOpen, lensCalibrationDraft } = this.state;
+        const {
+            lensCalibration, lensPanelOpen, lensCalibrationDraft, turnOnPromptOpen,
+        } = this.state;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1432,7 +1622,28 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                             Lens calibration ON
                         </div>
                     </CVATTooltip>
-                ) : null}
+                ) : (
+                    <CVATTooltip
+                        title='Lens calibration is disabled. Click to turn it back on.'
+                        placement='right'
+                    >
+                        <div
+                            className='cvat-canvas-lens-calibration-indicator cvat-canvas-lens-calibration-indicator-off'
+                            role='button'
+                            tabIndex={0}
+                            onClick={(): void => this.toggleLensPanel()}
+                            onKeyDown={(event): void => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    this.toggleLensPanel();
+                                }
+                            }}
+                        >
+                            <span className='cvat-canvas-lens-calibration-dot' />
+                            Lens calibration OFF
+                        </div>
+                    </CVATTooltip>
+                )}
 
                 {lensPanelOpen && lensCalibrationDraft ? (
                     <LensCalibrationPanel
@@ -1443,6 +1654,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                         }}
                         onSave={async (): Promise<void> => {
                             const { lensCalibrationDraft: draft } = this.state;
+                            if (draft) {
+                                this.setState({ lastLensValues: { ...draft } });
+                            }
                             await this.persistCalibration(draft);
                             this.setState({
                                 lensPanelOpen: false,
@@ -1463,7 +1677,41 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                 lensCalibrationSnapshot: null,
                             });
                         }}
+                        onTurnOff={(): void => {
+                            this.turnOffLens();
+                        }}
                     />
+                ) : null}
+
+                {!lensCalibration && turnOnPromptOpen ? (
+                    <div className='cvat-lens-calibration-panel cvat-lens-calibration-turn-on-panel'>
+                        <Text strong>Lens calibration is OFF</Text>
+                        <hr />
+                        <Text type='secondary'>
+                            Turn it back on to restore the previously used parameters.
+                        </Text>
+                        <Row justify='end' gutter={8} style={{ marginTop: 12 }}>
+                            <Col>
+                                <Button
+                                    onClick={(): void => {
+                                        this.setState({ turnOnPromptOpen: false });
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                            </Col>
+                            <Col>
+                                <Button
+                                    type='primary'
+                                    onClick={(): void => {
+                                        this.turnOnLens();
+                                    }}
+                                >
+                                    Turn On
+                                </Button>
+                            </Col>
+                        </Row>
+                    </div>
                 ) : null}
             </>
         );
