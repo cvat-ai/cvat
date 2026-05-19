@@ -17,6 +17,15 @@ from cvat.apps.engine.log import ServerLogManager, vlogger
 slogger = ServerLogManager(__name__)
 
 
+def log_remote_addr_event(*, source: str, scope: str, remote_addr: str | None) -> None:
+    slogger.glob.info(
+        "Prepared %s analytics event. scope=%r, remote_addr=%r",
+        source,
+        scope,
+        remote_addr,
+    )
+
+
 def event_scope(action, resource):
     return f"{action}:{resource}"
 
@@ -117,6 +126,7 @@ def record_server_event(
         "payload": JSONRenderer().render(payload_with_request_info).decode("UTF-8"),
         **kwargs,
     }
+    log_remote_addr_event(source="server", scope=scope, remote_addr=data.get("remote_addr"))
 
     rendered_data = JSONRenderer().render(data).decode("UTF-8")
 

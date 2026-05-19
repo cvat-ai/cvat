@@ -19,7 +19,7 @@ from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 from .const import USER_ACTIVITY_SCOPE
-from .event import get_remote_addr
+from .event import get_remote_addr, log_remote_addr_event
 from .export import export
 from .handlers import handle_client_events_push
 
@@ -112,6 +112,11 @@ class EventsViewSet(viewsets.ViewSet):
                     **event,
                     "remote_addr": remote_addr,
                 }
+            log_remote_addr_event(
+                source=event["source"],
+                scope=event["scope"],
+                remote_addr=event.get("remote_addr"),
+            )
 
             message = (
                 JSONRenderer()
