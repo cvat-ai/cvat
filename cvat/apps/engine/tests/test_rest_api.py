@@ -2678,7 +2678,7 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
                             "mutable": True,
                             "input_type": AttributeType.CHECKBOX,
                             "default_value": "false",
-                        }
+                        },
                     ],
                 },
                 {
@@ -2766,7 +2766,7 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
                         attribute_data(first_attribute, name=second_attribute.name),
                         attribute_data(second_attribute, name=first_attribute.name),
                     ],
-                }
+                },
             ],
         }
 

@@ -542,9 +542,7 @@ class LabelSerializer(SublabelSerializer):
             return
 
         current_names_by_id = dict(
-            db_label.attributespec_set.filter(id__in=request_names_by_id).values_list(
-                "id", "name"
-            )
+            db_label.attributespec_set.filter(id__in=request_names_by_id).values_list("id", "name")
         )
 
         # A normal rename to a new name is allowed. The unsafe case is swapping
