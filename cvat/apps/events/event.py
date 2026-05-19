@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 from datetime import datetime, timezone
 
 from django.db import transaction
@@ -59,13 +60,22 @@ def get_remote_addr(request) -> str | None:
     try:
         remote_addr = BaseThrottle().get_ident(request)
     except Exception:
-        slogger.glob.debug("Failed to resolve remote address", exc_info=True)
+        slogger.glob.warning("Failed to resolve remote address", exc_info=True)
         return None
 
     if not remote_addr:
-        slogger.glob.debug(
+        slogger.glob.warning(
             "Resolved empty remote address. "
             "X-Forwarded-For=%r, REMOTE_ADDR=%r, NUM_PROXIES=%r",
+            request.META.get("HTTP_X_FORWARDED_FOR"),
+            request.META.get("REMOTE_ADDR"),
+            api_settings.NUM_PROXIES,
+        )
+    elif os.getenv("CVAT_DEBUG_REMOTE_ADDR"):
+        slogger.glob.info(
+            "Resolved remote address for event logging. "
+            "remote_addr=%r, X-Forwarded-For=%r, REMOTE_ADDR=%r, NUM_PROXIES=%r",
+            remote_addr,
             request.META.get("HTTP_X_FORWARDED_FOR"),
             request.META.get("REMOTE_ADDR"),
             api_settings.NUM_PROXIES,
