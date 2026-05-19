@@ -85,7 +85,6 @@ function SelectCloudStorage(props: Props): JSX.Element {
             if (potentialStorages.length === 1 && potentialStorages[0].id !== cloudStorage?.id) {
                 const potentialStorage = potentialStorages[0];
                 setSearchPhrase(potentialStorage.displayName);
-                // eslint-disable-next-line prefer-destructuring
                 potentialStorage.manifestPath = (potentialStorage.manifests?.length) ? potentialStorage.manifests[0] : '';
                 onSelectCloudStorage(potentialStorage);
             }
@@ -127,7 +126,6 @@ function SelectCloudStorage(props: Props): JSX.Element {
                 onSelect={(value: string) => {
                     const selectedCloudStorage = list
                         .filter((_cloudStorage: CloudStorage) => _cloudStorage.id === +value)[0] || null;
-                    // eslint-disable-next-line prefer-destructuring
                     if (selectedCloudStorage.id !== cloudStorage?.id) {
                         if (selectedCloudStorage.manifests?.length) {
                             [selectedCloudStorage.manifestPath] = selectedCloudStorage.manifests;

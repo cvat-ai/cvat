@@ -6,6 +6,7 @@
 /// <reference types="cypress" />
 
 import { taskName, labelName } from '../../support/const';
+import { fullMatch } from '../../support/utils';
 
 context('Delete unlock/lock object', () => {
     const caseId = '24';
@@ -51,7 +52,7 @@ context('Delete unlock/lock object', () => {
 
     function actionOnConfirmWindow(textBuntton) {
         cy.get('.cvat-modal-confirm-remove-object').within(() => {
-            cy.contains(new RegExp(`^${textBuntton}$`, 'g')).click();
+            cy.contains(fullMatch(textBuntton)).click();
         });
     }
 

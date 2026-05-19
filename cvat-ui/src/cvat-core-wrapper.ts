@@ -63,6 +63,7 @@ cvat.config.uploadChunkSize = 2;
 cvat.config.opencvPath = config.OPENCV_PATH;
 cvat.config.previewPlaceholders = {
     [MediaType.POINT_CLOUD]: '/assets/point_cloud_preview.png',
+    [MediaType.AUDIO]: '/assets/audio_preview.png',
 };
 (globalThis as any).cvat = cvat;
 

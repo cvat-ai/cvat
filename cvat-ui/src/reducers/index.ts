@@ -4,7 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
-import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import {
+    Canvas, RectDrawingMethod, CuboidDrawingMethod, RenderData,
+} from 'cvat-canvas-wrapper';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
@@ -308,7 +310,7 @@ export type PluginsList = {
 export type CallbackReturnType = Promise<undefined | { preventJobStatusChange: boolean }>;
 
 export interface PluginComponent {
-    component: any;
+    component: any; // TODO: research correct plugin component type
     data: {
         weight: number;
         shouldBeRendered: (props?: object, state?: object) => boolean;
@@ -906,6 +908,7 @@ export interface AnnotationState {
         collapsedAll: boolean;
         states: any[];
         filters: object[];
+        renderData: RenderData;
         resetGroupFlag: boolean;
         initialized: boolean;
         history: {

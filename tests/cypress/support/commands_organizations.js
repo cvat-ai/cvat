@@ -10,6 +10,7 @@ import { convertClasses } from './utils';
 function openOrganizationsMenu() {
     cy.get('.cvat-header-menu-user-dropdown')
         .should('exist').and('be.visible').click();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500); // animation
     cy.get('.cvat-header-menu')
         .should('exist')

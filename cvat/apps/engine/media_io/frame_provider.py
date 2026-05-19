@@ -12,10 +12,9 @@ from abc import ABCMeta, abstractmethod
 from bisect import bisect
 from collections import OrderedDict
 from collections.abc import Callable, Iterator, Sequence
-from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, Generic, TypeAlias, TypeVar, overload
+from typing import Any, TypeAlias, overload
 
 import av
 import cv2
@@ -25,17 +24,32 @@ from PIL import Image
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache, prepare_chunk
+from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache
 from cvat.apps.engine.media_extractors import (
+    IChunkWriter,
     IMediaReader,
+    Mpeg4ChunkWriter,
+    Mpeg4CompressedChunkWriter,
     RandomAccessIterator,
     VideoReader,
+    ZipChunkWriter,
+    ZipCompressedChunkWriter,
     ZipReader,
+)
+from cvat.apps.engine.media_io.media_chunks import (
+    BufferChunkLoader,
+    ChunkLoader,
+    FileChunkLoader,
+    ReaderFactory,
+)
+from cvat.apps.engine.media_io.media_provider import (
+    DataWithMeta,
+    IMediaProvider,
+    PreviewNotAvailable,
+    segment_has_media_derived_preview,
 )
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.utils import take_by
-
-_T = TypeVar("_T")
 
 _ReaderFactory: TypeAlias = Callable[[BytesIO], IMediaReader]
 
@@ -115,36 +129,9 @@ Frame3d: TypeAlias = BytesIO
 AnyFrame: TypeAlias = Frame2d | Frame3d
 
 
-@dataclass
-class DataWithMeta(Generic[_T]):
-    data: _T
-    mime: str
-
-
-class PreviewNotAvailable(Exception):
-    """
-    Raised by get_preview() when there is no media-derived preview for an entity
-    (e.g. point cloud tasks) and the caller has opted in via ``allow_empty``.
-    """
-
-
-_MEDIA_TYPES_WITHOUT_PREVIEW: frozenset[models.MediaType] = frozenset(
-    {
-        models.MediaType.POINT_CLOUD,
-    }
-)
-
-
-def _has_media_derived_preview(media_type: models.MediaType) -> bool:
-    return media_type not in _MEDIA_TYPES_WITHOUT_PREVIEW
-
-
-class IFrameProvider(metaclass=ABCMeta):
+class IFrameProvider(IMediaProvider, metaclass=ABCMeta):
     VIDEO_FRAME_EXT = ".PNG"
     VIDEO_FRAME_MIME = "image/png"
-
-    def unload(self):
-        pass
 
     @classmethod
     def _av_frame_to_png_bytes(cls, av_frame: av.VideoFrame) -> BytesIO:
@@ -181,7 +168,7 @@ class IFrameProvider(metaclass=ABCMeta):
     def get_chunk_number(self, frame_number: int) -> int: ...
 
     @abstractmethod
-    def get_preview(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]: ...
+    def get_preview_image(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]: ...
 
     @abstractmethod
     def get_chunk(
@@ -258,8 +245,8 @@ class TaskFrameProvider(IFrameProvider):
         """
         return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
-    def get_preview(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
-        return self._get_segment_frame_provider(0).get_preview(allow_empty=allow_empty)
+    def get_preview_image(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
+        return self._get_segment_frame_provider(0).get_preview_image(allow_empty=allow_empty)
 
     def get_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
@@ -355,7 +342,7 @@ class TaskFrameProvider(IFrameProvider):
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
-        return prepare_chunk(
+        return prepare_image_chunk(
             task_chunk_frames.values(),
             quality=quality,
             db_task=db_task,
@@ -474,7 +461,7 @@ class TaskFrameProvider(IFrameProvider):
 
 
 class SegmentFrameProvider(IFrameProvider):
-    _READER_FACTORIES: dict[models.DataChoice, _ReaderFactory] = {
+    _READER_FACTORIES: dict[models.DataChoice, ReaderFactory] = {
         models.DataChoice.IMAGESET: lambda source: ZipReader([source]),
         # disable threading to avoid unpredictable server
         # resource consumption during reading in endpoints
@@ -495,9 +482,9 @@ class SegmentFrameProvider(IFrameProvider):
         ):
             cache = MediaCache()
 
-            def make_loader(quality: models.FrameQuality) -> _ChunkLoader:
+            def make_loader(quality: models.FrameQuality) -> ChunkLoader:
                 chunk_type = db_data.get_chunk_type(quality)
-                return _BufferChunkLoader(
+                return BufferChunkLoader(
                     reader_factory=self._READER_FACTORIES[chunk_type],
                     get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
                         db_segment, chunk_idx, quality=quality
@@ -506,9 +493,9 @@ class SegmentFrameProvider(IFrameProvider):
 
         else:
 
-            def make_loader(quality: models.FrameQuality) -> _ChunkLoader:
+            def make_loader(quality: models.FrameQuality) -> ChunkLoader:
                 chunk_type = db_data.get_chunk_type(quality)
-                return _FileChunkLoader(
+                return FileChunkLoader(
                     reader_factory=self._READER_FACTORIES[chunk_type],
                     get_chunk_path_callback=lambda chunk_idx: db_data.get_static_segment_chunk_path(
                         chunk_idx, segment_id=db_segment.id, quality=quality
@@ -572,8 +559,8 @@ class SegmentFrameProvider(IFrameProvider):
 
         return chunk_number
 
-    def get_preview(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
-        if allow_empty and not _has_media_derived_preview(self._db_segment.task.media_type):
+    def get_preview_image(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
+        if allow_empty and not segment_has_media_derived_preview(self._db_segment):
             raise PreviewNotAvailable
 
         cache = MediaCache()
@@ -794,3 +781,41 @@ def make_frame_provider(
         raise TypeError(f"Unexpected data source type {type(data_source)}")
 
     return frame_provider
+
+
+def prepare_image_chunk(
+    task_chunk_frames: Iterator[tuple[Any, str]],
+    *,
+    quality: models.FrameQuality,
+    db_task: models.Task,
+    dump_unchanged: bool = False,
+) -> DataWithMime:
+    db_data = db_task.require_data()
+
+    writer_classes: dict[models.FrameQuality, type[IChunkWriter]] = {
+        models.FrameQuality.COMPRESSED: (
+            Mpeg4CompressedChunkWriter
+            if db_data.compressed_chunk_type == models.DataChoice.VIDEO
+            else ZipCompressedChunkWriter
+        ),
+        models.FrameQuality.ORIGINAL: (
+            Mpeg4ChunkWriter
+            if db_data.original_chunk_type == models.DataChoice.VIDEO
+            else ZipChunkWriter
+        ),
+    }
+
+    writer_class = writer_classes[quality]
+
+    image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
+    writer = writer_class(quality=image_quality, dimension=db_task.dimension)
+
+    writer_kwargs = {}
+    if dump_unchanged and isinstance(writer, ZipCompressedChunkWriter):
+        writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
+
+    buffer = BytesIO()
+    writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
+
+    buffer.seek(0)
+    return buffer, writer.CHUNK_MIME_TYPE

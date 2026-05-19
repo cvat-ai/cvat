@@ -722,7 +722,7 @@ export function updateCachedChunksAsync(): ThunkAction {
             }, []).map(([start, end]) => `${start}:${end}`).join(';');
 
             dispatch(updateCachedChunks(ranges));
-        } catch (error) {
+        } catch (_error) {
             // even if error happens here, do not need to notify the users
         }
     };
@@ -1034,7 +1034,7 @@ export function getJobAsync({
             if (job.type === JobType.ANNOTATION || job.type === JobType.CONSENSUS_REPLICA) {
                 try {
                     [gtJob] = await cvat.jobs.get({ taskID, type: JobType.GROUND_TRUTH });
-                } catch (e) {
+                } catch (_e) {
                     // gtJob is not available for workers
                     // do nothing
                 }
@@ -1054,7 +1054,7 @@ export function getJobAsync({
                 // call first getting of frame data before rendering interface
                 // to load and decode first chunk
                 await frameData.data();
-            } catch (error) {
+            } catch (_error) {
                 // do nothing, user will be notified when data request is done
             }
 

@@ -362,6 +362,7 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    // eslint-disable-next-line no-param-reassign
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
 });
@@ -1263,6 +1264,7 @@ async function createTask(
         }
         totalSize += file.size;
     }
+    // eslint-disable-next-line no-param-reassign
     delete taskDataSpec.client_files;
 
     const taskData = new FormData();

@@ -611,5 +611,5 @@ export interface SerializedTaskValidationLayout extends SerializedJobValidationL
     disabled_frames?: number[];
 }
 
-export interface APIOrganizationMembersFilter extends APICommonFilterParams {}
+export type APIOrganizationMembersFilter = APICommonFilterParams;
 export type OrganizationMembersFilter = Camelized<APIOrganizationMembersFilter>;
