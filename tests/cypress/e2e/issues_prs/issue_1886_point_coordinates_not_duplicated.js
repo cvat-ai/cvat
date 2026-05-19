@@ -58,7 +58,7 @@ context("Point coordinates are not duplicated while polygon's interpolation.", (
         });
         it('The coordinates of the points are not duplicated', () => {
             for (let i = 0; i < pointsCoordinates.length - 1; i++) {
-                cy.expect(pointsCoordinates[i]).not.equal(pointsCoordinates[i + 1]);
+                expect(pointsCoordinates[i]).not.equal(pointsCoordinates[i + 1]);
             }
         });
     });

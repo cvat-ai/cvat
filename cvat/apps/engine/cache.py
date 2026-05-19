@@ -39,14 +39,10 @@ from cvat.apps.engine.cache_signals import cache_item_created_signal, cache_item
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
-    IChunkWriter,
     ImageReaderWithManifest,
-    Mpeg4ChunkWriter,
-    Mpeg4CompressedChunkWriter,
     ValidateDimension,
     VideoReader,
     VideoReaderWithManifest,
-    ZipChunkWriter,
     ZipCompressedChunkWriter,
     load_image,
 )
@@ -59,6 +55,7 @@ from cvat.apps.engine.utils import (
     md5_hash,
 )
 from utils.dataset_manifest import ImageManifestManager
+from utils.dataset_manifest.utils import Openable
 
 slogger = ServerLogManager(__name__)
 
@@ -626,6 +623,18 @@ class MediaCache:
         )
 
     @staticmethod
+    def read_raw_audio(db_task: models.Task) -> tuple[Openable, str]:
+        db_data = db_task.require_data()
+        assert db_data.storage in (
+            models.StorageChoice.LOCAL,
+            models.StorageChoice.SHARE,
+        ), db_data.storage
+
+        filename = str(db_data.audio.path)
+        data_dir = db_data.get_raw_data_dirname()
+        return (data_dir / filename, filename)
+
+    @staticmethod
     def read_raw_images(
         db_task: models.Task, frame_ids: Sequence[int], *, decode: bool = True
     ) -> Generator[tuple[PIL.Image.Image | str, str], None, None]:
@@ -852,18 +861,44 @@ class MediaCache:
         db_data = db_task.require_data()
 
         chunk_size = db_data.chunk_size
-        chunk_frame_ids = list(db_segment.frame_set)[
-            chunk_size * chunk_number : chunk_size * (chunk_number + 1)
-        ]
-
-        return self.prepare_custom_range_segment_chunk(db_task, chunk_frame_ids, quality=quality)
+        chunk_start_frame_index = chunk_size * chunk_number
+        chunk_end_frame_index = chunk_size * (chunk_number + 1)
+        chunk_frame_range = db_segment.frame_set[chunk_start_frame_index:chunk_end_frame_index]
+        return self.prepare_custom_range_segment_chunk(
+            db_task, chunk_frame_range, quality=quality, cache=self
+        )
 
     @classmethod
     def prepare_custom_range_segment_chunk(
-        cls, db_task: models.Task, frame_ids: Sequence[int], *, quality: models.FrameQuality
+        cls,
+        db_task: models.Task,
+        frame_ids: Sequence[int],
+        *,
+        quality: models.FrameQuality,
+        cache: MediaCache | None = None,
     ) -> DataWithMime:
-        with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
-            return prepare_chunk(frame_iter, quality=quality, db_task=db_task)
+        # TODO: refactor all chunk building into another class
+
+        match db_task.media_type:
+            case models.MediaType.AUDIO:
+                from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
+
+                assert cache
+
+                return TaskAudioProvider._build_audio_chunk(
+                    db_task=db_task,
+                    chunk_frames=(frame_ids[0], frame_ids[-1]),
+                    quality=quality,
+                    cache=cache,
+                )
+
+            case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+                from cvat.apps.engine.media_io.frame_provider import prepare_image_chunk
+
+                with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
+                    return prepare_image_chunk(frame_iter, quality=quality, db_task=db_task)
+            case _ as media_type:
+                assert False, f"Unknown media type '{media_type}'"
 
     def prepare_masked_range_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
@@ -876,6 +911,7 @@ class MediaCache:
             chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
 
+        assert db_task.media_type != models.MediaType.AUDIO
         return self.prepare_custom_masked_range_segment_chunk(
             db_task, chunk_frame_ids, chunk_number, quality=quality
         )
@@ -1012,6 +1048,16 @@ class MediaCache:
         match db_segment.task.media_type:
             case models.MediaType.POINT_CLOUD:
                 preview = PIL.Image.open(ASSETS_DIR / "point_cloud_default_preview.png")
+            case models.MediaType.AUDIO:
+                from cvat.apps.engine.media_extractors import AudioReader
+
+                preview = None
+                if db_segment.task.data.audio.has_cover_image:
+                    source_audio = self.read_raw_audio(db_segment.task)[0]
+                    reader = AudioReader([source_audio])
+                    preview = reader.get_preview_image()
+                else:
+                    preview = PIL.Image.open(ASSETS_DIR / "audio_default_preview.png")
             case models.MediaType.IMAGE:
                 from cvat.apps.engine.media_io.frame_provider import (  # avoid circular import
                     FrameOutputType,
@@ -1115,59 +1161,20 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     def get_mime(format_name: str) -> str:
         return PIL.Image.MIME[format_name]
 
+    # format is erased by exif_transpose(), keep it if possible
+    image_format = image.format
     image = PIL.ImageOps.exif_transpose(image)
-
-    output_buf = io.BytesIO()
 
     if image.size != PREVIEW_SIZE:
         image.thumbnail(PREVIEW_SIZE)
 
-    if image.format not in ALLOWED_FORMATS:
+    output_buf = io.BytesIO()
+    if image_format in ALLOWED_FORMATS:
+        image.save(output_buf, format=image_format)
+        mime = get_mime(image_format)
+    else:
         image.convert("RGB").save(output_buf, format="JPEG")
         mime = get_mime("JPEG")
-    else:
-        image.save(output_buf)
-        mime = get_mime(image.format)
 
+    output_buf.seek(0)
     return output_buf, mime
-
-
-def prepare_chunk(
-    task_chunk_frames: Iterator[tuple[Any, str]],
-    *,
-    quality: models.FrameQuality,
-    db_task: models.Task,
-    dump_unchanged: bool = False,
-) -> DataWithMime:
-    # TODO: refactor all chunk building into another class
-
-    db_data = db_task.require_data()
-
-    writer_classes: dict[models.FrameQuality, type[IChunkWriter]] = {
-        models.FrameQuality.COMPRESSED: (
-            Mpeg4CompressedChunkWriter
-            if db_data.compressed_chunk_type == models.DataChoice.VIDEO
-            else ZipCompressedChunkWriter
-        ),
-        models.FrameQuality.ORIGINAL: (
-            Mpeg4ChunkWriter
-            if db_data.original_chunk_type == models.DataChoice.VIDEO
-            else ZipChunkWriter
-        ),
-    }
-
-    writer_class = writer_classes[quality]
-
-    image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
-
-    merged_chunk_writer = writer_class(quality=image_quality, dimension=db_task.dimension)
-
-    writer_kwargs = {}
-    if dump_unchanged and isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
-        writer_kwargs = dict(compress_frames=False, zip_compress_level=1)
-
-    buffer = io.BytesIO()
-    merged_chunk_writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
-
-    buffer.seek(0)
-    return buffer, merged_chunk_writer.CHUNK_MIME_TYPE
