@@ -147,6 +147,7 @@ export default class LabelForm extends React.Component<Props> {
         }
     };
 
+    /* eslint-disable class-methods-use-this */
     private renderAttributeNameInput(fieldInstance: any, attr: any): JSX.Element {
         const { key } = fieldInstance;
         const attrNames = this.formRef.current?.getFieldValue('attributes')
@@ -321,8 +322,8 @@ export default class LabelForm extends React.Component<Props> {
                     name={[key, 'values']}
                 >
                     <Select className='cvat-attribute-values-input'>
-                        <Select.Option value='false'>false</Select.Option>
-                        <Select.Option value='true'>true</Select.Option>
+                        <Select.Option value='false'>False</Select.Option>
+                        <Select.Option value='true'>True</Select.Option>
                     </Select>
                 </Form.Item>
             </CVATTooltip>
@@ -417,6 +418,7 @@ export default class LabelForm extends React.Component<Props> {
             <CVATTooltip title='Delete the attribute'>
                 <Form.Item>
                     <Button
+                        disabled={attr.id >= 0} // temporary disabled, does not work on the server
                         type='link'
                         className='cvat-delete-attribute-button'
                         onClick={(): void => {
@@ -425,12 +427,14 @@ export default class LabelForm extends React.Component<Props> {
                                     className: 'cvat-modal-delete-label-attribute',
                                     icon: <ExclamationCircleOutlined />,
                                     title: `Do you want to remove the "${attr.name}" attribute?`,
-                                    content: 'This action cannot be undone. ' +
-                                        'Corresponding attribute annotation values will be removed.',
+                                    content: 'This action cannot be undone. All annotations associated to the attribute will be removed',
                                     type: 'warning',
                                     okButtonProps: { type: 'primary', danger: true },
                                     onOk: () => {
                                         this.removeAttribute(key);
+                                        setTimeout(() => {
+                                            this.formRef.current?.submit();
+                                        });
                                     },
                                 });
                             } else {
@@ -631,6 +635,7 @@ export default class LabelForm extends React.Component<Props> {
         return (fieldInstances: any[]): (JSX.Element | null)[] => fieldInstances.map(this.renderAttribute);
     }
 
+    // eslint-disable-next-line react/sort-comp
     public componentDidMount(): void {
         const { label } = this.props;
         if (this.formRef.current && label && label.attributes.length) {

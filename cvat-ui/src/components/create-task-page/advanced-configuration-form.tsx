@@ -190,6 +190,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         }
     }
 
+    /* eslint-disable class-methods-use-this */
     private renderCopyDataCheckbox(): JSX.Element {
         return (
             <Form.Item

@@ -18,14 +18,19 @@ import StandardWorkspaceComponent from 'components/annotation-page/standard-work
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
+import AudioFiltersModalComponent from 'components/annotation-page/audio-workspace/top-bar/audio-filters-modal';
 import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
+import AudioStatisticsModalComponent from 'components/annotation-page/audio-workspace/top-bar/audio-statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
+import AudioTopBarContainer from 'containers/annotation-page/audio-workspace/top-bar/audio-top-bar';
+import AudioWorkspaceContainer from 'containers/annotation-page/audio-workspace/audio-workspace';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 import { EventScope } from 'cvat-core/src/enums';
+import { useAudioAnnotationsEnabled } from 'utils/feature-flags';
 import SearchFramesModal from './top-bar/search-modal';
 
 interface Props {
@@ -135,7 +140,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         }
     }, [job, workspace]);
 
-    if (job === null || !annotationsInitialized) {
+    // Audio master switch: feature flag can disable audio workspace even when state asks for it.
+    const audioEnabled = useAudioAnnotationsEnabled();
+    const isAudio = workspace === Workspace.AUDIO && audioEnabled;
+
+    if (job === null || (!annotationsInitialized && !isAudio)) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
@@ -146,7 +155,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     return (
         <Layout className='cvat-annotation-page'>
             <Layout.Header className='cvat-annotation-header'>
-                <AnnotationTopBarContainer />
+                {isAudio ? <AudioTopBarContainer /> : <AnnotationTopBarContainer />}
             </Layout.Header>
             <Layout.Content className='cvat-annotation-layout-content'>
                 {workspace === Workspace.STANDARD3D && <StandardWorkspace3DComponent />}
@@ -155,9 +164,10 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 {workspace === Workspace.ATTRIBUTES && <AttributeAnnotationWorkspace />}
                 {workspace === Workspace.TAGS && <TagAnnotationWorkspace />}
                 {workspace === Workspace.REVIEW && <ReviewAnnotationsWorkspace />}
+                {isAudio && <AudioWorkspaceContainer />}
             </Layout.Content>
-            <FiltersModalComponent />
-            <StatisticsModalComponent />
+            {isAudio ? <AudioFiltersModalComponent /> : <FiltersModalComponent />}
+            {isAudio ? <AudioStatisticsModalComponent /> : <StatisticsModalComponent />}
             <SearchFramesModal />
         </Layout>
     );

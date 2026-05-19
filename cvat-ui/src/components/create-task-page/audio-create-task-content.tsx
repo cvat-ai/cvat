@@ -15,10 +15,10 @@ import Alert from 'antd/lib/alert';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 import { getCore, Storage, StorageLocation } from 'cvat-core-wrapper';
-import LabelsEditor from 'components/labels-editor/labels-editor';
-import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
+import AudioLabelsEditor from 'components/labels-editor/audio-labels-editor';
+import FileManagerComponent from 'components/file-manager/file-manager';
 import { RemoteFile } from 'components/file-manager/remote-browser';
-import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
+import { getFileNameFromPath, isAudioFile, isAudioPath } from 'utils/files';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import { formFieldsError } from 'utils/validation';
@@ -26,29 +26,14 @@ import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import MultiTasksProgress from './multi-task-progress';
-import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
-import QualityConfigurationForm, { QualityConfiguration, ValidationMode } from './quality-configuration-form';
+import { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
+import AudioAdvancedConfigurationForm from './audio-advanced-configuration-form';
+import { QualityConfiguration, ValidationMode } from './quality-configuration-form';
+import AudioQualityConfigurationForm from './audio-quality-configuration-form';
+import { CreateTaskData } from './create-task-content';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
-
-export interface CreateTaskData {
-    projectId: number | null;
-    basic: BaseConfiguration;
-    subset: string;
-    advanced: AdvancedConfiguration;
-    quality: QualityConfiguration;
-    labels: any[];
-    files: Files;
-    activeFileManagerTab: TabName;
-    cloudStorageId: number | null;
-}
-
-enum SupportedShareTypes {
-    IMAGE = 'image',
-    DIR = 'DIR',
-    VIDEO = 'video',
-}
 
 interface Props {
     onCreate: (data: CreateTaskData, onProgress?: (status: string, progress?: number) => void) => Promise<any>;
@@ -108,69 +93,30 @@ const defaultState: State = {
     statusInProgressTask: '',
 };
 
-const UploadFileErrorMessages = {
-    one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file or multiple images. ',
-    multi: 'Wrong list of files. You can upload one or more videos. ',
-};
+const NON_AUDIO_ERROR = 'Wrong list of files. Only audio files are allowed for an audio task. ';
 
-function receiveExtensions(files: RemoteFile[]): string[] {
-    const fileTypes = files.filter((file: RemoteFile) => file.name.includes('.'))
-        .map((file: RemoteFile) => `.${file.name.split('.').pop()}`);
-    return fileTypes;
+function localFilesHaveNonAudio(files: File[]): boolean {
+    const meaningful = files.filter((f) => !f.name.endsWith('.jsonl'));
+    return meaningful.some((f) => !isAudioFile(f));
 }
 
-function checkFiles(files: RemoteFile[], type: SupportedShareTypes, baseError: string): string {
-    const erroredFiles = files.filter(
-        (it) => it.mimeType !== type,
-    );
-    if (erroredFiles.length !== 0) {
-        const unsupportedTypes = receiveExtensions(erroredFiles);
-        const extensionList = Array.from(new Set(unsupportedTypes));
-        return extensionList.length ? `${baseError} Found unsupported types: ${extensionList.join(', ')}. ` : baseError;
-    }
-    return '';
+function pathsHaveNonAudio(paths: string[]): boolean {
+    const meaningful = paths.filter((p) => !p.endsWith('.jsonl'));
+    return meaningful.some((p) => !isAudioPath(p));
 }
 
-function validateRemoteFiles(remoteFiles: RemoteFile[], many: boolean): string {
-    let uploadFileErrorMessage = '';
-    const regFiles = remoteFiles.filter((file) => file.type === 'REG');
-    const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
-    if (!many && excludedManifests.length > 1) {
-        uploadFileErrorMessage = checkFiles(
-            excludedManifests,
-            SupportedShareTypes.IMAGE,
-            UploadFileErrorMessages.one,
-        );
-    } else if (many) {
-        uploadFileErrorMessage = checkFiles(
-            regFiles,
-            SupportedShareTypes.VIDEO,
-            UploadFileErrorMessages.multi,
-        );
-    }
-    return uploadFileErrorMessage;
-}
-
-function filterFiles(remoteFiles: RemoteFile[], many: boolean): RemoteFile[] {
-    if (many) {
-        return remoteFiles.filter((file: RemoteFile) => file.mimeType === 'video');
-    }
-
-    return remoteFiles;
-}
-
-class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
+class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
-    private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
-    private qualityConfigurationComponent: RefObject<QualityConfigurationForm>;
+    private advancedConfigurationComponent: RefObject<AudioAdvancedConfigurationForm>;
+    private qualityConfigurationComponent: RefObject<AudioQualityConfigurationForm>;
     private fileManagerComponent: any;
 
     public constructor(props: Props & RouteComponentProps) {
         super(props);
         this.state = { ...defaultState };
         this.basicConfigurationComponent = React.createRef<BasicConfigurationForm>();
-        this.advancedConfigurationComponent = React.createRef<AdvancedConfigurationForm>();
-        this.qualityConfigurationComponent = React.createRef<QualityConfigurationForm>();
+        this.advancedConfigurationComponent = React.createRef<AudioAdvancedConfigurationForm>();
+        this.qualityConfigurationComponent = React.createRef<AudioQualityConfigurationForm>();
     }
 
     public componentDidMount(): void {
@@ -220,21 +166,15 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private startLoading = (): void => {
-        this.setState({
-            loading: true,
-        });
+        this.setState({ loading: true });
     };
 
     private stopLoading = (): void => {
-        this.setState({
-            loading: false,
-        });
+        this.setState({ loading: false });
     };
 
     private changeStatusInProgressTask = (status: string): void => {
-        this.setState({
-            statusInProgressTask: status,
-        });
+        this.setState({ statusInProgressTask: status });
     };
 
     private handleProjectIdChange = (value: null | number): void => {
@@ -248,37 +188,27 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleChangeBasicConfiguration = (values: BaseConfiguration): void => {
-        this.setState({
-            basic: { ...values },
-        });
+        this.setState({ basic: { ...values } });
     };
 
     private handleSubmitQualityConfiguration = (values: QualityConfiguration): Promise<void> => (
         new Promise((resolve) => {
-            this.setState({
-                quality: { ...values },
-            }, resolve);
+            this.setState({ quality: { ...values } }, resolve);
         })
     );
 
     private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): Promise<void> => (
         new Promise((resolve) => {
-            this.setState({
-                advanced: { ...values },
-            }, resolve);
+            this.setState({ advanced: { ...values } }, resolve);
         })
     );
 
     private handleTaskSubsetChange = (value: string): void => {
-        this.setState({
-            subset: value,
-        });
+        this.setState({ subset: value });
     };
 
     private changeFileManagerTab = (value: TabName): void => {
-        this.setState({
-            activeFileManagerTab: value,
-        });
+        this.setState({ activeFileManagerTab: value });
     };
 
     private handleUseProjectSourceStorageChange = (value: boolean): void => {
@@ -323,25 +253,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleUploadLocalFiles = (uploadedFiles: File[]): void => {
-        const { many } = this.props;
         const { files } = this.state;
 
-        let uploadFileErrorMessage = '';
-
         const excludedManifests = uploadedFiles.filter((x: File) => !x.name.endsWith('.jsonl'));
-        if (!many && excludedManifests.length > 1) {
-            uploadFileErrorMessage = excludedManifests.every((it) => (
-                getFileContentType(it) === SupportedShareTypes.IMAGE
-            )) ? '' : UploadFileErrorMessages.one;
-        } else if (many) {
-            uploadFileErrorMessage = excludedManifests.every(
-                (it) => getFileContentType(it) === SupportedShareTypes.VIDEO,
-            ) ? '' : UploadFileErrorMessages.multi;
-        }
+        const uploadFileErrorMessage = localFilesHaveNonAudio(excludedManifests) ? NON_AUDIO_ERROR : '';
 
-        this.setState({
-            uploadFileErrorMessage,
-        });
+        this.setState({ uploadFileErrorMessage });
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -354,42 +271,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleUploadRemoteFiles = (urls: string[]): void => {
-        const { many } = this.props;
-
         const { files } = this.state;
-        const { length } = urls;
+        const uploadFileErrorMessage = pathsHaveNonAudio(urls) ? NON_AUDIO_ERROR : '';
 
-        let uploadFileErrorMessage = '';
-
-        try {
-            if (!many && length > 1) {
-                let index = 0;
-                while (index < length) {
-                    const isImageFile = getContentTypeRemoteFile(urls[index]) === 'image';
-                    if (!isImageFile) {
-                        uploadFileErrorMessage = UploadFileErrorMessages.one;
-                        break;
-                    }
-                    index++;
-                }
-            } else if (many) {
-                let index = 0;
-                while (index < length) {
-                    const isVideoFile = getContentTypeRemoteFile(urls[index]) === 'video';
-                    if (!isVideoFile) {
-                        uploadFileErrorMessage = UploadFileErrorMessages.multi;
-                        break;
-                    }
-                    index++;
-                }
-            }
-        } catch (err) {
-            uploadFileErrorMessage = `We can't process it. ${err}`;
-        }
-
-        this.setState({
-            uploadFileErrorMessage,
-        });
+        this.setState({ uploadFileErrorMessage });
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -403,16 +288,16 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private handleUploadShareFiles = (shareFiles: RemoteFile[]): void => {
         const { files } = this.state;
-        const { many } = this.props;
-        const uploadFileErrorMessage = validateRemoteFiles(shareFiles, many);
-        const filteredFiles = filterFiles(shareFiles, many);
+        const keys = shareFiles.map((it) => it.key);
+        const uploadFileErrorMessage = pathsHaveNonAudio(keys) ? NON_AUDIO_ERROR : '';
+
         this.setState({ uploadFileErrorMessage });
 
         if (!uploadFileErrorMessage) {
             this.setState({
                 files: {
                     ...files,
-                    share: filteredFiles.map((it) => it.key),
+                    share: keys,
                 },
             });
         }
@@ -420,16 +305,16 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private handleUploadCloudStorageFiles = (cloudStorageFiles: RemoteFile[]): void => {
         const { files } = this.state;
-        const { many } = this.props;
-        const uploadFileErrorMessage = validateRemoteFiles(cloudStorageFiles, many);
-        const filteredFiles = filterFiles(cloudStorageFiles, many);
+        const keys = cloudStorageFiles.map((it) => it.key);
+        const uploadFileErrorMessage = pathsHaveNonAudio(keys) ? NON_AUDIO_ERROR : '';
+
         this.setState({ uploadFileErrorMessage });
 
         if (!uploadFileErrorMessage) {
             this.setState({
                 files: {
                     ...files,
-                    cloudStorage: filteredFiles.map((it) => it.key),
+                    cloudStorage: keys,
                 },
             });
         }
@@ -466,33 +351,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     promises.push(this.qualityConfigurationComponent.current.submit());
                 }
 
-                const formIsValid = new Promise<void>((_resolve, _reject) => {
-                    Promise.all(promises).then(() => {
-                        const { quality, advanced } = this.state;
-                        if (
-                            quality.validationMode === ValidationMode.HONEYPOTS &&
-                            advanced.sortingMethod !== SortingMethod.RANDOM
-                        ) {
-                            this.setState({
-                                advanced: {
-                                    ...advanced,
-                                    sortingMethod: SortingMethod.RANDOM,
-                                },
-                            }, () => {
-                                _resolve();
-                                notification.info({
-                                    message: 'Task parameters were automatically updated',
-                                    description: 'Sorting method has been updated as Honeypots' +
-                                        ' quality method only supports RANDOM sorting',
-                                });
-                            });
-                        } else {
-                            _resolve();
-                        }
-                    }).catch(_reject);
-                });
-
-                return formIsValid;
+                return Promise.all(promises);
             }).then(() => {
                 if (projectId) {
                     return core.projects.get({ id: projectId }).then((response) => {
@@ -570,9 +429,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 resultTask,
                 ...multiTasks.slice(index + 1),
             ];
-            this.setState({
-                multiTasks: newMultiTasks,
-            }, resolve);
+            this.setState({ multiTasks: newMultiTasks }, resolve);
         });
     };
 
@@ -588,7 +445,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             await onCreate(task);
             await this.setStatusOneOfMultiTasks(index, 'completed');
         } catch (err) {
-            console.warn(err);
             await this.setStatusOneOfMultiTasks(index, 'failed');
         }
     };
@@ -604,7 +460,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             .map(async (): Promise<void> => {
                 // eslint-disable-next-line no-constant-condition
                 while (true) {
-                    index++; // preliminary increase is needed to avoid using the same index when queueSize > 1
+                    index++;
                     if (index > length) break;
                     await this.createOneOfMultiTasks(index - 1);
                 }
@@ -644,8 +500,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 activeFileManagerTab,
                 cloudStorageId,
                 status: 'pending',
-            }
-            )),
+            })),
         }, resolve);
     });
 
@@ -677,16 +532,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const newMultiTasks: any = multiTasks.map((it) => {
             if (it.status === 'pending') {
                 count++;
-                return {
-                    ...it,
-                    status: 'cancelled',
-                };
+                return { ...it, status: 'cancelled' };
             }
             return it;
         });
-        this.setState({
-            multiTasks: newMultiTasks,
-        }, () => {
+        this.setState({ multiTasks: newMultiTasks }, () => {
             notification.info({
                 message: `Creation of ${count} tasks have been canceled`,
                 className: 'cvat-notification-create-task-success',
@@ -707,16 +557,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { multiTasks } = this.state;
         const newMultiTasks: any = multiTasks.map((it) => {
             if (it.status === 'cancelled') {
-                return {
-                    ...it,
-                    status: 'pending',
-                };
+                return { ...it, status: 'pending' };
             }
             return it;
         });
-        this.setState({
-            multiTasks: newMultiTasks,
-        }, () => {
+        this.setState({ multiTasks: newMultiTasks }, () => {
             this.createMultiTasks();
         });
     };
@@ -725,33 +570,18 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { multiTasks } = this.state;
         const newMultiTasks: any = multiTasks.map((it) => {
             if (it.status === 'failed') {
-                return {
-                    ...it,
-                    status: 'pending',
-                };
+                return { ...it, status: 'pending' };
             }
             return it;
         });
-        this.setState({
-            multiTasks: newMultiTasks,
-        }, () => {
+        this.setState({ multiTasks: newMultiTasks }, () => {
             this.createMultiTasks();
         });
     };
 
-    private handleSortingMethodChange = (value: SortingMethod): void => {
-        this.setState((state) => ({
-            advanced: {
-                ...state.advanced,
-                sortingMethod: value,
-            },
-        }));
-    };
-
     private getTaskName = (indexFile: number, fileManagerTabName: TabName, defaultFileName = ''): string => {
         const { many } = this.props;
-        const { basic } = this.state;
-        const { files } = this.state;
+        const { basic, files } = this.state;
         const file = files[fileManagerTabName][indexFile];
         let fileName = defaultFileName;
         switch (fileManagerTabName) {
@@ -846,12 +676,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Col span={24}>
                 <Text className='cvat-text-color'>Labels</Text>
-                <LabelsEditor
+                <AudioLabelsEditor
                     labels={labels}
                     onSubmit={(newLabels): void => {
-                        this.setState({
-                            labels: newLabels,
-                        });
+                        this.setState({ labels: newLabels });
                     }}
                 />
             </Col>
@@ -894,18 +722,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderAdvancedBlock(): JSX.Element {
-        const { activeFileManagerTab, projectId } = this.state;
+        const { projectId } = this.state;
 
         const {
             advanced: {
                 useProjectSourceStorage,
                 useProjectTargetStorage,
-                sourceStorage: {
-                    location: sourceStorageLocation,
-                },
-                targetStorage: {
-                    location: targetStorageLocation,
-                },
+                sourceStorage: { location: sourceStorageLocation },
+                targetStorage: { location: targetStorageLocation },
             },
         } = this.state;
         return (
@@ -916,8 +740,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         key: '1',
                         label: <Text className='cvat-title'>Advanced configuration</Text>,
                         children: (
-                            <AdvancedConfigurationForm
-                                activeFileManagerTab={activeFileManagerTab}
+                            <AudioAdvancedConfigurationForm
                                 ref={this.advancedConfigurationComponent}
                                 onSubmit={this.handleSubmitAdvancedConfiguration}
                                 projectId={projectId}
@@ -925,7 +748,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                                 useProjectTargetStorage={useProjectTargetStorage}
                                 sourceStorageLocation={sourceStorageLocation}
                                 targetStorageLocation={targetStorageLocation}
-                                onChangeSortingMethod={this.handleSortingMethodChange}
                                 onChangeUseProjectSourceStorage={this.handleUseProjectSourceStorageChange}
                                 onChangeUseProjectTargetStorage={this.handleUseProjectTargetStorageChange}
                                 onChangeSourceStorageLocation={(value: StorageLocation) => {
@@ -943,7 +765,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderQualityBlock(): JSX.Element {
-        const { quality: { frameSelectionMethod, validationMode } } = this.state;
+        const { quality: { validationMode } } = this.state;
 
         return (
             <Col span={24}>
@@ -953,11 +775,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         key: '1',
                         label: <Text className='cvat-title'>Quality</Text>,
                         children: (
-                            <QualityConfigurationForm
+                            <AudioQualityConfigurationForm
                                 ref={this.qualityConfigurationComponent}
                                 initialValues={defaultState.quality}
                                 onSubmit={this.handleSubmitQualityConfiguration}
-                                frameSelectionMethod={frameSelectionMethod}
                                 onChangeFrameSelectionMethod={this.handleFrameSelectionMethodChange}
                                 validationMode={validationMode}
                                 onChangeValidationMode={this.handleValidationModeChange}
@@ -1069,4 +890,4 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 }
 
-export default withRouter(CreateTaskContent);
+export default withRouter(AudioCreateTaskContent);

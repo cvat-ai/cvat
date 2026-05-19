@@ -216,7 +216,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 activeObjectType = job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE;
             }
 
-            if (job.dimension === DimensionType.DIMENSION_2D) {
+            if (job.dimension === DimensionType.DIMENSION_1D) {
+                workspaceSelected = Workspace.AUDIO;
+            } else if (job.dimension === DimensionType.DIMENSION_2D) {
                 if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
                     workspaceSelected = queryParameters.initialWorkspace;
                 }
@@ -283,7 +285,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: job.dimension === DimensionType.DIMENSION_2D ? new Canvas() : new Canvas3d(),
+                    instance: job.dimension === DimensionType.DIMENSION_3D ? new Canvas3d() : new Canvas(),
                 },
                 colors,
                 workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
@@ -306,6 +308,41 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     hoveredChapter: action.payload.id,
+                },
+            };
+        }
+        case AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    initialized: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    saving: {
+                        ...state.annotations.saving,
+                        uploading: true,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    saving: {
+                        ...state.annotations.saving,
+                        uploading: false,
+                    },
                 },
             };
         }

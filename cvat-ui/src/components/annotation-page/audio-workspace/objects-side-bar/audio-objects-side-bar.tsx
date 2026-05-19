@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
 import React, { Dispatch, TransitionEvent } from 'react';
 import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
@@ -12,19 +11,17 @@ import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
 
 import { CombinedState } from 'reducers';
-import { DimensionType } from 'cvat-core-wrapper';
-import LabelsList from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import { collapseSidebar as collapseSidebarAction } from 'actions/annotation-actions';
-import AppearanceBlock from 'components/annotation-page/appearance-block';
-import IssuesListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/issues-list';
+import AudioAppearanceBlock from 'components/annotation-page/audio-workspace/audio-appearance-block';
+import AudioLabelsList from './audio-labels-list';
 
 interface OwnProps {
     objectsList: JSX.Element;
+    appearanceHidden?: boolean;
 }
 
 interface StateToProps {
     sidebarCollapsed: boolean;
-    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -33,16 +30,10 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        annotation: {
-            sidebarCollapsed,
-            job: { instance: jobInstance },
-        },
+        annotation: { sidebarCollapsed },
     } = state;
 
-    return {
-        sidebarCollapsed,
-        jobInstance,
-    };
+    return { sidebarCollapsed };
 }
 
 function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
@@ -53,9 +44,9 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
     };
 }
 
-function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
+function AudioObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        sidebarCollapsed, collapseSidebar, objectsList, jobInstance,
+        sidebarCollapsed, collapseSidebar, objectsList, appearanceHidden,
     } = props;
 
     const collapse = (): void => {
@@ -74,7 +65,6 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         collapseSidebar();
     };
 
-    const is2D = jobInstance ? jobInstance.dimension === DimensionType.DIMENSION_2D : true;
     return (
         <Layout.Sider
             className='cvat-objects-sidebar'
@@ -106,12 +96,12 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                     key: 'labels',
                     label: 'Labels',
                     forceRender: true,
-                    children: <LabelsList />,
-                }, ...(is2D ? [{ key: 'issues', label: 'Issues', children: <IssuesListComponent /> }] : [])]}
+                    children: <AudioLabelsList />,
+                }]}
             />
-            {!sidebarCollapsed && <AppearanceBlock />}
+            {!sidebarCollapsed && !appearanceHidden && <AudioAppearanceBlock />}
         </Layout.Sider>
     );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(React.memo(ObjectsSideBar));
+export default connect(mapStateToProps, mapDispatchToProps)(React.memo(AudioObjectsSideBar));

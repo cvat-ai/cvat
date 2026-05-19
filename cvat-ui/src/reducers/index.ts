@@ -18,6 +18,59 @@ import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/op
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { ImageFilter } from 'utils/image-processing';
 
+export interface AudioRegion {
+    id: string;
+    start: number;
+    end: number;
+    labelId: number | null;
+    attributes: Record<number, string>;
+    serverId?: number;
+    source?: string;
+    group?: number;
+    color?: string;
+    hidden?: boolean;
+    locked?: boolean;
+    zOrder: number;
+}
+
+export type AudioRegionDiff =
+    | { kind: 'added'; region: AudioRegion }
+    | { kind: 'removed'; region: AudioRegion }
+    | { kind: 'updated'; before: AudioRegion; after: AudioRegion };
+
+export interface AudioHistoryEntry {
+    actionName: string;
+    diffs: AudioRegionDiff[];
+    activeRegionIdBefore: string | null;
+    activeRegionIdAfter: string | null;
+}
+
+export interface AudioState {
+    player: {
+        playing: boolean;
+        currentTime: number;
+        duration: number;
+        playbackRate: number;
+        zoom: number;
+        volume: number;
+        loop: boolean;
+        regions: AudioRegion[];
+        activeRegionId: string | null;
+        hoveredRegionId: string | null;
+        audioUrl: string | null;
+        audioLoading: boolean;
+        audioError: string | null;
+        waveformReady: boolean;
+        activeLabelId: number | null;
+        hasUnsavedChanges: boolean;
+        version: number;
+    };
+    history: {
+        undo: AudioHistoryEntry[];
+        redo: AudioHistoryEntry[];
+    };
+}
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
@@ -308,7 +361,7 @@ export type PluginsList = {
 export type CallbackReturnType = Promise<undefined | { preventJobStatusChange: boolean }>;
 
 export interface PluginComponent {
-    component: any; // TODO: research correct plugin component type
+    component: any;
     data: {
         weight: number;
         shouldBeRendered: (props?: object, state?: object) => boolean;
@@ -335,11 +388,6 @@ export interface PluginsState {
         };
     };
     overridableComponents: {
-        app: {
-            serverUnavailable: ((props: {
-                details: string | null;
-            }) => JSX.Element)[];
-        };
         annotationPage: {
             header: {
                 saveAnnotationButton: (() => JSX.Element)[];
@@ -784,6 +832,9 @@ export enum ActiveControl {
     AI_TOOLS = 'ai_tools',
     PHOTO_CONTEXT = 'PHOTO_CONTEXT',
     OPENCV_TOOLS = 'opencv_tools',
+    AUDIO_REGION_CREATE = 'audio_region_create',
+    AUDIO_REGION_EDIT = 'audio_region_edit',
+    AUDIO_REGION_RECORD = 'audio_region_record',
 }
 
 export enum StatesOrdering {
@@ -955,6 +1006,7 @@ export enum Workspace {
     SINGLE_SHAPE = 'Single shape',
     TAGS = 'Tag annotation',
     REVIEW = 'Review',
+    AUDIO = 'Audio',
 }
 
 export enum GridColor {
@@ -1178,6 +1230,7 @@ export interface CombinedState {
     models: ModelsState;
     notifications: NotificationsState;
     annotation: AnnotationState;
+    audio: AudioState;
     settings: SettingsState;
     shortcuts: ShortcutsState;
     review: ReviewState;
