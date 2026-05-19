@@ -134,6 +134,7 @@ class StateChoice(str, Enum):
 class DataChoice(str, Enum):
     VIDEO = "video"
     IMAGESET = "imageset"
+    AUDIO_MP3 = "audio_mp3"
 
     @classmethod
     def choices(cls):

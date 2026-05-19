@@ -398,7 +398,7 @@ export function setupSkeletonEdges(
 }
 
 export function imageDataToDataURL(
-    imageBitmap: Uint8ClampedArray,
+    imageBitmap: Uint8ClampedArray<ArrayBuffer>,
     width: number,
     height: number,
     handleResult: (dataURL: string) => void,
@@ -438,8 +438,8 @@ export function RLEToImageData(
     g: number,
     b: number,
     encoded: ArrayLike<number>,
-): Uint8ClampedArray {
-    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray {
+): Uint8ClampedArray<ArrayBuffer> {
+    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray<ArrayBuffer> {
         const decoded = new Uint8ClampedArray(width * height * 4).fill(0);
         const { length } = rle;
         let decodedIdx = 0;

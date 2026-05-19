@@ -45,6 +45,7 @@ from cvat.apps.engine.media_extractors import (
     load_image,
     sort,
 )
+from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
@@ -172,7 +173,10 @@ def _generate_segment_params(
                 and db_task.mode == models.TaskMode.INTERPOLATION
             ):
                 overlap = 5
-            elif db_task.media_type == models.MediaType.AUDIO:
+            elif (
+                db_task.media_type == models.MediaType.AUDIO
+                and db_task.mode == models.TaskMode.INTERPOLATION
+            ):
                 overlap = 10000
             else:
                 overlap = 0
@@ -1214,9 +1218,8 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
 
     match (db_task.media_type, db_task.mode):
         case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
-            # Not supported yet
-            db_data.compressed_chunk_type = ""
-            db_data.original_chunk_type = ""
+            db_data.compressed_chunk_type = models.DataChoice.AUDIO_MP3
+            db_data.original_chunk_type = models.DataChoice.AUDIO_MP3
         case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
             db_data.compressed_chunk_type = (
                 models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
@@ -1992,13 +1995,21 @@ def create_thread(
     ):
         _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
-    # Prepare the preview image and save it in the cache
-    if db_task.media_type != models.MediaType.AUDIO and not (
-        is_data_in_cloud and is_backup_restore
-    ):
-        TaskFrameProvider(db_task=db_task).get_preview()
+    if not (is_data_in_cloud and is_backup_restore):
+        _create_task_preview(db_task)
 
     _move_to_backing_cs_if_configured(db_data)
+
+
+def _create_task_preview(db_task: models.Task):
+    # Prepare the preview image and save it in the cache
+    match db_task.media_type:
+        case models.MediaType.AUDIO:
+            TaskAudioProvider(db_task).get_preview_image()
+        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+            TaskFrameProvider(db_task).get_preview_image()
+        case _ as media_type:
+            assert False, f"Unknown media type '{media_type}'"
 
 
 def _create_static_chunks(
@@ -2061,6 +2072,11 @@ def _create_static_chunks(
         )
 
         fs_original.result()
+
+    assert db_task.media_type in (
+        models.MediaType.IMAGE,
+        models.MediaType.POINT_CLOUD,
+    )
 
     db_data = db_task.require_data()
 

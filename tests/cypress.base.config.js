@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line import/no-unresolved
 const reporter = require('allure-cypress/reporter');
 
 const { allureCypress } = reporter;
 const plugins = require('./cypress/plugins/index');
 
-const baseUrl = 'http://localhost:8080';
+const baseUrl = 'http://localhost:3000';
 const minioUrl = `http://${baseUrl.includes('3000') ? 'localhost' : 'minio'}:9000`;
 
 module.exports = {
@@ -20,8 +19,7 @@ module.exports = {
     downloadsFolder: 'cypress/fixtures',
     env: {
         user: 'admin',
-        email: 'admin@localhost.company',
-        password: '12qwaszx',
+        password: '12Qwaszx_',
     },
     e2e: {
         setupNodeEvents(on, config) {

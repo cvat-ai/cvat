@@ -310,7 +310,7 @@ export type PluginsList = {
 export type CallbackReturnType = Promise<undefined | { preventJobStatusChange: boolean }>;
 
 export interface PluginComponent {
-    component: any;
+    component: any; // TODO: research correct plugin component type
     data: {
         weight: number;
         shouldBeRendered: (props?: object, state?: object) => boolean;

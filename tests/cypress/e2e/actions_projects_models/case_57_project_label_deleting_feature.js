@@ -7,9 +7,9 @@
 import { projectNameDeleteLabel, labelDelete } from '../../support/const_project';
 
 context('Delete a label from a project.', () => {
-    const caseID = 57;
+    const caseId = 57;
     const projectName = projectNameDeleteLabel;
-    const taskName = `Task case ${caseID}`;
+    const taskName = `Task case ${caseId}`;
     const labelName = labelDelete.name;
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'Some value for type Text';
@@ -28,14 +28,14 @@ context('Delete a label from a project.', () => {
     const forProject = true;
     const attachToProject = false;
     const multiAttrParams = false;
-    let projectID = '';
+    let projectId = '';
 
-    function getProjectID() {
+    function getProjectId() {
         cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'data-cvat-project-id')
-            .then(($projectID) => {
-                projectID = $projectID;
+            .then(($projectId) => {
+                projectId = $projectId;
             });
     }
 
@@ -50,14 +50,14 @@ context('Delete a label from a project.', () => {
         // restore label with different color to mark deletion
         cy.window().then(async ($win) => {
             await $win.cvat.server.request(
-                `/api/projects/${projectID}`, {
+                `/api/projects/${projectId}`, {
                     method: 'PATCH',
                     data: { labels: [{ ...labelDelete, color: 'green' }] },
                 });
         });
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Create a task from project.', () => {
             cy.createAnnotationTask(
                 taskName,
@@ -75,7 +75,7 @@ context('Delete a label from a project.', () => {
 
         it('Delete a label from project.', () => {
             cy.openProject(projectName);
-            getProjectID(projectName);
+            getProjectId(projectName);
             cy.deleteLabel(labelName);
         });
 

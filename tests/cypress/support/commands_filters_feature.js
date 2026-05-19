@@ -23,23 +23,23 @@ function getFilterGroup(groupId, target = 'objects') {
     return getFilterBuilder(target).find(`.group[data-id="${groupId}"]`).first();
 }
 
-Cypress.Commands.add('collectGroupID', (target = 'objects') => {
-    const groupDataID = [];
+Cypress.Commands.add('collectGroupId', (target = 'objects') => {
+    const groupDataId = [];
     getFilterBuilder(target).find('.group').then(($group) => {
         for (let i = 0; i < $group.length; i++) {
-            groupDataID.push($group[i].dataset.id);
+            groupDataId.push($group[i].dataset.id);
         }
-        return groupDataID;
+        return groupDataId;
     });
 });
 
-Cypress.Commands.add('collectRuleID', (target = 'objects') => {
-    const ruleDataID = [];
+Cypress.Commands.add('collectRuleId', (target = 'objects') => {
+    const ruleDataId = [];
     getFilterBuilder(target).find('.rule').then(($rule) => {
         for (let i = 0; i < $rule.length; i++) {
-            ruleDataID.push($rule[i].dataset.id);
+            ruleDataId.push($rule[i].dataset.id);
         }
-        return ruleDataID;
+        return ruleDataId;
     });
 });
 
@@ -52,7 +52,7 @@ Cypress.Commands.add('clearFilters', () => {
 
 Cypress.Commands.add('addFiltersGroup', (groupIndex, target = 'objects') => {
     cy.checkFiltersModalOpened();
-    cy.collectGroupID(target).then((groupIdIndex) => {
+    cy.collectGroupId(target).then((groupIdIndex) => {
         getFilterGroup(groupIdIndex[groupIndex], target)
             .contains('button', 'Add group')
             .first()
@@ -62,7 +62,7 @@ Cypress.Commands.add('addFiltersGroup', (groupIndex, target = 'objects') => {
 
 Cypress.Commands.add('addFiltersRule', (groupIndex, target = 'objects') => {
     cy.checkFiltersModalOpened();
-    cy.collectGroupID(target).then((groupIdIndex) => {
+    cy.collectGroupId(target).then((groupIdIndex) => {
         getFilterGroup(groupIdIndex[groupIndex], target).then(($group) => {
             const addRuleButton = Array.from($group[0].querySelectorAll('button'))
                 .find((button) => ['Add rule', 'Add sub rule'].includes(button.textContent.trim()));
@@ -73,7 +73,7 @@ Cypress.Commands.add('addFiltersRule', (groupIndex, target = 'objects') => {
 
 Cypress.Commands.add('setGroupCondition', (groupIndex, condition, target = 'objects') => {
     cy.checkFiltersModalOpened();
-    cy.collectGroupID(target).then((groupIdIndex) => {
+    cy.collectGroupId(target).then((groupIdIndex) => {
         getFilterGroup(groupIdIndex[groupIndex], target).within(() => {
             cy.get('.group--header').first().trigger('mouseover');
             cy.contains('button', condition).click({ force: true });
@@ -87,8 +87,8 @@ Cypress.Commands.add(
         groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit, target = 'objects',
     }) => {
         cy.checkFiltersModalOpened();
-        cy.collectGroupID(target).then((groupIdIndex) => {
-            cy.collectRuleID(target).then((ruleIdIndex) => {
+        cy.collectGroupId(target).then((groupIdIndex) => {
+            cy.collectRuleId(target).then((ruleIdIndex) => {
                 const getRule = () => {
                     const group = getFilterGroup(groupIdIndex[groupIndex], target);
                     return target === 'elements' ?
