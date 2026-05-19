@@ -8,23 +8,29 @@ on:
       - "utils/dataset_manifest/requirements.in"
 
 permissions:
-  contents: write
+  contents: read
+  pull-requests: read
 
 jobs:
   update:
-    # Dependabot PRs can be synchronized by maintainers, so github.actor is not
-    # always dependabot[bot]. Limit this write-enabled job to Dependabot branches.
-    if: startsWith(github.event.pull_request.head.ref, 'dependabot/')
+    # Only run on Dependabot branches from this repository. Regenerating
+    # requirements can execute package build code, so fork PRs must not run this
+    # workflow with access to the CVAT bot token.
+    if: >
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'dependabot/pip/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
+          persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
 
       - name: Install system dependencies
         run: |
@@ -52,15 +58,35 @@ jobs:
       - name: Regenerate Python requirements
         run: cvat/requirements/regenerate.sh --no-upgrade
 
-      - name: Commit regenerated requirements
+      - name: Check generated requirements changes
+        id: changes
         run: |
           if git diff --quiet -- cvat/requirements/*.txt utils/dataset_manifest/requirements.txt; then
             echo "No generated requirements changes"
-            exit 0
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      # The default github.token does not trigger follow-up CI on push. Use the
+      # same app token as the release workflow so the updated Dependabot PR runs
+      # the normal validation pipeline.
+      - name: Generate authentication token
+        if: steps.changes.outputs.changed == 'true'
+        id: gen-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: "${{ secrets.CVAT_BOT_APP_ID }}"
+          private-key: "${{ secrets.CVAT_BOT_PRIVATE_KEY }}"
+
+      - name: Commit regenerated requirements
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
+        run: |
+          git config user.name "cvat-bot[bot]"
+          git config user.email "147643061+cvat-bot[bot]@users.noreply.github.com"
           git add cvat/requirements/*.txt utils/dataset_manifest/requirements.txt
           git commit -m "Regenerate Python requirements"
-          git push
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
