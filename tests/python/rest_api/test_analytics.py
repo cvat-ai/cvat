@@ -265,8 +265,7 @@ class TestGetAuditEvents:
 
         assert len(events)
         for event in events:
-            payload = json.loads(event["payload"])
-            assert "remote_addr" not in payload["request"]
+            assert "remote_addr" not in event
 
     @pytest.mark.parametrize("api_version", [1, 2])
     def test_delete_project(self, api_version: int):
