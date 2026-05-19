@@ -46,7 +46,7 @@ module.exports = (env, argv = {}) => {
     return {
         target: 'web',
         mode: isDevMode ? 'development' : 'production',
-        devtool: sourceMapsEnabled ? 'source-map' : false,
+        devtool: sourceMapsEnabled ? (isDevMode ? 'source-map' : 'hidden-source-map') : false,
         entry: {
             'cvat-ui': './src/index.tsx',
             ...pluginPaths.reduce((acc, { entrypoint }, index) => ({
