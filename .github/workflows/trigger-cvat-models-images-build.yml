@@ -3,7 +3,7 @@ name: Trigger Agent Image Builds
 on:
   push:
     branches:
-      - your-branch-name
+      - DEV-922
 #on:
 #  workflow_dispatch:
 #  release:
