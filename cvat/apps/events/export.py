@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import csv
-import json
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -31,38 +30,26 @@ slogger = ServerLogManager(__name__)
 
 DEFAULT_CACHE_TTL = timedelta(hours=1)
 TARGET = "events"
-
-
-def _exclude_remote_addr_from_payload(payload: str) -> str:
-    try:
-        data = json.loads(payload)
-    except (TypeError, json.JSONDecodeError):
-        return payload
-
-    if not isinstance(data, dict):
-        return payload
-
-    request = data.get("request")
-    if not isinstance(request, dict) or "remote_addr" not in request:
-        return payload
-
-    request.pop("remote_addr")
-    return json.dumps(data)
-
-
-def _prepare_event_rows_for_export(column_names: list[str], rows: list[tuple]) -> list[tuple]:
-    try:
-        payload_index = column_names.index("payload")
-    except ValueError:
-        return rows
-
-    prepared_rows = []
-    for row in rows:
-        prepared_row = list(row)
-        prepared_row[payload_index] = _exclude_remote_addr_from_payload(prepared_row[payload_index])
-        prepared_rows.append(tuple(prepared_row))
-
-    return prepared_rows
+EVENT_EXPORT_COLUMNS = [
+    "scope",
+    "obj_name",
+    "obj_id",
+    "obj_val",
+    "source",
+    "timestamp",
+    "count",
+    "duration",
+    "project_id",
+    "task_id",
+    "job_id",
+    "user_id",
+    "user_name",
+    "user_email",
+    "org_id",
+    "org_slug",
+    "payload",
+    "access_token_id",
+]
 
 
 def _create_csv(query_params: dict, output_filename: str):
@@ -74,7 +61,7 @@ def _create_csv(query_params: dict, output_filename: str):
             "to": query_params.pop("to"),
         }
 
-        query = "SELECT * FROM events"
+        query = f"SELECT {', '.join(EVENT_EXPORT_COLUMNS)} FROM events"
         conditions = ["source in ('server', 'client')", "scope != 'send:exception'"]
         parameters = {}
 
@@ -109,9 +96,7 @@ def _create_csv(query_params: dict, output_filename: str):
         with open(output_filename, "w", encoding="UTF8") as f:
             writer = csv.writer(f)
             writer.writerow(result.column_names)
-            writer.writerows(
-                _prepare_event_rows_for_export(result.column_names, result.result_rows)
-            )
+            writer.writerows(result.result_rows)
 
         return output_filename
     except Exception:

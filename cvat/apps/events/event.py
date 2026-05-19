@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 from datetime import datetime, timezone
 
 from django.db import transaction
@@ -60,27 +59,6 @@ def get_remote_addr(request) -> str | None:
         return None
 
 
-def add_remote_addr_to_payload(payload: str | None, remote_addr: str) -> str | None:
-    try:
-        data = json.loads(payload or "{}")
-    except (TypeError, json.JSONDecodeError):
-        return payload
-
-    if not isinstance(data, dict):
-        return payload
-
-    request = data.get("request")
-    if not isinstance(request, dict):
-        request = {}
-
-    data["request"] = {
-        **request,
-        "remote_addr": remote_addr,
-    }
-
-    return json.dumps(data)
-
-
 def record_server_event(
     *,
     scope: str,
@@ -94,6 +72,10 @@ def record_server_event(
     access_token_id = request_info.pop("access_token_id", None)
     if access_token_id is not None:
         kwargs.setdefault("access_token_id", access_token_id)
+
+    remote_addr = request_info.pop("remote_addr", None)
+    if remote_addr is not None:
+        kwargs.setdefault("remote_addr", remote_addr)
 
     payload_with_request_info = {
         **payload,

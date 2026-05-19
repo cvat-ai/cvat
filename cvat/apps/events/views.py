@@ -19,7 +19,7 @@ from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 from .const import USER_ACTIVITY_SCOPE
-from .event import add_remote_addr_to_payload, get_remote_addr
+from .event import get_remote_addr
 from .export import export
 from .handlers import handle_client_events_push
 
@@ -110,7 +110,7 @@ class EventsViewSet(viewsets.ViewSet):
             if remote_addr := get_remote_addr(request):
                 event = {
                     **event,
-                    "payload": add_remote_addr_to_payload(event.get("payload"), remote_addr),
+                    "remote_addr": remote_addr,
                 }
 
             message = (
