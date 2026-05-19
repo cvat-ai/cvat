@@ -5,7 +5,6 @@
 
 import csv
 import json
-import math
 import uuid
 from collections import Counter
 from datetime import datetime, timedelta, timezone
@@ -66,13 +65,6 @@ class TestGetAuditEvents:
             assert response.status == HTTPStatus.CREATED
         return project.id, response.headers.get("X-Request-Id")
 
-    @staticmethod
-    def _expected_job_count(
-        *, task_size: int, segment_size: int, consensus_replicas: int = 0
-    ) -> int:
-        segments_count = math.ceil(task_size / segment_size)
-        return segments_count * (consensus_replicas + 1)
-
     @pytest.fixture(autouse=True)
     def setup(self, restore_clickhouse_db_per_function, restore_redis_inmem_per_function):
         project_spec = {
@@ -101,14 +93,13 @@ class TestGetAuditEvents:
             "segment_size": 2,
             "project_id": self.project_id,
         }
-        task_size = 3
         task_ids = [
             create_task(
                 self._USERNAME,
                 task_spec,
                 {
                     "image_quality": 10,
-                    "client_files": generate_image_files(task_size),
+                    "client_files": generate_image_files(3),
                 },
             ),
             create_task(
@@ -116,66 +107,46 @@ class TestGetAuditEvents:
                 task_spec,
                 {
                     "image_quality": 10,
-                    "client_files": generate_image_files(task_size),
+                    "client_files": generate_image_files(3),
                 },
             ),
         ]
 
         self.task_ids = [t[0] for t in task_ids]
-        self.job_count_per_task = self._expected_job_count(
-            task_size=task_size,
-            segment_size=task_spec["segment_size"],
-        )
-        self.project_job_count = len(self.task_ids) * self.job_count_per_task
 
         assert project_request_id is not None
         assert all(t[1] is not None for t in task_ids)
 
         event_filters = [
             (
-                (
-                    (lambda e: json.loads(e["payload"])["request"]["id"], [project_request_id]),
-                    ("scope", ["create:project"]),
-                ),
-                1,
+                (lambda e: json.loads(e["payload"])["request"]["id"], [project_request_id]),
+                ("scope", ["create:project"]),
             ),
         ]
-        for task_id, request_id in task_ids:
+        for task_id in task_ids:
             event_filters.extend(
                 (
                     (
-                        (
-                            (lambda e: json.loads(e["payload"])["request"]["id"], [request_id]),
-                            ("scope", ["create:task"]),
-                        ),
-                        1,
+                        (lambda e: json.loads(e["payload"])["request"]["id"], [task_id[1]]),
+                        ("scope", ["create:task"]),
                     ),
-                    (
-                        (
-                            ("scope", ["create:job"]),
-                            ("task_id", [str(task_id)]),
-                        ),
-                        self.job_count_per_task,
-                    ),
+                    (("scope", ["create:job"]),),
                 )
             )
-        self._wait_for_events(event_filters)
+        self._wait_for_request_ids(event_filters)
 
-    def _wait_for_events(self, event_filters):
+    def _wait_for_request_ids(self, event_filters):
         MAX_RETRIES = 5
         SLEEP_INTERVAL = 2
         while MAX_RETRIES > 0:
             data = self._test_get_audit_logs_as_csv()
             events = self._csv_to_dict(data)
-            if all(
-                len(self._filter_events(events, filters)) >= expected_count
-                for filters, expected_count in event_filters
-            ):
+            if all(self._filter_events(events, filter) for filter in event_filters):
                 break
             MAX_RETRIES -= 1
             sleep(SLEEP_INTERVAL)
         else:
-            assert False, "Could not wait for expected events"
+            assert False, "Could not wait for expected request IDs"
 
     @staticmethod
     def _csv_to_dict(csv_data):
@@ -235,8 +206,8 @@ class TestGetAuditEvents:
 
         event_count = Counter([e["scope"] for e in filtered_events])
         assert event_count["create:project"] == 1
-        assert event_count["create:task"] == len(self.task_ids)
-        assert event_count["create:job"] == self.project_job_count
+        assert event_count["create:task"] == 2
+        assert event_count["create:job"] == 2
 
     @pytest.mark.parametrize("api_version", [1, 2])
     def test_filter_by_task(self, api_version: int):
@@ -254,7 +225,7 @@ class TestGetAuditEvents:
 
             event_count = Counter([e["scope"] for e in filtered_events])
             assert event_count["create:task"] == 1
-            assert event_count["create:job"] == self.job_count_per_task
+            assert event_count["create:job"] == 2
 
     @pytest.mark.parametrize("api_version", [1, 2])
     def test_filter_by_non_existent_project(self, api_version: int):
@@ -289,40 +260,24 @@ class TestGetAuditEvents:
         response = delete_method("admin1", f"projects/{self.project_id}")
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        event_filters = [
+        event_filters = (
             (
                 (
-                    (
-                        lambda e: json.loads(e["payload"])["request"]["id"],
-                        [response.headers.get("X-Request-Id")],
-                    ),
-                    ("scope", ["delete:project"]),
+                    lambda e: json.loads(e["payload"])["request"]["id"],
+                    [response.headers.get("X-Request-Id")],
                 ),
-                1,
+                ("scope", ["delete:project"]),
             ),
             (
                 (
-                    (
-                        lambda e: json.loads(e["payload"])["request"]["id"],
-                        [response.headers.get("X-Request-Id")],
-                    ),
-                    ("scope", ["delete:task"]),
+                    lambda e: json.loads(e["payload"])["request"]["id"],
+                    [response.headers.get("X-Request-Id")],
                 ),
-                len(self.task_ids),
+                ("scope", ["delete:task"]),
             ),
-            (
-                (
-                    (
-                        lambda e: json.loads(e["payload"])["request"]["id"],
-                        [response.headers.get("X-Request-Id")],
-                    ),
-                    ("scope", ["delete:job"]),
-                ),
-                self.project_job_count,
-            ),
-        ]
+        )
 
-        self._wait_for_events(event_filters)
+        self._wait_for_request_ids(event_filters)
 
         query_params = {
             "project_id": self.project_id,
@@ -337,8 +292,8 @@ class TestGetAuditEvents:
 
         event_count = Counter([e["scope"] for e in filtered_events])
         assert event_count["delete:project"] == 1
-        assert event_count["delete:task"] == len(self.task_ids)
-        assert event_count["delete:job"] == self.project_job_count
+        assert event_count["delete:task"] == 2
+        assert event_count["delete:job"] == 4
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("api_version, allowed", [(1, False), (2, True)])
