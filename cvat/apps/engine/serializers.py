@@ -66,9 +66,21 @@ from cvat.apps.engine.utils import (
 from cvat.apps.iam.permissions import get_iam_context
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
+from cvat.utils.paths import problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
+
+
+class CanonicalRelativePathValidator:
+    def __init__(self, *, allow_trailing_slash: bool = False) -> None:
+        self.allow_trailing_slash = allow_trailing_slash
+
+    def __call__(self, value: str) -> None:
+        if problem := problem_with_untrusted_path(
+            value, allow_trailing_slash=self.allow_trailing_slash
+        ):
+            raise serializers.ValidationError(problem)
 
 
 class WriteOnceMixin:
@@ -2253,10 +2265,12 @@ class ServerFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ServerFile
         fields = ("file",)
+        extra_kwargs = {
+            "file": {"validators": [CanonicalRelativePathValidator(allow_trailing_slash=True)]}
+        }
 
-    # pylint: disable=no-self-use
     def to_internal_value(self, data):
-        return {"file": data}
+        return super().to_internal_value({"file": data})
 
     # pylint: disable=no-self-use
     def to_representation(self, instance):
@@ -2536,7 +2550,10 @@ class DataSerializer(serializers.ModelSerializer):
     server_files_exclude = serializers.ListField(
         required=False,
         default=[],
-        child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
+        child=serializers.CharField(
+            max_length=MAX_FILENAME_LENGTH,
+            validators=[CanonicalRelativePathValidator(allow_trailing_slash=True)],
+        ),
         help_text=textwrap.dedent("""\
             Paths to files and directories from a file share mounted on the server, or from a cloud storage
             that should be excluded from the directories specified in server_files.
@@ -4177,10 +4194,10 @@ class ManifestSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Manifest
         fields = ("filename",)
+        extra_kwargs = {"filename": {"validators": [CanonicalRelativePathValidator()]}}
 
-    # pylint: disable=no-self-use
     def to_internal_value(self, data):
-        return {"filename": data}
+        return super().to_internal_value({"filename": data})
 
     # pylint: disable=no-self-use
     def to_representation(self, instance):
