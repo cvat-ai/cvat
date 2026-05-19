@@ -513,6 +513,21 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private toggleCuboidFreeFaceMode = (): void => {
+        const { objectState, canvasInstance } = this.props;
+        if (
+            objectState.shapeType !== ShapeType.CUBOID ||
+            !(canvasInstance instanceof Canvas)
+        ) {
+            return;
+        }
+        const clientID = objectState.clientID as number;
+        const current = canvasInstance.isCuboidFreeFaceMode(clientID);
+        canvasInstance.setCuboidFreeFaceMode(clientID, !current);
+        // Force a re-render so the menu label flips between "Free" / "Lock".
+        this.forceUpdate();
+    };
+
     private resetCuboidPerspective = (commit = true): void => {
         function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
@@ -606,6 +621,14 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     slice={this.slice}
                     simplify={this.requestSimplification}
                     resetCuboidPerspective={this.resetCuboidPerspective}
+                    toggleCuboidFreeFaceMode={this.toggleCuboidFreeFaceMode}
+                    cuboidFreeFaceMode={
+                        objectState.shapeType === ShapeType.CUBOID &&
+                        this.props.canvasInstance instanceof Canvas
+                            ? this.props.canvasInstance
+                                .isCuboidFreeFaceMode(objectState.clientID as number)
+                            : false
+                    }
                     runAnnotationAction={this.runAnnotationAction}
                 />
                 {simplifyMode && (

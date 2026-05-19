@@ -119,3 +119,14 @@ services:
   cvat_vector:
     ports:
       - '127.0.0.1:8282:8282'
+    # Workaround for a runc 1.4.0 regression on WSL2 that rejects single-file
+    # bind mounts ("MS_BIND|MS_REC ... not a directory"). The image's
+    # /etc/vector/ only contains vector.toml, so mounting the parent
+    # directory is functionally identical.
+    volumes: !reset
+      - type: bind
+        source: ./components/analytics/vector
+        target: /etc/vector
+        read_only: true
+      - type: tmpfs
+        target: /vector-data-dir

@@ -48,6 +48,8 @@ export interface CanvasView {
     html(): HTMLDivElement;
     setupConflictRegions(clientID: number): number[];
     translateFromSVG(points: number[]): number[];
+    setCuboidFreeFaceMode(clientID: number, flag: boolean): void;
+    isCuboidFreeFaceMode(clientID: number): boolean;
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -2006,6 +2008,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.background.classList.add('cvat_canvas_pixelized');
             }
 
+            const lensChanged = configuration.lensCalibration !== this.configuration.lensCalibration;
+            if (lensChanged) {
+                for (const drawnState of Object.values(this.drawnStates)) {
+                    if (drawnState.shapeType === 'cuboid') {
+                        const shape: any = this.svgShapes[drawnState.clientID];
+                        if (shape && typeof shape.setLens === 'function') {
+                            shape.setLens(configuration.lensCalibration ?? null, this.geometry.offset);
+                        }
+                    }
+                }
+            }
+
             this.configuration = configuration;
             if (withUpdatingShapeViews) {
                 updateShapeViews(Object.values(this.drawnStates));
@@ -2397,6 +2411,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public translateFromSVG(point: number[]): number[] {
         return translateFromSVG(this.content, point);
+    }
+
+    public setCuboidFreeFaceMode(clientID: number, flag: boolean): void {
+        const shape: any = this.svgShapes[clientID];
+        if (shape && typeof shape.setFreeFaceMode === 'function') {
+            shape.setFreeFaceMode(flag);
+        }
+    }
+
+    public isCuboidFreeFaceMode(clientID: number): boolean {
+        const shape: any = this.svgShapes[clientID];
+        if (shape && typeof shape.isFreeFaceMode === 'function') {
+            return shape.isFreeFaceMode();
+        }
+        return false;
     }
 
     private redrawBitmap(): void {
@@ -3489,7 +3518,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addCuboid(points: string, state: any): any {
         const cube = (this.adoptedContent as any)
-            .cube(points)
+            .cube(points, {
+                lens: this.configuration.lensCalibration ?? null,
+                offset: this.geometry.offset,
+            })
             .fill(state.color)
             .attr({
                 clientID: state.clientID,

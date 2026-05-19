@@ -301,6 +301,16 @@ g.cvat_canvas_shape_occluded {
     cursor: move;
 }
 
+/*
+ * Per-corner handles for cuboids in "Free Face Mode" (all 8 corners).
+ * Drawn in orange so users can clearly distinguish them from the
+ * standard perspective resize handles.
+ */
+.cvat_canvas_cuboid_free_corner {
+    fill: #ff8c00 !important;
+    stroke: #663d00 !important;
+}
+
 .cvat_canvas_first_poly_point {
     fill: lightgray;
 }
@@ -478,3 +488,11 @@ g.cvat_canvas_shape_occluded {
 .cvat-canvas-notification-list-shortcuts {
     color: yellow;
 }
+
+.cvat_canvas_cuboid_lens_distorted > polygon,
+.cvat_canvas_cuboid_lens_distorted > line {
+    stroke-opacity: 0;
+    fill-opacity: 0;
+    pointer-events: all;
+}
+

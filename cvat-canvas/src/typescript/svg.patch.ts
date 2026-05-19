@@ -12,6 +12,9 @@ import 'svg.draw.js';
 import consts from './consts';
 import { Equation, CuboidModel, Orientation, Edge } from './cuboid';
 import { Point, parsePoints, clamp } from './shared';
+import {
+    FisheyeLens, FisheyeParams, curvedEdgePoints, pointsToPathD, faceToCurvedPathD,
+} from './lensModel';
 
 // Update constructor
 const originalDraw = SVG.Element.prototype.draw;
@@ -210,16 +213,125 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
     create: 'g',
     inherit: SVG.G,
     extend: {
-        constructorMethod(points: string) {
+        constructorMethod(points: string, opts?: { lens?: FisheyeParams | null; offset?: number }) {
             this.cuboidModel = new CuboidModel(parsePoints(points));
             this.setupFaces();
             this.setupEdges();
             this.setupProjections();
             this.hideProjections();
+            this.setupLensOverlay();
 
             this._attr('points', points);
             this.addClass('cvat_canvas_shape_cuboid');
+            if (opts && opts.lens) {
+                this.setLens(opts.lens, opts.offset ?? 0);
+            }
             return this;
+        },
+
+        setupLensOverlay() {
+            this.lens = null as FisheyeLens | null;
+            // A child <g> that holds the curved overlay rendering. Hidden by
+            // default; shown when a lens is set. Children inherit stroke/fill
+            // from the parent cube group, so they stay color-correct.
+            this.lensOverlay = this.group().addClass('cvat_canvas_cuboid_lens_overlay');
+            this.lensOverlay.attr('pointer-events', 'none');
+            this.lensOverlay.hide();
+
+            // 6 face overlay paths (curved closed outlines, low-opacity fill).
+            this.lensFaceBot = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceTop = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceRight = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceLeft = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceDorsal = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+            this.lensFaceFront = this.lensOverlay.path('').attr('fill-rule', 'evenodd');
+
+            // 12 edge overlay paths (curved strokes, no fill). The four
+            // "front" edges are created LAST so they're appended to the SVG
+            // group after the side/back edges; SVG renders later children on
+            // top, which guarantees the grey perspective-face outline paints
+            // over the blue side/back edges at shared corners.
+            const edgePath = (cls?: string): any => {
+                const p = this.lensOverlay.path('').attr('fill', 'none');
+                if (cls) p.addClass(cls);
+                return p;
+            };
+            this.lensEdgeDR = edgePath();
+            this.lensEdgeDL = edgePath();
+            this.lensEdgeRT = edgePath();
+            this.lensEdgeLT = edgePath();
+            this.lensEdgeDT = edgePath();
+            this.lensEdgeRB = edgePath();
+            this.lensEdgeLB = edgePath();
+            this.lensEdgeDB = edgePath();
+            this.lensEdgeFL = edgePath('cvat_canvas_cuboid_front_edge');
+            this.lensEdgeFR = edgePath('cvat_canvas_cuboid_front_edge');
+            this.lensEdgeFT = edgePath('cvat_canvas_cuboid_front_edge');
+            this.lensEdgeFB = edgePath('cvat_canvas_cuboid_front_edge');
+        },
+
+        setLens(params: FisheyeParams | null, offset = 0) {
+            this.lensParams = params;
+            this.lensOffset = offset;
+            if (!params) {
+                this.lens = null;
+                this.lensOverlay.hide();
+                this.removeClass('cvat_canvas_cuboid_lens_distorted');
+                return;
+            }
+            // Cuboid corners live in SVG-canvas coordinates, which are image-pixel
+            // coordinates shifted by `offset`. Bake that shift into the lens'
+            // principal point so the lens consumes/produces SVG-canvas coords
+            // directly. Without this, every interior curve sample is computed
+            // against a wildly off-centre origin and the bow flips direction
+            // near the periphery (see INT-5968).
+            const width = params.horizontalResolution;
+            const height = Math.round(width / params.aspectRatio);
+            this.lens = new FisheyeLens({
+                ...params,
+                cx: (params.cx ?? width / 2) + offset,
+                cy: (params.cy ?? height / 2) + offset,
+            });
+            this.addClass('cvat_canvas_cuboid_lens_distorted');
+            this.lensOverlay.show();
+            this.updateLensOverlay();
+            // Re-apply the grey "perspective face" colouring to the curved
+            // overlay edges; without this, switching lens calibration on after
+            // the cuboid was created would leave the front edges with the
+            // default cuboid stroke colour.
+            this.paintOrientationLines();
+        },
+
+        updateLensOverlay() {
+            if (!this.lens) return;
+            const m = this.cuboidModel as any;
+            const lens = this.lens as FisheyeLens;
+
+            const setEdge = (el: any, e: Edge): void => {
+                el.plot(pointsToPathD(curvedEdgePoints(e.points[0], e.points[1], lens)));
+            };
+            setEdge(this.lensEdgeFL, m.fl);
+            setEdge(this.lensEdgeFR, m.fr);
+            setEdge(this.lensEdgeDR, m.dr);
+            setEdge(this.lensEdgeDL, m.dl);
+            setEdge(this.lensEdgeFT, m.ft);
+            setEdge(this.lensEdgeRT, m.rt);
+            setEdge(this.lensEdgeLT, m.lt);
+            setEdge(this.lensEdgeDT, m.dt);
+            setEdge(this.lensEdgeFB, m.fb);
+            setEdge(this.lensEdgeRB, m.rb);
+            setEdge(this.lensEdgeLB, m.lb);
+            setEdge(this.lensEdgeDB, m.db);
+
+            const setFace = (el: any, corners: Point[]): void => {
+                el.plot(faceToCurvedPathD(corners, lens));
+            };
+            setFace(this.lensFaceBot, m.bot.points);
+            setFace(this.lensFaceTop, m.top.points);
+            setFace(this.lensFaceRight, m.right.points);
+            setFace(this.lensFaceLeft, m.left.points);
+            setFace(this.lensFaceDorsal, m.dorsal.points);
+            setFace(this.lensFaceFront, m.front.points);
         },
 
         setupFaces() {
@@ -291,19 +403,79 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.drCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_ew');
             this.dlCenter = circle(0, 0).addClass('svg_select_points').addClass('svg_select_points_ew');
 
+            // Per-corner handles (only visible when freeFaceMode is on).
+            // Cuboid model indices:
+            //   front face: flt=0, flb=1, frt=2, frb=3
+            //   back face : brt=4, brb=5, blt=6, blb=7
+            this.bltCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_lt')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.blbCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_lb')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.brtCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_rt')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.brbCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_rb')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.fltCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_lt')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.flbCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_lb')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.frtCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_rt')
+                .addClass('cvat_canvas_cuboid_free_corner');
+            this.frbCenter = circle(0, 0)
+                .addClass('svg_select_points')
+                .addClass('svg_select_points_rb')
+                .addClass('cvat_canvas_cuboid_free_corner');
+
             const grabPoints = this.getGrabPoints();
             const edges = this.getEdges();
             for (let i = 0; i < grabPoints.length; i += 1) {
                 const edge = edges[i];
+                if (!edge) continue;
                 const cx = (edge.attr('x2') + edge.attr('x1')) / 2;
                 const cy = (edge.attr('y2') + edge.attr('y1')) / 2;
                 grabPoints[i].center(cx, cy);
             }
 
+            // Position per-corner handles directly on their points.
+            this.positionFreeCornerHandles();
+
             if (viewModel.orientation === Orientation.LEFT) {
                 this.dlCenter.hide();
             } else {
                 this.drCenter.hide();
+            }
+
+            this.updateFreeCornerHandlesVisibility();
+        },
+
+        positionFreeCornerHandles() {
+            if (!this.bltCenter) return;
+            const pts = this.cuboidModel.points;
+            // Back face: blt=6, blb=7, brt=4, brb=5
+            this.bltCenter.center(pts[6].x, pts[6].y);
+            this.blbCenter.center(pts[7].x, pts[7].y);
+            this.brtCenter.center(pts[4].x, pts[4].y);
+            this.brbCenter.center(pts[5].x, pts[5].y);
+            // Front face: flt=0, flb=1, frt=2, frb=3
+            if (this.fltCenter) {
+                this.fltCenter.center(pts[0].x, pts[0].y);
+                this.flbCenter.center(pts[1].x, pts[1].y);
+                this.frtCenter.center(pts[2].x, pts[2].y);
+                this.frbCenter.center(pts[3].x, pts[3].y);
             }
         },
 
@@ -374,6 +546,20 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                 this.getGrabPoints().forEach((point: SVG.Element) => {
                     point && point.remove();
                 });
+                [
+                    this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter,
+                    this.fltCenter, this.flbCenter, this.frtCenter, this.frbCenter,
+                ].forEach((point: SVG.Element) => {
+                    if (point) point.remove();
+                });
+                this.bltCenter = null;
+                this.blbCenter = null;
+                this.brtCenter = null;
+                this.brbCenter = null;
+                this.fltCenter = null;
+                this.flbCenter = null;
+                this.frtCenter = null;
+                this.frbCenter = null;
             } else {
                 this.setupGrabPoints(
                     this.face
@@ -434,6 +620,18 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     }
                 });
 
+                // Clean per-corner handle listeners (front + back) as well.
+                [
+                    this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter,
+                    this.fltCenter, this.flbCenter, this.frtCenter, this.frbCenter,
+                ].forEach((point: SVG.Element) => {
+                    if (point) {
+                        point.off('dragstart');
+                        point.off('dragmove');
+                        point.off('dragend');
+                    }
+                });
+
                 return;
             }
 
@@ -463,6 +661,22 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     let dyPortion = dy - accumulatedOffset.y;
                     accumulatedOffset.x += dxPortion;
                     accumulatedOffset.y += dyPortion;
+
+                    // ── FREE-FACE PATH ──────────────────────────────────
+                    // When free-face mode is on, dragging a single front-face
+                    // corner must move only that corner. Skip all perspective
+                    // recomputation that normally enforces vertical FL/FR.
+                    if (this.cuboidModel.freeFaceMode) {
+                        const pts = this.cuboidModel.points;
+                        pts[resizedCubePoint] = {
+                            x: pts[resizedCubePoint].x + dxPortion,
+                            y: pts[resizedCubePoint].y + dyPortion,
+                        };
+                        this.updateViewAndVM(false);
+                        this.face.plot(this.cuboidModel.front.points);
+                        this.fire(new CustomEvent('resizing', event));
+                        return;
+                    }
 
                     const edge = getEdgeIndex(resizedCubePoint);
                     const [edgeTopIndex, edgeBottomIndex] = getTopDown(edge);
@@ -777,6 +991,45 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     this.fire(new CustomEvent('resizedone', event));
                 });
 
+            // Per-corner handles (front + back). Active only when freeFaceMode
+            // is on. Each handle drags its own cuboid point with no perspective
+            // constraint; other corners are unaffected.
+            const setupFreeCornerHandle = (handle: any, pointIndex: number): void => {
+                if (!handle) return;
+                handle
+                    .draggable(() => ({
+                        // Allow free 2D motion while in free-face mode;
+                        // when not in that mode, lock the handle in place.
+                        x: !!this.cuboidModel.freeFaceMode,
+                        y: !!this.cuboidModel.freeFaceMode,
+                    }))
+                    .on('dragstart', (event: CustomEvent) => {
+                        this.fire(new CustomEvent('resizestart', event));
+                    })
+                    .on('dragmove', (event: CustomEvent) => {
+                        if (!this.cuboidModel.freeFaceMode) return;
+                        const cx = handle.cx();
+                        const cy = handle.cy();
+                        this.cuboidModel.points[pointIndex] = { x: cx, y: cy };
+                        this.updateViewAndVM(false);
+                        this.fire(new CustomEvent('resizing', event));
+                    })
+                    .on('dragend', (event: CustomEvent) => {
+                        this.fire(new CustomEvent('resizedone', event));
+                    });
+            };
+
+            // Back face: blt=6, blb=7, brt=4, brb=5
+            setupFreeCornerHandle(this.bltCenter, 6);
+            setupFreeCornerHandle(this.blbCenter, 7);
+            setupFreeCornerHandle(this.brtCenter, 4);
+            setupFreeCornerHandle(this.brbCenter, 5);
+            // Front face: flt=0, flb=1, frt=2, frb=3
+            setupFreeCornerHandle(this.fltCenter, 0);
+            setupFreeCornerHandle(this.flbCenter, 1);
+            setupFreeCornerHandle(this.frtCenter, 2);
+            setupFreeCornerHandle(this.frbCenter, 3);
+
             return this;
         },
 
@@ -950,6 +1203,21 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.frontBotEdge.stroke({ color: selectedColor });
             this.frontRightEdge.stroke({ color: selectedColor });
 
+            // Mirror the orientation colouring on the curved lens overlay so
+            // the perspective face is still highlighted when fisheye distortion
+            // is active (the original straight front edges are hidden via CSS
+            // when the cuboid has the cvat_canvas_cuboid_lens_distorted class).
+            // Also fill the curved front face with the grey colour at low
+            // opacity, mirroring the way the rest of the cuboid is drawn in
+            // its instance/label colour.
+            if (this.lens) {
+                this.lensEdgeFT.stroke({ color: selectedColor });
+                this.lensEdgeFL.stroke({ color: selectedColor });
+                this.lensEdgeFB.stroke({ color: selectedColor });
+                this.lensEdgeFR.stroke({ color: selectedColor });
+                this.lensFaceFront.fill({ color: selectedColor, opacity: 0.5 });
+            }
+
             this.rightTopEdge.stroke({ color: strokeColor });
             this.rightBotEdge.stroke({ color: strokeColor });
             this.dorsalRightEdge.stroke({ color: strokeColor });
@@ -1010,7 +1278,15 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
 
         updateViewAndVM(build: boolean) {
             this.cuboidModel.updateOrientation();
-            this.cuboidModel.buildBackEdge(build);
+            if (!this.cuboidModel.freeFaceMode) {
+                this.cuboidModel.buildBackEdge(build);
+            } else {
+                // Refresh vanishing points from current geometry purely so the
+                // projection guides (ftProj/fbProj/rtProj/rbProj) stay sane if
+                // the user toggles back to standard mode. Do NOT rewrite the
+                // face points: they are user-controlled in free-face mode.
+                (this.cuboidModel as any).updateVanishingPoints(false);
+            }
             this.updateView();
 
             // to correct getting of points in resizedone, dragdone
@@ -1021,6 +1297,55 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
                     .reduce((acc: string, point: Point): string => `${acc} ${point.x},${point.y}`, '')
                     .trim(),
             );
+        },
+
+        // Toggle Free Face Mode for this cuboid.
+        // When enabled, all 8 corner points (indices 0..7) become individually
+        // draggable and no side edge is forced vertical. When disabled, the
+        // front face is re-verticalised and the back face is rebuilt from the
+        // perspective rays so the cuboid is once again perspective-consistent.
+        setFreeFaceMode(flag: boolean) {
+            this.cuboidModel.freeFaceMode = !!flag;
+            if (!flag) {
+                // Snap side edges back to vertical and rebuild the back face
+                // along the perspective rays.
+                this.cuboidModel.updatePoints();
+                this.cuboidModel.buildBackEdge(false);
+                this.showProjections();
+            } else {
+                // Hide the vanishing-point projection guides while in free
+                // mode — they're meaningless without perspective coupling.
+                this.hideProjections();
+            }
+            this.updateFreeCornerHandlesVisibility();
+            this.updateView();
+            this._attr(
+                'points',
+                this.cuboidModel
+                    .getPoints()
+                    .reduce((acc: string, point: Point): string => `${acc} ${point.x},${point.y}`, '')
+                    .trim(),
+            );
+            // Notify CVAT so the change is persisted via the resize event chain.
+            this.fire(new CustomEvent('resizedone', { detail: {} }));
+        },
+
+        isFreeFaceMode(): boolean {
+            return !!(this.cuboidModel && this.cuboidModel.freeFaceMode);
+        },
+
+        updateFreeCornerHandlesVisibility() {
+            const handles = [
+                this.bltCenter, this.blbCenter, this.brtCenter, this.brbCenter,
+                this.fltCenter, this.flbCenter, this.frtCenter, this.frbCenter,
+            ];
+            const show = !!(this.cuboidModel && this.cuboidModel.freeFaceMode);
+            handles.forEach((h: any) => {
+                if (h) {
+                    if (show) h.show();
+                    else h.hide();
+                }
+            });
         },
 
         computeHeightFace(point: Point, index: number) {
@@ -1071,6 +1396,9 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             this.updateEdges();
             this.updateProjections();
             this.updateGrabPoints();
+            if (this.lens) {
+                this.updateLensOverlay();
+            }
         },
 
         updateFaces() {
@@ -1120,13 +1448,15 @@ function getTopDown(edgeIndex: EdgeIndex): number[] {
             const edges = this.getEdges();
             for (let i = 0; i < centers.length; i += 1) {
                 const edge = edges[i];
-                if (centers[i]) centers[i].center(edge.cx(), edge.cy());
+                if (centers[i] && edge) centers[i].center(edge.cx(), edge.cy());
             }
+            // Per-corner handles follow their own (corner) coordinates.
+            this.positionFreeCornerHandles();
         },
     },
     construct: {
-        cube(points: string) {
-            return this.put(new (SVG as any).Cube()).constructorMethod(points);
+        cube(points: string, opts?: { lens?: FisheyeParams | null; offset?: number }) {
+            return this.put(new (SVG as any).Cube()).constructorMethod(points, opts);
         },
     },
 });

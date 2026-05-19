@@ -376,7 +376,6 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
       GF_SERVER_ROOT_URL: http://${CVAT_HOST:-localhost}/analytics
-      GF_INSTALL_PLUGINS: 'grafana-clickhouse-datasource 4.8.2'
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/all_events.json
     volumes:
       - ./components/analytics/grafana/dashboards/:/var/lib/grafana/dashboards/:ro

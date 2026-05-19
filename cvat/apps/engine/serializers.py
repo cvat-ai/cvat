@@ -2547,6 +2547,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
     consensus_enabled = serializers.BooleanField(
         source='get_consensus_enabled', required=False, read_only=True
     )
+    # Fisheye lens calibration (mio-cvat extension). Optional JSON; absent /
+    # null when no calibration has been configured for the task.
+    lens_calibration = serializers.JSONField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -2558,6 +2561,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'organization', # deprecated field
             'target_storage', 'source_storage', 'jobs', 'labels',
             'assignee_updated_date', 'validation_mode', 'consensus_enabled',
+            'lens_calibration',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -2608,6 +2612,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
             Configured at task creation
         """)
     )
+    # Fisheye lens calibration (mio-cvat extension). Persisted on the task so
+    # the export pipeline can include it in CVAT-XML output for downstream
+    # post-processing. See `_validate_lens_calibration` for the schema.
+    lens_calibration = serializers.JSONField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -2615,7 +2623,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
             'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
             'target_storage', 'source_storage', 'consensus_replicas',
-            'organization_id',
+            'organization_id', 'lens_calibration',
         )
         write_once_fields = ('overlap', 'segment_size', 'consensus_replicas')
         update_only_fields = ('organization_id',)
@@ -2641,6 +2649,36 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
             )
 
         return value or 0
+
+    def validate_lens_calibration(self, value):
+        if value is None:
+            return None
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("lens_calibration must be an object")
+        required = {
+            'a', 'b', 'c', 'HFOVInRadians',
+            'aspectRatio', 'horizontalResolution', 'lensType',
+        }
+        missing = required - set(value)
+        if missing:
+            raise serializers.ValidationError(
+                f"Missing fisheye fields: {sorted(missing)}"
+            )
+        if value['lensType'] not in ('Equidistant',):
+            raise serializers.ValidationError(
+                f"Unsupported lensType '{value['lensType']}'"
+            )
+        for k in ('a', 'b', 'c', 'HFOVInRadians', 'aspectRatio'):
+            if not isinstance(value[k], (int, float)):
+                raise serializers.ValidationError(f"{k} must be a number")
+        if not isinstance(value['horizontalResolution'], int) or value['horizontalResolution'] <= 0:
+            raise serializers.ValidationError(
+                "horizontalResolution must be a positive integer"
+            )
+        for k in ('cx', 'cy'):
+            if k in value and value[k] is not None and not isinstance(value[k], (int, float)):
+                raise serializers.ValidationError(f"{k} must be a number")
+        return value
 
     # pylint: disable=no-self-use
     @transaction.atomic
@@ -2694,7 +2732,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
         update_fields: list[str],
     ):
         for field_name in (
-            "name", "bug_tracker", "subset", "owner_id", "assignee_id"
+            "name", "bug_tracker", "subset", "owner_id", "assignee_id",
+            "lens_calibration",
         ):
             if field_name in validated_data and (field_value := validated_data[field_name]) != getattr(instance, field_name):
                 if field_name != "assignee_id":
@@ -2800,6 +2839,15 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
             instance.save(update_fields=list(set(update_fields) | {"updated_date"}))
 
         if 'label_set' in validated_data and not instance.project_id:
+            self.update_child_objects_on_labels_update(instance)
+
+        # mio-cvat extension: a lens_calibration change is task-level metadata
+        # that gets emitted into job-level CVAT-XML exports too (see
+        # `JobData._init_meta` in cvat/apps/dataset_manager/bindings.py).
+        # Job-level export caches are keyed off `Job.updated_date`, so without
+        # this bump a stale cached export would be served and the new
+        # calibration would never appear in the downloaded XML.
+        if "lens_calibration" in update_fields:
             self.update_child_objects_on_labels_update(instance)
 
         return instance

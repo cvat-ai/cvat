@@ -693,6 +693,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         organizationId: 'organization_id',
                         sourceStorage: 'source_storage',
                         targetStorage: 'target_storage',
+                        lensCalibration: 'lens_calibration',
                     }),
                 } as Record<string, unknown> & {
                     assignee_id?: { id: number } | null;

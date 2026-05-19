@@ -51,6 +51,8 @@ interface Props {
     toOneLayerBackward(): void;
     toOneLayerForward(): void;
     resetCuboidPerspective(): void;
+    toggleCuboidFreeFaceMode(): void;
+    cuboidFreeFaceMode: boolean;
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
@@ -194,6 +196,23 @@ function ResetPerspectiveItem(props: ItemProps): JSX.Element {
     );
 }
 
+function ToggleFreeFaceModeItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { toggleCuboidFreeFaceMode, cuboidFreeFaceMode } = toolProps;
+    return (
+        <CVATTooltip title='Decouple all 8 corners of the cuboid so each can be moved independently. Useful for compensating lens distortion (e.g. fisheye footage).'>
+            <Button
+                type='link'
+                onClick={toggleCuboidFreeFaceMode}
+                className='cvat-object-item-menu-toggle-free-face-mode'
+            >
+                <Icon component={ResetPerspectiveIcon} />
+                {cuboidFreeFaceMode ? 'Lock face mode' : 'Free Face Mode'}
+            </Button>
+        </CVATTooltip>
+    );
+}
+
 function ToBackgroundItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
     const { toBackgroundShortcut, toBackground } = toolProps;
@@ -321,6 +340,7 @@ export default function ItemMenu(props: Props): MenuProps {
         PROPAGATE = 'propagate',
         SWITCH_ORIENTATION = 'switch_orientation',
         RESET_PERSPECTIVE = 'reset_perspective',
+        TOGGLE_FREE_FACE_MODE = 'toggle_free_face_mode',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
         TO_ONE_LAYER_BACKWARD = 'to_one_layer_backward',
@@ -390,6 +410,10 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.RESET_PERSPECTIVE,
             label: <ResetPerspectiveItem toolProps={props} />,
+        });
+        items.push({
+            key: MenuKeys.TOGGLE_FREE_FACE_MODE,
+            label: <ToggleFreeFaceModeItem toolProps={props} />,
         });
     }
 

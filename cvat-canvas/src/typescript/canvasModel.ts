@@ -75,6 +75,24 @@ export enum ColorBy {
     LABEL = 'Label',
 }
 
+export interface FisheyeLensCalibration {
+    // Hugin polynomial radial coefficients. d = 1 - (a+b+c).
+    a: number;
+    b: number;
+    c: number;
+    // Horizontal field of view in radians (e.g. 3.1799898972 for a 360 cam).
+    HFOVInRadians: number;
+    // Image aspect ratio (width / height).
+    aspectRatio: number;
+    // Horizontal resolution in pixels.
+    horizontalResolution: number;
+    // Lens model. Currently only "Equidistant" is supported.
+    lensType: 'Equidistant';
+    // Optional principal point overrides; default to image centre.
+    cx?: number;
+    cy?: number;
+}
+
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
@@ -100,6 +118,9 @@ export interface Configuration {
     hideEditedObject?: boolean;
     focusedObjectPadding?: number;
     snapRadius?: number;
+    // Optional fisheye calibration; when set, cuboid faces/edges are drawn as
+    // curved paths bent through this lens model. `null` disables lens curving.
+    lensCalibration?: FisheyeLensCalibration | null;
 }
 
 export interface BrushTool {
@@ -428,6 +449,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
                 hideEditedObject: false,
                 focusedObjectPadding: 50,
+                lensCalibration: null,
             },
             imageBitmap: false,
             image: null,
@@ -1021,6 +1043,28 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.focusedObjectPadding = Math.max(
                 configuration.focusedObjectPadding, 0,
             );
+        }
+
+        if (configuration.lensCalibration === null) {
+            this.data.configuration.lensCalibration = null;
+        } else if (configuration.lensCalibration && typeof configuration.lensCalibration === 'object') {
+            const lc = configuration.lensCalibration as unknown as Record<string, unknown>;
+            const requiredNumberKeys = ['a', 'b', 'c', 'HFOVInRadians', 'aspectRatio', 'horizontalResolution'];
+            const numbersValid = requiredNumberKeys.every(
+                (k) => typeof lc[k] === 'number' && Number.isFinite(lc[k] as number),
+            );
+            const lensTypeValid = lc.lensType === 'Equidistant';
+            const optionalCenterValid = (
+                lc.cx === undefined || (typeof lc.cx === 'number' && Number.isFinite(lc.cx))
+            ) && (
+                lc.cy === undefined || (typeof lc.cy === 'number' && Number.isFinite(lc.cy))
+            );
+            const positiveValid = (lc.aspectRatio as number) > 0
+                && (lc.horizontalResolution as number) > 0
+                && (lc.HFOVInRadians as number) > 0;
+            if (numbersValid && lensTypeValid && optionalCenterValid && positiveValid) {
+                this.data.configuration.lensCalibration = { ...configuration.lensCalibration };
+            }
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

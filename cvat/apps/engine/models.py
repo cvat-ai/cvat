@@ -857,6 +857,13 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     consensus_replicas = models.IntegerField(default=0)
     "Per job consensus replica count"
 
+    # Optional fisheye lens calibration (mio-cvat extension). Stored as a JSON
+    # blob so the schema can evolve (different lens types, extra coefficients)
+    # without further migrations. The shape mirrors `FisheyeParams` defined in
+    # cvat-canvas/src/typescript/lensModel.ts and is included in CVAT-XML
+    # exports under <meta>/<task>/<lens_calibration>.
+    lens_calibration = models.JSONField(null=True, blank=True, default=None)
+
     segment_set: models.manager.RelatedManager[Segment]
 
     user_can_view_task: MaybeUndefined[bool]

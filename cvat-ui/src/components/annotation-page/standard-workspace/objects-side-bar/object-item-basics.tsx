@@ -52,6 +52,8 @@ interface Props {
     toForeground(): void;
     toOneLayerForward(): void;
     resetCuboidPerspective(): void;
+    toggleCuboidFreeFaceMode(): void;
+    cuboidFreeFaceMode: boolean;
     runAnnotationAction(): void;
     edit(): void;
     slice(): void;
@@ -94,6 +96,8 @@ function ItemTopComponent(props: Props): JSX.Element {
         toOneLayerBackward,
         toOneLayerForward,
         resetCuboidPerspective,
+        toggleCuboidFreeFaceMode,
+        cuboidFreeFaceMode,
         runAnnotationAction,
         edit,
         slice,
@@ -180,6 +184,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                             toOneLayerBackward,
                             toOneLayerForward,
                             resetCuboidPerspective,
+                            toggleCuboidFreeFaceMode,
+                            cuboidFreeFaceMode,
                             setColorPickerVisible,
                             edit,
                             slice,
