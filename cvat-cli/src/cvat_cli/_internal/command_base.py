@@ -135,6 +135,7 @@ class GenericDownloadBackupCommand(GenericCommand):
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             f"{self.resource_type_str}_id",
+            dest="resource_id",
             type=int,
             help=f"{self.resource_type_str} ID",
         )
@@ -154,10 +155,8 @@ class GenericDownloadBackupCommand(GenericCommand):
         )
 
     def execute(
-        self, client: Client, *, filename: str, status_check_period: float, **kwargs
+        self, client: Client, *, resource_id: int, filename: str, status_check_period: float
     ) -> None:
-        resource_id = kwargs[f"{self.resource_type_str}_id"]
-
         if not filename:
             filename = os.getcwd()
 
