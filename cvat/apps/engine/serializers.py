@@ -529,6 +529,43 @@ class LabelSerializer(SublabelSerializer):
                 encountered_names.add(attr_name)
 
     @staticmethod
+    def check_no_attr_names_swap(db_label: models.Label, attrs: list[dict[str, Any]]) -> None:
+        request_names_by_id = {
+            attr["id"]: attr["name"]
+            for attr in attrs
+            if not attr.get("deleted")
+            and attr.get("id") is not None
+            and attr.get("name") is not None
+        }
+
+        if len(request_names_by_id) < 2:
+            return
+
+        current_names_by_id = dict(
+            db_label.attributespec_set.filter(id__in=request_names_by_id).values_list(
+                "id", "name"
+            )
+        )
+
+        # A normal rename to a new name is allowed. The unsafe case is swapping
+        # current names between existing attributes, because the first save
+        # would temporarily violate the unique (label, name) constraint.
+        current_name_ids = {name: attr_id for attr_id, name in current_names_by_id.items()}
+        swapped_attr_names = set()
+
+        for attr_id, attr_name in request_names_by_id.items():
+            current_attr_id = current_name_ids.get(attr_name)
+            if current_attr_id is not None and current_attr_id != attr_id:
+                swapped_attr_names.add(attr_name)
+                current_name = current_names_by_id.get(attr_id)
+                if current_name is not None:
+                    swapped_attr_names.add(current_name)
+
+        if swapped_attr_names:
+            attr_names = ", ".join(f'"{name}"' for name in sorted(swapped_attr_names))
+            raise serializers.ValidationError(f"Cannot swap attribute names {attr_names}")
+
+    @staticmethod
     def _split_attribute_values(values: str) -> list[str]:
         return values.split("\n") if values else []
 
@@ -663,6 +700,9 @@ class LabelSerializer(SublabelSerializer):
             assert validated_data["id"]  # must be checked in the validate()
             db_label.delete()
             return None
+
+        if label_exists:
+            cls.check_no_attr_names_swap(db_label, attributes)
 
         if not validated_data.get("color", None):
             other_label_colors = [
