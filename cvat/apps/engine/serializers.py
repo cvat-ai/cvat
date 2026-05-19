@@ -529,39 +529,43 @@ class LabelSerializer(SublabelSerializer):
                 encountered_names.add(attr_name)
 
     @staticmethod
-    def check_no_attr_names_swap(db_label: models.Label, attrs: list[dict[str, Any]]) -> None:
-        request_names_by_id = {
+    def check_attribute_names_available(
+        db_attributes: dict[int, str], attrs: list[dict[str, Any]]
+    ) -> None:
+        requested_attribute_names = {
             attr["id"]: attr["name"]
             for attr in attrs
-            if not attr.get("deleted")
-            and attr.get("id") is not None
-            and attr.get("name") is not None
+            if attr.get("id") is not None and attr.get("name") is not None
         }
 
-        if len(request_names_by_id) < 2:
+        if not requested_attribute_names:
             return
 
-        current_names_by_id = dict(
-            db_label.attributespec_set.filter(id__in=request_names_by_id).values_list("id", "name")
-        )
-
-        # A normal rename to a new name is allowed. The unsafe case is swapping
-        # current names between existing attributes, because the first save
-        # would temporarily violate the unique (label, name) constraint.
-        current_name_ids = {name: attr_id for attr_id, name in current_names_by_id.items()}
+        current_attribute_ids = {name: attr_id for attr_id, name in db_attributes.items()}
         swapped_attr_names = set()
+        busy_attr_names = set()
 
-        for attr_id, attr_name in request_names_by_id.items():
-            current_attr_id = current_name_ids.get(attr_name)
-            if current_attr_id is not None and current_attr_id != attr_id:
+        for attr_id, attr_name in requested_attribute_names.items():
+            current_attr_id = current_attribute_ids.get(attr_name)
+            if current_attr_id is None or current_attr_id == attr_id:
+                continue
+
+            if current_attr_id in requested_attribute_names:
                 swapped_attr_names.add(attr_name)
-                current_name = current_names_by_id.get(attr_id)
-                if current_name is not None:
+                if current_name := db_attributes.get(attr_id):
                     swapped_attr_names.add(current_name)
+            else:
+                busy_attr_names.add(attr_name)
 
         if swapped_attr_names:
-            attr_names = ", ".join(f'"{name}"' for name in sorted(swapped_attr_names))
+            attr_names = ", ".join(f'"{name}"' for name in swapped_attr_names)
             raise serializers.ValidationError(f"Cannot swap attribute names {attr_names}")
+
+        if busy_attr_names:
+            attr_names = ", ".join(f'"{name}"' for name in busy_attr_names)
+            raise serializers.ValidationError(
+                f"Attribute names are already used by this label: {attr_names}"
+            )
 
     @staticmethod
     def _split_attribute_values(values: str) -> list[str]:
@@ -699,9 +703,6 @@ class LabelSerializer(SublabelSerializer):
             db_label.delete()
             return None
 
-        if label_exists:
-            cls.check_no_attr_names_swap(db_label, attributes)
-
         if not validated_data.get("color", None):
             other_label_colors = [
                 label.color
@@ -738,6 +739,10 @@ class LabelSerializer(SublabelSerializer):
             db_attr = get_db_attr(attr_id)
             logger.info("{} attribute for {} label was deleted".format(db_attr.name, db_label.name))
             db_attr.delete()
+
+        if label_exists:
+            db_attributes = dict(db_label.attributespec_set.values_list("id", "name"))
+            cls.check_attribute_names_available(db_attributes, upserted_attributes)
 
         for attr in upserted_attributes:
             attr_id = attr.get("id", None)
