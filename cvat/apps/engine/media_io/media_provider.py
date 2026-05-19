@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
+from io import BytesIO
 from typing import Generic, TypeVar
 
 from cvat.apps.engine import models
@@ -22,6 +23,9 @@ class DataWithMeta(Generic[_T]):
 class IMediaProvider(metaclass=ABCMeta):
     def unload(self):
         pass
+
+    @abstractmethod
+    def get_preview_image(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]: ...
 
 
 class PreviewNotAvailable(Exception):

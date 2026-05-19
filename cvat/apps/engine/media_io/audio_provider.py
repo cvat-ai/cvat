@@ -51,9 +51,6 @@ class IAudioProvider(IMediaProvider, metaclass=ABCMeta):
     def get_chunk_number(self, frame_number: int) -> int: ...
 
     @abstractmethod
-    def get_preview_image(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]: ...
-
-    @abstractmethod
     def get_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
     ) -> DataWithMeta[BytesIO]: ...
