@@ -175,34 +175,65 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
     };
 
     private handleSubmit(savedLabels: LabelOptColor[], unsavedLabels: LabelOptColor[]): void {
-        function transformLabel(label: LabelOptColor): LabelOptColor {
+        function findLabelByID(labels: SerializedLabel[], id?: number): SerializedLabel | null {
+            if (typeof id === 'undefined') {
+                return null;
+            }
+
+            return labels.find((label: SerializedLabel): boolean => label.id === id) ?? null;
+        }
+
+        function findDeletedAttributes(label: LabelOptColor, originalLabel: SerializedLabel): SerializedAttribute[] {
+            const currentAttributeIDs = new Set(label.attributes
+                .map((attr: SerializedAttribute): number | undefined => attr.id)
+                .filter((id: number | undefined): id is number => typeof id !== 'undefined' && id >= 0));
+
+            return originalLabel.attributes
+                .filter((attr: SerializedAttribute): boolean => (
+                    typeof attr.id !== 'undefined' && attr.id >= 0 && !currentAttributeIDs.has(attr.id)
+                )).map((attr: SerializedAttribute): SerializedAttribute => ({
+                    ...attr,
+                    values: [...attr.values],
+                    deleted: true,
+                }));
+        }
+
+        function transformLabel(label: LabelOptColor, originalLabels: SerializedLabel[]): LabelOptColor {
+            const originalLabel = findLabelByID(originalLabels, label.id);
             const transformed: any = {
                 name: label.name,
                 id: label.id as number < 0 ? undefined : label.id,
                 color: label.color,
-                type: label.type || 'any',
+                type: label.type ?? 'any',
                 attributes: label.attributes.map((attr: SerializedAttribute): SerializedAttribute => ({
-                    name: attr.name,
+                    ...attr,
                     id: attr.id as number < 0 ? undefined : attr.id,
                     input_type: attr.input_type.toLowerCase() as SerializedAttribute['input_type'],
-                    default_value: attr.default_value,
-                    mutable: attr.mutable,
                     values: [...attr.values],
                 })),
             };
 
+            if (originalLabel) {
+                transformed.attributes.push(...findDeletedAttributes(label, originalLabel));
+            }
+
             if (label.type === 'skeleton') {
                 transformed.svg = label.svg;
                 transformed.sublabels = (label.sublabels || [])
-                    .map((internalLabel: LabelOptColor) => transformLabel(internalLabel));
+                    .map((internalLabel: LabelOptColor) => {
+                        const originalSublabel = originalLabel ?
+                            findLabelByID(originalLabel.sublabels || [], internalLabel.id) :
+                            null;
+                        return transformLabel(internalLabel, originalSublabel ? [originalSublabel] : []);
+                    });
             }
 
             return transformed;
         }
 
-        const { onSubmit } = this.props;
+        const { labels, onSubmit } = this.props;
         const output = savedLabels.concat(unsavedLabels)
-            .map((label: LabelOptColor): LabelOptColor => transformLabel(label));
+            .map((label: LabelOptColor): LabelOptColor => transformLabel(label, labels));
 
         onSubmit(output);
     }

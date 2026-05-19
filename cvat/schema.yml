@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.64.1
+  version: 2.65.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -7210,6 +7210,10 @@ components:
           items:
             type: string
             maxLength: 200
+        deleted:
+          type: boolean
+          writeOnly: true
+          description: Delete the attribute and all related annotation values.
       required:
       - input_type
       - mutable
@@ -7314,10 +7318,12 @@ components:
       enum:
       - video
       - imageset
+      - audio_mp3
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
+        * `audio_mp3` - AUDIO_MP3
     ClientEvents:
       type: object
       properties:
@@ -8580,8 +8586,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -9767,8 +9774,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         deleted:
           type: boolean
           writeOnly: true
@@ -11137,8 +11145,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -11190,8 +11199,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -11678,7 +11688,6 @@ components:
             The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
       required:
-      - frame_selection_method
       - mode
     WebhookContentType:
       enum:

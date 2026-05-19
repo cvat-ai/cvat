@@ -101,9 +101,27 @@ cmd_run() {
             fail "run worker: expected at least 1 queue name"
         fi
 
-        queue_list="${@:2}"
+        queues=()
+        extra_flags=()
+        for arg in "${@:2}"; do
+            if [[ "$arg" == --* ]]; then
+                extra_flags+=("$arg")
+            else
+                queues+=("$arg")
+            fi
+        done
+
+        if [ ${#queues[@]} -eq 0 ]; then
+            fail "run worker: expected at least 1 queue name"
+        fi
+
+        queue_list="${queues[*]}"
         echo "Workers to run: $queue_list"
+        if [ ${#extra_flags[@]} -gt 0 ]; then
+            echo "Extra rqworker flags: ${extra_flags[*]}"
+        fi
         export CVAT_QUEUES=$queue_list
+        export CVAT_RQWORKER_EXTRA_FLAGS="${extra_flags[*]:-}"
 
         postgres_app_name+=":${queue_list// /+}"
 

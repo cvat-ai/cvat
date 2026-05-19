@@ -106,6 +106,7 @@ const updateRoot = (root: Node, prefix?: string): Node => {
             // disable initialization of the latest one to run content request
             current.initialized = false;
             current.searchString = search;
+            // eslint-disable-next-line no-param-reassign
             root.initialized = true;
             return root;
         }

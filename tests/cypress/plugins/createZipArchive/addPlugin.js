@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 /* eslint-disable
-    import/no-extraneous-dependencies,
     security/detect-non-literal-fs-filename,
     no-use-before-define
 */

@@ -192,7 +192,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker webhooks
+    command: run worker webhooks --with-scheduler
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
