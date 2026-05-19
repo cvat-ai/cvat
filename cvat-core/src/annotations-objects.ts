@@ -6,7 +6,8 @@
 import { omit } from 'lodash';
 import config from './config';
 import ObjectState, { SerializedData } from './object-state';
-import { checkObjectType, clamp } from './common';
+import { checkObjectType } from './common';
+import { clamp } from './opencv/math-utils';
 import {
     DataError, ArgumentError, ScriptingError,
 } from './exceptions';
@@ -169,10 +170,10 @@ class Annotation {
         ) as Annotation['groupObject'];
 
         this.appendDefaultAttributes(this.label);
+        // eslint-disable-next-line no-param-reassign
         injection.groups.max = Math.max(injection.groups.max, this.group);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected withContext(_: number): {
         delete: Annotation['delete'];
     } {
@@ -355,7 +356,13 @@ class Annotation {
 
         if (updated.keyframe) {
             checkObjectType('keyframe', data.keyframe, 'boolean');
-            if (Object.keys(this.shapes).length === 1 && data.frame in this.shapes && !data.keyframe) {
+            const tracksShapeContext = this as Annotation & { shapes?: Record<number, TrackedShape> };
+            if (
+                tracksShapeContext.shapes &&
+                Object.keys(tracksShapeContext.shapes).length === 1 &&
+                data.frame in tracksShapeContext.shapes &&
+                !data.keyframe
+            ) {
                 throw new ArgumentError(
                     `Can not remove the latest keyframe of an object "${data.label.name}".` +
                     'Consider removing the object instead',
@@ -508,7 +515,7 @@ class Drawn extends Annotation {
     }
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
-        Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
+        super.validateStateBeforeSave(data, updated);
 
         let fittedPoints = [];
         if (updated.points && Number.isInteger(frame)) {
@@ -926,6 +933,7 @@ export class Track extends Drawn {
                 });
 
                 if (this.shapes[frame].points) {
+                    // eslint-disable-next-line no-param-reassign
                     shapesAccumulator[shapesAccumulator.length - 1].points = [...this.shapes[frame].points];
                 }
 
@@ -1045,7 +1053,7 @@ export class Track extends Drawn {
         return result;
     }
 
-    public updateFromServerResponse(body: SerializedTrack): void {
+    public updateFromServerResponse(body: SerializedTrack | SerializedTrack['elements'][0]): void {
         this.serverID = body.id;
         this.frame = body.frame;
         const updatedShapes = {};
@@ -1956,7 +1964,7 @@ export class SkeletonShape extends Shape {
                 type: sublabel.type as unknown as ShapeType,
             };
 
-            /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
+            // eslint-disable-next-line no-use-before-define
             return shapeFactory({
                 ...elementData,
                 group: this.group,
@@ -2047,7 +2055,7 @@ export class SkeletonShape extends Shape {
         return result;
     }
 
-    public get(frame): Omit<Required<SerializedData>, 'parentID' | 'keyframe' | 'keyframes'> {
+    public get(frame): Omit<Required<SerializedData>, 'keyframe' | 'keyframes'> {
         if (frame !== this.frame) {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
         }
@@ -2065,6 +2073,7 @@ export class SkeletonShape extends Shape {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
+            parentID: this.parentID,
             points: this.points,
             zOrder: this.zOrder,
             rotation: 0,
@@ -2151,8 +2160,12 @@ export class SkeletonShape extends Shape {
             return new ObjectState(this.get(frame));
         }
 
-        const updateElements = (affectedElements, action, property: 'points' | 'occluded' | 'hidden' | 'lock'): void => {
-            const undoSkeletonProperties = this.elements.map((element) => element[property]);
+        const updateElements = <K extends 'points' | 'occluded' | 'hidden' | 'lock'>(
+            affectedElements: ObjectState[],
+            action: HistoryActions,
+            property: K,
+        ): void => {
+            const undoSkeletonProperties = this.elements.map((element): Shape[K] => element[property]);
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
@@ -2166,7 +2179,7 @@ export class SkeletonShape extends Shape {
                 this.history.freeze(false);
             }
 
-            const redoSkeletonProperties = this.elements.map((element) => element[property]);
+            const redoSkeletonProperties = this.elements.map((element): Shape[K] => element[property]);
 
             this.history.do(
                 action,
@@ -2222,22 +2235,6 @@ export class SkeletonShape extends Shape {
         const result = Shape.prototype.save.call(this, frame, data);
         return result;
     }
-
-    get occluded(): boolean {
-        return this.elements.every((element) => element.occluded);
-    }
-
-    set occluded(_) {
-        // stub
-    }
-
-    get lock(): boolean {
-        return this.elements.every((element) => element.lock);
-    }
-
-    set lock(_) {
-        // stub
-    }
 }
 
 export class MaskShape extends Shape {
@@ -2272,7 +2269,9 @@ export class MaskShape extends Shape {
     public removeUnderlyingPixels(frame: number):
     {
         clientIDs: number[],
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
         undo: Function,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
         redo: Function,
         emptyMaskOccurred: boolean,
     } {
@@ -2591,8 +2590,8 @@ class PolyTrack extends Track {
             return minimum[0];
         }
 
-        function matchLeftRight(leftCurve: number[], rightCurve: number[]): Record<number, [number, number[]]> {
-            const matching = {};
+        function matchLeftRight(leftCurve: number[], rightCurve: number[]): Record<number, number[]> {
+            const matching: Record<number, number[]> = {};
             for (let i = 0; i < leftCurve.length; i++) {
                 matching[i] = [findNearestPair(leftCurve[i], rightCurve)];
             }
@@ -2603,8 +2602,8 @@ class PolyTrack extends Track {
         function matchRightLeft(
             leftCurve: number[],
             rightCurve: number[],
-            leftRightMatching: Record<number, [number, number[]]>,
-        ): Record<number, [number, number[]]> {
+            leftRightMatching: Record<number, number[]>,
+        ): Record<number, number[]> {
             const matchedRightPoints = Object.values(leftRightMatching).flat();
             const unmatchedRightPoints = rightCurve
                 .map((_, index) => index)
@@ -2624,7 +2623,12 @@ class PolyTrack extends Track {
             return updatedMatching;
         }
 
-        function reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints): void {
+        function reduceInterpolation(
+            interpolatedPoints: Point2D[],
+            matching: Record<number, number[]>,
+            leftPoints: Point2D[],
+            rightPoints: Point2D[],
+        ): Point2D[] {
             function averagePoint(points: Point2D[]): Point2D {
                 let sumX = 0;
                 let sumY = 0;
@@ -2672,8 +2676,8 @@ class PolyTrack extends Track {
                 return minimized;
             }
 
-            const reduced = [];
-            const interpolatedIndexes = {};
+            const reduced: Point2D[] = [];
+            const interpolatedIndexes: Record<number, number[]> = {};
             let accumulated = 0;
             for (let i = 0; i < leftPoints.length; i++) {
                 // eslint-disable-next-line
@@ -2706,7 +2710,7 @@ class PolyTrack extends Track {
                 reduced.push(...minimizeSegment(baseLength, N, startInterpolated, stopInterpolated));
             }
 
-            let previousOpened = null;
+            let previousOpened: number | null = null;
             for (let i = 0; i < leftPoints.length; i++) {
                 if (matching[i].length === 1) {
                     // check if left segment is opened
@@ -2809,7 +2813,7 @@ export class PolygonTrack extends PolyTrack {
             points: [...rightPosition.points, rightPosition.points[0], rightPosition.points[1]],
         };
 
-        const result = PolyTrack.prototype.interpolatePosition.call(this, copyLeft, copyRight, offset);
+        const result = super.interpolatePosition(copyLeft, copyRight, offset);
 
         return {
             ...result,
@@ -2965,7 +2969,7 @@ export class SkeletonTrack extends Track {
                 }],
             };
 
-            /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
+            // eslint-disable-next-line no-use-before-define
             return trackFactory({
                 ...elementData,
                 group: this.group,
@@ -3262,6 +3266,7 @@ export class SkeletonTrack extends Track {
             // todo: fix extra undo/redo change
             this.validateStateBeforeSave(data, data.updateFlags, frame);
             this.saveKeyframe(frame, data.keyframe);
+            // eslint-disable-next-line no-param-reassign
             data.updateFlags.keyframe = false;
             updateElements(updatedKeyframe, HistoryActions.CHANGED_KEYFRAME);
         }

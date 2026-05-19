@@ -46,9 +46,7 @@ import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
 
-import ApproximationAccuracy, {
-    thresholdFromAccuracy,
-} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
+import ApproximationAccuracy from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import ConfidenceThreshold from 'components/annotation-page/standard-workspace/controls-side-bar/confidence-threshold';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
@@ -74,8 +72,8 @@ interface StateToProps {
 
 interface DispatchToProps {
     updateAnnotations: (states: ObjectState[]) => Promise<void>;
-    createAnnotations: (states: ObjectState[]) => Promise<void>;
-    fetchAnnotations: () => Promise<void>;
+    createAnnotations: (states: ObjectState[]) => void;
+    fetchAnnotations: () => void;
     onInteractionStart: typeof interactWithCanvas;
     onSwitchToolsBlockerState: typeof switchToolsBlockerState;
     switchNavigationBlocked: typeof switchNavigationBlockedAction;
@@ -914,7 +912,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             duration: 0,
                             className: 'cvat-tracking-notice',
                         });
-                        // eslint-disable-next-line no-await-in-loop
+
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             type: 'track',
                             frame,
@@ -1028,6 +1026,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             throw new Error('OpenCV was not initialized');
         }
 
+        if (mask.length < 6) {
+            // minimal non-empty RLE is 6 points
+            return [];
+        }
+
         const polygons = openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });
         if (polygons.length) {
             return polygons[0].map<[number, number]>((val) => [val[0], val[1]]);
@@ -1043,7 +1046,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const { approxPolyAccuracy } = this.state;
         if (points.length > 3) {
-            const threshold = thresholdFromAccuracy(approxPolyAccuracy);
+            const threshold = openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy);
             return openCVWrapper.contours.approxPoly(points, threshold);
         }
 
@@ -1317,7 +1320,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         this.setState({ mode: 'detection', fetching: true });
 
                         // The function call endpoint doesn't support the cleanup parameter.
-                        const { cleanup, ...restOfBody } = body;
+                        const restOfBody = lodash.omit(body, 'cleanup');
 
                         const result = await core.lambda.call(jobInstance.taskId, model, {
                             ...restOfBody, type: 'annotate_frame', frame, job: jobInstance.id,

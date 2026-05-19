@@ -230,7 +230,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -250,7 +252,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
-                lambda page: self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+                lambda page: self.client.get(
+                    "/api/jobs", query_params={"task_id": task_id, "page": page}
+                )
             )
         return values
 
@@ -258,7 +262,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
                 lambda page: self.client.get(
-                    "/api/tasks", data={"project_id": project_id, "page": page}
+                    "/api/tasks", query_params={"project_id": project_id, "page": page}
                 )
             )
         return values

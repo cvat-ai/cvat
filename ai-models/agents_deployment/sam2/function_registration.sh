@@ -30,7 +30,7 @@ if FUNCTION_ID=$(curl --get --fail --data-urlencode "filter=$FILTER" "${ORG_CURL
 else
     echo -e "Function with name $FUNCTION_NAME not found. Proceeding to create a new one.\nPlease have some patience, function creation might take some time..."
     # Register the SAM2 function in CVAT. $MODEL_CONFIG_PARAMS should be unquoted to be passed as separate arguments to cvat-cli.
-    if FUNCTION_ID="$(cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function create-native "$FUNCTION_NAME" --function-file="$FUNCTION_FILE_PATH" $MODEL_CONFIG_PARAMS)"; then
+    if FUNCTION_ID="$(cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function create-native "$FUNCTION_NAME" "${VISIBILITY_ARGS[@]}" --function-file="$FUNCTION_FILE_PATH" $MODEL_CONFIG_PARAMS)"; then
       echo "Successfully created $FUNCTION_NAME function"
       echo "$FUNCTION_ID" > /shared/FUNCTION_ID
     else

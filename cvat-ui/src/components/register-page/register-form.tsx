@@ -18,7 +18,7 @@ import { useAuthQuery } from 'utils/hooks';
 import patterns from 'utils/validation-patterns';
 import validationRules from 'utils/validation-rules';
 
-export interface UserConfirmation {
+interface UserConfirmation {
     name: string;
     value: boolean;
 }
@@ -243,16 +243,18 @@ function RegisterFormComponent(props: Props): JSX.Element {
                     </Form.Item>
                 ))}
 
-                <Form.Item>
-                    <Button
-                        type='primary'
-                        htmlType='submit'
-                        className='cvat-credentials-action-button'
-                        loading={fetching}
-                        disabled={fetching}
-                    >
-                        Create account
-                    </Button>
+                <Form.Item shouldUpdate>
+                    {(): JSX.Element => (
+                        <Button
+                            type='primary'
+                            htmlType='submit'
+                            className='cvat-credentials-action-button'
+                            loading={fetching}
+                            disabled={fetching}
+                        >
+                            Create account
+                        </Button>
+                    )}
                 </Form.Item>
             </Form>
         </div>

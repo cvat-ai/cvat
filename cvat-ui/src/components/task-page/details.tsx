@@ -12,13 +12,13 @@ import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 
 import {
-    User, getCore, Project, Task, FramesMetaData,
+    User, getCore, Project, Task, FramesMetaData, CloudStorage,
 } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
-import { CombinedState, ActiveInference, CloudStorage } from 'reducers';
+import { CombinedState, ActiveInference } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
@@ -28,7 +28,7 @@ import ProjectSubsetField from '../create-task-page/project-subset-field';
 
 interface OwnProps {
     task: Task;
-    onUpdateTask: (task: Task) => Promise<Task>;
+    onUpdateTask: (task: Task, fields?: Parameters<Task['save']>[0]) => Promise<Task>;
     taskMeta: FramesMetaData;
     cloudStorageInstance: CloudStorage | null;
     onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
@@ -178,10 +178,11 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             <Row>
                 <Col span={24}>
                     <LabelsEditorComponent
-                        labels={taskInstance.labels.map((label: any): string => label.toJSON())}
+                        labels={taskInstance.labels.map((label) => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
-                            taskInstance.labels = labels.map((labelData): any => new core.classes.Label(labelData));
-                            onUpdateTask(taskInstance);
+                            onUpdateTask(taskInstance, {
+                                labels: labels.map((labelData): any => new core.classes.Label(labelData)),
+                            });
                         }}
                     />
                 </Col>

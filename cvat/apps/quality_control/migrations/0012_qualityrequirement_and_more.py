@@ -155,8 +155,10 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="qualitysettings",
             constraint=models.CheckConstraint(
-                check=models.Q(
-                    ("task_id__isnull", False), ("project_id__isnull", False), _connector="XOR"
+                condition=models.Q(
+                    models.Q(("task_id__isnull", False), ("project_id__isnull", True)),
+                    models.Q(("task_id__isnull", True), ("project_id__isnull", False)),
+                    _connector="OR",
                 ),
                 name="quality_settings_task_or_project",
             ),

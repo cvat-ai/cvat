@@ -46,7 +46,7 @@ class SearchFilter(filters.SearchFilter):
         raise NotImplementedError("coreapi is not supported")
 
     def get_schema_operation_parameters(self, view):
-        search_fields = getattr(view, "search_fields", [])
+        search_fields = sorted(getattr(view, "search_fields", []) or [])
         full_description = self.search_description + f" Available search_fields: {search_fields}"
 
         return (
@@ -91,7 +91,7 @@ class OrderingFilter(filters.OrderingFilter):
         raise NotImplementedError("coreapi is not supported")
 
     def get_schema_operation_parameters(self, view):
-        ordering_fields = getattr(view, "ordering_fields", [])
+        ordering_fields = sorted(getattr(view, "ordering_fields", []) or [])
         full_description = (
             self.ordering_description + f" Available ordering_fields: {ordering_fields}"
         )
@@ -225,7 +225,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         raise NotImplementedError("coreapi is not supported")
 
     def get_schema_operation_parameters(self, view):
-        filter_fields = getattr(view, "filter_fields", [])
+        filter_fields = sorted(getattr(view, "filter_fields", []) or [])
         filter_description = getattr(view, "filter_description", "")
         full_description = (
             self.filter_description
@@ -344,7 +344,7 @@ class SimpleFilter(DjangoFilterBackend):
             return []
 
         parameters = []
-        for field_name, filter_ in filterset_class.base_filters.items():
+        for field_name, filter_ in sorted(filterset_class.base_filters.items()):
             if isinstance(filter_, djf.BooleanFilter):
                 parameter_schema = {"type": "boolean"}
             elif isinstance(filter_, (djf.NumberFilter, djf.ModelChoiceFilter)):
@@ -414,7 +414,7 @@ class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
     """
 
     def get_schema_operation_parameters(self, view):
-        simple_filters = getattr(view, self.filter_fields_attr, None)
+        simple_filters = sorted(getattr(view, self.filter_fields_attr, []) or [])
         simple_filters_schema = getattr(view, "simple_filters_schema", None)
 
         parameters = []

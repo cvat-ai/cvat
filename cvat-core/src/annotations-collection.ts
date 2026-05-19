@@ -73,8 +73,10 @@ export default class Collection {
         this.stopFrame = data.stopFrame;
 
         this.labels = data.labels.reduce((labelAccumulator, label) => {
+            // eslint-disable-next-line no-param-reassign
             labelAccumulator[label.id] = label;
             (label?.structure?.sublabels || []).forEach((sublabel) => {
+                // eslint-disable-next-line no-param-reassign
                 labelAccumulator[sublabel.id] = sublabel;
             });
 
@@ -336,7 +338,7 @@ export default class Collection {
                     keyframes[object.frame + 1].outside = true;
                     keyframes[object.frame + 1].frame++;
                     keyframes[object.frame + 1].attributes = [];
-                    (keyframes[object.frame + 1].elements || []).forEach((el) => {
+                    ((keyframes[object.frame + 1] as any).elements || []).forEach((el) => {
                         el.outside = keyframes[object.frame + 1].outside;
                         el.frame = keyframes[object.frame + 1].frame;
                     });
@@ -886,6 +888,7 @@ export default class Collection {
                     if (delTrackKeyframesOnly) {
                         for (const keyframe of Object.keys(track.shapes)) {
                             if (+keyframe >= from && +keyframe <= to) {
+                                // eslint-disable-next-line no-param-reassign
                                 delete track.shapes[keyframe];
                                 if (track instanceof SkeletonTrack) {
                                     track.elements.forEach((element) => {
@@ -895,6 +898,7 @@ export default class Collection {
                                         }
                                     });
                                 }
+                                // eslint-disable-next-line no-param-reassign
                                 track.updated = Date.now();
                             }
                         }
@@ -1194,9 +1198,9 @@ export default class Collection {
         }
 
         // Add constructed objects to a collection
-        // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
-        const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+        const importedArray = ([] as (Tag | Track | Shape)[])
+            .concat(imported.tags, imported.tracks, imported.shapes);
         const additionalUndo = [];
         const additionalRedo = [];
         const additionalClientIDs = [];

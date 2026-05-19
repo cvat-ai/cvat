@@ -22,6 +22,9 @@ agent:
   # If you choose to use a secret, make sure to create it in your cluster and reference it in the `secret_env` section below.
   # Token takes precedence over the secret, so if both are provided, the value here will be used.
   cvat_access_token: ""
+  # Visibility of the function in CVAT. Can be "public" or "private". If not specified, it will default to "private".
+  # Private functions are visible to you and your organization (if specified), while public functions are visible to all users in CVAT instance.
+  function_visibility: "private"
 
   ### Model configuration
 

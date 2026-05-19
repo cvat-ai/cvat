@@ -72,7 +72,7 @@ function JobForm(props: Props): JSX.Element {
 
             const createdJob = await dispatch(createJobAsync(data));
             return createdJob;
-        } catch (e) {
+        } catch (_e) {
             return false;
         }
     }, [task]);

@@ -177,6 +177,7 @@ export interface SerializedAttribute {
     default_value: string;
     values: string[];
     id?: number;
+    deleted?: boolean;
 }
 
 export interface SerializedLabel {
@@ -570,6 +571,7 @@ export interface SerializedRequest {
         task_id: number | null;
         project_id: number | null;
         function_id: string | null;
+        lightweight?: boolean | null;
     };
     progress?: number;
     result_url?: string;
@@ -607,5 +609,5 @@ export interface SerializedTaskValidationLayout extends SerializedJobValidationL
     disabled_frames?: number[];
 }
 
-export interface APIOrganizationMembersFilter extends APICommonFilterParams {}
+export type APIOrganizationMembersFilter = APICommonFilterParams;
 export type OrganizationMembersFilter = Camelized<APIOrganizationMembersFilter>;

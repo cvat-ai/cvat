@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.db.models import Q
 from django.http import HttpResponse
-from django.utils import timezone
 from django.utils.text import slugify
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -82,16 +81,8 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     iam_permission_class = AnnotationConflictPermission
 
     search_fields = []
-    filter_fields = list(search_fields) + [
-        "id",
-        "frame",
-        "type",
-        "job_id",
-        "task_id",
-        "project_id",
-        "severity",
-    ]
-    simple_filters = set(filter_fields) - {"id"}
+    simple_filters = ("frame", "type", "job_id", "task_id", "project_id", "severity")
+    filter_fields = (*simple_filters, "id")
     lookup_fields = {
         "job_id": "report__job__id",
         "task_id": "report__job__segment__task__id",  # task reports do not have own conflicts
@@ -204,16 +195,16 @@ class QualityReportViewSet(
     iam_permission_class = QualityReportPermission
 
     search_fields = []
-    filter_fields = list(search_fields) + [
+    simple_filters = ["job_id"]
+    filter_fields = (
+        *simple_filters,
         "id",
-        "job_id",
         "task_id",
         "project_id",
         "created_date",
         "gt_last_updated",
         "target_last_updated",
-    ]
-    simple_filters = ["job_id"]
+    )
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
@@ -600,8 +591,8 @@ class QualitySettingsViewSet(
     iam_permission_class = QualitySettingPermission
 
     search_fields = []
-    filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]
-    simple_filters = ["task_id", "inherit"]
+    simple_filters = ("task_id", "inherit")
+    filter_fields = (*simple_filters, "id", "project_id", "created_date", "updated_date")
     ordering_fields = list(filter_fields)
     ordering = "id"
 

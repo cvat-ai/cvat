@@ -122,6 +122,7 @@ export interface DrawData {
     crosshair?: boolean;
     brushTool?: BrushTool;
     redraw?: number;
+    simplifyPoly?: boolean;
     onDrawDone?: (data: object) => void;
     onUpdateConfiguration?: (configuration: { brushTool?: Pick<BrushTool, 'size'> }) => void;
 }

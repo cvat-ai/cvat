@@ -49,6 +49,7 @@ import { JobType } from './enums';
 import { PaginatedResource } from './core-types';
 import CVATCore from '.';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 function implementationMixin(func: Function, implementation: Function): void {
     Object.assign(func, { implementation });
 }
@@ -94,8 +95,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.server.register, async (
         ...args: Parameters<typeof serverProxy.server.register>
     ) => {
-        const user = await serverProxy.server.register(...args);
-        return new User(user);
+        const result = await serverProxy.server.register(...args);
+        return result;
     });
     implementationMixin(cvat.server.login, async (
         ...args: Parameters<typeof serverProxy.server.login>

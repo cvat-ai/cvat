@@ -11,11 +11,11 @@ import {
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken,
-    Membership, AnnotationFormats,
+    Membership, AnnotationFormats, CloudStorage,
 } from 'cvat-core-wrapper';
-import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
+
+import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
-import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { ImageFilter } from 'utils/image-processing';
 
 export interface AuthState {
@@ -235,8 +235,6 @@ interface CloudStorageStatus {
     status: string | null;
 }
 
-export type CloudStorage = any;
-
 export interface CloudStoragesState {
     initialized: boolean;
     fetching: boolean;
@@ -307,10 +305,10 @@ export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
-export type CallbackReturnType = Promise<void | { preventJobStatusChange: boolean }>;
+export type CallbackReturnType = Promise<undefined | { preventJobStatusChange: boolean }>;
 
 export interface PluginComponent {
-    component: any;
+    component: any; // TODO: research correct plugin component type
     data: {
         weight: number;
         shouldBeRendered: (props?: object, state?: object) => boolean;
@@ -337,6 +335,11 @@ export interface PluginsState {
         };
     };
     overridableComponents: {
+        app: {
+            serverUnavailable: ((props: {
+                details: string | null;
+            }) => JSX.Element)[];
+        };
         annotationPage: {
             header: {
                 saveAnnotationButton: (() => JSX.Element)[];
@@ -447,7 +450,7 @@ export interface PluginsState {
 }
 
 export interface AboutState {
-    server: AboutData;
+    server: AboutData | null;
     packageVersion: {
         ui: string;
     };
@@ -891,6 +894,7 @@ export interface AnnotationState {
         activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
+        activeSimplifyPoly?: boolean;
     };
     editing: EditingState;
     annotations: {
@@ -932,6 +936,10 @@ export interface AnnotationState {
     }
     propagate: {
         visible: boolean;
+    };
+    simplify: {
+        objectState: ObjectState | null;
+        originalPoints: number[] | null;
     };
     colors: any[];
     filtersPanelVisible: boolean;

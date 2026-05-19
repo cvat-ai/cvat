@@ -5,12 +5,13 @@
 import json
 import operator
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
-from shared.utils.config import ASSETS_DIR
+from shared.utils.config import ASSETS_DIR, SHARE_DIR
 
 
 class Container:
@@ -620,3 +621,8 @@ def access_tokens_by_username(raw_access_tokens_by_username):
         data[username] = extended_user_tokens
 
     return data
+
+
+@pytest.fixture(scope="session")
+def fxt_local_audio_file_path() -> Generator[Path, None, None]:
+    yield SHARE_DIR / "audio" / "sample1.mp3"

@@ -49,6 +49,7 @@ export enum RQStatus {
     QUEUED = 'queued',
     STARTED = 'started',
     FINISHED = 'finished',
+    CANCELED = 'canceled',
     FAILED = 'failed',
     UNKNOWN = 'unknown',
 }
@@ -208,6 +209,7 @@ export enum CloudStorageCredentialsType {
     KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR',
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR',
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS',
+    CONNECTION_STRING = 'CONNECTION_STRING',
     KEY_FILE_PATH = 'KEY_FILE_PATH',
 }
 

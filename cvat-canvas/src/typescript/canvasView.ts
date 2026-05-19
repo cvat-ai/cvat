@@ -366,12 +366,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    // eslint-disable-next-line new-cap
                     state: {
                         ...data,
                         zOrder: zLayer || 0,
                     },
                     continue: continueDraw,
+                    simplifyPoly: data?.simplifyPoly || false,
                     duration,
                 },
             });
@@ -769,6 +769,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.controller.geometry = dragged;
         this.geometry = dragged;
         this.moveCanvas();
+
+        this.canvas.dispatchEvent(
+            new CustomEvent('canvas.zoom', {
+                bubbles: false,
+                cancelable: true,
+            }),
+        );
     };
 
     private moveCanvas(): void {
