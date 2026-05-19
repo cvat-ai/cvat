@@ -1,7 +1,7 @@
 import django_rq
 from django.core.management.base import BaseCommand
 
-from cvat.apps.rq_playground.task import send_webhook_task
+from cvat.apps.django_rq_ext.sandbox.tasks import send_webhook_task
 
 _DEFAULT_URL = "https://httpbin.org/get"
 _DEFAULT_COUNT = 5

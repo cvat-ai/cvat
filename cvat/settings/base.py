@@ -86,12 +86,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # NOTE @sosov: rq_playground must come BEFORE django_rq so that its
-    # `management/commands/rqworker.py` shadows django_rq's. Django's
-    # get_commands() iterates apps via reversed(get_app_configs()) and
-    # .update()s the dict, so the FIRST app in INSTALLED_APPS wins for
-    # command-name collisions.
-    "cvat.apps.rq_playground",
+    "cvat.apps.django_rq_ext",
     "django_rq",
     "django_sendfile",
     "dj_rest_auth",

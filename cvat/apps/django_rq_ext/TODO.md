@@ -17,8 +17,8 @@ Understand how RQ's worker monitoring works before adding back any of:
   abandoned and re-enqueue it → double execution.
 
 The three bullets above were intentionally stripped from `handle_job_failure`
-and `_perform_job` for Phase 2 (see git history). Re-add only with a clear
-model of what each piece is for in a multi-job worker.
+and `_perform_job`. Re-add only with a clear model of what each piece is for
+in a multi-job worker.
 
 ## RQ consistency: what happens to a job we SIGKILL'd mid-flight?
 
@@ -52,8 +52,7 @@ Implications to confirm later:
 
 - **No job loss**, but recovery is on the order of minutes, not seconds.
 - During the limbo window, `/api/requests/{rq_id}` would report `started` —
-  the polling client sees a job that looks alive but isn't. For CVAT exports
-  / imports this may be confusing; for playground/webhook jobs probably fine.
+  the polling client sees a job that looks alive but isn't.
 - Maintenance only runs if *another* worker exists on the same queue (or a
   replacement pod comes up). If the queue has a single worker that dies and
   no replacement, the stale entry persists indefinitely.
@@ -63,7 +62,13 @@ Implications to confirm later:
 ## Other Phase 3+ items
 
 - Per-job heartbeat refresh from inside the executor thread (today: only the
-  initial `job.heartbeat(ttl=~90s)` set at start; safe while
-  `_TASK_EXECUTION_TIME_THRESHOLD_SEC` ≤ 90).
-- `depends_on` / `on_success` / `on_failure` callbacks (today: dependents
-  enqueued only on failure path via `handle_job_failure`).
+  initial `job.heartbeat(ttl=~90s)` set at start; safe while the configured
+  `task_execution_time_threshold` ≤ 90).
+- `depends_on` / `enqueue_dependents` on the success path.
+  Today `_perform_job` does NOT call `queue.enqueue_dependents(job)` after a
+  successful `job.perform()` — so dependents of a successful job never run.
+  (Dependents of a failed-and-not-retrying job DO get enqueued, via
+  `handle_job_failure`, matching upstream BaseWorker.) Verify against
+  rq.worker.Worker.perform_job to see what we'd need to port.
+- `on_success` / `on_failure` job callbacks — currently not invoked at all
+  from `_perform_job`.

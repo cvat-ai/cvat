@@ -1,13 +1,11 @@
 # NOTE @sosov: shadows django_rq.management.commands.rqworker.Command. Picked
-# up by Django because cvat.apps.rq_playground sits after `django_rq` in
-# INSTALLED_APPS, and get_commands() takes the last definition wins.
+# up by Django because cvat.apps.django_rq_ext sits before `django_rq` in
+# INSTALLED_APPS, and get_commands() iterates via reversed(get_app_configs()),
+# so the FIRST app in INSTALLED_APPS wins for command-name collisions.
 #
-# Adds two optional flags:
-#   --pool-size                      (forwarded to worker.__init__)
-#   --task-execution-time-threshold  (forwarded to worker.__init__)
-# Both default to None and are only injected into worker kwargs when the user
-# explicitly passes them, so the stock rq.Worker (which doesn't accept either)
-# keeps working unchanged for `just runworker`.
+# Adds --pool-size and --task-execution-time-threshold. Both default to None
+# and are only injected when explicitly set, so stock rq.Worker invocations
+# (e.g. `just runworker`) keep working unchanged.
 
 import django_rq.management.commands.rqworker as _upstream
 
@@ -37,10 +35,8 @@ class Command(_upstream.Command):
 
     def handle(self, *args, **options) -> None:
         # NOTE @sosov: upstream handle() builds worker_kwargs as a literal dict
-        # with no extension hook, so we monkey-patch `get_worker` in its module
-        # namespace for the duration of one super() call. Upstream does
-        # `from ...workers import get_worker`, which binds the name on
-        # _upstream — rebinding it is what super().handle() resolves. Less
+        # with no extension hook, so we monkey-patch `get_worker` in its
+        # module namespace just for the duration of one super() call. Less
         # brittle than copy-pasting the whole handle() body.
         pool_size: int | None = options.pop("pool_size", None)
         task_threshold: int | None = options.pop("task_execution_time_threshold", None)
