@@ -7,7 +7,14 @@ import textwrap
 
 from cvat_sdk import Client, models
 
-from .command_base import CommandGroup, GenericCommand, GenericDeleteCommand, GenericListCommand
+from .command_base import (
+    CommandGroup,
+    GenericCommand,
+    GenericDeleteCommand,
+    GenericExportDatasetCommand,
+    GenericImportDatasetCommand,
+    GenericListCommand,
+)
 from .parsers import parse_label_arg
 
 COMMANDS = CommandGroup(description="Perform operations on CVAT projects.")
@@ -86,4 +93,14 @@ class ProjectCreate:
 
 @COMMANDS.command_class("delete")
 class ProjectDelete(GenericDeleteCommand, GenericProjectCommand):
+    pass
+
+
+@COMMANDS.command_class("export-dataset")
+class ProjectExportDataset(GenericExportDatasetCommand, GenericProjectCommand):
+    pass
+
+
+@COMMANDS.command_class("import-dataset")
+class ProjectImportDataset(GenericImportDatasetCommand, GenericProjectCommand):
     pass

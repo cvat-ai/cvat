@@ -9,6 +9,8 @@ The following subcommands are supported:
 - Projects:
   - `create` - create a new project
   - `delete` - delete projects
+  - `export-dataset` - export a project as a dataset
+  - `import-dataset` - import annotations into a project from a dataset
   - `ls` - list all projects
 
 - Tasks:

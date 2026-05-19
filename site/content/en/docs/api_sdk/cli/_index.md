@@ -16,6 +16,8 @@ The following subcommands are supported:
 - Projects:
   - `create` - create a new project
   - `delete` - delete projects
+  - `export-dataset` - export a project as a dataset
+  - `import-dataset` - import annotations into a project from a dataset
   - `ls` - list all projects
 
 - Tasks:
@@ -356,7 +358,12 @@ see that command's examples for more information.
   ```
 - Create a project from a dataset in the COCO format:
   ```bash
-  cvat-cli project create "new project" --dataset_file coco.zip --dataset_format "COCO 1.0"
+  cvat-cli project create "new project" --dataset_path coco.zip --dataset_format "COCO 1.0"
+  ```
+- Create a project from a dataset and check the import status every second:
+  ```bash
+  cvat-cli project create "new project" --dataset_path coco.zip --dataset_format "COCO 1.0" \
+      --completion_verification_period 1
   ```
 
 ### Delete
@@ -376,6 +383,30 @@ see that command's examples for more information.
   ```bash
   cvat-cli project ls --json > list_of_projects.json
   ```
+
+### Export as a dataset
+
+- Export project with id 103 in the format `CVAT for images 1.1` and save to the file "project.zip":
+  ```bash
+  cvat-cli project export-dataset --format "CVAT for images 1.1" 103 project.zip
+  ```
+- Export project with id 104 in the format `COCO 1.0`, including images, and save to the file "project.zip":
+  ```bash
+  cvat-cli project export-dataset --format "COCO 1.0" --with-images yes 104 project.zip
+  ```
+- Export project with id 105 to the current directory, using the server-generated filename:
+  ```bash
+  cvat-cli project export-dataset --format "CVAT for images 1.1" 105
+  ```
+
+### Import annotations from a dataset
+
+- Import a dataset into project with id 106, in the format `COCO 1.0`, from the file "coco.zip":
+  ```bash
+  cvat-cli project import-dataset --format "COCO 1.0" 106 coco.zip
+  ```
+
+  The project must have labels compatible with the dataset being imported.
 
 ## Examples - functions
 
