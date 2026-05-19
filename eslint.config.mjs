@@ -82,7 +82,7 @@ const browserAndNodeGlobals = {
 // Shared plugin instances keep FlatCompat output and handwritten flat entries
 // using the same plugin objects.
 const sharedCompatPlugins = {
-    '@stylistic': stylisticPlugin,
+    '@stylistic': stylisticPlugin, // https://eslint.org/blog/2023/10/deprecating-formatting-rules/
     '@typescript-eslint': tseslintPlugin,
     cypress: cypressPlugin,
     import: importPlugin,
