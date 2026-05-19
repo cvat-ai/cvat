@@ -838,16 +838,12 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
 function normaliseTask(task: SerializedTask): SerializedTask {
     // Server returns '' for media_type/mode/dimension on tasks without uploaded data;
     // collapse to undefined so downstream consumers see a clean optional value.
-    if ((task.media_type as unknown) === '') {
-        task.media_type = undefined;
-    }
-    if ((task.mode as unknown) === '') {
-        task.mode = undefined;
-    }
-    if ((task.dimension as unknown) === '') {
-        task.dimension = undefined;
-    }
-    return task;
+    return {
+        ...task,
+        media_type: (task.media_type as unknown) === '' ? undefined : task.media_type,
+        mode: (task.mode as unknown) === '' ? undefined : task.mode,
+        dimension: (task.dimension as unknown) === '' ? undefined : task.dimension,
+    };
 }
 
 async function getTasks(
@@ -884,9 +880,9 @@ async function getTasks(
         throw generateError(errorData);
     }
 
-    response.data.results.forEach(normaliseTask);
-    response.data.results.count = response.data.count;
-    return response.data.results;
+    const results = response.data.results.map(normaliseTask) as PaginatedResource<SerializedTask>;
+    results.count = response.data.count;
+    return results;
 }
 
 async function saveTask(id: number, taskData: Record<string, unknown>): Promise<SerializedTask> {
