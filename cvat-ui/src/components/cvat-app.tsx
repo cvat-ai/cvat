@@ -232,9 +232,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
                     content:
-                        <Text>
-                            {SERVER_UNAVAILABLE_COMPONENT}
-                        </Text>,
+    <Text>
+        {SERVER_UNAVAILABLE_COMPONENT}
+    </Text>,
                 });
             });
 
@@ -618,7 +618,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             )}
 
                             <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
-                            {routesToRender}
+                            { routesToRender }
                             <Redirect
                                 to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
                             />
