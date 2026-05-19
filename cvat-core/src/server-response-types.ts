@@ -110,7 +110,7 @@ export interface SerializedTask {
     data_compressed_chunk_type: ChunkType
     data_original_chunk_type: ChunkType;
     data_cloud_storage_id: number | null;
-    dimension: DimensionType;
+    dimension?: DimensionType;
     media_type?: MediaType;
     id: number;
     image_quality: number;
@@ -121,7 +121,7 @@ export interface SerializedTask {
         validation: number;
     };
     labels: { count: number; url: string; };
-    mode: TaskMode | '';
+    mode?: TaskMode;
     name: string;
     organization_id: number | null;
     overlap: number | null;

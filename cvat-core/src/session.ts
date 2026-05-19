@@ -696,7 +696,7 @@ export class Job extends Session {
     }
 
     public get dimension(): DimensionType {
-        return this.#data.dimension;
+        return this.#data.dimension!;
     }
 
     public get mediaType(): MediaType {
@@ -724,7 +724,7 @@ export class Job extends Session {
     }
 
     public get mode(): TaskMode {
-        return this.#data.mode;
+        return this.#data.mode!;
     }
 
     public get labels(): Label[] {
@@ -807,7 +807,7 @@ export class Task extends Session {
     public readonly id: number;
     public readonly status: TaskStatus;
     public readonly size: number;
-    public readonly mode: TaskMode;
+    public readonly mode: TaskMode | undefined;
     public readonly owner: User;
     public readonly createdDate: string;
     public readonly updatedDate: string;
@@ -816,7 +816,7 @@ export class Task extends Session {
     public readonly imageQuality: number;
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
-    public readonly dimension: DimensionType;
+    public readonly dimension: DimensionType | undefined;
     public readonly mediaType: MediaType | undefined;
     public readonly progress: {
         completedJobs: number,
