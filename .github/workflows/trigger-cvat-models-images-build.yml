@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Generate authentication token
         id: gen-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.CVAT_BOT_APP_ID }}
           private-key: ${{ secrets.CVAT_BOT_PRIVATE_KEY }}
@@ -32,6 +32,6 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/cvat-ai/cvat-models/actions/workflows/build-push-agent-images.yml/dispatches \
-            -d '{"ref":"develop","inputs":{"tag_name":"v2.65.1"}}'
+            https://api.github.com/repos/cvat-ai/cvat-models/dispatches \
+            -d '{"event_type":"build-agent-images","client_payload":{"tag_name":"v2.65.1"}}'
 #warn commented for test            -d '{"ref":"develop","inputs":{"tag_name":"${{ github.event.release.tag_name }}"}}'
