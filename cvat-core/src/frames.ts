@@ -868,16 +868,6 @@ export async function getContextImage(
     });
 }
 
-export const PREVIEW_PLACEHOLDER_PREFIX = 'cvat-placeholder:';
-
-export function isPreviewPlaceholder(value: string): boolean {
-    return value.startsWith(PREVIEW_PLACEHOLDER_PREFIX);
-}
-
-export function previewPlaceholderKind(value: string): string {
-    return value.slice(PREVIEW_PLACEHOLDER_PREFIX.length);
-}
-
 export function decodePreview(preview: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -891,25 +881,17 @@ export function decodePreview(preview: Blob): Promise<string> {
     });
 }
 
-function placeholderKindFor(mediaType: MediaType | '' | undefined): string | null {
-    if (mediaType === MediaType.POINT_CLOUD) {
-        return 'point_cloud';
-    }
-    return null;
-}
-
 export async function resolvePreviewResponse(
     response: PreviewResponse,
-    mediaType?: MediaType | '',
+    mediaType?: MediaType,
 ): Promise<string> {
-    if (response === null) {
-        return '';
-    }
     if (response === PREVIEW_DEFAULT) {
-        const kind = placeholderKindFor(mediaType);
-        return kind ? `${PREVIEW_PLACEHOLDER_PREFIX}${kind}` : '';
+        return (mediaType && config.previewPlaceholders[mediaType]) || '';
     }
-    return decodePreview(response);
+    if (response) {
+        return decodePreview(response);
+    }
+    return '';
 }
 
 export async function getFrame(

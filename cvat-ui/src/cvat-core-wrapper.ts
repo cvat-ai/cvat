@@ -28,15 +28,12 @@ import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core
 import QualitySettings, { TargetMetric, QualitySettingsSaveFields } from 'cvat-core/src/quality-settings';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import ApiToken from 'cvat-core/src/api-token';
-import {
-    FramesMetaData, FrameData, PREVIEW_PLACEHOLDER_PREFIX,
-    isPreviewPlaceholder, previewPlaceholderKind,
-} from 'cvat-core/src/frames';
+import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
     DimensionType, JobType, Source, MembershipRole,
-    JobStage, JobState, RQStatus, StorageLocation,
+    JobStage, JobState, RQStatus, StorageLocation, MediaType,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -64,6 +61,9 @@ cvat.config.origin = window.location.origin;
 // A larger value may cause a server-side timeout errors in the current implementation.
 cvat.config.uploadChunkSize = 2;
 cvat.config.opencvPath = config.OPENCV_PATH;
+cvat.config.previewPlaceholders = {
+    [MediaType.POINT_CLOUD]: '/assets/point_cloud_preview.png',
+};
 (globalThis as any).cvat = cvat;
 
 function getCore(): typeof cvat {
@@ -129,9 +129,6 @@ export {
     MembershipRole,
     AboutData,
     BaseImageFilter,
-    PREVIEW_PLACEHOLDER_PREFIX,
-    isPreviewPlaceholder,
-    previewPlaceholderKind,
 };
 
 export type {

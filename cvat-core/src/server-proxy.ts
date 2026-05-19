@@ -834,6 +834,15 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
     }
 }
 
+function normaliseTaskMediaType(task: SerializedTask): SerializedTask {
+    // Server returns '' for tasks without uploaded data; collapse to undefined
+    // so downstream consumers see a clean MediaType | undefined.
+    if ((task.media_type as unknown) === '') {
+        task.media_type = undefined;
+    }
+    return task;
+}
+
 async function getTasks(
     filter: TasksFilter = {},
     aggregate?: boolean,
@@ -850,7 +859,7 @@ async function getTasks(
             };
         } else if ('id' in filter) {
             response = await Axios.get(`${backendAPI}/tasks/${filter.id}`);
-            const results = [response.data];
+            const results = [normaliseTaskMediaType(response.data)];
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
@@ -868,6 +877,7 @@ async function getTasks(
         throw generateError(errorData);
     }
 
+    response.data.results.forEach(normaliseTaskMediaType);
     response.data.results.count = response.data.count;
     return response.data.results;
 }
@@ -882,7 +892,7 @@ async function saveTask(id: number, taskData: Record<string, unknown>): Promise<
         throw generateError(errorData);
     }
 
-    return response.data;
+    return normaliseTaskMediaType(response.data);
 }
 
 async function deleteTask(id: number, organizationID: string | null = null): Promise<void> {

@@ -9,15 +9,9 @@ import { PictureOutlined } from '@ant-design/icons';
 import { useInView } from 'react-intersection-observer';
 import Spin from 'antd/lib/spin';
 import { CombinedState } from 'reducers';
-import {
-    Job, Task, Project, isPreviewPlaceholder, previewPlaceholderKind,
-} from 'cvat-core-wrapper';
+import { Job, Task, Project } from 'cvat-core-wrapper';
 import MLModel from 'cvat-core/src/ml-model';
 import { previewQueue, getRequestId } from 'utils/preview-queue';
-
-const PLACEHOLDER_ASSETS: Record<string, string> = {
-    point_cloud: '/assets/point_cloud_preview.png',
-};
 
 interface Props {
     job?: Job | undefined;
@@ -104,9 +98,7 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
         );
     }
 
-    const imgSrc = isPreviewPlaceholder(preview.preview) ?
-        PLACEHOLDER_ASSETS[previewPlaceholderKind(preview.preview)] :
-        preview.preview;
+    const imgSrc = preview.preview;
 
     if (preview.initialized && !imgSrc) {
         return (

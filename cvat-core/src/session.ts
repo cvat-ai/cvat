@@ -526,7 +526,7 @@ export class Job extends Session {
         task_name: string | null;
         labels: Label[];
         dimension?: DimensionType;
-        media_type?: MediaType | '';
+        media_type?: MediaType;
         data_compressed_chunk_type?: ChunkType;
         data_chunk_size?: number;
         bug_tracker: string | null;
@@ -699,8 +699,8 @@ export class Job extends Session {
         return this.#data.dimension;
     }
 
-    public get mediaType(): MediaType | '' {
-        return this.#data.media_type;
+    public get mediaType(): MediaType {
+        return this.#data.media_type!;
     }
 
     public get parentJobId(): number | null {
@@ -817,7 +817,7 @@ export class Task extends Session {
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
     public readonly dimension: DimensionType;
-    public readonly mediaType: MediaType | '';
+    public readonly mediaType: MediaType | undefined;
     public readonly progress: {
         completedJobs: number,
         totalJobs: number,
