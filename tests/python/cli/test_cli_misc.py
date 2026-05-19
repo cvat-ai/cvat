@@ -5,11 +5,13 @@
 import os
 from datetime import timedelta
 from io import BytesIO
+from pathlib import Path
 from unittest import mock
 
 import packaging.version as pv
 import pytest
 from cvat_cli._internal.agent import _Event, _NewReconnectionDelay, _parse_event_stream
+from cvat_sdk.core.proxies.types import Location
 from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
@@ -202,3 +204,81 @@ class TestCliMisc(TestCliBase):
 def test_parse_event_stream(lines, messages):
     stream = BytesIO(b"".join(line.encode() + b"\n" for line in lines))
     assert list(_parse_event_stream(stream)) == messages
+
+
+class _FakeBackupTarget:
+    def __init__(self):
+        self.calls = []
+
+    def download_backup(self, **kwargs):
+        self.calls.append(kwargs)
+
+
+class _FakeRepo:
+    def __init__(self):
+        self.retrieve_calls = []
+        self.target = _FakeBackupTarget()
+
+    def retrieve(self, *, obj_id: int):
+        self.retrieve_calls.append(obj_id)
+        return self.target
+
+
+class _FakeClient:
+    def __init__(self):
+        self.tasks = _FakeRepo()
+        self.projects = _FakeRepo()
+
+
+class _FakeClientContext:
+    def __init__(self, client):
+        self.client = client
+
+    def __enter__(self):
+        return self.client
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+@pytest.mark.parametrize(
+    "resource, repo_attr",
+    [
+        ("task", "tasks"),
+        ("project", "projects"),
+    ],
+)
+def test_backup_command_dispatches_resource_id(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, resource: str, repo_attr: str):
+    from cvat_cli.__main__ import main
+
+    fake_client = _FakeClient()
+
+    def fake_build_client(parsed_args, logger):
+        for attr in (
+            "auth",
+            "insecure",
+            "loglevel",
+            "organization",
+            "server_host",
+            "server_port",
+        ):
+            delattr(parsed_args, attr)
+
+        return _FakeClientContext(fake_client)
+
+    monkeypatch.setattr(
+        "cvat_cli.__main__.build_client",
+        fake_build_client,
+    )
+    monkeypatch.setattr("cvat_cli.__main__.configure_logger", lambda logger, parsed_args: None)
+
+    output_path = tmp_path / f"{resource}.zip"
+
+    assert main([resource, "backup", "123", str(output_path)]) == 0
+
+    repo = getattr(fake_client, repo_attr)
+    assert repo.retrieve_calls == [123]
+    assert len(repo.target.calls) == 1
+    assert repo.target.calls[0]["filename"] == str(output_path)
+    assert repo.target.calls[0]["status_check_period"] == 2
+    assert repo.target.calls[0]["location"] is Location.LOCAL

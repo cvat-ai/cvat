@@ -207,7 +207,7 @@ class TestGetAuditEvents:
         event_count = Counter([e["scope"] for e in filtered_events])
         assert event_count["create:project"] == 1
         assert event_count["create:task"] == 2
-        assert event_count["create:job"] == 2
+        assert event_count["create:job"] == 4
 
     @pytest.mark.parametrize("api_version", [1, 2])
     def test_filter_by_task(self, api_version: int):

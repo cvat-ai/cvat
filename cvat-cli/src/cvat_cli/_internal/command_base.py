@@ -134,8 +134,8 @@ class GenericDownloadBackupCommand(GenericCommand):
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
-            f"{self.resource_type_str}_id",
-            dest="resource_id",
+            "resource_id",
+            metavar=f"{self.resource_type_str}_id",
             type=int,
             help=f"{self.resource_type_str} ID",
         )
