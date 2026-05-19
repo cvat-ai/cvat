@@ -5,14 +5,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
-import { usePlugins } from 'utils/hooks';
+import { Plugin } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { LabelWithCountHOF } from 'components/common/label-with-count';
+import { PluginMenuItemConstructor } from 'reducers';
 
-interface MenuItemsData {
+interface MenuItemsData<TTargetProps> {
     projectId: number;
     startEditField: (key: string) => void;
-    pluginActions: ReturnType<typeof usePlugins>;
+    pluginActions: Plugin<PluginMenuItemConstructor<TTargetProps>>[];
     onExportDataset: () => void;
     onImportDataset: () => void;
     onBackupProject: () => void;
@@ -20,9 +21,9 @@ interface MenuItemsData {
     selectedIds: number[];
 }
 
-export default function ProjectActionsItems(
-    menuItemsData: MenuItemsData,
-    projectMenuProps: unknown,
+export default function ProjectActionsItems<TTargetProps>(
+    menuItemsData: MenuItemsData<TTargetProps>,
+    projectMenuProps: TTargetProps,
 ): MenuProps['items'] {
     const {
         projectId,
@@ -107,7 +108,10 @@ export default function ProjectActionsItems(
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {
-            const menuItem = Component({ key: index, targetProps: projectMenuProps });
+            const menuItem = Component({
+                key: index,
+                targetProps: projectMenuProps,
+            });
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );

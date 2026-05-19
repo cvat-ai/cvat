@@ -13,6 +13,8 @@ import {
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken,
     Membership, AnnotationFormats, CloudStorage,
 } from 'cvat-core-wrapper';
+import type { MenuProps } from 'antd/lib/menu';
+import type React from 'react';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -307,8 +309,24 @@ export type PluginsList = {
 
 export type CallbackReturnType = Promise<undefined | { preventJobStatusChange: boolean }>;
 
-export interface PluginComponent {
-    component: any; // TODO: research correct plugin component type
+export interface PluginContext<TTargetProps = unknown, TTargetState = unknown> {
+    key?: React.Key;
+    targetProps?: TTargetProps;
+    targetState?: TTargetState;
+}
+
+export type PluginReactComponent<TTargetProps = unknown, TTargetState = unknown> = (
+    React.ComponentType<PluginContext<TTargetProps, TTargetState>>
+);
+
+export type PluginMenuItemConstructor<TTargetProps = unknown, TTargetState = unknown> = (
+    props: PluginContext<TTargetProps, TTargetState>
+) => NonNullable<MenuProps['items']>[0];
+
+export type PluginComponentType = PluginReactComponent<any, any> | PluginMenuItemConstructor<any, any>;
+
+export interface PluginComponent<T extends PluginComponentType = PluginComponentType> {
+    component: T;
     data: {
         weight: number;
         shouldBeRendered: (props?: object, state?: object) => boolean;
@@ -388,64 +406,64 @@ export interface PluginsState {
     components: {
         header: {
             userMenu: {
-                items: PluginComponent[];
+                items: PluginComponent<PluginMenuItemConstructor>[];
             };
         };
         loginPage: {
-            loginForm: PluginComponent[];
+            loginForm: PluginComponent<PluginReactComponent>[];
         };
         annotationPage: {
             player: {
-                slider: PluginComponent[];
+                slider: PluginComponent<PluginReactComponent>[];
             };
             menuActions: {
-                items: PluginComponent[];
+                items: PluginComponent<PluginMenuItemConstructor>[];
             };
         }
         modelsPage: {
             topBar: {
-                items: PluginComponent[];
+                items: PluginComponent<PluginReactComponent>[];
             };
             modelItem: {
                 menu: {
-                    items: PluginComponent[];
+                    items: PluginComponent<PluginMenuItemConstructor>[];
                 };
                 topBar:{
                     menu: {
-                        items: PluginComponent[];
+                        items: PluginComponent<PluginReactComponent>[];
                     };
                 };
             };
         };
         projectActions: {
-            items: PluginComponent[];
+            items: PluginComponent<PluginMenuItemConstructor>[];
         };
         taskActions: {
-            items: PluginComponent[];
+            items: PluginComponent<PluginMenuItemConstructor>[];
         };
         jobActions: {
-            items: PluginComponent[];
+            items: PluginComponent<PluginMenuItemConstructor>[];
         };
         taskItem: {
-            ribbon: PluginComponent[];
+            ribbon: PluginComponent<PluginReactComponent>[];
         };
         projectItem: {
-            ribbon: PluginComponent[];
+            ribbon: PluginComponent<PluginReactComponent>[];
         };
         settings: {
-            player: PluginComponent[];
+            player: PluginComponent<PluginReactComponent>[];
         };
         about: {
             links: {
-                items: PluginComponent[];
+                items: PluginComponent<PluginReactComponent>[];
             };
         };
         aiTools: {
             interactors: {
-                extras: PluginComponent[];
+                extras: PluginComponent<PluginReactComponent>[];
             };
         };
-        router: PluginComponent[];
+        router: PluginComponent<PluginReactComponent>[];
     }
 }
 

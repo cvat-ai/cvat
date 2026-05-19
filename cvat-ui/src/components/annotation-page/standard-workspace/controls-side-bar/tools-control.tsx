@@ -32,7 +32,7 @@ import {
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ToolsBlockerState, PluginComponent,
+    CombinedState, ActiveControl, ToolsBlockerState, PluginComponent, PluginReactComponent,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -67,7 +67,7 @@ interface StateToProps {
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
     frameIsDeleted: boolean;
-    interactorExtras: PluginComponent[];
+    interactorExtras: PluginComponent<PluginReactComponent>[];
 }
 
 interface DispatchToProps {

@@ -4,9 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { PluginsList, SupportedPlugins } from 'reducers';
+import { PluginComponentType, PluginsList, SupportedPlugins } from 'reducers';
 import { getCore } from 'cvat-core-wrapper';
-import React from 'react';
 
 const core = getCore();
 
@@ -34,13 +33,13 @@ export const pluginActions = {
     ),
     addUIComponent: (
         path: string,
-        component: React.Component,
+        component: PluginComponentType,
         data: {
             weight?: number;
             shouldBeRendered?: (props?: object, state?: object) => boolean;
         } = {},
     ) => createAction(PluginsActionTypes.ADD_UI_COMPONENT, { path, component, data }),
-    removeUIComponent: (path: string, component: React.Component) => createAction(
+    removeUIComponent: (path: string, component: PluginComponentType) => createAction(
         PluginsActionTypes.REMOVE_UI_COMPONENT, { path, component },
     ),
     addUICallback: (

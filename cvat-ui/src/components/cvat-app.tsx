@@ -502,7 +502,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const routesToRender = pluginComponents.router
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
-            .map(({ component: Component }) => Component());
+            .map(({ component: Component }, index) => <Component key={index} />);
 
         const queryParams = new URLSearchParams(location.search);
         const authParams = authQuery(queryParams);

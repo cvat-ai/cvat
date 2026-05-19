@@ -10,7 +10,9 @@ import {
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory, useLocation, useParams } from 'react-router';
-import { CombinedState, PluginComponent, InstanceType } from 'reducers';
+import {
+    CombinedState, PluginComponent, InstanceType, PluginComponentType, PluginReactComponent,
+} from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
@@ -37,26 +39,26 @@ export function useIsMounted(): () => boolean {
     return useCallback(() => ref.current, []);
 }
 
-export type Plugin = {
-    component: any; // TODO: research which type should be here
+export type Plugin<T extends PluginComponentType = PluginReactComponent<any, any>> = {
+    component: T;
     weight: number;
 };
 
-export function usePlugins(
+export function usePlugins<T extends PluginComponentType = PluginReactComponent<any, any>>(
     getState: (state: CombinedState) => PluginComponent[],
     props: object = {}, state: object = {},
-): Plugin[] {
+): Plugin<T>[] {
     const components = useSelector(getState);
     const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
     const mappedComponents = filteredComponents
         .map(({ component, data }): {
-            component: any; // TODO: research which type should be here
+            component: T;
             weight: number;
         } => ({
-            component,
+            component: component as T,
             weight: data.weight,
         }));
-    const ref = useRef<Plugin[]>(mappedComponents);
+    const ref = useRef<Plugin<T>[]>(mappedComponents);
 
     if (!_.isEqual(ref.current, mappedComponents)) {
         ref.current = mappedComponents;
