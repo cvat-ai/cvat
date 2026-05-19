@@ -8,13 +8,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
-import {
-    DimensionType, LabelType, ObjectType, ShapeType,
-} from 'cvat-core-wrapper';
+import { LabelType, ObjectType, ShapeType } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
-import {
-    rememberObject, setAudioActiveLabel, setAudioRegions, updateAnnotationsAsync,
-} from 'actions/annotation-actions';
+import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
@@ -43,12 +39,9 @@ registerComponentShortcuts(componentShortcuts);
 function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
 
-    const {
-        labels, keyMap, isAudio,
-    } = useSelector((state: CombinedState) => ({
+    const { labels, keyMap } = useSelector((state: CombinedState) => ({
         labels: state.annotation.job.labels,
         keyMap: state.shortcuts.keyMap,
-        isAudio: state.annotation.job.instance?.dimension === DimensionType.DIMENSION_1D,
     }), shallowEqual);
 
     const labelIDs = labels.map((label: any): number => label.id);
@@ -82,65 +75,42 @@ function LabelsListComponent(): JSX.Element {
         if (event) event.preventDefault();
         const labelID = keyToLabelMapping[index];
         const label = labels.find((_label: any) => _label.id === labelID)!;
-        if (!Number.isInteger(labelID) || !label) return;
-
-        if (isAudio) {
+        if (Number.isInteger(labelID) && label) {
             const relevantAppState = getCVATStore().getState();
-            const { regions, activeRegionId } = relevantAppState.audio.player;
-            if (activeRegionId) {
-                const labelObj = labels.find((l: any) => l.id === labelID);
-                const defaultAttrs: Record<number, string> = {};
-                if (labelObj) {
-                    labelObj.attributes.forEach((attr: any) => {
-                        defaultAttrs[attr.id] = attr.defaultValue;
-                    });
+            const { states, activatedStateID } = relevantAppState.annotation.annotations;
+            const { activeShapeType, activeObjectType } = relevantAppState.annotation.drawing;
+
+            if (Number.isInteger(activatedStateID)) {
+                const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
+                const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === LabelType.TAG;
+                const labelIsApplicable = label.type === LabelType.ANY ||
+                    (activatedState.shapeType === label.type && activatedState.shapeType !== ShapeType.SKELETON) ||
+                    bothAreTags;
+                if (activatedState && labelIsApplicable) {
+                    activatedState.label = label;
+                    dispatch(updateAnnotationsAsync([activatedState]));
                 }
-                const next = regions.map((r) => (
-                    r.id === activeRegionId ? { ...r, labelId: labelID, attributes: defaultAttrs } : r
-                ));
-                dispatch(setAudioRegions(next));
             } else {
-                dispatch(setAudioActiveLabel(labelID));
+                if (label.type === LabelType.TAG) {
+                    dispatch(rememberObject({ activeLabelID: labelID, activeObjectType: ObjectType.TAG }, false));
+                } else if (label.type === LabelType.MASK) {
+                    dispatch(rememberObject({
+                        activeLabelID: labelID,
+                        activeObjectType: ObjectType.SHAPE,
+                        activeShapeType: ShapeType.MASK,
+                    }, false));
+                } else {
+                    dispatch(rememberObject({
+                        activeLabelID: labelID,
+                        activeObjectType: activeObjectType !== ObjectType.TAG ? activeObjectType : ObjectType.SHAPE,
+                        activeShapeType: label.type === LabelType.ANY && activeShapeType !== ShapeType.SKELETON ?
+                            activeShapeType : label.type as unknown as ShapeType,
+                    }, false));
+                }
+
                 message.destroy();
                 message.success(`Default label has been changed to "${label.name}"`);
             }
-            return;
-        }
-
-        const relevantAppState = getCVATStore().getState();
-        const { states, activatedStateID } = relevantAppState.annotation.annotations;
-        const { activeShapeType, activeObjectType } = relevantAppState.annotation.drawing;
-
-        if (Number.isInteger(activatedStateID)) {
-            const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
-            const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === LabelType.TAG;
-            const labelIsApplicable = label.type === LabelType.ANY ||
-                (activatedState.shapeType === label.type && activatedState.shapeType !== ShapeType.SKELETON) ||
-                bothAreTags;
-            if (activatedState && labelIsApplicable) {
-                activatedState.label = label;
-                dispatch(updateAnnotationsAsync([activatedState]));
-            }
-        } else {
-            if (label.type === LabelType.TAG) {
-                dispatch(rememberObject({ activeLabelID: labelID, activeObjectType: ObjectType.TAG }, false));
-            } else if (label.type === LabelType.MASK) {
-                dispatch(rememberObject({
-                    activeLabelID: labelID,
-                    activeObjectType: ObjectType.SHAPE,
-                    activeShapeType: ShapeType.MASK,
-                }, false));
-            } else {
-                dispatch(rememberObject({
-                    activeLabelID: labelID,
-                    activeObjectType: activeObjectType !== ObjectType.TAG ? activeObjectType : ObjectType.SHAPE,
-                    activeShapeType: label.type === LabelType.ANY && activeShapeType !== ShapeType.SKELETON ?
-                        activeShapeType : label.type as unknown as ShapeType,
-                }, false));
-            }
-
-            message.destroy();
-            message.success(`Default label has been changed to "${label.name}"`);
         }
     };
 
