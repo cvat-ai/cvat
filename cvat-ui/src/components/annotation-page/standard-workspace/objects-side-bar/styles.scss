@@ -390,25 +390,12 @@
 
         > label {
             text-align: center;
-        }
-    }
-
-    .cvat-appearance-color-by-radio-group {
-        display: flex;
-
-        > label {
-            flex: 1 1 0;
+            width: 33%;
         }
     }
 
     .ant-checkbox-wrapper {
         margin-left: 0;
-    }
-
-    .cvat-appearance-opacity-slider,
-    .cvat-appearance-selected-opacity-slider {
-        margin-left: $grid-unit-size;
-        margin-right: $grid-unit-size;
     }
 }
 

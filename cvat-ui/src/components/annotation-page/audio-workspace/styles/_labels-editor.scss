@@ -2,4 +2,13 @@
     .cvat-label-type-input {
         display: none;
     }
+
+    .cvat-label-constructor-creator,
+    .cvat-label-constructor-updater {
+        border: 1px solid $border-color-1;
+        border-top: none;
+        border-radius: 0 0 $border-radius-base $border-radius-base;
+        padding: $grid-unit-size;
+        min-height: 9em;
+    }
 }
