@@ -20,6 +20,7 @@ interface Props {
     statesOrdering: StatesOrdering;
     sortedStatesID: number[];
     objectStates: any[];
+    visibleSkeletonElements: Record<number, number[]>;
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
     showGroundTruth: boolean;
@@ -42,6 +43,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesOrdering,
         sortedStatesID,
         objectStates,
+        visibleSkeletonElements,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
         showGroundTruth,
@@ -100,6 +102,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                 <ObjectItemContainer
                                     objectStates={objectStates}
                                     clientID={id}
+                                    visibleSkeletonElements={visibleSkeletonElements}
                                     allowSimplifyLifecycle
                                 />
                             </React.Fragment>
