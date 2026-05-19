@@ -16,6 +16,7 @@
 # See TODO.md alongside this file for the observability / consistency
 # follow-ups deferred to a later phase.
 
+import signal
 import sys
 import threading
 import time
@@ -190,9 +191,12 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
     # can't be interrupted, drain happens in teardown.
 
     def request_stop(self, signum, frame) -> None:
-        self.log.info("Stop requested via signal %s", signum)
+        self.log.info("Stop requested via signal %s; press again to force kill", signum)
         self._shutdown_requested_date = utcnow()
         self._stop_requested = True
+        signal.signal(signal.SIGINT, self.request_force_stop)
+        signal.signal(signal.SIGTERM, self.request_force_stop)
+        raise StopRequested()
 
     def request_force_stop(self, signum, frame) -> None:
         self.log.warning("Cold shut down")
