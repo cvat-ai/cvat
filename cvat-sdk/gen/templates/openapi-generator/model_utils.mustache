@@ -422,24 +422,10 @@ class ModelStringEnum(str, ModelSimple):
 
         super().set_attribute(name, value)
 
-    def __getattr__(self, attr):
-        # str appears before ModelSimple in the MRO, so restore OpenAPI model
-        # attribute lookup for required properties and _data_store values.
-        if attr in self.required_properties and attr in self.__dict__:
-            return self.__dict__[attr]
-
-        if attr in self.__dict__.get('_data_store', {}):
-            return self.__dict__['_data_store'][attr]
-
-        raise ApiAttributeError(
-            "{0} has no attribute '{1}'".format(
-                type(self).__name__, attr),
-            [e for e in [self.__dict__.get('_path_to_item'), attr] if e]
-        )
-
     def __getitem__(self, name):
-        # Support model-style access such as enum["value"], while preserving
-        # normal string indexing/slicing for integer and slice keys.
+        # Support model-style access such as enum["value"]. ModelSimple.__getitem__
+        # cannot be reused because it relies on `name in self`, which is a string
+        # substring check here, not a model-field check.
         if isinstance(name, str):
             if name in self.required_properties and name in self.__dict__:
                 return self.__dict__[name]
