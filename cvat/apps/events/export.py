@@ -30,26 +30,6 @@ slogger = ServerLogManager(__name__)
 
 DEFAULT_CACHE_TTL = timedelta(hours=1)
 TARGET = "events"
-EVENT_EXPORT_COLUMNS = [
-    "scope",
-    "obj_name",
-    "obj_id",
-    "obj_val",
-    "source",
-    "timestamp",
-    "count",
-    "duration",
-    "project_id",
-    "task_id",
-    "job_id",
-    "user_id",
-    "user_name",
-    "user_email",
-    "org_id",
-    "org_slug",
-    "payload",
-    "access_token_id",
-]
 
 
 def _create_csv(query_params: dict, output_filename: str):
