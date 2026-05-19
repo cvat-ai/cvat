@@ -86,6 +86,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # NOTE @sosov: rq_playground must come BEFORE django_rq so that its
+    # `management/commands/rqworker.py` shadows django_rq's. Django's
+    # get_commands() iterates apps via reversed(get_app_configs()) and
+    # .update()s the dict, so the FIRST app in INSTALLED_APPS wins for
+    # command-name collisions.
+    "cvat.apps.rq_playground",
     "django_rq",
     "django_sendfile",
     "dj_rest_auth",
@@ -281,6 +287,7 @@ class CVAT_QUEUES(Enum):
     CLEANING = "cleaning"
     CHUNKS = "chunks"
     CONSENSUS = "consensus"
+    PLAYGROUND = "playground"
 
 
 redis_inmem_host = os.getenv("CVAT_REDIS_INMEM_HOST", "localhost")
@@ -344,6 +351,10 @@ RQ_QUEUES = {
         "DEFAULT_TIMEOUT": "1h",
         # custom fields
         "PARSED_JOB_ID_CLASS": "cvat.apps.consensus.rq.ConsensusRequestId",
+    },
+    CVAT_QUEUES.PLAYGROUND.value: {
+        **REDIS_INMEM_SETTINGS,
+        "DEFAULT_TIMEOUT": "1h",
     },
 }
 
