@@ -2,28 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from datetime import datetime, timezone
 
 from django.db import transaction
 from django.http import HttpRequest
 from rest_framework.renderers import JSONRenderer
 from rest_framework.request import Request
-from rest_framework.settings import api_settings
 from rest_framework.throttling import BaseThrottle
 
-from cvat.apps.engine.log import ServerLogManager, vlogger
-
-slogger = ServerLogManager(__name__)
-
-
-def log_remote_addr_event(*, source: str, scope: str, remote_addr: str | None) -> None:
-    slogger.glob.info(
-        "Prepared %s analytics event. scope=%r, remote_addr=%r",
-        source,
-        scope,
-        remote_addr,
-    )
+from cvat.apps.engine.log import vlogger
 
 
 def event_scope(action, resource):
@@ -67,30 +54,9 @@ def get_remote_addr(request) -> str | None:
         return None
 
     try:
-        remote_addr = BaseThrottle().get_ident(request)
+        return BaseThrottle().get_ident(request)
     except Exception:
-        slogger.glob.warning("Failed to resolve remote address", exc_info=True)
         return None
-
-    if not remote_addr:
-        slogger.glob.warning(
-            "Resolved empty remote address. "
-            "X-Forwarded-For=%r, REMOTE_ADDR=%r, NUM_PROXIES=%r",
-            request.META.get("HTTP_X_FORWARDED_FOR"),
-            request.META.get("REMOTE_ADDR"),
-            api_settings.NUM_PROXIES,
-        )
-    elif os.getenv("CVAT_DEBUG_REMOTE_ADDR"):
-        slogger.glob.info(
-            "Resolved remote address for event logging. "
-            "remote_addr=%r, X-Forwarded-For=%r, REMOTE_ADDR=%r, NUM_PROXIES=%r",
-            remote_addr,
-            request.META.get("HTTP_X_FORWARDED_FOR"),
-            request.META.get("REMOTE_ADDR"),
-            api_settings.NUM_PROXIES,
-        )
-
-    return remote_addr
 
 
 def record_server_event(
@@ -126,7 +92,6 @@ def record_server_event(
         "payload": JSONRenderer().render(payload_with_request_info).decode("UTF-8"),
         **kwargs,
     }
-    log_remote_addr_event(source="server", scope=scope, remote_addr=data.get("remote_addr"))
 
     rendered_data = JSONRenderer().render(data).decode("UTF-8")
 
