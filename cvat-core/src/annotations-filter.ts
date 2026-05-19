@@ -313,7 +313,7 @@ export default class AnnotationsFilter {
                     label: label.name,
                     serverID: tag.id ?? null,
                     objectID: tag.clientID ?? null,
-                    type: ObjectType.SHAPE,
+                    type: ObjectType.TAG,
                     shape: null,
                     occluded: false,
                     score: null,
