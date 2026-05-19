@@ -336,7 +336,7 @@ class _TaskBackupBase(_BackupBase):
 
                     self._prepare_meta(allowed_fields, shape)
 
-                _prepare_tracks(track.get("elements", []), label)
+                deque(_prepare_tracks(track.get("elements", []), label), maxlen=0)
 
                 for attr in track["attributes"]:
                     _update_attribute(attr, label)

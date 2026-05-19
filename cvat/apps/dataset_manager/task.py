@@ -121,6 +121,34 @@ def merge_table_rows(rows, keys_for_merge, field_id):
     return list(merged_rows.values())
 
 
+def _validate_input_annotations(
+    annotations: AnnotationIR | dict, *, db_data: models.Data, dimension: models.DimensionType
+) -> AnnotationIR:
+    if not isinstance(annotations, AnnotationIR):
+        annotations = AnnotationIR(dimension, annotations)
+
+    if annotations.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
+        # Only tags and shapes can be used in tasks with GT pool
+        raise ValidationError(
+            "Tracks are not supported when task validation mode is {}".format(
+                models.ValidationMode.GT_POOL
+            )
+        )
+
+    if annotations.intervals:
+        task_start = db_data.start_frame
+        task_stop = db_data.stop_frame
+        for interval in annotations.intervals:
+            if not annotations.is_interval_inside(interval, task_start, task_stop):
+                raise ValidationError(
+                    f"Interval cannot be outside the task boundaries"
+                    f"[{task_start}, {task_stop}], got "
+                    f"[{interval['start']}, {interval['stop']}]"
+                )
+
+    return annotations
+
+
 class JobAnnotation:
     @classmethod
     def add_prefetch_info(
@@ -536,31 +564,10 @@ class JobAnnotation:
             self._set_updated_date()
 
     def _validate_input_annotations(self, data: AnnotationIR | dict) -> AnnotationIR:
-        if not isinstance(data, AnnotationIR):
-            data = AnnotationIR(self.db_job.segment.task.dimension, data)
-
-        db_data = self.db_job.segment.task.require_data()
-
-        if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
-            # Only tags and shapes can be used in tasks with GT pool
-            raise ValidationError(
-                "Tracks are not supported when task validation mode is {}".format(
-                    models.ValidationMode.GT_POOL
-                )
-            )
-
-        if data.intervals:
-            task_start = db_data.start_frame
-            task_stop = db_data.stop_frame
-            for interval in data.intervals:
-                if not data.is_interval_inside(interval, task_start, task_stop):
-                    raise ValidationError(
-                        f"Interval cannot be outside the task boundaries"
-                        f"[{task_start}, {task_stop}], got "
-                        f"[{interval['start']}, {interval['stop']}]"
-                    )
-
-        return data
+        db_task = self.db_job.segment.task
+        return _validate_input_annotations(
+            data, db_data=db_task.require_data(), dimension=db_task.dimension
+        )
 
     def _delete_job_labeledimages(self, ids__UNSAFE: list[int]) -> None:
         # ids__UNSAFE is a list, received from the user
@@ -1021,8 +1028,7 @@ class TaskAnnotation:
         self.ir_data.reset()
 
     def _patch_data(self, data: AnnotationIR | dict, action: PatchAction | None):
-        if not isinstance(data, AnnotationIR):
-            data = AnnotationIR(self.db_task.dimension, data)
+        data = self._validate_input_annotations(data)
 
         if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             self._preprocess_input_annotations_for_gt_pool_task(data, action=action)
@@ -1141,6 +1147,11 @@ class TaskAnnotation:
                     assert False
 
         return data
+
+    def _validate_input_annotations(self, data: AnnotationIR | dict) -> AnnotationIR:
+        return _validate_input_annotations(
+            data, db_data=self.db_task.require_data(), dimension=self.db_task.dimension
+        )
 
     def update(self, data):
         self._patch_data(data, PatchAction.UPDATE)

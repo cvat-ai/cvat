@@ -7356,6 +7356,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
 
         # Rare and buggy formats that are not crucial for testing
         formats.pop("Market-1501 1.0")  # Issue: https://github.com/cvat-ai/datumaro/issues/99
+        formats.pop("Generic TSV 1.0")  # Requires an audio task, checked in other test suite
 
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format, import_format=import_format):
