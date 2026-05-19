@@ -61,7 +61,7 @@ def _create_csv(query_params: dict, output_filename: str):
             "to": query_params.pop("to"),
         }
 
-        query = f"SELECT {', '.join(EVENT_EXPORT_COLUMNS)} FROM events"
+        query = "SELECT * EXCEPT(remote_addr) FROM events"
         conditions = ["source in ('server', 'client')", "scope != 'send:exception'"]
         parameters = {}
 
