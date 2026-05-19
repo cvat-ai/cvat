@@ -37,7 +37,7 @@ function transformSkeletonSVG(value: string): string {
                 idNameMapping[sublabel.id] = sublabel.name;
             }
         }
-    } catch (error: any) {
+    } catch (_error: any) {
         // unsuccessful parsing, return value as is
         return value;
     }

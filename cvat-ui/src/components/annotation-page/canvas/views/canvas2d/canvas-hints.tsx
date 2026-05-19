@@ -22,7 +22,7 @@ export default class CanvasTipsComponent extends React.PureComponent<{}, State> 
         let hiddenHints = {};
         try {
             hiddenHints = JSON.parse(localStorage.getItem('hiddenHints') || '{}');
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             // do nothing
         }
 
