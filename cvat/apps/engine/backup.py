@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import tempfile
+import traceback
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict, deque
 from collections.abc import Collection, Iterable
@@ -48,6 +49,7 @@ from cvat.apps.dataset_manager.views import (
     retry_current_rq_job,
 )
 from cvat.apps.engine import models
+from cvat.apps.engine.backup_signals import BackupStatus, backup_finished
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import DataChoice, StorageChoice, TaskMode
@@ -68,7 +70,12 @@ from cvat.apps.engine.serializers import (
 )
 from cvat.apps.engine.task import JobFileMapping
 from cvat.apps.engine.task import create_thread as create_task
-from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
+from cvat.apps.engine.utils import (
+    av_scan_paths,
+    parse_exception_message,
+    transaction_with_repeatable_read,
+)
+from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -502,7 +509,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         frame_ids_to_download = []
         frame_names_to_download = []
-        for media_file in self._db_data.images.all():
+        for media_file in self._db_data.images.order_by("frame").all():
             media_path = media_file.path
 
             local_path = os.path.join(data_dir, media_path)
@@ -940,7 +947,11 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 continue
 
             if file_name.startswith(input_data_dirname + "/"):
-                target_file = os.path.join(
+                # It should be impossible for file_name to enable a path traversal attack
+                # because it's the result of relpath(), which puts any ".." components in the front,
+                # and the if condition will be false for any path that starts with "..".
+                # But in case the surrounding logic changes, let's treat it as untrusted anyway.
+                target_file = join_untrusted_path(
                     output_data_path, os.path.relpath(file_name, input_data_dirname)
                 )
 
@@ -1068,6 +1079,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 data["server_files"].extend(
                     manifest_entry.get("meta", {}).get("related_images", [])
                 )
+
+            for server_file in data["server_files"]:
+                if problem := problem_with_untrusted_path(server_file):
+                    raise ValidationError(f"Unsafe file path in manifest: {problem}")
         else:
             if data_serializer.initial_data["storage"] != StorageChoice.LOCAL:
                 raise ValidationError(f"Unexpected storage type in the backup files")
@@ -1358,17 +1373,18 @@ def create_backup(
     lightweight: bool = None,
 ):
     db_instance = Exporter.get_object(instance_id)
-    instance_type = db_instance.__class__.__name__
-    instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
-
-    output_path = ExportCacheManager.make_backup_file_path(
-        instance_id=db_instance.id,
-        instance_type=instance_type,
-        instance_timestamp=instance_timestamp,
-        lightweight=lightweight,
-    )
 
     try:
+        instance_type = db_instance.__class__.__name__
+        instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
+
+        output_path = ExportCacheManager.make_backup_file_path(
+            instance_id=db_instance.id,
+            instance_type=instance_type,
+            instance_timestamp=instance_timestamp,
+            lightweight=lightweight,
+        )
+
         with get_export_cache_lock(
             output_path,
             block=True,
@@ -1378,6 +1394,12 @@ def create_backup(
             # output_path includes timestamp of the last update
             if os.path.exists(output_path):
                 extend_export_file_lifetime(output_path)
+                backup_finished.send(
+                    sender=create_backup,
+                    target=db_instance,
+                    lightweight=lightweight,
+                    status=BackupStatus.COMPLETED,
+                )
                 return output_path
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
@@ -1397,8 +1419,6 @@ def create_backup(
                 f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "
                 f"and available for downloading for the next {cache_ttl}."
             )
-
-        return output_path
     except LockNotAvailableError:
         # Need to retry later if the lock was not available
         retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
@@ -1408,10 +1428,26 @@ def create_backup(
             )
         )
         raise
-
-    except Exception:
+    except Exception as exc:
+        backup_finished.send(
+            sender=create_backup,
+            target=db_instance,
+            lightweight=lightweight,
+            status=BackupStatus.FAILED,
+            message=parse_exception_message(
+                "".join(traceback.format_exception_only(type(exc), exc))
+            ),
+        )
         log_exception(logger)
         raise
+
+    backup_finished.send(
+        sender=create_backup,
+        target=db_instance,
+        lightweight=lightweight,
+        status=BackupStatus.COMPLETED,
+    )
+    return output_path
 
 
 def get_backup_dirname():

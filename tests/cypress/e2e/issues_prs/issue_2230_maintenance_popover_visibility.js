@@ -19,6 +19,7 @@ context('Check maintenance of popups visibility.', () => {
         it('Open a popover for draw an object and apply the "mouseout" event to it. The popover be visible.', () => {
             cy.interactControlButton('draw-rectangle');
             cy.get('.cvat-draw-rectangle-popover').trigger('mouseout');
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
             cy.wait(500);
             cy.get('.cvat-draw-rectangle-popover').should('be.visible');
         });

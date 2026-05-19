@@ -1,276 +1,265 @@
-<p align="center">
-  <img src="/site/content/en/images/cvat-readme-gif.gif" alt="CVAT Platform" width="100%" max-width="800px">
-</p>
-<p align="center">
-  <a href="https://app.cvat.ai/">
-    <img src="/site/content/en/images/cvat-readme-button-tr-bg.png" alt="Start Annotating Now">
-  </a>
-</p>
+[![CVAT Community header](site/content/en/images/cvat_github_header.webp)](https://app.cvat.ai)
+# CVAT: Computer Vision Annotation Tool
 
-# Computer Vision Annotation Tool (CVAT)
-
+[![Release][release-img]][release-url]
+[![GitHub stars][stars-img]][stars-url]
+[![License][license-img]][license-url]
 [![CI][ci-img]][ci-url]
-[![Gitter chat][gitter-img]][gitter-url]
-[![Discord][discord-img]][discord-url]
-[![Coverage Status][coverage-img]][coverage-url]
 [![server pulls][docker-server-pulls-img]][docker-server-image-url]
 [![ui pulls][docker-ui-pulls-img]][docker-ui-image-url]
-[![DOI][doi-img]][doi-url]
+[![CVAT Online][online-img]][online-url]
+[![CVAT Enterprise][enterprise-img]][enterprise-url]
 [![Status][status-img]][status-url]
+[![Discord][discord-img]][discord-url]
+[![Docs][docs-img]][docs-url]
 
-CVAT is an interactive video and image annotation
-tool for computer vision. It is used by tens of thousands of users and
-companies around the world. Our mission is to help developers, companies, and
-organizations around the world to solve real problems using the Data-centric
-AI approach.
+[Website](https://www.cvat.ai/) ·
+[Docs](https://docs.cvat.ai/docs/) ·
+[Changelog](https://www.cvat.ai/resources/changelog) ·
+[Tutorials](https://www.cvat.ai/resources/videos) ·
+[Academy](https://www.cvat.ai/resources/academy) ·
+[Blog](https://www.cvat.ai/resources/blog)
 
-Start using CVAT online: [cvat.ai](https://cvat.ai). You can use it for free,
-or [subscribe](https://www.cvat.ai/pricing/cloud) to get unlimited data,
-organizations, autoannotations, and [Roboflow and HuggingFace integration](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
+## What is CVAT Community?
 
-Or set CVAT up as a self-hosted solution:
-[Self-hosted Installation Guide](https://docs.cvat.ai/docs/administration/basics/installation/).
-We provide [Enterprise support](https://www.cvat.ai/pricing/on-prem) for
-self-hosted installations with premium features: SSO, LDAP, Roboflow and
-HuggingFace integrations, and advanced analytics (coming soon). We also
-do trainings and a dedicated support with 24 hour SLA.
+**CVAT Community** is the free, self-hosted open-source edition of [CVAT](https://www.cvat.ai/) — one of
+the most widely used data annotation platforms for building high-quality visual datasets for
+computer vision and visual AI.
+Since 2018, CVAT has become one of the best-known data annotation tools in computer vision, with a
+large open-source community, millions of Docker pulls, and broad adoption across research and
+production AI teams.
 
-## Quick start ⚡
+CVAT Community supports image, video, and 3D annotation, dataset management, team collaboration, cloud storage
+integration, developer-friendly SDKs and APIs, and gives your team full control over your data
+and annotation infrastructure.
+The platform serves as the foundation of
+[CVAT Online](https://www.cvat.ai/pricing/cvat-online) and
+[CVAT Enterprise](https://www.cvat.ai/enterprise), and is actively maintained by the CVAT engineering team.
 
-- [Installation guide](https://docs.cvat.ai/docs/administration/basics/installation/)
-- [Manual](https://docs.cvat.ai/docs/manual/)
-- [Contributing](https://docs.cvat.ai/docs/contributing/)
-- [Datumaro dataset framework](https://github.com/cvat-ai/datumaro/blob/develop/README.md)
-- [Server API](#api)
-- [Python SDK](#sdk)
-- [Command line tool](#cli)
-- [XML annotation format](https://docs.cvat.ai/docs/manual/advanced/xml_format/)
-- [AWS Deployment Guide](https://docs.cvat.ai/docs/administration/basics/aws-deployment-guide/)
-- [Frequently asked questions](https://docs.cvat.ai/docs/faq/)
-- [Where to ask questions](#where-to-ask-questions)
+Why teams choose CVAT Community:
 
-## Partners ❤️
+- **Own your data:** Run entirely within your own infrastructure. No data leaves your environment.
+- **AI-powered annotation:** Connect your own ML models for detection, segmentation, and tracking to speed up labeling.
+- **Team collaboration:** Multi-user and multi-organization support with roles, task assignments,
+  and review workflows.
+- **MIT-licensed core:** Use, modify, and distribute CVAT Community under the permissive MIT License. Some serverless
+assets and dependencies may have separate licenses.
+- **Production-grade:** The foundation of all CVAT commercial products — battle-tested at scale.
+- **True open-source:** Transparent development, active community, on GitHub since 2018.
 
-CVAT is used by teams all over the world. In the list, you can find key companies which
-help us support the product or an essential part of our ecosystem. If you use us,
-please drop us a line at [contact@cvat.ai](mailto:contact+github@cvat.ai).
+This repository contains the source code and deployment assets for CVAT Community.
 
-- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the Human Protocol.
-- [FiftyOne](https://fiftyone.ai) is an open-source dataset curation and model analysis
-  tool for visualizing, exploring, and improving computer vision datasets and models that are
-  [tightly integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT
-  for annotation and label refinement.
+For a fully managed setup, annotation services, or enterprise features, see
+[CVAT Online](https://www.cvat.ai/pricing/cvat-online),
+[CVAT Enterprise](https://www.cvat.ai/enterprise) and
+[CVAT Labeling Services](https://www.cvat.ai/annotation-services).
 
-## Public datasets
+## Getting Started
 
-[ATLANTIS](https://github.com/smhassanerfani/atlantis), an open-source dataset for semantic segmentation
-of waterbody images, developed by [iWERS](http://ce.sc.edu/iwers/) group in the
-Department of Civil and Environmental Engineering at the University of South Carolina is using CVAT.
+> 💡 Want to explore CVAT before deploying anything?
+> **[Try CVAT Online (Free plan)](https://app.cvat.ai)** directly in your browser.
+> Feature availability and usage limits vary by plan; see
+> [CVAT Online pricing](https://www.cvat.ai/pricing/cvat-online) for details.
 
-For developing a semantic segmentation dataset using CVAT, see:
+### Installation
 
-- [ATLANTIS published article](https://www.sciencedirect.com/science/article/pii/S1364815222000391)
-- [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk)
-- [ATLANTIS annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
+**Prerequisites:**
 
-## CVAT online: [cvat.ai](https://cvat.ai)
+- [Docker Engine](https://docs.docker.com/engine/install/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Git](https://git-scm.com/)
 
-This is an online version of CVAT. It's free, efficient, and easy to use.
+> 💡 CVAT is primarily tested with Chromium-based browsers (Google Chrome, Microsoft Edge).
+> Firefox may work with some caveats; Safari/WebKit is not supported.
 
-[cvat.ai](https://cvat.ai) runs the latest version of the tool. You can create up
-to 10 tasks there and upload up to 500Mb of data to annotate. It will only be
-visible to you or the people you assign to it.
+**1. Start the default stack**
 
-For now, it does not have [analytics features](https://docs.cvat.ai/docs/administration/advanced/analytics/)
-like management and monitoring the data annotation team. It also does not allow exporting images, just the annotations.
+Clone the repository and launch the services.
 
-We plan to enhance [cvat.ai](https://cvat.ai) with new powerful features. Stay tuned!
+```bash
+git clone https://github.com/cvat-ai/cvat
+cd cvat
 
-## Prebuilt Docker images 🐳
+# Optional: set your IP or domain
+# export CVAT_HOST=your-ip-or-domain
 
-Prebuilt docker images are the easiest way to start using CVAT locally. They are available on Docker Hub:
+docker compose up -d
+```
 
-- [cvat/server](https://hub.docker.com/r/cvat/server)
-- [cvat/ui](https://hub.docker.com/r/cvat/ui)
+**2. Create an admin account**
 
-The images have been downloaded more than 1M times so far.
+```bash
+docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
+```
 
-## Screencasts 🎦
+See the [Installation Guide](https://docs.cvat.ai/docs/administration/community/basics/installation/) for full
+instructions and OS-specific setup.
 
-Here are some screencasts showing how to use CVAT.
+**3. Sign in and start labeling**
 
-<!--lint disable maximum-line-length-->
+- Open [http://localhost:8080](http://localhost:8080) (or your `CVAT_HOST`) in your browser.
+- Log in with your superuser account.
+- Create a project or task, upload your data (images, videos, or point clouds), and define labels to start annotating.
 
-[Computer Vision Annotation Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN):
-we introduce our course series designed to help you annotate data faster and better
-using CVAT. This course is about CVAT deployment and integrations, it includes
-presentations and covers the following topics:
+Learn more about annotation tools and workflows in the [CVAT Documentation](https://docs.cvat.ai/docs/) or
+take our free course – [CVAT Academy](https://www.cvat.ai/resources/academy).
 
-- **Speeding up your data annotation process: introduction to CVAT and Datumaro**.
-  What problems do CVAT and Datumaro solve, and how they can speed up your model
-  training process. Some resources you can use to learn more about how to use them.
-- **Deployment and use CVAT**. Use the app online at [app.cvat.ai](https://app.cvat.ai).
-  A local deployment. A containerized local deployment with Docker Compose (for regular use),
-  and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute
-  tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how
-  to deploy CVAT using Docker Compose.
+_For alternative deployments (AWS, Kubernetes, external PostgreSQL, backups, upgrades), see the [Deployment Guides](https://docs.cvat.ai/docs/administration/community/advanced/)._
 
-[Product tour](https://www.youtube.com/playlist?list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg): in this course, we show how to use CVAT, and help to get familiar with CVAT functionality and interfaces. This course does not cover integrations and is dedicated solely to CVAT. It covers the following topics:
+## Key Capabilities
 
-- **Pipeline**. In this video, we show how to use [app.cvat.ai](https://app.cvat.ai): how to sign up, upload your data, annotate it, and download it.
+- **[Manual & Auto-labeling](https://docs.cvat.ai/docs/annotation/manual-annotation/):** Annotate images, videos, and
+  3D point clouds with bounding boxes, polygons, masks, keypoints, cuboids, tags, and more. Speed up labeling
+  by connecting your own models for automatic annotation.
+- **[Task Management](https://docs.cvat.ai/docs/workspace/):** Organize datasets into projects, split them into tasks
+  and jobs, assign work to annotators, and track progress in real time.
+- **[Collaboration](https://docs.cvat.ai/docs/account_management/user-roles/):** Create organizations, invite teammates,
+  assign roles, and collaborate on annotations with comments and issues.
+- **[Quality Control](https://docs.cvat.ai/docs/qa-analytics/manual-qa/):** Review annotations, flag issues, compare
+  results across annotators with consensus, and run Ground Truth and Honeypot checks through the server API.
+- **[Analytics](https://docs.cvat.ai/docs/administration/community/advanced/analytics/):** Monitor user activity,
+  working time by job, events, and server logs with Grafana dashboards.
+- **[Data Ops & Integrations](https://docs.cvat.ai/docs/dataset_management/export-datasets/):** Export/import in 20+
+  formats (COCO, YOLO, Pascal VOC, KITTI, etc.), connect to cloud storage (S3, Azure, Google Cloud), and automate
+  via REST API and Python SDK.
 
-<!--lint enable maximum-line-length-->
+Advanced capabilities such as advanced project analytics, quality control UI, built-in auto-labeling with SAM 2
+ and SAM 3, AI agents, SSO, and more are available in [CVAT Online](https://www.cvat.ai/pricing/cvat-online)
+ paid plans (Solo, Team) and [CVAT Enterprise](https://www.cvat.ai/enterprise).
 
-For feedback, please see [Contact us](#contact-us)
+## Developer Tools
 
-## API
+CVAT is designed for automation. Beyond the Web UI, you can integrate it into your pipelines using:
 
-- [Documentation](https://docs.cvat.ai/docs/api_sdk/api/)
+- [Python SDK](https://docs.cvat.ai/docs/api_sdk/sdk/): install with `pip install cvat-sdk` and automate task creation,
+uploads, and exports from Python.
+- [Command line tool](https://docs.cvat.ai/docs/api_sdk/cli/): install with `pip install cvat-cli`
+and script common CVAT workflows from the terminal.
+- [REST API](https://docs.cvat.ai/docs/api_sdk/api/): full programmatic control over CVAT.
 
-## SDK
+## Data and Formats
 
-- Install with `pip install cvat-sdk`
-- [PyPI package homepage](https://pypi.org/project/cvat-sdk/)
-- [Documentation](https://docs.cvat.ai/docs/api_sdk/sdk/)
+CVAT Community supports image, video, and 3D (point cloud) annotation workflows. You can move data in and out using 20+
+industry-standard formats: CVAT (XML), COCO (JSON), YOLO (TXT), Ultralytics YOLO (TXT/YAML), Pascal VOC (XML),
+KITTI (TXT), MOT (TXT), and more.
 
-## CLI
+[Full list of supported formats.](https://docs.cvat.ai/docs/dataset_management/formats/)
 
-- Install with `pip install cvat-cli`
-- [PyPI package homepage](https://pypi.org/project/cvat-cli/)
-- [Documentation](https://docs.cvat.ai/docs/api_sdk/cli/)
+## ML and AI Models
 
-## Supported annotation formats
+CVAT Community supports automatic annotation via pre-built serverless models powered by Nuclio,
+covering detection, segmentation, pose estimation, and tracking:
 
-CVAT supports multiple annotation formats. You can select the format
-after clicking the **Upload annotation** and **Dump annotation** buttons.
-[Datumaro](https://github.com/cvat-ai/datumaro) dataset framework allows
-additional dataset transformations with its command line tool and Python library.
+| Model | Framework | Type |
+| --- | --- | --- |
+| [Segment Anything (SAM)](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/sam/nuclio) | PyTorch | Interactor |
+| [Inside-Outside Guidance (IOG)](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/shiyinzhang/iog/nuclio) | PyTorch | Interactor |
+| [RetinaNet R101](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio) | PyTorch | Detector |
+| [HRNet32 Whole Body Pose](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/mmpose/hrnet32/nuclio) | PyTorch | Pose Estimation |
+| [TransT](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/dschoerk/transt/nuclio) | PyTorch | Tracker |
+| [YOLO v7](https://github.com/cvat-ai/cvat/tree/develop/serverless/onnx/WongKinYiu/yolov7/nuclio) | ONNX | Detector |
+| [Mask RCNN Inception ResNet v2](https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio) | OpenVINO | Detector |
+| [Face Detection 0205](https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/face-detection-0205/nuclio) | OpenVINO | Detector |
+| [Faster RCNN Inception v2](https://github.com/cvat-ai/cvat/tree/develop/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio) | TensorFlow | Detector |
 
-For more information about the supported formats, see:
-[Annotation Formats](https://docs.cvat.ai/docs/manual/advanced/formats/).
+To enable automatic annotation, add the serverless component to your deployment:
 
-<!--lint disable maximum-line-length-->
+```bash
+docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
+```
 
-| Annotation format                                                                                | Import | Export |
-| ------------------------------------------------------------------------------------------------ | ------ | ------ |
-| [CVAT for images](https://docs.cvat.ai/docs/manual/advanced/xml_format/#annotation)              | ✔️     | ✔️     |
-| [CVAT for a video](https://docs.cvat.ai/docs/manual/advanced/xml_format/#interpolation)          | ✔️     | ✔️     |
-| [Datumaro](https://github.com/cvat-ai/datumaro)                                                  | ✔️     | ✔️     |
-| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                            | ✔️     | ✔️     |
-| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                    | ✔️     | ✔️     |
-| [YOLO](https://pjreddie.com/darknet/yolo/)                                                       | ✔️     | ✔️     |
-| [MS COCO Object Detection](http://cocodataset.org/#format-data)                                  | ✔️     | ✔️     |
-| [MS COCO Keypoints Detection](http://cocodataset.org/#format-data)                               | ✔️     | ✔️     |
-| [MOT](https://motchallenge.net/)                                                                 | ✔️     | ✔️     |
-| [MOTS PNG](https://www.vision.rwth-aachen.de/page/mots)                                          | ✔️     | ✔️     |
-| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                           | ✔️     | ✔️     |
-| [ImageNet](http://www.image-net.org)                                                             | ✔️     | ✔️     |
-| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                             | ✔️     | ✔️     |
-| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                                                  | ✔️     | ✔️     |
-| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                                  | ✔️     | ✔️     |
-| [Market-1501](https://www.aitribune.com/dataset/2018051063)                                      | ✔️     | ✔️     |
-| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                                       | ✔️     | ✔️     |
-| [Open Images V6](https://storage.googleapis.com/openimages/web/index.html)                       | ✔️     | ✔️     |
-| [Cityscapes](https://www.cityscapes-dataset.com/login/)                                          | ✔️     | ✔️     |
-| [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                   | ✔️     | ✔️     |
-| [Kitti Raw Format](https://www.cvlibs.net/datasets/kitti/raw_data.php)                           | ✔️     | ✔️     |
-| [LFW](http://vis-www.cs.umass.edu/lfw/)                                                          | ✔️     | ✔️     |
-| [Supervisely Point Cloud Format](https://docs.supervise.ly/data-organization/00_ann_format_navi) | ✔️     | ✔️     |
-| [Ultralytics YOLO Detection](https://docs.ultralytics.com/datasets/detect/)                      | ✔️     | ✔️     |
-| [Ultralytics YOLO Oriented Bounding Boxes](https://docs.ultralytics.com/datasets/obb/)           | ✔️     | ✔️     |
-| [Ultralytics YOLO Segmentation](https://docs.ultralytics.com/datasets/segment/)                  | ✔️     | ✔️     |
-| [Ultralytics YOLO Pose](https://docs.ultralytics.com/datasets/pose/)                             | ✔️     | ✔️     |
-| [Ultralytics YOLO Classification](https://docs.ultralytics.com/datasets/classify/)               | ✔️     | ✔️     |
+This starts the serverless infrastructure. To make models available in CVAT, install `nuctl` and deploy
+the functions you need, for example SAM or YOLO, as described in the [Automatic Annotation Guide](https://docs.cvat.ai/docs/annotation/auto-annotation/automatic-annotation/).
 
-<!--lint enable maximum-line-length-->
+## Which CVAT edition should I choose?
 
-## Deep learning serverless functions for automatic labeling
+- **CVAT Online**: the fastest way to try CVAT and start labeling without deployment. Use it to evaluate CVAT in
+the browser, explore managed features, and move to cost-efficient paid plans when you need more capacity or team
+workflows.
+- **CVAT Community**: the MIT-licensed self-hosted edition for teams that want to run CVAT themselves, customize the
+stack, and control their infrastructure.
+- **CVAT Enterprise**: for organizations that need CVAT in their own cloud or internal environment, enterprise support,
+security controls such as SSO, paid platform features, and SLAs.
+- **Labeling Services**: for teams that want to outsource annotation work to CVAT.ai’s experienced labeling team instead
+of building an internal labeling operation. Customers get trial access to CVAT Online during the project.
 
-CVAT supports automatic labeling. It can speed up the annotation process
-up to 10x. Here is a list of the algorithms we support, and the platforms they can be run on:
+For detailed plan limits and feature availability, see [CVAT Online pricing](https://www.cvat.ai/pricing/cvat-online),
+ [CVAT Enterprise](https://www.cvat.ai/enterprise), and [Labeling Services](https://www.cvat.ai/annotation-services).
 
-<!--lint disable maximum-line-length-->
+## Support
 
-| Name                                                                                                    | Type       | Framework  | CPU | GPU |
-| ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
-| [Segment Anything](/serverless/pytorch/facebookresearch/sam/nuclio/)                                    | interactor | PyTorch    | ✔️  | ✔️  |
-| [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_resnet_v2_atrous_coco/nuclio)       | detector   | OpenVINO   | ✔️  |     |
-| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | ✔️  |     |
-| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | ✔️  |     |
-| [YOLO v7](/serverless/onnx/WongKinYiu/yolov7/nuclio)                                                    | detector   | ONNX       | ✔️  | ✔️  |
-| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-0277/nuclio)    | reid       | OpenVINO   | ✔️  |     |
-| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | ✔️  |     |
-| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | ✔️  |     |
-| [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    | ✔️  | ✔️  |
-| [TransT](/serverless/pytorch/dschoerk/transt/nuclio)                                                    | tracker    | PyTorch    | ✔️  | ✔️  |
-| [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    | ✔️  |     |
-| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | ✔️  | ✔️  |
-| [RetinaNet](serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio)                       | detector   | PyTorch    | ✔️  | ✔️  |
-| [Face Detection](/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | detector   | OpenVINO   | ✔️  |     |
+- **Usage questions:** ask the community on [Discord](https://discord.com/invite/fNR3eXfk6C) or
+Stack Overflow with the `cvat` tag.
+- **Bugs and feature requests:** use [GitHub Issues](https://github.com/cvat-ai/cvat/issues).
+- **FAQ:** [Installation, upgrades, troubleshooting](https://docs.cvat.ai/docs/faq/).
 
-<!--lint enable maximum-line-length-->
+For dedicated support, SLAs, or advanced deployments, consider [CVAT Enterprise](https://www.cvat.ai/enterprise).
+
+## Contributing
+
+We welcome all contributions: bug reports, documentation fixes, integrations, and code.
+
+- If you'd like to contribute to CVAT, please refer to our
+  [contribution documentation](https://docs.cvat.ai/docs/contributing/).
+- For bug reports or feature requests, please use the [GitHub Issues](https://github.com/cvat-ai/cvat/issues) tracker.
+
+## Security
+
+- Please review our [Security Policy](https://github.com/cvat-ai/cvat/security/policy) before reporting vulnerabilities.
+- For sensitive issues, contact: [secure@cvat.ai](mailto:secure@cvat.ai).
 
 ## License
 
-The code is released under the [MIT License](https://opensource.org/licenses/MIT).
+CVAT Community is released under the MIT License.
 
-The code contained within the `/serverless` directory is released under the **MIT License**.
-However, it may download and utilize various assets, such as source code, architectures, and weights, among others.
-These assets may be distributed under different licenses, including non-commercial licenses.
-It is your responsibility to ensure compliance with the terms of these licenses before using the assets.
+- Code in `/serverless` is also MIT-licensed, but may use third-party assets under separate licenses (including
+  non-commercial). Review those licenses before use.
+- This software uses FFmpeg libraries under LGPL/GPL. See the Dockerfile and
+  [FFmpeg legal info](https://www.ffmpeg.org/legal.html) for details.
 
-This software uses LGPL-licensed libraries from the [FFmpeg](https://www.ffmpeg.org) project.
-The exact steps on how FFmpeg was configured and compiled can be found in the [Dockerfile](Dockerfile).
+## Additional Resources
 
-FFmpeg is an open-source framework licensed under LGPL and GPL.
-See [https://www.ffmpeg.org/legal.html](https://www.ffmpeg.org/legal.html). You are solely responsible
-for determining if your use of FFmpeg requires any
-additional licenses. CVAT.ai Corporation is not responsible for obtaining any
-such licenses, nor liable for any licensing fees due in
-connection with your use of FFmpeg.
+For the latest product releases, feature walkthroughs, and all things CVAT see:
 
-## Contact us
-
-[Gitter](https://gitter.im/opencv-cvat/public) to ask CVAT usage-related questions.
-Typically questions get answered fast by the core team or community. There you can also browse other common questions.
-
-[Discord](https://discord.gg/S6sRHhuQ7K) is the place to also ask questions or discuss any other stuff related to CVAT.
-
-[LinkedIn](https://www.linkedin.com/company/cvat-ai/) for the company and work-related questions.
-
-[YouTube](https://www.youtube.com/@cvat-ai) to see screencast and tutorials about the CVAT.
-
-[GitHub issues](https://github.com/cvat-ai/cvat/issues) for feature requests or bug reports.
-If it's a bug, please add the steps to reproduce it.
-
-[#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow is one more way to ask
-questions and get our support.
-
-[Use our website](https://www.cvat.ai/contact-us/enterprise) to reach out to us if you need commercial support.
-
-## Links
-
-- [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
-- [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
-- [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
-- [How to Use CVAT (Roboflow guide)](https://blog.roboflow.com/cvat/)
-- [How to auto-label data in CVAT with one of 50,000+ models on Roboflow Universe](https://blog.roboflow.com/how-to-use-roboflow-models-in-cvat/)
+<table cellspacing="10" border="0"><tr>
+  <td><a href="https://www.cvat.ai/resources/blog"><img src="site/content/en/images/badge-blog.png" alt="CVAT Blog" height="120"/></a></td>
+  <td><a href="https://www.cvat.ai/resources/academy"><img src="site/content/en/images/badge-academy.png" alt="CVAT Academy" height="120"/></a></td>
+  <td><a href="https://www.cvat.ai/resources/case-studies"><img src="site/content/en/images/badge-case-studies.png" alt="Case Studies" height="120"/></a></td>
+  <td><a href="https://www.youtube.com/@cvat-ai"><img src="site/content/en/images/badge-youtube.png" alt="YouTube" height="120"/></a></td>
+  <td><a href="https://www.linkedin.com/company/cvat-ai"><img src="site/content/en/images/badge-linkedin.png" alt="LinkedIn" height="120"/></a></td>
+</tr></table>
 
   <!-- Badges -->
 
-[docker-server-pulls-img]: https://img.shields.io/docker/pulls/cvat/server.svg?style=flat-square&label=server%20pulls
-[docker-server-image-url]: https://hub.docker.com/r/cvat/server
-[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/cvat/ui.svg?style=flat-square&label=UI%20pulls
-[docker-ui-image-url]: https://hub.docker.com/r/cvat/ui
 [ci-img]: https://github.com/cvat-ai/cvat/actions/workflows/main.yml/badge.svg?branch=develop
 [ci-url]: https://github.com/cvat-ai/cvat/actions
-[gitter-img]: https://img.shields.io/gitter/room/opencv-cvat/public?style=flat
-[gitter-url]: https://gitter.im/opencv-cvat/public
-[coverage-img]: https://codecov.io/github/cvat-ai/cvat/branch/develop/graph/badge.svg
-[coverage-url]: https://codecov.io/github/cvat-ai/cvat
-[doi-img]: https://zenodo.org/badge/139156354.svg
-[doi-url]: https://zenodo.org/badge/latestdoi/139156354
-[discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
-[discord-url]: https://discord.gg/fNR3eXfk6C
+
+[docs-img]: https://img.shields.io/badge/docs-docs.cvat.ai-blue?style=flat-square
+[docs-url]: https://docs.cvat.ai
+
+[online-img]: https://img.shields.io/badge/CVAT%20Online-app.cvat.ai-success?style=flat-square
+[online-url]: https://app.cvat.ai
+
+[release-img]: https://img.shields.io/github/v/release/cvat-ai/cvat?style=flat-square
+[release-url]: https://github.com/cvat-ai/cvat/releases
+
+[license-img]: https://img.shields.io/github/license/cvat-ai/cvat?style=flat-square
+[license-url]: https://github.com/cvat-ai/cvat/blob/develop/LICENSE
+
+[stars-img]: https://img.shields.io/github/stars/cvat-ai/cvat?style=flat-square
+[stars-url]: https://github.com/cvat-ai/cvat/stargazers
+
 [status-img]: https://uptime.betterstack.com/status-badges/v2/monitor/1yl3h.svg
 [status-url]: https://status.cvat.ai
+
+[enterprise-img]: https://img.shields.io/badge/CVAT%20Enterprise-cvat.ai-orange?style=flat-square
+[enterprise-url]: https://www.cvat.ai/enterprise
+
+[docker-server-pulls-img]: https://img.shields.io/docker/pulls/cvat/server.svg?style=flat-square&label=server%20pulls
+[docker-server-image-url]: https://hub.docker.com/r/cvat/server
+
+[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/cvat/ui.svg?style=flat-square&label=UI%20pulls
+[docker-ui-image-url]: https://hub.docker.com/r/cvat/ui
+
+[discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
+[discord-url]: https://discord.gg/fNR3eXfk6C

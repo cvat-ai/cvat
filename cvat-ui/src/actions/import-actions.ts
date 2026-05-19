@@ -79,6 +79,7 @@ export const importDatasetAsync = (
     sourceStorage: Storage,
     file: File | string,
     convMaskToPoly: boolean,
+    importMode: 'replace' | 'append',
 ): ThunkAction => (
     async (dispatch, getState) => {
         const instanceType = getInstanceType(instance);
@@ -114,7 +115,7 @@ export const importDatasetAsync = (
                     useDefaultSettings,
                     sourceStorage,
                     file,
-                    { convMaskToPoly },
+                    { convMaskToPoly, importMode },
                 );
                 await listenForImport(rqID);
             } else { // job
@@ -124,7 +125,7 @@ export const importDatasetAsync = (
                     useDefaultSettings,
                     sourceStorage,
                     file,
-                    { convMaskToPoly },
+                    { convMaskToPoly, importMode },
                 );
 
                 await listenForImport(rqID);
