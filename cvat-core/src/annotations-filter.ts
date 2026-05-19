@@ -199,7 +199,7 @@ export default class AnnotationsFilter {
                     },
                     label: labelByID[tag.label_id]?.name ?? null,
                     serverID: tag.id ?? null,
-                    type: ObjectType.SHAPE,
+                    type: ObjectType.TAG,
                     shape: null,
                     occluded: false,
                     objectID: tag.clientID ?? null,
