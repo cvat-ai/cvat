@@ -10,6 +10,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
 import CreateTaskContent, { CreateTaskData } from './create-task-content';
+import AudioCreateTaskContent from './audio-create-task-content';
 
 interface Props {
     onCreate: (data: CreateTaskData, onProgress?: (status: string) => void) => Promise<any>;

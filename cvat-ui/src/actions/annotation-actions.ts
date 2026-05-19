@@ -185,6 +185,11 @@ export enum AnnotationSource {
     OTHER = 'other',
 }
 
+export enum AnnotationSource {
+    DRAW_SIMPLIFIED_POLY = 'draw_simplified_poly',
+    OTHER = 'other',
+}
+
 export function setHoveredChapter(id: number | null): AnyAction {
     return {
         type: AnnotationActionTypes.HOVERED_CHAPTER,

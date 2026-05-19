@@ -18,6 +18,7 @@ import StandardWorkspaceComponent from 'components/annotation-page/standard-work
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
+import AudioFiltersModalComponent from 'components/annotation-page/audio-workspace/top-bar/audio-filters-modal';
 import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
@@ -26,6 +27,7 @@ import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 import { EventScope } from 'cvat-core/src/enums';
+import { useAudioAnnotationsEnabled } from 'utils/feature-flags';
 import SearchFramesModal from './top-bar/search-modal';
 
 interface Props {
@@ -146,7 +148,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     return (
         <Layout className='cvat-annotation-page'>
             <Layout.Header className='cvat-annotation-header'>
-                <AnnotationTopBarContainer />
+                {isAudio ? <AudioTopBarContainer /> : <AnnotationTopBarContainer />}
             </Layout.Header>
             <Layout.Content className='cvat-annotation-layout-content'>
                 {workspace === Workspace.STANDARD3D && <StandardWorkspace3DComponent />}
