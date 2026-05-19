@@ -53,6 +53,7 @@ interface Props {
     resetCuboidPerspective(): void;
     toggleCuboidFreeFaceMode(): void;
     cuboidFreeFaceMode: boolean;
+    resetCuboidRotation(): void;
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
@@ -213,6 +214,23 @@ function ToggleFreeFaceModeItem(props: ItemProps): JSX.Element {
     );
 }
 
+function ResetCuboidRotationItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { resetCuboidRotation } = toolProps;
+    return (
+        <CVATTooltip title='Zero pitch / roll / yaw, snapping the cuboid back to a perspective-consistent box.'>
+            <Button
+                type='link'
+                onClick={resetCuboidRotation}
+                className='cvat-object-item-menu-reset-cuboid-rotation'
+            >
+                <Icon component={ResetPerspectiveIcon} />
+                Reset rotation
+            </Button>
+        </CVATTooltip>
+    );
+}
+
 function ToBackgroundItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
     const { toBackgroundShortcut, toBackground } = toolProps;
@@ -341,6 +359,7 @@ export default function ItemMenu(props: Props): MenuProps {
         SWITCH_ORIENTATION = 'switch_orientation',
         RESET_PERSPECTIVE = 'reset_perspective',
         TOGGLE_FREE_FACE_MODE = 'toggle_free_face_mode',
+        RESET_CUBOID_ROTATION = 'reset_cuboid_rotation',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
         TO_ONE_LAYER_BACKWARD = 'to_one_layer_backward',
@@ -414,6 +433,10 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.TOGGLE_FREE_FACE_MODE,
             label: <ToggleFreeFaceModeItem toolProps={props} />,
+        });
+        items.push({
+            key: MenuKeys.RESET_CUBOID_ROTATION,
+            label: <ResetCuboidRotationItem toolProps={props} />,
         });
     }
 
