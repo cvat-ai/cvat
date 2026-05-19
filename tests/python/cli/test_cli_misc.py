@@ -11,10 +11,10 @@ from unittest import mock
 import packaging.version as pv
 import pytest
 from cvat_cli._internal.agent import _Event, _NewReconnectionDelay, _parse_event_stream
-from cvat_sdk.core.proxies.types import Location
 from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
+from cvat_sdk.core.proxies.types import Location
 
 from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
 
@@ -248,7 +248,9 @@ class _FakeClientContext:
         ("project", "projects"),
     ],
 )
-def test_backup_command_dispatches_resource_id(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, resource: str, repo_attr: str):
+def test_backup_command_dispatches_resource_id(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, resource: str, repo_attr: str
+):
     from cvat_cli.__main__ import main
 
     fake_client = _FakeClient()
