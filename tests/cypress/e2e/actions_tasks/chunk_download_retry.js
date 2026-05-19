@@ -10,8 +10,8 @@ context('Retry chunk downloads on annotation page', () => {
     const serverFiles = ['images/image_1.jpg'];
     const failedAttempts = 3;
 
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     before(() => {
         cy.visit('/auth/login');
@@ -30,14 +30,14 @@ context('Retry chunk downloads on annotation page', () => {
             use_cache: true,
             sorting_method: 'lexicographical',
         }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
         });
     });
 
     after(() => {
-        if (taskID) {
-            cy.headlessDeleteTask(taskID);
+        if (taskId) {
+            cy.headlessDeleteTask(taskId);
         }
     });
 
@@ -46,7 +46,7 @@ context('Retry chunk downloads on annotation page', () => {
 
         cy.intercept({
             method: 'GET',
-            pathname: `/api/jobs/${jobID}/data`,
+            pathname: `/api/jobs/${jobId}/data`,
             query: {
                 type: 'chunk',
             },
@@ -61,9 +61,9 @@ context('Retry chunk downloads on annotation page', () => {
                 req.continue();
             }
         }).as('getJobChunk');
-        cy.intercept('GET', `/tasks/${taskID}/jobs/${jobID}`).as('visitAnnotationView');
+        cy.intercept('GET', `/tasks/${taskId}/jobs/${jobId}`).as('visitAnnotationView');
 
-        cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+        cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
         cy.wait('@visitAnnotationView');
         for (let attempt = 0; attempt < failedAttempts; attempt++) {
             cy.wait('@getJobChunk').its('error').should('exist');

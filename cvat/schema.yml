@@ -2712,11 +2712,6 @@ paths:
       operationId: jobs_retrieve_data
       summary: Get data of a job
       parameters:
-      - in: header
-        name: Range
-        schema:
-          type: string
-        description: 'Byte range to return, applicable for chunks only. Example: ''bytes=0-1023'''
       - in: path
         name: id
         schema:
@@ -5813,11 +5808,6 @@ paths:
       operationId: tasks_retrieve_data
       summary: Get data of a task
       parameters:
-      - in: header
-        name: Range
-        schema:
-          type: string
-        description: 'Byte range to return, applicable for chunks only. Example: ''bytes=0-1023'''
       - in: path
         name: id
         schema:

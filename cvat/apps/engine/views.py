@@ -6,6 +6,7 @@
 import itertools
 import os
 import os.path as osp
+import re
 import shutil
 import textwrap
 import traceback
@@ -598,7 +599,6 @@ class ProjectViewSet(
             return HttpResponseNotFound("Project image preview not found")
 
         data_getter = _TaskDataGetter(
-            request=request,
             db_task=first_task,
             data_type="preview",
             data_quality="compressed",
@@ -626,13 +626,44 @@ class ProjectViewSet(
         return response
 
 
+class _RangeHeaderSyntaxError(Exception): ...
+
+
+class _RangeNotSatisfiableError(Exception): ...
+
+
+def _parse_range_header(range_header: str | None) -> tuple[int | None, int | None] | None:
+    if not range_header:
+        return None
+
+    range_spec = re.fullmatch(r"([^=\s]+)\s*=\s*(.+)", range_header.strip())
+    if not range_spec:
+        raise _RangeHeaderSyntaxError
+
+    if range_spec.group(1).lower() != "bytes":
+        return None
+
+    matched = re.fullmatch(r"(\d*)-(\d*)", range_spec.group(2).strip())
+    if not matched:
+        raise _RangeHeaderSyntaxError
+
+    start_text, end_text = matched.groups()
+    if not start_text and not end_text:
+        raise _RangeHeaderSyntaxError
+
+    return (
+        int(start_text) if start_text else None,
+        int(end_text) if end_text else None,
+    )
+
+
 class _DataGetter(metaclass=ABCMeta):
     def __init__(
         self,
-        request: ExtendedRequest,
         data_type: str,
         data_num: str | int | None,
         data_quality: str,
+        data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         possible_data_type_values = ("chunk", "frame", "preview", "context_image")
         possible_quality_values = ("compressed", "original")
@@ -650,39 +681,30 @@ class _DataGetter(metaclass=ABCMeta):
         self.quality = (
             FrameQuality.COMPRESSED if data_quality == "compressed" else FrameQuality.ORIGINAL
         )
-        self._request = request
+        self._range = data_range
 
     @abstractmethod
     def _get_media_provider(self) -> IFrameProvider | IAudioProvider: ...
 
     @staticmethod
-    def _parse_range(range_header: str, content_size: int) -> tuple[int, int]:
-        range_unit, separator, ranges = range_header.partition("=")
-        if range_unit.strip().lower() != "bytes" or separator != "=" or "," in ranges:
-            raise ValidationError("Invalid Range header")
+    def _resolve_range(
+        data_range: tuple[int | None, int | None], content_size: int
+    ) -> tuple[int, int]:
+        start_value, end_value = data_range
 
-        start_text, separator, end_text = ranges.strip().partition("-")
-        if separator != "-":
-            raise ValidationError("Invalid Range header")
+        if start_value is not None:
+            start = start_value
+            end = end_value if end_value is not None else content_size - 1
+        else:
+            suffix_length = end_value
+            assert suffix_length is not None
+            if suffix_length <= 0:
+                raise _RangeNotSatisfiableError
+            start = max(content_size - suffix_length, 0)
+            end = content_size - 1
 
-        if not start_text and not end_text:
-            raise ValidationError("Invalid Range header")
-
-        try:
-            if start_text:
-                start = int(start_text)
-                end = int(end_text) if end_text else content_size - 1
-            else:
-                suffix_length = int(end_text)
-                if suffix_length <= 0:
-                    raise ValidationError("Invalid Range header")
-                start = max(content_size - suffix_length, 0)
-                end = content_size - 1
-        except ValueError as ex:
-            raise ValidationError("Invalid Range header") from ex
-
-        if start < 0 or end < start or start >= content_size:
-            raise ValidationError("Invalid Range header")
+        if end < start or start >= content_size:
+            raise _RangeNotSatisfiableError
 
         return start, min(end, content_size - 1)
 
@@ -694,13 +716,12 @@ class _DataGetter(metaclass=ABCMeta):
             "Accept-Ranges": "bytes",
         }
 
-        range_header = self._request.headers.get("Range")
-        if not range_header:
+        if self._range is None:
             return HttpResponse(data, content_type=chunk_data.mime, headers=chunk_headers)
 
         try:
-            start, end = self._parse_range(range_header, content_size)
-        except ValidationError:
+            start, end = self._resolve_range(self._range, content_size)
+        except _RangeNotSatisfiableError:
             return HttpResponse(
                 status=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
                 headers={
@@ -810,15 +831,18 @@ class _DataGetter(metaclass=ABCMeta):
 class _TaskDataGetter(_DataGetter):
     def __init__(
         self,
-        request: ExtendedRequest,
         db_task: models.Task,
         *,
         data_type: str,
         data_quality: str,
         data_num: str | int | None = None,
+        data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         super().__init__(
-            request=request, data_type=data_type, data_num=data_num, data_quality=data_quality
+            data_type=data_type,
+            data_num=data_num,
+            data_quality=data_quality,
+            data_range=data_range,
         )
         self._db_task = db_task
 
@@ -841,13 +865,13 @@ class _TaskDataGetter(_DataGetter):
 class _JobDataGetter(_DataGetter):
     def __init__(
         self,
-        request: ExtendedRequest,
         db_job: models.Job,
         *,
         data_type: str,
         data_quality: str,
         data_num: str | int | None = None,
         data_index: str | int | None = None,
+        data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         possible_data_type_values = ("chunk", "frame", "preview", "context_image")
         possible_quality_values = ("compressed", "original")
@@ -874,7 +898,7 @@ class _JobDataGetter(_DataGetter):
             FrameQuality.COMPRESSED if data_quality == "compressed" else FrameQuality.ORIGINAL
         )
 
-        self._request = request
+        self._range = data_range
         self._db_job = db_job
 
     def _get_media_provider(self) -> JobFrameProvider | JobAudioProvider:
@@ -1497,14 +1521,6 @@ class TaskViewSet(
                 description="A unique number value identifying chunk or frame",
             ),
             OpenApiParameter(
-                "Range",
-                location=OpenApiParameter.HEADER,
-                required=False,
-                type=OpenApiTypes.STR,
-                description="Byte range to return, applicable for chunks only. "
-                "Example: 'bytes=0-1023'",
-            ),
-            OpenApiParameter(
                 _DATA_CHECKSUM_HEADER_NAME,
                 location=OpenApiParameter.HEADER,
                 type=OpenApiTypes.STR,
@@ -1560,13 +1576,17 @@ class TaskViewSet(
             data_type = request.query_params.get("type", None)
             data_num = request.query_params.get("number", None)
             data_quality = request.query_params.get("quality", "compressed")
+            try:
+                data_range = _parse_range_header(request.headers.get("Range"))
+            except _RangeHeaderSyntaxError:
+                return HttpResponse("Invalid Range header", status=status.HTTP_400_BAD_REQUEST)
 
             data_getter = _TaskDataGetter(
-                request=request,
                 db_task=self._object,
                 data_type=data_type,
                 data_num=data_num,
                 data_quality=data_quality,
+                data_range=data_range,
             )
             return data_getter()
 
@@ -1941,7 +1961,6 @@ class TaskViewSet(
             return HttpResponseNotFound("Task image preview not found")
 
         data_getter = _TaskDataGetter(
-            request=request,
             db_task=self._object,
             data_type="preview",
             data_quality="compressed",
@@ -2479,14 +2498,6 @@ class JobViewSet(
                 type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk, starts from 0 for each job",
             ),
-            OpenApiParameter(
-                "Range",
-                location=OpenApiParameter.HEADER,
-                required=False,
-                type=OpenApiTypes.STR,
-                description="Byte range to return, applicable for chunks only. "
-                "Example: 'bytes=0-1023'",
-            ),
         ],
         responses={
             "200": OpenApiResponse(OpenApiTypes.BINARY, description="Data of a specific type"),
@@ -2505,14 +2516,18 @@ class JobViewSet(
         data_num = request.query_params.get("number", None)
         data_index = request.query_params.get("index", None)
         data_quality = request.query_params.get("quality", "compressed")
+        try:
+            data_range = _parse_range_header(request.headers.get("Range"))
+        except _RangeHeaderSyntaxError:
+            return HttpResponse("Invalid Range header", status=status.HTTP_400_BAD_REQUEST)
 
         data_getter = _JobDataGetter(
-            request=request,
             db_job=db_job,
             data_type=data_type,
             data_quality=data_quality,
             data_index=data_index,
             data_num=data_num,
+            data_range=data_range,
         )
         return data_getter()
 
@@ -2688,7 +2703,6 @@ class JobViewSet(
         self._object = self.get_object()  # call check_object_permissions as well
 
         data_getter = _JobDataGetter(
-            request=request,
             db_job=self._object,
             data_type="preview",
             data_quality="compressed",

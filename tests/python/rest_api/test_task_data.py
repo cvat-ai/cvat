@@ -1875,6 +1875,23 @@ class TestTaskData(TestTasksBase):
         assert invalid_range_response.headers["Accept-Ranges"] == "bytes"
         assert invalid_range_response.headers["Content-Range"] == f"bytes */{len(full_chunk)}"
 
+        unsupported_unit_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header="items=0-99", **params
+        )
+
+        assert unsupported_unit_response.status == HTTPStatus.OK
+        assert unsupported_unit_response.data == full_chunk
+        assert unsupported_unit_response.headers["Accept-Ranges"] == "bytes"
+        assert "Content-Range" not in unsupported_unit_response.headers
+
+        malformed_range_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header="bytes=abc", **params
+        )
+
+        assert malformed_range_response.status == HTTPStatus.BAD_REQUEST
+        assert malformed_range_response.data == b"Invalid Range header"
+        assert "Content-Range" not in malformed_range_response.headers
+
     def test_can_get_data_chunk_byte_ranges(self, fxt_uploaded_images_task: tuple[ITaskSpec, int]):
         _, task_id = fxt_uploaded_images_task
 
