@@ -433,6 +433,27 @@ const DEFAULT_FISHEYE_LENS = {
     lensType: 'Equidistant' as const,
 };
 
+// Builds the default fisheye lens preset, substituting the detected video
+// frame size for the hard-coded fallback (1280 × 1.0). If width/height are
+// not yet known (e.g. frames meta still loading), falls back to the static
+// defaults so cuboid rendering still works on first paint.
+const defaultLensForSize = (
+    width?: number | null,
+    height?: number | null,
+): typeof DEFAULT_FISHEYE_LENS => {
+    const w = typeof width === 'number' && Number.isFinite(width) && width > 0 ?
+        Math.round(width) :
+        DEFAULT_FISHEYE_LENS.horizontalResolution;
+    const h = typeof height === 'number' && Number.isFinite(height) && height > 0 ?
+        Math.round(height) :
+        Math.round(w / DEFAULT_FISHEYE_LENS.aspectRatio);
+    return {
+        ...DEFAULT_FISHEYE_LENS,
+        horizontalResolution: w,
+        aspectRatio: h > 0 ? w / h : DEFAULT_FISHEYE_LENS.aspectRatio,
+    };
+};
+
 interface PersistedLensState {
     enabled: boolean;
     values: any | null;
@@ -468,6 +489,11 @@ const saveLensToStorage = (jobId: number | undefined, data: PersistedLensState):
 class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
+    // Most recently detected video frame size (width, height), populated
+    // asynchronously in componentDidMount from frames metadata. Used as the
+    // fallback when no prior calibration is available (e.g. on first Turn On
+    // after Turn Off, before lastLensValues has been populated).
+    private detectedSize: { w: number; h: number } | null = null;
 
     constructor(props: Props) {
         super(props);
@@ -535,7 +561,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         // Load any persisted lens-calibration state for this job. We first
         // check per-job localStorage (which carries the on/off toggle and the
         // last-used values across page refreshes) and fall back to the
-        // task-level value otherwise. Runs in the background so it doesn't
+        // task-level value otherwise. If neither exists, the default preset
+        // is initialized with the detected video frame size (from frames
+        // metadata) instead of the static 1280 × 1.0 fallback. Persisted
+        // values are never mutated. Runs in the background so it doesn't
         // block initial canvas setup.
         (async () => {
             try {
@@ -543,8 +572,30 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                 const jobId = jobInstance?.id;
                 const taskId = jobInstance?.taskId;
 
+                // Resolve detected video size (frame 0). Done in parallel
+                // with the task fetch below so it doesn't add latency.
+                // Errors are swallowed — we just fall back to
+                // DEFAULT_FISHEYE_LENS.
+                const detectedSizePromise: Promise<{ w: number; h: number } | null> = (async () => {
+                    if (typeof jobId !== 'number') return null;
+                    try {
+                        const meta = await cvat.frames.getMeta('job', jobId);
+                        const f0 = meta?.frames?.[0];
+                        if (f0?.width && f0?.height) {
+                            return { w: f0.width, h: f0.height };
+                        }
+                    } catch {
+                        // ignore — fall back to static defaults
+                    }
+                    return null;
+                })();
+                detectedSizePromise.then((detected) => {
+                    if (detected) this.detectedSize = detected;
+                });
+
                 const stored = loadLensFromStorage(jobId);
                 if (stored) {
+                    // Persisted localStorage wins — never mutate user data.
                     if (stored.enabled && stored.values) {
                         canvasInstance.configure({ lensCalibration: stored.values });
                         this.setState({
@@ -553,11 +604,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                         });
                     } else {
                         canvasInstance.configure({ lensCalibration: null });
+                        const detected = await detectedSizePromise;
+                        const fallback = stored.values ?
+                            { ...stored.values } :
+                            defaultLensForSize(detected?.w, detected?.h);
                         this.setState({
                             lensCalibration: null,
-                            lastLensValues: stored.values ?
-                                { ...stored.values } :
-                                { ...DEFAULT_FISHEYE_LENS },
+                            lastLensValues: fallback,
                         });
                     }
                     return;
@@ -567,15 +620,27 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                 const [task] = await cvat.tasks.get({ id: taskId });
                 const persisted = task?.lensCalibration ?? null;
                 if (persisted) {
+                    // Task-saved value wins — never mutate user data.
                     canvasInstance.configure({ lensCalibration: persisted });
                     this.setState({
                         lensCalibration: { ...persisted },
                         lastLensValues: { ...persisted },
                     });
+                    return;
                 }
+
+                // No persisted state anywhere → use detected video size as
+                // the default preset for this job.
+                const detected = await detectedSizePromise;
+                const sized = defaultLensForSize(detected?.w, detected?.h);
+                canvasInstance.configure({ lensCalibration: sized });
+                this.setState({
+                    lensCalibration: { ...sized },
+                    lastLensValues: { ...sized },
+                });
             } catch (error) {
                 // eslint-disable-next-line no-console
-                console.warn('Failed to load lens calibration from task', error);
+                console.warn('Failed to load lens calibration', error);
             }
         })();
 
@@ -903,7 +968,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     // tuning panel so the user can immediately adjust the sliders.
     private turnOnLens = async (): Promise<void> => {
         const { lastLensValues } = this.state;
-        const valuesToUse = lastLensValues ? { ...lastLensValues } : { ...DEFAULT_FISHEYE_LENS };
+        const valuesToUse = lastLensValues ?
+            { ...lastLensValues } :
+            defaultLensForSize(this.detectedSize?.w, this.detectedSize?.h);
         this.applyCalibrationLive(valuesToUse);
         this.setState({
             lensPanelOpen: true,
