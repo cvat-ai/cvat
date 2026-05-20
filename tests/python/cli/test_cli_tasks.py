@@ -4,6 +4,7 @@
 
 import json
 import os
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -177,6 +178,8 @@ class TestCliTasks(TestCliBase):
         )
 
         assert 0 < filename.stat().st_size
+        with zipfile.ZipFile(filename) as backup_zip:
+            assert "task.json" in backup_zip.namelist()
 
     def test_can_download_task_backup_with_server_filename(self, fxt_new_task: Task):
         output_dir = str(self.tmp_path / "save_dir") + os.path.sep
