@@ -8,13 +8,14 @@ import { Job, Task } from './session';
 import { DataError, ServerError } from './exceptions';
 import {
     SerializedCollection, SerializedShape,
-    SerializedTag, SerializedTrack,
+    SerializedTag, SerializedTrack, SerializedInterval,
 } from './server-response-types';
 
 interface ExtractedIDs {
     shapes: number[];
     tracks: number[];
     tags: number[];
+    intervals: number[];
 }
 
 interface SplittedCollection {
@@ -23,9 +24,9 @@ interface SplittedCollection {
     deleted: Omit<SerializedCollection, 'version'>;
 }
 
-type CollectionObject = SerializedShape | SerializedTrack | SerializedTag;
+type CollectionObject = SerializedShape | SerializedTrack | SerializedTag | SerializedInterval;
 
-const COLLECTION_KEYS: ('shapes' | 'tracks' | 'tags')[] = ['shapes', 'tracks', 'tags'];
+const COLLECTION_KEYS: ('shapes' | 'tracks' | 'tags' | 'intervals')[] = ['shapes', 'tracks', 'tags', 'intervals'];
 const JSON_SERIALIZER_KEYS = [
     'id',
     'label_id',
@@ -43,9 +44,11 @@ const JSON_SERIALIZER_KEYS = [
     'spec_id',
     'source',
     'outside',
+    'start',
+    'stop',
 ];
 
-function removeIDFromObject<T extends SerializedShape | SerializedTag | SerializedTrack>(
+function removeIDFromObject<T extends SerializedShape | SerializedTag | SerializedTrack | SerializedInterval>(
     object: T,
     property: 'id' | 'clientID',
 ): T {
@@ -73,6 +76,7 @@ export default class AnnotationsSaver {
         shapes: Record<number, SerializedCollection['shapes'][0]>,
         tracks: Record<number, SerializedCollection['tracks'][0]>,
         tags: Record<number, SerializedCollection['tags'][0]>,
+        intervals: Record<number, SerializedCollection['intervals'][0]>,
     };
 
     constructor(version: number, collection, session: Task | Job) {
@@ -81,7 +85,9 @@ export default class AnnotationsSaver {
         this.version = version;
         this.collection = collection;
         this.hash = this._getHash();
-        this.initialObjects = { shapes: {}, tracks: {}, tags: {} };
+        this.initialObjects = {
+            shapes: {}, tracks: {}, tags: {}, intervals: {},
+        };
 
         // We need use data from export instead of initialData
         // Otherwise we have differ keys order and JSON comparison code works incorrectly
@@ -129,16 +135,19 @@ export default class AnnotationsSaver {
                 shapes: [],
                 tracks: [],
                 tags: [],
+                intervals: [],
             },
             updated: {
                 shapes: [],
                 tracks: [],
                 tags: [],
+                intervals: [],
             },
             deleted: {
                 shapes: [],
                 tracks: [],
                 tags: [],
+                intervals: [],
             },
         };
 
@@ -162,6 +171,7 @@ export default class AnnotationsSaver {
             shapes: exported.shapes.map((object) => +object.id),
             tracks: exported.tracks.map((object) => +object.id),
             tags: exported.tags.map((object) => +object.id),
+            intervals: exported.intervals.map((object) => +object.id),
         };
 
         for (const type of COLLECTION_KEYS) {
@@ -177,8 +187,10 @@ export default class AnnotationsSaver {
     }
 
     _updateCreatedObjects(saved: SerializedCollection, indexes: ExtractedIDs): void {
-        const savedLength = saved.tracks.length + saved.shapes.length + saved.tags.length;
-        const indexesLength = indexes.tracks.length + indexes.shapes.length + indexes.tags.length;
+        const savedLength = saved.tracks.length + saved.shapes.length + saved.tags.length +
+            saved.intervals.length;
+        const indexesLength = indexes.tracks.length + indexes.shapes.length + indexes.tags.length +
+            indexes.intervals.length;
         if (indexesLength !== savedLength) {
             throw new DataError(
                 `Number of indexes is differed by number of saved objects ${indexesLength} vs ${savedLength}`,
@@ -200,6 +212,7 @@ export default class AnnotationsSaver {
             tracks: exported.tracks.map((track) => track.clientID),
             shapes: exported.shapes.map((shape) => shape.clientID),
             tags: exported.tags.map((tag) => tag.clientID),
+            intervals: exported.intervals.map((interval) => interval.clientID),
         };
 
         // Remove them from the request body
@@ -243,7 +256,9 @@ export default class AnnotationsSaver {
             this.collection.flush = false;
 
             this._updateCreatedObjects(savedData, indexes);
-            this.initialObjects = { shapes: {}, tracks: {}, tags: {} };
+            this.initialObjects = {
+                shapes: {}, tracks: {}, tags: {}, intervals: {},
+            };
 
             for (const type of COLLECTION_KEYS) {
                 for (const object of savedData[type]) {
@@ -278,6 +293,12 @@ export default class AnnotationsSaver {
                 } : {}),
             });
 
+            const getFrameKey = (obj: CollectionObject): number | undefined => {
+                if ('frame' in obj) return obj.frame;
+                if ('start' in obj) return obj.start;
+                return undefined;
+            };
+
             const findPair = (
                 key: typeof COLLECTION_KEYS[0],
                 objectToSave: CollectionObject,
@@ -285,13 +306,17 @@ export default class AnnotationsSaver {
             ): CollectionObject | null => {
                 const collection = serverCollection[key];
                 const existingIDs = Object.keys(this.initialObjects[key]).map((id) => +id);
-                const { frame, label_id: labelID } = objectToSave;
+                const labelID = objectToSave.label_id;
+                const frameKey = getFrameKey(objectToSave);
 
                 // optimization to avoid stringifying each object in collection
-                const potentialObjects = collection.filter(
-                    (object) => object.frame === frame &&
-                    object.label_id === labelID &&
-                    !existingIDs.includes(object.id), // exclude objects that client knows
+                const potentialObjects = (collection as CollectionObject[]).filter(
+                    (object) => {
+                        const objFrame = getFrameKey(object);
+                        return objFrame === frameKey &&
+                            object.label_id === labelID &&
+                            !existingIDs.includes(object.id);
+                    },
                 );
 
                 const comparedKeys = JSON_SERIALIZER_KEYS.filter((_key) => !['id', 'attributes'].includes(_key));
@@ -334,6 +359,7 @@ export default class AnnotationsSaver {
                                         shapes: [],
                                         tracks: [],
                                         tags: [],
+                                        intervals: [],
                                         version: serverCollection.version,
                                     };
                                     for (const type of COLLECTION_KEYS) {
@@ -362,7 +388,8 @@ export default class AnnotationsSaver {
 
             const { created, updated, deleted } = this._split(exported);
 
-            if (updated.shapes.length || updated.tags.length || updated.tracks.length) {
+            if (updated.shapes.length || updated.tags.length || updated.tracks.length ||
+                updated.intervals.length) {
                 onUpdate('Updated objects are being saved on the server');
                 const updatedIndexes = this._extractClientIDs(updated);
                 const requestBody = { ...updated, version: this.version };
@@ -382,7 +409,8 @@ export default class AnnotationsSaver {
                 }
             }
 
-            if (deleted.shapes.length || deleted.tags.length || deleted.tracks.length) {
+            if (deleted.shapes.length || deleted.tags.length || deleted.tracks.length ||
+                deleted.intervals.length) {
                 onUpdate('Deleted objects are being deleted from the server');
                 this._extractClientIDs(deleted);
                 const requestBody = { ...deleted, version: this.version };
@@ -401,7 +429,8 @@ export default class AnnotationsSaver {
                 }
             }
 
-            if (created.shapes.length || created.tags.length || created.tracks.length) {
+            if (created.shapes.length || created.tags.length || created.tracks.length ||
+                created.intervals.length) {
                 onUpdate('Created objects are being saved on the server');
                 const createdIndexes = this._extractClientIDs(created);
                 const requestBody = { ...created, version: this.version };

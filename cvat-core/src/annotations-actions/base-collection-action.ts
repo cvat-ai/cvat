@@ -85,7 +85,7 @@ export async function run(
         // Then apply user filter
         const annotationsFilter = new AnnotationsFilter();
         const filteredCollectionIDs = annotationsFilter
-            .filterSerializedCollection(filteredByAction, instance.labels, filters);
+            .filterSerializedCollection({ ...filteredByAction, intervals: [] }, instance.labels, filters);
         const filteredByUser = {
             shapes: filteredCollectionIDs.shapes.map((clientID) => mapID2Obj[clientID]),
             tags: filteredCollectionIDs.tags.map((clientID) => mapID2Obj[clientID]),

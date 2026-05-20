@@ -142,6 +142,8 @@ export class FramesMetaData {
             chunks_updated_date: undefined,
             storage: undefined,
             cloud_storage_id: undefined,
+            dimension: undefined,
+            media_type: undefined,
         };
 
         this.#updateTrigger = new FieldUpdateTrigger();

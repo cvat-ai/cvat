@@ -1,0 +1,26 @@
+.cvat-audio-workspace {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+
+    .cvat-canvas-controls-sidebar {
+        position: relative;
+        overflow: visible;
+
+        .cvat-audio-sidebar-control {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .cvat-audio-controls-divider {
+            width: 24px;
+            height: 1px;
+            background-color: #d9d9d9;
+            margin: 16px auto;
+        }
+    }
+}

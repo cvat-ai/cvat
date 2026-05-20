@@ -148,6 +148,17 @@ interface ConvertedObjectData extends BaseConvertedData {
     elements: ConvertedElementData[];
 }
 
+interface ConvertedIntervalData {
+    duration: number | null;
+    attr: Record<string, ConvertedAttributes>;
+    label: string;
+    serverID: number | null;
+    objectID: number | null;
+    type: ObjectType;
+    score: number | null;
+    votes: number | null;
+}
+
 function getRotation(shapeType: ShapeType, rotation?: number | null): number | null {
     return shapeType === ShapeType.RECTANGLE || shapeType === ShapeType.ELLIPSE ? rotation ?? null : null;
 }
@@ -240,7 +251,12 @@ export default class AnnotationsFilter {
     private _convertSerializedCollection(
         collection: Omit<SerializedCollection, 'version'>,
         labelsSpec: Label[],
-    ): { shapes: ConvertedObjectData[]; tags: ConvertedObjectData[]; tracks: ConvertedObjectData[] } {
+    ): {
+        shapes: ConvertedObjectData[];
+        tags: ConvertedObjectData[];
+        tracks: ConvertedObjectData[];
+        intervals: ConvertedIntervalData[];
+    } {
         const { labelByID, attributeByID } = buildLabelMaps(labelsSpec);
 
         return {
@@ -372,6 +388,22 @@ export default class AnnotationsFilter {
                     elements,
                 };
             }),
+            intervals: collection.intervals.map((interval): ConvertedIntervalData => {
+                const label = labelByID[interval.label_id];
+
+                return {
+                    duration: interval.stop != null ? interval.stop - interval.start : null,
+                    attr: {
+                        [adjustName(label.name)]: convertAttributes(interval.attributes, attributeByID),
+                    },
+                    label: label.name,
+                    serverID: interval.id ?? null,
+                    objectID: null,
+                    type: ObjectType.INTERVAL,
+                    score: interval.score ?? null,
+                    votes: null,
+                };
+            }),
         };
     }
 
@@ -388,12 +420,15 @@ export default class AnnotationsFilter {
         collection: Omit<SerializedCollection, 'version'>,
         labelsSpec: Label[],
         filters: object[],
-    ): { shapes: number[]; tags: number[]; tracks: number[] } {
+    ): { shapes: number[]; tags: number[]; tracks: number[]; intervals: number[]; } {
         if (isEmptyFilter(filters[0]) && isEmptyFilter(filters[1])) {
             return {
                 shapes: collection.shapes.map((shape) => shape.clientID),
                 tags: collection.tags.map((tag) => tag.clientID),
                 tracks: collection.tracks.map((track) => track.clientID),
+                intervals: collection.intervals.map((interval) => interval.id).filter(
+                    (id): id is number => id != null,
+                ),
             };
         }
 
@@ -403,6 +438,10 @@ export default class AnnotationsFilter {
             shapes: getMatchingIDs(converted.shapes, filters[0], filters[1]),
             tags: getMatchingIDs(converted.tags, filters[0], filters[1]),
             tracks: getMatchingIDs(converted.tracks, filters[0], filters[1]),
+            intervals: converted.intervals
+                .filter((interval) => isEmptyFilter(filters[0]) || jsonLogic.apply(filters[0], interval))
+                .map((interval) => interval.serverID)
+                .filter((id): id is number => id != null),
         };
     }
 

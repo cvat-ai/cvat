@@ -46,10 +46,12 @@ export interface QualitySummary {
 export default class QualityReport {
     #id: number;
     #parentID: number;
+    #projectID: number;
     #taskID: number;
     #jobID: number;
     #target: string;
     #createdDate: string;
+    #targetLastUpdated: string;
     #gtLastUpdated: string;
     #assignee: User | null;
     #summary: Partial<SerializedQualityReportData['summary']>;
@@ -57,9 +59,11 @@ export default class QualityReport {
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
         this.#parentID = initialData.parent_id;
+        this.#projectID = initialData.project_id;
         this.#taskID = initialData.task_id;
         this.#jobID = initialData.job_id;
         this.#target = initialData.target;
+        this.#targetLastUpdated = initialData.target_last_updated;
         this.#gtLastUpdated = initialData.gt_last_updated;
         this.#createdDate = initialData.created_date;
         this.#summary = initialData.summary;
@@ -79,6 +83,10 @@ export default class QualityReport {
         return this.#parentID;
     }
 
+    get projectID(): number {
+        return this.#projectID;
+    }
+
     get taskID(): number {
         return this.#taskID;
     }
@@ -89,6 +97,10 @@ export default class QualityReport {
 
     get target(): string {
         return this.#target;
+    }
+
+    get targetLastUpdated(): string {
+        return this.#targetLastUpdated;
     }
 
     get gtLastUpdated(): string {

@@ -9,6 +9,11 @@ export enum QualityConflictType {
     EXTRA = 'extra_annotation',
     MISMATCHING = 'mismatching_label',
     MISSING = 'missing_annotation',
+    LOW_OVERLAP = 'low_overlap',
+    MISMATCHING_DIRECTION = 'mismatching_direction',
+    MISMATCHING_ATTRIBUTES = 'mismatching_attributes',
+    MISMATCHING_GROUPS = 'mismatching_groups',
+    COVERED_ANNOTATION = 'covered_annotation',
 }
 
 export enum ConflictSeverity {
@@ -68,7 +73,7 @@ export class AnnotationConflict {
 
 export default class QualityConflict {
     #id: number;
-    #frame: number;
+    #frame: number | null;
     #type: QualityConflictType;
     #annotationConflicts: AnnotationConflict[];
     #severity: ConflictSeverity;
@@ -76,7 +81,7 @@ export default class QualityConflict {
 
     constructor(initialData: SerializedQualityConflictData) {
         this.#id = initialData.id;
-        this.#frame = initialData.frame;
+        this.#frame = initialData.frame ?? null;
         this.#type = initialData.type as QualityConflictType;
         this.#severity = initialData.severity as ConflictSeverity;
         this.#annotationConflicts = initialData.annotation_ids
@@ -94,7 +99,7 @@ export default class QualityConflict {
         return this.#id;
     }
 
-    get frame(): number {
+    get frame(): number | null {
         return this.#frame;
     }
 

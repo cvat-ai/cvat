@@ -13,12 +13,16 @@ import {
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
     ObjectState, ObjectType, ShapeType, JobState, JobValidationLayout,
+    DimensionType, FramesMetaData, fetchAndAssembleAudio, Source,
 } from 'cvat-core-wrapper';
+import type { SerializedInterval } from 'cvat-core-wrapper';
+import serverProxy from 'cvat-core/src/server-proxy';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
 import {
     ActiveControl,
+    AudioRegion,
     CombinedState,
     ContextMenuType,
     FrameSpeed,
@@ -27,6 +31,7 @@ import {
     Rotation,
     Workspace,
 } from 'reducers';
+import { pickInstanceColor } from 'components/annotation-page/audio-workspace/utils/create-audio-region';
 import { switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
 
@@ -178,6 +183,31 @@ export enum AnnotationActionTypes {
     UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
     HIGHLIGHT_CONFLICT = 'HIGHLIGHT_CONFCLICT',
     HOVERED_CHAPTER = 'HOVERED_CHAPTER',
+    SWITCH_AUDIO_PLAY = 'SWITCH_AUDIO_PLAY',
+    SET_AUDIO_CURRENT_TIME = 'SET_AUDIO_CURRENT_TIME',
+    SET_AUDIO_DURATION = 'SET_AUDIO_DURATION',
+    SET_AUDIO_PLAYBACK_RATE = 'SET_AUDIO_PLAYBACK_RATE',
+    SET_AUDIO_ZOOM = 'SET_AUDIO_ZOOM',
+    SET_AUDIO_VOLUME = 'SET_AUDIO_VOLUME',
+    SET_AUDIO_LOOP = 'SET_AUDIO_LOOP',
+    SET_AUDIO_REGIONS = 'SET_AUDIO_REGIONS',
+    SET_AUDIO_ACTIVE_REGION = 'SET_AUDIO_ACTIVE_REGION',
+    SET_AUDIO_HOVERED_REGION = 'SET_AUDIO_HOVERED_REGION',
+    LOAD_AUDIO_DATA = 'LOAD_AUDIO_DATA',
+    LOAD_AUDIO_DATA_SUCCESS = 'LOAD_AUDIO_DATA_SUCCESS',
+    LOAD_AUDIO_DATA_FAILED = 'LOAD_AUDIO_DATA_FAILED',
+    SET_WAVEFORM_READY = 'SET_WAVEFORM_READY',
+    SET_AUDIO_ACTIVE_LABEL = 'SET_AUDIO_ACTIVE_LABEL',
+    LOAD_AUDIO_ANNOTATIONS_SUCCESS = 'LOAD_AUDIO_ANNOTATIONS_SUCCESS',
+    UPDATE_AUDIO_REGION_ATTRIBUTE = 'UPDATE_AUDIO_REGION_ATTRIBUTE',
+    TOGGLE_AUDIO_REGION_LOCK = 'TOGGLE_AUDIO_REGION_LOCK',
+    TOGGLE_AUDIO_REGION_HIDDEN = 'TOGGLE_AUDIO_REGION_HIDDEN',
+    SAVE_AUDIO_ANNOTATIONS = 'SAVE_AUDIO_ANNOTATIONS',
+    SAVE_AUDIO_ANNOTATIONS_SUCCESS = 'SAVE_AUDIO_ANNOTATIONS_SUCCESS',
+    SAVE_AUDIO_ANNOTATIONS_FAILED = 'SAVE_AUDIO_ANNOTATIONS_FAILED',
+    LOAD_AUDIO_ANNOTATIONS_FAILED = 'LOAD_AUDIO_ANNOTATIONS_FAILED',
+    AUDIO_UNDO = 'AUDIO_UNDO',
+    AUDIO_REDO = 'AUDIO_REDO',
 }
 
 export enum AnnotationSource {
@@ -191,6 +221,356 @@ export function setHoveredChapter(id: number | null): AnyAction {
         payload: {
             id,
         },
+    };
+}
+
+export function switchAudioPlay(playing: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_AUDIO_PLAY,
+        payload: {
+            playing,
+        },
+    };
+}
+
+export function setAudioCurrentTime(time: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_CURRENT_TIME,
+        payload: {
+            time,
+        },
+    };
+}
+
+export function setAudioDuration(duration: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_DURATION,
+        payload: {
+            duration,
+        },
+    };
+}
+
+export function setAudioPlaybackRate(rate: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_PLAYBACK_RATE,
+        payload: {
+            rate,
+        },
+    };
+}
+
+export function setAudioZoom(zoom: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_ZOOM,
+        payload: {
+            zoom,
+        },
+    };
+}
+
+export function setAudioLoop(loop: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_LOOP,
+        payload: {
+            loop,
+        },
+    };
+}
+
+export function setAudioVolume(volume: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_VOLUME,
+        payload: {
+            volume,
+        },
+    };
+}
+
+export function setAudioRegions(regions: AudioRegion[]): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_REGIONS,
+        payload: {
+            regions,
+        },
+    };
+}
+
+export function updateAudioRegionAttribute(
+    regionId: string, attrID: number, value: string,
+): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_AUDIO_REGION_ATTRIBUTE,
+        payload: { regionId, attrID, value },
+    };
+}
+
+export function toggleAudioRegionLock(regionId: string): AnyAction {
+    return {
+        type: AnnotationActionTypes.TOGGLE_AUDIO_REGION_LOCK,
+        payload: { regionId },
+    };
+}
+
+export function toggleAudioRegionHidden(regionId: string): AnyAction {
+    return {
+        type: AnnotationActionTypes.TOGGLE_AUDIO_REGION_HIDDEN,
+        payload: { regionId },
+    };
+}
+
+export function setAudioActiveRegion(regionId: string | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_ACTIVE_REGION,
+        payload: {
+            regionId,
+        },
+    };
+}
+
+export function setAudioHoveredRegion(regionId: string | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_HOVERED_REGION,
+        payload: {
+            regionId,
+        },
+    };
+}
+
+export function setWaveformReady(ready: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_WAVEFORM_READY,
+        payload: { ready },
+    };
+}
+
+export function setAudioActiveLabel(labelId: number | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_AUDIO_ACTIVE_LABEL,
+        payload: {
+            labelId,
+        },
+    };
+}
+
+export function audioUndoAction(): AnyAction {
+    return { type: AnnotationActionTypes.AUDIO_UNDO };
+}
+
+export function audioRedoAction(): AnyAction {
+    return { type: AnnotationActionTypes.AUDIO_REDO };
+}
+
+export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const prevAudioUrl = getState().audio.player.audioUrl;
+        if (prevAudioUrl) {
+            URL.revokeObjectURL(prevAudioUrl);
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.LOAD_AUDIO_DATA,
+            payload: {},
+        });
+
+        try {
+            const totalFrames = jobMeta.size;
+            const { chunkSize } = jobMeta;
+            const blob = await fetchAndAssembleAudio(job.id, totalFrames, chunkSize);
+            const audioUrl = URL.createObjectURL(blob);
+
+            dispatch({
+                type: AnnotationActionTypes.LOAD_AUDIO_DATA_SUCCESS,
+                payload: { audioUrl },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.LOAD_AUDIO_DATA_FAILED,
+                payload: { error: error instanceof Error ? error.message : String(error) },
+            });
+        }
+    };
+}
+
+export function loadAudioAnnotationsAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { job: { instance: jobInstance } } = getState().annotation;
+        if (!jobInstance) {
+            dispatch({
+                type: AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS,
+                payload: { regions: [], version: 0 },
+            });
+            return;
+        }
+
+        try {
+            const response = await serverProxy.annotations.getAnnotations('job', jobInstance.id);
+            const intervals: SerializedInterval[] = response.intervals || [];
+
+            const regions: AudioRegion[] = intervals.reduce<AudioRegion[]>((acc, interval, index) => {
+                const startSec = interval.start / 1000;
+                const stopMs = interval.stop ?? interval.start;
+                const endSec = stopMs / 1000;
+                if (!(endSec > startSec)) {
+                    return acc;
+                }
+                acc.push({
+                    id: `server-${interval.id}`,
+                    start: startSec,
+                    end: endSec,
+                    labelId: interval.label_id,
+                    attributes: interval.attributes.reduce<Record<number, string>>(
+                        (attrs, attr) => ({ ...attrs, [attr.spec_id]: attr.value }),
+                        {},
+                    ),
+                    serverId: interval.id,
+                    source: String(interval.source),
+                    group: interval.group,
+                    color: pickInstanceColor(acc),
+                    zOrder: index,
+                    locked: false,
+                    hidden: false,
+                });
+                return acc;
+            }, []);
+
+            dispatch({
+                type: AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS,
+                payload: { regions, version: response.version ?? 0 },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_FAILED,
+                payload: { error },
+            });
+        }
+    };
+}
+
+export function saveAudioAnnotationsAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
+        const { job: { instance: jobInstance } } = state.annotation;
+        const { regions, version } = state.audio.player;
+        if (!jobInstance) return;
+
+        const hasNoneLabels = regions.some((r: AudioRegion) => r.labelId === null);
+        if (hasNoneLabels) return;
+
+        dispatch({
+            type: AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS,
+            payload: {},
+        });
+
+        try {
+            const intervals: SerializedInterval[] = regions.map((region: AudioRegion) => ({
+                label_id: region.labelId as number,
+                start: Math.round(region.start * 1000),
+                stop: Math.round(region.end * 1000),
+                group: region.group || 0,
+                source: (region.source || 'manual') as Source,
+                attributes: Object.entries(region.attributes || {}).map(([specId, value]) => ({
+                    spec_id: Number(specId),
+                    value: String(value),
+                })),
+            }));
+
+            const response = await serverProxy.annotations.updateAnnotations(
+                'job',
+                jobInstance.id,
+                {
+                    shapes: [], tracks: [], tags: [], intervals, version,
+                },
+                'put',
+            );
+
+            if (jobInstance.state === cvat.enums.JobState.NEW) {
+                await dispatch(updateJobAsync(jobInstance, { state: JobState.IN_PROGRESS }));
+            }
+
+            dispatch({
+                type: AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_SUCCESS,
+                payload: { version: response.version ?? version },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_FAILED,
+                payload: { error },
+            });
+            throw error;
+        }
+    };
+}
+
+export function updateAudioRegionAsync(
+    regionId: string,
+    patch: Partial<AudioRegion> | ((region: AudioRegion, regions: AudioRegion[]) => Partial<AudioRegion>),
+): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { regions } = getState().audio.player;
+        const target = regions.find((r) => r.id === regionId);
+        if (!target) return;
+        const resolved = typeof patch === 'function' ? patch(target, regions) : patch;
+        dispatch(setAudioRegions(regions.map((r) => (r.id === regionId ? { ...r, ...resolved } : r))));
+    };
+}
+
+export function copyAudioRegionAsync(regionId: string): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { regions } = getState().audio.player;
+        const source = regions.find((r) => r.id === regionId);
+        if (!source) return;
+
+        const maxZOrder = regions.length > 0 ?
+            Math.max(...regions.map((r) => r.zOrder)) : 0;
+        const rand = Math.random().toString(36).slice(2);
+        const newId = `copy-${Date.now()}-${rand}`;
+        const copied: AudioRegion = {
+            ...source,
+            id: newId,
+            serverId: undefined,
+            zOrder: maxZOrder + 1,
+        };
+
+        dispatch(setAudioRegions([...regions, copied]));
+        dispatch(setAudioActiveRegion(newId));
+    };
+}
+
+export function extendAudioRegionFromLastAsync(labelId: number | null): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { regions, currentTime, duration } = getState().audio.player;
+        const { labels } = getState().annotation.job;
+
+        const lastRegion = regions.length > 0 ? regions[regions.length - 1] : null;
+        const start = lastRegion ? lastRegion.end : 0;
+        const end = Math.min(currentTime, duration || currentTime);
+        if (end - start <= 0.001) return;
+
+        const matchingLabel = labelId !== null ? labels.find((l) => l.id === labelId) : null;
+        const defaultAttrs: Record<number, string> = {};
+        if (matchingLabel) {
+            matchingLabel.attributes.forEach((attr) => {
+                defaultAttrs[attr.id!] = attr.defaultValue;
+            });
+        }
+
+        const maxZOrder = regions.length > 0 ? Math.max(...regions.map((r) => r.zOrder)) : 0;
+        const rand = Math.random().toString(36).slice(2);
+        const newId = `extend-${Date.now()}-${rand}`;
+        const newRegion: AudioRegion = {
+            id: newId,
+            start,
+            end,
+            labelId,
+            attributes: defaultAttrs,
+            source: 'manual',
+            color: pickInstanceColor(regions),
+            zOrder: maxZOrder + 1,
+        };
+
+        dispatch(setAudioRegions([...regions, newRegion]));
+        dispatch(setAudioActiveRegion(newId));
     };
 }
 
@@ -1047,15 +1427,16 @@ export function getJobAsync({
                     { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
                 )) || job.startFrame;
 
-            const frameData = await job.frames.get(frameNumber);
+            const isAudio = job.dimension === DimensionType.DIMENSION_1D;
+            const frameData = isAudio ? null : await job.frames.get(frameNumber);
             const jobMeta = await cvat.frames.getMeta('job', job.id);
             const frameNumbers = await job.frames.frameNumbers();
-            try {
-                // call first getting of frame data before rendering interface
-                // to load and decode first chunk
-                await frameData.data();
-            } catch (_error) {
-                // do nothing, user will be notified when data request is done
+            if (frameData) {
+                try {
+                    await frameData.data();
+                } catch (_error) {
+                    // do nothing, user will be notified when data request is done
+                }
             }
 
             await job.annotations.clear({ reload: true });
@@ -1096,16 +1477,21 @@ export function getJobAsync({
                     issues,
                     conflicts,
                     frameNumber,
-                    frameFilename: frameData.filename,
-                    relatedFiles: frameData.relatedFiles,
+                    frameFilename: frameData?.filename,
+                    relatedFiles: frameData?.relatedFiles ?? 0,
                     frameData,
                     colors,
                     filters,
                 },
             });
 
-            dispatch(fetchAnnotationsAsync());
-            dispatch(changeFrameAsync(frameNumber, false));
+            if (job.dimension === DimensionType.DIMENSION_1D) {
+                dispatch(loadAudioDataAsync(job, jobMeta));
+                dispatch(loadAudioAnnotationsAsync());
+            } else {
+                dispatch(fetchAnnotationsAsync());
+                dispatch(changeFrameAsync(frameNumber, false));
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_FAILED,
@@ -1118,7 +1504,13 @@ export function getJobAsync({
 }
 
 export function saveAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { workspace } = getState().annotation;
+        if (workspace === Workspace.AUDIO) {
+            await dispatch(saveAudioAnnotationsAsync());
+            return;
+        }
+
         const { jobInstance } = receiveAnnotationsParameters();
 
         dispatch({

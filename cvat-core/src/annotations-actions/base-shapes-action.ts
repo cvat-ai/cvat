@@ -74,6 +74,7 @@ export async function run(
             shapes: exportedCollection.shapes,
             tags: [],
             tracks: [],
+            intervals: [],
         }, instance.labels, filters).shapes;
 
         const filteredShapesByFrame = exportedCollection.shapes.reduce((acc, shape) => {
@@ -143,8 +144,8 @@ export async function run(
         }
 
         await instance.annotations.commit(
-            { shapes: totalUpdates.created.shapes, tags: [], tracks: [] },
-            { shapes: totalUpdates.deleted.shapes, tags: [], tracks: [] },
+            { shapes: totalUpdates.created.shapes },
+            { shapes: totalUpdates.deleted.shapes },
             frameNumbers[0],
         );
 
@@ -191,8 +192,8 @@ export async function call(
         });
 
         await instance.annotations.commit(
-            { shapes: processedCollection.created.shapes, tags: [], tracks: [] },
-            { shapes: processedCollection.deleted.shapes, tags: [], tracks: [] },
+            { shapes: processedCollection.created.shapes },
+            { shapes: processedCollection.deleted.shapes },
             frame,
         );
 

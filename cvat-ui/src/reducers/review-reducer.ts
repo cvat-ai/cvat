@@ -32,10 +32,9 @@ export default function (state: ReviewState = defaultState, action: any): Review
     switch (action.type) {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
-                issues,
-                conflicts,
-                frameData: { number: frame },
+                issues, conflicts, frameData, frameNumber,
             } = action.payload;
+            const frame = frameData?.number ?? frameNumber;
             const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
             const frameConflicts = conflicts.filter((conflict: QualityConflict): boolean => conflict.frame === frame);
 

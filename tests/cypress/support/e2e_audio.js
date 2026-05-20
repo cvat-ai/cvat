@@ -1,0 +1,26 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+require('./commands');
+require('./commands_projects');
+require('./commands_review_pipeline');
+require('./commands_canvas3d');
+require('./commands_audio');
+require('./commands_filters_feature');
+require('./commands_models');
+require('./commands_opencv');
+require('./commands_organizations');
+require('./commands_cloud_storages');
+require('./commands_annotations_actions');
+require('./commands_webhooks');
+require('@cypress/code-coverage/support');
+require('cypress-real-events/support');
+
+const resizeObserverLoopErr = 'ResizeObserver loop';
+Cypress.on('uncaught:exception', (err) => {
+    if (err.message.includes(resizeObserverLoopErr)) {
+        return false;
+    }
+    return true;
+});

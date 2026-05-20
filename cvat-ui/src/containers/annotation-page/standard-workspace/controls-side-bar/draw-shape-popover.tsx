@@ -38,6 +38,7 @@ interface StateToProps {
     shapeType: ShapeType;
     labels: any[];
     jobInstance: any;
+    activeSimplifyPoly?: boolean;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -71,6 +72,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         annotation: {
             canvas: { instance: canvasInstance },
             job: { labels, instance: jobInstance },
+            drawing: { activeSimplifyPoly },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -81,6 +83,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         labels,
         normalizedKeyMap,
         jobInstance,
+        activeSimplifyPoly,
     };
 }
 

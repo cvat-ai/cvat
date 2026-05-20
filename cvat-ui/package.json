@@ -6,6 +6,8 @@
   "scripts": {
     "build": "webpack --config ./webpack.config.js",
     "start": "webpack serve --env API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "yarn run type-check --watch",
     "lint": "eslint './src/**/*.{ts,tsx}'",
     "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"
   },
@@ -32,6 +34,7 @@
     "@types/redux-logger": "^3.0.9",
     "@types/resize-observer-browser": "^0.1.6",
     "@uiw/react-md-editor": "^3.22.0",
+    "@wavesurfer/react": "^1.0.12",
     "antd": "5.17.1",
     "chart.js": "^4.4.8",
     "chartjs-plugin-datalabels": "^2.2.0",
@@ -61,6 +64,7 @@
     "redux-devtools-extension": "^2.13.9",
     "redux-logger": "^4.0.0",
     "redux-thunk": "^2.3.0",
-    "rehype-sanitize": "^6.0.0"
+    "rehype-sanitize": "^6.0.0",
+    "wavesurfer.js": "^7.12.5"
   }
 }

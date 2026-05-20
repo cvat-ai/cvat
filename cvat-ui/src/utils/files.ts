@@ -39,7 +39,11 @@ const VIDEO_EXTENSIONS = ['3g2', '3ga', '3gp', '3gp2', '3gpp', '3gpp2', 'amv', '
     'qt', 'qtvr', 'rm', 'rmvb', 'roq', 'rv', 'rvx', 'svi', 'ts', 'vdr', 'viv', 'vivo', 'vob', 'webm', 'wmp', 'wmv', 'yuv',
 ];
 
-export function getContentTypeRemoteFile(url: string): 'image' | 'video' | 'unknown' {
+const AUDIO_EXTENSIONS = ['aac', 'aif', 'aifc', 'aiff', 'amr', 'ape', 'au', 'flac', 'm4a', 'm4b',
+    'mka', 'mp3', 'oga', 'ogg', 'opus', 'ra', 'wav', 'weba', 'wma',
+];
+
+export function getContentTypeRemoteFile(url: string): 'image' | 'video' | 'audio' | 'unknown' {
     const extension = getUrlExtension(url);
     if (IMAGE_EXTENSIONS.includes(extension)) {
         return 'image';
@@ -49,7 +53,21 @@ export function getContentTypeRemoteFile(url: string): 'image' | 'video' | 'unkn
         return 'video';
     }
 
+    if (AUDIO_EXTENSIONS.includes(extension)) {
+        return 'audio';
+    }
+
     return 'unknown';
+}
+
+export function isAudioFile(file: File): boolean {
+    if (file.type) return getFileContentType(file) === 'audio';
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    return AUDIO_EXTENSIONS.includes(ext);
+}
+
+export function isAudioPath(path: string): boolean {
+    return getContentTypeRemoteFile(path) === 'audio';
 }
 
 export function getFileNameFromPath(path: string): string {

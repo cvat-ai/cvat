@@ -9,7 +9,9 @@ import { useHistory } from 'react-router';
 
 import { Row, Col } from 'antd/lib/grid';
 import Popover from 'antd/lib/popover';
-import { LoadingOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import {
+    LoadingOutlined, PlusOutlined, SoundOutlined, UploadOutlined,
+} from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import { importActions } from 'actions/import-actions';
@@ -119,6 +121,14 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                                     icon={<PlusOutlined />}
                                 >
                                     Create a new task
+                                </Button>
+                                <Button
+                                    className='cvat-create-audio-task-button'
+                                    type='primary'
+                                    onClick={(): void => history.push('/tasks/create?audio=true')}
+                                    icon={<SoundOutlined />}
+                                >
+                                    Create a new audio task
                                 </Button>
                                 <Button
                                     className='cvat-create-multi-tasks-button'

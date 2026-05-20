@@ -16,7 +16,9 @@ import {
     colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType, JobType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
-import { SerializedShape, SerializedTrack, SerializedTag } from './server-response-types';
+import {
+    SerializedShape, SerializedTrack, SerializedTag, SerializedInterval,
+} from './server-response-types';
 import { mask2Rle, rle2Mask } from './rle-utils';
 import {
     checkNumberOfPoints, attrsAsAnObject, checkShapeArea,
@@ -1539,6 +1541,120 @@ export class Tag extends Annotation {
         this.validateStateBeforeSave(data, updated);
 
         // Now when all fields are validated, we can apply them
+        if (updated.label) {
+            this.saveLabel(data.label, frame);
+        }
+
+        if (updated.attributes) {
+            this.saveAttributes(data.attributes, frame);
+        }
+
+        if (updated.lock) {
+            this.saveLock(data.lock, frame);
+        }
+
+        if (updated.color) {
+            this.saveColor(data.color, frame);
+        }
+
+        this.updateTimestamp(updated);
+        updated.reset();
+
+        return new ObjectState(this.get(frame));
+    }
+}
+
+export type SerializedIntervalView = Omit<Required<SerializedData>,
+    'elements' | 'occluded' | 'outside' | 'rotation' | 'zOrder' |
+    'points' | 'hidden' | 'pinned' | 'keyframe' | 'shapeType' |
+    'parentID' | 'descriptions' | 'keyframes'
+>;
+
+export class Interval extends Annotation {
+    public start: number;
+    public stop: number | null;
+
+    constructor(data: SerializedInterval, clientID: number, color: string, injection: BasicInjection) {
+        super({ ...data, frame: data.start, group: data.group ?? 0 }, clientID, color, injection);
+        this.start = data.start;
+        this.stop = data.stop;
+    }
+
+    protected withContext(frame: number): ReturnType<Annotation['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedInterval;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedInterval,
+        };
+    }
+
+    public toJSON(): SerializedInterval {
+        const result: SerializedInterval = {
+            clientID: this.clientID,
+            label_id: this.label.id,
+            source: this.source,
+            group: 0,
+            attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
+                attributeAccumulator.push({
+                    spec_id: +attrId,
+                    value: this.attributes[attrId],
+                });
+                return attributeAccumulator;
+            }, []),
+            score: this.score,
+            start: this.start,
+            stop: this.stop,
+        };
+
+        if (this.serverID !== null) {
+            result.id = this.serverID;
+        }
+
+        return result;
+    }
+
+    public get(frame: number): SerializedIntervalView {
+        if (frame < this.start || (this.stop !== null && frame > this.stop)) {
+            throw new ScriptingError('Received frame is outside the interval range');
+        }
+
+        return {
+            objectType: ObjectType.INTERVAL,
+            clientID: this.clientID,
+            serverID: this.serverID,
+            lock: this.lock,
+            attributes: { ...this.attributes },
+            label: this.label,
+            group: this.groupObject,
+            color: this.color,
+            updated: this.updated,
+            frame,
+            source: this.source,
+            score: this.score,
+            votes: this.votes,
+            __internal: this.withContext(frame),
+        };
+    }
+
+    public save(frame: number, data: ObjectState): ObjectState {
+        if (frame < this.start || (this.stop !== null && frame > this.stop)) {
+            throw new ScriptingError('Received frame is outside the interval range');
+        }
+
+        if (this.lock && data.lock) {
+            return new ObjectState(this.get(frame));
+        }
+
+        const updated = data.updateFlags;
+        for (const readOnlyField of this.readOnlyFields) {
+            updated[readOnlyField] = false;
+        }
+
+        this.validateStateBeforeSave(data, updated);
+
         if (updated.label) {
             this.saveLabel(data.label, frame);
         }
