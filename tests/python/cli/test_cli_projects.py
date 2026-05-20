@@ -4,6 +4,7 @@
 
 import json
 import os
+import zipfile
 
 import pytest
 from cvat_sdk.api_client import exceptions
@@ -113,6 +114,8 @@ class TestCliProjects(TestCliBase):
         )
 
         assert 0 < filename.stat().st_size
+        with zipfile.ZipFile(filename) as backup_zip:
+            assert "project.json" in backup_zip.namelist()
 
     def test_can_download_project_backup_with_server_filename(self, fxt_project_with_task: Project):
         output_dir = str(self.tmp_path / "save_dir") + os.path.sep
