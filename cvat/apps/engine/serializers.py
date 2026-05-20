@@ -541,6 +541,45 @@ class LabelSerializer(SublabelSerializer):
                 encountered_names.add(attr_name)
 
     @staticmethod
+    def check_attribute_names_available(
+        db_attributes: dict[int, str], attrs: list[dict[str, Any]]
+    ) -> None:
+        requested_attribute_names = {
+            attr["id"]: attr["name"]
+            for attr in attrs
+            if attr.get("id") is not None and attr.get("name") is not None
+        }
+
+        if not requested_attribute_names:
+            return
+
+        current_attribute_ids = {name: attr_id for attr_id, name in db_attributes.items()}
+        swapped_attr_names = set()
+        occupied_attr_names = set()
+
+        for attr_id, attr_name in requested_attribute_names.items():
+            current_attr_id = current_attribute_ids.get(attr_name)
+            if current_attr_id is None or current_attr_id == attr_id:
+                continue
+
+            if current_attr_id in requested_attribute_names:
+                swapped_attr_names.add(attr_name)
+                if current_name := db_attributes.get(attr_id):
+                    swapped_attr_names.add(current_name)
+            else:
+                occupied_attr_names.add(attr_name)
+
+        if swapped_attr_names:
+            attr_names = ", ".join(f'"{name}"' for name in swapped_attr_names)
+            raise serializers.ValidationError(f"Cannot swap attribute names {attr_names}")
+
+        if occupied_attr_names:
+            attr_names = ", ".join(f'"{name}"' for name in occupied_attr_names)
+            raise serializers.ValidationError(
+                f"Attribute names are already used by this label: {attr_names}"
+            )
+
+    @staticmethod
     def _split_attribute_values(values: str) -> list[str]:
         return values.split("\n") if values else []
 
@@ -712,6 +751,10 @@ class LabelSerializer(SublabelSerializer):
             db_attr = get_db_attr(attr_id)
             logger.info("{} attribute for {} label was deleted".format(db_attr.name, db_label.name))
             db_attr.delete()
+
+        if label_exists:
+            db_attributes = dict(db_label.attributespec_set.values_list("id", "name"))
+            cls.check_attribute_names_available(db_attributes, upserted_attributes)
 
         for attr in upserted_attributes:
             attr_id = attr.get("id", None)

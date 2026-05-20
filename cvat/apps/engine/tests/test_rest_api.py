@@ -2799,7 +2799,13 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
                             "mutable": True,
                             "input_type": AttributeType.CHECKBOX,
                             "default_value": "true",
-                        }
+                        },
+                        {
+                            "name": "second_bool_attribute",
+                            "mutable": True,
+                            "input_type": AttributeType.CHECKBOX,
+                            "default_value": "false",
+                        },
                     ],
                 },
                 {
@@ -2815,6 +2821,17 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
     def _check_api_v2_task(self, data):
         response = self._run_api_v2_task_id(self.task.id, self.admin, data)
         self._check_response(response, self.task, data)
+
+    @staticmethod
+    def _attribute_data(attribute, *, name):
+        return {
+            "id": attribute.id,
+            "name": name,
+            "mutable": attribute.mutable,
+            "input_type": attribute.input_type,
+            "default_value": attribute.default_value,
+            "values": [],
+        }
 
     def _run_api_v2_task_id(self, tid, user, data):
         with ForceLogin(user, self.client):
@@ -2857,6 +2874,103 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
     def test_api_v2_tasks_delete_label(self):
         data = {"labels": [{"id": 2, "name": "Label for deletion", "deleted": True}]}
         self._check_api_v2_task(data)
+
+    def test_api_v2_tasks_reject_attribute_name_swap(self):
+        label = self.task.label_set.get(name="car")
+        other_label = self.task.label_set.get(name="person")
+        first_attribute = label.attributespec_set.get(name="bool_attribute")
+        second_attribute = label.attributespec_set.get(name="second_bool_attribute")
+
+        data = {
+            "labels": [
+                {
+                    "id": other_label.id,
+                    "name": "updated person",
+                },
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "attributes": [
+                        self._attribute_data(first_attribute, name=second_attribute.name),
+                        self._attribute_data(second_attribute, name=first_attribute.name),
+                    ],
+                },
+            ],
+        }
+
+        response = self._run_api_v2_task_id(self.task.id, self.admin, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Cannot swap attribute names", str(response.data))
+        self.assertIn("bool_attribute", str(response.data))
+        self.assertIn("second_bool_attribute", str(response.data))
+        self.assertEqual(self.task.label_set.get(id=other_label.id).name, "person")
+        self.assertEqual(
+            label.attributespec_set.get(id=first_attribute.id).name,
+            "bool_attribute",
+        )
+        self.assertEqual(
+            label.attributespec_set.get(id=second_attribute.id).name,
+            "second_bool_attribute",
+        )
+
+    def test_api_v2_tasks_reject_attribute_name_conflict_with_database(self):
+        label = self.task.label_set.get(name="car")
+        first_attribute = label.attributespec_set.get(name="bool_attribute")
+        second_attribute = label.attributespec_set.get(name="second_bool_attribute")
+
+        data = {
+            "labels": [
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "attributes": [
+                        self._attribute_data(first_attribute, name=second_attribute.name),
+                    ],
+                }
+            ],
+        }
+
+        response = self._run_api_v2_task_id(self.task.id, self.admin, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Attribute names are already used by this label", str(response.data))
+        self.assertIn("second_bool_attribute", str(response.data))
+        self.assertEqual(
+            label.attributespec_set.get(id=first_attribute.id).name,
+            "bool_attribute",
+        )
+        self.assertEqual(
+            label.attributespec_set.get(id=second_attribute.id).name,
+            "second_bool_attribute",
+        )
+
+    def test_api_v2_tasks_allow_attribute_rename_to_deleted_attribute_name(self):
+        label = self.task.label_set.get(name="car")
+        first_attribute = label.attributespec_set.get(name="bool_attribute")
+        second_attribute = label.attributespec_set.get(name="second_bool_attribute")
+
+        data = {
+            "labels": [
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "attributes": [
+                        {"id": second_attribute.id, "deleted": True},
+                        self._attribute_data(first_attribute, name=second_attribute.name),
+                    ],
+                }
+            ],
+        }
+
+        response = self._run_api_v2_task_id(self.task.id, self.admin, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            label.attributespec_set.get(id=first_attribute.id).name,
+            "second_bool_attribute",
+        )
+        self.assertFalse(label.attributespec_set.filter(id=second_attribute.id).exists())
 
 
 class TaskMoveAPITestCase(ApiTestBase):
