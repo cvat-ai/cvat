@@ -8,6 +8,7 @@ from __future__ import annotations
 import functools
 import json
 import os
+import threading
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -19,10 +20,14 @@ from queue import Queue
 from typing import Any, BinaryIO, Concatenate, ParamSpec, TypeVar
 
 import boto3
+import botocore.credentials
+import botocore.hooks
+import botocore.loaders
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
+from botocore import UNSIGNED
 from botocore.client import Config
 from botocore.exceptions import (
     ClientError,
@@ -30,7 +35,6 @@ from botocore.exceptions import (
     EndpointConnectionError,
     ReadTimeoutError,
 )
-from botocore.handlers import disable_signing
 from django.conf import settings
 from google.api_core.exceptions import RetryError
 from google.cloud import storage
@@ -48,7 +52,7 @@ from cvat.apps.engine.models import (
     DimensionType,
 )
 from cvat.apps.engine.rq import ExportRQMeta
-from cvat.apps.engine.utils import get_cpu_number, take_by
+from cvat.apps.engine.utils import get_cpu_number, parse_specific_attributes, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest.utils import (
     InvalidPcdError,
@@ -588,6 +592,107 @@ def get_cloud_storage_instance(
     return instance
 
 
+# Shared across all S3 sessions in this process. botocore caches the parsed
+# service-2.json / resources-1.json / endpoint-rule-set JSON on the Loader, so
+# a single Loader instance lets every session reuse them — drops ~7MB per
+# cached S3CloudStorage and removes ~80ms of JSON parsing per build. Loader is
+# injected into each Session via the "data_loader" component override, see:
+#   https://botocore.amazonaws.com/v1/documentation/api/latest/reference/loaders.html
+_SHARED_BOTOCORE_LOADER = botocore.loaders.create_loader()
+
+
+class _FrozenEventEmitter:
+    """Wraps a HierarchicalEmitter and forbids registration/unregistration.
+
+    Cached S3 sessions hand their `events` to every client built from them. If
+    arbitrary code later calls `session.events.register(...)` it would mutate
+    shared state behind the back of any caller already holding a reference, and
+    affect every future client built on the same session. Freezing the emitter
+    after construction makes such mutations fail loudly instead of silently
+    introducing cross-instance coupling.
+    """
+
+    __slots__ = ("_wrapped",)
+
+    def __init__(self, wrapped: botocore.hooks.HierarchicalEmitter):
+        object.__setattr__(self, "_wrapped", wrapped)
+
+    def __getattr__(self, name):
+        return getattr(self._wrapped, name)
+
+    def emit(self, *args, **kwargs):
+        return self._wrapped.emit(*args, **kwargs)
+
+    def emit_until_response(self, *args, **kwargs):
+        return self._wrapped.emit_until_response(*args, **kwargs)
+
+    def copy(self):
+        # Per-client event emitters are copies of the session-level one and
+        # remain mutable: clients legitimately register handlers after build
+        # (e.g. retry/signing). Only the shared session-level emitter is frozen.
+        return self._wrapped.copy()
+
+    def register(self, *args, **kwargs):
+        raise RuntimeError(
+            "Refusing to register an event handler on a cached S3 session emitter: "
+            "session-level events are shared across every client built from this "
+            "session. Register on a specific client's `meta.events` instead."
+        )
+
+    register_first = register
+    register_last = register
+    unregister = register
+
+# boto3 Session objects (and the resources/clients they build) are NOT
+# thread-safe to construct; only low-level Clients are thread-safe to USE once
+# built. See:
+#   https://boto3.amazonaws.com/v1/documentation/api/latest/guide/session.html#multithreading-and-multiprocessing
+#   https://boto3.amazonaws.com/v1/documentation/api/latest/guide/clients.html#multithreading-or-multiprocessing-with-clients
+#   https://boto3.amazonaws.com/v1/documentation/api/latest/guide/resources.html#multithreading-or-multiprocessing-with-resources
+# With a process-shared Loader, the additional shared-state risk is the
+# Loader's read-modify-write of its service-model cache on first miss. Serialize
+# Session.resource/client construction so neither the per-Session build path
+# nor the shared loader race under concurrent first-builds. After both calls
+# return, low-level clients are safe to use from many threads.
+_S3_BUILD_LOCK = threading.Lock()
+
+
+def _make_boto3_session(
+    *,
+    access_key_id: str | None,
+    secret_key: str | None,
+    session_token: str | None,
+    region: str | None,
+) -> boto3.Session:
+    """Build a Session that uses the shared loader and never falls back to
+    env/file/IMDS credential resolution. Credentials must be explicit (from the
+    CloudStorage model) or the resulting clients must use an UNSIGNED Config.
+    """
+    kwargs = {}
+    for key, arg_v in (
+        ("aws_access_key_id", access_key_id),
+        ("aws_secret_access_key", secret_key),
+        ("aws_session_token", session_token),
+        ("region_name", region),
+    ):
+        if arg_v:
+            kwargs[key] = arg_v
+
+    session = boto3.Session(**kwargs)
+    # Inject the process-shared loader so every Session reuses the parsed
+    # service-2.json/resources-1.json/endpoint-ruleset instead of re-parsing.
+    session._session.register_component("data_loader", _SHARED_BOTOCORE_LOADER)
+    # Block env/file/IMDS credential discovery. CloudStorage credentials must
+    # come from the DB row; anonymous access uses Config(signature_version=UNSIGNED).
+    # Replacing the resolver with an empty one keeps `session.get_credentials()`
+    # from ever stalling on the metadata service.
+    session._session.register_component(
+        "credential_provider",
+        botocore.credentials.CredentialResolver(providers=[]),
+    )
+    return session
+
+
 class S3CloudStorage(AbstractCloudStorage):
     transfer_config = {
         "max_io_queue": 10,
@@ -612,54 +717,68 @@ class S3CloudStorage(AbstractCloudStorage):
         if sum(1 for credential in (access_key_id, secret_key, session_token) if credential) == 1:
             raise Exception("Insufficient data for authentication")
 
-        kwargs = dict()
-        for key, arg_v in zip(
-            (
-                "aws_access_key_id",
-                "aws_secret_access_key",
-                "aws_session_token",
-                "region_name",
-            ),
-            (access_key_id, secret_key, session_token, region),
-        ):
-            if arg_v:
-                kwargs[key] = arg_v
+        is_anonymous = not any([access_key_id, secret_key, session_token])
 
-        session = boto3.Session(**kwargs)
-        # Status checks are part of the control plane, not the data-transfer path, so
-        # Bucket status probes should fail fast when the endpoint is unreachable or
-        # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
-        # the regular resource/client retain their standard retry behavior for normal
-        # storage operations.
-        self._s3 = session.resource(
-            "s3",
-            endpoint_url=endpoint_url,
-            config=Config(
-                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
-                max_pool_connections=(
-                    # AWS can throttle the requests if there are too many of them,
-                    # the SDK handles it with the retry policy:
-                    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
-                    # 10 is the default value
-                    max(10, CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU)
-                ),
-            ),
-        )
-        self._status_client = session.client(
-            "s3",
-            endpoint_url=endpoint_url,
-            config=Config(
-                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
-                connect_timeout=2,
-                read_timeout=5,
-                retries={"total_max_attempts": 1, "mode": "standard"},
-            ),
+        session = _make_boto3_session(
+            access_key_id=access_key_id,
+            secret_key=secret_key,
+            session_token=session_token,
+            region=region,
         )
 
-        # anonymous access
-        if not any([access_key_id, secret_key, session_token]):
-            self._s3.meta.client.meta.events.register("choose-signer.s3.*", disable_signing)
-            self._status_client.meta.events.register("choose-signer.s3.*", disable_signing)
+        resource_config_kwargs = dict(
+            proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+            max_pool_connections=(
+                # AWS can throttle the requests if there are too many of them,
+                # the SDK handles it with the retry policy:
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
+                # 10 is the default value
+                max(10, CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU)
+            ),
+        )
+        status_config_kwargs = dict(
+            proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+            connect_timeout=2,
+            read_timeout=5,
+            retries={"total_max_attempts": 1, "mode": "standard"},
+        )
+        if is_anonymous:
+            # UNSIGNED also skips the credential resolver entirely, so there
+            # is no need to register `choose-signer` handlers on the client.
+            resource_config_kwargs["signature_version"] = UNSIGNED
+            status_config_kwargs["signature_version"] = UNSIGNED
+
+        # Lock only the calls that touch the process-shared botocore Loader
+        # cache (read-modify-write of service-model/resource/endpoint JSON on
+        # first miss) and that exercise the documented non-thread-safe
+        # construction paths in boto3 (see _S3_BUILD_LOCK definition above).
+        # Everything else — Session, Config, post-build attribute assignment —
+        # is per-instance and safe to run concurrently.
+        with _S3_BUILD_LOCK:
+            # Status checks are part of the control plane, not the data-transfer path, so
+            # Bucket status probes should fail fast when the endpoint is unreachable or
+            # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
+            # the regular resource/client retain their standard retry behavior for normal
+            # storage operations.
+            self._s3 = session.resource(
+                "s3",
+                endpoint_url=endpoint_url,
+                config=Config(**resource_config_kwargs),
+            )
+            self._status_client = session.client(
+                "s3",
+                endpoint_url=endpoint_url,
+                config=Config(**status_config_kwargs),
+            )
+
+            # Freeze the session-level emitter after both clients have copied
+            # it into their own per-client emitters. Any further attempt to
+            # register/unregister at the session level will raise; per-client
+            # emitters (`client.meta.events`) remain mutable.
+            session._session.register_component(
+                "event_emitter",
+                _FrozenEventEmitter(session._session.get_component("event_emitter")),
+            )
 
         self._client = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
@@ -1270,20 +1389,48 @@ class Credentials:
         ]
 
 
-def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
+def _build_storage_instance(
+    cloud_provider: str,
+    resource: str,
+    credentials_type: str,
+    credentials_value: str,
+    specific_attributes_str: str,
+    updated_date_iso: str,  # noqa: ARG001  invalidates cache when storage row changes
+) -> AbstractCloudStorage:
     credentials = Credentials()
     credentials.convert_from_db(
-        {
-            "type": db_storage.credentials_type,
-            "value": db_storage.credentials,
-        }
+        {"type": credentials_type, "value": credentials_value}
     )
-    details = {
-        "resource": db_storage.resource,
-        "credentials": credentials,
-        "specific_attributes": db_storage.get_specific_attributes(),
-    }
-    return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+    return get_cloud_storage_instance(
+        cloud_provider=cloud_provider,
+        resource=resource,
+        credentials=credentials,
+        specific_attributes=parse_specific_attributes(specific_attributes_str),
+    )
+
+
+@functools.cache
+def _build_storage_instance_cached():
+    # Wrapped lazily so the setting is read after Django app config has applied
+    # engine defaults (apps.py:EngineConfig.ready), not at module import time.
+    return functools.lru_cache(maxsize=settings.CLOUD_STORAGE_INSTANCE_CACHE_SIZE)(
+        _build_storage_instance
+    )
+
+
+def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
+    # Cache key uses raw DB fields (incl. credentials + specific_attributes strings)
+    # plus updated_date, so any modification to the storage row invalidates the entry.
+    # Constructing boto3/Azure/GCS clients is expensive (~100ms each); reuse the
+    # built instance across calls in the same process.
+    return _build_storage_instance_cached()(
+        cloud_provider=db_storage.provider_type,
+        resource=db_storage.resource,
+        credentials_type=db_storage.credentials_type,
+        credentials_value=db_storage.credentials,
+        specific_attributes_str=db_storage.specific_attributes,
+        updated_date_iso=db_storage.updated_date.isoformat(),
+    )
 
 
 P = ParamSpec("P")

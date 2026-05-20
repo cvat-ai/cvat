@@ -120,3 +120,11 @@ if DEFAULT_BACKING_CS_ID:
     DEFAULT_BACKING_CS_ID = int(DEFAULT_BACKING_CS_ID)
 else:
     DEFAULT_BACKING_CS_ID = None
+
+CLOUD_STORAGE_INSTANCE_CACHE_SIZE = int(os.getenv("CVAT_CLOUD_STORAGE_INSTANCE_CACHE_SIZE", 32))
+"""
+Number of cloud storage client instances kept in the per-process LRU cache.
+Constructing boto3/Azure/GCS clients is expensive (~100ms each), so reusing
+them across calls is a significant win. Bump for multi-tenant deployments
+with many active cloud storages per worker.
+"""
