@@ -451,6 +451,7 @@ class AnnotationIRTest(TestCase):
                     "tags": [],
                     "shapes": [],
                     "tracks": [track],
+                    "intervals": [],
                 }
                 annotation = AnnotationIR(dimension=dimension, data=data)
                 sliced_annotation = annotation.slice(0, 1)

@@ -328,7 +328,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 def test_list_requests_when_there_is_job_with_non_regular_or_corrupted_meta(
     jobs: Container, admin_user: str, request: pytest.FixtureRequest
 ):
-    job = next(iter(jobs))
+    job = next(j for j in jobs if j["media_type"] != "audio")
 
     export_job_dataset(admin_user, save_images=True, id=job["id"], download_result=False)
     export_job_dataset(admin_user, save_images=False, id=job["id"], download_result=False)
@@ -497,16 +497,16 @@ class TestGetRequests:
 
         if target_type == "project":
             export_func, import_func = export_project_dataset, import_project_dataset
-            target = next(iter(projects))
+            target = next(p for p in projects if p["dimension"] != "1d")
             owner = target["owner"]
         elif target_type == "task":
             export_func, import_func = export_task_dataset, import_task_annotations
-            target = next(iter(tasks))
+            target = next(t for t in tasks if t["media_type"] != "audio")
             owner = target["owner"]
         else:
             assert target_type == "job"
             export_func, import_func = export_job_dataset, import_job_annotations
-            target = next(iter(jobs))
+            target = next(j for j in jobs if j["media_type"] != "audio")
             owner = tasks[target["task_id"]]["owner"]
 
         target_id = target["id"]

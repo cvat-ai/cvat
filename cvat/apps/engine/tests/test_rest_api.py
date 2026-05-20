@@ -1902,6 +1902,37 @@ class _CloudStorageTestBase(ApiTestBase):
                 for key in files:
                     del self._files[key]
 
+            def _list_raw_content_on_one_page(
+                self,
+                prefix: str = "",
+                *,
+                next_token: str | None = None,
+                page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
+            ) -> dict:
+                start = int(next_token or 0)
+                entries = []
+                seen_directories = set()
+
+                for key in sorted(k for k in self._files if k.startswith(prefix)):
+                    suffix = key[len(prefix) :]
+                    match suffix.split("/", maxsplit=1):
+                        case [dirname, _]:
+                            directory = prefix + dirname + "/"
+                            if directory not in seen_directories:
+                                entries.append(directory)
+                                seen_directories.add(directory)
+                        case _:
+                            entries.append(key)
+
+                page = entries[start : start + page_size]
+                next_page_start = start + page_size
+
+                return {
+                    "files": [name for name in page if not name.endswith("/")],
+                    "directories": [name for name in page if name.endswith("/")],
+                    "next": str(next_page_start) if next_page_start < len(entries) else None,
+                }
+
         cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.S3CloudStorage", MockS3)
         cls._aws_patch.start()
 
@@ -1941,11 +1972,107 @@ class _CloudStorageTestBase(ApiTestBase):
 
             response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            rq_id = response.data["rq_id"]
+
+            response = self.client.get("/api/requests/%s" % rq_id)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(
+                response.data["status"], "finished", "Message: " + response.data["message"]
+            )
 
             response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
         return task
+
+
+class CloudStorageTestCase(_CloudStorageTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.client = APIClient()
+        cls.mock_aws.create_file("../manifest.jsonl", b"evil manifest")
+
+    def test_add_with_unsafe_manifest_path(self):
+        data = {
+            "provider_type": "AWS_S3_BUCKET",
+            "resource": "test",
+            "display_name": "Bucket",
+            "credentials_type": "ANONYMOUS_ACCESS",
+            "manifests": ["../manifest.jsonl"],
+        }
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.post("/api/cloudstorages", data=data, format="json")
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(b"'..' segment", response.content)
+
+    def test_update_with_unsafe_manifest_path(self):
+        cloud_storage_id = self._create_cloud_storage()
+        with ForceLogin(self.owner, self.client):
+            response = self.client.patch(
+                f"/api/cloudstorages/{cloud_storage_id}",
+                data={"manifests": ["/manifest.jsonl"]},
+                format="json",
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(b"not relative", response.content)
+
+    def test_contents_with_unsafe_manifest_path(self):
+        cloud_storage_id = self._create_cloud_storage()
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.get(
+                f"/api/cloudstorages/{cloud_storage_id}/content-v2",
+                data={"manifest_path": "../manifest.jsonl"},
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(b"'..' segment", response.content)
+
+
+class TaskCloudStorageTestCase(_CloudStorageTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.client = APIClient()
+        cls.mock_aws.create_file("a/test.jpg", generate_image_file("test.jpg", (8, 8)).read())
+        cls.mock_aws.create_file("a/../evil.jpg", generate_image_file("evil.jpg", (8, 8)).read())
+
+    def test_unsafe_paths_in_directory(self):
+        cloud_storage_id = self._create_cloud_storage()
+
+        tid = self._create_task(
+            {"name": "test task"},
+            {
+                "server_files[0]": "a/",
+                "image_quality": 75,
+                "cloud_storage_id": cloud_storage_id,
+            },
+        )["id"]
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.get(f"/api/tasks/{tid}/data/meta")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(response.data["frames"]), 1)
+            self.assertEqual(response.data["frames"][0]["name"], "a/test.jpg")
+
+    def test_unsafe_paths_in_pattern_expansion(self):
+        cloud_storage_id = self._create_cloud_storage()
+
+        tid = self._create_task(
+            {"name": "test task"},
+            {
+                "filename_pattern": "a/*",
+                "image_quality": 75,
+                "cloud_storage_id": cloud_storage_id,
+            },
+        )["id"]
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.get(f"/api/tasks/{tid}/data/meta")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(response.data["frames"]), 1)
+            self.assertEqual(response.data["frames"][0]["name"], "a/test.jpg")
 
 
 @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
@@ -2672,7 +2799,13 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
                             "mutable": True,
                             "input_type": AttributeType.CHECKBOX,
                             "default_value": "true",
-                        }
+                        },
+                        {
+                            "name": "second_bool_attribute",
+                            "mutable": True,
+                            "input_type": AttributeType.CHECKBOX,
+                            "default_value": "false",
+                        },
                     ],
                 },
                 {
@@ -2688,6 +2821,17 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
     def _check_api_v2_task(self, data):
         response = self._run_api_v2_task_id(self.task.id, self.admin, data)
         self._check_response(response, self.task, data)
+
+    @staticmethod
+    def _attribute_data(attribute, *, name):
+        return {
+            "id": attribute.id,
+            "name": name,
+            "mutable": attribute.mutable,
+            "input_type": attribute.input_type,
+            "default_value": attribute.default_value,
+            "values": [],
+        }
 
     def _run_api_v2_task_id(self, tid, user, data):
         with ForceLogin(user, self.client):
@@ -2730,6 +2874,103 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
     def test_api_v2_tasks_delete_label(self):
         data = {"labels": [{"id": 2, "name": "Label for deletion", "deleted": True}]}
         self._check_api_v2_task(data)
+
+    def test_api_v2_tasks_reject_attribute_name_swap(self):
+        label = self.task.label_set.get(name="car")
+        other_label = self.task.label_set.get(name="person")
+        first_attribute = label.attributespec_set.get(name="bool_attribute")
+        second_attribute = label.attributespec_set.get(name="second_bool_attribute")
+
+        data = {
+            "labels": [
+                {
+                    "id": other_label.id,
+                    "name": "updated person",
+                },
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "attributes": [
+                        self._attribute_data(first_attribute, name=second_attribute.name),
+                        self._attribute_data(second_attribute, name=first_attribute.name),
+                    ],
+                },
+            ],
+        }
+
+        response = self._run_api_v2_task_id(self.task.id, self.admin, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Cannot swap attribute names", str(response.data))
+        self.assertIn("bool_attribute", str(response.data))
+        self.assertIn("second_bool_attribute", str(response.data))
+        self.assertEqual(self.task.label_set.get(id=other_label.id).name, "person")
+        self.assertEqual(
+            label.attributespec_set.get(id=first_attribute.id).name,
+            "bool_attribute",
+        )
+        self.assertEqual(
+            label.attributespec_set.get(id=second_attribute.id).name,
+            "second_bool_attribute",
+        )
+
+    def test_api_v2_tasks_reject_attribute_name_conflict_with_database(self):
+        label = self.task.label_set.get(name="car")
+        first_attribute = label.attributespec_set.get(name="bool_attribute")
+        second_attribute = label.attributespec_set.get(name="second_bool_attribute")
+
+        data = {
+            "labels": [
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "attributes": [
+                        self._attribute_data(first_attribute, name=second_attribute.name),
+                    ],
+                }
+            ],
+        }
+
+        response = self._run_api_v2_task_id(self.task.id, self.admin, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Attribute names are already used by this label", str(response.data))
+        self.assertIn("second_bool_attribute", str(response.data))
+        self.assertEqual(
+            label.attributespec_set.get(id=first_attribute.id).name,
+            "bool_attribute",
+        )
+        self.assertEqual(
+            label.attributespec_set.get(id=second_attribute.id).name,
+            "second_bool_attribute",
+        )
+
+    def test_api_v2_tasks_allow_attribute_rename_to_deleted_attribute_name(self):
+        label = self.task.label_set.get(name="car")
+        first_attribute = label.attributespec_set.get(name="bool_attribute")
+        second_attribute = label.attributespec_set.get(name="second_bool_attribute")
+
+        data = {
+            "labels": [
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "attributes": [
+                        {"id": second_attribute.id, "deleted": True},
+                        self._attribute_data(first_attribute, name=second_attribute.name),
+                    ],
+                }
+            ],
+        }
+
+        response = self._run_api_v2_task_id(self.task.id, self.admin, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            label.attributespec_set.get(id=first_attribute.id).name,
+            "second_bool_attribute",
+        )
+        self.assertFalse(label.attributespec_set.filter(id=second_attribute.id).exists())
 
 
 class TaskMoveAPITestCase(ApiTestBase):
@@ -3182,9 +3423,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                         root_dir=temp_dir,
                     )
 
-                cls.media_data[-1]["server_files[1]"] = os.path.join(
-                    settings.SHARE_ROOT, manifest_path.name
-                )
+                cls.media_data[-1]["server_files[1]"] = manifest_path.name
 
         filename = os.path.join("videos", "test_video_1.mp4")
         path = share_root / filename
@@ -5450,6 +5689,30 @@ class TaskDataAPITestCase(ApiTestBase):
         response = self._create_task(None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_api_v2_tasks_id_data_unsafe_server_files(self):
+        response = self._create_task(self.admin, {"name": "my task"})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        task_id = response.data["id"]
+
+        response = self._run_api_v2_tasks_id_data_post(
+            task_id, self.admin, data={"server_files[0]": "../test.jpg"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assert b"'..' segment" in response.content
+
+    def test_api_v2_tasks_id_data_unsafe_server_files_exclude(self):
+        response = self._create_task(self.admin, {"name": "my task"})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        task_id = response.data["id"]
+
+        response = self._run_api_v2_tasks_id_data_post(
+            task_id,
+            self.admin,
+            data={"server_files[0]": "test/", "server_files_exclude[0]": "test/./test.jpg"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assert b"not in canonical form" in response.content
+
 
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
@@ -7356,6 +7619,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
 
         # Rare and buggy formats that are not crucial for testing
         formats.pop("Market-1501 1.0")  # Issue: https://github.com/cvat-ai/datumaro/issues/99
+        formats.pop("Generic TSV 1.0")  # Requires an audio task, checked in other test suite
 
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format, import_format=import_format):
@@ -7720,9 +7984,9 @@ class ServerShareDifferentTypesAPITestCase(ApiTestBase):
         response = self._run_api_v2_server_share("/data1")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        shared_images = [img for img in shared_images if os.path.dirname(img) != "/data1/subdir"]
-        shared_images.append("/data1/subdir/")
-        shared_images.append("/data1/")
+        shared_images = [img for img in shared_images if os.path.dirname(img) != "data1/subdir"]
+        shared_images.append("data1/subdir/")
+        shared_images.append("data1/")
         remote_files = {"server_files[%d]" % i: shared_images[i] for i in range(len(shared_images))}
 
         task = {

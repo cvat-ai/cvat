@@ -371,7 +371,7 @@ class TestTokenAuthPermissions:
             t for t in access_tokens_by_username[admin_user] if t["read_only"] == is_readonly
         )
 
-        task_id = next(p["id"] for p in tasks if p["size"] > 0)
+        task_id = next(p["id"] for p in tasks if p["size"] > 0 if p["media_type"] != "audio")
 
         with make_api_client(access_token=token["private_key"]) as api_client:
             if export_type in ("annotations", "dataset"):
@@ -391,7 +391,7 @@ class TestTokenAuthPermissions:
             t for t in access_tokens_by_username[admin_user] if t["read_only"] == is_readonly
         )
 
-        job_id = next(p["id"] for p in jobs)
+        job_id = next(p["id"] for p in jobs if p["media_type"] != "audio")
 
         with make_api_client(access_token=token["private_key"]) as api_client:
             if export_type in ("annotations", "dataset"):

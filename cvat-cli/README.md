@@ -7,7 +7,9 @@ comprehensive CVAT administration tool in the future.
 The following subcommands are supported:
 
 - Projects:
+  - `backup` - back up a project
   - `create` - create a new project
+  - `create-from-backup` - create a project from a backup file
   - `delete` - delete projects
   - `export-dataset` - export a project as a dataset
   - `import-dataset` - import annotations into a project from a dataset

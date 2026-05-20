@@ -52,6 +52,7 @@ from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
+from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import (
     ImageManifestManager,
     VideoManifestManager,
@@ -249,15 +250,7 @@ def _create_segments_and_jobs(
 
 def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
     share_root = settings.SHARE_ROOT
-    server_files = []
-
-    for path in data["server_files"]:
-        path = os.path.normpath(path).lstrip("/")
-        if ".." in path.split(os.path.sep):
-            raise ValueError("Don't use '..' inside file paths")
-        if not (share_root / path).resolve().is_relative_to(share_root):
-            raise ValueError("Bad file path: " + path)
-        server_files.append(path)
+    server_files = [f.rstrip("/") for f in data["server_files"]]
 
     sorted_server_files = sorted(server_files, reverse=True)
     # The idea of the code is trivial. After sort we will have files in the
@@ -295,9 +288,7 @@ def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
     )
 
     count_files(
-        file_mapping={
-            f: os.path.abspath(os.path.join(share_root, f)) for f in data["server_files"]
-        },
+        file_mapping={f: join_untrusted_path(share_root, f) for f in data["server_files"]},
         counter=counter,
     )
 
@@ -448,7 +439,7 @@ def _validate_manifest(
     if len(manifests) != 1:
         raise ValidationError("Only one manifest file can be attached to data")
     manifest_file = manifests[0]
-    full_manifest_path = root_dir / manifests[0]
+    full_manifest_path = join_untrusted_path(root_dir, manifest_file)
 
     if is_in_cloud and not is_backup_restore:
         cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
@@ -1125,6 +1116,9 @@ def _filter_cloud_storage_files(
                     prefix=directory, _use_flat_listing=True
                 ):
                     if f["type"] == "REG":
+                        if problem_with_untrusted_path(f["name"]):
+                            continue
+
                         additional_files.append(f["name"])
                     else:
                         dirs.append(f["name"])
@@ -1162,6 +1156,9 @@ def _filter_cloud_storage_files(
             while True:
                 for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
                     if f["type"] == "REG":
+                        if problem_with_untrusted_path(f["name"]):
+                            continue
+
                         additional_files.append(f["name"])
                     else:
                         dirs.append(f["name"])
@@ -1424,14 +1421,17 @@ def _collect_image_dataset_descriptors(
 
     images: list[models.Image] = []
     for frame_id in extractor.frame_range:
-        image_path = extractor.get_path(frame_id)
+        image_path = extractor.get_path(frame_id).relative_to(upload_dir).as_posix()
         image_size = None
 
         if manifest:
             image_info = manifest[frame_id]
 
             # check mapping
-            if not image_path.as_posix().endswith(f"{image_info['name']}{image_info['extension']}"):
+            manifest_image_path = f"{image_info['name']}{image_info['extension']}"
+            if image_path != manifest_image_path and not image_path.endswith(
+                "/" + manifest_image_path
+            ):
                 raise ValidationError("Incorrect file mapping to manifest content")
 
             if image_info.get("width") is not None and image_info.get("height") is not None:
@@ -1439,7 +1439,7 @@ def _collect_image_dataset_descriptors(
             elif is_data_in_cloud:
                 raise ValidationError(
                     "Can't find image '{}' width or height info in the manifest".format(
-                        f"{image_info['name']}{image_info['extension']}"
+                        manifest_image_path
                     )
                 )
 
@@ -1449,7 +1449,7 @@ def _collect_image_dataset_descriptors(
         images.append(
             models.Image(
                 data=db_data,
-                path=os.path.relpath(image_path, upload_dir),
+                path=image_path,
                 frame=frame_id,
                 width=image_size[0],
                 height=image_size[1],
@@ -1799,7 +1799,7 @@ def create_thread(
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
 
-        if MEDIA_TYPES[media_type]["mode"] == "annotation":
+        if MEDIA_TYPES[media_type]["mode"] == models.TaskMode.ANNOTATION:
             details["sorting_method"] = (
                 data["sorting_method"] if not is_media_sorted else models.SortingMethod.PREDEFINED
             )

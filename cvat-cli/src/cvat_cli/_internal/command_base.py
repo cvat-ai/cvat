@@ -128,6 +128,74 @@ class GenericDeleteCommand(GenericCommand):
         self.repo(client).remove_by_ids(ids)
 
 
+class GenericDownloadBackupCommand(GenericCommand):
+    @property
+    def description(self) -> str:
+        return f"Download a {self.resource_type_str} backup."
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "resource_id",
+            metavar=f"{self.resource_type_str}_id",
+            type=int,
+            help=f"{self.resource_type_str} ID",
+        )
+        parser.add_argument(
+            "filename",
+            type=str,
+            nargs="?",
+            default="",
+            help="output file or directory (default: current directory)",
+        )
+        parser.add_argument(
+            "--completion_verification_period",
+            dest="status_check_period",
+            default=2,
+            type=float,
+            help="time interval between checks if archive building has been finished, in seconds",
+        )
+
+    def execute(
+        self, client: Client, *, resource_id: int, filename: str, status_check_period: float
+    ) -> None:
+        if not filename:
+            filename = os.getcwd()
+
+        if filename.endswith((os.sep, os.altsep or os.sep)):
+            os.makedirs(filename, exist_ok=True)
+
+        self.repo(client).retrieve(obj_id=resource_id).download_backup(
+            filename=filename,
+            status_check_period=status_check_period,
+            pbar=DeferredTqdmProgressReporter(),
+            location=Location.LOCAL,
+        )
+
+
+class GenericCreateFromBackupCommand(GenericCommand):
+    @property
+    def description(self) -> str:
+        return f"Create a {self.resource_type_str} from a backup file."
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument("filename", type=str, help="upload file")
+        parser.add_argument(
+            "--completion_verification_period",
+            dest="status_check_period",
+            default=2,
+            type=float,
+            help="time interval between checks if archive processing was finished, in seconds",
+        )
+
+    def execute(self, client: Client, *, filename: str, status_check_period: float) -> None:
+        resource = self.repo(client).create_from_backup(
+            filename=filename,
+            status_check_period=status_check_period,
+            pbar=DeferredTqdmProgressReporter(),
+        )
+        print(resource.id)
+
+
 class GenericExportDatasetCommand(GenericCommand):
     @property
     def description(self) -> str:

@@ -157,6 +157,7 @@ from cvat.apps.engine.view_utils import (
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
+from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
 from . import models
@@ -3256,9 +3257,15 @@ class CloudStorageViewSet(
             next_token = request.query_params.get("next_token")
 
             if manifest_path := request.query_params.get("manifest_path"):
+                if problem := problem_with_untrusted_path(manifest_path):
+                    return HttpResponseBadRequest(f"manifest_path: {problem}")
+
                 manifest_prefix = os.path.dirname(manifest_path)
 
-                full_manifest_path = db_storage.get_storage_dirname() / manifest_path
+                full_manifest_path = join_untrusted_path(
+                    db_storage.get_storage_dirname(), manifest_path
+                )
+
                 if not full_manifest_path.exists() or datetime.fromtimestamp(
                     full_manifest_path.stat().st_mtime, tz=timezone.utc
                 ) < storage.get_file_last_modified(manifest_path):

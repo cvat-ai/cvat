@@ -10,7 +10,9 @@ from cvat_sdk import Client, models
 from .command_base import (
     CommandGroup,
     GenericCommand,
+    GenericCreateFromBackupCommand,
     GenericDeleteCommand,
+    GenericDownloadBackupCommand,
     GenericExportDatasetCommand,
     GenericImportDatasetCommand,
     GenericListCommand,
@@ -93,6 +95,16 @@ class ProjectCreate:
 
 @COMMANDS.command_class("delete")
 class ProjectDelete(GenericDeleteCommand, GenericProjectCommand):
+    pass
+
+
+@COMMANDS.command_class("backup")
+class ProjectBackup(GenericDownloadBackupCommand, GenericProjectCommand):
+    pass
+
+
+@COMMANDS.command_class("create-from-backup")
+class ProjectCreateFromBackup(GenericCreateFromBackupCommand, GenericProjectCommand):
     pass
 
 
