@@ -20,15 +20,15 @@ wait_for_clickhouse() {
 }
 
 account_for_internal_proxy() {
-    if [ -n "${CVAT_NUM_PROXIES:-}" ]; then
-        if ! [[ "$CVAT_NUM_PROXIES" =~ ^[0-9]+$ ]]; then
-            fail "CVAT_NUM_PROXIES must be a non-negative integer"
-        fi
+    CVAT_NUM_PROXIES="${CVAT_NUM_PROXIES:-0}"
 
-        # The user-facing setting counts proxies before the backend container.
-        # Add the internal nginx hop that proxies requests to uvicorn.
-        export CVAT_NUM_PROXIES=$((CVAT_NUM_PROXIES + 1))
+    if ! [[ "$CVAT_NUM_PROXIES" =~ ^[0-9]+$ ]]; then
+        fail "CVAT_NUM_PROXIES must be a non-negative integer"
     fi
+
+    # The user-facing setting counts proxies before the backend container.
+    # Add the internal nginx hop that proxies requests to uvicorn.
+    export CVAT_NUM_PROXIES=$((CVAT_NUM_PROXIES + 1))
 }
 
 cmd_bash() {
