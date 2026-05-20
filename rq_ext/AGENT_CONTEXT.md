@@ -3,11 +3,10 @@
 This file is a handoff. Read it first if you are picking up work on the
 ThreadPoolWorker without the prior conversation.
 
-For technical limitations and rationale, read `documentation.md` in this same
-directory (`rq_ext/`). For the **actual code, it has moved** — the worker now
-lives at `cvat/apps/django_rq_ext/`, not in `rq_ext/`. See the "Files" table
-below. This file covers **why we got here, what Aleksei has decided, what's
-done, what's still pending, and how to collaborate with him.**
+For technical limitations and rationale, read `README.md` in
+`cvat/apps/django_rq_ext/`. The worker code lives there too. See the
+"Files" table below. This file covers **why we got here, what Aleksei has
+decided, what's done, what's still pending, and how to collaborate with him.**
 
 ---
 
@@ -170,9 +169,9 @@ Consequences:
 - **`heartbeat_ttl` IS the abandonment threshold** — no separate config.
   Our `threshold + slack` choice is what tells `cleanup()` "this job is
   abandoned." This is also why we deliberately don't refresh the heartbeat
-  from the executor thread (TODO.md "Intentionally NOT added"): refresh
-  would only help jobs legitimately exceeding the SLO, and we can't
-  preempt those anyway (`requests.post` blocks in C-level socket IO).
+  from inside `job.perform()`: refresh would only help jobs legitimately
+  exceeding the SLO, and we can't preempt those anyway (`requests.post`
+  blocks in C-level socket IO).
 
 ### `job.retry(queue, pipeline)` and `enqueue_dependents` in `handle_job_failure`
 
@@ -283,8 +282,7 @@ No outstanding correctness items in the worker itself. The thread-pool
 worker is **not yet wired into deploy** — `cvat_worker_webhooks` in
 `docker-compose.yml:186-194` still runs vanilla `rq worker webhooks
 --with-scheduler`. Swapping that to `ThreadPoolWorker` is a separate
-decision (deploy gate, not a code gap). See `cvat/apps/django_rq_ext/
-TODO.md` for Phase 3 history and intentionally-NOT-added items.
+decision (deploy gate, not a code gap).
 
 ---
 
@@ -298,14 +296,12 @@ TODO.md` for Phase 3 history and intentionally-NOT-added items.
 | `cvat/apps/django_rq_ext/management/commands/rqworker.py` | **Active code** | Shadows django_rq's `rqworker`; adds `--pool-size` and `--task-execution-time-threshold` via monkey-patching `_upstream.get_worker` for one super().handle() call. |
 | `cvat/apps/django_rq_ext/management/commands/enqueue_playground.py` | **Active code** | `python manage.py enqueue_playground --count N` — enqueues `send_webhook_task` jobs onto the `playground` queue. |
 | `cvat/apps/django_rq_ext/sandbox/tasks.py` | **Active code** | `send_webhook_task` — zero Django deps, importable from a bare Python process. Aleksei has at times replaced its body with `time.sleep(...)` to simulate slow tasks; treat the content as scratch. |
-| `cvat/apps/django_rq_ext/TODO.md` | **Living doc** | Phase 3 history — LANDED items and intentionally-NOT-added decisions. |
+| `cvat/apps/django_rq_ext/README.md` | Reference doc | Phase 1-era technical limitations + rationale, sectioned per deferred feature. Older than this file; treat as background, not source of truth. |
 | `cvat/apps/django_rq_ext/apps.py` | Trivial | `DjangoRqExtConfig`. `ready()` copies uppercase names from `default_settings` onto `django.conf.settings` (verbatim webhooks pattern). |
 | `cvat/apps/django_rq_ext/default_settings.py` | **Active code** | `THREAD_POOL_WORKER_JOB_HEARTBEAT_TTL_SLACK_SEC` (default 60s) — slack added to per-job StartedJobRegistry TTL. |
-| `rq_ext/documentation.md` | Living doc | Technical limitations + rationale, sectioned per deferred feature. Older than this file; treat as background, not source of truth. |
-| `rq_ext/thread_pool_worker_example.py` | Reference | Verbatim port of `ccrvlh/rq feature/multithread`'s `ThreadPoolWorker` for comparison. Don't `import` it from production code. |
 | `rq_ext/AGENT_CONTEXT.md` | **This file** | Conversation handoff. Update when behavior changes meaningfully. |
 
-`rq_ext/` is otherwise empty of code now; the `__init__.py` there is leftover and not needed.
+`rq_ext/` holds only this handoff doc now; the `__init__.py` there is leftover and not needed.
 
 ---
 
@@ -353,7 +349,7 @@ shadow command and `rqworker` will resolve back to django_rq.
   out "for future".
 - **Removes inline comments aggressively.** Has trimmed almost every
   multi-line comment I've written. The mental model: behavior should be
-  obvious from code; deep rationale belongs in TODO.md / this file. Keep
+  obvious from code; deep rationale belongs in this file. Keep
   inline notes to one-liners and only for *non-obvious* invariants (e.g.
   "pool-full gate before dequeue so executor doesn't park overflow").
 - **Asks clarifying questions back at you.** If you write something he
@@ -408,10 +404,10 @@ shadow command and `rqworker` will resolve back to django_rq.
 
 ## What NOT to do
 
-- **Don't expand observability beyond what's in TODO.md.** Phase 3 has
-  landed (counters + `handle_exception` + structural alignment). Items
-  Aleksei deliberately skipped — `set_current_job_id`, per-job heartbeat
-  refresh, `procline`, `set_current_job_working_time` — should NOT be
+- **Don't expand observability beyond what's documented in this file.**
+  Phase 3 has landed (counters + `handle_exception` + structural alignment).
+  Items Aleksei deliberately skipped — `set_current_job_id`, mid-`perform`
+  heartbeat refresh, `set_current_job_working_time` — should NOT be
   reintroduced without a fresh design conversation.
 - **Don't change `cvat/apps/webhooks/`.** That code stays untouched. The
   thread-pool worker is invoked at deploy time by changing the

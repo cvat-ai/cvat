@@ -108,6 +108,13 @@ class RqWorkerPortMixin:
             p.expire(self.key, 60)
             p.execute()
 
+    def set_shutdown_requested_date(self) -> None:
+        self.connection.hset(
+            self.key,
+            "shutdown_requested_date",
+            utcformat(self._shutdown_requested_date),
+        )
+
     def increment_failed_job_count(self, pipeline: Optional["Pipeline"] = None) -> None:
         connection = pipeline if pipeline is not None else self.connection
         connection.hincrby(self.key, "failed_job_count", 1)

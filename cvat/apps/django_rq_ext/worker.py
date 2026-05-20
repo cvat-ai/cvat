@@ -14,7 +14,7 @@ from rq.job import Job, JobStatus
 from rq.queue import Queue
 from rq.registry import StartedJobRegistry
 from rq.utils import utcnow
-from rq.worker import BaseWorker, DequeueStrategy, StopRequested
+from rq.worker import BaseWorker, DequeueStrategy, StopRequested, WorkerStatus
 
 from cvat.apps.django_rq_ext.mixins import RqWorkerPortMixin
 from cvat.apps.django_rq_ext.utils import NoOpDeathPenalty
@@ -42,6 +42,7 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
         self._active_futures: list[Future] = []
         self._active_futures_lock = threading.Lock()
 
+        self._heartbeat_future: Optional[Future] = None
         self._heartbeat_stop_event = threading.Event()
 
     def work(
@@ -59,6 +60,7 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
     ) -> None:
         self.bootstrap(logging_level, date_format, log_format)
         self._dequeue_strategy = dequeue_strategy
+
         if with_scheduler:
             self._start_scheduler(burst, logging_level, date_format, log_format)
 
@@ -135,12 +137,12 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
     def _start_heartbeat(self) -> None:
         self._heartbeat_stop_event.clear()
 
-        future = self._executor.submit(self._heartbeat_loop)
+        self._heartbeat_future = self._executor.submit(self._heartbeat_loop)
 
         with self._active_futures_lock:
-            self._active_futures.append(future)
+            self._active_futures.append(self._heartbeat_future)
 
-        future.add_done_callback(self._on_future_performed)
+        self._heartbeat_future.add_done_callback(self._on_future_performed)
 
     def _stop_heartbeat(self) -> None:
         self._heartbeat_stop_event.set()
@@ -178,11 +180,23 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
         self.register_death()
 
     def request_stop(self, signum, frame) -> None:
-        self.log.info("Stop requested via signal %s; press again to force kill", signum)
+        self.log.debug("Got signal %s", signum)
         self._shutdown_requested_date = utcnow()
-        self._stop_requested = True
+
         signal.signal(signal.SIGINT, self.request_force_stop)
         signal.signal(signal.SIGTERM, self.request_force_stop)
+
+        self.handle_warm_shutdown_request()
+        self._shutdown()
+
+    def _shutdown(self) -> None:
+        self._stop_requested = True
+
+        self.set_shutdown_requested_date()
+
+        if self.scheduler:
+            self.stop_scheduler()
+
         raise StopRequested()
 
     def request_force_stop(self, signum, frame) -> None:
@@ -194,8 +208,10 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
 
     def execute_job(self, job: Job, queue: Queue) -> None:
         future = self._executor.submit(self._perform_job, job, queue)
+
         with self._active_futures_lock:
             self._active_futures.append(future)
+            self.set_state(WorkerStatus.BUSY)
 
         future.add_done_callback(self._on_future_performed)
 
@@ -205,6 +221,12 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
                 self._active_futures.remove(future)
             except ValueError:
                 pass
+
+            if future is self._heartbeat_future:
+                return
+
+            if all(f is self._heartbeat_future for f in self._active_futures):
+                self.set_state(WorkerStatus.IDLE)
 
     def get_heartbeat_ttl(self, job: Job) -> int:
         return (
