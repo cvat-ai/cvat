@@ -69,6 +69,35 @@ function cloneTrackedShape(shape: TrackedShapeData): TrackedShapeData {
     };
 }
 
+function parseLayerPlacement(placement: LayerPlacement): LayerPlacementData {
+    checkObjectType('placement', placement, null, { cls: Object, name: 'Object' });
+
+    const hasExact = Object.hasOwn(placement, 'exact');
+    const hasBefore = Object.hasOwn(placement, 'before');
+    const hasAfter = Object.hasOwn(placement, 'after');
+    const specifiedCount = Number(hasExact) + Number(hasBefore) + Number(hasAfter);
+
+    if (specifiedCount !== 1) {
+        throw new ArgumentError('Exactly one of "exact", "before", or "after" must be specified');
+    }
+
+    if (hasExact) {
+        const { exact: zOrder } = placement as { exact: number };
+        checkObjectType('placement exact', zOrder, 'integer', null);
+        return { kind: 'exact', zOrder };
+    }
+
+    if (hasBefore) {
+        const { before: zOrder } = placement as { before: number };
+        checkObjectType('placement before', zOrder, 'integer', null);
+        return { kind: 'before', zOrder };
+    }
+
+    const { after: zOrder } = placement as { after: number };
+    checkObjectType('placement after', zOrder, 'integer', null);
+    return { kind: 'after', zOrder };
+}
+
 const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     label.attributes.reduce((accumulator, attribute) => {
         accumulator[attribute.id] = attribute;
@@ -137,26 +166,6 @@ export default class Collection {
         };
     }
 
-    private _parseLayerPlacement(placement: LayerPlacement): LayerPlacementData {
-        checkObjectType('placement', placement, null, { cls: Object, name: 'Object' });
-
-        // Normalize the public placement union into a shape that is easier to branch on below.
-        const placementEntries = ([
-            ['exact', (placement as { exact?: number }).exact],
-            ['before', (placement as { before?: number }).before],
-            ['after', (placement as { after?: number }).after],
-        ] as const).filter(([, value]) => typeof value !== 'undefined');
-
-        if (placementEntries.length !== 1) {
-            throw new ArgumentError('Exactly one of "exact", "before", or "after" must be specified');
-        }
-
-        const [[kind, zOrder]] = placementEntries;
-        checkObjectType(`placement ${kind}`, zOrder, 'integer', null);
-
-        return { kind, zOrder } as LayerPlacementData;
-    }
-
     private _captureZOrderSnapshot(object: Shape | Track, frame: number): ZOrderSnapshot {
         if (object instanceof Track) {
             return {
@@ -194,6 +203,7 @@ export default class Collection {
         const snapshots: { undo: ZOrderSnapshot; redo: ZOrderSnapshot }[] = [];
         const updatedStates: ObjectState[] = [];
 
+        // Prevent each individual object.save() from creating its own history item.
         this.history.freeze(true);
 
         try {
@@ -239,6 +249,7 @@ export default class Collection {
         }
 
         if (snapshots.length) {
+            // Store the whole layer operation as one undo/redo item after all objects are updated.
             this.history.do(
                 HistoryActions.CHANGED_ZORDER,
                 () => {
@@ -1405,7 +1416,7 @@ export default class Collection {
         objectStates.forEach((state) => {
             checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
         });
-        const parsedPlacement = this._parseLayerPlacement(placement);
+        const parsedPlacement = parseLayerPlacement(placement);
 
         // Tags do not participate in z-order layers, so skip them without treating it as an error.
         const objectClientIDs = new Set(
@@ -1433,15 +1444,19 @@ export default class Collection {
             return visibleState;
         });
 
-        const targetZOrder = parsedPlacement.kind === 'after' ? parsedPlacement.zOrder + 1 : parsedPlacement.zOrder;
-        const updates = new Map<number, number>();
-
         if (parsedPlacement.kind === 'exact') {
-            // Exact placement is a direct move/merge and does not shift existing occupants.
-            selectedStates.forEach((state) => updates.set(state.clientID as number, targetZOrder));
-        } else {
+            const exactUpdates = new Map<number, number>();
+            selectedStates.forEach((state) => {
+                exactUpdates.set(state.clientID as number, parsedPlacement.zOrder);
+            });
+
+            return this._applyZOrderUpdates(frame, exactUpdates);
+        }
+
+        const updates = new Map<number, number>();
+        const scheduleInsertMove = (statesToMove: ObjectState[], targetZOrder: number): void => {
             // For insertion, group the current frame by layer so occupied target layers can be displaced.
-            const layerStates = visibleStates.reduce((accumulator: Record<number, ObjectState[]>, state) => {
+            const statesByLayer = visibleStates.reduce((accumulator: Record<number, ObjectState[]>, state) => {
                 accumulator[state.zOrder] = accumulator[state.zOrder] || [];
                 accumulator[state.zOrder].push(state);
                 return accumulator;
@@ -1450,7 +1465,7 @@ export default class Collection {
             const scheduleMove = (states: ObjectState[], zOrder: number): void => {
                 // Find the objects already occupying the target layer, excluding the current move batch.
                 const movingClientIDs = new Set(states.map((state) => state.clientID as number));
-                const displacedStates = (layerStates[zOrder] || []).filter((state) => (
+                const displacedStates = (statesByLayer[zOrder] || []).filter((state) => (
                     !movingClientIDs.has(state.clientID as number) &&
                     !originalSelectedClientIDs.has(state.clientID as number)
                 ));
@@ -1467,7 +1482,13 @@ export default class Collection {
             };
 
             // Start from the requested insertion layer and recursively push occupied layers upward.
-            scheduleMove(selectedStates, targetZOrder);
+            scheduleMove(statesToMove, targetZOrder);
+        };
+
+        if (parsedPlacement.kind === 'before') {
+            scheduleInsertMove(selectedStates, parsedPlacement.zOrder - 1);
+        } else if (parsedPlacement.kind === 'after') {
+            scheduleInsertMove(selectedStates, parsedPlacement.zOrder + 1);
         }
 
         // Apply all scheduled changes at once to preserve a single batched undo/redo action.
