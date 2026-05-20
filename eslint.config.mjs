@@ -2,15 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { dirname, extname } from 'node:path';
+import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
-import { fixupPluginRules } from '@eslint/compat';
 import js from '@eslint/js';
-import { FlatCompat } from '@eslint/eslintrc';
 import stylisticPlugin from '@stylistic/eslint-plugin';
 import tseslintPlugin from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
 import cypressPlugin from 'eslint-plugin-cypress';
 import globals from 'globals';
 import importPlugin from 'eslint-plugin-import';
@@ -21,57 +20,70 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import securityPlugin from 'eslint-plugin-security';
 import chaiFriendlyPlugin from 'eslint-plugin-chai-friendly';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
+const rootDir = dirname(fileURLToPath(import.meta.url));
 
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-});
+const airbnbBaseConfigs = [
+    require('eslint-config-airbnb-base/rules/best-practices'),
+    require('eslint-config-airbnb-base/rules/errors'),
+    require('eslint-config-airbnb-base/rules/node'),
+    require('eslint-config-airbnb-base/rules/style'),
+    require('eslint-config-airbnb-base/rules/variables'),
+    require('eslint-config-airbnb-base/rules/es6'),
+    require('eslint-config-airbnb-base/rules/imports'),
+    require('eslint-config-airbnb-base/rules/strict'),
+];
+const airbnbReactConfigs = [
+    require('eslint-config-airbnb/rules/react'),
+    require('eslint-config-airbnb/rules/react-a11y'),
+];
+const airbnbReactBaseDir = dirname(require.resolve('eslint-config-airbnb'));
+const airbnbReactBaseConfigs = [
+    require(join(airbnbReactBaseDir, 'node_modules/eslint-config-airbnb-base/rules/best-practices')),
+    require(join(airbnbReactBaseDir, 'node_modules/eslint-config-airbnb-base/rules/errors')),
+    require(join(airbnbReactBaseDir, 'node_modules/eslint-config-airbnb-base/rules/node')),
+    require(join(airbnbReactBaseDir, 'node_modules/eslint-config-airbnb-base/rules/style')),
+    require(join(airbnbReactBaseDir, 'node_modules/eslint-config-airbnb-base/rules/variables')),
+    require(join(airbnbReactBaseDir, 'node_modules/eslint-config-airbnb-base/rules/es6')),
+    require(join(airbnbReactBaseDir, 'node_modules/eslint-config-airbnb-base/rules/imports')),
+    require(join(airbnbReactBaseDir, 'node_modules/eslint-config-airbnb-base/rules/strict')),
+];
 
-// Convert a legacy .eslintrc-style object to flat config entries and pin it to
-// the files that used to be linted from that package directory.
-function scopedConfig(config, files) {
-    return compat.config(config).map((entry) => ({
-        ...entry,
-        // FlatCompat resolves plugin names itself, but some legacy configs pull
-        // in plugin objects that need the manually imported/fixed versions below.
-        ...(entry.plugins ? {
-            plugins: Object.fromEntries(
-                Object.entries(entry.plugins).map(([name, plugin]) => [name, sharedCompatPlugins[name] || plugin]),
-            ),
-        } : {}),
-        ...(entry.ignores ? {} : { files }),
-    }));
+function mergeRules(configs) {
+    return Object.assign({}, ...configs.map((config) => config.rules || {}));
 }
 
-// Some legacy shareable configs still reference rules or plugin presets that do
-// not load cleanly in the flat-config setup. Their supported rule sets are added
-// explicitly later in this file.
-function withoutUnsupportedExtends(config) {
-    return {
-        ...config,
-        extends: (config.extends || []).filter((extend) => (
-            extend !== 'plugin:security/recommended' &&
-            extend !== 'plugin:no-unsanitized/DOM' &&
-            extend !== 'airbnb-typescript' &&
-            extend !== 'airbnb-typescript/base'
-        )),
-        rules: {
-            ...Object.fromEntries(
-                Object.entries(config.rules || {}).filter(([ruleName]) => (
-                    !ruleName.startsWith('security/')
-                )),
-            ),
-            indent: 'off', // airbnb's legacy indent
-        },
-    };
+function mergeSettings(configs) {
+    return Object.assign({}, ...configs.map((config) => config.settings || {}));
 }
+
+function packageDir(name) {
+    return join(rootDir, name);
+}
+
+export function configDir(metaUrl) {
+    return dirname(fileURLToPath(metaUrl));
+}
+
+const airbnbBaseRules = mergeRules(airbnbBaseConfigs);
+const airbnbBaseSettings = mergeSettings(airbnbBaseConfigs);
+const airbnbReactBaseRules = mergeRules(airbnbReactBaseConfigs);
+const airbnbReactRules = mergeRules(airbnbReactConfigs);
+const airbnbReactSettings = mergeSettings(airbnbReactConfigs);
+const importRecommendedRules = mergeRules([
+    importPlugin.configs.errors,
+    importPlugin.configs.warnings,
+    importPlugin.configs.typescript,
+]);
+const importJavaScriptRules = mergeRules([
+    importPlugin.configs.errors,
+    importPlugin.configs.warnings,
+]);
+const typeScriptRecommendedRules = mergeRules(tseslintPlugin.configs['flat/recommended']);
 
 // CVAT frontend packages run in browser code, Node-based tooling, and workers,
 // so the shared source config starts from both browser and Node globals.
-const browserAndNodeGlobals = {
+export const browserAndNodeGlobals = {
     ...globals.browser,
     ...globals.node,
     ...globals.es2024,
@@ -79,23 +91,40 @@ const browserAndNodeGlobals = {
     WorkerGlobalScope: 'readonly',
 };
 
-// Shared plugin instances keep FlatCompat output and handwritten flat entries
-// using the same plugin objects.
-const sharedCompatPlugins = {
-    '@stylistic': stylisticPlugin, // https://eslint.org/blog/2023/10/deprecating-formatting-rules/
+const cypressGlobals = {
+    Cypress: 'readonly',
+    cy: 'readonly',
+    expect: 'readonly',
+    assert: 'readonly',
+    before: 'readonly',
+    after: 'readonly',
+    beforeEach: 'readonly',
+    afterEach: 'readonly',
+    context: 'readonly',
+    describe: 'readonly',
+    it: 'readonly',
+};
+
+const testsNodeAndCypressGlobals = {
+    ...browserAndNodeGlobals,
+    ...cypressGlobals,
+};
+
+const sharedPlugins = {
+    '@stylistic': stylisticPlugin,
     '@typescript-eslint': tseslintPlugin,
     cypress: cypressPlugin,
     import: importPlugin,
     'jsx-a11y': jsxA11yPlugin,
     'no-unsanitized': noUnsanitizedPlugin,
-    react: fixupPluginRules(reactPlugin),
+    react: reactPlugin,
     'react-hooks': reactHooksPlugin,
     security: securityPlugin,
     'chai-friendly': chaiFriendlyPlugin,
 };
 
-// eslint-plugin-react's jsx-filename-extension rule is not available in the
-// shape required here, so the flat config carries a tiny local replacement.
+// eslint-plugin-react's jsx-filename-extension rule is not usable in the
+// current ESLint 10 setup, so the flat config carries a small local replacement.
 const localReactPlugin = {
     rules: {
         'jsx-filename-extension': {
@@ -155,44 +184,333 @@ const localReactPlugin = {
         },
     },
 };
+
 const disabledReactRules = Object.fromEntries(
     Object.keys(reactPlugin.rules).map((ruleName) => [`react/${ruleName}`, 'off']),
 );
 
-// First-party application code is TypeScript today. Vendored JS and generated
-// browser assets are excluded in the ignore block instead of being lint targets.
-const sourceFiles = [
-    'cvat-data/**/*.ts',
-    'cvat-core/**/*.ts',
-    'cvat-canvas/**/*.ts',
-    'cvat-canvas3d/**/*.ts',
-    'cvat-ui/**/*.{ts,tsx}',
+const commonIgnores = [
+    '.*/**',
+    '**/node_modules/**',
+    '**/dist/**',
+    '**/eslint.config.mjs',
+    '**/lint-staged.config.js',
+    '**/webpack.config.{js,cjs}',
 ];
 
-// Cypress remains JavaScript, including the root Cypress config files.
-const cypressTestFiles = [
-    'tests/cypress/**/*.js',
-    'tests/*cypress*.config.js',
-];
-const cypressPluginFiles = [
-    'tests/cypress/plugins/**/*.js',
-];
+export function defineIgnores(ignores = []) {
+    return [{
+        ignores: [
+            ...commonIgnores,
+            ...ignores,
+        ],
+    }];
+}
 
-const cypressGlobals = {
-    Cypress: 'readonly',
-    cy: 'readonly',
-    expect: 'readonly',
-    assert: 'readonly',
-    before: 'readonly',
-    after: 'readonly',
-    beforeEach: 'readonly',
-    afterEach: 'readonly',
-    context: 'readonly',
-    describe: 'readonly',
-    it: 'readonly',
+const rootRules = {
+    'no-plusplus': 0,
+    'no-continue': 0,
+    'no-console': 0,
+    'no-restricted-syntax': [0, { selector: 'ForOfStatement' }],
+    'no-await-in-loop': 0,
+    indent: 'off',
+    '@stylistic/indent': ['error', 4, { SwitchCase: 1 }],
+    'max-len': ['error', { code: 120, ignoreStrings: true }],
+    'func-names': 0,
+    'valid-typeof': 0,
+    quotes: ['error', 'single', { avoidEscape: true }],
+    'lines-between-class-members': 'off',
+    '@stylistic/lines-between-class-members': 0,
+    '@typescript-eslint/lines-between-class-members': 'off',
+    'class-methods-use-this': 0,
+    'no-underscore-dangle': ['error', { allowAfterThis: true }],
+    'max-classes-per-file': 0,
+    'operator-linebreak': ['error', 'after'],
+    'newline-per-chained-call': 0,
+    'global-require': 0,
+    'arrow-parens': ['error', 'always'],
+    'import/order': ['error', { groups: ['builtin', 'external', 'internal'] }],
+    'import/no-unresolved': 'off',
+    'import/prefer-default-export': 0,
+    'no-useless-assignment': 'off',
+    'preserve-caught-error': 'off',
+
+    'react/jsx-indent-props': 0,
+    'react/jsx-indent': 0,
+    'function-paren-newline': 0,
+    '@typescript-eslint/default-param-last': 0,
+    '@typescript-eslint/ban-ts-comment': 0,
+    '@typescript-eslint/no-explicit-any': 0,
+    '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/no-empty-object-type': [
+        'error',
+        {
+            allowInterfaces: 'always',
+            allowObjectTypes: 'never',
+        },
+    ],
+    '@typescript-eslint/no-unsafe-function-type': 'error',
+    '@typescript-eslint/no-restricted-types': [
+        'error',
+        {
+            types: {
+                object: {
+                    message: 'Use a more specific object shape, Record<string, unknown>, or unknown instead of object.',
+                },
+            },
+        },
+    ],
 };
 
-const testsGlobalConfig = {
+// airbnb-typescript still configures removed @typescript-eslint formatting
+// rules. Keep explicit silences until it ships ESLint 10/TS-ESLint 8 flat
+// support. https://typescript-eslint.io/blog/deprecating-formatting-rules/
+const unsupportedAirbnbTypeScriptRules = {
+    '@typescript-eslint/brace-style': 'off',
+    '@typescript-eslint/comma-dangle': 'off',
+    '@typescript-eslint/comma-spacing': 'off',
+    '@typescript-eslint/func-call-spacing': 'off',
+    '@typescript-eslint/indent': 'off',
+    '@typescript-eslint/keyword-spacing': 'off',
+    '@typescript-eslint/lines-between-class-members': 'off',
+    '@typescript-eslint/no-extra-parens': 'off',
+    '@typescript-eslint/no-extra-semi': 'off',
+    '@typescript-eslint/object-curly-spacing': 'off',
+    '@typescript-eslint/quotes': 'off',
+    '@typescript-eslint/semi': 'off',
+    '@typescript-eslint/space-before-blocks': 'off',
+    '@typescript-eslint/space-before-function-paren': 'off',
+    '@typescript-eslint/space-infix-ops': 'off',
+};
+
+const typeScriptOverrideRules = {
+    camelcase: 'off',
+    'import/extensions': 'off',
+    'import/no-unresolved': 'off',
+    'prefer-const': ['error', { destructuring: 'any', ignoreReadBeforeAssign: true }],
+    'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+    }],
+    '@typescript-eslint/default-param-last': 'off',
+    '@typescript-eslint/no-unsafe-function-type': 'error',
+    'lines-between-class-members': 'off',
+    '@typescript-eslint/lines-between-class-members': 'off',
+    'default-param-last': 'off',
+    '@typescript-eslint/no-restricted-types': 'off',
+    '@typescript-eslint/no-empty-object-type': ['error', { allowObjectTypes: 'always' }],
+};
+
+const noParamReassignRules = {
+    'no-param-reassign': ['error', {
+        props: true,
+        ignorePropertyModificationsFor: [
+            '_label',
+            'acc',
+            'accumulator',
+            'camera',
+            'collectionObject',
+            'context',
+            'el',
+            'element',
+            'image',
+            'model',
+            'object',
+            'plugin',
+            'shape',
+            'win',
+        ],
+    }],
+};
+
+const securityAndSanitizerRules = {
+    // plugin:no-unsanitized/DOM is deprecated by the plugin and aliases this
+    // recommended rule set. https://github.com/mozilla/eslint-plugin-no-unsanitized#deprecated-dom-config
+    ...securityPlugin.configs['recommended-legacy'].rules,
+    ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
+    'security/detect-object-injection': 'off',
+};
+
+const preSharedRules = {
+    ...securityAndSanitizerRules,
+    'no-constant-condition': ['error', { checkLoops: 'allExceptWhileTrue' }],
+};
+
+const typeScriptBaseRules = {
+    ...js.configs.recommended.rules,
+    ...airbnbBaseRules,
+    ...importRecommendedRules,
+    ...typeScriptRecommendedRules,
+};
+
+const typeScriptSettings = {
+    react: {
+        version: '18.2.0',
+    },
+    ...airbnbBaseSettings,
+    ...importPlugin.configs.typescript.settings,
+};
+
+const uiSettings = {
+    ...importPlugin.configs.typescript.settings,
+    ...airbnbBaseSettings,
+    ...airbnbReactSettings,
+    react: {
+        ...airbnbReactSettings.react,
+        version: '18.2.0',
+    },
+};
+
+function typeScriptLanguageOptions(tsconfigRootDir) {
+    return {
+        parser: tsParser,
+        parserOptions: {
+            ecmaFeatures: {
+                globalReturn: true,
+                generators: false,
+                objectLiteralDuplicateProperties: false,
+                jsx: true,
+            },
+            parser: '@typescript-eslint/parser',
+            project: './tsconfig.json',
+            tsconfigRootDir,
+        },
+        globals: {
+            ...browserAndNodeGlobals,
+            JSX: 'readonly',
+            React: 'readonly',
+        },
+        sourceType: 'module',
+        ecmaVersion: 2018,
+    };
+}
+
+export function defineTypeScriptPackageConfig({
+    files,
+    tsconfigRootDir,
+    rules = {},
+    react = false,
+}) {
+    const entries = [
+        {
+            files,
+            settings: typeScriptSettings,
+            plugins: {
+                ...sharedPlugins,
+                'local-react': localReactPlugin,
+            },
+            languageOptions: typeScriptLanguageOptions(tsconfigRootDir),
+            rules: preSharedRules,
+        },
+        {
+            files,
+            settings: typeScriptSettings,
+            plugins: {
+                ...sharedPlugins,
+                'local-react': localReactPlugin,
+            },
+            languageOptions: typeScriptLanguageOptions(tsconfigRootDir),
+            rules: typeScriptBaseRules,
+        },
+        {
+            files,
+            rules: rootRules,
+        },
+    ];
+
+    if (react) {
+        entries.push({
+            files,
+            settings: uiSettings,
+            rules: {
+                ...airbnbReactBaseRules,
+                ...airbnbReactRules,
+                indent: 'off',
+                ...rootRules,
+                ...rules,
+            },
+        });
+    } else if (Object.keys(rules).length) {
+        entries.push({
+            files,
+            rules,
+        });
+    }
+
+    entries.push(
+        {
+            files,
+            rules: {
+                ...disabledReactRules,
+                'local-react/jsx-filename-extension': ['error', { extensions: ['.tsx'] }],
+            },
+        },
+        {
+            files,
+            rules: unsupportedAirbnbTypeScriptRules,
+        },
+        {
+            files,
+            rules: typeScriptOverrideRules,
+        },
+        {
+            files,
+            rules: noParamReassignRules,
+        },
+    );
+
+    return entries;
+}
+
+function importNoExtraneousDependenciesRule(packageRoot) {
+    return [
+        'error',
+        {
+            packageDir: [packageRoot, `${rootDir}/`],
+        },
+    ];
+}
+
+export function defineCoreConfig(files, tsconfigRootDir) {
+    return defineTypeScriptPackageConfig({
+        files,
+        tsconfigRootDir,
+        rules: {
+            'import/no-extraneous-dependencies': importNoExtraneousDependenciesRule(tsconfigRootDir),
+        },
+    });
+}
+
+export function defineCanvasConfig(files, tsconfigRootDir) {
+    return defineCoreConfig(files, tsconfigRootDir);
+}
+
+export function defineUiConfig(files, tsconfigRootDir) {
+    return defineTypeScriptPackageConfig({
+        files,
+        tsconfigRootDir,
+        react: true,
+        rules: {
+            'jsx-a11y/control-has-associated-label': 0,
+            'react/no-unused-class-component-methods': 0,
+            'react/no-unstable-nested-components': 0,
+            'react/no-did-update-set-state': 0,
+            'react/require-default-props': 'off',
+            'react/no-unused-prop-types': 'off',
+            'react/no-array-index-key': 'off',
+            'react/prop-types': 'off',
+            'react/jsx-props-no-spreading': 0,
+            'jsx-quotes': ['error', 'prefer-single'],
+            'react/static-property-placement': ['warn', 'static public field'],
+            'import/no-extraneous-dependencies': importNoExtraneousDependenciesRule(tsconfigRootDir),
+        },
+    });
+}
+
+const testsGlobalRules = {
     camelcase: ['error', { properties: 'never', ignoreDestructuring: false, ignoreImports: false }],
     'no-continue': 0,
     'no-console': 0,
@@ -211,228 +529,150 @@ const testsGlobalConfig = {
             message: 'Use "Id" instead of "ID" in imported local names.',
         },
     ],
-    'func-names': 0, // TODO: remove this, all procedures should be named
+    'func-names': 0,
     quotes: ['error', 'single', { avoidEscape: true }],
     'no-underscore-dangle': ['error', { allowAfterThis: true }],
     'import/order': ['error', { groups: ['builtin', 'external', 'internal'] }],
     'function-paren-newline': 0,
 };
 
-const testsNodeAndCypressGlobals = {
-    ...browserAndNodeGlobals,
-    ...cypressGlobals,
+const testsBaseRules = Object.fromEntries(
+    Object.entries(rootRules).filter(([ruleName]) => !ruleName.startsWith('@typescript-eslint')),
+);
+
+const cypressBaseRules = {
+    ...js.configs.recommended.rules,
+    ...airbnbBaseRules,
+    ...importJavaScriptRules,
 };
 
-const rootConfig = withoutUnsupportedExtends(require('./.eslintrc.cjs'));
-const dataConfig = require('./cvat-data/.eslintrc.cjs');
-const coreConfig = require('./cvat-core/.eslintrc.cjs');
-const canvasConfig = require('./cvat-canvas/.eslintrc.cjs');
-const canvas3dConfig = require('./cvat-canvas3d/.eslintrc.cjs');
-const uiConfig = withoutUnsupportedExtends(require('./cvat-ui/.eslintrc.cjs'));
-const testsConfig = withoutUnsupportedExtends(require('./tests/.eslintrc.js'));
-const cypressBaseConfig = {
-    ...testsConfig,
-    rules: {
-        ...(testsConfig.rules || {}),
-        ...testsGlobalConfig,
+const cypressRootRules = {
+    ...testsBaseRules,
+    ...testsGlobalRules,
+};
+
+const cypressOverrideRules = {
+    ...cypressPlugin.configs.recommended.rules,
+    ...securityAndSanitizerRules,
+    'import/no-unresolved': 'off',
+    'import/extensions': 'off',
+    'no-prototype-builtins': 'off',
+    'no-underscore-dangle': 'off',
+    'cypress/no-unnecessary-waiting': 'off',
+    'no-unused-expressions': 0,
+    'chai-friendly/no-unused-expressions': 'error',
+};
+
+const cypressSettings = {
+    react: {
+        version: '18.2.0',
     },
+    ...airbnbBaseSettings,
 };
 
-// Flat config is ordered. The entries below start with global ignores and broad
-// shared rules, then layer package, TypeScript, Cypress, and mutation-specific
-// overrides on top.
+export function defineCypressConfig({
+    files,
+    pluginFiles = [],
+}) {
+    return [
+        {
+            files,
+            settings: cypressSettings,
+            plugins: sharedPlugins,
+            languageOptions: {
+                parserOptions: {
+                    parser: '@babel/eslint-parser',
+                    sourceType: 'module',
+                },
+                globals: testsNodeAndCypressGlobals,
+                sourceType: 'module',
+                ecmaVersion: 'latest',
+            },
+            rules: preSharedRules,
+        },
+        {
+            files,
+            settings: cypressSettings,
+            plugins: sharedPlugins,
+            languageOptions: {
+                parserOptions: {
+                    parser: '@babel/eslint-parser',
+                    sourceType: 'module',
+                },
+                globals: testsNodeAndCypressGlobals,
+                sourceType: 'module',
+                ecmaVersion: 'latest',
+            },
+            rules: cypressBaseRules,
+        },
+        {
+            files,
+            rules: cypressRootRules,
+        },
+        {
+            files,
+            rules: cypressOverrideRules,
+        },
+        {
+            files: pluginFiles,
+            settings: cypressSettings,
+            plugins: sharedPlugins,
+            languageOptions: {
+                globals: browserAndNodeGlobals,
+                sourceType: 'module',
+                ecmaVersion: 'latest',
+            },
+            rules: {
+                ...securityAndSanitizerRules,
+                'import/no-unresolved': 'off',
+                'import/extensions': 'off',
+                'no-prototype-builtins': 'off',
+                'no-underscore-dangle': 'off',
+            },
+        },
+        {
+            files,
+            rules: noParamReassignRules,
+        },
+    ];
+}
+
+const cypressTestFiles = [
+    'tests/cypress/**/*.js',
+    'tests/*cypress*.config.js',
+];
+const cypressPluginFiles = [
+    'tests/cypress/plugins/**/*.js',
+];
+
 export default [
-    {
-        ignores: [
-            // Repository-wide generated, vendored, and hidden paths.
-            '.*/**',
-            '**/node_modules/**',
-            '**/dist/**',
-            '**/.eslintrc.js',
-            '**/.eslintrc.cjs',
-            '**/lint-staged.config.js',
-            '**/webpack.config.{js,cjs}',
-            '3rdparty/**',
-            'data/**',
-            'datumaro/**',
-            'keys/**',
-            'logs/**',
-            'static/**',
-            'templates/**',
-            'site/**',
-
-            // Package-specific generated or vendored files that are still
-            // matched by broad JavaScript globs.
-            'cvat-ui/exec-scripts-webpack-plugin.cjs',
-            'cvat-ui/src/assets/opencv*.js',
-            'cvat-core/tests/**/*.cjs',
-            'cvat-data/src/ts/3rdparty/**',
-        ],
-    },
-    {
-        // Security and DOM-sanitization plugins are added here because their
-        // legacy shareable configs are filtered out before FlatCompat runs.
-        files: [
-            ...sourceFiles,
-            ...cypressTestFiles,
-        ],
-        settings: {
-            react: {
-                version: '18.2.0',
-            },
-        },
-        plugins: {
-            '@stylistic': stylisticPlugin,
-            security: securityPlugin,
-            'no-unsanitized': noUnsanitizedPlugin,
-        },
-        rules: {
-            ...securityPlugin.configs['recommended-legacy'].rules,
-            ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
-            'no-constant-condition': ['error', { checkLoops: 'allExceptWhileTrue' }],
-            'security/detect-object-injection': 'off'
-        },
-    },
-    // Legacy package configs are still the source of truth; FlatCompat scopes
-    // each one to the package files that used to discover it via cwd.
-    ...scopedConfig(rootConfig, sourceFiles),
-    ...scopedConfig(dataConfig, ['cvat-data/**/*.ts']),
-    ...scopedConfig(coreConfig, ['cvat-core/**/*.ts']),
-    ...scopedConfig(canvasConfig, ['cvat-canvas/**/*.ts']),
-    ...scopedConfig(canvas3dConfig, ['cvat-canvas3d/**/*.ts']),
-    ...scopedConfig(uiConfig, ['cvat-ui/**/*.{ts,tsx}']),
-    {
-        // The local JSX-extension rule replaces react/jsx-filename-extension
-        // after the upstream React rule set is disabled below.
-        files: sourceFiles,
-        settings: {
-            react: {
-                version: '18.2.0',
-            },
-        },
-        plugins: {
-            'local-react': localReactPlugin,
-        },
-        rules: {
-            ...disabledReactRules,
-            'local-react/jsx-filename-extension': ['error', { extensions: ['.tsx'] }],
-        },
-    },
-    {
-        // TypeScript-only relaxations and replacements for rules that conflict
-        // with @typescript-eslint or older CVAT generic patterns.
-        files: sourceFiles,
-        plugins: {
-            react: fixupPluginRules(reactPlugin),
-        },
-        languageOptions: {
-            globals: {
-                JSX: 'readonly',
-                React: 'readonly',
-            },
-        },
-        rules: {
-            camelcase: 'off',
-            'import/extensions': 'off',
-            'import/no-unresolved': 'off',
-            'no-unused-vars': 'off',
-            '@typescript-eslint/no-unused-vars': ['error', {
-                argsIgnorePattern: '^_',
-                varsIgnorePattern: '^_',
-                caughtErrorsIgnorePattern: '^_',
-            }],
-            '@typescript-eslint/default-param-last': 'off',
-            '@typescript-eslint/no-unsafe-function-type': 'error',
-            'lines-between-class-members': 'off',
-            '@typescript-eslint/lines-between-class-members': 'off',
-            'default-param-last': 'off',
-            // Relax the object type restriction - use Record<string, unknown> or explicit types where reasonable
-            '@typescript-eslint/no-restricted-types': 'off',
-            // Allow {} in generics (e.g., React.PureComponent<{}, State>)
-            '@typescript-eslint/no-empty-object-type': ['error', { allowObjectTypes: 'always' }],
-        },
-    },
-    // Tests keep a dedicated legacy config, then receive Cypress globals and
-    // plugin rules from the following flat entry.
-    ...scopedConfig(cypressBaseConfig, cypressTestFiles),
-    {
+    ...defineIgnores([
+        '3rdparty/**',
+        'data/**',
+        'datumaro/**',
+        'keys/**',
+        'logs/**',
+        'static/**',
+        'templates/**',
+        'site/**',
+        'cvat-ui/exec-scripts-webpack-plugin.cjs',
+        'cvat-ui/src/assets/opencv*.js',
+        'cvat-core/tests/**/*.cjs',
+        'cvat-data/src/ts/3rdparty/**',
+    ]),
+    ...defineTypeScriptPackageConfig({
+        files: ['cvat-data/**/*.ts'],
+        tsconfigRootDir: packageDir('cvat-data'),
+    }),
+    ...defineCoreConfig(['cvat-core/**/*.ts'], packageDir('cvat-core')),
+    ...defineCanvasConfig(['cvat-canvas/**/*.ts'], packageDir('cvat-canvas')),
+    ...defineTypeScriptPackageConfig({
+        files: ['cvat-canvas3d/**/*.ts'],
+        tsconfigRootDir: packageDir('cvat-canvas3d'),
+    }),
+    ...defineUiConfig(['cvat-ui/**/*.{ts,tsx}'], packageDir('cvat-ui')),
+    ...defineCypressConfig({
         files: cypressTestFiles,
-        plugins: {
-            import: importPlugin,
-            cypress: cypressPlugin,
-            security: securityPlugin,
-            'no-unsanitized': noUnsanitizedPlugin,
-            'chai-friendly': chaiFriendlyPlugin,
-        },
-        languageOptions: {
-            globals: testsNodeAndCypressGlobals,
-            sourceType: 'module',
-            ecmaVersion: 'latest',
-        },
-        rules: {
-            ...cypressPlugin.configs.recommended.rules,
-            ...securityPlugin.configs['recommended-legacy'].rules,
-            ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
-            'import/no-unresolved': 'off',
-            'import/extensions': 'off',
-            'no-prototype-builtins': 'off',
-            'no-underscore-dangle': 'off',
-            'cypress/no-unnecessary-waiting': 'off',
-            'no-unused-expressions': 0,
-            'chai-friendly/no-unused-expressions': 'error',
-            'security/detect-object-injection': 'off',
-        },
-    },
-    {
-        // Cypress plugin files execute in Node but are located under the
-        // Cypress tree, so they override only the environment-specific pieces.
-        files: cypressPluginFiles,
-        plugins: {
-            import: importPlugin,
-            security: securityPlugin,
-            'no-unsanitized': noUnsanitizedPlugin,
-        },
-        languageOptions: {
-            globals: browserAndNodeGlobals,
-            sourceType: 'module',
-            ecmaVersion: 'latest',
-        },
-        rules: {
-            ...securityPlugin.configs['recommended-legacy'].rules,
-            ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
-            'import/no-unresolved': 'off',
-            'import/extensions': 'off',
-            'no-prototype-builtins': 'off',
-            'no-underscore-dangle': 'off',
-        },
-    },
-    {
-        // Keep the stricter parameter-mutation rule centralized so package and
-        // Cypress layers inherit the same allow-list.
-        files: [
-            ...sourceFiles,
-            ...cypressTestFiles,
-        ],
-        rules: {
-            'no-param-reassign': ['error', {
-                props: true,
-                ignorePropertyModificationsFor: [
-                    '_label',
-                    'acc',
-                    'accumulator',
-                    'camera',
-                    'collectionObject',
-                    'context',
-                    'el',
-                    'element',
-                    'image',
-                    'model',
-                    'object',
-                    'plugin',
-                    'shape',
-                    'win',
-                ],
-            }],
-        },
-    },
+        pluginFiles: cypressPluginFiles,
+    }),
 ];
