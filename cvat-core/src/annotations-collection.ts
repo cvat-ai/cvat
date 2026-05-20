@@ -52,18 +52,13 @@ interface ZOrderSnapshot {
     hasShape?: boolean;
 }
 
+type LayerPlacementData =
+    { kind: 'exact'; zOrder: number } |
+    { kind: 'before'; zOrder: number } |
+    { kind: 'after'; zOrder: number };
+
 function isLayerState(state: ObjectState): boolean {
     return [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType);
-}
-
-function isZOrderBetweenSourceAndTarget(zOrder: number, sourceZOrder: number, targetZOrder: number): boolean {
-    return sourceZOrder > targetZOrder ?
-        zOrder >= targetZOrder && zOrder < sourceZOrder :
-        zOrder > sourceZOrder && zOrder <= targetZOrder;
-}
-
-function getShiftedZOrder(zOrder: number, sourceZOrder: number, targetZOrder: number): number {
-    return sourceZOrder > targetZOrder ? zOrder + 1 : zOrder - 1;
 }
 
 function cloneTrackedShape(shape: TrackedShapeData): TrackedShapeData {
@@ -140,6 +135,26 @@ export default class Collection {
                 .filter((object) => object instanceof MaskShape),
             replicasCount: data.replicasCount,
         };
+    }
+
+    private _parseLayerPlacement(placement: LayerPlacement): LayerPlacementData {
+        checkObjectType('placement', placement, null, { cls: Object, name: 'Object' });
+
+        // Normalize the public placement union into a shape that is easier to branch on below.
+        const placementEntries = ([
+            ['exact', (placement as { exact?: number }).exact],
+            ['before', (placement as { before?: number }).before],
+            ['after', (placement as { after?: number }).after],
+        ] as const).filter(([, value]) => typeof value !== 'undefined');
+
+        if (placementEntries.length !== 1) {
+            throw new ArgumentError('Exactly one of "exact", "before", or "after" must be specified');
+        }
+
+        const [[kind, zOrder]] = placementEntries;
+        checkObjectType(`placement ${kind}`, zOrder, 'integer', null);
+
+        return { kind, zOrder } as LayerPlacementData;
     }
 
     private _captureZOrderSnapshot(object: Shape | Track, frame: number): ZOrderSnapshot {
@@ -1384,77 +1399,79 @@ export default class Collection {
     }
 
     public moveObjectsToLayer(frame: number, placement: LayerPlacement, objectStates: ObjectState[]): ObjectState[] {
+        // Validate the public inputs before reading collection state or applying any changes.
         checkObjectType('frame', frame, 'integer', null);
-        checkObjectType('placement', placement, null, { cls: Object, name: 'Object' });
         checkObjectType('object states', objectStates, null, { cls: Array, name: 'Array' });
+        objectStates.forEach((state) => {
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
+        });
+        const parsedPlacement = this._parseLayerPlacement(placement);
 
-        const placementKeys = ['exact', 'before', 'after'].filter((key) => Object.hasOwn(placement, key));
-        if (placementKeys.length !== 1) {
-            throw new ArgumentError('Exactly one of "exact", "before", or "after" must be specified');
-        }
-
-        const [placementKey] = placementKeys;
-        const placementZOrder =
-            placementKey === 'exact' ? (placement as { exact: number }).exact :
-                placementKey === 'before' ? (placement as { before: number }).before :
-                    (placement as { after: number }).after;
-        checkObjectType(`placement ${placementKey}`, placementZOrder, 'integer', null);
-
-        if (!objectStates.length) {
+        // Tags do not participate in z-order layers, so skip them without treating it as an error.
+        const objectClientIDs = new Set(
+            objectStates
+                .filter(isLayerState)
+                .map((state) => state.clientID)
+                .filter((clientID): clientID is number => Number.isInteger(clientID)),
+        );
+        if (!objectClientIDs.size) {
             return [];
         }
 
+        // Resolve requested IDs against the full visible collection on the frame, not the UI-filtered subset.
         const visibleStates = this.get(frame, false, []).filter(isLayerState);
         const visibleStatesByClientID = visibleStates.reduce((accumulator: Record<number, ObjectState>, state) => {
             accumulator[state.clientID as number] = state;
             return accumulator;
         }, {});
-        const selectedStates = objectStates.map((state) => {
-            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
-            if (!isLayerState(state)) {
-                throw new ArgumentError('Tags cannot be moved between z-order layers');
-            }
-
-            const visibleState = visibleStatesByClientID[state.clientID as number];
-            if (!visibleState) {
+        const selectedStates = Array.from(objectClientIDs).map((clientID) => {
+            const visibleState = visibleStatesByClientID[clientID];
+            if (typeof visibleState === 'undefined') {
                 throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
             }
 
             return visibleState;
         });
-        const sourceZOrder = selectedStates[0].zOrder;
 
-        if (selectedStates.some((state) => state.zOrder !== sourceZOrder)) {
-            throw new ArgumentError('All moved objects must belong to the same z-order layer');
-        }
+        const targetZOrder = parsedPlacement.kind === 'after' ? parsedPlacement.zOrder + 1 : parsedPlacement.zOrder;
+        const updates = new Map<number, number>();
 
-        const targetZOrder = placementKey === 'after' ? placementZOrder + 1 : placementZOrder;
-        const selectedClientIDs = new Set(selectedStates.map((state) => state.clientID as number));
-        const zOrders = new Map<number, number>();
+        if (parsedPlacement.kind === 'exact') {
+            // Exact placement is a direct move/merge and does not shift existing occupants.
+            selectedStates.forEach((state) => updates.set(state.clientID as number, targetZOrder));
+        } else {
+            // For insertion, group the current frame by layer so occupied target layers can be displaced.
+            const layerStates = visibleStates.reduce((accumulator: Record<number, ObjectState[]>, state) => {
+                accumulator[state.zOrder] = accumulator[state.zOrder] || [];
+                accumulator[state.zOrder].push(state);
+                return accumulator;
+            }, {});
+            const originalSelectedClientIDs = new Set(selectedStates.map((state) => state.clientID as number));
+            const scheduleMove = (states: ObjectState[], zOrder: number): void => {
+                // Find the objects already occupying the target layer, excluding the current move batch.
+                const movingClientIDs = new Set(states.map((state) => state.clientID as number));
+                const displacedStates = (layerStates[zOrder] || []).filter((state) => (
+                    !movingClientIDs.has(state.clientID as number) &&
+                    !originalSelectedClientIDs.has(state.clientID as number)
+                ));
 
-        selectedStates.forEach((state) => zOrders.set(state.clientID as number, targetZOrder));
+                if (displacedStates.length) {
+                    // First make room deeper in the stack, then place this batch into the freed layer.
+                    scheduleMove(displacedStates, zOrder + 1);
+                }
 
-        if (placementKey !== 'exact') {
-            const targetOccupied = visibleStates.some((state) => (
-                !selectedClientIDs.has(state.clientID as number) && state.zOrder === targetZOrder
-            ));
-
-            if (targetOccupied) {
-                visibleStates.forEach((state) => {
-                    if (
-                        !selectedClientIDs.has(state.clientID as number) &&
-                        isZOrderBetweenSourceAndTarget(state.zOrder, sourceZOrder, targetZOrder)
-                    ) {
-                        zOrders.set(
-                            state.clientID as number,
-                            getShiftedZOrder(state.zOrder, sourceZOrder, targetZOrder),
-                        );
-                    }
+                // Record the planned move after deeper layers are scheduled, but before any mutation occurs.
+                states.forEach((state) => {
+                    updates.set(state.clientID as number, zOrder);
                 });
-            }
+            };
+
+            // Start from the requested insertion layer and recursively push occupied layers upward.
+            scheduleMove(selectedStates, targetZOrder);
         }
 
-        return this._applyZOrderUpdates(frame, zOrders);
+        // Apply all scheduled changes at once to preserve a single batched undo/redo action.
+        return this._applyZOrderUpdates(frame, updates);
     }
 
     public compactFrameLayers(frame: number): ObjectState[] {
