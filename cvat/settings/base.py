@@ -122,7 +122,6 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
-
 def parse_num_proxies(value: str | None) -> int | None:
     if value in (None, ""):
         return None
@@ -178,7 +177,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/minute",
     },
-    "NUM_PROXIES": parse_num_proxies(os.getenv("CVAT_NUM_PROXIES", "2")),
+    "NUM_PROXIES": parse_num_proxies(os.getenv("CVAT_NUM_PROXIES", "0")),
     "DEFAULT_METADATA_CLASS": "rest_framework.metadata.SimpleMetadata",
     "DEFAULT_SCHEMA_CLASS": "cvat.apps.iam.schema.CustomAutoSchema",
     "EXCEPTION_HANDLER": "cvat.apps.events.handlers.handle_viewset_exception",

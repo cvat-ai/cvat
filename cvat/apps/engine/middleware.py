@@ -2,11 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
+
 from typing import Protocol
 from uuid import uuid4
 
 from django.conf import settings
 from django.utils.timezone import now
+
+logger = logging.getLogger("cvat.server.request")
 
 
 class WithUUID(Protocol):
@@ -23,6 +27,13 @@ class RequestTrackingMiddleware:
 
     def __call__(self, request):
         request.uuid = self._generate_id()
+        logger.debug(
+            "request x-forwarded-for uuid=%s method=%s path=%s x_forwarded_for=%r",
+            request.uuid,
+            request.method,
+            request.get_full_path(),
+            request.META.get("HTTP_X_FORWARDED_FOR"),
+        )
         response = self.get_response(request)
         response.headers["X-Request-Id"] = request.uuid
 
