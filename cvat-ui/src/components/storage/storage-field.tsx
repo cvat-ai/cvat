@@ -6,10 +6,9 @@ import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Select from 'antd/lib/select';
 import Form from 'antd/lib/form';
-import { CloudStorage } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 
-import { StorageData, StorageLocation } from 'cvat-core-wrapper';
+import { StorageData, StorageLocation, CloudStorage } from 'cvat-core-wrapper';
 
 const { Option } = Select;
 
@@ -61,7 +60,7 @@ export default function StorageField(props: Props): JSX.Element {
         if (onChangeStorage) {
             onChangeStorage({
                 location: locationValue,
-                cloudStorageId: cloudStorage?.id ? parseInt(cloudStorage?.id, 10) : undefined,
+                cloudStorageId: cloudStorage?.id ?? undefined,
             });
         }
     }, [cloudStorage, locationValue]);

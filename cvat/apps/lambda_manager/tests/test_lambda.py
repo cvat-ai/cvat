@@ -1265,13 +1265,17 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         self.labels = get_paginated_collection(
             lambda page: self._get_request(
-                f"/api/labels?task_id={self.task['id']}&page={page}&sort=id", self.admin
+                "/api/labels",
+                self.admin,
+                query_params={"task_id": self.task["id"], "page": page, "sort": "id"},
             )
         )
 
         self.jobs = get_paginated_collection(
             lambda page: self._get_request(
-                f"/api/jobs?task_id={self.task['id']}&page={page}", self.admin
+                "/api/jobs",
+                self.admin,
+                query_params={"task_id": self.task["id"], "page": page},
             )
         )
 

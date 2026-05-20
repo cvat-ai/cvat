@@ -25,6 +25,7 @@ from unittest.mock import DEFAULT as MOCK_DEFAULT
 from unittest.mock import MagicMock, patch
 
 import av
+import datumaro
 import numpy as np
 from attr import define, field
 from datumaro.components.comparator import EqualityComparator
@@ -229,7 +230,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -249,7 +252,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
-                lambda page: self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+                lambda page: self.client.get(
+                    "/api/jobs", query_params={"task_id": task_id, "page": page}
+                )
             )
         return values
 
@@ -257,7 +262,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
                 lambda page: self.client.get(
-                    "/api/tasks", data={"project_id": project_id, "page": page}
+                    "/api/tasks", query_params={"project_id": project_id, "page": page}
                 )
             )
         return values
@@ -2458,8 +2463,10 @@ class ProjectDumpUpload(_DbTestBase):
         user = self.admin
 
         with TestDir() as test_dir:
-            # Dump annotations with objects type is track
-            # create task with annotations
+            # Clean up from previous tests and iterations
+            self._clear_rq_jobs()
+
+            # Create task with annotations
             project_dict = copy.deepcopy(projects["main"])
             task_dict = copy.deepcopy(tasks[dump_format_name])
             project_dict["labels"] = task_dict["labels"]
@@ -2481,9 +2488,8 @@ class ProjectDumpUpload(_DbTestBase):
             task = self._create_task(task_dict, video)
             task_id = task["id"]
             self._create_annotations(task, "skeleton track", "default")
-            # dump annotations
-            self._clear_rq_jobs()  # clean up from previous tests and iterations
 
+            # Export annotations
             file_zip_name = osp.join(test_dir, f"{test_name}_{dump_format_name}.zip")
             self._export_project_dataset(
                 user,
@@ -2495,7 +2501,7 @@ class ProjectDumpUpload(_DbTestBase):
 
             data_from_task_before_upload = self._get_data_from_task(task_id, True)
 
-            # Upload annotations with objects type is track
+            # Import annotations
             project = self._create_project(project_dict)
 
             with open(file_zip_name, "rb") as binary_file:
@@ -2506,7 +2512,23 @@ class ProjectDumpUpload(_DbTestBase):
                     query_params={"format": upload_format_name},
                 )
 
-            # equals annotations
+            # Check annotations
+            expected_dataset = datumaro.Dataset(data_from_task_before_upload)
+            expected_dataset.init_cache()
+
+            # The imported annotations are expected to contain only keyframes in tracks,
+            # even if the annotations were interpolated originally.
+            self.assertEqual(len(expected_dataset), task["size"])
+            for item in expected_dataset:
+                for ann in item.annotations:
+                    if "keyframe" in ann.attributes:
+                        ann.attributes["keyframe"] = True
+
+                    if isinstance(ann, datumaro.Skeleton):
+                        for point in ann.elements:
+                            if "keyframe" in ann.attributes:
+                                point.attributes["keyframe"] = True
+
             new_task = self._get_tasks(project["id"])[0]
             data_from_task_after_upload = self._get_data_from_task(new_task["id"], True)
-            compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
+            compare_datasets(expected_dataset, data_from_task_after_upload)

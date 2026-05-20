@@ -72,57 +72,55 @@ nuctl deploy "path/to/the/function"
 
 The AI agent implementation enables SAM2 tracking for CVAT Online users and provides an alternative deployment method
 for Enterprise customers. This approach runs the tracking model on user hardware via auto-annotation (AA) functions.
+Deploy SAM2 using Docker Compose with pre-built images for a quick and straightforward setup.
 
 #### Prerequisites
 
-- Python 3.10 or later
-- Git
+- Docker and Docker Compose
 - CVAT Online account or Enterprise instance
 - Optional: NVIDIA GPU with CUDA support for faster inference
 
 #### Setup Instructions
 
-1. Clone the CVAT repository:
+The easiest way to deploy SAM2 with pre-built images from Docker Hub.
+
+1. Clone the CVAT repository and navigate to the SAM2 agent directory:
    ```sh
-   git clone https://github.com/cvat-ai/cvat.git <CVAT_DIR>
+   git clone https://github.com/cvat-ai/cvat.git
+   cd cvat/ai-models/agents_deployment/sam2
    ```
 
-1. Install required dependencies:
+1. Create or update the `.env` file with your configuration.
+For GPU deployment, set `IMAGE_URL=cvat/sam2_agent:latest_GPU` and `COMPOSE_PROFILES=gpu`.
+For CPU-only deployment, set `IMAGE_URL=cvat/sam2_agent:latest` and `COMPOSE_PROFILES=cpu`.
+Configure the remaining required variables (`CVAT_BASE_URL`, `CVAT_ACCESS_TOKEN`, `FUNCTION_NAME`, etc.)
+following the [corresponding](/docs/guides/compose-agents-userguide/#environment-configuration).
+
+1. Start the agent:
    ```sh
-   pip install cvat-cli -r <CVAT_DIR>/ai-models/tracker/sam2/requirements.txt
+   docker compose up
    ```
 
-   {{% alert title="Note" color="info" %}}
-   If you encounter issues installing SAM2, refer to the
-   [SAM2 installation guide](https://github.com/facebookresearch/sam2/blob/main/INSTALL.md#common-installation-issues)
-   for solutions to common problems.
-   {{% /alert %}}
+1. Verify the agent is running in the CVAT interface.
+You should see a new function model named `<FUNCTION_NAME>` in the list on the `/models` page
+and in the annotation actions list.
 
-1. Register the SAM2 function with CVAT:
+1. To stop and clean up:
    ```sh
-   cvat-cli --server-host <CVAT_BASE_URL> --auth <USERNAME>:<PASSWORD> \
-       function create-native "SAM2" \
-       --function-file=<CVAT_DIR>/ai-models/tracker/sam2/func.py -p model_id=str:<MODEL_ID>
+   # Deregister the function from CVAT (must be called before volume removed)
+   # Alternatively, you can always remove the function from CVAT interface
+   docker compose run --rm cvat-function-deregister
+
+   # Stop the agent and remove volumes
+   docker compose down -v
    ```
 
-1. Run the AI agent:
-   ```sh
-   cvat-cli --server-host <CVAT_BASE_URL> --auth <USERNAME>:<PASSWORD> \
-       function run-agent <FUNCTION_ID> \
-       --function-file=<CVAT_DIR>/ai-models/tracker/sam2/func.py -p model_id=str:<MODEL_ID>
-   ```
+For detailed configuration options and troubleshooting, see the [Docker Compose agent guide](/docs/guides/compose-agents-userguide/).
 
-#### Parameter Reference
-
-- `<CVAT_BASE_URL>`: Your CVAT instance URL (e.g., `https://app.cvat.ai`)
-- `<USERNAME>` and `<PASSWORD>`: Your CVAT credentials
-- `<FUNCTION_ID>`: The ID returned by the `function create-native` command
-- `<MODEL_ID>`: A [SAM2 model ID](https://huggingface.co/models?search=facebook%2Fsam2) from Hugging Face Hub (e.g., `facebook/sam2.1-hiera-tiny`)
-
-#### Optional Parameters
-
-- **GPU Support**: Add `-p device=str:cuda` to the agent command to use NVIDIA GPU acceleration
-- **Organization Sharing**: Add `--org <ORG_SLUG>` to both commands to share the function with your organization
+{{% alert title="Note" color="info" %}}
+For enterprise deployments using Kubernetes, refer to the [Docker Compose agent guide](/docs/guides/compose-agents-userguide/)
+for Kubernetes deployment instructions and container orchestration examples.
+{{% /alert %}}
 
 #### Agent Behavior and Resilience
 
@@ -141,7 +139,6 @@ If the agent stops, active tracking operations will fail and need to be restarte
 
 - **AI Agent SAM2 Tracker**: Requires CVAT version 2.42.0 or later
 - **Classic SAM2 Tracker**: Available in all Enterprise versions
-- **Python**: Version 3.10 or later for AI agent setup
 - **GPU Support**: Optional but recommended for both implementations
 
 ## Usage

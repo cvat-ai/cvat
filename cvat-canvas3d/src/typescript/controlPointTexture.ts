@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 
-function getCircleTexture(size: number): THREE.CanvasTexture {
+function getCircleTexture(size: number): THREE.CanvasTexture<OffscreenCanvas> {
     const canvas = new OffscreenCanvas(size, size);
     const ctx = canvas.getContext('2d');
 

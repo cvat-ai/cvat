@@ -54,14 +54,14 @@ Common environment variables
       key: {{ .secretKey }}
 {{- end }}
 {{- end }}
-- name: MODEL_ID
-  value: {{ .Values.agent.model_id | quote }}
 - name: NAMESPACE
   value: {{ .Release.Namespace }}
 - name: CONFIGMAP_NAME
   value: {{ include "agent.fullname" . }}-config
 - name: ORG_SLUG
   value: {{ .Values.agent.org_slug | quote }}
+- name: FUNCTION_VISIBILITY
+  value: {{ .Values.agent.function_visibility | default "private" | quote }}
 {{- end }}
 
 {{/*
@@ -77,4 +77,64 @@ imagePullPolicy: {{ .Values.image.pullPolicy }}
 runAsNonRoot: true
 runAsUser: 1000
 runAsGroup: 1000
+{{- end }}
+
+
+{{/*
+Configure command arguments for cvat-cli
+*/}}
+{{/*I have to use extra var here $val because i need to trim leading space that is generated in range loop and i cannot just pass range output into trim */}}
+{{- define "agent.modelParamsOverride" -}}
+{{- $preset := index .Values.agent.modelPresets .Values.agent.preset | default dict -}}
+{{- $merged := merge .Values.agent.modelParamsOverride $preset -}}
+{{- $val := "" -}}
+{{- range $key, $v := $merged -}}
+{{- if $v.value -}}
+{{- $val = printf "%s -p %s=%s:%s" $val $key $v.type $v.value -}}
+{{- end -}}
+{{- end -}}
+- name: MODEL_CONFIG_PARAMS
+  value: {{ $val | trim | quote }}
+{{- end -}}
+
+{{/*
+Configure function name for agent
+*/}}
+{{- define "agent.functionNameEnv" -}}
+- name: FUNCTION_NAME
+{{- if .Values.agent.function_name }}
+  value: {{ .Values.agent.function_name | quote }}
+{{- else }}
+  value: "MyAgentFunction"
+{{- end }}
+{{- end }}
+
+{{/*
+Configure resources for agent*/}}
+{{- define "agent.resources" -}}
+resources:
+  {{- if .Values.agent.resources.limits }}
+  limits:
+    {{- if .Values.agent.resources.limits.cpu }}
+    cpu: {{ .Values.agent.resources.limits.cpu }}
+    {{- end }}
+    {{- if .Values.agent.resources.limits.memory }}
+    memory: {{ .Values.agent.resources.limits.memory }}
+    {{- end }}
+    {{- if and .Values.agent.resources.limits.gpu .Values.agent.use_cuda }}
+    nvidia.com/gpu: {{ .Values.agent.resources.limits.gpu }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.agent.resources.requests }}
+  requests:
+    {{- if .Values.agent.resources.requests.cpu }}
+    cpu: {{ .Values.agent.resources.requests.cpu }}
+    {{- end }}
+    {{- if .Values.agent.resources.requests.memory }}
+    memory: {{ .Values.agent.resources.requests.memory }}
+    {{- end }}
+    {{- if and .Values.agent.resources.requests.gpu .Values.agent.use_cuda }}
+    nvidia.com/gpu: {{ .Values.agent.resources.requests.gpu }}
+    {{- end }}
+  {{- end }}
 {{- end }}

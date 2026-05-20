@@ -38,7 +38,7 @@ function clientIdGen(): string {
     try {
         // try to use 32bit integer with high entropy if available
         [val] = crypto.getRandomValues(new Uint32Array(1));
-    } catch (error: unknown) {
+    } catch (_error: unknown) {
         // fallback as a less secure option
         val = Math.floor(Math.random() * 2 ** 32);
     }
@@ -59,7 +59,7 @@ class Logger {
         try {
             this.clientID = localStorage.getItem('clientID') ?? clientIdGen();
             localStorage.setItem('clientID', this.clientID);
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             this.clientID = clientIdGen();
         }
 

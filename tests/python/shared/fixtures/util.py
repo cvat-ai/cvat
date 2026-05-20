@@ -33,7 +33,7 @@ def fxt_logger():
 @pytest.fixture
 def fxt_test_name(request: pytest.FixtureRequest):
     name = request.node.name
-    if request.fixturename:
+    if request.fixturename and request.fixturename != "fxt_test_name":
         name += f"[{request.fixturename}]"
 
     yield name

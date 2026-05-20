@@ -152,7 +152,7 @@
     }
 }
 
-.cvat-jobs-list-filters-wrapper {
+.cvat-jobs-list-wrapper {
     display: flex;
     justify-content: space-between;
     margin-top: $grid-unit-size * 2;
@@ -162,6 +162,11 @@
     }
 
     .cvat-resource-page-filters {
-        margin-right: $grid-unit-size * 4;
+        margin-right: $grid-unit-size;
     }
+}
+
+.cvat-jobs-list-filters-wrapper {
+    margin-right: $grid-unit-size * 4;
+    display: flex;
 }

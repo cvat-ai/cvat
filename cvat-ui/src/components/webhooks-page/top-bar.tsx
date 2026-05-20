@@ -15,6 +15,7 @@ import {
     ResourceSelectionInfo,
 } from 'components/resource-sorting-filtering';
 import { WebhooksQuery } from 'reducers';
+import dimensions from 'utils/dimensions';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, config,
 } from './webhooks-filter-configuration';
@@ -43,12 +44,12 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
     return (
         <>
             <Row justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
+                <Col {...dimensions}>
                     {goBackContent}
                 </Col>
             </Row>
-            <Row className='cvat-webhooks-page-top-bar' justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
+            <Row className='cvat-webhooks-page-top-bar cvat-resource-top-bar-wrapper' justify='center' align='middle'>
+                <Col {...dimensions}>
                     <div className='cvat-webhooks-page-filters-wrapper'>
                         <div>
                             <Input.Search

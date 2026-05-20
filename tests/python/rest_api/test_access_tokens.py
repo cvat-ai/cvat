@@ -175,7 +175,7 @@ class TestAccessTokenListFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.auth_api.list_access_tokens_endpoint
 
-    @pytest.mark.parametrize("field", ("name",))
+    @pytest.mark.parametrize("field", ("name", "read_only"))
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
 
@@ -289,7 +289,7 @@ class TestTokenAuthPermissions:
         ):
             api_client.auth_api.create_password_change(
                 password_change_request=models.PasswordChangeRequest(
-                    old_password="any", new_password1="any", new_password2="any"
+                    old_password="any", new_password1="anypass1", new_password2="anypass1"
                 )
             )
 

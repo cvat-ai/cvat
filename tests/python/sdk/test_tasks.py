@@ -58,12 +58,7 @@ class TestTaskUsecases(TestDatasetExport):
 
     @pytest.fixture
     def fxt_new_task_without_data(self):
-        task = self.client.tasks.create(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
-        )
+        task = self.client.tasks.create(spec={"name": "test_task"})
 
         return task
 
@@ -91,21 +86,6 @@ class TestTaskUsecases(TestDatasetExport):
 
         task_spec = {
             "name": f"test {self.user} to create a task with local data",
-            "labels": [
-                {
-                    "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [
-                        {
-                            "name": "a",
-                            "mutable": True,
-                            "input_type": "number",
-                            "default_value": "5",
-                            "values": ["4", "5", "6"],
-                        }
-                    ],
-                }
-            ],
         }
 
         data_params = {
@@ -152,10 +132,7 @@ class TestTaskUsecases(TestDatasetExport):
 
     def test_can_create_task_with_remote_data(self):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task"},
             resource_type=ResourceType.SHARE,
             resources=["images/image_1.jpg", "images/image_2.jpg"],
             # make sure string fields are transferred correctly;
@@ -173,11 +150,6 @@ class TestTaskUsecases(TestDatasetExport):
 
         task_spec = {
             "name": f"test {self.user} to create a task with no data",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         with pytest.raises(BackgroundRequestException) as capture:
@@ -198,7 +170,6 @@ class TestTaskUsecases(TestDatasetExport):
         task = self.client.tasks.create(
             {
                 "name": f"test task",
-                "labels": [{"name": "car"}],
             }
         )
 

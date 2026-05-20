@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 type CamelizeString<T extends PropertyKey, C extends string = ''> =
-T extends string ? string extends T ? string :
-    T extends `${infer F}_${infer R}` ?
-        CamelizeString<Capitalize<R>, `${C}${F}`> : (T extends 'Id' ? `${C}${'ID'}` : `${C}${T}`) : T;
+    T extends string ? string extends T ? string :
+        T extends `${infer F}_${infer R}` ?
+            CamelizeString<Capitalize<R>, `${C}${F}`> : (T extends 'Id' ? `${C}${'ID'}` : `${C}${T}`) : T;
 
 type CamelizeStringV2<T extends PropertyKey, C extends string = ''> =
     T extends string

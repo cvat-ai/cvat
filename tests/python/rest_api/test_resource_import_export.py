@@ -150,11 +150,6 @@ class TestExportResourceToS3(_S3ResourceTest):
 
         task_spec = {
             "name": f"Task with files from foreign cloud storage {storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
         data_spec = {
             "image_quality": 75,
@@ -311,11 +306,6 @@ class TestImportResourceFromS3(_S3ResourceTest):
 
         task_spec = {
             "name": f"Task with files from foreign cloud storage {storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
         data_spec = {
             "image_quality": 75,
@@ -655,7 +645,6 @@ class TestUploads:
                     url,
                     archive_path,
                     meta=params,
-                    logger=owner_client.logger.debug,
                     pbar=pbar,
                 )
 

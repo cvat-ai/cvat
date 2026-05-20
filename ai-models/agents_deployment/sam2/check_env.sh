@@ -27,12 +27,18 @@ resolve_org_slug() {
     fi
 }
 
-resolve_model_id() {
-    if [ -z "$MODEL_ID" ]; then
-        echo "Warning: MODEL_ID environment variable not found. Default is facebook/sam2.1-hiera-tiny"
-        MODEL_ID="facebook/sam2.1-hiera-tiny"
+
+resolve_model_params() {
+    if [ -z "$MODEL_CONFIG_PARAMS" ]; then
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable not found. Default model will be used facebook/sam2.1-hiera-tiny"
+        MODEL_CONFIG_PARAMS="-p model_id=str:facebook/sam2.1-hiera-tiny"
+    elif result=$(echo "$MODEL_CONFIG_PARAMS" | grep -oP 'model_id=str:\K[^ ]+'); then
+        echo "Extracted MODEL_ID from MODEL_CONFIG_PARAMS: $result"
+        export MODEL_ID="$result"
     else
-        echo "Using MODEL_ID: $MODEL_ID"
+        echo "Error: MODEL_CONFIG_PARAMS environment variable is set but does not contain model_id format i can understand"
+        echo "using default MODEL_ID: facebook/sam2.1-hiera-tiny"
+        MODEL_CONFIG_PARAMS="-p model_id=str:facebook/sam2.1-hiera-tiny"
     fi
 }
 
@@ -45,8 +51,35 @@ resolve_cuda() {
     fi
 }
 
+resolve_function_name() {
+    if [ -z "$FUNCTION_NAME" ]; then
+        echo "Warning: FUNCTION_NAME environment variable not found. Default is SAM2"
+        FUNCTION_NAME="SAM2"
+    else
+        echo "Using FUNCTION_NAME: $FUNCTION_NAME"
+    fi
+}
+
+resolve_visibility() {
+    if [ -z "$FUNCTION_VISIBILITY" ]; then
+        echo "Warning: FUNCTION_VISIBILITY environment variable not found. Default is private"
+        VISIBILITY_ARGS=(--visibility private)
+        echo "This function will be visible to you and ORG members if ORG_SLUG is set, but not to other users of this CVAT instance."
+    else
+        if [ "$FUNCTION_VISIBILITY" = "public" ]; then
+            echo "This function will be visible to all users of this CVAT instance."
+            VISIBILITY_ARGS=(--visibility "$FUNCTION_VISIBILITY")
+        else
+            echo "FUNCTION_VISIBILITY must be private or public. Defaulting to private visibility."
+            echo "This function will be visible to you and ORG members if ORG_SLUG is set, but not to other users of this CVAT instance."
+            VISIBILITY_ARGS=(--visibility private)
+        fi
+    fi
+}
+
 common_env() {
     validate_access_token
     resolve_base_url
     resolve_org_slug
+    resolve_visibility
 }

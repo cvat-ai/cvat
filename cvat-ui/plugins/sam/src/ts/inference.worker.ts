@@ -26,14 +26,15 @@ export interface DecodeBody {
     height: number;
 }
 
-export interface WorkerOutput {
-    action: WorkerAction;
-    error?: string;
-}
-
 export interface WorkerInput {
     action: WorkerAction;
     payload: InitBody | DecodeBody;
+}
+
+export interface SAMOutputItem {
+    mask_input: Float32Array;
+    points: Uint8ClampedArray;
+    bounds: [number, number, number, number];
 }
 
 const errorToMessage = (error: unknown): string => {
@@ -90,17 +91,17 @@ if ((self as any).importScripts) {
                     results.masks.getData(),
                     results.low_res_masks.getData(),
                 ])
-            )).then(([xtl, ytl, xbr, ybr, mask, lowResMask]) => {
+            )).then((
+                [xtl, ytl, xbr, ybr, mask, lowResMask]:
+                [Int32Array, Int32Array, Int32Array, Int32Array, Float32Array, Float32Array],
+            ) => {
                 postMessage({
                     action: WorkerAction.DECODE,
-                    payload: {
-                        mask,
-                        lowResMask,
-                        xtl: Number(xtl[0]),
-                        ytl: Number(ytl[0]),
-                        xbr: Number(xbr[0]),
-                        ybr: Number(ybr[0]),
-                    },
+                    payload: [{
+                        mask_input: lowResMask as Float32Array,
+                        points: new Uint8ClampedArray(mask.buffer, mask.byteOffset, mask.length),
+                        bounds: [Number(xtl[0]), Number(ytl[0]), Number(xbr[0]), Number(ybr[0])] as const,
+                    }] as SAMOutputItem[],
                 });
             }).catch((error: unknown) => {
                 postMessage({ action: WorkerAction.DECODE, error: errorToMessage(error) });
