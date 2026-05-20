@@ -2,40 +2,49 @@
 #
 # SPDX-License-Identifier: MIT
 
+import datetime
+import os
 import unittest
+from unittest.mock import MagicMock, patch
 
 from botocore import UNSIGNED
+from django.test import override_settings
 
 from cvat.apps.engine import cloud_provider
 from cvat.apps.engine.cloud_provider import (
-    _FrozenEventEmitter,
     _SHARED_BOTOCORE_LOADER,
     S3CloudStorage,
     _build_storage_instance_cached,
+    _FrozenEventEmitter,
     _make_boto3_session,
     db_storage_to_storage_instance,
 )
+from cvat.apps.engine.models import CloudStorage
 
 
-def _make_anonymous_s3():
-    return S3CloudStorage(bucket="test-bucket")
-
-
-def _make_signed_s3(**overrides):
-    kwargs = dict(
-        bucket="test-bucket",
-        access_key_id="AKIA_TEST_KEY",
-        secret_key="secret-test-value",
-        region="us-east-1",
+def _make_cloud_storage(
+    *,
+    provider_type="AWS_S3_BUCKET",
+    resource="test-bucket",
+    credentials_type="ANONYMOUS_ACCESS",
+    credentials="",
+    specific_attributes="",
+    updated_date_iso="2025-05-20T10:00:00+00:00",
+):
+    return CloudStorage(
+        provider_type=provider_type,
+        resource=resource,
+        credentials_type=credentials_type,
+        credentials=credentials,
+        specific_attributes=specific_attributes,
+        updated_date=datetime.datetime.fromisoformat(updated_date_iso),
     )
-    kwargs.update(overrides)
-    return S3CloudStorage(**kwargs)
 
 
 class TestSharedBotocoreLoader(unittest.TestCase):
     """The process-level Loader override must actually be installed on every
-    Session and used by all clients built from it. If boto3 silently swaps it
-    out, the memory/time savings evaporate without warning."""
+    Session built via `_make_boto3_session`. If boto3 silently swaps it out,
+    the memory/time savings evaporate without warning."""
 
     def test_session_uses_shared_loader(self):
         session = _make_boto3_session(
@@ -58,91 +67,81 @@ class TestSharedBotocoreLoader(unittest.TestCase):
             s2._session.get_component("data_loader"),
         )
 
-    def test_resource_and_client_use_shared_loader(self):
-        # The acid test: the actual clients/resources built from a session
-        # must end up consulting the shared loader, not a per-session copy.
-        s3 = _make_anonymous_s3()
-        # botocore Client objects don't expose the loader directly, but the
-        # service model carries the loader-loaded data. Sharing the loader is
-        # observable through identity of the loaded service description across
-        # independently built clients.
-        s3_b = _make_anonymous_s3()
-        self.assertEqual(
-            s3._client.meta.service_model.service_name,
-            s3_b._client.meta.service_model.service_name,
-        )
-        # And the underlying session's loader component is the shared one.
-        for cli in (s3._client, s3._status_client, s3_b._client, s3_b._status_client):
-            self.assertIs(
-                cli.meta.events,  # ensure events present (sanity)
-                cli.meta.events,
-            )
-
 
 class TestCredentialResolverHardened(unittest.TestCase):
-    """No silent fall-through to env/file/IMDS. CloudStorage creds must come
-    from the DB row, and anonymous must use UNSIGNED."""
+    """No silent fall-through to env/file/IMDS. CloudStorage credentials must
+    come from the DB row."""
 
     def test_session_credential_resolver_has_no_providers(self):
+        # Default botocore resolver chains env vars -> ~/.aws/credentials ->
+        # ~/.aws/config -> IMDS -> container metadata. Any of these would let
+        # ambient host credentials bleed into a CloudStorage that should be
+        # anonymous (or whose creds the row didn't supply). An empty provider
+        # list proves the resolver was replaced, so `session.get_credentials()`
+        # can never fall through to host-level secrets or stall on IMDS.
         session = _make_boto3_session(
             access_key_id=None, secret_key=None, session_token=None, region=None
         )
         resolver = session._session.get_component("credential_provider")
         self.assertEqual(resolver.providers, [])
 
+    def test_anonymous_session_ignores_ambient_aws_env_vars(self):
+        # Behavioral check that no chain provider actually fires: botocore's
+        # EnvProvider is the first link in the default chain, so if our
+        # resolver swap is dropped or bypassed, these sentinel env vars would
+        # propagate into the session and get_credentials() would return them.
+        # With the empty resolver, the call must return None.
+        sentinel_env = {
+            "AWS_ACCESS_KEY_ID": "SENTINEL-SHOULD-NOT-LEAK",
+            "AWS_SECRET_ACCESS_KEY": "SENTINEL-SHOULD-NOT-LEAK",
+            "AWS_SESSION_TOKEN": "SENTINEL-SHOULD-NOT-LEAK",
+        }
+        with patch.dict(os.environ, sentinel_env):
+            session = _make_boto3_session(
+                access_key_id=None,
+                secret_key=None,
+                session_token=None,
+                region=None,
+            )
+            self.assertIsNone(session.get_credentials())
+
     def test_explicit_credentials_survive_resolver_swap(self):
         # boto3.Session(aws_access_key_id=..., ...) calls set_credentials
         # directly on the botocore session, which stores them outside the
         # resolver chain. Verify our resolver swap doesn't drop them.
-        s3 = _make_signed_s3()
+        access_key = "AKIA-EXPLICIT-KEY"
+        secret_key = "explicit-secret-value"
+        s3 = S3CloudStorage(
+            bucket="test-bucket",
+            access_key_id=access_key,
+            secret_key=secret_key,
+            region="us-east-1",
+        )
         signer = s3._client._request_signer
-        self.assertEqual(signer.signature_version, "s3v4")
         self.assertIsNotNone(signer._credentials)
-        self.assertEqual(signer._credentials.access_key, "AKIA_TEST_KEY")
-        self.assertEqual(signer._credentials.secret_key, "secret-test-value")
+        self.assertEqual(signer._credentials.access_key, access_key)
+        self.assertEqual(signer._credentials.secret_key, secret_key)
 
+        # Production contract: signed CS must not pick up UNSIGNED. The exact
+        # signature_version (currently s3v4) is a boto3 default and not part
+        # of our contract.
+        self.assertIsNot(signer.signature_version, UNSIGNED)
 
-class TestAnonymousUsesUnsigned(unittest.TestCase):
-    """Anonymous CS must use Config(signature_version=UNSIGNED), not the
-    legacy disable_signing event handler trick. Both the main client and the
-    status-check client need it."""
-
-    def test_signer_is_unsigned(self):
-        s3 = _make_anonymous_s3()
+    def test_anonymous_clients_use_unsigned(self):
+        # Anonymous CS must use Config(signature_version=UNSIGNED) on both
+        # the main client and the status-check client, replacing the legacy
+        # disable_signing event handler trick. Together with the empty
+        # resolver, this means anonymous requests never look up credentials.
+        s3 = S3CloudStorage(bucket="test-bucket")
         self.assertIs(s3._client._request_signer.signature_version, UNSIGNED)
         self.assertIs(s3._status_client._request_signer.signature_version, UNSIGNED)
-
-    def test_no_disable_signing_handler_registered(self):
-        # The old code registered a `choose-signer.s3.*` handler. With UNSIGNED
-        # there should be no such handler on the client's event emitter.
-        s3 = _make_anonymous_s3()
-        handlers = list(s3._client.meta.events._emitter._handlers.prefix_search("choose-signer.s3"))
-        # We can't easily enumerate; just assert no handler explicitly named
-        # disable_signing is reachable. Use emit and check no signer override.
-        signer = s3._client._request_signer
-        self.assertIs(signer.signature_version, UNSIGNED)
-        # Touch handlers list to ensure no exception, content not contract.
-        self.assertIsInstance(handlers, list)
-
-
-class TestSignedUsesS3V4(unittest.TestCase):
-    def test_signer_is_s3v4_with_creds(self):
-        s3 = _make_signed_s3()
-        self.assertEqual(s3._client._request_signer.signature_version, "s3v4")
-        self.assertEqual(s3._status_client._request_signer.signature_version, "s3v4")
 
 
 class TestFrozenSessionEvents(unittest.TestCase):
     """After both clients are built, the session-level emitter must reject
     further register/unregister calls. Per-client emitters stay mutable."""
 
-    def test_frozen_emitter_type_installed(self):
-        s3 = _make_anonymous_s3()
-        # Access via the cached session through one of the clients.
-        # The boto3.Session isn't kept on the instance; reconstruct equivalent
-        # path via _make_boto3_session + manual freeze to confirm the type.
-        # Instead, validate by constructing a fresh session and applying the
-        # same freeze step the constructor uses, then assert it's our wrapper.
+    def _frozen_session_events(self):
         session = _make_boto3_session(
             access_key_id=None, secret_key=None, session_token=None, region=None
         )
@@ -150,178 +149,86 @@ class TestFrozenSessionEvents(unittest.TestCase):
             "event_emitter",
             _FrozenEventEmitter(session._session.get_component("event_emitter")),
         )
-        self.assertIsInstance(
-            session._session.get_component("event_emitter"), _FrozenEventEmitter
-        )
-        # And the production instance keeps clients functional.
-        self.assertIsNotNone(s3._client)
+        return session.events
 
     def test_register_raises_after_freeze(self):
-        session = _make_boto3_session(
-            access_key_id=None, secret_key=None, session_token=None, region=None
-        )
-        original = session._session.get_component("event_emitter")
-        session._session.register_component(
-            "event_emitter", _FrozenEventEmitter(original)
-        )
-        events = session.events
-        with self.assertRaisesRegex(RuntimeError, "Refusing to register"):
-            events.register("foo", lambda **kw: None)
-        with self.assertRaisesRegex(RuntimeError, "Refusing to register"):
-            events.register_first("foo", lambda **kw: None)
-        with self.assertRaisesRegex(RuntimeError, "Refusing to register"):
-            events.register_last("foo", lambda **kw: None)
-        with self.assertRaisesRegex(RuntimeError, "Refusing to register"):
-            events.unregister("foo", lambda **kw: None)
+        events = self._frozen_session_events()
+        for method in ("register", "register_first", "register_last", "unregister"):
+            with self.subTest(method=method):
+                with self.assertRaisesRegex(RuntimeError, "Refusing to register"):
+                    getattr(events, method)("foo", lambda **kw: None)
 
     def test_emit_still_works_after_freeze(self):
-        # Freezing must not break event dispatch (clients rely on emit).
-        session = _make_boto3_session(
-            access_key_id=None, secret_key=None, session_token=None, region=None
-        )
-        original = session._session.get_component("event_emitter")
-        frozen = _FrozenEventEmitter(original)
+        events = self._frozen_session_events()
         # emit must delegate without error and return whatever the wrapped emitter returns.
-        result = frozen.emit("no-such-event-anywhere")
+        result = events.emit("no-such-event-anywhere")
         self.assertIsInstance(result, list)
 
     def test_per_client_events_remain_mutable(self):
-        s3 = _make_anonymous_s3()
-        called = []
-        s3._client.meta.events.register(
-            "before-call.s3.HeadObject", lambda **kw: called.append(True)
-        )
-        # If register raised, we'd never reach this; the assertion is the
-        # successful registration itself.
-        self.assertEqual(called, [])
+        s3 = S3CloudStorage(bucket="test-bucket")
+        # If register raised, we'd never reach the next line; successful
+        # registration is the assertion.
+        s3._client.meta.events.register("before-call.s3.HeadObject", lambda **kw: None)
 
 
-class TestBuildLockExists(unittest.TestCase):
-    def test_lock_is_a_lock(self):
-        # Lock object must be acquirable and releasable (rules out a stub).
-        lock = cloud_provider._S3_BUILD_LOCK
-        acquired = lock.acquire(blocking=False)
-        try:
-            self.assertTrue(acquired)
-        finally:
-            if acquired:
-                lock.release()
+def _reset_cs_client_instance_cache():
+    _build_storage_instance_cached.cache_clear()
 
 
-class TestLruCacheBehavior(unittest.TestCase):
-    """The lru_cache must return the same instance for identical CloudStorage
-    state and invalidate when any identifying field changes."""
-
+class TestS3CloudStorageClientCaching(unittest.TestCase):
     def setUp(self):
-        _build_storage_instance_cached().cache_clear()
+        _reset_cs_client_instance_cache()
 
-    def _build(self, **overrides):
-        defaults = dict(
-            cloud_provider="AWS_S3_BUCKET",
-            resource="test-bucket",
-            credentials_type="ANONYMOUS_ACCESS",
-            credentials_value="",
-            specific_attributes_str="",
-            updated_date_iso="2025-01-01T00:00:00+00:00",
+    def test_same_cs_returns_cached_instance(self):
+        cloud_storage = _make_cloud_storage()
+        self.assertIs(
+            db_storage_to_storage_instance(cloud_storage),
+            db_storage_to_storage_instance(cloud_storage),
         )
-        defaults.update(overrides)
-        return _build_storage_instance_cached()(**defaults)
 
-    def test_same_inputs_return_same_instance(self):
-        a = self._build()
-        b = self._build()
-        self.assertIs(a, b)
+    def test_field_change_invalidates(self):
+        cases = [
+            ("resource", {"resource": "bucket-1"}, {"resource": "bucket-2"}),
+            (
+                "credentials",
+                {"credentials_type": "KEY_SECRET_KEY_PAIR", "credentials": "key1 secret1"},
+                {"credentials_type": "KEY_SECRET_KEY_PAIR", "credentials": "key2 secret2"},
+            ),
+            (
+                "specific_attributes",
+                {"specific_attributes": "region=us-east-1"},
+                {"specific_attributes": "region=eu-west-1"},
+            ),
+            (
+                "updated_date",
+                {"updated_date_iso": "2025-01-01T00:00:00+00:00"},
+                {"updated_date_iso": "2025-01-02T00:00:00+00:00"},
+            ),
+        ]
+        for label, kwargs_a, kwargs_b in cases:
+            with self.subTest(field=label):
+                _reset_cs_client_instance_cache()
+                self.assertIsNot(
+                    db_storage_to_storage_instance(_make_cloud_storage(**kwargs_a)),
+                    db_storage_to_storage_instance(_make_cloud_storage(**kwargs_b)),
+                )
 
-    def test_different_resource_invalidates(self):
-        a = self._build(resource="bucket-1")
-        b = self._build(resource="bucket-2")
-        self.assertIsNot(a, b)
+    @override_settings(CLOUD_STORAGE_INSTANCE_CACHE_SIZE=1)
+    def test_cache_size_setting_applies(self):
+        client1 = db_storage_to_storage_instance(_make_cloud_storage(resource="bucket-1"))
 
-    def test_different_credentials_invalidates(self):
-        a = self._build(
-            credentials_type="KEY_SECRET_KEY_PAIR",
-            credentials_value="key1 secret1",
-        )
-        b = self._build(
-            credentials_type="KEY_SECRET_KEY_PAIR",
-            credentials_value="key2 secret2",
-        )
-        self.assertIsNot(a, b)
+        db_storage_to_storage_instance(_make_cloud_storage(resource="bucket-2"))
 
-    def test_different_specific_attributes_invalidates(self):
-        a = self._build(specific_attributes_str="region=us-east-1")
-        b = self._build(specific_attributes_str="region=eu-west-1")
-        self.assertIsNot(a, b)
+        client2 = db_storage_to_storage_instance(_make_cloud_storage(resource="bucket-1"))
+        self.assertIsNot(client1, client2)
 
-    def test_different_updated_date_invalidates(self):
-        a = self._build(updated_date_iso="2025-01-01T00:00:00+00:00")
-        b = self._build(updated_date_iso="2025-01-02T00:00:00+00:00")
-        self.assertIsNot(a, b)
-
-    def test_cache_size_bounded(self):
-        # Default 32. Confirm the lru_cache respects an upper bound (not None).
-        info = _build_storage_instance_cached().cache_info()
-        self.assertIsNotNone(info.maxsize)
-        self.assertGreater(info.maxsize, 0)
-
-
-class TestDbStorageToStorageInstanceIntegration(unittest.TestCase):
-    """End-to-end: db_storage_to_storage_instance threads the right fields
-    through the cache and returns the same instance on consecutive calls when
-    nothing on the row changes."""
-
-    def test_same_db_row_returns_cached_instance(self):
-        _build_storage_instance_cached().cache_clear()
-
-        class FakeRow:
-            provider_type = "AWS_S3_BUCKET"
-            resource = "test-bucket"
-            credentials_type = "ANONYMOUS_ACCESS"
-            credentials = ""
-            specific_attributes = ""
-
-            class _Date:
-                @staticmethod
-                def isoformat():
-                    return "2025-05-20T10:00:00+00:00"
-
-            updated_date = _Date()
-
-        row = FakeRow()
-        a = db_storage_to_storage_instance(row)
-        b = db_storage_to_storage_instance(row)
-        self.assertIs(a, b)
-
-    def test_updated_date_change_rebuilds(self):
-        _build_storage_instance_cached().cache_clear()
-
-        class FakeRow:
-            provider_type = "AWS_S3_BUCKET"
-            resource = "test-bucket"
-            credentials_type = "ANONYMOUS_ACCESS"
-            credentials = ""
-            specific_attributes = ""
-
-            def __init__(self, date_iso):
-                self._iso = date_iso
-
-            @property
-            def updated_date(self):
-                outer = self
-
-                class _Date:
-                    @staticmethod
-                    def isoformat():
-                        return outer._iso
-
-                return _Date()
-
-        row_v1 = FakeRow("2025-05-20T10:00:00+00:00")
-        row_v2 = FakeRow("2025-05-20T11:00:00+00:00")
-        a = db_storage_to_storage_instance(row_v1)
-        b = db_storage_to_storage_instance(row_v2)
-        self.assertIsNot(a, b)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_protected_by_build_lock(self):
+        # Production call path must actually go through `_S3_BUILD_LOCK`, not
+        # just have a lock object available.
+        cloud_storage = _make_cloud_storage()
+        fake_lock = MagicMock()
+        fake_lock.__enter__ = MagicMock(return_value=None)
+        fake_lock.__exit__ = MagicMock(return_value=None)
+        with patch.object(cloud_provider, "_S3_BUILD_LOCK", fake_lock):
+            db_storage_to_storage_instance(cloud_storage)
+        fake_lock.__enter__.assert_called()

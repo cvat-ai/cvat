@@ -643,6 +643,7 @@ class _FrozenEventEmitter:
     register_last = register
     unregister = register
 
+
 # boto3 Session objects (and the resources/clients they build) are NOT
 # thread-safe to construct; only low-level Clients are thread-safe to USE once
 # built. See:
@@ -1398,9 +1399,7 @@ def _build_storage_instance(
     updated_date_iso: str,  # noqa: ARG001  invalidates cache when storage row changes
 ) -> AbstractCloudStorage:
     credentials = Credentials()
-    credentials.convert_from_db(
-        {"type": credentials_type, "value": credentials_value}
-    )
+    credentials.convert_from_db({"type": credentials_type, "value": credentials_value})
     return get_cloud_storage_instance(
         cloud_provider=cloud_provider,
         resource=resource,
