@@ -53,7 +53,7 @@ export default function ProjectsPageComponent(): JSX.Element {
 
     const updatedQuery = useResourceQuery<ProjectsQuery>(query, { pageSize: 12 });
 
-    const { isMounted, setQuery } = usePageQuerySync({
+    const { setQuery } = usePageQuerySync({
         query,
         updatedQuery,
         onFetch: (fetchQuery: ProjectsQuery) => {
@@ -74,21 +74,21 @@ export default function ProjectsPageComponent(): JSX.Element {
             <TopBarComponent
                 onApplySearch={(search: string | null) => {
                     setQuery({
-                        ...query,
+                        ...updatedQuery,
                         search,
                         page: 1,
                     });
                 }}
                 onApplyFilter={(filter: string | null) => {
                     setQuery({
-                        ...query,
+                        ...updatedQuery,
                         filter,
                         page: 1,
                     });
                 }}
                 onApplySorting={(sorting: string | null) => {
                     setQuery({
-                        ...query,
+                        ...updatedQuery,
                         sort: sorting,
                         page: 1,
                     });

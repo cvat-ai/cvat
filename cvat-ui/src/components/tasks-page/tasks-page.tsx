@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
-
 import './styles.scss';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
@@ -57,7 +55,7 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
 
     const updatedQuery = useResourceQuery<TasksQuery>(query);
 
-    const { isMounted, setQuery } = usePageQuerySync({
+    const { setQuery } = usePageQuerySync({
         query,
         updatedQuery,
         onFetch: (fetchQuery: TasksQuery) => {
@@ -82,7 +80,7 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
                         className='cvat-tasks-pagination'
                         onChange={(page: number, pageSize: number) => {
                             setQuery({
-                                ...query,
+                                ...updatedQuery,
                                 page,
                                 pageSize,
                             });
@@ -105,21 +103,21 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
             <TopBar
                 onApplySearch={(search: string | null) => {
                     setQuery({
-                        ...query,
+                        ...updatedQuery,
                         search,
                         page: 1,
                     });
                 }}
                 onApplyFilter={(filter: string | null) => {
                     setQuery({
-                        ...query,
+                        ...updatedQuery,
                         filter,
                         page: 1,
                     });
                 }}
                 onApplySorting={(sorting: string | null) => {
                     setQuery({
-                        ...query,
+                        ...updatedQuery,
                         sort: sorting,
                         page: 1,
                     });
