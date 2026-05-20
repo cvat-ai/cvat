@@ -20,6 +20,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+from attrs.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -544,6 +545,99 @@ class TestPostTaskData:
         kwargs = {"org_id": org_id} if org_id else {}
         create_task(self._USERNAME, task_spec, data_spec, **kwargs)
 
+    @pytest.mark.with_external_services
+    @pytest.mark.timeout(60)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)) is False,
+        reason="requires CVAT_ALLOW_STATIC_CACHE=true on the worker",
+    )
+    def test_cannot_create_task_with_cloud_storage_without_cache_when_server_file_is_missing(
+        self, cloud_storages
+    ):
+        cloud_storage = cloud_storages[1]
+        missing_key = "this_file_does_not_exist_for_full_download.png"
+
+        task_spec = {"name": "missing key, no cache", "labels": [{"name": "car"}]}
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": False,
+            "cloud_storage_id": cloud_storage["id"],
+            "server_files": [missing_key],
+        }
+
+        request_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+
+        message = request_details.message
+        assert "rest_framework.exceptions.NotFound" in message, message
+        assert f"The file '{missing_key}' not found" in message, message
+
+    @pytest.mark.with_external_services
+    @pytest.mark.timeout(60)
+    def test_can_create_task_with_cloud_storage_and_manifest_when_manifest_references_missing_file(
+        self, request, cloud_storages
+    ):
+        cloud_storage = cloud_storages[1]
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
+
+        prefix = "test_lying_manifest"
+        present_name = "01_present.png"
+        ghost_name = "02_ghost.png"
+        present_image = generate_image_file(filename=present_name)
+        present_image.seek(0)
+        s3_client.create_file(filename=f"{prefix}/{present_name}", data=present_image.getvalue())
+        request.addfinalizer(partial(s3_client.remove_file, filename=f"{prefix}/{present_name}"))
+
+        manifest_body = (
+            '{"version":"1.0"}\n'
+            '{"type":"images"}\n'
+            '{"name":"01_present","extension":".png","width":100,"height":50}\n'
+            '{"name":"02_ghost","extension":".png","width":100,"height":50}\n'
+        ).encode()
+        s3_client.create_file(filename=f"{prefix}/manifest.jsonl", data=manifest_body)
+        request.addfinalizer(partial(s3_client.remove_file, filename=f"{prefix}/manifest.jsonl"))
+
+        task_spec = {"name": "manifest lies", "labels": [{"name": "car"}]}
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage["id"],
+            "chunk_size": 1,
+            "server_files": [
+                f"{prefix}/{present_name}",
+                f"{prefix}/{ghost_name}",
+                f"{prefix}/manifest.jsonl",
+            ],
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
+
+        with make_api_client(self._USERNAME) as api_client:
+            task, _ = api_client.tasks_api.retrieve(task_id)
+
+        assert task.size == 2, task.size
+
+    @pytest.mark.with_external_services
+    @pytest.mark.timeout(60)
+    def test_cannot_create_task_with_cloud_storage_without_manifest_when_server_file_is_missing(
+        self, cloud_storages
+    ):
+        cloud_storage = cloud_storages[1]
+        missing_key = "this_file_does_not_exist_for_header_download.png"
+
+        task_spec = {"name": "missing key, cache, no manifest", "labels": [{"name": "car"}]}
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage["id"],
+            "server_files": [missing_key],
+        }
+
+        request_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+
+        message = request_details.message
+        assert "rest_framework.exceptions.NotFound" in message, message
+        assert f"The file '{missing_key}' not found" in message, message
+
     def _create_task_with_cloud_data(
         self,
         request,
@@ -801,7 +895,7 @@ class TestPostTaskData:
             ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2, ""),
             ("abc_manifest.jsonl", "[d]*.jpeg", False, 1, ""),
             ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0, "No media data found"),
-            (None, "*", True, 0, "Only one video, archive, pdf, zip"),
+            (None, "*", True, 0, "Only one video, audio, archive, pdf, zip"),
             (None, "test/*", True, 3, ""),
             (None, "test/sub*1.jpeg", True, 1, ""),
             (None, "*image*.jpeg", True, 3, ""),

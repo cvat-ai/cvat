@@ -35,11 +35,12 @@ from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.task import PatchAction
-from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.models import (
     Job,
     Label,
+    MediaType,
     RequestAction,
     RequestTarget,
     ShapeType,
@@ -1300,6 +1301,9 @@ class FunctionViewSet(viewsets.ViewSet):
                 code=status.HTTP_400_BAD_REQUEST,
             )
 
+        if db_task.media_type == MediaType.AUDIO:
+            raise serializers.ValidationError("Auto-annotation is not available in audio tasks")
+
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
@@ -1417,6 +1421,9 @@ class RequestViewSet(viewsets.ViewSet):
                 + "with wrong arguments ({})".format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST,
             )
+
+        if Task.objects.get(pk=task).media_type == MediaType.AUDIO:
+            raise serializers.ValidationError("Auto-annotation is not available in audio tasks")
 
         gateway = LambdaGateway()
         queue = LambdaQueue()

@@ -175,7 +175,7 @@ class TestAccessTokenListFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.auth_api.list_access_tokens_endpoint
 
-    @pytest.mark.parametrize("field", ("name",))
+    @pytest.mark.parametrize("field", ("name", "read_only"))
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
 

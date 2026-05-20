@@ -55,7 +55,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                         const parsedSettings = JSON.parse(currentSettings);
                         delete parsedSettings.shortcuts;
                         localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
-                    } catch (error) {
+                    } catch (_error) {
                         localStorage.removeItem('clientSettings');
                     }
                 }

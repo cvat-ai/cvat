@@ -12,8 +12,8 @@ context('Zooming onto an annotation must not scale issue text size', () => {
     const shapeSelector = '#cvat_canvas_shape_1';
     const issueRegionSelector = '.cvat_canvas_issue_region';
 
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     before(() => {
         cy.visit('/auth/login');
@@ -32,8 +32,8 @@ context('Zooming onto an annotation must not scale issue text size', () => {
             use_cache: true,
             sorting_method: 'lexicographical',
         }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
 
             cy.headlessCreateObjects([{
                 objectType: 'shape',
@@ -41,19 +41,19 @@ context('Zooming onto an annotation must not scale issue text size', () => {
                 frame: 0,
                 type: 'rectangle',
                 points: [200, 200, 400, 400],
-            }], jobID);
+            }], jobId);
 
-            cy.headlessUpdateJob(jobID, { stage: 'validation', state: 'in progress' });
+            cy.headlessUpdateJob(jobId, { stage: 'validation', state: 'in progress' });
 
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
             cy.get('.cvat-spinner').should('not.exist');
         });
     });
 
     after(() => {
-        if (taskID) {
-            cy.headlessDeleteTask(taskID);
+        if (taskId) {
+            cy.headlessDeleteTask(taskId);
         }
         cy.logout();
     });

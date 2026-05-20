@@ -39,7 +39,17 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
     const isCardMenu = !dropdownTrigger;
 
     const downloadable = (_request: Request): boolean => !!_request.url && !cancelled[_request.id];
-    const cancelable = (_request: Request): boolean => _request.status === RQStatus.QUEUED && !cancelled[_request.id];
+    const cancelable = (_request: Request): boolean => {
+        const {
+            status,
+            operation: { type },
+        } = _request;
+
+        return (
+            !cancelled[_request.id] &&
+            (status === RQStatus.QUEUED || (status === RQStatus.STARTED && type.startsWith('export:')))
+        );
+    };
 
     let requestsToAct: Request[];
     if (isCardMenu && !downloadable(requestInstance) && !cancelable(requestInstance)) {

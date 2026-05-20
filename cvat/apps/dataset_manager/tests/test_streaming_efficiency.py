@@ -385,7 +385,9 @@ class TestImporters(ApiTestBase):
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -398,7 +400,7 @@ class TestImporters(ApiTestBase):
         with ForceLogin(self.user, self.client):
             return get_paginated_collection(
                 lambda page: self.client.get(
-                    "/api/jobs?task_id=%s&page=%s" % (tid, page), format="json"
+                    "/api/jobs", query_params={"task_id": tid, "page": page}, format="json"
                 )
             )
 

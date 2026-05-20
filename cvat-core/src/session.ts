@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
-
 import { ChunkQuality } from 'cvat-data';
 import {
     ChunkType, DimensionType, HistoryActions, JobStage,
@@ -40,7 +38,7 @@ function buildDuplicatedAPI(prototype) {
                     useDefaultLocation: boolean,
                     sourceStorage: Storage,
                     file: File | string,
-                    options?: { convMaskToPoly?: boolean },
+                    options?: { convMaskToPoly?: boolean, importMode?: 'replace' | 'append' },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -388,6 +386,7 @@ export class Session {
             file: File | string,
             options?: {
                 convMaskToPoly?: boolean,
+                importMode?: 'replace' | 'append',
                 updateStatusCallback?: (s: string, n: number) => void,
             },
         ) => Promise<string>;
@@ -794,7 +793,7 @@ export class Task extends Session {
     public assignee: User | null;
     public bugTracker: string;
     public subset: string;
-    public labels: Label[];
+    public readonly labels: Label[];
     public sourceStorage: Storage;
     public targetStorage: Storage;
     public readonly guideId: number | null;
@@ -1075,49 +1074,6 @@ export class Task extends Session {
                 },
                 labels: {
                     get: () => [...data.labels],
-                    set: (labels: Label[]) => {
-                        if (!Array.isArray(labels)) {
-                            throw new ArgumentError('Value must be an array of Labels');
-                        }
-
-                        if (!Array.isArray(labels) || labels.some((label) => !(label instanceof Label))) {
-                            throw new ArgumentError(
-                                'Each array value must be an instance of Label',
-                            );
-                        }
-
-                        const oldIDs = data.labels.map((_label) => _label.id);
-                        const newIDs = labels.map((_label) => _label.id);
-
-                        // find any deleted labels and mark them
-                        data.labels.filter((_label) => !newIDs.includes(_label.id))
-                            .forEach((_label) => {
-                                // for deleted labels let's specify that they are deleted
-                                _label.deleted = true;
-                            });
-
-                        // find any patched labels and mark them
-                        labels.forEach((_label) => {
-                            const { id } = _label;
-                            if (oldIDs.includes(id)) {
-                                const oldLabelIndex = data.labels.findIndex((__label) => __label.id === id);
-                                if (oldLabelIndex !== -1) {
-                                    // replace current label by the patched one
-                                    const oldLabel = data.labels[oldLabelIndex];
-                                    data.labels.splice(oldLabelIndex, 1, _label);
-                                    if (!_.isEqual(_label.toJSON(), oldLabel.toJSON())) {
-                                        _label.patched = true;
-                                    }
-                                }
-                            }
-                        });
-
-                        // find new labels to append them to the end
-                        const newLabels = labels.filter((_label) => !Number.isInteger(_label.id));
-                        data.labels = [...data.labels, ...newLabels];
-
-                        updateTrigger.update('labels');
-                    },
                 },
                 jobs: {
                     get: () => [...(data.jobs || [])],
@@ -1209,6 +1165,7 @@ export class Task extends Session {
             clientFiles?: File[];
             serverFiles?: string[];
             remoteFiles?: string[];
+            labels?: Label[];
         },
         options?: { updateStatusCallback?: (updateData: Request | UpdateStatusData) => void },
     ): Promise<Task> {

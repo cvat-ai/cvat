@@ -14,6 +14,7 @@ Check out:
 - [User registration](#user-registration)
 - [User registration with social accounts](#user-registration-with-social-accounts)
 - [Account access](#account-access)
+- [Update profile information](#update-profile-information)
 - [Password reset](#password-reset)
 - [Change password](#change-password)
 
@@ -61,6 +62,17 @@ To access your account:
 
 To log in with Google or GitHub, select the button with the service name.
 
+## Update profile information
+
+To update your profile information:
+
+1. Log in to your CVAT account.
+1. In the top right corner, select the username.
+1. Select **Profile**.
+1. On the **Profile** tab, update the **First Name**, **Last Name**,
+   or **Username** fields.
+1. Select **Save changes**.
+
 ## Password reset
 
 To reset password:
@@ -82,7 +94,8 @@ To change password:
 
 1. Log in to your CVAT account.
 1. In the top right corner, select the username.
-1. Select **Change password**.
-1. Follow the instructions on the screen.
+1. Select **Profile**.
+1. Open the **Security** tab.
+1. Select **Change password** and follow the instructions on the screen.
 
-   ![Reset password](/images/change_password.jpg)
+   ![Reset password](/images/change_password.png)

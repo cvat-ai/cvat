@@ -49,6 +49,7 @@ export enum RQStatus {
     QUEUED = 'queued',
     STARTED = 'started',
     FINISHED = 'finished',
+    CANCELED = 'canceled',
     FAILED = 'failed',
     UNKNOWN = 'unknown',
 }

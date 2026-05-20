@@ -137,6 +137,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         await dispatch(makeBulkOperationAsync(
             tasksToUpdate,
             async (task) => {
+                // eslint-disable-next-line no-param-reassign
                 task.assignee = assignee;
                 if (onUpdateTask && task.id === taskInstance.id) {
                     onUpdateTask(task);
@@ -190,6 +191,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             dispatch(makeBulkOperationAsync(
                 tasksToUpdate,
                 async (task) => {
+                    // eslint-disable-next-line no-param-reassign
                     task.organizationId = newOrganization?.id ?? null;
                     await dispatch(updateTaskAsync(task, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
                 },
