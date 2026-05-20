@@ -42,9 +42,10 @@ export function logError(
             stack: error.stack,
             ...extras,
         };
+
         if ('code' in error && typeof error.code === 'number') {
             payload.code = error.code;
-            if (error.code === 0) {
+            if (error.code === 0 && 'onLine' in navigator) {
                 payload.is_online = navigator.onLine;
             }
         }
