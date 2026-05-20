@@ -1236,7 +1236,7 @@ Cypress.Commands.add('addNewSkeletonLabel', ({ name, points }) => {
 
         cy.get('.cvat-skeleton-configurator-svg').within(() => {
             cy.get('circle').then(($circles) => {
-                expect($circles.length).to.be.equal(5);
+                expect($circles.length).to.be.equal(points.length);
                 $circles.each(function (i) {
                     const circle1 = this;
                     $circles.each(function (j) {
@@ -1828,7 +1828,6 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
 });
 
 Cypress.Commands.add('hideTooltips', () => {
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500); // FIXME: wait while tooltips are opened
 
     cy.document().then((doc) => {

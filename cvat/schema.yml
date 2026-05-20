@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.64.1
+  version: 2.65.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -3105,6 +3105,7 @@ paths:
           - polyline
           - rectangle
           - skeleton
+          - interval
           - tag
       tags:
       - labels
@@ -8604,6 +8605,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -8658,6 +8660,7 @@ components:
       - polyline
       - rectangle
       - skeleton
+      - interval
       - tag
       type: string
       description: |-
@@ -8670,6 +8673,7 @@ components:
         * `polyline` - POLYLINE
         * `rectangle` - RECTANGLE
         * `skeleton` - SKELETON
+        * `interval` - INTERVAL
         * `tag` - TAG
     LabeledData:
       type: object
@@ -8692,6 +8696,11 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrack'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledInterval'
+          default: []
     LabeledDataRequest:
       type: object
       properties:
@@ -8712,6 +8721,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
+          default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
           default: []
     LabeledImage:
       type: object
@@ -8770,6 +8784,85 @@ components:
       required:
       - frame
       - label_id
+    LabeledInterval:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+          default: 0
+        source:
+          type: string
+          default: manual
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
+      required:
+      - label_id
+      - start
+      - stop
+    LabeledIntervalRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+          default: 0
+        source:
+          type: string
+          minLength: 1
+          default: manual
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
+      required:
+      - label_id
+      - start
+      - stop
     LabeledShape:
       type: object
       properties:
@@ -9797,6 +9890,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -9824,6 +9918,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
+          default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
           default: []
     PatchedMembershipWriteRequest:
       type: object
@@ -11163,6 +11262,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11217,6 +11317,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11688,7 +11789,6 @@ components:
             The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
       required:
-      - frame_selection_method
       - mode
     WebhookContentType:
       enum:

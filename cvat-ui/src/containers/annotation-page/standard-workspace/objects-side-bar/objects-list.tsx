@@ -30,6 +30,7 @@ import {
     ActiveControl,
 } from 'reducers';
 import { ObjectState, ObjectType, ShapeType } from 'cvat-core-wrapper';
+import { RenderData } from 'cvat-canvas-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
@@ -45,6 +46,7 @@ interface StateToProps {
     collapsedStates: Record<number, boolean>;
     objectStates: ObjectState[];
     annotationsFilters: any[];
+    renderData: RenderData;
     colors: string[];
     colorBy: ColorBy;
     activatedStateID: number | null;
@@ -206,6 +208,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: objectStates,
                 filters: annotationsFilters,
+                renderData,
                 collapsed,
                 collapsedAll,
                 activatedStateID,
@@ -257,6 +260,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameNumber,
         jobInstance,
         annotationsFilters,
+        renderData,
         colors,
         colorBy,
         activatedStateID,
@@ -600,6 +604,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             switchSimplifyVisibility,
             changeFrame,
             workspace,
+            renderData,
         } = this.props;
         const {
             objectStates, sortedStatesID, statesOrdering, filteredStates,
@@ -813,6 +818,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}
+                    visibleSkeletonElements={renderData.visibleSkeletonElements}
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}

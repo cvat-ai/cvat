@@ -39,6 +39,7 @@ import { toClipboard } from 'utils/to-clipboard';
 interface OwnProps {
     clientID: number;
     objectStates: ObjectState[];
+    visibleSkeletonElements?: Record<number, number[]>;
     allowSimplifyLifecycle?: boolean;
     zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
     zLayerDragging?: boolean;
@@ -165,7 +166,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     labels: Label[];
-    elements: number[];
     simplifyMode: boolean;
     approxPolyAccuracy: number;
     originalPoints: number[] | null;
@@ -177,7 +177,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             labels: props.labels,
-            elements: props.objectState.elements.map((el: ObjectState) => el.clientID as number),
             simplifyMode: false,
             approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             originalPoints: null,
@@ -561,7 +560,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const {
-            labels, elements, simplifyMode, approxPolyAccuracy,
+            labels, simplifyMode, approxPolyAccuracy,
         } = this.state;
         const {
             objectState,
@@ -573,7 +572,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             jobInstance,
             zLayerDragProps,
             zLayerDragging,
+            visibleSkeletonElements = {},
         } = this.props;
+        const elements = visibleSkeletonElements[objectState.clientID as number] ??
+            objectState.elements.map((el: ObjectState) => el.clientID as number);
 
         return (
             <>

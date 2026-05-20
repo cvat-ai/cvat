@@ -14,9 +14,18 @@ Cypress.Commands.add('checkFiltersModalOpened', () => {
     });
 });
 
-Cypress.Commands.add('collectGroupId', () => {
+function getFilterBuilder(target = 'objects') {
+    return cy.get('.cvat-filters-modal-visible .query-builder-container')
+        .eq(target === 'elements' ? 1 : 0);
+}
+
+function getFilterGroup(groupId, target = 'objects') {
+    return getFilterBuilder(target).find(`.group[data-id="${groupId}"]`).first();
+}
+
+Cypress.Commands.add('collectGroupId', (target = 'objects') => {
     const groupDataId = [];
-    cy.get('.group').then(($group) => {
+    getFilterBuilder(target).find('.group').then(($group) => {
         for (let i = 0; i < $group.length; i++) {
             groupDataId.push($group[i].dataset.id);
         }
@@ -24,9 +33,9 @@ Cypress.Commands.add('collectGroupId', () => {
     });
 });
 
-Cypress.Commands.add('collectRuleId', () => {
+Cypress.Commands.add('collectRuleId', (target = 'objects') => {
     const ruleDataId = [];
-    cy.get('.rule').then(($rule) => {
+    getFilterBuilder(target).find('.rule').then(($rule) => {
         for (let i = 0; i < $rule.length; i++) {
             ruleDataId.push($rule[i].dataset.id);
         }
@@ -41,24 +50,31 @@ Cypress.Commands.add('clearFilters', () => {
     cy.get('.cvat-filters-modal').should('not.exist');
 });
 
-Cypress.Commands.add('addFiltersGroup', (groupIndex) => {
+Cypress.Commands.add('addFiltersGroup', (groupIndex, target = 'objects') => {
     cy.checkFiltersModalOpened();
-    cy.collectGroupId().then((groupIdIndex) => {
-        cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).contains('button', 'Add group').first().click();
+    cy.collectGroupId(target).then((groupIdIndex) => {
+        getFilterGroup(groupIdIndex[groupIndex], target)
+            .contains('button', 'Add group')
+            .first()
+            .click();
     });
 });
 
-Cypress.Commands.add('addFiltersRule', (groupIndex) => {
+Cypress.Commands.add('addFiltersRule', (groupIndex, target = 'objects') => {
     cy.checkFiltersModalOpened();
-    cy.collectGroupId().then((groupIdIndex) => {
-        cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).contains('button', 'Add rule').click();
+    cy.collectGroupId(target).then((groupIdIndex) => {
+        getFilterGroup(groupIdIndex[groupIndex], target).then(($group) => {
+            const addRuleButton = Array.from($group[0].querySelectorAll('button'))
+                .find((button) => ['Add rule', 'Add sub rule'].includes(button.textContent.trim()));
+            cy.wrap(addRuleButton).click();
+        });
     });
 });
 
-Cypress.Commands.add('setGroupCondition', (groupIndex, condition) => {
+Cypress.Commands.add('setGroupCondition', (groupIndex, condition, target = 'objects') => {
     cy.checkFiltersModalOpened();
-    cy.collectGroupId().then((groupIdIndex) => {
-        cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).first().within(() => {
+    cy.collectGroupId(target).then((groupIdIndex) => {
+        getFilterGroup(groupIdIndex[groupIndex], target).within(() => {
             cy.get('.group--header').first().trigger('mouseover');
             cy.contains('button', condition).click({ force: true });
         });
@@ -68,17 +84,21 @@ Cypress.Commands.add('setGroupCondition', (groupIndex, condition) => {
 Cypress.Commands.add(
     'setFilter',
     ({
-        groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit,
+        groupIndex, ruleIndex, field, operator, valueSource, value, label, labelAttr, submit, target = 'objects',
     }) => {
         cy.checkFiltersModalOpened();
-        cy.collectGroupId().then((groupIdIndex) => {
-            cy.collectRuleId().then((ruleIdIndex) => {
-                cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
-                    .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
-                    .first()
-                    .within(() => {
-                        cy.contains('button', 'Select field').click();
-                    });
+        cy.collectGroupId(target).then((groupIdIndex) => {
+            cy.collectRuleId(target).then((ruleIdIndex) => {
+                const getRule = () => {
+                    const group = getFilterGroup(groupIdIndex[groupIndex], target);
+                    return target === 'elements' ?
+                        group.find('.rule').eq(ruleIndex) :
+                        group.find(`[data-id="${ruleIdIndex[ruleIndex]}"]`).first();
+                };
+
+                getRule().within(() => {
+                    cy.contains('button', 'Select field').click();
+                });
                 if (field === 'Attributes') {
                     cy.get('.ant-dropdown')
                         .not('.ant-dropdown-hidden')
@@ -89,38 +109,34 @@ Cypress.Commands.add(
                 } else {
                     cy.get('.ant-dropdown').not('.ant-dropdown-hidden').contains('[role="menuitem"]', field).click();
                 }
-                cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
-                    .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
-                    .first()
-                    .within(() => {
-                        cy.get('[type="search"]').first().click({ force: true });
-                    });
+                if (field === 'Elements') {
+                    return;
+                }
+                getRule().within(() => {
+                    cy.get('[type="search"]').first().click({ force: true });
+                });
                 cy.get(`[label="${operator}"]`).last().click();
                 if (valueSource) {
-                    cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
-                        .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
-                        .first()
-                        .within(() => {
-                            cy.get('[aria-label="ellipsis"]').trigger('mouseover');
-                        });
+                    getRule().within(() => {
+                        cy.get('[aria-label="ellipsis"]').trigger('mouseover');
+                    });
                     cy.contains('Select value source').parents('[role="tooltip"]').contains(valueSource).click();
                 }
-                cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
-                    .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
-                    .first()
-                    .within(() => {
-                        if (field === 'Attributes') {
-                            cy.get('[placeholder="Enter string"]').last().type(`${value}{Enter}`);
-                        } else if (!valueSource) {
-                            if (field === 'ObjectID' || field === 'Width' || field === 'Height' || field === 'Rotation') {
-                                cy.get('[placeholder="Enter number"]').type(`${value}{Enter}`);
-                            } else {
-                                cy.get('[type="search"]').last().type(`${value}{Enter}`);
-                            }
+                getRule().within(() => {
+                    if (field === 'Attributes') {
+                        cy.get('[placeholder="Enter string"]').last().type(`${value}{Enter}`);
+                    } else if (!valueSource) {
+                        if (field === 'ObjectID' || field === 'Width' || field === 'Height' || field === 'Rotation') {
+                            cy.get('[placeholder="Enter number"]').type(`${value}{Enter}`);
+                        } else if (field === 'Occluded' && value === 'true') {
+                            cy.get('.ant-switch').click();
                         } else {
-                            cy.contains('[type="button"]', 'Select field ').click();
+                            cy.get('[type="search"]').last().type(`${value}{Enter}`);
                         }
-                    });
+                    } else {
+                        cy.contains('[type="button"]', 'Select field ').click();
+                    }
+                });
                 if (valueSource) {
                     cy.get('.ant-dropdown').not('.ant-dropdown-hidden').contains('[role="menuitem"]', value).click();
                 }

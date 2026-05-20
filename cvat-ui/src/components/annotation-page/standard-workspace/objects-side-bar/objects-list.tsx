@@ -89,6 +89,7 @@ interface Props {
     statesOrdering: StatesOrdering;
     sortedStatesID: number[];
     objectStates: ObjectState[];
+    visibleSkeletonElements: Record<number, number[]>;
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
     showGroundTruth: boolean;
@@ -110,10 +111,13 @@ interface DraggableObjectItemProps {
     objectStates: ObjectState[];
     clientID: number;
     draggable: boolean;
+    visibleSkeletonElements: Record<number, number[]>;
 }
 
 function DraggableObjectItem(props: DraggableObjectItemProps): JSX.Element {
-    const { objectStates, clientID, draggable } = props;
+    const {
+        objectStates, clientID, draggable, visibleSkeletonElements,
+    } = props;
     const {
         attributes, listeners, setNodeRef, transform, isDragging,
     } = useDraggable({
@@ -135,6 +139,7 @@ function DraggableObjectItem(props: DraggableObjectItemProps): JSX.Element {
             <ObjectItemContainer
                 objectStates={objectStates}
                 clientID={clientID}
+                visibleSkeletonElements={visibleSkeletonElements}
                 allowSimplifyLifecycle
                 zLayerDragging={isDragging}
                 zLayerDragProps={draggable ? {} : undefined}
@@ -199,13 +204,14 @@ interface ZLayerSectionProps {
     zOrder: number;
     objectIDs: number[];
     objectStates: ObjectState[];
+    visibleSkeletonElements: Record<number, number[]>;
     collapsed: boolean;
     toggleLayerCollapsed(zOrder: number): void;
 }
 
 function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
     const {
-        zOrder, objectIDs, objectStates, collapsed, toggleLayerCollapsed,
+        zOrder, objectIDs, objectStates, visibleSkeletonElements, collapsed, toggleLayerCollapsed,
     } = props;
     const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
 
@@ -227,6 +233,7 @@ function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
                         key={id}
                         objectStates={objectStates}
                         clientID={id}
+                        visibleSkeletonElements={visibleSkeletonElements}
                         draggable={object?.objectType !== ObjectType.TAG}
                     />
                 );
@@ -278,6 +285,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesOrdering,
         sortedStatesID,
         objectStates,
+        visibleSkeletonElements,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
         showGroundTruth,
@@ -432,6 +440,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                             zOrder={zOrder}
                                             objectIDs={zLayerIDs[zOrder] || []}
                                             objectStates={objectStates}
+                                            visibleSkeletonElements={visibleSkeletonElements}
                                             collapsed={collapsedZLayers.includes(zOrder)}
                                             toggleLayerCollapsed={toggleLayerCollapsed}
                                         />
@@ -448,6 +457,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                         key={id}
                         objectStates={objectStates}
                         clientID={id}
+                        visibleSkeletonElements={visibleSkeletonElements}
                         allowSimplifyLifecycle
                     />
                 ))}

@@ -19,7 +19,9 @@ import {
     ColorBy, GridColor, Workspace, ActiveControl, CombinedState,
 } from 'reducers';
 import { EventScope } from 'cvat-logger';
-import { Canvas, HighlightSeverity, CanvasHint } from 'cvat-canvas-wrapper';
+import {
+    Canvas, HighlightSeverity, CanvasHint, RenderData,
+} from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     AnnotationConflict, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
@@ -80,6 +82,7 @@ interface StateToProps {
     activatedElementID: number | null;
     activatedAttributeID: number | null;
     annotations: ObjectState[];
+    renderData: RenderData;
     frameData: any;
     frameAngle: number;
     canvasIsReady: boolean;
@@ -177,6 +180,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedAttributeID,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
                 highlightedConflict,
+                renderData,
             },
             workspace,
         },
@@ -226,6 +230,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedElementID,
         activatedAttributeID,
         annotations,
+        renderData,
         opacity: opacity / 100,
         colorBy,
         selectedOpacity: selectedOpacity / 100,
@@ -496,6 +501,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             highlightedConflict,
             imageFilters,
             focusedObjectPadding,
+            renderData,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -603,7 +609,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (
             prevProps.annotations !== annotations ||
             prevProps.frameData !== frameData ||
-            prevProps.curZLayer !== curZLayer
+            prevProps.curZLayer !== curZLayer ||
+            prevProps.renderData !== renderData
         ) {
             this.updateCanvas();
         } else if (prevProps.imageFilters !== imageFilters) {
@@ -1002,7 +1009,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private updateCanvas(): void {
         const {
             curZLayer, annotations, frameData,
-            workspace, frame, imageFilters,
+            workspace, frame, imageFilters, renderData,
         } = this.props;
 
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
@@ -1058,6 +1065,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 proxy,
                 frameData.deleted ? [] : filteredAnnotations,
                 curZLayer,
+                renderData,
             );
             canvasInstance.configure({ forceFrameUpdate: false });
         }
