@@ -5,17 +5,15 @@
 
 const fs = require('fs');
 const path = require('path');
-const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const ExecScriptsPlugin = require('./exec-scripts-webpack-plugin.cjs');
 
-module.exports = (env) => {
-    const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
-    const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
-    const sourceMapsDisabled = (process.env.DISABLE_SOURCE_MAPS || 'false').toLocaleLowerCase() === 'true';
-    const sourceMapsToken = process.env.SOURCE_MAPS_TOKEN || '';
+module.exports = (env, argv = {}) => {
+    const isDevMode = argv.mode === 'development' || process.env.WEBPACK_SERVE === 'true';
+    const sourceMapsEnabled = isDevMode ||
+        (process.env.SOURCE_MAPS_ENABLED || 'false').toLocaleLowerCase() === 'true';
 
     const defaultPlugins = ['plugins/sam'];
     const plugins = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
@@ -37,7 +35,7 @@ module.exports = (env) => {
         return true;
     });
 
-    console.log('Source maps: ', sourceMapsDisabled ? 'disabled' : 'enabled');
+    console.log('Source maps: ', sourceMapsEnabled ? 'enabled' : 'disabled');
     console.log('Plugins:');
     for (const { entrypoint } of pluginPaths) {
         console.log(`- ${entrypoint}`);
@@ -47,8 +45,8 @@ module.exports = (env) => {
     const port = process.env.CVAT_UI_PORT ?? 3000;
     return {
         target: 'web',
-        mode: 'production',
-        devtool: sourceMapsDisabled ? false : 'source-map',
+        mode: isDevMode ? 'development' : 'production',
+        devtool: sourceMapsEnabled ? (isDevMode ? 'source-map' : 'hidden-source-map') : false,
         entry: {
             'cvat-ui': './src/index.tsx',
             ...pluginPaths.reduce((acc, { entrypoint }, index) => ({
@@ -104,8 +102,6 @@ module.exports = (env) => {
                 fs: false,
             },
             alias: {
-                config$: appConfigFile,
-
                 // when import svg modules
                 // the loader transforms their to modules with JSX code
                 // and adds 'import React from "react";'
@@ -228,10 +224,6 @@ module.exports = (env) => {
                     },
                 ],
             }),
-            ...(!sourceMapsDisabled && sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
-                append: '\n',
-                filename: `${sourceMapsToken}/[file].map`,
-            })] : []),
         ],
     }
 };

@@ -41,19 +41,28 @@ function UserInfoCard(): JSX.Element {
 
     const onFinish = async (values: ProfileFormValues): Promise<void> => {
         const currentEditableValues = {
+            username: values.username,
             firstName: values.firstName,
             lastName: values.lastName,
         };
         const initialEditableValues = {
+            username: initialValues.username,
             firstName: initialValues.firstName,
             lastName: initialValues.lastName,
         };
-        const hasFormChanges = !isEqual(currentEditableValues, initialEditableValues);
-        if (user && hasFormChanges) {
-            await dispatch(updateUserAsync(user, {
-                firstName: values.firstName,
-                lastName: values.lastName,
-            }));
+        if (user && !isEqual(currentEditableValues, initialEditableValues)) {
+            const updatedFields: Parameters<typeof user.save>[0] = {};
+            if (values.username !== initialValues.username) {
+                updatedFields.username = values.username;
+            }
+            if (values.firstName !== initialValues.firstName) {
+                updatedFields.firstName = values.firstName;
+            }
+            if (values.lastName !== initialValues.lastName) {
+                updatedFields.lastName = values.lastName;
+            }
+
+            await dispatch(updateUserAsync(user, updatedFields));
         }
     };
 
@@ -97,7 +106,7 @@ function UserInfoCard(): JSX.Element {
                     name='username'
                     rules={validationRules.userName}
                 >
-                    <Input disabled />
+                    <Input />
                 </Form.Item>
 
                 <Form.Item>

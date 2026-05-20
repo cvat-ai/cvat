@@ -97,13 +97,13 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
             if (state.shapeType === ShapeType.CUBOID && state.points) {
                 const points = state.points.slice();
                 switch (type) {
-                    case SizeType.WIDTH:
+                    case SizeType.LENGTH:
                         points[6] = value;
                         break;
-                    case SizeType.HEIGHT:
+                    case SizeType.WIDTH:
                         points[7] = value;
                         break;
-                    case SizeType.LENGTH:
+                    case SizeType.HEIGHT:
                         points[8] = value;
                         break;
                     default:
@@ -130,9 +130,9 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
 
             if (state.shapeType === ShapeType.CUBOID && workspace === Workspace.STANDARD3D && state.points) {
                 sizeParams = {
-                    width: parseFloat(state.points[6].toFixed(2)), // X
-                    height: parseFloat(state.points[7].toFixed(2)), // Y
-                    length: parseFloat(state.points[8].toFixed(2)), // Z
+                    length: parseFloat(state.points[6].toFixed(2)), // X
+                    width: parseFloat(state.points[7].toFixed(2)), // Y
+                    height: parseFloat(state.points[8].toFixed(2)), // Z
                 };
             }
             return (

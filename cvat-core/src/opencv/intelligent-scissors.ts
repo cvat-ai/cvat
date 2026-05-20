@@ -176,12 +176,10 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         return [...state.contour];
     }
 
-    // eslint-disable-next-line class-methods-use-this
     public get type(): string {
         return 'opencv_intelligent_scissors';
     }
 
-    // eslint-disable-next-line class-methods-use-this
     public get params(): IntelligentScissorsParams {
         return {
             shape: {

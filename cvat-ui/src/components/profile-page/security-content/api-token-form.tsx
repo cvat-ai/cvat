@@ -43,7 +43,7 @@ function ApiTokenForm({
                 expiryDate: values.expirationDate ? values.expirationDate.toISOString() : null,
                 readOnly: values.isReadOnly,
             });
-        } catch (error) {
+        } catch (_error) {
             // Form validation failed
         }
     };
