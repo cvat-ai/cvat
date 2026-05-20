@@ -20,7 +20,12 @@ services:
         CLAM_AV:
         CVAT_DEBUG_ENABLED:
         COVERAGE_PROCESS_START:
+    # py-spy attaches via ptrace; debug containers need the capability.
+    cap_add:
+      - SYS_PTRACE
     environment:
+      # See cvat_worker_export below for the rationale.
+      NUMPROCS: 1
       # Use this with CVAT_DEBUG_ENABLED to avoid server response timeouts
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9090'
@@ -32,10 +37,11 @@ services:
 
   cvat_worker_export:
     environment:
-      # For debugging, make sure to set 1 process
-      # Due to the supervisord specifics, the extra processes will fail and
-      # after few attempts supervisord will give up restarting, leaving only 1 process
-      # NUMPROCS: 1
+      # For debugging, force 1 process. Multiple supervisord-managed processes
+      # confuse debuggers (debugpy port conflicts) and py-spy (one PID per
+      # target). The extra processes also fail and supervisord gives up
+      # restarting them.
+      NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9092'
       COVERAGE_PROCESS_START:
@@ -43,11 +49,15 @@ services:
       - '9092:9092'
 
   cvat_worker_import:
+    # py-spy attaches via ptrace; the worker container needs the capability.
+    cap_add:
+      - SYS_PTRACE
     environment:
-      # For debugging, make sure to set 1 process
-      # Due to the supervisord specifics, the extra processes will fail and
-      # after few attempts supervisord will give up restarting, leaving only 1 process
-      # NUMPROCS: 1
+      # For debugging, force 1 process. Multiple supervisord-managed processes
+      # confuse debuggers (debugpy port conflicts) and py-spy (one PID per
+      # target). The extra processes also fail and supervisord gives up
+      # restarting them.
+      NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9093'
       COVERAGE_PROCESS_START:
@@ -56,10 +66,11 @@ services:
 
   cvat_worker_quality_reports:
     environment:
-      # For debugging, make sure to set 1 process
-      # Due to the supervisord specifics, the extra processes will fail and
-      # after few attempts supervisord will give up restarting, leaving only 1 process
-      # NUMPROCS: 1
+      # For debugging, force 1 process. Multiple supervisord-managed processes
+      # confuse debuggers (debugpy port conflicts) and py-spy (one PID per
+      # target). The extra processes also fail and supervisord gives up
+      # restarting them.
+      NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9094'
       COVERAGE_PROCESS_START:
@@ -68,10 +79,11 @@ services:
 
   cvat_worker_consensus:
     environment:
-      # For debugging, make sure to set 1 process
-      # Due to the supervisord specifics, the extra processes will fail and
-      # after few attempts supervisord will give up restarting, leaving only 1 process
-      # NUMPROCS: 1
+      # For debugging, force 1 process. Multiple supervisord-managed processes
+      # confuse debuggers (debugpy port conflicts) and py-spy (one PID per
+      # target). The extra processes also fail and supervisord gives up
+      # restarting them.
+      NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9096'
       COVERAGE_PROCESS_START:
@@ -80,15 +92,29 @@ services:
 
   cvat_worker_annotation:
     environment:
-      # For debugging, make sure to set 1 process
-      # Due to the supervisord specifics, the extra processes will fail and
-      # after few attempts supervisord will give up restarting, leaving only 1 process
-      # NUMPROCS: 1
+      # For debugging, force 1 process. Multiple supervisord-managed processes
+      # confuse debuggers (debugpy port conflicts) and py-spy (one PID per
+      # target). The extra processes also fail and supervisord gives up
+      # restarting them.
+      NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9091'
       COVERAGE_PROCESS_START:
     ports:
       - '127.0.0.1:9091:9091'
+
+  cvat_worker_chunks:
+    environment:
+      # For debugging, force 1 process. Multiple supervisord-managed processes
+      # confuse debuggers (debugpy port conflicts) and py-spy (one PID per
+      # target). The extra processes also fail and supervisord gives up
+      # restarting them.
+      NUMPROCS: 1
+      CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
+      CVAT_DEBUG_PORT: '9097'
+      COVERAGE_PROCESS_START:
+    ports:
+      - '127.0.0.1:9097:9097'
 
   cvat_ui:
     build:
@@ -119,3 +145,8 @@ services:
   cvat_vector:
     ports:
       - '127.0.0.1:8282:8282'
+
+networks:
+  cvat:
+    name: cvat-human-bridge
+    external: true

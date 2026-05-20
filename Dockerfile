@@ -176,7 +176,7 @@ COPY --from=build-image-av /opt/ffmpeg/lib /usr/lib
 # This library allows remote python debugging with VS Code
 ARG CVAT_DEBUG_ENABLED
 RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
-        python3 -m pip install --no-cache-dir debugpy; \
+        python3 -m pip install --no-cache-dir debugpy py-spy; \
     fi
 
 # Removing pip due to security reasons. See: https://scout.docker.com/vulnerabilities/id/CVE-2018-20225
