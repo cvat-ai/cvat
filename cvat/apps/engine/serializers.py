@@ -543,7 +543,7 @@ class LabelSerializer(SublabelSerializer):
 
         current_attribute_ids = {name: attr_id for attr_id, name in db_attributes.items()}
         swapped_attr_names = set()
-        busy_attr_names = set()
+        occupied_attr_names = set()
 
         for attr_id, attr_name in requested_attribute_names.items():
             current_attr_id = current_attribute_ids.get(attr_name)
@@ -555,14 +555,14 @@ class LabelSerializer(SublabelSerializer):
                 if current_name := db_attributes.get(attr_id):
                     swapped_attr_names.add(current_name)
             else:
-                busy_attr_names.add(attr_name)
+                occupied_attr_names.add(attr_name)
 
         if swapped_attr_names:
             attr_names = ", ".join(f'"{name}"' for name in swapped_attr_names)
             raise serializers.ValidationError(f"Cannot swap attribute names {attr_names}")
 
-        if busy_attr_names:
-            attr_names = ", ".join(f'"{name}"' for name in busy_attr_names)
+        if occupied_attr_names:
+            attr_names = ", ".join(f'"{name}"' for name in occupied_attr_names)
             raise serializers.ValidationError(
                 f"Attribute names are already used by this label: {attr_names}"
             )
