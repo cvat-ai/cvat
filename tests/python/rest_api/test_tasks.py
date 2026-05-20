@@ -1504,6 +1504,10 @@ class TestTaskBackups:
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
+    def test_can_export_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
+
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_mounted_share(self):
         task_spec = {
@@ -1664,6 +1668,10 @@ class TestTaskBackups:
         task = tasks[gt_job["task_id"]]
 
         self._test_can_restore_task_from_backup(task["id"])
+
+    def test_can_import_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
@@ -3677,6 +3685,42 @@ class TestImportTaskAnnotations:
             updated_annotations = json.loads(
                 api_client.tasks_api.retrieve_annotations(task["id"])[1].data
             )
+
+        assert (
+            compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}
+        )
+
+    def test_can_import_audio_tsv(self, tasks):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["media_type"] == "audio" and t.get("validation_mode") != "gt_pool"
+        )
+
+        format_name = "Generic TSV 1.0"
+
+        original_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
+
+        dataset_file = io.BytesIO(
+            export_dataset(
+                self.client.api_client.tasks_api,
+                id=task["id"],
+                format=format_name,
+                save_images=False,
+            )
+        )
+
+        with TemporaryDirectory() as temp_dir:
+            annotation_file = Path(temp_dir) / "annotations.tsv"
+            annotation_file.write_bytes(dataset_file.getvalue())
+            self.client.tasks.retrieve(task["id"]).import_annotations(format_name, annotation_file)
+
+        updated_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
 
         assert (
             compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}
