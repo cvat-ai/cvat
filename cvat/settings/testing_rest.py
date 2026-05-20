@@ -12,7 +12,7 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
-REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["anon"] = "300/minute"
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["anon"] = "100/minute"
 
 IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=30)
 
