@@ -384,6 +384,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
                     "Datumaro 3D 1.0",
+                    "DICOM 1.0",
                 ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -526,6 +527,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
                     "Datumaro 3D 1.0",
+                    "DICOM 1.0",
                 ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -999,6 +1001,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOTS PNG 1.0",  # issue #2925 and changed points values
                         "KITTI 1.0",  # format does not support empty annotation
                         "Cityscapes 1.0",  # formats doesn't support empty annotations
+                        "DICOM 1.0",  # importer ingests .dcm files, not CVAT-format zips
                     ]:
                         self.skipTest("Format is fail")
                     images = self._generate_task_images(3)
@@ -1029,6 +1032,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "MOTS PNG 1.0",  # issue #2925 and changed points values
                         "Cityscapes 1.0",  # expanding annotations due to background mask
+                        "DICOM 1.0",  # importer ingests .dcm files, no annotation round-trip
                     ]:
                         self.skipTest("Format is fail")
 
@@ -1165,6 +1169,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "KITTI 1.0",  # changed points values
                         "Cityscapes 1.0",  # changed points value
                         "Datumaro 3D 1.0",
+                        "DICOM 1.0",  # importer ingests .dcm files, no annotation round-trip
                     ]:
                         self.skipTest("Format is fail")
 
@@ -2295,6 +2300,7 @@ class ProjectDumpUpload(_DbTestBase):
                 if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
+                    "DICOM 1.0",
                 ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -2350,6 +2356,7 @@ class ProjectDumpUpload(_DbTestBase):
                 if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
+                    "DICOM 1.0",
                 ]:
                     continue
                 upload_format_name = upload_format.DISPLAY_NAME

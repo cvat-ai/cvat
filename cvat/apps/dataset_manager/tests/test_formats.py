@@ -295,6 +295,7 @@ class TaskExportTest(_DbTestBase):
                 "Ultralytics YOLO Detection Track 1.0",
                 "Ultralytics YOLO Pose 1.0",
                 "Ultralytics YOLO Segmentation 1.0",
+                "DICOM 1.0",
             },
         )
 
@@ -334,6 +335,7 @@ class TaskExportTest(_DbTestBase):
                 "Ultralytics YOLO Detection 1.0",
                 "Ultralytics YOLO Pose 1.0",
                 "Ultralytics YOLO Segmentation 1.0",
+                "DICOM 1.0",
             },
         )
 
@@ -1009,6 +1011,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
             with self.subTest(format=format_name):
                 if not f.ENABLED:
                     self.skipTest("Format is disabled")
+                if format_name == "DICOM 1.0":
+                    # DICOM importer ingests .dcm files and converts them to images;
+                    # it does not round-trip CVAT-format annotations.
+                    self.skipTest("Format does not support annotation round-trip")
 
                 self._test_can_import_annotations(task, format_name)
 

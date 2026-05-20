@@ -7327,6 +7327,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
 
         # Rare and buggy formats that are not crucial for testing
         formats.pop("Market-1501 1.0")  # Issue: https://github.com/cvat-ai/datumaro/issues/99
+        # DICOM importer ingests .dcm files and converts them to images;
+        # it does not round-trip CVAT-format annotations.
+        formats.pop("DICOM 1.0", None)
 
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format, import_format=import_format):
