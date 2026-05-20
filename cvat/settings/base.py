@@ -122,6 +122,7 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
+
 def parse_num_proxies(value: str | None) -> int | None:
     if value in (None, ""):
         return None
