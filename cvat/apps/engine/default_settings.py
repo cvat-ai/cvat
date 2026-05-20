@@ -121,10 +121,32 @@ if DEFAULT_BACKING_CS_ID:
 else:
     DEFAULT_BACKING_CS_ID = None
 
-CLOUD_STORAGE_INSTANCE_CACHE_SIZE = int(os.getenv("CVAT_CLOUD_STORAGE_INSTANCE_CACHE_SIZE", 32))
+CLOUD_STORAGE_INSTANCE_CACHE_SIZE = int(os.getenv("CVAT_CLOUD_STORAGE_INSTANCE_CACHE_SIZE", 2))
 """
-Number of cloud storage client instances kept in the per-process LRU cache.
+Number of cloud storage client instances kept in the per-process TTL cache.
 Constructing boto3/Azure/GCS clients is expensive (~100ms each), so reusing
-them across calls is a significant win. Bump for multi-tenant deployments
-with many active cloud storages per worker.
+them across calls is a significant win — but each cached instance keeps a
+boto3 Session and HTTP connection pool resident (~4 MB RSS).
+
+Recommended per-role overrides via `CVAT_CLOUD_STORAGE_INSTANCE_CACHE_SIZE`:
+  - default (e.g. import/export/quality workers):  2  — one-off jobs, rare
+    repeats; keep RSS small.
+  - server (UI/API):                               8  — task-creation dialog
+    navigation makes repeat hits on the same CS within a session.
+  - chunk worker:                                 16  — batches of chunks
+    against the same CS / backing CS are the hottest reuse path.
+"""
+
+CLOUD_STORAGE_INSTANCE_CACHE_TTL = int(os.getenv("CVAT_CLOUD_STORAGE_INSTANCE_CACHE_TTL", 300))
+"""
+Time-to-live (seconds) for cached cloud storage client instances.
+
+On expiry the entry is evicted, the boto3 Session is GC'd, and its kept-alive
+HTTP connection pool is closed. This bounds how long an idle client (with
+potentially stale TCP connections, DNS records, or STS session tokens) can
+linger in the cache. After eviction the next request rebuilds the client
+(~27 ms with the shared botocore loader) and re-establishes connections.
+
+Lower values trade build-time CPU for fresher state; higher values trade RSS
+for fewer cold rebuilds. Default 300 s (5 min).
 """

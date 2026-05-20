@@ -23,6 +23,7 @@ import boto3
 import botocore.credentials
 import botocore.hooks
 import botocore.loaders
+import cachetools
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
@@ -736,11 +737,17 @@ class S3CloudStorage(AbstractCloudStorage):
                 # 10 is the default value
                 max(10, CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU)
             ),
+            # Enable SO_KEEPALIVE so the OS detects dead peer connections
+            # while the client is parked in the LRU cache between requests.
+            # Complements the TTL on the cache; together they bound how stale
+            # a kept-alive socket can get.
+            tcp_keepalive=True,
         )
         status_config_kwargs = dict(
             proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
             connect_timeout=2,
             read_timeout=5,
+            tcp_keepalive=True,
             retries={"total_max_attempts": 1, "mode": "standard"},
         )
         if is_anonymous:
@@ -1410,11 +1417,19 @@ def _build_storage_instance(
 
 @functools.cache
 def _build_storage_instance_cached():
-    # Wrapped lazily so the setting is read after Django app config has applied
-    # engine defaults (apps.py:EngineConfig.ready), not at module import time.
-    return functools.lru_cache(maxsize=settings.CLOUD_STORAGE_INSTANCE_CACHE_SIZE)(
-        _build_storage_instance
-    )
+    # Wrapped lazily so the size/ttl settings are read after Django app config
+    # has applied engine defaults (apps.py:EngineConfig.ready), not at module
+    # import time. TTL bounds how long an idle client (and its kept-alive HTTP
+    # connection pool) can stay parked; on expiry the entry is evicted, the
+    # boto3 Session is GC'd, and its socket pool closes. STS session-token
+    # rotations and DNS staleness are bounded by the same window.
+    return cachetools.cached(
+        cache=cachetools.TTLCache(
+            maxsize=settings.CLOUD_STORAGE_INSTANCE_CACHE_SIZE,
+            ttl=settings.CLOUD_STORAGE_INSTANCE_CACHE_TTL,
+        ),
+        lock=threading.Lock(),
+    )(_build_storage_instance)
 
 
 def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:

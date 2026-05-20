@@ -4,6 +4,7 @@
 
 import datetime
 import os
+import time
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -220,6 +221,23 @@ class TestS3CloudStorageClientCaching(unittest.TestCase):
         db_storage_to_storage_instance(_make_cloud_storage(resource="bucket-2"))
 
         client2 = db_storage_to_storage_instance(_make_cloud_storage(resource="bucket-1"))
+        self.assertIsNot(client1, client2)
+
+    def test_cache_ttl_setting_applies(self):
+        # The factory must wire the configured TTL into the underlying
+        # TTLCache, and entries that pass that horizon must be evicted on the
+        # next access. Advance the cache's timer past the TTL via
+        # `cache.expire(time=...)` instead of sleeping, so the test is
+        # deterministic under load.
+        from django.conf import settings as dj_settings
+
+        cache = _build_storage_instance_cached().cache
+        self.assertEqual(cache.ttl, dj_settings.CLOUD_STORAGE_INSTANCE_CACHE_TTL)
+
+        cloud_storage = _make_cloud_storage()
+        client1 = db_storage_to_storage_instance(cloud_storage)
+        cache.expire(time=time.monotonic() + cache.ttl + 1)
+        client2 = db_storage_to_storage_instance(cloud_storage)
         self.assertIsNot(client1, client2)
 
     def test_protected_by_build_lock(self):
