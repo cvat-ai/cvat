@@ -100,6 +100,7 @@ services:
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
       ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
+      CVAT_CLOUD_STORAGE_INSTANCE_CACHE_SIZE: 8
     command: init run server
     labels:
       traefik.enable: "true"
@@ -223,6 +224,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
+      CVAT_CLOUD_STORAGE_INSTANCE_CACHE_SIZE: 8
     command: run worker chunks
     volumes:
       - cvat_data:/home/django/data

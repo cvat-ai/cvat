@@ -593,6 +593,28 @@ def get_cloud_storage_instance(
     return instance
 
 
+def _botocore_load_file_plaindict(self, full_path, open_method):
+    # Drop-in replacement for botocore.loaders.JSONFileLoader._load_file that
+    # parses with stdlib json into plain dicts instead of OrderedDicts.
+    #
+    # botocore's loader caches large service-model JSON (service-2.json,
+    # resources-1.json, endpoint-rule-sets) and historically built them as
+    # OrderedDicts via `object_pairs_hook=OrderedDict`. On Python 3.7+ regular
+    # dicts already preserve insertion order, and OrderedDict carries a
+    # doubly-linked list per item — measured RSS overhead is ~3x compared to
+    # plain dicts for these models (e.g. 1 S3CloudStorage: 29 MB -> 11 MB).
+    # No code in botocore relies on OrderedDict-specific methods on loaded
+    # service-model data (verified by grep for move_to_end / popitem(last=...)).
+    if not os.path.isfile(full_path):
+        return
+    with open_method(full_path, "rb") as fp:
+        payload = fp.read().decode("utf-8")
+    return json.loads(payload)
+
+
+botocore.loaders.JSONFileLoader._load_file = _botocore_load_file_plaindict
+
+
 # Shared across all S3 sessions in this process. botocore caches the parsed
 # service-2.json / resources-1.json / endpoint-rule-set JSON on the Loader, so
 # a single Loader instance lets every session reuse them — drops ~7MB per
@@ -681,9 +703,11 @@ def _make_boto3_session(
             kwargs[key] = arg_v
 
     session = boto3.Session(**kwargs)
+
     # Inject the process-shared loader so every Session reuses the parsed
     # service-2.json/resources-1.json/endpoint-ruleset instead of re-parsing.
     session._session.register_component("data_loader", _SHARED_BOTOCORE_LOADER)
+
     # Block env/file/IMDS credential discovery. CloudStorage credentials must
     # come from the DB row; anonymous access uses Config(signature_version=UNSIGNED).
     # Replacing the resolver with an empty one keeps `session.get_credentials()`
@@ -692,6 +716,7 @@ def _make_boto3_session(
         "credential_provider",
         botocore.credentials.CredentialResolver(providers=[]),
     )
+
     return session
 
 

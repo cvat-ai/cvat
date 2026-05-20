@@ -126,7 +126,17 @@ CLOUD_STORAGE_INSTANCE_CACHE_SIZE = int(os.getenv("CVAT_CLOUD_STORAGE_INSTANCE_C
 Number of cloud storage client instances kept in the per-process TTL cache.
 Constructing boto3/Azure/GCS clients is expensive (~100ms each), so reusing
 them across calls is a significant win — but each cached instance keeps a
-boto3 Session and HTTP connection pool resident (~4 MB RSS).
+boto3 Session and HTTP connection pool resident in memory.
+
+Measured RSS overhead vs. an idle Django worker (boto3 S3, anonymous, single
+NUMPROC). The first instance includes the one-time ~12 MB shared botocore
+service-model load; each subsequent slot adds ~1.1 MB:
+  -   1 cached:   +12 MB
+  -   2 cached:   +13 MB  (1 +  1 * 1.1)
+  -   8 cached:   +20 MB  (1 +  7 * 1.1)
+  -  16 cached:   +29 MB  (1 + 15 * 1.1)
+  -  32 cached:   +45 MB  (measured)
+  - 128 cached:  +152 MB  (measured)
 
 Recommended per-role overrides via `CVAT_CLOUD_STORAGE_INSTANCE_CACHE_SIZE`:
   - default (e.g. import/export/quality workers):  2  — one-off jobs, rare
