@@ -4,11 +4,13 @@
 # in the work-horse machinery we don't want, we port those methods here
 # verbatim. Re-sync on rq version bumps.
 
+import traceback
 from datetime import timedelta
 from random import shuffle
 from typing import TYPE_CHECKING, Optional
 
 from rq import worker_registration
+from rq.exceptions import DeserializationError
 from rq.utils import utcformat, utcnow
 from rq.worker import DequeueStrategy
 
@@ -118,6 +120,45 @@ class RqWorkerPortMixin:
         self, job_execution_time: timedelta, pipeline: "Pipeline"
     ) -> None:
         pipeline.hincrbyfloat(self.key, "total_working_time", job_execution_time.total_seconds())
+
+    def handle_exception(self, job, *exc_info) -> None:
+        """Walks the exception handler stack to delegate exception handling.
+        If the job cannot be deserialized, it will raise when func_name or
+        the other properties are accessed, which will stop exceptions from
+        being properly logged, so we guard against it here.
+        """
+        self.log.debug("Handling exception for %s.", job.id)
+        exc_string = "".join(traceback.format_exception(*exc_info))
+        try:
+            extra = {
+                "func": job.func_name,
+                "arguments": job.args,
+                "kwargs": job.kwargs,
+            }
+            func_name = job.func_name
+        except DeserializationError:
+            extra = {}
+            func_name = "<DeserializationError>"
+
+        extra.update({"queue": job.origin, "job_id": job.id})
+
+        self.log.error(
+            "[Job %s]: exception raised while executing (%s)\n%s",
+            job.id,
+            func_name,
+            exc_string,
+            extra=extra,
+        )
+
+        for handler in self._exc_handlers:
+            self.log.debug("Invoking exception handler %s", handler)
+            fallthrough = handler(job, *exc_info)
+
+            if fallthrough is None:
+                fallthrough = True
+
+            if not fallthrough:
+                break
 
     def stop_scheduler(self) -> None:
         import os

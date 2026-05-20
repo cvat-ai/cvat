@@ -7,7 +7,7 @@ Resolved in this phase:
 - **Counters.** `increment_successful_job_count`, `increment_failed_job_count`,
   `increment_total_working_time` ported verbatim from `rq.worker.Worker` into
   `RqWorkerPortMixin` (HINCRBY / HINCRBYFLOAT — atomic across N threads). Wired
-  into the existing finished-job pipeline in `_perform_job` and into
+  into the existing finished-job pipeline in `handle_job_success` and into
   `handle_job_failure`, matching upstream placement (failures count for retries
   too). `total_working_time` is the **sum of per-job durations**, not the
   wall-clock concurrent interval — 10s + 10s concurrent = 20s. Acceptable
@@ -19,79 +19,71 @@ Resolved in this phase:
   no longer creates a silent double-execution risk via another worker's
   `clean_registries`. The `+60` jitter buffer that upstream uses (because they
   refresh every `job_monitoring_interval`) is replaced by an explicit named
-  constant that documents what it covers.
+  constant that documents what it covers. The formula lives in our
+  `get_heartbeat_ttl(job)` override (same name as upstream, ignores `job`).
+- **`_perform_job` aligned with upstream `perform_job` shape.** Bookkeeping
+  split out into:
+  - `prepare_job_execution(job, remove_from_intermediate_queue=False)` — pipeline
+    that calls `job.prepare_for_execution`, `job.heartbeat(...)`, and (when
+    `len(self.queues) == 1`) clears the intermediate queue entry. Deliberately
+    omits upstream's `self.set_current_job_id`, `self.set_current_job_working_time`,
+    extra `self.heartbeat(...)` (covered by `_heartbeat_loop`), and `self.procline(...)`.
+  - `handle_job_success(job, queue, started_job_registry)` — separate method,
+    success pipeline + counter increments + finished-job log.
+  - Post-completion `job.heartbeat(utcnow(), job.{success,failure}_callback_timeout)`
+    in both branches (rq/worker.py:1444, 1455) so cleanup has TTL room.
+- **`handle_exception(job, *exc_info)` ported into `RqWorkerPortMixin`** verbatim
+  from `rq.worker.Worker:1485-1522`. Called from `_perform_job`'s except branch
+  after `handle_job_failure`, matching upstream `perform_job:1461-1464`. Walks
+  the `_exc_handlers` chain registered via `push_exc_handler` / `pop_exc_handler`
+  (also on the mixin).
+- **`handle_job_success` delegates to `job._handle_success(result_ttl, pipeline)`**
+  (rq/job.py:1446). Mirrors the existing `job._handle_failure(...)` call on the
+  failure side and picks up upstream's Redis Streams handling
+  (`Result.create(..., Type.SUCCESSFUL, ...)`) that the previous inlined version
+  silently lacked — so on Redis ≥5.0 success results are now retrievable via the
+  modern Results API. Still no `queue.enqueue_dependents(job)` here; see "Other
+  Phase 3+ items".
+- **`on_success` / `on_failure` callbacks wired.** `_perform_job` now calls
+  `job.execute_success_callback(NoOpDeathPenalty, rv)` after the success
+  heartbeat (matches rq/worker.py:1445) and `job.execute_failure_callback(
+  NoOpDeathPenalty, *exc_info)` after the failure heartbeat (matches
+  rq/worker.py:1456). The failure-callback call is wrapped in the same nested
+  try/except as upstream (rq/worker.py:1454-1459) so a raising failure
+  callback overwrites `exc_info`/`exc_string` before `handle_job_failure`
+  runs. `NoOpDeathPenalty` (`cvat/apps/django_rq_ext/utils.py`) is the
+  thread-safe stand-in we pass to satisfy `Job.execute_*_callback(
+  death_penalty_class, ...)` — we don't enforce callback timeouts for the
+  same reason we don't enforce job timeouts (see AGENT_CONTEXT.md decision #4).
+- **Success-path `enqueue_dependents` ported from upstream.**
+  `handle_job_success` now wraps its pipeline in `while True: try: … except
+  redis.exceptions.WatchError: continue` and opens each iteration with
+  `pipeline.watch(job.dependents_key)` + `queue.enqueue_dependents(job,
+  pipeline=pipeline)` + the defensive `if not pipeline.explicit_transaction:
+  pipeline.multi()` fallback — mirrors upstream `Worker.handle_job_success`
+  (rq/worker.py:1380-1410) verbatim except `set_current_job_id(None)` (decision
+  #7). The `pipeline.multi()` fallback handles the empty-dependents case where
+  `enqueue_dependents` short-circuits at `rq/queue.py:1200-1201` without ever
+  calling `pipe.multi()`. The caller-side WATCH satisfies `enqueue_dependents`'s
+  pipeline contract (`rq/queue.py:1192-1195`) and protects against external
+  producers calling `register_dependency` between our SMEMBERS and EXEC. See
+  AGENT_CONTEXT.md "How job recovery and failure handling work" for the
+  asymmetry vs `handle_job_failure`'s no-pipeline call.
 
 Intentionally NOT added:
 
 - `set_current_job_id` — upstream uses it only for `kill-horse` /
   `get_current_job()` semantics that don't apply to threads. Pure observability
   use, so skipped.
-- Per-job heartbeat refresh from the worker loop. Not needed while
-  `heartbeat_ttl = threshold + slack` is set once and >= the job's actual
-  runtime. Revisit only if we ever want jobs that legitimately run longer
-  than the SLO.
-
-## RQ consistency: what happens to a job we SIGKILL'd mid-flight?
-
-Scenario: worker dequeues job, starts running it, the job exceeds the soft
-SLO, K8s SIGKILL hits before it returns, no cleanup runs.
-
-Tentative answer (to verify against rq 1.16.0 source — `rq/registry.py`,
-`rq/worker.py::run_maintenance_tasks`, `rq/queue.py::Queue.cleanup`):
-
-1. **On dequeue**, RQ atomically:
-   - removes the job id from the queue list,
-   - adds it to `StartedJobRegistry` with a ZSET score of `now + heartbeat_ttl`
-     (≈ 90s for us — `job_monitoring_interval + 60`),
-   - sets the job hash `status = started`, `worker_name = <us>`.
-2. **SIGKILL hits.** None of our cleanup runs. The job entry sits in
-   `StartedJobRegistry` with a stale score; the job hash still says `started`.
-3. **Next worker's maintenance pass** (`run_maintenance_tasks` →
-   `clean_registries(queue)`) iterates `StartedJobRegistry` entries with
-   `score < now` (i.e. TTL expired ~90s after the original dequeue). For each:
-   - if `job.retries_left > 0` → `job.retry(queue, pipeline)` puts it back on
-     the queue;
-   - else → moves it to `FailedJobRegistry` with `exc_info` = "Moved to
-     FailedJobRegistry at <ts>" and runs the failure callback / exception
-     handlers.
-4. Maintenance runs at most every `DEFAULT_MAINTENANCE_TASK_INTERVAL` (10 min
-   by default) per worker, gated by `should_run_maintenance_tasks`. So in the
-   worst case the job is in limbo for up to **TTL (90s) + maintenance gap
-   (10min)** before it surfaces as failed / retried.
-
-Implications to confirm later:
-
-- **No job loss**, but recovery is on the order of minutes, not seconds.
-- During the limbo window, `/api/requests/{rq_id}` would report `started` —
-  the polling client sees a job that looks alive but isn't.
-- Maintenance only runs if *another* worker exists on the same queue (or a
-  replacement pod comes up). If the queue has a single worker that dies and
-  no replacement, the stale entry persists indefinitely.
-- `clean_registries` requires a Redis lock per queue (`cleaning:<queue>`), so
-  N workers don't double-clean.
+- Per-job heartbeat refresh from the worker loop. One-shot TTL of
+  `threshold + slack` is sufficient under the SLO. Even if a job exceeded
+  the threshold we couldn't preempt it anyway — webhook jobs block on
+  C-level socket IO, which `PyThreadState_SetAsyncExc` (the only thread-safe
+  mechanism upstream offers) can't interrupt. So there's no scenario where
+  refresh helps.
 
 ## Other Phase 3+ items
 
-- Per-job heartbeat refresh from inside the executor thread. Not needed
-  today: the one-shot TTL is `task_execution_time_threshold + slack`, so any
-  job that honors the SLO is safe. Required only if we want jobs that
-  legitimately exceed the SLO.
-- `depends_on` / `enqueue_dependents` on the success path.
-  `handle_job_success` does NOT call `queue.enqueue_dependents(job)` after a
-  successful `job.perform()` — so dependents of a successful job never run.
-  (Dependents of a failed-and-not-retrying job DO get enqueued, via
-  `handle_job_failure`, matching upstream BaseWorker.) Verify against
-  rq.worker.Worker.handle_job_success / perform_job to see what we'd need to port.
-- `job.execute_success_callback(self.death_penalty_class, rv)` /
-  `job.execute_failure_callback(self.death_penalty_class, *exc_info)` —
-  upstream perform_job (rq/worker.py:1445, 1456) invokes these between
-  `job.heartbeat(...)` and `handle_job_success` / `handle_job_failure`. They
-  run user-provided `on_success` / `on_failure` hooks under a death-penalty
-  timer. We already do the heartbeat refresh; the callback invocations are
-  not wired. Two open design questions when we add them: (1) the
-  death_penalty_class needs a thread-safe substitute (UnixSignalDeathPenalty
-  doesn't work off the main thread; TimerDeathPenalty can't interrupt blocked
-  C I/O — same trade-offs we had for job timeouts), and (2) callback
-  exceptions should be caught and converted into an exc_string fed to
-  `handle_job_failure`, mirroring upstream's nested try/except at
-  rq/worker.py:1454-1459.
+No outstanding worker correctness items. Deploy swap (`cvat_worker_webhooks`
+→ ThreadPoolWorker in `docker-compose.yml`) is a separate decision tracked
+outside this file.

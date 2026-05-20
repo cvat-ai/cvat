@@ -1,21 +1,3 @@
-# Thread-pool RQ worker.
-#
-# Design constraints:
-#   - CPython threads cannot be cancelled. We do not support remote `stop-job`,
-#     `kill-horse`, or per-job hard timeouts. Per-job time bounds are the job
-#     function's responsibility (e.g. `requests.post(timeout=...)`).
-#   - Soft per-job SLO: `task_execution_time_threshold` (default 60s, also
-#     reused as the shutdown drain cap). Anything past it logs a warning. The
-#     K8s `terminationGracePeriodSeconds` must be strictly greater (see
-#     `sosov_deploy/worker.yaml`) so register_death + log flush can run before
-#     SIGKILL.
-#   - rq.BaseWorker isn't really a usable base — many lifecycle methods it
-#     references live only on `rq.worker.Worker`. We port them verbatim via
-#     `_RqWorkerPortMixin` in mixins.py.
-#
-# See TODO.md alongside this file for the observability / consistency
-# follow-ups deferred to a later phase.
-
 import signal
 import sys
 import threading
@@ -35,6 +17,7 @@ from rq.utils import utcnow
 from rq.worker import BaseWorker, DequeueStrategy, StopRequested
 
 from cvat.apps.django_rq_ext.mixins import RqWorkerPortMixin
+from cvat.apps.django_rq_ext.utils import NoOpDeathPenalty
 
 _POOL_FULL_POLL_INTERVAL = 0.1
 
@@ -120,10 +103,13 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
                 except redis.exceptions.TimeoutError:
                     self.log.error("Worker %s: Redis connection timeout, quitting...", self.key)
                     break
+
                 except StopRequested:
                     break
+
                 except SystemExit:
                     raise
+
                 except:  # noqa pylint: disable=bare-except
                     self.log.error(
                         "Worker %s: found an unhandled exception, quitting...",
@@ -148,9 +134,12 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
 
     def _start_heartbeat(self) -> None:
         self._heartbeat_stop_event.clear()
+
         future = self._executor.submit(self._heartbeat_loop)
+
         with self._active_futures_lock:
             self._active_futures.append(future)
+
         future.add_done_callback(self._on_future_performed)
 
     def _stop_heartbeat(self) -> None:
@@ -188,12 +177,6 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
 
         self.register_death()
 
-    # NOTE @sosov: SIGINT/SIGTERM are wired by BaseWorker._install_signal_handlers to
-    # self.request_stop. request_stop / request_force_stop live on
-    # rq.worker.Worker (not BaseWorker), so we MUST override or signal-handler
-    # install AttributeErrors. Our request_stop just flips a flag — threads
-    # can't be interrupted, drain happens in teardown.
-
     def request_stop(self, signum, frame) -> None:
         self.log.info("Stop requested via signal %s; press again to force kill", signum)
         self._shutdown_requested_date = utcnow()
@@ -223,18 +206,33 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
             except ValueError:
                 pass
 
-    def _perform_job(self, job: Job, queue: Queue) -> None:
-        started_registry = queue.started_job_registry
-        heartbeat_ttl = (
+    def get_heartbeat_ttl(self, job: Job) -> int:
+        return (
             self._task_execution_time_threshold_sec
             + settings.THREAD_POOL_WORKER_JOB_HEARTBEAT_TTL_SLACK_SEC
         )
 
+    def prepare_job_execution(
+        self,
+        job: Job,
+        remove_from_intermediate_queue: bool = False,
+    ) -> None:
+        with self.connection.pipeline() as pipeline:
+            job.prepare_for_execution(self.name, pipeline=pipeline)
+            job.heartbeat(utcnow(), self.get_heartbeat_ttl(job), pipeline=pipeline)
+
+            if remove_from_intermediate_queue:
+                intermediate_queue = Queue(job.origin, connection=self.connection)
+                pipeline.lrem(intermediate_queue.intermediate_queue_key, 1, job.id)
+
+            pipeline.execute()
+
+    def _perform_job(self, job: Job, queue: Queue) -> None:
+        started_registry = queue.started_job_registry
+
         try:
-            with self.connection.pipeline() as pipeline:
-                job.prepare_for_execution(self.name, pipeline=pipeline)
-                job.heartbeat(utcnow(), heartbeat_ttl, pipeline=pipeline)
-                pipeline.execute()
+            remove_from_intermediate_queue = len(self.queues) == 1
+            self.prepare_job_execution(job, remove_from_intermediate_queue)
 
             rv = job.perform()
 
@@ -242,6 +240,7 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
             job._result = rv
 
             job.heartbeat(utcnow(), job.success_callback_timeout)
+            job.execute_success_callback(NoOpDeathPenalty, rv)
 
             self.handle_job_success(
                 job=job,
@@ -255,9 +254,12 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
             self.log.warning("Job %s raised an exception", job.id)
             job.ended_at = utcnow()
 
-            # NOTE @sosov: matches upstream perform_job (rq/worker.py:1455).
-            # Same rationale as the success-side heartbeat above.
-            job.heartbeat(utcnow(), job.failure_callback_timeout)
+            try:
+                job.heartbeat(utcnow(), job.failure_callback_timeout)
+                job.execute_failure_callback(NoOpDeathPenalty, *exc_info)
+            except Exception:  # pylint: disable=broad-except
+                exc_info = sys.exc_info()
+                exc_string = "".join(traceback.format_exception(*exc_info))
 
             self.handle_job_failure(
                 job,
@@ -265,6 +267,7 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
                 started_job_registry=started_registry,
                 exc_string=exc_string,
             )
+            self.handle_exception(job, *exc_info)
 
         if job.started_at and job.ended_at:
             elapsed_sec = (job.ended_at - job.started_at).total_seconds()
@@ -283,19 +286,28 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
         started_job_registry: StartedJobRegistry,
     ) -> None:
         with self.connection.pipeline() as pipeline:
-            result_ttl = job.get_result_ttl(self.default_result_ttl)
-            job.set_status(JobStatus.FINISHED, pipeline=pipeline)
-            job.worker_name = None
-            started_job_registry.remove(job, pipeline=pipeline)
-            if result_ttl != 0:
-                job.cleanup(result_ttl, pipeline=pipeline, remove_from_queue=False)
-                job.save(pipeline=pipeline, include_meta=False, include_result=True)
-                queue.finished_job_registry.add(job, result_ttl, pipeline=pipeline)
+            while True:
+                try:
+                    pipeline.watch(job.dependents_key)
+                    queue.enqueue_dependents(job, pipeline=pipeline)
 
-            self.increment_successful_job_count(pipeline=pipeline)
-            self.increment_total_working_time(job.ended_at - job.started_at, pipeline)
+                    if not pipeline.explicit_transaction:
+                        pipeline.multi()
 
-            pipeline.execute()
+                    self.increment_successful_job_count(pipeline=pipeline)
+                    self.increment_total_working_time(job.ended_at - job.started_at, pipeline)
+
+                    result_ttl = job.get_result_ttl(self.default_result_ttl)
+                    if result_ttl != 0:
+                        job._handle_success(result_ttl, pipeline=pipeline)
+
+                    job.cleanup(result_ttl, pipeline=pipeline, remove_from_queue=False)
+                    started_job_registry.remove(job, pipeline=pipeline)
+
+                    pipeline.execute()
+                    break
+                except redis.exceptions.WatchError:
+                    continue
 
         self.log.info("Job %s succeeded", job.id)
 
