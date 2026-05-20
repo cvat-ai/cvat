@@ -1,5 +1,6 @@
 cvat:
   backend:
+    numProxies: 2
     defaultStorage:
       accessModes:
       - ReadWriteOnce
