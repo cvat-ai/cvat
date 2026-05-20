@@ -201,13 +201,6 @@ class GenericExportDatasetCommand(GenericCommand):
 class GenericImportDatasetCommand(GenericCommand):
     import_method_name = "import_dataset"
 
-    @property
-    def description(self) -> str:
-        return textwrap.dedent(f"""\
-            Import annotations into a {self.resource_type_str} from a dataset in the specified
-            format (e.g. 'YOLO 1.1').
-            """)
-
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "resource_id",

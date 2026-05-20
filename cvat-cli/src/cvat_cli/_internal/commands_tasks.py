@@ -266,6 +266,10 @@ class TaskExportDataset(GenericExportDatasetCommand, GenericTaskCommand):
 
 @COMMANDS.command_class("import-dataset")
 class TaskImportDataset(GenericImportDatasetCommand, GenericTaskCommand):
+    description = textwrap.dedent("""\
+        Import annotations into a task from a dataset in the specified format
+        (e.g. 'YOLO 1.1').
+        """)
     import_method_name = "import_annotations"
 
 
