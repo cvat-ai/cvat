@@ -1,24 +1,35 @@
 # ThreadPoolWorker — TODO
 
-## Phase 3: observability / monitoring
+## Phase 3 (LANDED): observability / monitoring
 
-Understand how RQ's worker monitoring works before adding back any of:
+Resolved in this phase:
 
-- `set_current_job_id` — single-slot key on the worker hash that tracks "the
-  job I'm currently running". Pointless with N concurrent jobs unless rewritten
-  as a set; needs to be reasoned through.
-- `increment_failed_job_count` / `increment_total_working_time` — per-worker
-  counters in Redis. With N concurrent threads writing, need to confirm whether
-  they're atomic (HINCRBY is, plain HSET isn't) and whether anything in the RQ
-  dashboard / `rq info` reads them.
-- `clean_registries` / `StartedJobRegistry` interaction with our per-job
-  heartbeat TTL (`job_monitoring_interval + 60` ≈ 90s). If a job legitimately
-  runs longer than that, another worker's maintenance pass will consider it
-  abandoned and re-enqueue it → double execution.
+- **Counters.** `increment_successful_job_count`, `increment_failed_job_count`,
+  `increment_total_working_time` ported verbatim from `rq.worker.Worker` into
+  `RqWorkerPortMixin` (HINCRBY / HINCRBYFLOAT — atomic across N threads). Wired
+  into the existing finished-job pipeline in `_perform_job` and into
+  `handle_job_failure`, matching upstream placement (failures count for retries
+  too). `total_working_time` is the **sum of per-job durations**, not the
+  wall-clock concurrent interval — 10s + 10s concurrent = 20s. Acceptable
+  trade-off for not tracking interval overlaps.
+- **Per-job StartedJobRegistry TTL.** Changed from `job_monitoring_interval + 60`
+  to `task_execution_time_threshold + THREAD_POOL_WORKER_JOB_HEARTBEAT_TTL_SLACK_SEC`
+  (default slack = 60s, in `default_settings.py`). One-shot — we do not refresh.
+  The TTL now adapts to the SLO knob, so raising `--task-execution-time-threshold`
+  no longer creates a silent double-execution risk via another worker's
+  `clean_registries`. The `+60` jitter buffer that upstream uses (because they
+  refresh every `job_monitoring_interval`) is replaced by an explicit named
+  constant that documents what it covers.
 
-The three bullets above were intentionally stripped from `handle_job_failure`
-and `_perform_job`. Re-add only with a clear model of what each piece is for
-in a multi-job worker.
+Intentionally NOT added:
+
+- `set_current_job_id` — upstream uses it only for `kill-horse` /
+  `get_current_job()` semantics that don't apply to threads. Pure observability
+  use, so skipped.
+- Per-job heartbeat refresh from the worker loop. Not needed while
+  `heartbeat_ttl = threshold + slack` is set once and >= the job's actual
+  runtime. Revisit only if we ever want jobs that legitimately run longer
+  than the SLO.
 
 ## RQ consistency: what happens to a job we SIGKILL'd mid-flight?
 
@@ -61,14 +72,26 @@ Implications to confirm later:
 
 ## Other Phase 3+ items
 
-- Per-job heartbeat refresh from inside the executor thread (today: only the
-  initial `job.heartbeat(ttl=~90s)` set at start; safe while the configured
-  `task_execution_time_threshold` ≤ 90).
+- Per-job heartbeat refresh from inside the executor thread. Not needed
+  today: the one-shot TTL is `task_execution_time_threshold + slack`, so any
+  job that honors the SLO is safe. Required only if we want jobs that
+  legitimately exceed the SLO.
 - `depends_on` / `enqueue_dependents` on the success path.
-  Today `_perform_job` does NOT call `queue.enqueue_dependents(job)` after a
+  `handle_job_success` does NOT call `queue.enqueue_dependents(job)` after a
   successful `job.perform()` — so dependents of a successful job never run.
   (Dependents of a failed-and-not-retrying job DO get enqueued, via
   `handle_job_failure`, matching upstream BaseWorker.) Verify against
-  rq.worker.Worker.perform_job to see what we'd need to port.
-- `on_success` / `on_failure` job callbacks — currently not invoked at all
-  from `_perform_job`.
+  rq.worker.Worker.handle_job_success / perform_job to see what we'd need to port.
+- `job.execute_success_callback(self.death_penalty_class, rv)` /
+  `job.execute_failure_callback(self.death_penalty_class, *exc_info)` —
+  upstream perform_job (rq/worker.py:1445, 1456) invokes these between
+  `job.heartbeat(...)` and `handle_job_success` / `handle_job_failure`. They
+  run user-provided `on_success` / `on_failure` hooks under a death-penalty
+  timer. We already do the heartbeat refresh; the callback invocations are
+  not wired. Two open design questions when we add them: (1) the
+  death_penalty_class needs a thread-safe substitute (UnixSignalDeathPenalty
+  doesn't work off the main thread; TimerDeathPenalty can't interrupt blocked
+  C I/O — same trade-offs we had for job timeouts), and (2) callback
+  exceptions should be caught and converted into an exc_string fed to
+  `handle_job_failure`, mirroring upstream's nested try/except at
+  rq/worker.py:1454-1459.

@@ -26,6 +26,7 @@ from contextlib import suppress
 from typing import Optional
 
 import redis.exceptions
+from django.conf import settings
 from rq.defaults import DEFAULT_LOGGING_DATE_FORMAT, DEFAULT_LOGGING_FORMAT
 from rq.job import Job, JobStatus
 from rq.queue import Queue
@@ -48,13 +49,16 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.threadpool_size = pool_size
+
         self._task_execution_time_threshold_sec = task_execution_time_threshold
-        self.executor = ThreadPoolExecutor(
+
+        self._executor = ThreadPoolExecutor(
             max_workers=pool_size,
             thread_name_prefix="rq_threadpool_",
         )
         self._active_futures: list[Future] = []
         self._active_futures_lock = threading.Lock()
+
         self._heartbeat_stop_event = threading.Event()
 
     def work(
@@ -76,6 +80,7 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
             self._start_scheduler(burst, logging_level, date_format, log_format)
 
         self._install_signal_handlers()
+
         self._start_heartbeat()
 
         try:
@@ -86,19 +91,18 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
                         break
 
                     self.check_for_suspension(burst)
+
                     if self.should_run_maintenance_tasks:
                         self.run_maintenance_tasks()
 
-                    # NOTE @sosov: pool-full gate before dequeue. Without it,
-                    # ThreadPoolExecutor would park overflow in its internal
-                    # _work_queue, hiding jobs from Redis (not in started_job_registry,
-                    # not on the queue) and losing them on crash.
-                    if self._is_pool_full:
+                    if self._is_threadpool_full:
                         time.sleep(_POOL_FULL_POLL_INTERVAL)
                         continue
 
-                    timeout = None if burst else self.dequeue_timeout
-                    result = self.dequeue_job_and_maintain_ttl(timeout, max_idle_time)
+                    result = self.dequeue_job_and_maintain_ttl(
+                        timeout=None if burst else self.dequeue_timeout,
+                        max_idle_time=max_idle_time,
+                    )
                     if result is None:
                         if burst:
                             self.log.info("Worker %s: done, quitting", self.key)
@@ -131,7 +135,7 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
             self.teardown()
 
     @property
-    def _is_pool_full(self) -> bool:
+    def _is_threadpool_full(self) -> bool:
         with self._active_futures_lock:
             return len(self._active_futures) >= self.threadpool_size
 
@@ -144,7 +148,7 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
 
     def _start_heartbeat(self) -> None:
         self._heartbeat_stop_event.clear()
-        future = self.executor.submit(self._heartbeat_loop)
+        future = self._executor.submit(self._heartbeat_loop)
         with self._active_futures_lock:
             self._active_futures.append(future)
         future.add_done_callback(self._on_future_performed)
@@ -167,7 +171,7 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
 
         self._stop_heartbeat()
 
-        self.executor.shutdown(wait=False)
+        self._executor.shutdown(wait=False)
 
         with self._active_futures_lock:
             in_flight = list(self._active_futures)
@@ -206,7 +210,7 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
         self.log.info("Worker %s [PID %d]: warm shut down requested", self.name, self.pid)
 
     def execute_job(self, job: Job, queue: Queue) -> None:
-        future = self.executor.submit(self._perform_job, job, queue)
+        future = self._executor.submit(self._perform_job, job, queue)
         with self._active_futures_lock:
             self._active_futures.append(future)
 
@@ -221,7 +225,10 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
 
     def _perform_job(self, job: Job, queue: Queue) -> None:
         started_registry = queue.started_job_registry
-        heartbeat_ttl = self.job_monitoring_interval + 60
+        heartbeat_ttl = (
+            self._task_execution_time_threshold_sec
+            + settings.THREAD_POOL_WORKER_JOB_HEARTBEAT_TTL_SLACK_SEC
+        )
 
         try:
             with self.connection.pipeline() as pipeline:
@@ -234,6 +241,32 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
             job.ended_at = utcnow()
             job._result = rv
 
+            job.heartbeat(utcnow(), job.success_callback_timeout)
+
+            self.handle_job_success(
+                job=job,
+                queue=queue,
+                started_job_registry=started_registry,
+            )
+
+        except Exception:  # pylint: disable=broad-except
+            exc_info = sys.exc_info()
+            exc_string = "".join(traceback.format_exception(*exc_info))
+            self.log.warning("Job %s raised an exception", job.id)
+            job.ended_at = utcnow()
+
+            # NOTE @sosov: matches upstream perform_job (rq/worker.py:1455).
+            # Same rationale as the success-side heartbeat above.
+            job.heartbeat(utcnow(), job.failure_callback_timeout)
+
+            self.handle_job_failure(
+                job,
+                queue,
+                started_job_registry=started_registry,
+                exc_string=exc_string,
+            )
+
+        if job.started_at and job.ended_at:
             elapsed_sec = (job.ended_at - job.started_at).total_seconds()
             if elapsed_sec > self._task_execution_time_threshold_sec:
                 self.log.warning(
@@ -243,39 +276,28 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
                     self._task_execution_time_threshold_sec,
                 )
 
-            with self.connection.pipeline() as pipeline:
-                result_ttl = job.get_result_ttl(self.default_result_ttl)
-                job.set_status(JobStatus.FINISHED, pipeline=pipeline)
-                job.worker_name = None
-                started_registry.remove(job, pipeline=pipeline)
-                if result_ttl != 0:
-                    job.cleanup(result_ttl, pipeline=pipeline, remove_from_queue=False)
-                    job.save(pipeline=pipeline, include_meta=False, include_result=True)
-                    queue.finished_job_registry.add(job, result_ttl, pipeline=pipeline)
-                pipeline.execute()
+    def handle_job_success(
+        self,
+        job: Job,
+        queue: Queue,
+        started_job_registry: StartedJobRegistry,
+    ) -> None:
+        with self.connection.pipeline() as pipeline:
+            result_ttl = job.get_result_ttl(self.default_result_ttl)
+            job.set_status(JobStatus.FINISHED, pipeline=pipeline)
+            job.worker_name = None
+            started_job_registry.remove(job, pipeline=pipeline)
+            if result_ttl != 0:
+                job.cleanup(result_ttl, pipeline=pipeline, remove_from_queue=False)
+                job.save(pipeline=pipeline, include_meta=False, include_result=True)
+                queue.finished_job_registry.add(job, result_ttl, pipeline=pipeline)
 
-            self.log.info("Job %s succeeded", job.id)
-        except Exception:  # pylint: disable=broad-except
-            exc_info = sys.exc_info()
-            exc_string = "".join(traceback.format_exception(*exc_info))
-            self.log.warning("Job %s raised an exception", job.id)
-            job.ended_at = utcnow()
+            self.increment_successful_job_count(pipeline=pipeline)
+            self.increment_total_working_time(job.ended_at - job.started_at, pipeline)
 
-            elapsed_sec = (job.ended_at - job.started_at).total_seconds()
-            if elapsed_sec > self._task_execution_time_threshold_sec:
-                self.log.warning(
-                    "Failed job %s exceeded execution threshold: %.1fs > %ds",
-                    job.id,
-                    elapsed_sec,
-                    self._task_execution_time_threshold_sec,
-                )
+            pipeline.execute()
 
-            self.handle_job_failure(
-                job,
-                queue,
-                started_job_registry=started_registry,
-                exc_string=exc_string,
-            )
+        self.log.info("Job %s succeeded", job.id)
 
     def handle_job_failure(self, job, queue, started_job_registry=None, exc_string=""):
         self.log.debug("Handling failed execution of job %s", job.id)
@@ -298,6 +320,11 @@ class ThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
                 job._handle_failure(exc_string, pipeline=pipeline)
                 with suppress(redis.exceptions.ConnectionError):
                     pipeline.execute()
+
+            self.increment_failed_job_count(pipeline)
+
+            if job.started_at and job.ended_at:
+                self.increment_total_working_time(job.ended_at - job.started_at, pipeline)
 
             if retry:
                 job.retry(queue, pipeline)

@@ -4,11 +4,16 @@
 # in the work-horse machinery we don't want, we port those methods here
 # verbatim. Re-sync on rq version bumps.
 
+from datetime import timedelta
 from random import shuffle
+from typing import TYPE_CHECKING, Optional
 
 from rq import worker_registration
 from rq.utils import utcformat, utcnow
 from rq.worker import DequeueStrategy
+
+if TYPE_CHECKING:
+    from redis.client import Pipeline
 
 try:
     from setproctitle import setproctitle as setprocname
@@ -100,6 +105,19 @@ class RqWorkerPortMixin:
             p.hset(self.key, "death", utcformat(utcnow()))
             p.expire(self.key, 60)
             p.execute()
+
+    def increment_failed_job_count(self, pipeline: Optional["Pipeline"] = None) -> None:
+        connection = pipeline if pipeline is not None else self.connection
+        connection.hincrby(self.key, "failed_job_count", 1)
+
+    def increment_successful_job_count(self, pipeline: Optional["Pipeline"] = None) -> None:
+        connection = pipeline if pipeline is not None else self.connection
+        connection.hincrby(self.key, "successful_job_count", 1)
+
+    def increment_total_working_time(
+        self, job_execution_time: timedelta, pipeline: "Pipeline"
+    ) -> None:
+        pipeline.hincrbyfloat(self.key, "total_working_time", job_execution_time.total_seconds())
 
     def stop_scheduler(self) -> None:
         import os
