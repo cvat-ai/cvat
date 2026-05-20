@@ -2799,6 +2799,7 @@ class TestPreviewPreferHeader:
         [
             ("task", "point_cloud", "handling=empty", HTTPStatus.NO_CONTENT, "handling=empty"),
             ("task", "point_cloud", "HANDLING=Empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+            ("task", "point_cloud", 'handling="empty"', HTTPStatus.NO_CONTENT, "handling=empty"),
             ("task", "point_cloud", None, HTTPStatus.OK, None),
             ("task", "point_cloud", "wait=5", HTTPStatus.OK, None),
             ("task", "image", "handling=empty", HTTPStatus.OK, "handling=empty"),
@@ -2826,8 +2827,7 @@ class TestPreviewPreferHeader:
 
         assert response.status_code == expected_status
         assert response.headers.get("Preference-Applied") == expected_applied
-        if expected_applied is not None:
-            assert "Prefer" in (response.headers.get("Vary") or "")
+        assert "Prefer" in (response.headers.get("Vary") or "")
 
         if expected_status == HTTPStatus.NO_CONTENT:
             assert response.content == b""

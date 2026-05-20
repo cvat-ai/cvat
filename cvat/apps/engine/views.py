@@ -651,7 +651,10 @@ def _wants_empty_preview(request: ExtendedRequest) -> bool:
     """Return True if the request opts in to 204-on-empty via ``Prefer: handling=empty``."""
     for token in request.headers.get("Prefer", "").split(","):
         key, _, value = token.strip().partition("=")
-        if key.strip().lower() == "handling" and value.strip().lower() == "empty":
+        value = value.strip()
+        if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        if key.strip().lower() == "handling" and value.lower() == "empty":
             return True
     return False
 
@@ -706,25 +709,21 @@ class _DataGetter(metaclass=ABCMeta):
             data = media_provider.get_frame(self.number, quality=self.quality)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == "preview":
-            preference_headers = (
-                {
-                    "Preference-Applied": _PREFER_HANDLING_EMPTY,
-                    "Vary": "Prefer",
-                }
-                if self.allow_empty_preview
-                else {}
-            )
+            preview_headers = {"Vary": "Prefer"}
+            if self.allow_empty_preview:
+                preview_headers["Preference-Applied"] = _PREFER_HANDLING_EMPTY
+
             try:
                 data = media_provider.get_preview_image(allow_empty=self.allow_empty_preview)
             except PreviewNotAvailable:
                 return HttpResponse(
                     status=status.HTTP_204_NO_CONTENT,
-                    headers=preference_headers,
+                    headers=preview_headers,
                 )
             return HttpResponse(
                 data.data.getvalue(),
                 content_type=data.mime,
-                headers=preference_headers,
+                headers=preview_headers,
             )
         elif self.type == "context_image":
             if isinstance(media_provider, IAudioProvider):
