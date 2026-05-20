@@ -1254,6 +1254,99 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     };
 }
 
+function dispatchAnnotationsUpdate(dispatch: ThunkDispatch, states: any[], history: any): void {
+    const [minZ, maxZ] = computeZRange(states);
+
+    dispatch({
+        type: AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS,
+        payload: {
+            states,
+            history,
+            minZ,
+            maxZ,
+        },
+    });
+}
+
+function prepareUpdatedAnnotations(states: any[], workspace: Workspace, jobInstance: Job): any[] {
+    let updatedStates = states;
+    if (jobInstance.type === JobType.GROUND_TRUTH) {
+        updatedStates = wrapAnnotationsInGTJob(updatedStates);
+    }
+
+    if (workspace === Workspace.REVIEW) {
+        updatedStates = wrapStatesForReviewMode(updatedStates);
+    }
+
+    return updatedStates;
+}
+
+export function moveObjectsToLayerAsync(
+    frame: number,
+    placement: { exact: number } | { before: number } | { after: number },
+    statesToMove: ObjectState[],
+): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const { jobInstance, workspace } = receiveAnnotationsParameters();
+        try {
+            dispatch(activateObject(null, null, null));
+            const states = prepareUpdatedAnnotations(
+                await jobInstance.annotations.moveObjectsToLayer(frame, placement, statesToMove),
+                workspace,
+                jobInstance,
+            );
+
+            if (!states.length) {
+                return;
+            }
+
+            if (states.some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null)) {
+                dispatch(fetchAnnotationsAsync());
+                return;
+            }
+
+            dispatchAnnotationsUpdate(dispatch, states, await jobInstance.actions.get());
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
+                payload: { error },
+            });
+            dispatch(fetchAnnotationsAsync());
+        }
+    };
+}
+
+export function compactFrameLayersAsync(frame: number): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const { jobInstance, workspace } = receiveAnnotationsParameters();
+        try {
+            dispatch(activateObject(null, null, null));
+            const states = prepareUpdatedAnnotations(
+                await jobInstance.annotations.compactFrameLayers(frame),
+                workspace,
+                jobInstance,
+            );
+
+            if (!states.length) {
+                return;
+            }
+
+            if (states.some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null)) {
+                dispatch(fetchAnnotationsAsync());
+                return;
+            }
+
+            dispatchAnnotationsUpdate(dispatch, states, await jobInstance.actions.get());
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
+                payload: { error },
+            });
+            dispatch(fetchAnnotationsAsync());
+        }
+    };
+}
+
 export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const state = getState();

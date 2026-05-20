@@ -20,6 +20,8 @@ import {
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
     changeHideActiveObjectAsync,
+    moveObjectsToLayerAsync,
+    compactFrameLayersAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -73,9 +75,13 @@ interface DispatchToProps {
     changeGroupColor(group: number, color: string): void;
     changeShowGroundTruth(value: boolean): void;
     changeHideEditedState(value: boolean): void;
+    moveObjectsToLayer(
+        frame: number,
+        placement: { exact: number } | { before: number } | { after: number },
+        states: ObjectState[],
+    ): void;
+    compactFrameLayers(frame: number): void;
 }
-
-type LayerDragMode = 'move' | 'merge';
 
 const componentShortcuts = {
     SWITCH_ALL_LOCK: {
@@ -202,6 +208,10 @@ const componentShortcuts = {
 
 registerComponentShortcuts(componentShortcuts);
 
+function isLayerState(state: ObjectState): boolean {
+    return [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType);
+}
+
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
@@ -238,7 +248,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     objectStates.forEach((objectState: ObjectState) => {
         const { lock } = objectState;
         if (!lock) {
-            if (objectState.objectType !== ObjectType.TAG) {
+            if (isLayerState(objectState)) {
                 if (objectState.shapeType === ShapeType.SKELETON) {
                     objectState.elements.forEach((element: ObjectState) => {
                         statesHidden = statesHidden && (element.lock || element.hidden);
@@ -310,6 +320,16 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeHideEditedState(value: boolean): void {
             dispatch(changeHideActiveObjectAsync(value));
         },
+        moveObjectsToLayer(
+            frame: number,
+            placement: { exact: number } | { before: number } | { after: number },
+            states: ObjectState[],
+        ): void {
+            dispatch(moveObjectsToLayerAsync(frame, placement, states));
+        },
+        compactFrameLayers(frame: number): void {
+            dispatch(compactFrameLayersAsync(frame));
+        },
     };
 }
 
@@ -343,20 +363,6 @@ function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): numb
 }
 
 type Props = StateToProps & DispatchToProps;
-
-function isLayerState(state: ObjectState): boolean {
-    return state.objectType !== ObjectType.TAG;
-}
-
-function isZOrderBetweenSourceAndTarget(zOrder: number, sourceZOrder: number, targetZOrder: number): boolean {
-    return sourceZOrder > targetZOrder ?
-        zOrder >= targetZOrder && zOrder < sourceZOrder :
-        zOrder > sourceZOrder && zOrder <= targetZOrder;
-}
-
-function getShiftedZOrder(zOrder: number, sourceZOrder: number, targetZOrder: number): number {
-    return sourceZOrder > targetZOrder ? zOrder + 1 : zOrder - 1;
-}
 
 interface State {
     statesOrdering: StatesOrdering;
@@ -441,21 +447,17 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         changeShowGroundTruth(!showGroundTruth);
     };
 
-    private moveObjectToLayer = (clientID: number, targetZOrder: number): void => {
-        const { updateAnnotations } = this.props;
+    private layerPlacement = (targetZOrder: number): { exact: number } | { before: number } => {
         const { filteredStates } = this.state;
-        const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
+        const targetOccupied = filteredStates.some((state: ObjectState): boolean => (
+            isLayerState(state) && state.zOrder === targetZOrder
+        ));
 
-        if (!objectState || objectState.objectType === ObjectType.TAG || objectState.zOrder === targetZOrder) {
-            return;
-        }
-
-        objectState.zOrder = targetZOrder;
-        updateAnnotations([objectState]);
+        return targetOccupied ? { before: targetZOrder } : { exact: targetZOrder };
     };
 
-    private moveObjectToNewLayer = (clientID: number, targetZOrder: number): void => {
-        const { updateAnnotations } = this.props;
+    private moveObjectToLayer = (clientID: number, targetZOrder: number): void => {
+        const { frameNumber, moveObjectsToLayer } = this.props;
         const { filteredStates } = this.state;
         const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
 
@@ -463,90 +465,45 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return;
         }
 
-        const sourceZOrder = objectState.zOrder;
-        const targetOccupied = filteredStates.some((state: ObjectState): boolean => (
-            isLayerState(state) && state.clientID !== clientID && state.zOrder === targetZOrder
-        ));
-
-        const statesToUpdate = targetOccupied ?
-            filteredStates.filter((state: ObjectState): boolean => (
-                isLayerState(state) && (
-                    state.clientID === clientID ||
-                    isZOrderBetweenSourceAndTarget(state.zOrder, sourceZOrder, targetZOrder)
-                )
-            )) :
-            [objectState];
-
-        for (const state of statesToUpdate) {
-            // The dragged object owns the newly inserted layer.
-            if (state.clientID === clientID) {
-                state.zOrder = targetZOrder;
-            } else if (targetOccupied) {
-                // Shift only layers between the source and target positions.
-                state.zOrder = getShiftedZOrder(state.zOrder, sourceZOrder, targetZOrder);
-            }
-        }
-
-        updateAnnotations(statesToUpdate);
+        moveObjectsToLayer(frameNumber, { exact: targetZOrder }, [objectState]);
     };
 
-    private moveLayer = (sourceZOrder: number, targetZOrder: number, mode: LayerDragMode): void => {
-        const { updateAnnotations } = this.props;
+    private moveObjectToNewLayer = (clientID: number, targetZOrder: number): void => {
+        const { frameNumber, moveObjectsToLayer } = this.props;
+        const { filteredStates } = this.state;
+        const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
+
+        if (!objectState || !isLayerState(objectState) || objectState.zOrder === targetZOrder) {
+            return;
+        }
+
+        moveObjectsToLayer(frameNumber, this.layerPlacement(targetZOrder), [objectState]);
+    };
+
+    private moveLayer = (sourceZOrder: number, targetZOrder: number, mode: 'move' | 'merge'): void => {
+        const { frameNumber, moveObjectsToLayer } = this.props;
         const { filteredStates } = this.state;
 
         if (sourceZOrder === targetZOrder) {
             return;
         }
 
-        const targetOccupied = filteredStates.some((state: ObjectState): boolean => (
-            isLayerState(state) && state.zOrder === targetZOrder && state.zOrder !== sourceZOrder
-        ));
-        const statesToUpdate = filteredStates.filter((state: ObjectState): boolean => (
-            isLayerState(state) && (
-                state.zOrder === sourceZOrder ||
-                (mode === 'move' && targetOccupied && (
-                    isZOrderBetweenSourceAndTarget(state.zOrder, sourceZOrder, targetZOrder)
-                ))
-            )
+        const statesToMove = filteredStates.filter((state: ObjectState): boolean => (
+            isLayerState(state) && state.zOrder === sourceZOrder
         ));
 
-        for (const state of statesToUpdate) {
-            if (state.zOrder === sourceZOrder) {
-                state.zOrder = targetZOrder;
-            } else if (targetOccupied) {
-                // Move only layers between the source and target positions.
-                state.zOrder = getShiftedZOrder(state.zOrder, sourceZOrder, targetZOrder);
-            }
-        }
-
-        if (statesToUpdate.length) {
-            updateAnnotations(statesToUpdate);
+        if (statesToMove.length) {
+            moveObjectsToLayer(
+                frameNumber,
+                mode === 'merge' ? { exact: targetZOrder } : this.layerPlacement(targetZOrder),
+                statesToMove,
+            );
         }
     };
 
     private compactLayers = (): void => {
-        const { updateAnnotations } = this.props;
-        const { filteredStates } = this.state;
-        const zOrderMap = new Map(
-            Array.from(new Set(
-                filteredStates
-                    .filter((state: ObjectState): boolean => state.objectType !== ObjectType.TAG)
-                    .map((state: ObjectState): number => state.zOrder),
-            ))
-                .sort((left: number, right: number): number => left - right)
-                .map((zOrder: number, index: number): [number, number] => [zOrder, index]),
-        );
-        const statesToUpdate = filteredStates.filter((state: ObjectState): boolean => (
-            state.objectType !== ObjectType.TAG && zOrderMap.get(state.zOrder) !== state.zOrder
-        ));
-
-        for (const state of statesToUpdate) {
-            state.zOrder = zOrderMap.get(state.zOrder) as number;
-        }
-
-        if (statesToUpdate.length) {
-            updateAnnotations(statesToUpdate);
-        }
+        const { frameNumber, compactFrameLayers } = this.props;
+        compactFrameLayers(frameNumber);
     };
 
     private lockAllStates(locked: boolean): void {
@@ -668,7 +625,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_OCCLUDED: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.occluded = !state.occluded;
                     updateAnnotations([state]);
                 }
@@ -727,7 +684,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_BACKGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder = minZLayer - 1;
                     updateAnnotations([state]);
                 }
@@ -735,7 +692,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_FOREGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder = maxZLayer + 1;
                     updateAnnotations([state]);
                 }
@@ -743,7 +700,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_ONE_LAYER_BACKWARD: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder -= 1;
                     updateAnnotations([state]);
                 }
@@ -751,7 +708,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_ONE_LAYER_FORWARD: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder += 1;
                     updateAnnotations([state]);
                 }

@@ -234,6 +234,16 @@ context('Actions on polygon', () => {
             cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '2');
             cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '2');
             cy.contains('.cvat-objects-sidebar-z-layer-mark', '1').should('not.exist');
+
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '1');
+            cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '2');
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '1').should('exist');
+
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '2');
+            cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '2');
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '1').should('not.exist');
         });
 
         it('Moves an object to a new layer by dragging it between layers', () => {
@@ -285,6 +295,16 @@ context('Actions on polygon', () => {
             cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '0');
             cy.contains('.cvat-objects-sidebar-z-layer-mark', '0').should('exist');
             cy.contains('.cvat-objects-sidebar-z-layer-mark', '2').should('not.exist');
+
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '2');
+            cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '2');
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '2').should('exist');
+
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
+            cy.get('#cvat_canvas_shape_1').should('have.attr', 'data-z-order', '0');
+            cy.get('#cvat_canvas_shape_2').should('have.attr', 'data-z-order', '0');
+            cy.contains('.cvat-objects-sidebar-z-layer-mark', '0').should('exist');
         });
 
         it('Does not make tag cards draggable', () => {

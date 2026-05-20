@@ -41,6 +41,39 @@ const objectAttributesAsList = (state: ObjectState): { spec_id: number, value: s
     }))
 );
 
+type LayerPlacement = { exact: number } | { before: number } | { after: number };
+type TrackedShapeData = Track['shapes'][number];
+
+interface ZOrderSnapshot {
+    object: Shape | Track;
+    source: Source;
+    zOrder?: number;
+    shape?: TrackedShapeData;
+    hasShape?: boolean;
+}
+
+function isLayerState(state: ObjectState): boolean {
+    return [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType);
+}
+
+function isZOrderBetweenSourceAndTarget(zOrder: number, sourceZOrder: number, targetZOrder: number): boolean {
+    return sourceZOrder > targetZOrder ?
+        zOrder >= targetZOrder && zOrder < sourceZOrder :
+        zOrder > sourceZOrder && zOrder <= targetZOrder;
+}
+
+function getShiftedZOrder(zOrder: number, sourceZOrder: number, targetZOrder: number): number {
+    return sourceZOrder > targetZOrder ? zOrder + 1 : zOrder - 1;
+}
+
+function cloneTrackedShape(shape: TrackedShapeData): TrackedShapeData {
+    return {
+        ...shape,
+        points: shape.points ? [...shape.points] : undefined,
+        attributes: { ...shape.attributes },
+    };
+}
+
 const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     label.attributes.reduce((accumulator, attribute) => {
         accumulator[attribute.id] = attribute;
@@ -107,6 +140,104 @@ export default class Collection {
                 .filter((object) => object instanceof MaskShape),
             replicasCount: data.replicasCount,
         };
+    }
+
+    private _captureZOrderSnapshot(object: Shape | Track, frame: number): ZOrderSnapshot {
+        if (object instanceof Track) {
+            return {
+                object,
+                source: (object as any).source,
+                hasShape: frame in object.shapes,
+                shape: frame in object.shapes ? cloneTrackedShape(object.shapes[frame]) : undefined,
+            };
+        }
+
+        return {
+            object,
+            source: (object as any).source,
+            zOrder: object.zOrder,
+        };
+    }
+
+    private _restoreZOrderSnapshot(snapshot: ZOrderSnapshot, frame: number): void {
+        const { object } = snapshot;
+        (object as any).source = snapshot.source;
+        object.updated = Date.now();
+
+        if (object instanceof Track) {
+            if (snapshot.hasShape) {
+                object.shapes[frame] = cloneTrackedShape(snapshot.shape as TrackedShapeData);
+            } else {
+                delete object.shapes[frame];
+            }
+        } else {
+            object.zOrder = snapshot.zOrder as number;
+        }
+    }
+
+    private _applyZOrderUpdates(frame: number, zOrders: Map<number, number>): ObjectState[] {
+        const snapshots: { undo: ZOrderSnapshot; redo: ZOrderSnapshot }[] = [];
+        const updatedStates: ObjectState[] = [];
+
+        this.history.freeze(true);
+
+        try {
+            for (const [clientID, zOrder] of zOrders) {
+                const object = this.objects[clientID];
+                if (!(object instanceof Shape || object instanceof Track) || object.removed) {
+                    continue;
+                }
+
+                let currentState: ObjectState;
+                try {
+                    currentState = new ObjectState(object.get(frame));
+                } catch (error: unknown) {
+                    if (error instanceof InterpolationNotPossibleError) {
+                        continue;
+                    }
+                    throw error;
+                }
+
+                const previousZOrder = currentState.zOrder;
+                if (previousZOrder === zOrder) {
+                    continue;
+                }
+
+                const undo = this._captureZOrderSnapshot(object, frame);
+                currentState.zOrder = zOrder;
+                object.save(frame, currentState);
+                const redo = this._captureZOrderSnapshot(object, frame);
+                const updatedState = new ObjectState(object.get(frame));
+
+                if (updatedState.zOrder === previousZOrder) {
+                    continue;
+                }
+
+                snapshots.push({ undo, redo });
+                updatedStates.push(updatedState);
+            }
+        } catch (error: unknown) {
+            snapshots.forEach(({ undo }) => this._restoreZOrderSnapshot(undo, frame));
+            throw error;
+        } finally {
+            this.history.freeze(false);
+        }
+
+        if (snapshots.length) {
+            this.history.do(
+                HistoryActions.CHANGED_ZORDER,
+                () => {
+                    snapshots.forEach(({ undo }) => this._restoreZOrderSnapshot(undo, frame));
+                },
+                () => {
+                    snapshots.forEach(({ redo }) => this._restoreZOrderSnapshot(redo, frame));
+                },
+                snapshots.map(({ undo }) => undo.object.clientID),
+                frame,
+            );
+        }
+
+        return updatedStates;
     }
 
     public import(data: Omit<SerializedCollection, 'version'>): {
@@ -1250,6 +1381,104 @@ export default class Collection {
         }
 
         return importedArray.map((value) => value.clientID);
+    }
+
+    public moveObjectsToLayer(frame: number, placement: LayerPlacement, objectStates: ObjectState[]): ObjectState[] {
+        checkObjectType('frame', frame, 'integer', null);
+        checkObjectType('placement', placement, null, { cls: Object, name: 'Object' });
+        checkObjectType('object states', objectStates, null, { cls: Array, name: 'Array' });
+
+        const placementKeys = ['exact', 'before', 'after'].filter((key) => Object.hasOwn(placement, key));
+        if (placementKeys.length !== 1) {
+            throw new ArgumentError('Exactly one of "exact", "before", or "after" must be specified');
+        }
+
+        const [placementKey] = placementKeys;
+        const placementZOrder =
+            placementKey === 'exact' ? (placement as { exact: number }).exact :
+                placementKey === 'before' ? (placement as { before: number }).before :
+                    (placement as { after: number }).after;
+        checkObjectType(`placement ${placementKey}`, placementZOrder, 'integer', null);
+
+        if (!objectStates.length) {
+            return [];
+        }
+
+        const visibleStates = this.get(frame, false, []).filter(isLayerState);
+        const visibleStatesByClientID = visibleStates.reduce((accumulator: Record<number, ObjectState>, state) => {
+            accumulator[state.clientID as number] = state;
+            return accumulator;
+        }, {});
+        const selectedStates = objectStates.map((state) => {
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
+            if (!isLayerState(state)) {
+                throw new ArgumentError('Tags cannot be moved between z-order layers');
+            }
+
+            const visibleState = visibleStatesByClientID[state.clientID as number];
+            if (!visibleState) {
+                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            }
+
+            return visibleState;
+        });
+        const sourceZOrder = selectedStates[0].zOrder;
+
+        if (selectedStates.some((state) => state.zOrder !== sourceZOrder)) {
+            throw new ArgumentError('All moved objects must belong to the same z-order layer');
+        }
+
+        const targetZOrder = placementKey === 'after' ? placementZOrder + 1 : placementZOrder;
+        const selectedClientIDs = new Set(selectedStates.map((state) => state.clientID as number));
+        const zOrders = new Map<number, number>();
+
+        selectedStates.forEach((state) => zOrders.set(state.clientID as number, targetZOrder));
+
+        if (placementKey !== 'exact') {
+            const targetOccupied = visibleStates.some((state) => (
+                !selectedClientIDs.has(state.clientID as number) && state.zOrder === targetZOrder
+            ));
+
+            if (targetOccupied) {
+                visibleStates.forEach((state) => {
+                    if (
+                        !selectedClientIDs.has(state.clientID as number) &&
+                        isZOrderBetweenSourceAndTarget(state.zOrder, sourceZOrder, targetZOrder)
+                    ) {
+                        zOrders.set(
+                            state.clientID as number,
+                            getShiftedZOrder(state.zOrder, sourceZOrder, targetZOrder),
+                        );
+                    }
+                });
+            }
+        }
+
+        return this._applyZOrderUpdates(frame, zOrders);
+    }
+
+    public compactFrameLayers(frame: number): ObjectState[] {
+        checkObjectType('frame', frame, 'integer', null);
+
+        const zOrderMap = new Map(
+            Array.from(new Set(
+                this.get(frame, false, [])
+                    .filter(isLayerState)
+                    .map((state: ObjectState): number => state.zOrder),
+            ))
+                .sort((left: number, right: number): number => left - right)
+                .map((zOrder: number, index: number): [number, number] => [zOrder, index]),
+        );
+        const zOrders = new Map<number, number>();
+
+        this.get(frame, false, []).filter(isLayerState).forEach((state) => {
+            const zOrder = zOrderMap.get(state.zOrder) as number;
+            if (zOrder !== state.zOrder) {
+                zOrders.set(state.clientID as number, zOrder);
+            }
+        });
+
+        return this._applyZOrderUpdates(frame, zOrders);
     }
 
     public select(objectStates: ObjectState[], x: number, y: number): {
