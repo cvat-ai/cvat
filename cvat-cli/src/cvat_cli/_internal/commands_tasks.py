@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import textwrap
 from collections.abc import Sequence
 
@@ -13,7 +12,6 @@ import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
 from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
-from cvat_sdk.core.proxies.types import Location
 
 from .command_base import (
     CommandGroup,
