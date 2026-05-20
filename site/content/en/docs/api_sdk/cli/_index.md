@@ -17,7 +17,7 @@ The following subcommands are supported:
   - `create` - create a new project
   - `delete` - delete projects
   - `export-dataset` - export a project as a dataset
-  - `import-dataset` - import annotations into a project from a dataset
+  - `import-dataset` - create project tasks from a dataset
   - `ls` - list all projects
 
 - Tasks:
@@ -399,14 +399,15 @@ see that command's examples for more information.
   cvat-cli project export-dataset --format "CVAT for images 1.1" 105
   ```
 
-### Import annotations from a dataset
+### Create tasks from a dataset
 
-- Import a dataset into project with id 106, in the format `COCO 1.0`, from the file "coco.zip":
+- Create tasks in project with id 106 from the file "coco.zip" in the format `COCO 1.0`:
   ```bash
   cvat-cli project import-dataset --format "COCO 1.0" 106 coco.zip
   ```
 
-  The project must have labels compatible with the dataset being imported.
+  The project must have labels compatible with the dataset being imported. The uploaded dataset
+  must include image data, because the command creates new tasks with images and annotations.
 
 ## Examples - functions
 

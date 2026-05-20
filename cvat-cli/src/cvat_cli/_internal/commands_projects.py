@@ -103,4 +103,7 @@ class ProjectExportDataset(GenericExportDatasetCommand, GenericProjectCommand):
 
 @COMMANDS.command_class("import-dataset")
 class ProjectImportDataset(GenericImportDatasetCommand, GenericProjectCommand):
-    pass
+    description = textwrap.dedent("""\
+        Create tasks in a project from a dataset in the specified format
+        (e.g. 'YOLO 1.1'), including images and annotations.
+        """)

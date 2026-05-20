@@ -122,7 +122,7 @@ class TestCliProjects(TestCliBase):
             "--format",
             "CVAT for images 1.1",
             "--with-images",
-            "no",
+            "yes",
             "--completion_verification_period",
             "0.01",
         )
