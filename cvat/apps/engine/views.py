@@ -58,6 +58,11 @@ from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
+from cvat.apps.engine.media_io.audio_provider import (
+    IAudioProvider,
+    JobAudioProvider,
+    TaskAudioProvider,
+)
 from cvat.apps.engine.media_io.frame_provider import (
     DataWithMeta,
     IFrameProvider,
@@ -152,6 +157,7 @@ from cvat.apps.engine.view_utils import (
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
+from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
 from . import models
@@ -640,26 +646,38 @@ class _DataGetter(metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def _get_frame_provider(self) -> IFrameProvider: ...
+    def _get_media_provider(self) -> IFrameProvider | IAudioProvider: ...
 
     def _get_data_response(self) -> HttpResponse:
-        frame_provider = self._get_frame_provider()
+        media_provider = self._get_media_provider()
 
         if self.type == "chunk":
-            data = frame_provider.get_chunk(self.number, quality=self.quality)
+            data = media_provider.get_chunk(self.number, quality=self.quality)
             return HttpResponse(
                 data.data.getvalue(),
                 content_type=data.mime,
                 headers=self._get_chunk_response_headers(data),
             )
         elif self.type == "frame":
-            data = frame_provider.get_frame(self.number, quality=self.quality)
+            if isinstance(media_provider, IAudioProvider):
+                raise ValidationError(
+                    "Frame requests are not available for this data",
+                    code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            data = media_provider.get_frame(self.number, quality=self.quality)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == "preview":
-            data = frame_provider.get_preview()
+            data = media_provider.get_preview_image()
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == "context_image":
-            data = frame_provider.get_frame_context_images_chunk(self.number)
+            if isinstance(media_provider, IAudioProvider):
+                raise ValidationError(
+                    "Context image requests are not available for this data",
+                    code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            data = media_provider.get_frame_context_images_chunk(self.number)
             if not data:
                 return HttpResponseNotFound()
 
@@ -706,7 +724,11 @@ class _DataGetter(metaclass=ABCMeta):
         size_checksum = zlib.crc32(str(len(data)).encode())
         return str(zlib.crc32(data[: self._CHUNK_HEADER_BYTES_LENGTH], size_checksum))
 
-    def _make_chunk_response_headers(self, checksum: str, updated_date: datetime) -> dict[str, str]:
+    def _make_chunk_response_headers(
+        self,
+        checksum: str,
+        updated_date: datetime,
+    ) -> dict[str, str]:
         return {
             _DATA_CHECKSUM_HEADER_NAME: str(checksum or ""),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(
@@ -727,11 +749,14 @@ class _TaskDataGetter(_DataGetter):
         super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
         self._db_task = db_task
 
-        if db_task.media_type == models.MediaType.AUDIO:
-            raise ValidationError("Media retrieval is not available in audio tasks")
-
-    def _get_frame_provider(self) -> TaskFrameProvider:
-        return TaskFrameProvider(self._db_task)
+    def _get_media_provider(self) -> TaskFrameProvider | TaskAudioProvider:
+        match self._db_task.media_type:
+            case models.MediaType.AUDIO:
+                return TaskAudioProvider(self._db_task)
+            case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+                return TaskFrameProvider(self._db_task)
+            case _ as media_type:
+                assert False, f"Unknown media type {media_type}"
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
@@ -777,23 +802,26 @@ class _JobDataGetter(_DataGetter):
 
         self._db_job = db_job
 
-        if db_job.segment.task.media_type == models.MediaType.AUDIO:
-            raise ValidationError("Media retrieval is not available in audio tasks")
-
-    def _get_frame_provider(self) -> JobFrameProvider:
-        return JobFrameProvider(self._db_job)
+    def _get_media_provider(self) -> JobFrameProvider | JobAudioProvider:
+        match self._db_job.segment.task.media_type:
+            case models.MediaType.AUDIO:
+                return JobAudioProvider(self._db_job)
+            case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+                return JobFrameProvider(self._db_job)
+            case _ as media_type:
+                assert False, f"Unknown media type {media_type}"
 
     def _get_data_response(self):
         if self.type == "chunk":
             # Reproduce the task chunk indexing
-            frame_provider = self._get_frame_provider()
+            media_provider = self._get_media_provider()
 
             if self.index is not None:
-                data = frame_provider.get_chunk(
+                data = media_provider.get_chunk(
                     self.index, quality=self.quality, is_task_chunk=False
                 )
             else:
-                data = frame_provider.get_chunk(
+                data = media_provider.get_chunk(
                     self.number, quality=self.quality, is_task_chunk=True
                 )
 
@@ -3229,9 +3257,15 @@ class CloudStorageViewSet(
             next_token = request.query_params.get("next_token")
 
             if manifest_path := request.query_params.get("manifest_path"):
+                if problem := problem_with_untrusted_path(manifest_path):
+                    return HttpResponseBadRequest(f"manifest_path: {problem}")
+
                 manifest_prefix = os.path.dirname(manifest_path)
 
-                full_manifest_path = db_storage.get_storage_dirname() / manifest_path
+                full_manifest_path = join_untrusted_path(
+                    db_storage.get_storage_dirname(), manifest_path
+                )
+
                 if not full_manifest_path.exists() or datetime.fromtimestamp(
                     full_manifest_path.stat().st_mtime, tz=timezone.utc
                 ) < storage.get_file_last_modified(manifest_path):

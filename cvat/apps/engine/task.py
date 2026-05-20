@@ -26,7 +26,7 @@ from django.db import transaction
 from django.forms.models import model_to_dict
 from rest_framework.serializers import ValidationError
 
-from cvat.apps.engine import models
+from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
@@ -45,12 +45,14 @@ from cvat.apps.engine.media_extractors import (
     load_image,
     sort,
 )
+from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
+from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import (
     ImageManifestManager,
     VideoManifestManager,
@@ -172,7 +174,10 @@ def _generate_segment_params(
                 and db_task.mode == models.TaskMode.INTERPOLATION
             ):
                 overlap = 5
-            elif db_task.media_type == models.MediaType.AUDIO:
+            elif (
+                db_task.media_type == models.MediaType.AUDIO
+                and db_task.mode == models.TaskMode.INTERPOLATION
+            ):
                 overlap = 10000
             else:
                 overlap = 0
@@ -245,15 +250,7 @@ def _create_segments_and_jobs(
 
 def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
     share_root = settings.SHARE_ROOT
-    server_files = []
-
-    for path in data["server_files"]:
-        path = os.path.normpath(path).lstrip("/")
-        if ".." in path.split(os.path.sep):
-            raise ValueError("Don't use '..' inside file paths")
-        if not (share_root / path).resolve().is_relative_to(share_root):
-            raise ValueError("Bad file path: " + path)
-        server_files.append(path)
+    server_files = [f.rstrip("/") for f in data["server_files"]]
 
     sorted_server_files = sorted(server_files, reverse=True)
     # The idea of the code is trivial. After sort we will have files in the
@@ -291,9 +288,7 @@ def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
     )
 
     count_files(
-        file_mapping={
-            f: os.path.abspath(os.path.join(share_root, f)) for f in data["server_files"]
-        },
+        file_mapping={f: join_untrusted_path(share_root, f) for f in data["server_files"]},
         counter=counter,
     )
 
@@ -395,7 +390,7 @@ def _validate_validation_params(
 
     if (
         params["mode"] == models.ValidationMode.GT
-        and params["frame_selection_method"] == models.JobFrameSelectionMethod.RANDOM_PER_JOB
+        and params.get("frame_selection_method") == models.JobFrameSelectionMethod.RANDOM_PER_JOB
         and (frames_per_job := params.get("frames_per_job_count"))
         and db_task.segment_size <= frames_per_job
     ):
@@ -444,7 +439,7 @@ def _validate_manifest(
     if len(manifests) != 1:
         raise ValidationError("Only one manifest file can be attached to data")
     manifest_file = manifests[0]
-    full_manifest_path = root_dir / manifests[0]
+    full_manifest_path = join_untrusted_path(root_dir, manifest_file)
 
     if is_in_cloud and not is_backup_restore:
         cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
@@ -898,104 +893,138 @@ def _create_validation_jobs(
 ) -> None:
     db_data = db_task.require_data()
 
-    if db_task.media_type == models.MediaType.AUDIO and validation_params:
+    if db_task.media_type == models.MediaType.AUDIO and (
+        validation_params and validation_params["mode"] != models.ValidationMode.GT
+    ):
         raise ValidationError(
-            f"Quality control is not available for '{models.MediaType.AUDIO}' media type"
+            "Only the '{}' validation mode is available in '{}' tasks.".format(
+                models.ValidationMode.GT, models.MediaType.AUDIO
+            )
         )
+
+    if db_task.media_type == models.MediaType.POINT_CLOUD and (
+        validation_params and validation_params["mode"]
+    ):
+        raise ValidationError(f"Validation is not available in '{db_task.media_type}' tasks.")
 
     if validation_params and validation_params["mode"] == models.ValidationMode.GT:
 
         def _to_rel_frame(abs_frame: int) -> int:
             return (abs_frame - db_data.start_frame) // db_data.get_frame_step()
 
-        # The RNG backend must not change to yield reproducible frame picks,
-        # so here we specify it explicitly
-        from numpy import random
+        if db_task.media_type == models.MediaType.AUDIO:
+            if "frame_selection_method" in validation_params:
+                field_validation.require_one_of_values(
+                    validation_params, "frame_selection_method", ["random_uniform"]
+                )
+                validation_params.pop("frame_selection_method")
 
-        seed = validation_params.get("random_seed")
-        rng = random.Generator(random.MT19937(seed=seed))
+            if "frames" in validation_params:
+                if not validation_params["frames"]:
+                    validation_params.pop("frames")
 
-        match validation_params["frame_selection_method"]:
-            case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                all_frames = range(db_data.size)
+            if extra_params := set(validation_params.keys()) - {"mode"}:
+                raise ValidationError(
+                    "Validation parameters {} are not applicable to the '{}' media type.".format(
+                        ", ".join(f"'{v}'" for v in extra_params),
+                        db_task.media_type,
+                    )
+                )
 
-                if frame_count := validation_params.get("frame_count"):
-                    if db_data.size < frame_count:
+            validation_frames = []
+        else:
+            field_validation.require_field(validation_params, "frame_selection_method")
+
+            # The RNG backend must not change to yield reproducible frame picks,
+            # so here we specify it explicitly
+            from numpy import random
+
+            seed = validation_params.get("random_seed")
+            rng = random.Generator(random.MT19937(seed=seed))
+
+            match validation_params["frame_selection_method"]:
+                case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                    all_frames = range(db_data.size)
+
+                    if frame_count := validation_params.get("frame_count"):
+                        if db_data.size < frame_count:
+                            raise ValidationError(
+                                f"The number of validation frames requested ({frame_count}) "
+                                f"is greater that the number of task frames ({db_data.size})"
+                            )
+                    elif frame_share := validation_params.get("frame_share"):
+                        frame_count = max(1, int(frame_share * len(all_frames)))
+                    else:
+                        raise ValidationError("The number of validation frames is not specified")
+
+                    validation_frames = rng.choice(
+                        all_frames, size=frame_count, shuffle=False, replace=False
+                    ).tolist()
+                case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+                    if frame_count := validation_params.get("frames_per_job_count"):
+                        if db_task.segment_size < frame_count:
+                            raise ValidationError(
+                                "The requested number of GT frames per job must be less "
+                                f"than task segment size ({db_task.segment_size})"
+                            )
+                    elif frame_share := validation_params.get("frames_per_job_share"):
+                        frame_count = min(
+                            max(1, int(frame_share * db_task.segment_size)), db_data.size
+                        )
+                    else:
+                        raise ValidationError("The number of validation frames is not specified")
+
+                    validation_frames: list[int] = []
+                    overlap = db_task.overlap
+                    for segment in db_task.segment_set.all():
+                        segment_frames = set(map(_to_rel_frame, segment.frame_set))
+                        selected_frames = segment_frames.intersection(validation_frames)
+                        selected_count = len(selected_frames)
+
+                        missing_count = min(len(segment_frames), frame_count) - selected_count
+                        if missing_count <= 0:
+                            continue
+
+                        selectable_segment_frames = set(
+                            sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
+                        ).difference(selected_frames)
+
+                        validation_frames.extend(
+                            rng.choice(
+                                tuple(selectable_segment_frames), size=missing_count, replace=False
+                            ).tolist()
+                        )
+                case models.JobFrameSelectionMethod.MANUAL:
+                    if not images:
                         raise ValidationError(
-                            f"The number of validation frames requested ({frame_count}) "
-                            f"is greater that the number of task frames ({db_data.size})"
+                            "{} validation frame selection method at task creation "
+                            "is only available for image-based tasks. "
+                            "Please create the GT job after the task is created.".format(
+                                models.JobFrameSelectionMethod.MANUAL
+                            )
                         )
-                elif frame_share := validation_params.get("frame_share"):
-                    frame_count = max(1, int(frame_share * len(all_frames)))
-                else:
-                    raise ValidationError("The number of validation frames is not specified")
 
-                validation_frames = rng.choice(
-                    all_frames, size=frame_count, shuffle=False, replace=False
-                ).tolist()
-            case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
-                if frame_count := validation_params.get("frames_per_job_count"):
-                    if db_task.segment_size < frame_count:
+                    validation_frames: list[int] = []
+                    known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
+                    unknown_requested_frames = []
+                    for frame_filename in validation_params["frames"]:
+                        frame_id = known_frame_names.get(frame_filename)
+                        if frame_id is None:
+                            unknown_requested_frames.append(frame_filename)
+                            continue
+
+                        validation_frames.append(frame_id)
+
+                    if unknown_requested_frames:
                         raise ValidationError(
-                            "The requested number of GT frames per job must be less "
-                            f"than task segment size ({db_task.segment_size})"
+                            "Unknown validation frames requested: {}".format(
+                                format_list(sorted(unknown_requested_frames))
+                            )
                         )
-                elif frame_share := validation_params.get("frames_per_job_share"):
-                    frame_count = min(max(1, int(frame_share * db_task.segment_size)), db_data.size)
-                else:
-                    raise ValidationError("The number of validation frames is not specified")
-
-                validation_frames: list[int] = []
-                overlap = db_task.overlap
-                for segment in db_task.segment_set.all():
-                    segment_frames = set(map(_to_rel_frame, segment.frame_set))
-                    selected_frames = segment_frames.intersection(validation_frames)
-                    selected_count = len(selected_frames)
-
-                    missing_count = min(len(segment_frames), frame_count) - selected_count
-                    if missing_count <= 0:
-                        continue
-
-                    selectable_segment_frames = set(
-                        sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
-                    ).difference(selected_frames)
-
-                    validation_frames.extend(
-                        rng.choice(
-                            tuple(selectable_segment_frames), size=missing_count, replace=False
-                        ).tolist()
-                    )
-            case models.JobFrameSelectionMethod.MANUAL:
-                if not images:
-                    raise ValidationError(
-                        "{} validation frame selection method at task creation "
-                        "is only available for image-based tasks. "
-                        "Please create the GT job after the task is created.".format(
-                            models.JobFrameSelectionMethod.MANUAL
-                        )
-                    )
-
-                validation_frames: list[int] = []
-                known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
-                unknown_requested_frames = []
-                for frame_filename in validation_params["frames"]:
-                    frame_id = known_frame_names.get(frame_filename)
-                    if frame_id is None:
-                        unknown_requested_frames.append(frame_filename)
-                        continue
-
-                    validation_frames.append(frame_id)
-
-                if unknown_requested_frames:
-                    raise ValidationError(
-                        "Unknown validation frames requested: {}".format(
-                            format_list(sorted(unknown_requested_frames))
-                        )
-                    )
-            case _:
-                assert (
-                    False
-                ), f'Unknown frame selection method {validation_params["frame_selection_method"]}'
+                case _:
+                    assert (
+                        False
+                    ), f'Unknown frame selection method {validation_params["frame_selection_method"]}'
 
         db_data.update_validation_layout(
             models.ValidationLayout(
@@ -1015,7 +1044,11 @@ def _create_validation_jobs(
                 start_frame=0,
                 stop_frame=db_data.size - 1,
                 frames=list(map(_to_abs_frame, db_data.validation_layout.frames)),
-                type=models.SegmentType.SPECIFIC_FRAMES,
+                type=(
+                    models.SegmentType.SPECIFIC_FRAMES
+                    if db_data.validation_layout.frames
+                    else models.SegmentType.RANGE
+                ),
             )
         elif db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
             db_gt_segment = models.Segment(
@@ -1083,6 +1116,9 @@ def _filter_cloud_storage_files(
                     prefix=directory, _use_flat_listing=True
                 ):
                     if f["type"] == "REG":
+                        if problem_with_untrusted_path(f["name"]):
+                            continue
+
                         additional_files.append(f["name"])
                     else:
                         dirs.append(f["name"])
@@ -1120,6 +1156,9 @@ def _filter_cloud_storage_files(
             while True:
                 for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
                     if f["type"] == "REG":
+                        if problem_with_untrusted_path(f["name"]):
+                            continue
+
                         additional_files.append(f["name"])
                     else:
                         dirs.append(f["name"])
@@ -1214,9 +1253,8 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
 
     match (db_task.media_type, db_task.mode):
         case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
-            # Not supported yet
-            db_data.compressed_chunk_type = ""
-            db_data.original_chunk_type = ""
+            db_data.compressed_chunk_type = models.DataChoice.AUDIO_MP3
+            db_data.original_chunk_type = models.DataChoice.AUDIO_MP3
         case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
             db_data.compressed_chunk_type = (
                 models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
@@ -1383,14 +1421,17 @@ def _collect_image_dataset_descriptors(
 
     images: list[models.Image] = []
     for frame_id in extractor.frame_range:
-        image_path = extractor.get_path(frame_id)
+        image_path = extractor.get_path(frame_id).relative_to(upload_dir).as_posix()
         image_size = None
 
         if manifest:
             image_info = manifest[frame_id]
 
             # check mapping
-            if not image_path.as_posix().endswith(f"{image_info['name']}{image_info['extension']}"):
+            manifest_image_path = f"{image_info['name']}{image_info['extension']}"
+            if image_path != manifest_image_path and not image_path.endswith(
+                "/" + manifest_image_path
+            ):
                 raise ValidationError("Incorrect file mapping to manifest content")
 
             if image_info.get("width") is not None and image_info.get("height") is not None:
@@ -1398,7 +1439,7 @@ def _collect_image_dataset_descriptors(
             elif is_data_in_cloud:
                 raise ValidationError(
                     "Can't find image '{}' width or height info in the manifest".format(
-                        f"{image_info['name']}{image_info['extension']}"
+                        manifest_image_path
                     )
                 )
 
@@ -1408,7 +1449,7 @@ def _collect_image_dataset_descriptors(
         images.append(
             models.Image(
                 data=db_data,
-                path=os.path.relpath(image_path, upload_dir),
+                path=image_path,
                 frame=frame_id,
                 width=image_size[0],
                 height=image_size[1],
@@ -1992,13 +2033,21 @@ def create_thread(
     ):
         _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
-    # Prepare the preview image and save it in the cache
-    if db_task.media_type != models.MediaType.AUDIO and not (
-        is_data_in_cloud and is_backup_restore
-    ):
-        TaskFrameProvider(db_task=db_task).get_preview()
+    if not (is_data_in_cloud and is_backup_restore):
+        _create_task_preview(db_task)
 
     _move_to_backing_cs_if_configured(db_data)
+
+
+def _create_task_preview(db_task: models.Task):
+    # Prepare the preview image and save it in the cache
+    match db_task.media_type:
+        case models.MediaType.AUDIO:
+            TaskAudioProvider(db_task).get_preview_image()
+        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+            TaskFrameProvider(db_task).get_preview_image()
+        case _ as media_type:
+            assert False, f"Unknown media type '{media_type}'"
 
 
 def _create_static_chunks(
@@ -2061,6 +2110,11 @@ def _create_static_chunks(
         )
 
         fs_original.result()
+
+    assert db_task.media_type in (
+        models.MediaType.IMAGE,
+        models.MediaType.POINT_CLOUD,
+    )
 
     db_data = db_task.require_data()
 

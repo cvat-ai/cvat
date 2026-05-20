@@ -182,6 +182,7 @@ export class SliceHandlerImpl implements SliceHandler {
                 // if intersection is too close to edge points
                 // it is an intersection in a point, ignore it
                 if (d1 < 2e-3 || d2 < 2e-3) {
+                    // eslint-disable-next-line no-param-reassign
                     delete intersections[key];
                 }
             }

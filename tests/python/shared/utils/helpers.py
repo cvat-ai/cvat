@@ -2,13 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import subprocess
 from collections.abc import Generator
 from fractions import Fraction
 from io import BytesIO
+from pathlib import Path
 
 import av
 import av.video.reformatter
+import librosa
+import numpy as np
 from PIL import Image
 
 from shared.fixtures.init import get_server_image_tag
@@ -119,3 +123,9 @@ def generate_manifest(path: str) -> None:
     except subprocess.CalledProcessError as e:
         print(e.stderr.decode("utf-8"))
         raise
+
+
+def read_audio_pcm(
+    f: Path | io.IOBase, *, offset_ms: int = 0, rate: int = 8000
+) -> tuple[np.ndarray, float]:
+    return librosa.load(f, mono=True, sr=rate, offset=offset_ms / 1000)
