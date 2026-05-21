@@ -14,7 +14,9 @@ comprehensive CVAT administration tool in the future.
 The following subcommands are supported:
 
 - Projects:
+  - `backup` - back up a project
   - `create` - create a new project
+  - `create-from-backup` - create a project from a backup file
   - `delete` - delete projects
   - `ls` - list all projects
 
@@ -356,7 +358,7 @@ see that command's examples for more information.
   ```
 - Create a project from a dataset in the COCO format:
   ```bash
-  cvat-cli project create "new project" --dataset_file coco.zip --dataset_format "COCO 1.0"
+  cvat-cli project create "new project" --dataset_path coco.zip --dataset_format "COCO 1.0"
   ```
 
 ### Delete
@@ -375,6 +377,20 @@ see that command's examples for more information.
 - Save list of all projects into file "list_of_projects.json":
   ```bash
   cvat-cli project ls --json > list_of_projects.json
+  ```
+
+### Back up a project
+
+- Back up project with id 25 to file `project_25.zip`:
+  ```bash
+  cvat-cli project backup 25 project_25.zip
+  ```
+
+### Create from backup
+
+- Create a project from backup file `project_backup.zip`:
+  ```bash
+  cvat-cli project create-from-backup project_backup.zip
   ```
 
 ## Examples - functions
