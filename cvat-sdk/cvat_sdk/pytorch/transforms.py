@@ -144,8 +144,7 @@ class ExtractInstanceMasks:
             labels.append(target.label_id_to_index[shape.label_id])
             masks.append(
                 torch.as_tensor(
-                    _draw_mask(shape=shape, image_size=target.image_size),
-                    dtype=torch.uint8
+                    _draw_mask(shape=shape, image_size=target.image_size), dtype=torch.uint8
                 )
             )
 

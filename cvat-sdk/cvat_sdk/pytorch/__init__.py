@@ -5,8 +5,13 @@
 from .common import Target
 from .project_dataset import ProjectVisionDataset
 from .task_dataset import TaskVisionDataset
-from .transforms import ExtractBoundingBoxes, ExtractInstanceMasks, ExtractSingleLabelIndex
-from .transforms import LabeledBoxes, LabeledMasks
+from .transforms import (
+    ExtractBoundingBoxes,
+    ExtractInstanceMasks,
+    ExtractSingleLabelIndex,
+    LabeledBoxes,
+    LabeledMasks,
+)
 
 # isort: split
 # Compatibility imports
