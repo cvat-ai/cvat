@@ -1964,7 +1964,7 @@ export class SkeletonShape extends Shape {
                 type: sublabel.type as unknown as ShapeType,
             };
 
-            // eslint-disable-next-line no-use-before-define
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             return shapeFactory({
                 ...elementData,
                 group: this.group,
@@ -2969,7 +2969,7 @@ export class SkeletonTrack extends Track {
                 }],
             };
 
-            // eslint-disable-next-line no-use-before-define
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             return trackFactory({
                 ...elementData,
                 group: this.group,

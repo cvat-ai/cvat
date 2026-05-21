@@ -251,6 +251,49 @@ const rootRules = {
     'valid-typeof': 0,
 };
 
+const airbnbCommaDangleOptions = airbnbBaseRules['comma-dangle'][1];
+const stylisticTypeScriptRules = {
+    // apply airbnb's rule options to stylistic's counterparts
+    '@stylistic/brace-style': airbnbBaseRules['brace-style'],
+    '@stylistic/comma-dangle': [
+        airbnbBaseRules['comma-dangle'][0],
+        {
+            ...airbnbCommaDangleOptions,
+            enums: airbnbCommaDangleOptions.arrays,
+            generics: airbnbCommaDangleOptions.arrays,
+            tuples: airbnbCommaDangleOptions.arrays,
+        },
+    ],
+    '@stylistic/comma-spacing': airbnbBaseRules['comma-spacing'],
+    '@stylistic/function-call-spacing': airbnbBaseRules['func-call-spacing'],
+    '@stylistic/indent': rootRules['@stylistic/indent'],
+    '@stylistic/keyword-spacing': airbnbBaseRules['keyword-spacing'],
+    '@stylistic/lines-between-class-members': rootRules['@stylistic/lines-between-class-members'],
+    '@stylistic/no-extra-parens': airbnbBaseRules['no-extra-parens'],
+    '@stylistic/no-extra-semi': airbnbBaseRules['no-extra-semi'],
+    '@stylistic/object-curly-spacing': airbnbBaseRules['object-curly-spacing'],
+    '@stylistic/quotes': rootRules.quotes,
+    '@stylistic/semi': airbnbBaseRules.semi,
+    '@stylistic/space-before-blocks': airbnbBaseRules['space-before-blocks'],
+    '@stylistic/space-before-function-paren': airbnbBaseRules['space-before-function-paren'],
+    '@stylistic/space-infix-ops': airbnbBaseRules['space-infix-ops'],
+    'brace-style': 'off',
+    'comma-dangle': 'off',
+    'comma-spacing': 'off',
+    'func-call-spacing': 'off',
+    indent: 'off',
+    'keyword-spacing': 'off',
+    'lines-between-class-members': 'off',
+    'no-extra-parens': 'off',
+    'no-extra-semi': 'off',
+    'object-curly-spacing': 'off',
+    quotes: 'off',
+    semi: 'off',
+    'space-before-blocks': 'off',
+    'space-before-function-paren': 'off',
+    'space-infix-ops': 'off',
+};
+
 // airbnb-typescript still configures removed @typescript-eslint formatting
 // rules. Keep explicit silences until it ships ESLint 10/TS-ESLint 8 flat
 // support. https://typescript-eslint.io/blog/deprecating-formatting-rules/
@@ -329,7 +372,7 @@ const preSharedRules = {
 
 const typeScriptBaseRules = {
     ...js.configs.recommended.rules,
-    ...airbnbBaseRules,
+    ...stylisticTypeScriptRules,
     ...importRecommendedRules,
     ...typeScriptRecommendedRules,
 };
@@ -439,6 +482,10 @@ export function defineTypeScriptPackageConfig({
         {
             files,
             rules: unsupportedAirbnbTypeScriptRules,
+        },
+        {
+            files,
+            rules: stylisticTypeScriptRules,
         },
         {
             files,

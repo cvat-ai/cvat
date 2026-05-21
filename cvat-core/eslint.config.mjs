@@ -11,7 +11,6 @@ import {
 export default [
     ...defineIgnores([
         'webpack.config.cjs',
-        'tests/**/*.cjs',
     ]),
     ...defineCoreConfig(['**/*.ts'], configDir(import.meta.url)),
 ];
