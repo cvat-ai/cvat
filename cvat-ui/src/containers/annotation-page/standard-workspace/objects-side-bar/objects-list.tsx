@@ -41,7 +41,8 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 
-type LayerPlacement = { exact: number } | { before: number } | { after: number };
+type LayerPlacement = { before: number } | { after: number };
+type LayerMoveSource = { clientID: number } | { zOrder: number };
 
 interface StateToProps {
     jobInstance: any;
@@ -463,64 +464,41 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         changeShowGroundTruth(!showGroundTruth);
     };
 
-    private isSamePlacement = (sourceZOrder: number, placement: LayerPlacement): boolean => {
-        if ('exact' in placement) {
-            return sourceZOrder === placement.exact;
-        }
-
-        if ('before' in placement) {
-            return sourceZOrder === placement.before;
-        }
-
-        return sourceZOrder === placement.after;
-    };
-
-    private moveObjectToLayer = (clientID: number, targetZOrder: number): void => {
-        const { frameNumber, updateLayer } = this.props;
-        const { filteredStates } = this.state;
-        const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
-
-        if (!objectState || !isLayerState(objectState) || objectState.zOrder === targetZOrder) {
-            return;
-        }
-
-        updateLayer(frameNumber, { exact: targetZOrder }, [objectState]);
-    };
-
-    private moveObjectToNewLayer = (clientID: number, placement: LayerPlacement): void => {
-        const { frameNumber, updateLayer } = this.props;
-        const { filteredStates } = this.state;
-        const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
-
-        if (!objectState || !isLayerState(objectState) || this.isSamePlacement(objectState.zOrder, placement)) {
-            return;
-        }
-
-        updateLayer(frameNumber, placement, [objectState]);
-    };
-
-    private moveLayer = (sourceZOrder: number, target: number | LayerPlacement, mode: 'move' | 'merge'): void => {
-        const { frameNumber, updateLayer } = this.props;
+    private statesFromMoveSource(source: LayerMoveSource): ObjectState[] {
         const { filteredStates } = this.state;
 
-        if (
-            (typeof target === 'number' && sourceZOrder === target) ||
-            (typeof target !== 'number' && this.isSamePlacement(sourceZOrder, target))
-        ) {
-            return;
+        if ('clientID' in source) {
+            const objectState = filteredStates.find((state: ObjectState): boolean => (
+                state.clientID === source.clientID
+            ));
+            return objectState && isLayerState(objectState) ? [objectState] : [];
         }
 
-        const statesToMove = filteredStates.filter((state: ObjectState): boolean => (
-            isLayerState(state) && state.zOrder === sourceZOrder
+        return filteredStates.filter((state: ObjectState): boolean => (
+            isLayerState(state) && state.zOrder === source.zOrder
         ));
+    }
 
-        if (statesToMove.length) {
-            const placement: LayerPlacement = mode === 'merge' ?
-                { exact: target as number } :
-                target as LayerPlacement;
+    private moveObjectsToLayer = (source: LayerMoveSource, targetZOrder: number): void => {
+        const { frameNumber, updateLayer } = this.props;
+        const statesToMove = this.statesFromMoveSource(source);
 
-            updateLayer(frameNumber, placement, statesToMove);
+        if (!statesToMove.length) {
+            return;
         }
+
+        updateLayer(frameNumber, { exact: targetZOrder }, statesToMove);
+    };
+
+    private moveObjectsOnNewLayer = (source: LayerMoveSource, placement: LayerPlacement): void => {
+        const { frameNumber, updateLayer } = this.props;
+        const statesToMove = this.statesFromMoveSource(source);
+
+        if (!statesToMove.length) {
+            return;
+        }
+
+        updateLayer(frameNumber, placement, statesToMove);
     };
 
     private compactLayers = (): void => {
@@ -804,9 +782,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
                     selectLayer={this.props.selectLayer}
-                    moveObjectToLayer={this.moveObjectToLayer}
-                    moveObjectToNewLayer={this.moveObjectToNewLayer}
-                    moveLayer={this.moveLayer}
+                    moveObjectsToLayer={this.moveObjectsToLayer}
+                    moveObjectsOnNewLayer={this.moveObjectsOnNewLayer}
                     compactLayers={this.compactLayers}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}

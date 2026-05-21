@@ -30,8 +30,8 @@ const LAYER_DRAG_ID_PREFIX = 'drag-layer:';
 const LAYER_DROP_ID_PREFIX = 'layer:';
 const LAYER_INSERT_DROP_ID_PREFIX = 'insert-layer:';
 
-type LayerDragMode = 'move' | 'merge';
-type LayerPlacement = { exact: number } | { before: number } | { after: number };
+type LayerPlacement = { before: number } | { after: number };
+type LayerMoveSource = { clientID: number } | { zOrder: number };
 
 function objectDragID(clientID: number): string {
     return `${OBJECT_DRAG_ID_PREFIX}${clientID}`;
@@ -46,10 +46,6 @@ function layerDropID(zOrder: number): string {
 }
 
 function layerInsertDropID(placement: LayerPlacement): string {
-    if ('exact' in placement) {
-        return `${LAYER_INSERT_DROP_ID_PREFIX}exact:${placement.exact}`;
-    }
-
     if ('before' in placement) {
         return `${LAYER_INSERT_DROP_ID_PREFIX}before:${placement.before}`;
     }
@@ -96,10 +92,6 @@ function parseLayerInsertDropID(id: string): LayerPlacement | null {
         return null;
     }
 
-    if (kind === 'exact') {
-        return { exact: zOrder };
-    }
-
     if (kind === 'before') {
         return { before: zOrder };
     }
@@ -126,9 +118,8 @@ interface Props {
     showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
     selectLayer(zOrder: number): void;
-    moveObjectToLayer(clientID: number, targetZOrder: number): void;
-    moveObjectToNewLayer(clientID: number, placement: LayerPlacement): void;
-    moveLayer(sourceZOrder: number, targetZOrder: number | LayerPlacement, mode: LayerDragMode): void;
+    moveObjectsToLayer(source: LayerMoveSource, targetZOrder: number): void;
+    moveObjectsOnNewLayer(source: LayerMoveSource, placement: LayerPlacement): void;
     compactLayers(): void;
     lockAllStates(): void;
     unlockAllStates(): void;
@@ -333,14 +324,15 @@ function getZLayers(objectStates: ObjectState[]): number[] {
 }
 
 function getInsertPlacement(zLayers: number[], index: number): LayerPlacement {
-    if (index === 0) {
-        return { exact: zLayers[0] - 1 };
+    return { before: zLayers[index] };
+}
+
+function isLayerDroppedBesideItself(sourceZOrder: number, placement: LayerPlacement): boolean {
+    if ('before' in placement) {
+        return sourceZOrder === placement.before;
     }
 
-    const previousZOrder = zLayers[index - 1];
-    const nextZOrder = zLayers[index];
-
-    return nextZOrder - previousZOrder > 1 ? { exact: previousZOrder + 1 } : { before: nextZOrder };
+    return sourceZOrder === placement.after;
 }
 
 function ObjectListComponent(props: Props): JSX.Element {
@@ -359,9 +351,8 @@ function ObjectListComponent(props: Props): JSX.Element {
         showGroundTruth,
         changeStatesOrdering,
         selectLayer,
-        moveObjectToLayer,
-        moveObjectToNewLayer,
-        moveLayer,
+        moveObjectsToLayer,
+        moveObjectsOnNewLayer,
         compactLayers,
         lockAllStates,
         unlockAllStates,
@@ -449,16 +440,20 @@ function ObjectListComponent(props: Props): JSX.Element {
 
         if (clientID !== null && zOrder !== null) {
             // Dropping an object onto an existing layer moves it into that layer.
-            moveObjectToLayer(clientID, zOrder);
+            moveObjectsToLayer({ clientID }, zOrder);
         } else if (clientID !== null && placement !== null) {
-            // The layout-level drop area decides whether the insertion is exact, before, or after a layer.
-            moveObjectToNewLayer(clientID, placement);
+            // Dropping an object between layers creates a new layer before/after a layout boundary.
+            moveObjectsOnNewLayer({ clientID }, placement);
         } else if (sourceZOrder !== null && zOrder !== null) {
             // Dropping a layer onto an existing layer merges both layers.
-            moveLayer(sourceZOrder, zOrder, 'merge');
+            moveObjectsToLayer({ zOrder: sourceZOrder }, zOrder);
         } else if (sourceZOrder !== null && placement !== null) {
-            // The layout-level drop area decides whether the insertion is exact, before, or after a layer.
-            moveLayer(sourceZOrder, placement, 'move');
+            if (isLayerDroppedBesideItself(sourceZOrder, placement)) {
+                return;
+            }
+
+            // Dropping a layer between layers creates a new layer before/after a layout boundary.
+            moveObjectsOnNewLayer({ zOrder: sourceZOrder }, placement);
         }
     };
     const toggleLayerCollapsed = (zOrder: number): void => {
