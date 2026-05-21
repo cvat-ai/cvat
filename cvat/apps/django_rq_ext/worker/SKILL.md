@@ -129,6 +129,45 @@ difference:
   is reusable; delegates to `job._handle_success(result_ttl, pipeline)`
   for Redis Streams handling.
 
+## Tests
+
+Tests live at `tests/python/dependencies/django_rq_ext/test_threadpool_worker.py`
+(a new subtree under the existing pytest e2e tree — they need real Redis,
+not the HTTP stack).
+
+The test file is organized as:
+
+- **Section A — Ports from upstream `rq/tests/test_worker.py @ v1.16.0`.**
+  Each ported test maps 1:1 to an upstream test, written in /testing
+  style. The top of the section lists every deliberately-skipped upstream
+  test (work-horse/fork plumbing with no thread analog). Inverted tests
+  document our deviations positively (e.g.,
+  `test_job_timeout_is_silently_ignored`, `test_max_jobs_is_accepted_and_ignored`).
+  Coverage today: ~6 ports + 2 inverts. The remaining ~60 upstream tests
+  are catalogued and unported — pick them up incrementally.
+- **Section B — Threading-specific.** Net-new tests for behavior rq
+  doesn't have: heartbeat-future slot accounting, pool back-pressure,
+  drain on teardown (success and timeout), concurrent thread idents.
+- **Section C — rq version pin sentinel.** Asserts `rq.VERSION == "1.16.0"`
+  with a multi-line failure message instructing the bumper to re-diff the
+  mixin and adapted methods.
+- **Section D — Pure unit tests.** `_is_threadpool_full`,
+  `_on_future_performed`, `get_heartbeat_ttl`, `subscribe()` no-op, signal
+  handlers. No I/O.
+
+The fixtures (`queue` with UUID-suffixed name; `threadpool_worker_factory`)
+live in `conftest.py` next to the tests. Tests use the existing
+`restore_redis_inmem_per_function` fixture for between-test cleanup —
+queue names are UUID-suffixed so the running `runworker-pytest` worker
+cannot accidentally consume our jobs.
+
+**Caveat for full-tree runs.** Our conftest does `django.setup()`, which
+imports all `INSTALLED_APPS` (including `cvat.apps.engine.models` →
+datumaro → shapely → libgeos) — adds ~200 MB to the pytest process. The
+cost is paid once per session and only when our directory is on the
+collection path. Pass `--ignore=tests/python/dependencies` to skip it when
+running the broader e2e suite.
+
 ## INSTALLED_APPS ordering
 
 `cvat.apps.django_rq_ext` MUST come **before** `django_rq` in
