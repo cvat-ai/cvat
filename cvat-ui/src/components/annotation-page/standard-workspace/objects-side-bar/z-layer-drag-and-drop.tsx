@@ -188,7 +188,7 @@ function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
             className={className}
             style={style}
         >
-            <div className='cvat-objects-sidebar-z-layer-controls'>
+            <div>
                 <CVATTooltip title={collapsed ? 'Expand layer' : 'Collapse layer'}>
                     <Button
                         className='cvat-objects-sidebar-z-layer-collapse-button'
