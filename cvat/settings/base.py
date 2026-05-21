@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "cvat.apps.django_rq_ext",
     "django_rq",
     "django_sendfile",
     "dj_rest_auth",
