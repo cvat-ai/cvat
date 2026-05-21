@@ -38,11 +38,11 @@ import { filterAnnotations } from 'utils/filter-annotations';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
+import {
+    type LayerPlacement, type LayerMoveSource,
+} from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
-
-type LayerPlacement = { before: number } | { after: number };
-type LayerMoveSource = { clientID: number } | { zOrder: number };
 
 interface StateToProps {
     jobInstance: any;
