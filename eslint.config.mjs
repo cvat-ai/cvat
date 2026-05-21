@@ -316,7 +316,7 @@ const noParamReassignRules = {
 
 const securityAndSanitizerRules = {
     // plugin:no-unsanitized/DOM is deprecated by the plugin and aliases this
-    // recommended rule set. https://github.com/mozilla/eslint-plugin-no-unsanitized#deprecated-dom-config
+    // recommended rule set. https://github.com/mozilla/eslint-plugin-no-unsanitized/blob/v4.1.5/index.js#L33-L42
     ...securityPlugin.configs['recommended-legacy'].rules,
     ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
     'security/detect-object-injection': 'off',
