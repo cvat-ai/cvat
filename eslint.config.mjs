@@ -22,6 +22,7 @@ import chaiFriendlyPlugin from 'eslint-plugin-chai-friendly';
 
 const require = createRequire(import.meta.url);
 const rootDir = dirname(fileURLToPath(import.meta.url));
+const reactVersion = require('./cvat-ui/package.json').dependencies.react;
 
 const airbnbBaseConfigs = [
     require('eslint-config-airbnb-base/rules/best-practices'),
@@ -336,7 +337,7 @@ const typeScriptBaseRules = {
 
 const typeScriptSettings = {
     react: {
-        version: '18.2.0',
+        version: reactVersion,
     },
     ...airbnbBaseSettings,
     ...importPlugin.configs.typescript.settings,
@@ -348,7 +349,7 @@ const uiSettings = {
     ...airbnbReactSettings,
     react: {
         ...airbnbReactSettings.react,
-        version: '18.2.0',
+        version: reactVersion,
     },
 };
 
@@ -553,7 +554,7 @@ const cypressOverrideRules = {
 
 const cypressSettings = {
     react: {
-        version: '18.2.0',
+        version: reactVersion,
     },
     ...airbnbBaseSettings,
 };
