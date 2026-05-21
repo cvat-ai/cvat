@@ -2719,6 +2719,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             if (
                 drawnState.label.id !== state.label.id ||
+                drawnState.zOrder !== state.zOrder ||
                 pointsUpdated ||
                 rotationUpdated ||
                 drawnStateDescriptions.length !== stateDescriptions.length ||
@@ -2727,7 +2728,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 // remove created text and create it again
                 if (text) {
                     text.remove();
-                    this.addText(state);
+                    this.updateTextPosition(this.addText(state));
                 }
             } else {
                 const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
@@ -3322,10 +3323,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const withSource = content.includes('source');
         const withDescriptions = content.includes('descriptions');
         const withDimensions = content.includes('dimensions');
+        const withLayer = content.includes('layer') || content.includes('zOrder');
 
         const textFontSize = this.configuration.textFontSize || 12;
         const {
-            label, clientID, attributes, source, descriptions, score, votes,
+            label, clientID, attributes, source, descriptions, score, votes, zOrder,
         } = state;
         const isConsensus = source === 'consensus';
         const withScore = isConsensus && !options.isSkeletonElement;
@@ -3344,7 +3346,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         textContent: [
                             ...(withLabel ? ['label'] : []),
                             ...(withAttr ? ['attributes'] : []),
-                            // Note: explicitly exclude 'score' and 'votes' for skeleton elements
+                            // Note: explicitly exclude 'layer', 'score' and 'votes' for skeleton elements
                         ].join(',') || ' ',
                         isSkeletonElement: true,
                     });
@@ -3359,6 +3361,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 `${withSource ? `(${source})` : ''}`).style({
                     'text-transform': 'uppercase',
                 });
+
+                if (withLayer) {
+                    block
+                        .tspan(`Layer: ${zOrder}`)
+                        .attr({
+                            dy: '1.25em',
+                            x: 0,
+                        })
+                        .addClass('cvat_canvas_text_layer');
+                }
 
                 if (withDimensions && ['rectangle', 'ellipse'].includes(state.shapeType)) {
                     let width = state.points[2] - state.points[0];
