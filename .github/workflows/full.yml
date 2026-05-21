@@ -156,10 +156,10 @@ jobs:
       - name: Install SDK
         run: |
           pip3 install -r ./tests/python/requirements.txt \
-            -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
+            -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli -e ./cvat_libs \
             --extra-index-url https://download.pytorch.org/whl/cpu
 
-      - name: Running REST API and SDK tests
+      - name: Run REST API, SDK, and library tests
         id: run_tests
         run: |
           pytest tests/python/
