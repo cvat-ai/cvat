@@ -185,10 +185,10 @@ jobs:
       - name: Install SDK
         run: |
           pip3 install -r ./tests/python/requirements.txt \
-            -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
+            -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli -e ./cvat_libs \
             --extra-index-url https://download.pytorch.org/whl/cpu
 
-      - name: Run REST API and SDK tests
+      - name: Run REST API, SDK, and library tests
         id: run_tests
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
@@ -472,18 +472,22 @@ jobs:
 
       - name: Deploy to minikube
         run: |
-          printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> helm-chart/test.values.yaml
           helm upgrade release-${{ github.run_id }}-${{ github.run_attempt }} --install helm-chart \
             -f helm-chart/cvat.values.yaml \
             -f helm-chart/test.values.yaml \
             --set cvat.backend.tag=${{ env.CVAT_VERSION }} \
-            --set cvat.frontend.tag=${{ env.CVAT_VERSION }}
+            --set cvat.frontend.tag=${{ env.CVAT_VERSION }} \
+            --set traefik.service.externalIPs[0]=$(minikube ip) \
+            --set redis.master.service.externalIPs[0]=$(minikube ip)
 
       - name: Update test config
         run: |
+          MINIKUBE_IP=$(minikube ip)
           sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
+          sed -i -e 's$REDIS_INMEM_HOST = "127.0.0.1"$REDIS_INMEM_HOST = "'"$MINIKUBE_IP"'"$' tests/python/shared/utils/config.py
+          sed -i -e 's$REDIS_INMEM_PASSWORD = ""$REDIS_INMEM_PASSWORD = "cvat_redis"$' tests/python/shared/utils/config.py
           find tests/python/shared/assets/ -type f -name '*.json' | xargs sed -i -e 's$http://localhost:8080$http://cvat.local$g'
-          echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
+          echo "$MINIKUBE_IP cvat.local" | sudo tee -a /etc/hosts
 
       - name: Generate SDK
         run: |
@@ -492,7 +496,7 @@ jobs:
 
       - name: Install test requirements
         run: |
-          pip3 install --user cvat-sdk/ cvat-cli/ -r tests/python/requirements.txt
+          pip3 install --user cvat-sdk/ cvat-cli/ cvat_libs/ -r tests/python/requirements.txt
 
       - name: Wait for CVAT to be ready
         run: |
@@ -503,13 +507,14 @@ jobs:
           kubectl get pods
           kubectl logs $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}')
 
-      - name: REST API and SDK tests
+      - name: Run REST API, SDK, and library tests against Helm-deployed CVAT
         # We don't have external services in Helm tests, so we ignore corresponding cases
-        # They are still tested without Helm
+        # They are still tested without Helm.
         run: |
           kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
           kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
-          pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-cli-level DEBUG
+          pytest --timeout 30 --platform=kube -m "not with_external_services" \
+            tests/python --log-cli-level DEBUG
 
       - name: Creating a log file from "cvat" container logs
         if: failure()

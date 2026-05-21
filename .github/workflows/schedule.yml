@@ -140,9 +140,9 @@ jobs:
 
       - name: Install test requirements
         run: |
-          pip3 install -e ./cvat-sdk -e ./cvat-cli -r ./tests/python/requirements.txt
+          pip3 install -e ./cvat-sdk -e ./cvat-cli -e ./cvat_libs -r ./tests/python/requirements.txt
 
-      - name: REST API and SDK tests
+      - name: Run REST API, SDK, and library tests
         run: |
           echo 'Run 1: without cache'
           pytest tests/python/ --alluredir=tests/python/allure-results
