@@ -11,6 +11,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Mapping, Sequence
 from typing import Protocol
 
+from attr.converters import to_bool
 from cvat_sdk import Client
 from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.types import Location
@@ -193,3 +194,109 @@ class GenericCreateFromBackupCommand(GenericCommand):
             pbar=DeferredTqdmProgressReporter(),
         )
         print(resource.id)
+
+
+class GenericExportDatasetCommand(GenericCommand):
+    @property
+    def description(self) -> str:
+        return textwrap.dedent(f"""\
+            Export a {self.resource_type_str} as a dataset in the specified format
+            (e.g. 'YOLO 1.1').
+            """)
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "resource_id",
+            metavar=f"{self.resource_type_str}_id",
+            type=int,
+            help=f"{self.resource_type_str} ID",
+        )
+        parser.add_argument(
+            "filename",
+            type=str,
+            nargs="?",
+            default="",
+            help="output file or directory (default: current directory)",
+        )
+        parser.add_argument(
+            "--format",
+            dest="fileformat",
+            type=str,
+            default="CVAT for images 1.1",
+            help="annotation format (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--completion_verification_period",
+            dest="status_check_period",
+            default=2,
+            type=float,
+            help="number of seconds to wait until checking if dataset building finished",
+        )
+        parser.add_argument(
+            "--with-images",
+            type=to_bool,
+            default=False,
+            dest="include_images",
+            help="Whether to include images or not (default: %(default)s)",
+        )
+
+    def execute(
+        self,
+        client: Client,
+        *,
+        fileformat: str,
+        filename: str,
+        status_check_period: int,
+        include_images: bool,
+        resource_id: int,
+    ) -> None:
+        if not filename:
+            filename = os.getcwd()
+
+        if filename.endswith((os.sep, os.altsep or os.sep)):
+            os.makedirs(filename, exist_ok=True)
+
+        self.repo(client).retrieve(obj_id=resource_id).export_dataset(
+            format_name=fileformat,
+            filename=filename,
+            pbar=DeferredTqdmProgressReporter(),
+            status_check_period=status_check_period,
+            include_images=include_images,
+            location=Location.LOCAL,
+        )
+
+
+class GenericImportDatasetCommand(GenericCommand):
+    import_method_name = "import_dataset"
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "resource_id",
+            metavar=f"{self.resource_type_str}_id",
+            type=int,
+            help=f"{self.resource_type_str} ID",
+        )
+        parser.add_argument("filename", type=str, help="upload file")
+        parser.add_argument(
+            "--format",
+            dest="fileformat",
+            type=str,
+            default="CVAT 1.1",
+            help="annotation format (default: %(default)s)",
+        )
+
+    def execute(
+        self,
+        client: Client,
+        *,
+        fileformat: str,
+        filename: str,
+        resource_id: int,
+    ) -> None:
+        resource = self.repo(client).retrieve(obj_id=resource_id)
+        import_dataset = getattr(resource, self.import_method_name)
+        import_dataset(
+            format_name=fileformat,
+            filename=filename,
+            pbar=DeferredTqdmProgressReporter(),
+        )
