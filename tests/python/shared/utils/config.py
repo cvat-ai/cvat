@@ -24,6 +24,10 @@ MINIO_SECRET_KEY = "minio_secret_key"  # nosec
 MINIO_ENDPOINT_URL = "http://localhost:9000"
 IMPORT_EXPORT_BUCKET_ID = 3
 
+REDIS_INMEM_HOST = "127.0.0.1"
+REDIS_INMEM_PORT = 6379
+REDIS_INMEM_PASSWORD = ""
+
 
 def _to_query_params(**kwargs):
     return "&".join([f"{k}={v}" for k, v in kwargs.items()])
