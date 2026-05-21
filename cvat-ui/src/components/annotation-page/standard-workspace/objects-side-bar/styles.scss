@@ -354,6 +354,7 @@
     flex: 1;
     flex-direction: column;
     min-height: 0;
+    padding-top: 8px;
 }
 
 .cvat-objects-sidebar-z-layers-title {
@@ -395,8 +396,9 @@
 }
 
 .cvat-objects-sidebar-z-layer-move-drop-area {
-    height: $grid-unit-size * 1.5;
-    margin: -$grid-unit-size * 0.5 0;
+    flex: 0 0 8px;
+    height: 8px;
+    margin: 0;
     border-radius: $border-radius-base;
     transition: background-color $box-shadow-transition, box-shadow $box-shadow-transition;
 }
@@ -440,14 +442,12 @@
     z-index: 1000;
 }
 
-.cvat-objects-sidebar-z-layer-mark-selected {
-    background: rgba($color: $completed-progress-color, $alpha: 16%);
-    box-shadow: inset 3px 0 0 rgba($color: $completed-progress-color, $alpha: 70%);
+.cvat-objects-sidebar-z-layer-mark-invisible {
+    opacity: 0.5;
+}
 
-    > .ant-typography {
-        background: rgba($color: $completed-progress-color, $alpha: 18%);
-        color: $completed-progress-color;
-    }
+.cvat-objects-sidebar-z-layer-mark-selected {
+    box-shadow: inset 3px 0 0 rgba($color: $completed-progress-color, $alpha: 70%);
 }
 
 .cvat-objects-sidebar-z-layer-controls {
@@ -461,6 +461,7 @@
 }
 
 .cvat-objects-sidebar-z-layer-collapse-button,
+.cvat-objects-sidebar-z-layer-select-button,
 .cvat-objects-sidebar-z-layer-drag-handle {
     display: inline-flex;
     align-items: center;
@@ -469,6 +470,23 @@
     height: $grid-unit-size * 3;
     border-radius: $border-radius-base;
     color: $objects-bar-icons-color;
+}
+
+.cvat-objects-sidebar-z-layer-select-button[disabled] {
+    opacity: 1;
+}
+
+.cvat-objects-sidebar-z-layer-id {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cvat-objects-sidebar-z-layer-visibility-indicator {
+    display: inline-flex;
+    align-items: center;
+    color: $objects-bar-icons-color;
+    font-size: 13px;
 }
 
 .cvat-objects-sidebar-z-layer-drag-handle {
@@ -483,7 +501,8 @@
 .cvat-objects-sidebar-z-layer {
     border: 1px solid rgba(0, 0, 0, 8%);
     border-radius: $border-radius-base;
-    margin-bottom: $grid-unit-size * 0.75;
+    flex: 0 0 auto;
+    margin-bottom: 0;
     overflow: visible;
     position: relative;
     background: rgba(255, 255, 255, 22%);

@@ -697,7 +697,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasShapeDrawn = (event: any): void => {
         const {
             jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
-            onUpdateEditedObject, activeObjectHidden, workspace,
+            onUpdateEditedObject, activeObjectHidden, workspace, curZLayer,
         } = this.props;
 
         if (!event.detail.continue) {
@@ -712,6 +712,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.label = state.label || jobInstance.labels.filter((label: any) => label.id === activeLabelID)[0];
         state.frame = frame;
         state.rotation = state.rotation || 0;
+        state.zOrder = curZLayer;
         state.occluded = state.occluded || false;
         state.outside = state.outside || false;
         state.hidden = state.hidden || (activeObjectHidden && workspace !== Workspace.SINGLE_SHAPE);
@@ -1016,7 +1017,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 frame,
                 workspace,
                 exclude: [ObjectType.TAG],
-            });
+            }).filter((state: ObjectState): boolean => state.zOrder <= curZLayer);
             const proxy = new Proxy(frameData, {
                 get: (_frameData, prop, receiver) => {
                     if (prop === 'data') {
@@ -1062,7 +1063,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             canvasInstance.setup(
                 proxy,
                 frameData.deleted ? [] : filteredAnnotations,
-                curZLayer,
                 renderData,
             );
             canvasInstance.configure({ forceFrameUpdate: false });

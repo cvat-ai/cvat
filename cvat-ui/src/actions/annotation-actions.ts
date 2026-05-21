@@ -157,7 +157,6 @@ export enum AnnotationActionTypes {
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
     ROTATE_FRAME = 'ROTATE_FRAME',
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
-    ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
     SEARCH_CHAPTERS_FAILED = 'SEARCH_CHAPTERS_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
@@ -237,13 +236,6 @@ export function canvasErrorOccurred(error: Error): AnyAction {
         payload: {
             error,
         },
-    };
-}
-
-export function addZLayer(): AnyAction {
-    return {
-        type: AnnotationActionTypes.ADD_Z_LAYER,
-        payload: {},
     };
 }
 

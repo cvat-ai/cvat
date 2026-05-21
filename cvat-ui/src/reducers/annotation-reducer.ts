@@ -1028,6 +1028,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.SWITCH_Z_LAYER: {
             const { cur } = action.payload;
+            // min/max are kept for background/foreground commands and as a default layer boundary.
             const { max, min } = state.annotations.zLayer;
 
             let { activatedStateID } = state.annotations;
@@ -1052,20 +1053,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         ...state.annotations.zLayer,
                         cur: clamp(cur, min, max),
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.ADD_Z_LAYER: {
-            const { max } = state.annotations.zLayer;
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    zLayer: {
-                        ...state.annotations.zLayer,
-                        max: max + 1,
-                        cur: max + 1,
                     },
                 },
             };

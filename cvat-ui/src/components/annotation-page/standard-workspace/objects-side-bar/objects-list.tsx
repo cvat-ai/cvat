@@ -9,7 +9,8 @@ import {
     DndContext, DragEndEvent, PointerSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors,
 } from '@dnd-kit/core';
 import {
-    CaretDownOutlined, CaretRightOutlined, HolderOutlined, VerticalAlignMiddleOutlined,
+    CaretDownOutlined, CaretRightOutlined, EyeInvisibleOutlined, EyeOutlined, HolderOutlined,
+    SelectOutlined, VerticalAlignMiddleOutlined,
 } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -98,6 +99,7 @@ interface Props {
     switchHiddenAllShortcut: string;
     showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
+    selectLayer(zOrder: number): void;
     moveObjectToLayer(clientID: number, targetZOrder: number): void;
     moveObjectToNewLayer(clientID: number, targetZOrder: number): void;
     moveLayer(sourceZOrder: number, targetZOrder: number, mode: LayerDragMode): void;
@@ -155,13 +157,15 @@ function DraggableObjectItem(props: DraggableObjectItemProps): JSX.Element {
 interface ZLayerHeaderProps {
     zOrder: number;
     selected: boolean;
+    visible: boolean;
     collapsed: boolean;
+    selectLayer(zOrder: number): void;
     toggleLayerCollapsed(zOrder: number): void;
 }
 
 function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
     const {
-        zOrder, selected, collapsed, toggleLayerCollapsed,
+        zOrder, selected, visible, collapsed, selectLayer, toggleLayerCollapsed,
     } = props;
     const {
         attributes, listeners, setNodeRef, transform, isDragging,
@@ -171,8 +175,12 @@ function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
     } : undefined;
     const className = `cvat-objects-sidebar-z-layer-mark${
         isDragging ? ' cvat-objects-sidebar-z-layer-mark-dragging' : ''
+    }${!visible ? ' cvat-objects-sidebar-z-layer-mark-invisible' : ''
     }${selected ? ' cvat-objects-sidebar-z-layer-mark-selected' : ''
     }`;
+    const visibilityTooltip = visible ? 'Visible on canvas' : 'Hidden on canvas';
+    const selectLayerTooltip = selected ? 'Current layer. Higher layers are hidden on canvas' :
+        'Select as current layer. Higher layers will not be visible on canvas';
 
     return (
         <div
@@ -190,6 +198,16 @@ function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
                         onClick={(): void => toggleLayerCollapsed(zOrder)}
                     />
                 </CVATTooltip>
+                <CVATTooltip title={selectLayerTooltip}>
+                    <Button
+                        className='cvat-objects-sidebar-z-layer-select-button'
+                        type='text'
+                        size='small'
+                        disabled={selected}
+                        icon={<SelectOutlined />}
+                        onClick={(): void => selectLayer(zOrder)}
+                    />
+                </CVATTooltip>
                 <CVATTooltip title='Drag layer'>
                     <Button
                         {...attributes}
@@ -201,7 +219,14 @@ function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
                     />
                 </CVATTooltip>
             </div>
-            <Text strong>{zOrder}</Text>
+            <div className='cvat-objects-sidebar-z-layer-id'>
+                <Text strong>{zOrder}</Text>
+                <CVATTooltip title={visibilityTooltip}>
+                    <span className='cvat-objects-sidebar-z-layer-visibility-indicator'>
+                        {visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                    </span>
+                </CVATTooltip>
+            </div>
         </div>
     );
 }
@@ -212,13 +237,16 @@ interface ZLayerSectionProps {
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
     selected: boolean;
+    visible: boolean;
     collapsed: boolean;
+    selectLayer(zOrder: number): void;
     toggleLayerCollapsed(zOrder: number): void;
 }
 
 function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
     const {
-        zOrder, objectIDs, objectStates, visibleSkeletonElements, selected, collapsed, toggleLayerCollapsed,
+        zOrder, objectIDs, objectStates, visibleSkeletonElements, selected, visible, collapsed, selectLayer,
+        toggleLayerCollapsed,
     } = props;
     const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
 
@@ -231,7 +259,9 @@ function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
             <ZLayerHeader
                 zOrder={zOrder}
                 selected={selected}
+                visible={visible}
                 collapsed={collapsed}
+                selectLayer={selectLayer}
                 toggleLayerCollapsed={toggleLayerCollapsed}
             />
             {!collapsed && objectIDs.map((id: number): JSX.Element => {
@@ -300,6 +330,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         switchHiddenAllShortcut,
         showGroundTruth,
         changeStatesOrdering,
+        selectLayer,
         moveObjectToLayer,
         moveObjectToNewLayer,
         moveLayer,
@@ -469,7 +500,9 @@ function ObjectListComponent(props: Props): JSX.Element {
                                             objectStates={objectStates}
                                             visibleSkeletonElements={visibleSkeletonElements}
                                             selected={zOrder === currentZLayer}
+                                            visible={zOrder <= currentZLayer}
                                             collapsed={collapsedZLayers.includes(zOrder)}
+                                            selectLayer={selectLayer}
                                             toggleLayerCollapsed={toggleLayerCollapsed}
                                         />
                                     </React.Fragment>

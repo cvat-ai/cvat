@@ -22,6 +22,7 @@ import {
     changeHideActiveObjectAsync,
     updateLayerAsync,
     compactLayersAsync,
+    switchZLayer,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -83,6 +84,7 @@ interface DispatchToProps {
         states: ObjectState[],
     ): void;
     compactLayers(frame: number): void;
+    selectLayer(zOrder: number): void;
 }
 
 const componentShortcuts = {
@@ -333,6 +335,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         compactLayers(frame: number): void {
             dispatch(compactLayersAsync(frame));
         },
+        selectLayer(zOrder: number): void {
+            dispatch(switchZLayer(zOrder));
+        },
     };
 }
 
@@ -420,6 +425,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
         const { filteredStates } = this.state;
+        const { maxZLayer, selectLayer } = this.props;
+
+        if (statesOrdering !== StatesOrdering.Z_ORDER) {
+            selectLayer(maxZLayer);
+        }
+
         this.setState({
             statesOrdering,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
@@ -797,6 +808,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
+                    selectLayer={this.props.selectLayer}
                     moveObjectToLayer={this.moveObjectToLayer}
                     moveObjectToNewLayer={this.moveObjectToNewLayer}
                     moveLayer={this.moveLayer}
