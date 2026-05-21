@@ -90,16 +90,6 @@ function headersToObject(headers: Headers): Record<string, string> {
     return Object.fromEntries([...headers.entries()]);
 }
 
-function getContentLength(response: Response): number | null {
-    const contentLength = response.headers.get('content-length');
-    if (contentLength === null) {
-        return null;
-    }
-
-    const parsedContentLength = Number(contentLength);
-    return Number.isInteger(parsedContentLength) && parsedContentLength >= 0 ? parsedContentLength : null;
-}
-
 function mergeChunks(chunks: Uint8Array[], totalLength: number): ArrayBuffer {
     const data = new Uint8Array(totalLength);
     let offset = 0;
@@ -187,7 +177,7 @@ async function fetchData(url: string, requestConfig): Promise<{
                     throw new Error(`Unexpected response status: ${response.status}`);
                 }
             } else {
-                expectedSize = getContentLength(response);
+                expectedSize = null;
             }
 
             receivedBytes = await readResponse(response, chunks, receivedBytes);
