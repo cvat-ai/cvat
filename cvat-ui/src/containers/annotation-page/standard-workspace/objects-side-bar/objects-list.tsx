@@ -419,8 +419,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
-        const { filteredStates } = this.state;
+        const { filteredStates, statesOrdering: currentStatesOrdering } = this.state;
         const { maxZLayer, selectLayer } = this.props;
+
+        if (statesOrdering === currentStatesOrdering) {
+            return;
+        }
 
         // whenever open or close layer ordering mode
         // set maxium z layer as current to show everything
