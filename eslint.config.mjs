@@ -91,19 +91,7 @@ export const browserAndNodeGlobals = {
     WorkerGlobalScope: 'readonly',
 };
 
-const cypressGlobals = {
-    Cypress: 'readonly',
-    cy: 'readonly',
-    expect: 'readonly',
-    assert: 'readonly',
-    before: 'readonly',
-    after: 'readonly',
-    beforeEach: 'readonly',
-    afterEach: 'readonly',
-    context: 'readonly',
-    describe: 'readonly',
-    it: 'readonly',
-};
+const cypressGlobals = cypressPlugin.configs.globals.languageOptions.globals;
 
 const testsNodeAndCypressGlobals = {
     ...browserAndNodeGlobals,
