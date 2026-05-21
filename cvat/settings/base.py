@@ -604,6 +604,10 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-organization",
 ]
 
+CORS_EXPOSE_HEADERS = [
+    "Content-Range",
+]
+
 TUS_MAX_FILE_SIZE = 26843545600  # 25gb
 
 # This setting makes request secure if X-Forwarded-Proto: 'https' header is specified by our proxy
