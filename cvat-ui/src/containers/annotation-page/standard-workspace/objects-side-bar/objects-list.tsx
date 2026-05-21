@@ -20,8 +20,8 @@ import {
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
     changeHideActiveObjectAsync,
-    moveObjectsToLayerAsync,
-    compactFrameLayersAsync,
+    updateLayerAsync,
+    compactLayersAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -75,12 +75,12 @@ interface DispatchToProps {
     changeGroupColor(group: number, color: string): void;
     changeShowGroundTruth(value: boolean): void;
     changeHideEditedState(value: boolean): void;
-    moveObjectsToLayer(
+    updateLayer(
         frame: number,
         placement: { exact: number } | { before: number } | { after: number },
         states: ObjectState[],
     ): void;
-    compactFrameLayers(frame: number): void;
+    compactLayers(frame: number): void;
 }
 
 const componentShortcuts = {
@@ -320,15 +320,15 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeHideEditedState(value: boolean): void {
             dispatch(changeHideActiveObjectAsync(value));
         },
-        moveObjectsToLayer(
+        updateLayer(
             frame: number,
             placement: { exact: number } | { before: number } | { after: number },
             states: ObjectState[],
         ): void {
-            dispatch(moveObjectsToLayerAsync(frame, placement, states));
+            dispatch(updateLayerAsync(frame, placement, states));
         },
-        compactFrameLayers(frame: number): void {
-            dispatch(compactFrameLayersAsync(frame));
+        compactLayers(frame: number): void {
+            dispatch(compactLayersAsync(frame));
         },
     };
 }
@@ -457,7 +457,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private moveObjectToLayer = (clientID: number, targetZOrder: number): void => {
-        const { frameNumber, moveObjectsToLayer } = this.props;
+        const { frameNumber, updateLayer } = this.props;
         const { filteredStates } = this.state;
         const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
 
@@ -465,11 +465,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return;
         }
 
-        moveObjectsToLayer(frameNumber, { exact: targetZOrder }, [objectState]);
+        updateLayer(frameNumber, { exact: targetZOrder }, [objectState]);
     };
 
     private moveObjectToNewLayer = (clientID: number, targetZOrder: number): void => {
-        const { frameNumber, moveObjectsToLayer } = this.props;
+        const { frameNumber, updateLayer } = this.props;
         const { filteredStates } = this.state;
         const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
 
@@ -477,11 +477,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return;
         }
 
-        moveObjectsToLayer(frameNumber, this.layerPlacement(targetZOrder), [objectState]);
+        updateLayer(frameNumber, this.layerPlacement(targetZOrder), [objectState]);
     };
 
     private moveLayer = (sourceZOrder: number, targetZOrder: number, mode: 'move' | 'merge'): void => {
-        const { frameNumber, moveObjectsToLayer } = this.props;
+        const { frameNumber, updateLayer } = this.props;
         const { filteredStates } = this.state;
 
         if (sourceZOrder === targetZOrder) {
@@ -493,7 +493,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         ));
 
         if (statesToMove.length) {
-            moveObjectsToLayer(
+            updateLayer(
                 frameNumber,
                 mode === 'merge' ? { exact: targetZOrder } : this.layerPlacement(targetZOrder),
                 statesToMove,
@@ -502,8 +502,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private compactLayers = (): void => {
-        const { frameNumber, compactFrameLayers } = this.props;
-        compactFrameLayers(frameNumber);
+        const { frameNumber, compactLayers } = this.props;
+        compactLayers(frameNumber);
     };
 
     private lockAllStates(locked: boolean): void {

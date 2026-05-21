@@ -160,10 +160,10 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async moveObjectsToLayer(frame, placement, objectStates) {
+                async updateLayer(frame, placement, objectStates) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
-                        prototype.annotations.moveObjectsToLayer,
+                        prototype.annotations.updateLayer,
                         frame,
                         placement,
                         objectStates,
@@ -171,10 +171,10 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async compactFrameLayers(frame) {
+                async compactLayers(frame) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
-                        prototype.annotations.compactFrameLayers,
+                        prototype.annotations.compactLayers,
                         frame,
                     );
                     return result;
@@ -379,12 +379,12 @@ export class Session {
         group: (objectStates: ObjectState[], reset: boolean) => Promise<number>;
         join: (objectStates: ObjectState[], points: number[][]) => Promise<void>;
         slice: (state: ObjectState, results: number[][]) => Promise<void>;
-        moveObjectsToLayer: (
+        updateLayer: (
             frame: number,
             placement: { exact: number } | { before: number } | { after: number },
             objectStates: ObjectState[],
         ) => Promise<ObjectState[]>;
-        compactFrameLayers: (frame: number) => Promise<ObjectState[]>;
+        compactLayers: (frame: number) => Promise<ObjectState[]>;
         clear: (options?: {
             reload?: boolean;
             startFrame?: number;
@@ -493,8 +493,8 @@ export class Session {
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
             join: Object.getPrototypeOf(this).annotations.join.bind(this),
             slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
-            moveObjectsToLayer: Object.getPrototypeOf(this).annotations.moveObjectsToLayer.bind(this),
-            compactFrameLayers: Object.getPrototypeOf(this).annotations.compactFrameLayers.bind(this),
+            updateLayer: Object.getPrototypeOf(this).annotations.updateLayer.bind(this),
+            compactLayers: Object.getPrototypeOf(this).annotations.compactLayers.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             upload: Object.getPrototypeOf(this).annotations.upload.bind(this),

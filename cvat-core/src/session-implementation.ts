@@ -460,23 +460,23 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
-    Object.defineProperty(Job.prototype.annotations.moveObjectsToLayer, 'implementation', {
-        value: function moveObjectsToLayerImplementation(
+    Object.defineProperty(Job.prototype.annotations.updateLayer, 'implementation', {
+        value: function updateLayerImplementation(
             this: JobClass,
-            frame: Parameters<typeof JobClass.prototype.annotations.moveObjectsToLayer>[0],
-            placement: Parameters<typeof JobClass.prototype.annotations.moveObjectsToLayer>[1],
-            objectStates: Parameters<typeof JobClass.prototype.annotations.moveObjectsToLayer>[2],
-        ): ReturnType<typeof JobClass.prototype.annotations.moveObjectsToLayer> {
-            return Promise.resolve(getCollection(this).moveObjectsToLayer(frame, placement, objectStates));
+            frame: Parameters<typeof JobClass.prototype.annotations.updateLayer>[0],
+            placement: Parameters<typeof JobClass.prototype.annotations.updateLayer>[1],
+            objectStates: Parameters<typeof JobClass.prototype.annotations.updateLayer>[2],
+        ): ReturnType<typeof JobClass.prototype.annotations.updateLayer> {
+            return Promise.resolve(getCollection(this).updateLayer(frame, placement, objectStates));
         },
     });
 
-    Object.defineProperty(Job.prototype.annotations.compactFrameLayers, 'implementation', {
-        value: function compactFrameLayersImplementation(
+    Object.defineProperty(Job.prototype.annotations.compactLayers, 'implementation', {
+        value: function compactLayersImplementation(
             this: JobClass,
-            frame: Parameters<typeof JobClass.prototype.annotations.compactFrameLayers>[0],
-        ): ReturnType<typeof JobClass.prototype.annotations.compactFrameLayers> {
-            return Promise.resolve(getCollection(this).compactFrameLayers(frame));
+            frame: Parameters<typeof JobClass.prototype.annotations.compactLayers>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.compactLayers> {
+            return Promise.resolve(getCollection(this).compactLayers(frame));
         },
     });
 
@@ -1243,23 +1243,23 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
-    Object.defineProperty(Task.prototype.annotations.moveObjectsToLayer, 'implementation', {
-        value: function moveObjectsToLayerImplementation(
+    Object.defineProperty(Task.prototype.annotations.updateLayer, 'implementation', {
+        value: function updateLayerImplementation(
             this: TaskClass,
-            frame: Parameters<typeof TaskClass.prototype.annotations.moveObjectsToLayer>[0],
-            placement: Parameters<typeof TaskClass.prototype.annotations.moveObjectsToLayer>[1],
-            objectStates: Parameters<typeof TaskClass.prototype.annotations.moveObjectsToLayer>[2],
-        ): ReturnType<typeof TaskClass.prototype.annotations.moveObjectsToLayer> {
-            return Promise.resolve(getCollection(this).moveObjectsToLayer(frame, placement, objectStates));
+            frame: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[0],
+            placement: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[1],
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[2],
+        ): ReturnType<typeof TaskClass.prototype.annotations.updateLayer> {
+            return Promise.resolve(getCollection(this).updateLayer(frame, placement, objectStates));
         },
     });
 
-    Object.defineProperty(Task.prototype.annotations.compactFrameLayers, 'implementation', {
-        value: function compactFrameLayersImplementation(
+    Object.defineProperty(Task.prototype.annotations.compactLayers, 'implementation', {
+        value: function compactLayersImplementation(
             this: TaskClass,
-            frame: Parameters<typeof TaskClass.prototype.annotations.compactFrameLayers>[0],
-        ): ReturnType<typeof TaskClass.prototype.annotations.compactFrameLayers> {
-            return Promise.resolve(getCollection(this).compactFrameLayers(frame));
+            frame: Parameters<typeof TaskClass.prototype.annotations.compactLayers>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.compactLayers> {
+            return Promise.resolve(getCollection(this).compactLayers(frame));
         },
     });
 

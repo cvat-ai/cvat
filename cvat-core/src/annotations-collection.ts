@@ -1383,7 +1383,7 @@ export default class Collection {
         return importedArray.map((value) => value.clientID);
     }
 
-    public moveObjectsToLayer(frame: number, placement: LayerPlacement, objectStates: ObjectState[]): ObjectState[] {
+    public updateLayer(frame: number, placement: LayerPlacement, objectStates: ObjectState[]): ObjectState[] {
         const parsedPlacement = parseLayerPlacement(placement);
         // Validate the public inputs before reading collection state or applying any changes.
         checkObjectType('frame', frame, 'integer', null);
@@ -1468,7 +1468,7 @@ export default class Collection {
         return this._applyZOrderUpdates(frame, updates);
     }
 
-    public compactFrameLayers(frame: number): ObjectState[] {
+    public compactLayers(frame: number): ObjectState[] {
         checkObjectType('frame', frame, 'integer', null);
 
         const allStates = this.get(frame, false, []).filter((state) => isLayerState(state) && !state.lock);

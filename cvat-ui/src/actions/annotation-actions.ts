@@ -1281,7 +1281,7 @@ function prepareUpdatedAnnotations(states: any[], workspace: Workspace, jobInsta
     return updatedStates;
 }
 
-export function moveObjectsToLayerAsync(
+export function updateLayerAsync(
     frame: number,
     placement: { exact: number } | { before: number } | { after: number },
     statesToMove: ObjectState[],
@@ -1291,7 +1291,7 @@ export function moveObjectsToLayerAsync(
         try {
             dispatch(activateObject(null, null, null));
             const states = prepareUpdatedAnnotations(
-                await jobInstance.annotations.moveObjectsToLayer(frame, placement, statesToMove),
+                await jobInstance.annotations.updateLayer(frame, placement, statesToMove),
                 workspace,
                 jobInstance,
             );
@@ -1316,13 +1316,13 @@ export function moveObjectsToLayerAsync(
     };
 }
 
-export function compactFrameLayersAsync(frame: number): ThunkAction {
+export function compactLayersAsync(frame: number): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
             dispatch(activateObject(null, null, null));
             const states = prepareUpdatedAnnotations(
-                await jobInstance.annotations.compactFrameLayers(frame),
+                await jobInstance.annotations.compactLayers(frame),
                 workspace,
                 jobInstance,
             );
