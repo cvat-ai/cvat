@@ -1,15 +1,9 @@
 name: Trigger Agent Image Builds
 
 on:
-  push:
-    branches:
-      - DEV-922
-#on:
-#  workflow_dispatch:
-#  release:
-#    types: [released]
-# warn temp comment to test
-# test
+  workflow_dispatch:
+  release:
+    types: [released]
 
 jobs:
   dispatch:
@@ -33,5 +27,4 @@ jobs:
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/cvat-ai/cvat-models/dispatches \
-            -d '{"event_type":"build-agent-images","client_payload":{"tag_name":"v2.65.1"}}'
-#warn commented for test            -d '{"ref":"develop","inputs":{"tag_name":"${{ github.event.release.tag_name }}"}}'
+            -d '{"ref":"develop","inputs":{"tag_name":"${{ github.event.release.tag_name }}"}}'
