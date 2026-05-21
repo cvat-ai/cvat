@@ -122,6 +122,7 @@ class TestTaskVisionDataset:
             sample_image_tensor = TF.pil_to_tensor(sample_image)
             reference_tensor = TF.pil_to_tensor(PIL.Image.open(self.images[index]))
             assert torch.equal(sample_image_tensor, reference_tensor)
+            assert sample_target.image_size == sample_image.size
 
             for index, label_id in enumerate(self.label_ids):
                 assert sample_target.label_id_to_index[label_id] == index
@@ -210,6 +211,94 @@ class TestTaskVisionDataset:
         # points are filtered out
         assert torch.equal(dataset[7][1]["boxes"], torch.tensor([]))
         assert torch.equal(dataset[7][1]["labels"], torch.tensor([]))
+
+    def test_extract_instance_masks(self):
+        from cvat_sdk.masks import encode_mask
+
+        width, height = 6, 5
+        label_id_to_index = {self.label_ids[0]: 0, self.label_ids[1]: 1}
+
+        bitmap = torch.zeros((height, width), dtype=torch.bool)
+        bitmap[1:3, 2:5] = True
+
+        target = cvatpt.Target(
+            annotations=cvatpt.FrameAnnotations(
+                shapes=[
+                    models.LabeledShape(
+                        frame=0,
+                        label_id=self.label_ids[0],
+                        type=models.ShapeType("polygon"),
+                        points=[1.0, 1.0, 4.0, 1.0, 4.0, 3.0, 1.0, 3.0],
+                        rotation=0,
+                    ),
+                    models.LabeledShape(
+                        frame=0,
+                        label_id=self.label_ids[1],
+                        type=models.ShapeType("mask"),
+                        points=encode_mask(bitmap.numpy()),
+                        rotation=0,
+                    ),
+                    models.LabeledShape(
+                        frame=0,
+                        label_id=self.label_ids[1],
+                        type=models.ShapeType("points"),
+                        points=[0.0, 0.0],
+                        rotation=0,
+                    ),
+                ],
+            ),
+            label_id_to_index=label_id_to_index,
+            image_size=(width, height),
+        )
+
+        transformed = cvatpt.ExtractInstanceMasks(include_shape_types={"polygon", "mask"})(target)
+
+        assert torch.equal(
+            transformed["boxes"],
+            torch.tensor([(1.0, 1.0, 4.0, 3.0), (2.0, 1.0, 5.0, 3.0)]),
+        )
+        assert torch.equal(transformed["labels"], torch.tensor([0, 1]))
+
+        expected_polygon = torch.zeros((height, width), dtype=torch.uint8)
+        expected_polygon[1:4, 1:5] = 1
+
+        assert torch.equal(transformed["masks"][0], expected_polygon)
+        assert torch.equal(transformed["masks"][1], bitmap.to(torch.uint8))
+
+    def test_extract_instance_masks_empty(self):
+        target = cvatpt.Target(
+            annotations=cvatpt.FrameAnnotations(),
+            label_id_to_index={},
+            image_size=(6, 5),
+        )
+
+        transformed = cvatpt.ExtractInstanceMasks(include_shape_types={"polygon", "mask"})(target)
+
+        assert transformed["boxes"].shape == (0, 4)
+        assert transformed["boxes"].dtype == torch.float
+        assert torch.equal(transformed["labels"], torch.tensor([]))
+        assert transformed["masks"].shape == (0, 5, 6)
+        assert transformed["masks"].dtype == torch.uint8
+
+    def test_extract_instance_masks_rejects_rotated_shapes(self):
+        target = cvatpt.Target(
+            annotations=cvatpt.FrameAnnotations(
+                shapes=[
+                    models.LabeledShape(
+                        frame=0,
+                        label_id=self.label_ids[0],
+                        type=models.ShapeType("polygon"),
+                        points=[1.0, 1.0, 4.0, 1.0, 4.0, 3.0],
+                        rotation=1,
+                    ),
+                ],
+            ),
+            label_id_to_index={self.label_ids[0]: 0},
+            image_size=(6, 5),
+        )
+
+        with pytest.raises(cvatpt.UnsupportedDatasetError, match="Rotated shapes"):
+            cvatpt.ExtractInstanceMasks(include_shape_types={"polygon"})(target)
 
     def test_transforms(self):
         dataset = cvatpt.TaskVisionDataset(

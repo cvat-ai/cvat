@@ -125,6 +125,8 @@ The target object contains the following attributes:
     shape annotations associated with the current frame.
 - `target.label_id_to_index` (`Mapping[int, int]`):
     see [Label index assignment](#label-index-assignment).
+- `target.image_size` (`tuple[int, int]`):
+    the image size as a `(width, height)` tuple.
 
 Note that track annotations are currently inaccessible.
 
@@ -270,6 +272,43 @@ Example:
 
 ```python
 ExtractBoundingBoxes(include_shape_types=['rectangle', 'ellipse'])
+```
+
+### `ExtractInstanceMasks`
+
+Intended for instance segmentation tasks.
+
+Constructor parameters:
+
+- `include_shape_types` (`Iterable[str]`).
+  The values must be from the following list:
+
+  - `"ellipse"`
+  - `"mask"`
+  - `"polygon"`
+  - `"rectangle"`
+
+Effect: Gathers all shape annotations from the input target object
+whose types are contained in the value of `include_shape_types`.
+Then returns a dictionary with the following string keys
+(where `N` is the number of gathered shapes,
+and `H` and `W` are the image height and width):
+
+- `"boxes"` (a floating-point tensor of shape `N`x`4`).
+    Each row represents the bounding box of the corresponding shape
+    in the following format: `[x_min, y_min, x_max, y_max]`.
+
+- `"labels"` (an integer tensor of shape `N`).
+    Each element is the index of the label of the corresponding shape.
+
+- `"masks"` (an unsigned 8-bit integer tensor of shape `N`x`H`x`W`).
+    Each element is a binary instance mask for the corresponding shape.
+    CVAT mask annotations are decoded from their encoded `points` representation.
+
+Example:
+
+```python
+ExtractInstanceMasks(include_shape_types=['polygon', 'mask'])
 ```
 
 ### `ExtractSingleLabelIndex`
