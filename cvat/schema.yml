@@ -2765,15 +2765,6 @@ paths:
                 type: string
                 format: binary
           description: Data of a specific type
-        '206':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-                format: binary
-          description: Partial chunk data
-        '416':
-          description: Requested range is not satisfiable
   /api/jobs/{id}/data/meta:
     get:
       operationId: jobs_retrieve_data_meta
@@ -5860,20 +5851,6 @@ paths:
                 format: date-time
               description: Data update date, applicable for chunks only
           description: Data of a specific type
-        '206':
-          headers:
-            X-Checksum:
-              schema:
-                type: string
-              description: Data checksum, applicable for chunks only
-            X-Updated-Date:
-              schema:
-                type: string
-                format: date-time
-              description: Data update date, applicable for chunks only
-          description: Partial chunk data
-        '416':
-          description: Requested range is not satisfiable
     post:
       operationId: tasks_create_data
       description: |
