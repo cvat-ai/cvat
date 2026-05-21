@@ -252,7 +252,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     objectStates.forEach((objectState: ObjectState) => {
         const { lock } = objectState;
         if (!lock) {
-            if (isLayerState(objectState)) {
+            if (objectState.objectType === ObjectType.SHAPE || objectState.objectType === ObjectType.TRACK) {
                 if (objectState.shapeType === ShapeType.SKELETON) {
                     objectState.elements.forEach((element: ObjectState) => {
                         statesHidden = statesHidden && (element.lock || element.hidden);
@@ -294,49 +294,45 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        updateAnnotations(states: ObjectState[]): void {
-            dispatch(updateAnnotationsAsync(states));
+        updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void {
+            dispatch(updateAnnotationsAsync(...args));
         },
-        collapseStates(states: ObjectState[], collapsed: boolean): void {
-            dispatch(collapseObjectItems(states, collapsed));
+        collapseStates(...args: Parameters<typeof collapseObjectItems>): void {
+            dispatch(collapseObjectItems(...args));
         },
-        removeObject(objectState: ObjectState, force: boolean): void {
-            dispatch(removeObjectAction(objectState, force));
+        removeObject(...args: Parameters<typeof removeObjectAction>): void {
+            dispatch(removeObjectAction(...args));
         },
-        copyShape(objectState: ObjectState): void {
-            dispatch(copyShapeAction(objectState));
+        copyShape(...args: Parameters<typeof copyShapeAction>): void {
+            dispatch(copyShapeAction(...args));
         },
-        switchPropagateVisibility(visible: boolean): void {
-            dispatch(switchPropagateVisibilityAction(visible));
+        switchPropagateVisibility(...args: Parameters<typeof switchPropagateVisibilityAction>): void {
+            dispatch(switchPropagateVisibilityAction(...args));
         },
-        switchSimplifyVisibility(clientID: number | null): void {
-            dispatch(switchSimplifyVisibilityAction(clientID));
+        switchSimplifyVisibility(...args: Parameters<typeof switchSimplifyVisibilityAction>): void {
+            dispatch(switchSimplifyVisibilityAction(...args));
         },
-        changeFrame(frame: number): void {
-            dispatch(changeFrameAsync(frame));
+        changeFrame(...args: Parameters<typeof changeFrameAsync>): void {
+            dispatch(changeFrameAsync(...args));
         },
-        changeGroupColor(group: number, color: string): void {
-            dispatch(changeGroupColorAsync(group, color));
+        changeGroupColor(...args: Parameters<typeof changeGroupColorAsync>): void {
+            dispatch(changeGroupColorAsync(...args));
         },
-        changeShowGroundTruth(value: boolean): void {
-            dispatch(changeShowGroundTruthAction(value));
+        changeShowGroundTruth(...args: Parameters<typeof changeShowGroundTruthAction>): void {
+            dispatch(changeShowGroundTruthAction(...args));
             dispatch(fetchAnnotationsAsync());
         },
-        changeHideEditedState(value: boolean): void {
-            dispatch(changeHideActiveObjectAsync(value));
+        changeHideEditedState(...args: Parameters<typeof changeHideActiveObjectAsync>): void {
+            dispatch(changeHideActiveObjectAsync(...args));
         },
-        updateLayer(
-            frame: number,
-            placement: { exact: number } | { before: number } | { after: number },
-            states: ObjectState[],
-        ): void {
-            dispatch(updateLayerAsync(frame, placement, states));
+        updateLayer(...args: Parameters<typeof updateLayerAsync>): void {
+            dispatch(updateLayerAsync(...args));
         },
-        compactLayers(frame: number): void {
-            dispatch(compactLayersAsync(frame));
+        compactLayers(...args: Parameters<typeof compactLayersAsync>): void {
+            dispatch(compactLayersAsync(...args));
         },
-        selectLayer(zOrder: number): void {
-            dispatch(switchZLayer(zOrder));
+        selectLayer(...args: Parameters<typeof switchZLayer>): void {
+            dispatch(switchZLayer(...args));
         },
     };
 }
