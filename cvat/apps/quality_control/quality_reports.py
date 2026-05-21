@@ -1078,6 +1078,8 @@ def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=
 
 @define(kw_only=True)
 class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
+    img_size: tuple[int, int] | None = None  # (height, width) for image-space OKS scaling
+
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
@@ -1085,29 +1087,27 @@ class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
         a_area = a_bbox[2] * a_bbox[3]
         b_area = b_bbox[2] * b_bbox[3]
 
-        # The bbox IoU check is an optimization that skips OKS for clearly
-        # non-overlapping annotations. Skip it for degenerate (zero-area) bboxes —
-        # single-point or collinear skeletons always produce IoU=0 even when
-        # the annotations are identical, causing false negatives.
-        if a_area > 0 and b_area > 0:
-            if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
+        visibility_a = [v == dm.Points.Visibility.visible for v in a.visibility]
+        visibility_b = [v == dm.Points.Visibility.visible for v in b.visibility]
+
+        if a_area == 0 and b_area == 0:
+            # Degenerate case: single-point or collinear skeletons produce
+            # zero-area bboxes. bbox_iou() always returns 0 for these, so the
+            # normal IoU guard would block even identical annotations. Instead,
+            # scale OKS by the image area — the same approach used for point
+            # annotations (see match_points._distance, else-branch).
+            if self.img_size is None:
                 return 0
+            img_h, img_w = self.img_size
+            return oks(a, b, sigma=self.sigma, scale=img_h * img_w,
+                       visibility_a=visibility_a, visibility_b=visibility_b)
+
+        if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
+            return 0
 
         bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
-
-        # OKS normalizes distances by bbox area (scale = w * h). Expand
-        # degenerate bboxes to avoid division by zero in the exponent.
-        if bbox[2] * bbox[3] <= 0:
-            bbox = (bbox[0], bbox[1], max(bbox[2], 1), max(bbox[3], 1))
-
-        return oks(
-            a,
-            b,
-            sigma=self.sigma,
-            bbox=bbox,
-            visibility_a=[v == dm.Points.Visibility.visible for v in a.visibility],
-            visibility_b=[v == dm.Points.Visibility.visible for v in b.visibility],
-        )
+        return oks(a, b, sigma=self.sigma, bbox=bbox,
+                   visibility_a=visibility_a, visibility_b=visibility_b)
 
 
 def _arr_div(a_arr: np.ndarray, b_arr: np.ndarray) -> np.ndarray:
@@ -1835,7 +1835,9 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
+        img_h, img_w = item_a.media_as(dm.Image).size
+        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma,
+                                   img_size=(img_h, img_w))
 
         results = self.match_segments(
             dm.AnnotationType.points,
