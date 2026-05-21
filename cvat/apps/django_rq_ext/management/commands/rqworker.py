@@ -1,13 +1,18 @@
-# NOTE @sosov: shadows django_rq.management.commands.rqworker.Command. Picked
-# up by Django because cvat.apps.django_rq_ext sits before `django_rq` in
-# INSTALLED_APPS, and get_commands() iterates via reversed(get_app_configs()),
-# so the FIRST app in INSTALLED_APPS wins for command-name collisions.
-#
-# Adds --pool-size and --task-execution-time-threshold. Both default to None
-# and are only injected when explicitly set, so stock rq.Worker invocations
-# (e.g. `just runworker`) keep working unchanged.
+import argparse
 
 import django_rq.management.commands.rqworker as _upstream
+
+
+def _validate_pool_size(raw: str) -> int:
+    # NOTE @sosov: minimum is 2 because the heartbeat future permanently
+    # occupies one slot; pool_size=1 would leave zero capacity for jobs.
+    value = int(raw)
+    if value < 2:
+        raise argparse.ArgumentTypeError(
+            f"--pool-size must be at least 2 (got {value}); the heartbeat "
+            "future occupies one slot so a pool of 1 has no capacity for jobs."
+        )
+    return value
 
 
 class Command(_upstream.Command):
@@ -15,10 +20,11 @@ class Command(_upstream.Command):
         super().add_arguments(parser)
         parser.add_argument(
             "--pool-size",
-            type=int,
+            type=_validate_pool_size,
             default=None,
             help=(
-                "Thread-pool size for ThreadPoolWorker. Only meaningful when "
+                "Thread-pool size for ThreadPoolWorker (minimum 2 — the "
+                "heartbeat thread takes one slot). Only meaningful when "
                 "--worker-class points at a thread-pool worker; passing this "
                 "with the stock rq.Worker will TypeError."
             ),
