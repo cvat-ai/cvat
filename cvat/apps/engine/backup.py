@@ -19,6 +19,7 @@ from datetime import timedelta
 from enum import Enum
 from logging import Logger
 from pathlib import Path, PurePath
+from time import sleep
 from typing import Any, ClassVar
 from zipfile import ZipFile, ZipInfo
 
@@ -79,6 +80,8 @@ from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
+
+TEMP_BACKUP_EXPORT_WORKER_DELAY = timedelta(minutes=10)
 
 
 class Version(Enum):
@@ -1446,6 +1449,8 @@ def create_backup(
     *,
     lightweight: bool = None,
 ):
+    sleep(TEMP_BACKUP_EXPORT_WORKER_DELAY.total_seconds())
+
     db_instance = Exporter.get_object(instance_id)
 
     try:
