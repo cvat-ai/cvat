@@ -17,8 +17,8 @@ from rq.registry import StartedJobRegistry
 from rq.utils import utcnow
 from rq.worker import BaseWorker, DequeueStrategy, StopRequested, WorkerStatus
 
-from cvat.apps.django_rq_ext.mixins import RqWorkerPortMixin
-from cvat.apps.django_rq_ext.utils import NoOpDeathPenalty
+from cvat.apps.django_rq_ext.worker.mixins import RqWorkerPortMixin
+from cvat.apps.django_rq_ext.worker.utils import NoOpDeathPenalty
 
 _POOL_FULL_POLL_INTERVAL = 0.1
 
