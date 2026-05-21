@@ -752,7 +752,7 @@
         margin-top: $grid-unit-size * 0.5;
     }
 
-    span {
+    span[role='img'] {
         @extend .cvat-object-sidebar-icon;
 
         display: inline-flex;
@@ -768,6 +768,7 @@
     }
 
     > div:nth-child(2) {
+        white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
         max-height: 1.5em;
