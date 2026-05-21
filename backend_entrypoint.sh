@@ -19,6 +19,18 @@ wait_for_clickhouse() {
     wait-for-it "${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT:-8123}" -t 0
 }
 
+account_for_internal_proxy() {
+    CVAT_NUM_PROXIES="${CVAT_NUM_PROXIES:-0}"
+
+    if ! [[ "$CVAT_NUM_PROXIES" =~ ^[0-9]+$ ]]; then
+        fail "CVAT_NUM_PROXIES must be a non-negative integer"
+    fi
+
+    # The user-facing setting counts proxies before the backend container.
+    # Add the internal nginx hop that proxies requests to uvicorn.
+    export CVAT_NUM_PROXIES=$((CVAT_NUM_PROXIES + 1))
+}
+
 cmd_bash() {
     exec bash "$@"
 }
@@ -106,6 +118,7 @@ cmd_run() {
     fi
 
     if [ "$component" = "server" ]; then
+        account_for_internal_proxy
         ~/manage.py collectstatic --no-input
     fi
 
