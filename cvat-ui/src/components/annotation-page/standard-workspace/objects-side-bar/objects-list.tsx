@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 
 import {
-    DndContext, DragEndEvent, DragStartEvent, PointerSensor, pointerWithin,
+    DndContext, DragEndEvent, PointerSensor, pointerWithin,
     useDraggable, useDroppable, useSensor, useSensors,
 } from '@dnd-kit/core';
 import {
@@ -37,7 +37,6 @@ const LAYER_INSERT_DROP_ID_PREFIX = 'insert-layer:';
 export type LayerPlacement = { before: number } | { after: number };
 export type LayerMoveSource = { clientID: number } | { zOrder: number };
 type PointerPosition = { x: number; y: number };
-const INSERT_DROP_AREA_PROXIMITY = 16;
 
 function objectDragID(clientID: number): string {
     return `${OBJECT_DRAG_ID_PREFIX}${clientID}`;
@@ -194,19 +193,24 @@ function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
     const {
         zOrder, selected, visible, collapsed, selectLayer, toggleLayerCollapsed,
     } = props;
+
     const {
         attributes, listeners, setNodeRef, transform, isDragging,
     } = useDraggable({ id: layerDragID(zOrder) });
+
     // dnd-kit exposes the live drag offset; applying it makes the dragged layer follow the pointer.
     const style = {
         ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {}),
         ...(isDragging ? { pointerEvents: 'none' as const } : {}),
     };
-    const className = `cvat-objects-sidebar-z-layer-mark${
-        isDragging ? ' cvat-objects-sidebar-z-layer-mark-dragging' : ''
-    }${!visible ? ' cvat-objects-sidebar-z-layer-mark-invisible' : ''
-    }${selected ? ' cvat-objects-sidebar-z-layer-mark-selected' : ''
-    }`;
+
+    const className = [
+        'cvat-objects-sidebar-z-layer-mark',
+        ...(isDragging ? ['cvat-objects-sidebar-z-layer-mark-dragging'] : []),
+        ...(!visible ? ['cvat-objects-sidebar-z-layer-mark-invisible'] : []),
+        ...(selected ? ['cvat-objects-sidebar-z-layer-mark-selected'] : []),
+    ].join(' ');
+
     const visibilityTooltip = visible ? 'Visible on canvas' : 'Hidden on canvas';
     const selectLayerTooltip = selected ? 'Current layer. Higher layers are hidden on canvas' :
         'Select as current layer. Higher layers will not be visible on canvas';
@@ -262,7 +266,7 @@ function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
 
 interface ZLayerSectionProps {
     zOrder: number;
-    objectIDs: number[];
+    layerObjectIds: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
     selected: boolean;
@@ -274,11 +278,12 @@ interface ZLayerSectionProps {
 
 function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
     const {
-        zOrder, objectIDs, objectStates, visibleSkeletonElements, selected, visible, collapsed, selectLayer,
+        zOrder, layerObjectIds, objectStates, visibleSkeletonElements,
+        selected, visible, collapsed, selectLayer,
         toggleLayerCollapsed,
     } = props;
-    const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
 
+    const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
     return (
         <div
             ref={setNodeRef}
@@ -293,7 +298,7 @@ function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
                 selectLayer={selectLayer}
                 toggleLayerCollapsed={toggleLayerCollapsed}
             />
-            {!collapsed && objectIDs.map((id: number): JSX.Element => {
+            {!collapsed && layerObjectIds.map((id: number): JSX.Element => {
                 const object = objectStates.find((state: ObjectState): boolean => state.clientID === id);
 
                 return (
@@ -302,7 +307,7 @@ function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
                         objectStates={objectStates}
                         clientID={id}
                         visibleSkeletonElements={visibleSkeletonElements}
-                        draggable={object?.objectType !== ObjectType.TAG}
+                        draggable={object.objectType === ObjectType.SHAPE || object.objectType === ObjectType.TRACK}
                     />
                 );
             })}
@@ -313,17 +318,19 @@ function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
 interface ZLayerInsertDropAreaProps {
     placement: LayerPlacement;
     pointerPosition: PointerPosition | null;
-    draggedItemHeight: number | null;
 }
 
 function ZLayerInsertDropArea(props: ZLayerInsertDropAreaProps): JSX.Element {
-    const { placement, pointerPosition, draggedItemHeight } = props;
+    const { placement, pointerPosition } = props;
     const { isOver, setNodeRef } = useDroppable({ id: layerInsertDropID(placement) });
     const dropAreaRef = useRef<HTMLDivElement | null>(null);
+
     const setDropAreaRef = useCallback((element: HTMLDivElement | null): void => {
         dropAreaRef.current = element;
         setNodeRef(element);
     }, [setNodeRef]);
+
+    const INSERT_DROP_AREA_PROXIMITY = 16;
     const pointerIsNear = ((): boolean => {
         if (!pointerPosition || !dropAreaRef.current) {
             return false;
@@ -337,6 +344,7 @@ function ZLayerInsertDropArea(props: ZLayerInsertDropAreaProps): JSX.Element {
             pointerPosition.y <= rect.bottom + INSERT_DROP_AREA_PROXIMITY
         );
     })();
+
     const expanded = isOver || pointerIsNear;
     const classList = [
         'cvat-objects-sidebar-z-layer-move-drop-area',
@@ -347,10 +355,6 @@ function ZLayerInsertDropArea(props: ZLayerInsertDropAreaProps): JSX.Element {
         <div
             ref={setDropAreaRef}
             className={`${classList.join(' ')}`}
-            style={expanded && draggedItemHeight ? {
-                flexBasis: draggedItemHeight,
-                height: draggedItemHeight,
-            } : undefined}
         />
     );
 }
@@ -395,30 +399,36 @@ function ObjectListComponent(props: Props): JSX.Element {
         showAllStates,
         changeShowGroundTruth,
     } = props;
+
     const sensors = useSensors(useSensor(PointerSensor, {
         activationConstraint: {
             distance: 6,
         },
     }));
+
     const [collapsedZLayers, setCollapsedZLayers] = useState<number[]>([]);
     const [dragActive, setDragActive] = useState<boolean>(false);
     const [dragPointerPosition, setDragPointerPosition] = useState<PointerPosition | null>(null);
-    const [draggedItemHeight, setDraggedItemHeight] = useState<number | null>(null);
     const zLayers = Array.from(new Set([...getZLayers(objectStates), currentZLayer]))
         .sort((left: number, right: number): number => left - right);
     const allLayersCollapsed = !!zLayers.length && zLayers.every((zOrder: number): boolean => (
         collapsedZLayers.includes(zOrder)
     ));
+
+    // Remove collapse markers for layers that disappeared after filtering or z-order changes.
     useEffect((): void => {
         setCollapsedZLayers((current: number[]): number[] => (
             current.filter((zOrder: number): boolean => zLayers.includes(zOrder))
         ));
     }, [zLayers.join(',')]);
+
+    // React to external requests to expand, scroll to, or open a layer in the sidebar.
     useEffect((): () => void => {
         const onExpandZLayer = (event: Event): void => {
             const { clientID, parentID } = (
                 event as CustomEvent<{ clientID: number; parentID: number | null }>
             ).detail;
+
             const expandedState = objectStates.find((state: ObjectState): boolean => (
                 state.clientID === (parentID ?? clientID)
             ));
@@ -429,12 +439,14 @@ function ObjectListComponent(props: Props): JSX.Element {
                 ));
             }
         };
+
         const onOpenZLayer = (event: Event): void => {
             const { zOrder } = (event as CustomEvent<{ zOrder: number }>).detail;
 
             setCollapsedZLayers((current: number[]): number[] => (
                 current.filter((currentZOrder: number): boolean => currentZOrder !== zOrder)
             ));
+
             window.setTimeout((): void => {
                 window.document
                     .querySelector(`[data-z-order="${zOrder}"]`)
@@ -450,6 +462,8 @@ function ObjectListComponent(props: Props): JSX.Element {
             window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenZLayer);
         };
     }, [objectStates]);
+
+    // Track the pointer only during drag so nearby insert gaps can expand.
     useEffect((): (() => void) | undefined => {
         if (!dragActive) {
             return undefined;
@@ -460,29 +474,28 @@ function ObjectListComponent(props: Props): JSX.Element {
         };
 
         window.addEventListener('pointermove', onPointerMove);
-
         return (): void => {
             window.removeEventListener('pointermove', onPointerMove);
         };
     }, [dragActive]);
-    const zLayerIDs = zLayers.reduce((acc: Record<number, number[]>, zOrder: number): Record<number, number[]> => {
-        acc[zOrder] = [];
-        return acc;
-    }, {});
-    sortedStatesID.forEach((id: number): void => {
-        const object = objectStates.find((state: ObjectState): boolean => state.clientID === id);
 
-        if (object) {
-            zLayerIDs[object.zOrder] = zLayerIDs[object.zOrder] || [];
-            zLayerIDs[object.zOrder].push(id);
-        }
-    });
-    const onDragEnd = (event: DragEndEvent): void => {
+    const objectIdsByLayer = sortedStatesID
+        .reduce((acc: Record<number, number[]>, id: number): Record<number, number[]> => {
+            const object = objectStates.find((state: ObjectState): boolean => state.clientID === id);
+
+            if (object) {
+                acc[object.zOrder] = acc[object.zOrder] || [];
+                acc[object.zOrder].push(id);
+            }
+
+            return acc;
+        }, {});
+
+    const onDragEnd = useCallback((event: DragEndEvent): void => {
         const { active, over } = event;
 
         setDragActive(false);
         setDragPointerPosition(null);
-        setDraggedItemHeight(null);
 
         if (!over) {
             return;
@@ -510,18 +523,17 @@ function ObjectListComponent(props: Props): JSX.Element {
             // Dropping a layer between layers creates a new layer before/after a layout boundary.
             moveObjectsOnNewLayer({ zOrder: sourceZOrder }, placement);
         }
-    };
-    const onDragStart = (event: DragStartEvent): void => {
-        const draggedRect = event.active.rect.current.initial;
+    }, [moveObjectsOnNewLayer, moveObjectsToLayer]);
 
+    const onDragStart = useCallback((): void => {
         setDragActive(true);
-        setDraggedItemHeight(draggedRect?.height ?? null);
-    };
-    const onDragCancel = (): void => {
+    }, []);
+
+    const onDragCancel = useCallback((): void => {
         setDragActive(false);
         setDragPointerPosition(null);
-        setDraggedItemHeight(null);
-    };
+    }, []);
+
     const toggleLayerCollapsed = (zOrder: number): void => {
         setCollapsedZLayers((current: number[]): number[] => (
             current.includes(zOrder) ?
@@ -529,6 +541,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                 [...current, zOrder]
         ));
     };
+
     const toggleAllLayersCollapsed = (): void => {
         setCollapsedZLayers(allLayersCollapsed ? [] : [...zLayers]);
     };
@@ -591,11 +604,10 @@ function ObjectListComponent(props: Props): JSX.Element {
                                         <ZLayerInsertDropArea
                                             placement={{ before: zOrder + 1 }}
                                             pointerPosition={dragPointerPosition}
-                                            draggedItemHeight={draggedItemHeight}
                                         />
                                         <ZLayerSection
                                             zOrder={zOrder}
-                                            objectIDs={zLayerIDs[zOrder] || []}
+                                            layerObjectIds={objectIdsByLayer[zOrder] || []}
                                             objectStates={objectStates}
                                             visibleSkeletonElements={visibleSkeletonElements}
                                             selected={zOrder === currentZLayer}
@@ -610,7 +622,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                                     <ZLayerInsertDropArea
                                         placement={{ after: zLayers.length }}
                                         pointerPosition={dragPointerPosition}
-                                        draggedItemHeight={draggedItemHeight}
                                     />
                                 )}
                             </div>
