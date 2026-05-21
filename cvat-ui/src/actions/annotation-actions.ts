@@ -80,11 +80,11 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
     };
 }
 
-export function computeZRange(states: any[]): number[] {
-    const filteredStates = states.filter((state: any): any => state.objectType !== ObjectType.TAG);
+export function computeZRange(states: ObjectState[]): number[] {
+    const filteredStates = states.filter((state) => state.objectType !== ObjectType.TAG);
     let minZ = filteredStates.length ? filteredStates[0].zOrder : 0;
     let maxZ = filteredStates.length ? filteredStates[0].zOrder : 0;
-    filteredStates.forEach((state: any): void => {
+    filteredStates.forEach((state): void => {
         minZ = Math.min(minZ, state.zOrder);
         maxZ = Math.max(maxZ, state.zOrder);
     });
@@ -1197,7 +1197,7 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
     };
 }
 
-function dispatchAnnotationsUpdate(dispatch: ThunkDispatch, states: any[], history: any, forceZRange = false): void {
+function dispatchAnnotationsUpdate(dispatch: ThunkDispatch, states: any[], history: any): void {
     const [minZ, maxZ] = computeZRange(states);
 
     dispatch({
@@ -1207,7 +1207,6 @@ function dispatchAnnotationsUpdate(dispatch: ThunkDispatch, states: any[], histo
             history,
             minZ,
             maxZ,
-            forceZRange,
         },
     });
 }
@@ -1232,7 +1231,7 @@ async function updateObjectsLayers(
         }
 
         dispatch(activateObject(null, null, null));
-        dispatchAnnotationsUpdate(dispatch, updatedStates, await jobInstance.actions.get(), true);
+        dispatchAnnotationsUpdate(dispatch, updatedStates, await jobInstance.actions.get());
     } catch (error) {
         dispatch({
             type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
