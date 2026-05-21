@@ -16,7 +16,6 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any, NoReturn, Protocol, TypeVar
 from unittest import TestCase
-from urllib.parse import urlencode
 
 import av
 import django.test
@@ -144,7 +143,7 @@ class ApiTestBase(APITestCase):
         self, path: str, user: User, *, query_params: dict[str, Any] | None = None
     ) -> Response:
         with ForceLogin(user, self.client):
-            response = self.client.get(path, data=query_params)
+            response = self.client.get(path, query_params=query_params)
         return response
 
     def _delete_request(self, path: str, user: User):
@@ -158,16 +157,11 @@ class ApiTestBase(APITestCase):
         user: User,
         *,
         format: str = "json",  # pylint: disable=redefined-builtin
-        query_params: dict[str, Any] = None,
+        query_params: dict[str, Any] | None = None,
         data: dict[str, Any] | None = None,
     ):
-        if query_params:
-            # Note: once we upgrade to Django 5.1+, this should be changed to pass query_params
-            # directly to self.client.
-            assert "?" not in path
-            path += "?" + urlencode(query_params)
         with ForceLogin(user, self.client):
-            response = self.client.post(path, data=data, format=format)
+            response = self.client.post(path, data=data, format=format, query_params=query_params)
         return response
 
     def _patch_request(self, path: str, user: str, *, data: dict[str, Any] | None = None):
@@ -840,6 +834,8 @@ def check_annotation_response(
             )
         if key_path and key_path[-1] == "tracks":
             return filter_dict(optional_fields, keep=["source", "attributes", "elements"])
+        if key_path and key_path[-1] == "intervals":
+            return filter_dict(optional_fields, keep=["source", "attributes"])
         if format_key(key_path, index_placeholder="*").endswith("tracks.*.elements"):
             return filter_dict(optional_fields, keep=["source", "attributes"])
         if format_key(key_path, index_placeholder="*").endswith("tracks.*.elements.*.shapes"):
@@ -859,6 +855,8 @@ def check_annotation_response(
                     "score",
                 ],
             )
+        if not key_path:
+            return {"tags": [], "shapes": [], "tracks": [], "intervals": []}
 
         return None
 

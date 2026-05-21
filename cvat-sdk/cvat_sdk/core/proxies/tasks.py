@@ -152,6 +152,7 @@ class Task(
         filename: StrPath,
         *,
         conv_mask_to_poly: bool | None = None,
+        import_mode: str | None = None,
         status_check_period: int | None = None,
         pbar: ProgressReporter | None = None,
     ):
@@ -167,6 +168,7 @@ class Task(
             format_name,
             url_params={"id": self.id},
             conv_mask_to_poly=conv_mask_to_poly,
+            import_mode=import_mode,
             pbar=pbar,
             status_check_period=status_check_period,
         )

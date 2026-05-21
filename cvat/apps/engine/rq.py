@@ -259,8 +259,13 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         db_obj: Model | None,
     ):
         # to prevent circular import
-        from cvat.apps.events.handlers import job_id, organization_slug, task_id
-        from cvat.apps.webhooks.signals import organization_id, project_id
+        from cvat.apps.events.handlers import (
+            job_id,
+            organization_id,
+            organization_slug,
+            project_id,
+            task_id,
+        )
 
         oid = organization_id(db_obj)
         oslug = organization_slug(db_obj)

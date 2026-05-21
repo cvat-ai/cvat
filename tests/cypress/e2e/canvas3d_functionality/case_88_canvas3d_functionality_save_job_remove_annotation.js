@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-/* eslint-disable cypress/no-unnecessary-waiting */
-
 /// <reference types="cypress" />
 
 import { taskName, labelName } from '../../support/const_canvas3d';
@@ -25,6 +23,7 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
         cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.customScreenshot('.cvat-canvas3d-topview', 'canvas3d_topview_before_all');
         cy.create3DCuboid(cuboidCreationParams);
@@ -38,6 +37,7 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
             cy.get('.cvat-objects-sidebar-state-item').then((sidebarStateItem) => {
                 expect(sidebarStateItem.length).to.be.equal(1);
             });
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
             cy.wait(waitTime);
             cy.customScreenshot('.cvat-canvas3d-topview', 'canvas3d_topview_after_reopen_job');
             cy.compareImagesAndCheckResult(
@@ -51,6 +51,7 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
             cy.saveJob('PUT');
             cy.get('Saving changes on the server').should('not.exist');
             cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
             cy.wait(waitTime);
             cy.customScreenshot('.cvat-canvas3d-topview', 'canvas3d_topview_after_remove_annotations');
             cy.compareImagesAndCheckResult(

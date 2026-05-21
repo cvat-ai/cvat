@@ -49,6 +49,8 @@ from rest_api.utils import (
     create_task,
     export_dataset,
     export_task_dataset,
+    import_job_annotations,
+    import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
 from shared.tasks.interface import ITaskSpec
@@ -61,6 +63,7 @@ from shared.utils.config import (
     make_api_client,
     make_sdk_client,
     patch_method,
+    post_method,
     put_method,
 )
 from shared.utils.helpers import generate_image_files
@@ -356,10 +359,12 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
         (
             "assignee",
             "dimension",
+            "media_type",
             "mode",
             "name",
             "owner",
             "project_id",
+            "project_name",
             "status",
             "subset",
             "tracker_link",
@@ -1042,7 +1047,7 @@ class TestGetTaskDataset:
         default_subset_name,
         subset_path_template,
     ):
-        tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
+        tasks = filter_tasks(exclude_target_storage__location="cloud_storage", dimension="2d")
         group_key_func = itemgetter("subset")
         subsets_and_tasks = [
             (subset, next(group))
@@ -1187,6 +1192,40 @@ class TestPatchTaskLabel:
 
         resulting_labels = self._get_task_labels(task["id"], admin_user)
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
+
+    def test_can_delete_attribute(self, admin_user):
+        spec = {
+            "name": "test delete task label attribute",
+            "labels": [
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "mazda",
+                            "values": ["mazda"],
+                        }
+                    ],
+                }
+            ],
+        }
+        response = post_method(admin_user, "tasks", spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        task = response.json()
+        label = self._get_task_labels(task["id"], admin_user)[0]
+        attribute = label["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'tasks/{task["id"]}',
+            {"labels": [{"id": label["id"], "attributes": [{**attribute, "deleted": True}]}]},
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        label = self._get_task_labels(task["id"], admin_user)[0]
+        assert label["attributes"] == []
 
     def test_can_rename_label(self, tasks_wlc, labels, admin_user):
         task = [t for t in tasks_wlc if t["project_id"] is None and t["labels"]["count"] > 0][0]
@@ -1426,20 +1465,32 @@ class TestTaskBackups:
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode and not t["validation_mode"]
+        )["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_honeypot_task(self, tasks):
-        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        task_id = next(
+            t for t in tasks if t["dimension"] == "2d" if t["validation_mode"] == "gt_pool"
+        )["id"]
         self._test_can_export_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup_for_simple_gt_job_task(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode and t["validation_mode"] == "gt")["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode and t["validation_mode"] == "gt"
+        )["id"]
         self._test_can_export_backup(task_id)
 
     def test_cannot_export_backup_for_task_without_data(self, tasks):
@@ -1449,6 +1500,10 @@ class TestTaskBackups:
             self._test_can_export_backup(task_id)
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
+
+    def test_can_export_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_mounted_share(self):
@@ -1522,20 +1577,34 @@ class TestTaskBackups:
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode if not t["validation_mode"])["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode
+            if not t["validation_mode"]
+        )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_with_simple_gt_job_task(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode if t["validation_mode"] == "gt")["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode
+            if t["validation_mode"] == "gt"
+        )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_honeypot_task(self, tasks):
-        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        task_id = next(
+            t for t in tasks if t["dimension"] == "2d" if t["validation_mode"] == "gt_pool"
+        )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
@@ -1587,6 +1656,7 @@ class TestTaskBackups:
         gt_job = next(
             j
             for j in jobs
+            if j["dimension"] == "2d"
             if j["type"] == "ground_truth"
             if job_has_annotations(j["id"])
             if tasks[j["task_id"]]["validation_mode"] == "gt"
@@ -1595,6 +1665,10 @@ class TestTaskBackups:
         task = tasks[gt_job["task_id"]]
 
         self._test_can_restore_task_from_backup(task["id"])
+
+    def test_can_import_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
@@ -1711,7 +1785,11 @@ class TestTaskBackups:
         assert restored_task_json["id"] != task_json["id"]
         assert restored_task_json["data"] != task_json["data"]
         assert restored_task_json["organization"] is None
-        assert restored_task_json["data_compressed_chunk_type"] in ["imageset", "video"]
+        assert restored_task_json["data_compressed_chunk_type"] in [
+            "imageset",
+            "video",
+            "audio_mp3",
+        ]
         if task_json["jobs"]["count"] == 1:
             assert restored_task_json["overlap"] == 0
         else:
@@ -3166,6 +3244,8 @@ def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestImportTaskAnnotations:
+    _SENTINEL_GROUP = 987654
+
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
         self.tmp_dir = tmp_path
@@ -3187,6 +3267,198 @@ class TestImportTaskAnnotations:
         with make_api_client(self.user) as api_client:
             _, response = api_client.tasks_api.destroy_annotations(id=task_id)
             assert response.status == HTTPStatus.NO_CONTENT
+
+    def _find_label_id(self, annotations: dict[str, Any]) -> int:
+        for annotation_type in ("tags", "shapes", "tracks"):
+            if annotations[annotation_type]:
+                return annotations[annotation_type][0]["label_id"]
+
+        raise AssertionError("Expected non-empty annotations")
+
+    def _sentinel_annotations(self, label_id: int, *, frame: int = 0) -> dict[str, Any]:
+        return {
+            "version": 0,
+            "tags": [
+                {
+                    "frame": frame,
+                    "label_id": label_id,
+                    "group": self._SENTINEL_GROUP,
+                    "attributes": [],
+                }
+            ],
+            "shapes": [],
+            "tracks": [],
+        }
+
+    def _has_sentinel(self, annotations: dict[str, Any]) -> bool:
+        return any(tag["group"] == self._SENTINEL_GROUP for tag in annotations["tags"])
+
+    def _annotations_count(self, annotations: dict[str, Any]) -> int:
+        return sum(
+            len(annotations[annotation_type]) for annotation_type in ("tags", "shapes", "tracks")
+        )
+
+    def _import_annotations_file(
+        self,
+        target_type: str,
+        target_id: int,
+        annotation_file: bytes,
+        *,
+        import_mode: str | None = None,
+    ) -> None:
+        annotation_file_io = io.BytesIO(annotation_file)
+        annotation_file_io.name = "annotations.zip"
+
+        import_func = {
+            "tasks": import_task_annotations,
+            "jobs": import_job_annotations,
+        }[target_type]
+
+        query_params = {
+            "id": target_id,
+            "format": self.import_format,
+        }
+        if import_mode:
+            query_params["import_mode"] = import_mode
+
+        background_request = import_func(
+            self.user,
+            annotation_file_io,
+            max_retries=300,
+            **query_params,
+        )
+        assert (
+            background_request.status.value
+            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+        )
+
+    def _is_2d_annotation_task(self, task: dict[str, Any], *, require_size: bool = False) -> bool:
+        return (
+            task["dimension"] == "2d"
+            and task["mode"] == "annotation"
+            and task["validation_mode"] != "gt_pool"
+            and (not require_size or task["size"] > 0)
+        )
+
+    def _select_annotations_target(
+        self,
+        target_type: str,
+        *,
+        tasks: Iterable[dict],
+        tasks_with_shapes: Iterable[dict],
+        jobs_with_shapes: Iterable[dict],
+    ) -> tuple[int, int]:
+        if target_type == "tasks":
+            task = next(
+                task
+                for task in tasks_with_shapes
+                if self._is_2d_annotation_task(task, require_size=True)
+            )
+            return task["id"], 0
+
+        if target_type == "jobs":
+            tasks_by_id = {task["id"]: task for task in tasks}
+            job = next(
+                job
+                for job in jobs_with_shapes
+                if job["type"] == "annotation"
+                if self._is_2d_annotation_task(tasks_by_id[job["task_id"]])
+            )
+            return job["id"], job["start_frame"]
+
+        raise AssertionError(f"Unexpected annotations target type: {target_type}")
+
+    def _annotations_api(self, api_client, target_type: str):
+        if target_type == "tasks":
+            return api_client.tasks_api
+        if target_type == "jobs":
+            return api_client.jobs_api
+
+        raise AssertionError(f"Unexpected annotations target type: {target_type}")
+
+    def _export_annotations_file(
+        self, target_type: str, target_id: int
+    ) -> tuple[bytes, dict[str, Any]]:
+        with make_api_client(self.user) as api_client:
+            annotations_api = self._annotations_api(api_client, target_type)
+            original_annotations = json.loads(
+                annotations_api.retrieve_annotations(target_id)[1].data
+            )
+            annotation_file = export_dataset(
+                annotations_api,
+                id=target_id,
+                format=self.export_format,
+                save_images=False,
+            )
+
+        assert annotation_file
+        assert self._annotations_count(original_annotations) > 0
+        return annotation_file, original_annotations
+
+    @pytest.mark.timeout(60)
+    @pytest.mark.parametrize(
+        ("import_mode", "should_append"),
+        [
+            pytest.param(None, False, id="replace-default"),
+            pytest.param("replace", False, id="replace"),
+            pytest.param("append", True, id="append"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "target_type",
+        [
+            pytest.param("tasks", id="task"),
+            pytest.param("jobs", id="job"),
+        ],
+    )
+    def test_import_annotations_respects_import_mode(
+        self,
+        target_type: str,
+        import_mode: str | None,
+        should_append: bool,
+        tasks,
+        tasks_with_shapes,
+        jobs_with_shapes,
+    ):
+        target_id, sentinel_frame = self._select_annotations_target(
+            target_type,
+            tasks=tasks,
+            tasks_with_shapes=tasks_with_shapes,
+            jobs_with_shapes=jobs_with_shapes,
+        )
+        annotation_file, original_annotations = self._export_annotations_file(
+            target_type, target_id
+        )
+
+        replacement = self._sentinel_annotations(
+            self._find_label_id(original_annotations), frame=sentinel_frame
+        )
+        endpoint = f"{target_type}/{target_id}/annotations"
+        response = put_method(self.user, endpoint, replacement)
+        assert response.status_code == HTTPStatus.OK, response.content
+
+        self._import_annotations_file(
+            target_type,
+            target_id,
+            annotation_file,
+            import_mode=import_mode,
+        )
+
+        response = get_method(self.user, endpoint)
+        assert response.status_code == HTTPStatus.OK, response.content
+        imported_annotations = response.json()
+
+        if should_append:
+            assert self._has_sentinel(imported_annotations)
+            assert self._annotations_count(imported_annotations) == (
+                self._annotations_count(original_annotations) + self._annotations_count(replacement)
+            )
+        else:
+            assert not self._has_sentinel(imported_annotations)
+            assert (
+                compare_annotations(original_annotations, imported_annotations, ignore_source=True)
+                == {}
+            )
 
     @pytest.mark.skip("Fails sometimes, needs to be fixed")
     @pytest.mark.timeout(70)
@@ -3342,6 +3614,42 @@ class TestImportTaskAnnotations:
             updated_annotations = json.loads(
                 api_client.tasks_api.retrieve_annotations(task["id"])[1].data
             )
+
+        assert (
+            compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}
+        )
+
+    def test_can_import_audio_tsv(self, tasks):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["media_type"] == "audio" and t.get("validation_mode") != "gt_pool"
+        )
+
+        format_name = "Generic TSV 1.0"
+
+        original_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
+
+        dataset_file = io.BytesIO(
+            export_dataset(
+                self.client.api_client.tasks_api,
+                id=task["id"],
+                format=format_name,
+                save_images=False,
+            )
+        )
+
+        with TemporaryDirectory() as temp_dir:
+            annotation_file = Path(temp_dir) / "annotations.tsv"
+            annotation_file.write_bytes(dataset_file.getvalue())
+            self.client.tasks.retrieve(task["id"]).import_annotations(format_name, annotation_file)
+
+        updated_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
 
         assert (
             compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}

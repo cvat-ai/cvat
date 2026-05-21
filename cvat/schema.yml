@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.64.1
+  version: 2.65.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -103,7 +103,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'id', 'created_date', 'updated_date', 'expiry_date', 'last_used_date', 'read_only'].
+           Available filter_fields: ['created_date', 'expiry_date', 'id', 'last_used_date', 'name', 'read_only', 'updated_date'].
         schema:
           type: string
       - name: name
@@ -123,18 +123,23 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - name: read_only
+        in: query
+        description: A simple equality filter for the read_only field
+        schema:
+          type: boolean
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'',)'
+        description: 'A search term. Available search_fields: [''name'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''id'', ''created_date'', ''updated_date'', ''expiry_date'',
-          ''last_used_date'', ''read_only'']'
+          [''created_date'', ''expiry_date'', ''id'', ''last_used_date'', ''name'',
+          ''read_only'', ''updated_date'']'
         schema:
           type: string
       tags:
@@ -500,7 +505,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['provider_type', 'name', 'resource', 'credentials_type', 'owner', 'description', 'id'].
+           Available filter_fields: ['credentials_type', 'description', 'id', 'name', 'owner', 'provider_type', 'resource'].
         schema:
           type: string
       - name: name
@@ -552,16 +557,16 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''provider_type'',
-          ''name'', ''resource'', ''credentials_type'', ''owner'', ''description'')'
+        description: 'A search term. Available search_fields: [''description'', ''name'',
+          ''owner'', ''resource'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''provider_type'', ''name'', ''resource'', ''credentials_type'', ''owner'',
-          ''description'', ''id'']'
+          [''credentials_type'', ''description'', ''id'', ''name'', ''owner'', ''provider_type'',
+          ''resource'']'
         schema:
           type: string
       tags:
@@ -951,7 +956,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner', 'id', 'issue_id', 'frame_id', 'job_id'].
+           Available filter_fields: ['frame_id', 'id', 'issue_id', 'job_id', 'owner'].
         schema:
           type: string
       - name: frame_id
@@ -999,14 +1004,14 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''owner'',)'
+        description: 'A search term. Available search_fields: [''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''owner'', ''id'', ''issue_id'', ''frame_id'', ''job_id'']'
+          [''frame_id'', ''id'', ''issue_id'', ''job_id'', ''owner'']'
         schema:
           type: string
       tags:
@@ -1625,6 +1630,11 @@ paths:
         description: Organization unique slug
         schema:
           type: string
+      - name: accepted
+        in: query
+        description: A simple equality filter for the accepted field
+        schema:
+          type: boolean
       - name: filter
         required: false
         in: query
@@ -1638,7 +1648,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner', 'user_id', 'accepted'].
+           Available filter_fields: ['accepted', 'id', 'owner', 'user_id'].
         schema:
           type: string
       - name: org
@@ -1671,16 +1681,21 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''owner'',)'
+        description: 'A search term. Available search_fields: [''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''owner'', ''created_date'']'
+          [''accepted'', ''created_date'', ''owner'', ''user_id'']'
         schema:
           type: string
+      - name: user_id
+        in: query
+        description: A simple equality filter for the user_id field
+        schema:
+          type: integer
       tags:
       - invitations
       security:
@@ -1923,7 +1938,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved', 'frame_id'].
+           Available filter_fields: ['assignee', 'frame_id', 'id', 'job_id', 'owner', 'resolved', 'task_id'].
         schema:
           type: string
       - name: frame_id
@@ -1971,15 +1986,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''owner'', ''assignee'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''owner'', ''assignee'', ''id'', ''job_id'', ''task_id'', ''resolved'',
-          ''frame_id'']'
+          [''assignee'', ''frame_id'', ''id'', ''job_id'', ''owner'', ''resolved'',
+          ''task_id'']'
         schema:
           type: string
       - name: task_id
@@ -2145,8 +2160,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -2160,9 +2176,26 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id'].
+           Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'parent_job_id', 'project_id', 'project_name', 'stage', 'state', 'task_id', 'task_name', 'type', 'updated_date'].
         schema:
           type: string
+      - name: media_type
+        in: query
+        description: A simple equality filter for the media_type field
+        schema:
+          type: string
+          enum:
+          - image
+          - point_cloud
+          - audio
+      - name: mode
+        in: query
+        description: A simple equality filter for the mode field
+        schema:
+          type: string
+          enum:
+          - annotation
+          - interpolation
       - name: org
         in: query
         description: Organization unique slug
@@ -2203,17 +2236,17 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''task_name'', ''project_name'',
-          ''assignee'', ''state'', ''stage'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''project_name'',
+          ''task_name'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''task_name'', ''project_name'', ''assignee'', ''state'', ''stage'', ''id'',
-          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'',
-          ''parent_job_id'']'
+          [''assignee'', ''dimension'', ''id'', ''media_type'', ''mode'', ''parent_job_id'',
+          ''project_id'', ''project_name'', ''stage'', ''state'', ''task_id'', ''task_name'',
+          ''type'', ''updated_date'']'
         schema:
           type: string
       - name: stage
@@ -2531,6 +2564,15 @@ paths:
           type: integer
         description: A unique integer value identifying this job.
         required: true
+      - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
       - in: query
         name: location
         schema:
@@ -2980,7 +3022,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'parent', 'id', 'type', 'color', 'parent_id'].
+           Available filter_fields: ['color', 'id', 'name', 'parent', 'parent_id', 'type'].
         schema:
           type: string
       - in: query
@@ -3033,14 +3075,14 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''parent'')'
+        description: 'A search term. Available search_fields: [''name'', ''parent'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''parent'', ''id'', ''type'', ''color'', ''parent_id'']'
+          [''color'', ''id'', ''name'', ''parent'', ''parent_id'', ''type'']'
         schema:
           type: string
       - in: query
@@ -3063,6 +3105,7 @@ paths:
           - polyline
           - rectangle
           - skeleton
+          - interval
           - tag
       tags:
       - labels
@@ -3376,7 +3419,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['user', 'role', 'id'].
+           Available filter_fields: ['id', 'role', 'user'].
         schema:
           type: string
       - name: org
@@ -3414,14 +3457,14 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''user'', ''role'')'
+        description: 'A search term. Available search_fields: [''user'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''user'', ''role'', ''id'']'
+          [''id'', ''role'', ''user'']'
         schema:
           type: string
       - name: user
@@ -3543,7 +3586,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'slug', 'id'].
+           Available filter_fields: ['id', 'name', 'owner', 'slug'].
         schema:
           type: string
       - name: name
@@ -3571,8 +3614,8 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'',
-          ''slug'')'
+        description: 'A search term. Available search_fields: [''name'', ''owner'',
+          ''slug'']'
         schema:
           type: string
       - name: slug
@@ -3584,7 +3627,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''slug'', ''id'']'
+          [''id'', ''name'', ''owner'', ''slug'']'
         schema:
           type: string
       tags:
@@ -3736,7 +3779,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date'].
+           Available filter_fields: ['assignee', 'id', 'name', 'owner', 'status', 'updated_date'].
         schema:
           type: string
       - name: name
@@ -3774,15 +3817,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'',
-          ''assignee'', ''status'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''name'',
+          ''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''assignee'', ''status'', ''id'', ''updated_date'']'
+          [''assignee'', ''id'', ''name'', ''owner'', ''status'', ''updated_date'']'
         schema:
           type: string
       - name: status
@@ -4261,7 +4304,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'project_id', 'severity'].
+           Available filter_fields: ['frame', 'id', 'job_id', 'project_id', 'severity', 'task_id', 'type'].
         schema:
           type: string
       - name: frame
@@ -4318,7 +4361,8 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''project_id'', ''severity'']'
+          [''frame'', ''id'', ''job_id'', ''project_id'', ''severity'', ''task_id'',
+          ''type'']'
         schema:
           type: string
       - name: task_id
@@ -4393,7 +4437,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'job_id', 'task_id', 'project_id', 'created_date', 'gt_last_updated', 'target_last_updated'].
+           Available filter_fields: ['created_date', 'gt_last_updated', 'id', 'job_id', 'project_id', 'target_last_updated', 'task_id'].
         schema:
           type: string
       - name: job_id
@@ -4437,8 +4481,8 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''job_id'', ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
-          ''target_last_updated'']'
+          [''created_date'', ''gt_last_updated'', ''id'', ''job_id'', ''project_id'',
+          ''target_last_updated'', ''task_id'']'
         schema:
           type: string
       - in: query
@@ -4609,7 +4653,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'task_id', 'project_id', 'inherit', 'created_date', 'updated_date'].
+           Available filter_fields: ['created_date', 'id', 'inherit', 'project_id', 'task_id', 'updated_date'].
         schema:
           type: string
       - name: inherit
@@ -4656,7 +4700,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''task_id'', ''project_id'', ''inherit'', ''created_date'', ''updated_date'']'
+          [''created_date'', ''id'', ''inherit'', ''project_id'', ''task_id'', ''updated_date'']'
         schema:
           type: string
       - name: task_id
@@ -4757,7 +4801,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'target', 'subresource', 'format'].
+           Available filter_fields: ['action', 'format', 'job_id', 'org', 'org_id', 'project_id', 'status', 'subresource', 'target', 'task_id'].
         schema:
           type: string
       - name: format
@@ -4775,6 +4819,11 @@ paths:
         description: A simple equality filter for the org field
         schema:
           type: string
+      - name: org_id
+        in: query
+        description: A simple equality filter for the org_id field
+        schema:
+          type: integer
       - name: page
         required: false
         in: query
@@ -4796,7 +4845,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''created_date'', ''status'', ''action'']'
+          [''action'', ''created_date'', ''status'']'
         schema:
           type: string
       - name: status
@@ -4994,6 +5043,7 @@ paths:
           - tr
           - tt
           - udm
+          - ug
           - uk
           - ur
           - uz
@@ -5146,8 +5196,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -5161,7 +5212,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'name', 'owner', 'project_id', 'project_name', 'status', 'subset', 'tracker_link', 'updated_date', 'validation_mode'].
 
           There are few examples for complex filtering tasks:
 
@@ -5171,6 +5222,15 @@ paths:
 
         schema:
           type: string
+      - name: media_type
+        in: query
+        description: A simple equality filter for the media_type field
+        schema:
+          type: string
+          enum:
+          - image
+          - point_cloud
+          - audio
       - name: mode
         in: query
         description: A simple equality filter for the mode field
@@ -5224,18 +5284,17 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''project_name'', ''name'',
-          ''owner'', ''status'', ''assignee'', ''subset'', ''mode'', ''dimension'',
-          ''tracker_link'', ''validation_mode'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''name'',
+          ''owner'', ''project_name'', ''subset'', ''tracker_link'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''project_name'', ''name'', ''owner'', ''status'', ''assignee'', ''subset'',
-          ''mode'', ''dimension'', ''tracker_link'', ''validation_mode'', ''id'',
-          ''project_id'', ''updated_date'']'
+          [''assignee'', ''dimension'', ''id'', ''media_type'', ''mode'', ''name'',
+          ''owner'', ''project_id'', ''project_name'', ''status'', ''subset'', ''tracker_link'',
+          ''updated_date'', ''validation_mode'']'
         schema:
           type: string
       - name: status
@@ -5524,6 +5583,15 @@ paths:
           type: integer
         description: A unique integer value identifying this task.
         required: true
+      - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
       - in: query
         name: location
         schema:
@@ -6258,7 +6326,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['username', 'first_name', 'last_name', 'id', 'is_active'].
+           Available filter_fields: ['first_name', 'id', 'is_active', 'last_name', 'username'].
         schema:
           type: string
       - name: first_name
@@ -6301,15 +6369,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''username'', ''first_name'',
-          ''last_name'')'
+        description: 'A search term. Available search_fields: [''first_name'', ''last_name'',
+          ''username'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''username'', ''first_name'', ''last_name'', ''id'', ''is_active'']'
+          [''first_name'', ''id'', ''is_active'', ''last_name'', ''username'']'
         schema:
           type: string
       - name: username
@@ -6457,7 +6525,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['target_url', 'owner', 'type', 'description', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['description', 'id', 'owner', 'project_id', 'target_url', 'type', 'updated_date'].
         schema:
           type: string
       - name: org
@@ -6495,15 +6563,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''target_url'', ''owner'',
-          ''type'', ''description'')'
+        description: 'A search term. Available search_fields: [''description'', ''owner'',
+          ''target_url'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''target_url'', ''owner'', ''type'', ''description'', ''id'', ''project_id'',
+          [''description'', ''id'', ''owner'', ''project_id'', ''target_url'', ''type'',
           ''updated_date'']'
         schema:
           type: string
@@ -7143,6 +7211,10 @@ components:
           items:
             type: string
             maxLength: 200
+        deleted:
+          type: boolean
+          writeOnly: true
+          description: Delete the attribute and all related annotation values.
       required:
       - input_type
       - mutable
@@ -7247,10 +7319,12 @@ components:
       enum:
       - video
       - imageset
+      - audio_mp3
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
+        * `audio_mp3` - AUDIO_MP3
     ClientEvents:
       type: object
       properties:
@@ -7540,7 +7614,6 @@ components:
       - chunks_updated_date
       - deleted_frames
       - frames
-      - image_quality
     DataRequest:
       type: object
       description: |-
@@ -7556,8 +7629,9 @@ components:
         image_quality:
           type: integer
           maximum: 100
-          minimum: 0
-          description: Image quality to use during annotation
+          minimum: 1
+          description: Image quality to use during annotation, required for image
+            and video-based tasks
         start_frame:
           type: integer
           maximum: 2147483647
@@ -7713,8 +7787,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ValidationParamsRequest'
           nullable: true
-      required:
-      - image_quality
     DataResponse:
       oneOf:
       - $ref: '#/components/schemas/RqId'
@@ -7899,7 +7971,9 @@ components:
       - webhook_type
     EventsEnum:
       enum:
+      - create:backup
       - create:comment
+      - create:export
       - create:invitation
       - create:issue
       - create:job
@@ -7923,7 +7997,9 @@ components:
       - update:task
       type: string
       description: |-
+        * `create:backup` - CREATE:BACKUP
         * `create:comment` - CREATE:COMMENT
+        * `create:export` - CREATE:EXPORT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
@@ -7984,10 +8060,8 @@ components:
           type: boolean
           readOnly: true
       required:
-      - height
       - name
       - related_files
-      - width
     FrameSelectionMethod:
       enum:
       - random_uniform
@@ -8132,6 +8206,9 @@ components:
           type: boolean
           readOnly: true
           nullable: true
+        accepted:
+          type: boolean
+          readOnly: true
         organization_info:
           $ref: '#/components/schemas/BasicOrganization'
       required:
@@ -8269,7 +8346,12 @@ components:
         dimension:
           type: string
           readOnly: true
-          maxLength: 2
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         bug_tracker:
           type: string
           readOnly: true
@@ -8286,9 +8368,6 @@ components:
         state:
           allOf:
           - $ref: '#/components/schemas/OperationStatus'
-          readOnly: true
-        mode:
-          type: string
           readOnly: true
         frame_count:
           type: integer
@@ -8508,8 +8587,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -8525,6 +8605,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -8579,6 +8660,7 @@ components:
       - polyline
       - rectangle
       - skeleton
+      - interval
       - tag
       type: string
       description: |-
@@ -8591,6 +8673,7 @@ components:
         * `polyline` - POLYLINE
         * `rectangle` - RECTANGLE
         * `skeleton` - SKELETON
+        * `interval` - INTERVAL
         * `tag` - TAG
     LabeledData:
       type: object
@@ -8613,6 +8696,11 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrack'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledInterval'
+          default: []
     LabeledDataRequest:
       type: object
       properties:
@@ -8634,15 +8722,74 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
+          default: []
     LabeledImage:
       type: object
       properties:
         id:
           type: integer
           nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+          default: 0
+        source:
+          type: string
+          default: manual
         frame:
           type: integer
           minimum: 0
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
+      required:
+      - frame
+      - label_id
+    LabeledImageRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+          default: 0
+        source:
+          type: string
+          minLength: 1
+          default: manual
+        frame:
+          type: integer
+          minimum: 0
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
+      required:
+      - frame
+      - label_id
+    LabeledInterval:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
         label_id:
           type: integer
           minimum: 0
@@ -8659,18 +8806,29 @@ components:
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
       required:
-      - frame
       - label_id
-    LabeledImageRequest:
+      - start
+      - stop
+    LabeledIntervalRequest:
       type: object
       properties:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8688,9 +8846,23 @@ components:
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
       required:
-      - frame
       - label_id
+      - start
+      - stop
     LabeledShape:
       type: object
       properties:
@@ -8719,9 +8891,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8733,6 +8902,9 @@ components:
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8780,9 +8952,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8795,6 +8964,9 @@ components:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8820,9 +8992,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8834,15 +9003,18 @@ components:
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
         elements:
           type: array
           items:
@@ -8857,9 +9029,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8872,15 +9041,18 @@ components:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
         elements:
           type: array
           items:
@@ -9695,8 +9867,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         deleted:
           type: boolean
           writeOnly: true
@@ -9717,6 +9890,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -9744,6 +9918,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
+          default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
           default: []
     PatchedMembershipWriteRequest:
       type: object
@@ -10150,7 +10329,6 @@ components:
           type: string
           readOnly: true
           nullable: true
-          maxLength: 16
         organization:
           type: integer
           readOnly: true
@@ -10718,6 +10896,9 @@ components:
         job_id:
           type: integer
           nullable: true
+        org_id:
+          type: integer
+          nullable: true
         format:
           type: string
           nullable: true
@@ -10892,9 +11073,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10906,6 +11084,9 @@ components:
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -10949,9 +11130,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10964,6 +11142,9 @@ components:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -10985,9 +11166,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10999,15 +11177,18 @@ components:
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
       required:
       - frame
       - label_id
@@ -11018,9 +11199,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -11033,15 +11211,18 @@ components:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
       required:
       - frame
       - label_id
@@ -11063,8 +11244,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -11080,6 +11262,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11116,8 +11299,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -11133,6 +11317,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11165,9 +11350,6 @@ components:
         project_name:
           type: string
           nullable: true
-          readOnly: true
-        mode:
-          type: string
           readOnly: true
         owner:
           allOf:
@@ -11236,6 +11418,13 @@ components:
           readOnly: true
         dimension:
           type: string
+          readOnly: true
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         subset:
           type: string
           readOnly: true
@@ -11414,17 +11603,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeVal'
-          default: []
       required:
       - frame
       - type
@@ -11453,17 +11642,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeValRequest'
-          default: []
       required:
       - frame
       - type
@@ -11600,7 +11789,6 @@ components:
             The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
       required:
-      - frame_selection_method
       - mode
     WebhookContentType:
       enum:

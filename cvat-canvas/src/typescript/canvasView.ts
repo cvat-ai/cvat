@@ -366,7 +366,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    // eslint-disable-next-line new-cap
                     state: {
                         ...data,
                         zOrder: zLayer || 0,
@@ -960,6 +959,29 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    private getVisibleSkeletonElements(clientID: number): number[] | null {
+        const visibleElements = this.controller.renderData.visibleSkeletonElements[clientID];
+        return Array.isArray(visibleElements) ? [...visibleElements] : null;
+    }
+
+    private getVisibleSkeletonElementIDs(clientID: number): Set<number> | null {
+        const visibleElements = this.getVisibleSkeletonElements(clientID);
+        return visibleElements ? new Set(visibleElements) : null;
+    }
+
+    private skeletonElementsVisibilityChanged(state: any): boolean {
+        if (state.shapeType !== 'skeleton') {
+            return false;
+        }
+
+        const drawnVisibleElements = this.drawnStates[state.clientID].visibleSkeletonElements ?? null;
+        const visibleElements = this.getVisibleSkeletonElements(state.clientID);
+        return (
+            drawnVisibleElements?.length !== visibleElements?.length ||
+            (drawnVisibleElements || []).some((clientID, idx) => clientID !== visibleElements?.[idx])
+        );
+    }
+
     private setupObjects(states: any[]): void {
         const created = [];
         const updated = [];
@@ -970,7 +992,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else {
                 const drawnState = this.drawnStates[state.clientID];
                 // object has been changed or changed frame for a track
-                if (drawnState.updated !== state.updated || drawnState.frame !== state.frame) {
+                if (
+                    drawnState.updated !== state.updated ||
+                    drawnState.frame !== state.frame ||
+                    this.skeletonElementsVisibilityChanged(state)
+                ) {
                     updated.push(state);
                 }
             }
@@ -2535,6 +2561,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             color: state.color,
             elements: state.shapeType === 'skeleton' ?
                 state.elements.map((element: any) => this.saveState(element)) : null,
+            visibleSkeletonElements: state.shapeType === 'skeleton' ?
+                this.getVisibleSkeletonElements(state.clientID) : null,
         };
 
         return result;
@@ -3309,7 +3337,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
         if (state.shapeType === 'skeleton') {
+            const visibleElementIDs = this.getVisibleSkeletonElementIDs(state.clientID);
             state.elements.forEach((element: any) => {
+                if (visibleElementIDs && !visibleElementIDs.has(element.clientID)) {
+                    return;
+                }
+
                 if (!(element.clientID in this.svgTexts)) {
                     this.svgTexts[element.clientID] = this.addText(element, {
                         textContent: [
@@ -3583,9 +3616,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         let [xtl, ytl, xbr, ybr] = [null, null, null, null];
         const svgElements: Record<number, SVG.Element> = {};
+        const visibleElementIDs = this.getVisibleSkeletonElementIDs(state.clientID);
+        const visibleNodeIDs = new Set<string | number>();
         const templateElements = Array.from(SVGElement.children()).filter((el: SVG.Element) => el.type === 'circle');
         for (let i = 0; i < state.elements.length; i++) {
             const element = state.elements[i];
+            if (visibleElementIDs && !visibleElementIDs.has(element.clientID)) {
+                continue;
+            }
+
             if (element.shapeType === 'points') {
                 const points: number[] = element.points as number[];
                 const [cx, cy] = this.translateToCanvas(points);
@@ -3598,6 +3637,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
 
                 const templateElement = templateElements.find((el: SVG.Circle) => el.attr('data-label-id') === element.label.id);
+                visibleNodeIDs.add(templateElement.attr('data-node-id'));
                 const circle = skeleton.circle()
                     .center(cx, cy)
                     .attr({
@@ -3720,7 +3760,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }).addClass('cvat_canvas_skeleton_wrapping_rect');
 
         skeleton.node.prepend(wrappingRect.node);
-        setupSkeletonEdges(skeleton, SVGElement);
+        setupSkeletonEdges(skeleton, SVGElement, visibleNodeIDs);
 
         if (state.occluded) {
             skeleton.addClass('cvat_canvas_shape_occluded');

@@ -5,8 +5,6 @@
 
 /// <reference types="cypress" />
 
-/* eslint-disable no-unused-expressions */
-
 import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Objects ordering feature', () => {
@@ -115,7 +113,7 @@ context('Objects ordering feature', () => {
 
         taskSpec.labels = labels;
 
-        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskID: tid, jobIDs: [jid] }) => {
+        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId: tid, jobIds: [jid] }) => {
             [taskId, jobId] = [tid, jid];
             cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
         });

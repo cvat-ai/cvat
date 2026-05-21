@@ -87,7 +87,7 @@ function RightGroup(props: Props): JSX.Element {
                     if (!Array.isArray(seenGuides) || seenGuides.some((el) => !Number.isInteger(el))) {
                         throw new Error('Wrong structure stored in local storage');
                     }
-                } catch (error: unknown) {
+                } catch (_error: unknown) {
                     seenGuides = [];
                 }
 

@@ -20,6 +20,7 @@ from shared.utils.helpers import generate_image_files
 from .utils import (
     CollectionSimpleFilterTestBase,
     create_task,
+    export_dataset,
     export_job_dataset,
     export_project_backup,
     export_project_dataset,
@@ -35,10 +36,12 @@ from .utils import (
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
-@pytest.mark.usefixtures("restore_redis_inmem_per_function")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
-@pytest.mark.timeout(30)
+@pytest.mark.usefixtures("restore_redis_inmem_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
 class TestRequestsListFilters(CollectionSimpleFilterTestBase):
+    # Org used for the org/org_id filter cases. Only the id is hardcoded;
+    # the slug is derived from the `organizations` fixture at setup time.
+    _ORG_ID = 2
 
     field_lookups = {
         "target": ["operation", "target"],
@@ -48,18 +51,34 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
         "task_id": ["operation", "task_id"],
         "job_id": ["operation", "job_id"],
         "format": ["operation", "format"],
+        "org_id": ["operation", "org_id"],
     }
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.requests_api.list_endpoint
 
-    @pytest.fixture(autouse=True)
-    def setup(self, find_users):
-        self.user = find_users(privilege="user")[0]["username"]
+    @pytest.fixture(scope="class")
+    @classmethod
+    def setup_user(cls, find_users):
+        cls.user = find_users(privilege="user")[0]["username"]
 
-    @pytest.fixture
-    def fxt_resources_ids(self):
-        with make_api_client(self.user) as api_client:
+    @pytest.fixture(scope="class")
+    @classmethod
+    def setup_org_users(cls, find_users, organizations, memberships):
+        cls.org_slug = next(o["slug"] for o in organizations if o["id"] == cls._ORG_ID)
+        # Pick an owner/maintainer so they can create projects/tasks in the org.
+        cls.org_user = next(
+            find_users(id=m["user"]["id"])[0]["username"]
+            for m in memberships
+            if m["organization"] == cls._ORG_ID
+            and m["user"]
+            and m["role"] in ("owner", "maintainer")
+        )
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def fxt_resources_ids(cls, setup_user):
+        with make_api_client(cls.user) as api_client:
             project_ids = [
                 api_client.projects_api.create(
                     {"name": f"Test project {idx + 1}", "labels": [{"name": "car"}]}
@@ -69,7 +88,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
             task_ids = [
                 create_task(
-                    self.user,
+                    cls.user,
                     spec={"name": f"Test task {idx + 1}"},
                     data={
                         "image_quality": 75,
@@ -87,9 +106,11 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
         return project_ids, task_ids, job_ids
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
+    @classmethod
     def fxt_make_requests(
-        self,
+        cls,
+        setup_user,
         fxt_make_export_project_requests,
         fxt_make_export_task_requests,
         fxt_make_export_job_requests,
@@ -116,7 +137,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
                     if resource_type == "task" and subresource == "backup":
                         import_task_backup(
-                            self.user,
+                            cls.user,
                             file_content=tmp_file,
                         )
 
@@ -125,14 +146,15 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
             # import corrupted backup
             import_task_backup(
-                self.user,
+                cls.user,
                 file_content=empty_file,
             )
 
         return _make_requests
 
-    @pytest.fixture
-    def fxt_download_file(self):
+    @pytest.fixture(scope="class")
+    @classmethod
+    def fxt_download_file(cls, setup_user):
         def download_file(resource: str, rid: int, subresource: str):
             func = {
                 ("project", "dataset"): lambda *args, **kwargs: export_project_dataset(
@@ -157,22 +179,23 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                 ),
             }[(resource, subresource)]
 
-            data = func(self.user, id=rid, download_result=True)
+            data = func(cls.user, id=rid, download_result=True)
             assert data, f"Failed to download {resource} {subresource} locally"
             return data
 
         return download_file
 
-    @pytest.fixture
-    def fxt_make_export_project_requests(self):
+    @pytest.fixture(scope="class")
+    @classmethod
+    def fxt_make_export_project_requests(cls, setup_user):
         def make_requests(project_ids: list[int]):
             for project_id in project_ids:
-                export_project_backup(self.user, id=project_id, download_result=False)
+                export_project_backup(cls.user, id=project_id, download_result=False)
                 export_project_dataset(
-                    self.user, save_images=True, id=project_id, download_result=False
+                    cls.user, save_images=True, id=project_id, download_result=False
                 )
                 export_project_dataset(
-                    self.user,
+                    cls.user,
                     save_images=False,
                     id=project_id,
                     download_result=False,
@@ -180,29 +203,31 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
         return make_requests
 
-    @pytest.fixture
-    def fxt_make_export_task_requests(self):
+    @pytest.fixture(scope="class")
+    @classmethod
+    def fxt_make_export_task_requests(cls, setup_user):
         def make_requests(task_ids: list[int]):
             for task_id in task_ids:
-                export_task_backup(self.user, id=task_id, download_result=False)
-                export_task_dataset(self.user, save_images=True, id=task_id, download_result=False)
-                export_task_dataset(self.user, save_images=False, id=task_id, download_result=False)
+                export_task_backup(cls.user, id=task_id, download_result=False)
+                export_task_dataset(cls.user, save_images=True, id=task_id, download_result=False)
+                export_task_dataset(cls.user, save_images=False, id=task_id, download_result=False)
 
         return make_requests
 
-    @pytest.fixture
-    def fxt_make_export_job_requests(self):
+    @pytest.fixture(scope="class")
+    @classmethod
+    def fxt_make_export_job_requests(cls, setup_user):
         def make_requests(job_ids: list[int]):
             for job_id in job_ids:
                 export_job_dataset(
-                    self.user,
+                    cls.user,
                     save_images=True,
                     id=job_id,
                     format="COCO 1.0",
                     download_result=False,
                 )
                 export_job_dataset(
-                    self.user,
+                    cls.user,
                     save_images=False,
                     id=job_id,
                     format="YOLO 1.1",
@@ -210,6 +235,60 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                 )
 
         return make_requests
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def fxt_org_resources(cls, setup_org_users):
+        with make_api_client(cls.org_user) as api_client:
+            api_client.set_default_header("X-Organization", cls.org_slug)
+            cls.org_project_id = api_client.projects_api.create(
+                {"name": "Org test project", "labels": [{"name": "car"}]},
+            )[0].id
+            cls.org_task_id = create_task(
+                cls.org_user,
+                spec={"name": "Org test task"},
+                data={
+                    "image_quality": 75,
+                    "client_files": generate_image_files(2),
+                    "segment_size": 1,
+                },
+                org_id=cls._ORG_ID,
+            )[0]
+            export_dataset(
+                api_client.projects_api,
+                save_images=True,
+                id=cls.org_project_id,
+                download_result=False,
+            )
+            export_dataset(
+                api_client.tasks_api,
+                save_images=True,
+                id=cls.org_task_id,
+                download_result=False,
+            )
+
+    @pytest.fixture(scope="class", autouse=True)
+    @classmethod
+    def setup(
+        cls,
+        setup_user,
+        setup_org_users,
+        fxt_resources_ids,
+        fxt_make_requests,
+        fxt_org_resources,
+    ):
+        cls.project_ids, cls.task_ids, cls.job_ids = fxt_resources_ids
+        fxt_make_requests(cls.project_ids, cls.task_ids, cls.job_ids)
+
+    def _get_field_samples(self, field):
+        if field == "org":
+            gt_objects = [
+                s
+                for s in self.samples
+                if self._get_field(s, ["operation", "org_id"]) == self._ORG_ID
+            ]
+            return self.org_slug, gt_objects
+        return super()._get_field_samples(field)
 
     @pytest.mark.parametrize(
         "simple_filter, values",
@@ -222,22 +301,19 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             ("job_id", []),
             ("format", ["CVAT for images 1.1", "COCO 1.0", "YOLO 1.1"]),
             ("target", ["project", "task", "job"]),
+            ("org_id", []),
+            ("org", []),
         ],
     )
-    def test_can_use_simple_filter_for_object_list(
-        self, simple_filter: str, values: list, fxt_resources_ids, fxt_make_requests
-    ):
-        project_ids, task_ids, job_ids = fxt_resources_ids
-        fxt_make_requests(project_ids, task_ids, job_ids)
-
-        if simple_filter in ("project_id", "task_id", "job_id"):
-            # check last project|task|job
-            if simple_filter == "project_id":
-                values = project_ids[-1:]
-            elif simple_filter == "task_id":
-                values = task_ids[-1:]
-            else:
-                values = job_ids[-1:]
+    def test_can_use_simple_filter_for_object_list(self, simple_filter: str, values: list):
+        if simple_filter == "project_id":
+            values = self.project_ids[-1:]
+        elif simple_filter == "task_id":
+            values = self.task_ids[-1:]
+        elif simple_filter == "job_id":
+            values = self.job_ids[-1:]
+        elif simple_filter == "org_id":
+            values = [self._ORG_ID]
 
         with make_api_client(self.user) as api_client:
             self.samples = get_paginated_collection(
@@ -246,41 +322,44 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
         return super()._test_can_use_simple_filter_for_object_list(simple_filter, values)
 
-    def test_list_requests_when_there_is_job_with_non_regular_or_corrupted_meta(
-        self, jobs: Container, admin_user: str, request: pytest.FixtureRequest
-    ):
-        job = next(iter(jobs))
 
-        export_job_dataset(admin_user, save_images=True, id=job["id"], download_result=False)
-        export_job_dataset(admin_user, save_images=False, id=job["id"], download_result=False)
+@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+def test_list_requests_when_there_is_job_with_non_regular_or_corrupted_meta(
+    jobs: Container, admin_user: str, request: pytest.FixtureRequest
+):
+    job = next(j for j in jobs if j["media_type"] != "audio")
 
-        with make_api_client(admin_user) as api_client:
-            background_requests, response = api_client.requests_api.list(_check_status=False)
-            assert response.status == HTTPStatus.OK
-            assert 2 == background_requests.count
+    export_job_dataset(admin_user, save_images=True, id=job["id"], download_result=False)
+    export_job_dataset(admin_user, save_images=False, id=job["id"], download_result=False)
 
-            corrupted_job, normal_job = background_requests.results
-            corrupted_job_key = f"rq:job:{corrupted_job['id']}"
-            remove_meta_command = f'redis-cli -e HDEL "{corrupted_job_key}" meta'
+    with make_api_client(admin_user) as api_client:
+        background_requests, response = api_client.requests_api.list(_check_status=False)
+        assert response.status == HTTPStatus.OK
+        assert 2 == background_requests.count
 
-            if request.config.getoption("--platform") == "local":
-                stdout = docker_exec_redis_inmem(["sh", "-c", remove_meta_command])
-            else:
-                stdout = kube_exec_redis_inmem(
-                    [
-                        "sh",
-                        "-c",
-                        'export REDISCLI_AUTH="${REDIS_PASSWORD}" && ' + remove_meta_command,
-                    ]
-                )
-            assert bool(int(stdout.strip()))
+        corrupted_job, normal_job = background_requests.results
+        corrupted_job_key = f"rq:job:{corrupted_job['id']}"
+        remove_meta_command = f'redis-cli -e HDEL "{corrupted_job_key}" meta'
 
-            _, response = api_client.requests_api.list(_check_status=False, _parse_response=False)
-            assert response.status == HTTPStatus.OK
+        if request.config.getoption("--platform") == "local":
+            stdout = docker_exec_redis_inmem(["sh", "-c", remove_meta_command])
+        else:
+            stdout = kube_exec_redis_inmem(
+                [
+                    "sh",
+                    "-c",
+                    'export REDISCLI_AUTH="${REDIS_PASSWORD}" && ' + remove_meta_command,
+                ]
+            )
+        assert bool(int(stdout.strip()))
 
-            background_requests = json.loads(response.data)
-            assert 1 == background_requests["count"]
-            assert normal_job.id == background_requests["results"][0]["id"]
+        _, response = api_client.requests_api.list(_check_status=False, _parse_response=False)
+        assert response.status == HTTPStatus.OK
+
+        background_requests = json.loads(response.data)
+        assert 1 == background_requests["count"]
+        assert normal_job.id == background_requests["results"][0]["id"]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -418,16 +497,16 @@ class TestGetRequests:
 
         if target_type == "project":
             export_func, import_func = export_project_dataset, import_project_dataset
-            target = next(iter(projects))
+            target = next(p for p in projects if p["dimension"] != "1d")
             owner = target["owner"]
         elif target_type == "task":
             export_func, import_func = export_task_dataset, import_task_annotations
-            target = next(iter(tasks))
+            target = next(t for t in tasks if t["media_type"] != "audio")
             owner = target["owner"]
         else:
             assert target_type == "job"
             export_func, import_func = export_job_dataset, import_job_annotations
-            target = next(iter(jobs))
+            target = next(j for j in jobs if j["media_type"] != "audio")
             owner = tasks[target["task_id"]]["owner"]
 
         target_id = target["id"]

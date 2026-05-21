@@ -233,8 +233,8 @@ IAM_DEFAULT_ROLE = "user"
 IAM_ADMIN_ROLE = "admin"
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, "user", "worker"]
-IAM_OPA_HOST = "http://opa:8181"
-IAM_OPA_DATA_URL = f"{IAM_OPA_HOST}/v1/data"
+IAM_OPA_URL = os.getenv("CVAT_OPA_URL", "http://opa:8181")
+IAM_OPA_DATA_URL = f"{IAM_OPA_URL}/v1/data"
 LOGIN_URL = "rest_login"
 LOGIN_REDIRECT_URL = "/"
 
@@ -669,6 +669,8 @@ SPECTACULAR_SETTINGS = {
         "ShapeType": "cvat.apps.engine.models.ShapeType",
         "OperationStatus": "cvat.apps.engine.models.StateChoice",
         "ChunkType": "cvat.apps.engine.models.DataChoice",
+        "MediaType": "cvat.apps.engine.models.MediaType",
+        "Dimension": "cvat.apps.engine.models.DimensionType",
         "StorageMethod": "cvat.apps.engine.models.StorageMethodChoice",
         "JobStatus": "cvat.apps.engine.models.StatusChoice",
         "JobStage": "cvat.apps.engine.models.StageChoice",

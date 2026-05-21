@@ -4,12 +4,14 @@
 
 import json
 import os
+import zipfile
 
 import pytest
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.projects import Project
+from cvat_sdk.core.proxies.tasks import ResourceType
 
-from .util import TestCliBase
+from .util import TestCliBase, generate_images
 
 
 class TestCliProjects(TestCliBase):
@@ -23,6 +25,30 @@ class TestCliProjects(TestCliBase):
         )
 
         return project
+
+    @pytest.fixture
+    def fxt_project_with_task(self, fxt_new_project: Project):
+        files = generate_images(self.tmp_path, 5)
+
+        self.client.tasks.create_from_data(
+            spec={
+                "name": "test_task",
+                "project_id": fxt_new_project.id,
+            },
+            resource_type=ResourceType.LOCAL,
+            resources=files,
+        )
+        fxt_new_project.fetch()
+
+        return fxt_new_project
+
+    @pytest.fixture
+    def fxt_backup_file(self, fxt_project_with_task: Project):
+        backup_path = self.tmp_path / "backup.zip"
+
+        fxt_project_with_task.download_backup(backup_path)
+
+        yield backup_path
 
     def test_can_create_project(self):
         stdout = self.run_cli(
@@ -75,3 +101,45 @@ class TestCliProjects(TestCliBase):
 
         with pytest.raises(exceptions.NotFoundException):
             fxt_new_project.fetch()
+
+    def test_can_download_project_backup(self, fxt_project_with_task: Project):
+        filename = self.tmp_path / f"project_{fxt_project_with_task.id}-cvat.zip"
+        self.run_cli(
+            "project",
+            "backup",
+            str(fxt_project_with_task.id),
+            str(filename),
+            "--completion_verification_period",
+            "0.01",
+        )
+
+        assert 0 < filename.stat().st_size
+        with zipfile.ZipFile(filename) as backup_zip:
+            assert "project.json" in backup_zip.namelist()
+
+    def test_can_download_project_backup_with_server_filename(self, fxt_project_with_task: Project):
+        output_dir = str(self.tmp_path / "save_dir") + os.path.sep
+        self.run_cli(
+            "project",
+            "backup",
+            str(fxt_project_with_task.id),
+            output_dir,
+            "--completion_verification_period",
+            "0.01",
+        )
+
+        output_dir_files = os.listdir(output_dir)
+        assert len(output_dir_files) == 1
+        assert os.stat(output_dir + output_dir_files[0]).st_size > 0
+
+    def test_can_create_project_from_backup(self, fxt_project_with_task: Project, fxt_backup_file):
+        stdout = self.run_cli("project", "create-from-backup", str(fxt_backup_file))
+
+        project_id = int(stdout.rstrip("\n"))
+        assert project_id
+        assert project_id != fxt_project_with_task.id
+
+        restored_project = self.client.projects.retrieve(project_id)
+        restored_tasks = restored_project.get_tasks()
+        assert len(restored_tasks) == 1
+        assert restored_tasks[0].size == fxt_project_with_task.get_tasks()[0].size

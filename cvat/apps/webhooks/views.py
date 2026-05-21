@@ -26,7 +26,7 @@ from .serializers import (
     WebhookReadSerializer,
     WebhookWriteSerializer,
 )
-from .signals import ping, redeliver
+from .services import ping, redeliver
 
 
 @extend_schema(tags=["webhooks"])
@@ -65,9 +65,9 @@ class WebhookViewSet(viewsets.ModelViewSet):
     ordering = "-id"
     http_method_names = ["get", "post", "delete", "patch", "put"]
 
-    search_fields = ("target_url", "owner", "type", "description")
-    filter_fields = list(search_fields) + ["id", "project_id", "updated_date"]
-    simple_filters = list(set(search_fields) - {"description"} | {"project_id"})
+    search_fields = ("target_url", "owner", "description")
+    simple_filters = ("target_url", "owner", "type", "project_id")
+    filter_fields = (*simple_filters, "id", "updated_date", "description")
     ordering_fields = list(filter_fields)
     lookup_fields = {"owner": "owner__username"}
     iam_supports_organization_params = True
@@ -175,7 +175,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     def redelivery(self, request, pk, delivery_id):
         webhook = self.get_object()
         delivery = webhook.deliveries.get(id=delivery_id)
-        redeliver(webhook, delivery.request)
+        redeliver(webhook=webhook, data=delivery.request)
         return Response({}, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -188,6 +188,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
         instance = self.get_object()  # force call of check_object_permissions()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
-        delivery = ping(serializer)
+        delivery = ping(serializer=serializer)
         serializer = WebhookDeliveryReadSerializer(delivery, context={"request": request})
         return Response(serializer.data)
