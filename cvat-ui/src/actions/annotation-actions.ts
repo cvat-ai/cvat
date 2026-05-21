@@ -80,18 +80,6 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
     };
 }
 
-export function computeZRange(states: ObjectState[]): number[] {
-    const filteredStates = states.filter((state) => state.objectType !== ObjectType.TAG);
-    let minZ = filteredStates.length ? filteredStates[0].zOrder : 0;
-    let maxZ = filteredStates.length ? filteredStates[0].zOrder : 0;
-    filteredStates.forEach((state): void => {
-        minZ = Math.min(minZ, state.zOrder);
-        maxZ = Math.max(maxZ, state.zOrder);
-    });
-
-    return [minZ, maxZ];
-}
-
 export enum AnnotationActionTypes {
     GET_JOB = 'GET_JOB',
     GET_JOB_SUCCESS = 'GET_JOB_SUCCESS',
@@ -309,8 +297,6 @@ function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
     history: CombinedState['annotation']['annotations']['history'];
-    minZ: number;
-    maxZ: number;
 }> {
     const {
         filters, frame, showAllInterpolationTracks, jobInstance,
@@ -320,7 +306,6 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
 
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
     let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
-    const [minZ, maxZ] = computeZRange(states);
 
     if (jobInstance.type === JobType.GROUND_TRUTH) {
         states = wrapAnnotationsInGTJob(states);
@@ -346,17 +331,13 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     return {
         states,
         history,
-        minZ,
-        maxZ,
     };
 }
 
 export function fetchAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
-            const {
-                states, history, minZ, maxZ,
-            } = await fetchAnnotations();
+            const { states, history } = await fetchAnnotations();
 
             const { workspace } = getState().annotation;
             const finalStates = workspace === Workspace.REVIEW ?
@@ -367,8 +348,6 @@ export function fetchAnnotationsAsync(): ThunkAction {
                 payload: {
                     states: finalStates,
                     history,
-                    minZ,
-                    maxZ,
                 },
             });
         } catch (error) {
@@ -802,9 +781,7 @@ export function changeFrameAsync(
                 Math.round(1000 / frameSpeed) - currentTime + (state.annotation.player.frame.changeTime as number),
             );
 
-            const {
-                states, maxZ, minZ, history,
-            } = await fetchAnnotations(toFrame);
+            const { states, history } = await fetchAnnotations(toFrame);
 
             if (state.annotation.workspace === Workspace.REVIEW) {
                 userUnlockedInReviewMode.clear();
@@ -819,9 +796,6 @@ export function changeFrameAsync(
                     relatedFiles: data.relatedFiles,
                     states,
                     history,
-                    minZ,
-                    maxZ,
-                    curZ: maxZ,
                     changeTime: currentTime + delay,
                     delay,
                     changeFrameEvent,
@@ -1198,15 +1172,11 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
 }
 
 function dispatchAnnotationsUpdate(dispatch: ThunkDispatch, states: any[], history: any): void {
-    const [minZ, maxZ] = computeZRange(states);
-
     dispatch({
         type: AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS,
         payload: {
             states,
             history,
-            minZ,
-            maxZ,
         },
     });
 }
