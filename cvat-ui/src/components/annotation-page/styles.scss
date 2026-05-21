@@ -459,6 +459,7 @@
     font-size: $grid-unit-size * 3.25;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 12%);
     opacity: 0.76;
+    line-height: 1;
     transition:
         background-color $box-shadow-transition,
         border-color $box-shadow-transition,
@@ -497,6 +498,21 @@
             stroke-linejoin: round;
             stroke-width: 2;
         }
+    }
+
+    .cvat-canvas-layer-stack-trigger-layer {
+        position: absolute;
+        right: 3px;
+        bottom: 2px;
+        min-width: 12px;
+        max-width: 20px;
+        overflow: hidden;
+        color: $completed-progress-color;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 12px;
+        text-align: center;
+        text-overflow: ellipsis;
     }
 }
 

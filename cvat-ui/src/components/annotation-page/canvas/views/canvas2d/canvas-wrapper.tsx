@@ -1249,10 +1249,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     <button
                         className='cvat-canvas-layer-stack-trigger'
                         type='button'
-                        aria-label='Open layer stack'
+                        aria-label={`Open layer stack. Current layer ${curZLayer}`}
                         onClick={(): void => onOpenLayerStack(curZLayer, sidebarCollapsed)}
                     >
                         <Icon component={LayerStackIcon} />
+                        <span className='cvat-canvas-layer-stack-trigger-layer'>{curZLayer}</span>
                     </button>
                 </CVATTooltip>
 
