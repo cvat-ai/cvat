@@ -25,7 +25,7 @@ import {
 
 const defaultGroupColor = '#E0E0E0';
 
-export function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): TrackedShape {
+function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): TrackedShape {
     return {
         rotation: state.rotation,
         zOrder: state.zOrder,

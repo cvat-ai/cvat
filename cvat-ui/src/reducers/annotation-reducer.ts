@@ -32,6 +32,18 @@ function getAnnotationsRenderData(states: ObjectState[], filters: object[]): Ren
     };
 }
 
+function getZLayerRange(states: ObjectState[]): [number, number] {
+    const statesWithLayer = states.filter((state: ObjectState): boolean => state.objectType !== ObjectType.TAG);
+
+    if (!statesWithLayer.length) {
+        return [0, 0];
+    }
+
+    return statesWithLayer.reduce(([minZ, maxZ]: [number, number], state: ObjectState): [number, number] => (
+        [Math.min(minZ, state.zOrder), Math.max(maxZ, state.zOrder)]
+    ), [statesWithLayer[0].zOrder, statesWithLayer[0].zOrder]);
+}
+
 function updateActivatedStateID(newStates: ObjectState[], prevActivatedStateID: number | null): number | null {
     return prevActivatedStateID === null ||
         newStates.some((_state: ObjectState) => _state.clientID === prevActivatedStateID) ?
@@ -624,7 +636,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS: {
             const {
-                history, states: updatedStates, minZ, maxZ,
+                history, states: updatedStates, minZ, maxZ, forceZRange,
             } = action.payload;
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
@@ -637,8 +649,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 }
             }
 
-            const maxZLayer = Math.max(state.annotations.zLayer.max, maxZ);
-            const minZLayer = Math.min(state.annotations.zLayer.min, minZ);
+            const [actualMinZ, actualMaxZ] = forceZRange ? getZLayerRange(nextStates) : [minZ, maxZ];
+            const maxZLayer = forceZRange ? actualMaxZ : Math.max(state.annotations.zLayer.max, maxZ);
+            const minZLayer = forceZRange ? actualMinZ : Math.min(state.annotations.zLayer.min, minZ);
 
             return {
                 ...state,
