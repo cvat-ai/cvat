@@ -427,7 +427,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         }
 
         // whenever open or close layer ordering mode
-        // set maxium z layer as current to show everything
+        // set maximum z layer as current to show everything
         selectLayer(maxZLayer);
         this.setState({
             statesOrdering,
