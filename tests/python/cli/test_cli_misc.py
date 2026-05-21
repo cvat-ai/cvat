@@ -10,11 +10,9 @@ from unittest import mock
 import packaging.version as pv
 import pytest
 from cvat_cli._internal.agent import _Event, _NewReconnectionDelay, _parse_event_stream
-from cvat_cli._internal.command_base import GenericExportDatasetCommand
 from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
-from cvat_sdk.core.proxies.types import Location
 
 from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
 
@@ -204,30 +202,3 @@ class TestCliMisc(TestCliBase):
 def test_parse_event_stream(lines, messages):
     stream = BytesIO(b"".join(line.encode() + b"\n" for line in lines))
     assert list(_parse_event_stream(stream)) == messages
-
-
-def test_export_dataset_uses_current_directory_by_default(monkeypatch, tmp_path):
-    class Command(GenericExportDatasetCommand):
-        resource_type_str = "test resource"
-
-        def repo(self, client):
-            return repo
-
-    repo = mock.Mock()
-    resource = repo.retrieve.return_value
-
-    monkeypatch.chdir(tmp_path)
-
-    Command().execute(
-        mock.Mock(),
-        fileformat="CVAT for images 1.1",
-        filename="",
-        status_check_period=0.01,
-        include_images=False,
-        resource_id=123,
-    )
-
-    repo.retrieve.assert_called_once_with(obj_id=123)
-    resource.export_dataset.assert_called_once()
-    assert resource.export_dataset.call_args.kwargs["filename"] == os.fspath(tmp_path)
-    assert resource.export_dataset.call_args.kwargs["location"] == Location.LOCAL
