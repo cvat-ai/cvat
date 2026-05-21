@@ -1,0 +1,30 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+[project]
+name = "cvat_libs"
+version = "0.1.0"
+description = "Internal Python libraries shared across the CVAT backend"
+authors = [{ name = "CVAT.ai Corporation", email = "support@cvat.ai" }]
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "rq==1.16.0",
+    "redis==4.6.0",
+]
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "." }
+packages = { find = { include = ["cvat_libs*"] } }
+
+[tool.isort]
+profile = "black"
+forced_separate = ["tests"]
+line_length = 100
+skip_gitignore = true
+known_first_party = ["cvat_libs"]
