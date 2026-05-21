@@ -4,7 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { Dispatch, TransitionEvent } from 'react';
+import React, {
+    Dispatch, TransitionEvent, useEffect, useState,
+} from 'react';
 import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
@@ -17,6 +19,7 @@ import LabelsList from 'components/annotation-page/standard-workspace/objects-si
 import { collapseSidebar as collapseSidebarAction } from 'actions/annotation-actions';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
 import IssuesListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/issues-list';
+import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 
 interface OwnProps {
     objectsList: JSX.Element;
@@ -57,6 +60,18 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
     const {
         sidebarCollapsed, collapseSidebar, objectsList, jobInstance,
     } = props;
+    const [activeTab, setActiveTab] = useState('objects');
+    useEffect((): () => void => {
+        const onOpenZLayer = (): void => {
+            setActiveTab('objects');
+        };
+
+        window.addEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenZLayer);
+
+        return (): void => {
+            window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenZLayer);
+        };
+    }, []);
 
     const collapse = (): void => {
         const [collapser] = window.document.getElementsByClassName('cvat-objects-sidebar');
@@ -96,7 +111,8 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
 
             <Tabs
                 type='card'
-                defaultActiveKey='objects'
+                activeKey={activeTab}
+                onChange={setActiveTab}
                 className='cvat-objects-sidebar-tabs'
                 items={[{
                     key: 'objects',

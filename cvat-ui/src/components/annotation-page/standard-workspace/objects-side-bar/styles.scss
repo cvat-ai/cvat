@@ -440,6 +440,16 @@
     z-index: 1000;
 }
 
+.cvat-objects-sidebar-z-layer-mark-selected {
+    background: rgba($color: $completed-progress-color, $alpha: 16%);
+    box-shadow: inset 3px 0 0 rgba($color: $completed-progress-color, $alpha: 70%);
+
+    > .ant-typography {
+        background: rgba($color: $completed-progress-color, $alpha: 18%);
+        color: $completed-progress-color;
+    }
+}
+
 .cvat-objects-sidebar-z-layer-controls {
     align-items: center;
     display: flex;

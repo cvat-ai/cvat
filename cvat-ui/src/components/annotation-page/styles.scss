@@ -440,48 +440,62 @@
     width: 100%;
 }
 
-.cvat-canvas-z-axis-wrapper {
+.cvat-canvas-layer-stack-trigger {
     position: absolute;
     background: $background-color-2;
     bottom: 10px;
     right: 10px;
-    height: 150px;
+    width: $grid-unit-size * 5;
+    height: $grid-unit-size * 5;
     z-index: 100;
     border-radius: $border-radius-base;
-    opacity: 0.5;
     border: 1px solid $border-color-1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: $objects-bar-icons-color;
+    cursor: pointer;
+    font-size: $grid-unit-size * 3.25;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 12%);
+    opacity: 0.76;
+    transition:
+        background-color $box-shadow-transition,
+        border-color $box-shadow-transition,
+        box-shadow $box-shadow-transition,
+        opacity $box-shadow-transition;
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
+        border-color: rgba($color: $completed-progress-color, $alpha: 45%);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 18%);
         opacity: 1;
     }
 
-    > .ant-slider {
-        height: 75%;
-        margin: 5px 3px;
-
-        > .ant-slider-rail {
-            background-color: #979797;
-        }
-
-        > .ant-slider-handle {
-            transform: none !important;
-        }
+    &:active {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 16%);
+        opacity: 0.82;
     }
 
-    > span[role='img'] {
-        opacity: 0.7;
-        color: $objects-bar-icons-color;
+    > .anticon {
+        font-size: inherit;
+        line-height: 1;
 
-        &:hover {
-            opacity: 1;
+        > svg {
+            width: 1em;
+            height: 1em;
         }
 
-        &:active {
-            opacity: 0.7;
+        .cvat-layer-stack-icon-top {
+            color: $completed-progress-color;
+            fill: rgba($color: $completed-progress-color, $alpha: 16%);
+        }
+
+        svg {
+            fill: none;
+            stroke: currentColor;
+            stroke-linejoin: round;
+            stroke-width: 2;
         }
     }
 }

@@ -38,6 +38,7 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
+import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 
 interface StateToProps {
     jobInstance: any;
@@ -55,6 +56,7 @@ interface StateToProps {
     activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
+    curZLayer: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
@@ -223,7 +225,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsedAll,
                 activatedStateID,
                 activatedElementID,
-                zLayer: { min: minZLayer, max: maxZLayer },
+                zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
             job: { instance: jobInstance },
             player: {
@@ -277,6 +279,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedElementID,
         minZLayer,
         maxZLayer,
+        curZLayer,
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
@@ -384,6 +387,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.updateObjects();
+        window.addEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, this.onOpenZLayerInSidebar);
+    }
+
+    public componentWillUnmount(): void {
+        window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, this.onOpenZLayerInSidebar);
     }
 
     public componentDidUpdate(): void {
@@ -415,6 +423,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.setState({
             statesOrdering,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
+        });
+    };
+
+    private onOpenZLayerInSidebar = (): void => {
+        const { filteredStates } = this.state;
+        this.setState({
+            statesOrdering: StatesOrdering.Z_ORDER,
+            sortedStatesID: sortAndMap(filteredStates, StatesOrdering.Z_ORDER),
         });
     };
 
@@ -547,6 +563,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             activatedElementID,
             maxZLayer,
             minZLayer,
+            curZLayer,
             keyMap,
             normalizedKeyMap,
             colors,
@@ -772,6 +789,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesCollapsedAll={statesCollapsedAll}
                     workspace={workspace}
                     statesOrdering={statesOrdering}
+                    currentZLayer={curZLayer}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}

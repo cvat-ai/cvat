@@ -18,7 +18,10 @@ import { StatesOrdering, Workspace } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { ObjectState, ObjectType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT } from 'utils/objects-sidebar';
+import {
+    OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT,
+    OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT,
+} from 'utils/objects-sidebar';
 import ObjectListHeader from './objects-list-header';
 
 const OBJECT_DRAG_ID_PREFIX = 'object:';
@@ -87,6 +90,7 @@ interface Props {
     statesLocked: boolean;
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
+    currentZLayer: number;
     sortedStatesID: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
@@ -150,13 +154,14 @@ function DraggableObjectItem(props: DraggableObjectItemProps): JSX.Element {
 
 interface ZLayerHeaderProps {
     zOrder: number;
+    selected: boolean;
     collapsed: boolean;
     toggleLayerCollapsed(zOrder: number): void;
 }
 
 function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
     const {
-        zOrder, collapsed, toggleLayerCollapsed,
+        zOrder, selected, collapsed, toggleLayerCollapsed,
     } = props;
     const {
         attributes, listeners, setNodeRef, transform, isDragging,
@@ -166,6 +171,7 @@ function ZLayerHeader(props: ZLayerHeaderProps): JSX.Element {
     } : undefined;
     const className = `cvat-objects-sidebar-z-layer-mark${
         isDragging ? ' cvat-objects-sidebar-z-layer-mark-dragging' : ''
+    }${selected ? ' cvat-objects-sidebar-z-layer-mark-selected' : ''
     }`;
 
     return (
@@ -205,13 +211,14 @@ interface ZLayerSectionProps {
     objectIDs: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
+    selected: boolean;
     collapsed: boolean;
     toggleLayerCollapsed(zOrder: number): void;
 }
 
 function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
     const {
-        zOrder, objectIDs, objectStates, visibleSkeletonElements, collapsed, toggleLayerCollapsed,
+        zOrder, objectIDs, objectStates, visibleSkeletonElements, selected, collapsed, toggleLayerCollapsed,
     } = props;
     const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
 
@@ -219,9 +226,11 @@ function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
         <div
             ref={setNodeRef}
             className={`cvat-objects-sidebar-z-layer${isOver ? ' cvat-objects-sidebar-z-layer-active' : ''}`}
+            data-z-order={zOrder}
         >
             <ZLayerHeader
                 zOrder={zOrder}
+                selected={selected}
                 collapsed={collapsed}
                 toggleLayerCollapsed={toggleLayerCollapsed}
             />
@@ -283,6 +292,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesLocked,
         statesCollapsedAll,
         statesOrdering,
+        currentZLayer,
         sortedStatesID,
         objectStates,
         visibleSkeletonElements,
@@ -308,7 +318,8 @@ function ObjectListComponent(props: Props): JSX.Element {
         },
     }));
     const [collapsedZLayers, setCollapsedZLayers] = useState<number[]>([]);
-    const zLayers = getZLayers(objectStates);
+    const zLayers = Array.from(new Set([...getZLayers(objectStates), currentZLayer]))
+        .sort((left: number, right: number): number => left - right);
     const allLayersCollapsed = !!zLayers.length && zLayers.every((zOrder: number): boolean => (
         collapsedZLayers.includes(zOrder)
     ));
@@ -319,7 +330,9 @@ function ObjectListComponent(props: Props): JSX.Element {
     }, [zLayers.join(',')]);
     useEffect((): () => void => {
         const onExpandZLayer = (event: Event): void => {
-            const { clientID, parentID } = (event as CustomEvent<{ clientID: number; parentID: number | null }>).detail;
+            const { clientID, parentID } = (
+                event as CustomEvent<{ clientID: number; parentID: number | null }>
+            ).detail;
             const expandedState = objectStates.find((state: ObjectState): boolean => (
                 state.clientID === (parentID ?? clientID)
             ));
@@ -330,11 +343,25 @@ function ObjectListComponent(props: Props): JSX.Element {
                 ));
             }
         };
+        const onOpenZLayer = (event: Event): void => {
+            const { zOrder } = (event as CustomEvent<{ zOrder: number }>).detail;
+
+            setCollapsedZLayers((current: number[]): number[] => (
+                current.filter((currentZOrder: number): boolean => currentZOrder !== zOrder)
+            ));
+            window.setTimeout((): void => {
+                window.document
+                    .querySelector(`[data-z-order="${zOrder}"]`)
+                    ?.scrollIntoView({ block: 'nearest' });
+            });
+        };
 
         window.addEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandZLayer);
+        window.addEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenZLayer);
 
         return (): void => {
             window.removeEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandZLayer);
+            window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenZLayer);
         };
     }, [objectStates]);
     const zLayerIDs = zLayers.reduce((acc: Record<number, number[]>, zOrder: number): Record<number, number[]> => {
@@ -441,6 +468,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                             objectIDs={zLayerIDs[zOrder] || []}
                                             objectStates={objectStates}
                                             visibleSkeletonElements={visibleSkeletonElements}
+                                            selected={zOrder === currentZLayer}
                                             collapsed={collapsedZLayers.includes(zOrder)}
                                             toggleLayerCollapsed={toggleLayerCollapsed}
                                         />

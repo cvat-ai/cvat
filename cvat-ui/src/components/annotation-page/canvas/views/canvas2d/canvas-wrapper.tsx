@@ -7,10 +7,9 @@ import './styles.scss';
 
 import React from 'react';
 import { connect } from 'react-redux';
-import Slider from 'antd/lib/slider';
 import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
-import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
+import Icon, { UpOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
 
@@ -26,10 +25,11 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     AnnotationConflict, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
-import { scrollAndExpandState } from 'utils/objects-sidebar';
+import { openZLayerInObjectsSidebar, scrollAndExpandState } from 'utils/objects-sidebar';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
+import { LayerStackIcon } from 'icons';
 import {
     confirmCanvasReadyAsync,
     resetCanvas,
@@ -43,13 +43,12 @@ import {
     splitAnnotationsAsync,
     activateObject,
     updateCanvasContextMenu,
-    addZLayer,
-    switchZLayer,
     fetchAnnotationsAsync,
     getDataFailed,
     canvasErrorOccurred,
     updateEditedStateAsync,
     collapseObjectItems,
+    collapseSidebar,
     AnnotationSource,
 } from 'actions/annotation-actions';
 import {
@@ -113,9 +112,8 @@ interface StateToProps {
     textContent: string;
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
-    minZLayer: number;
-    maxZLayer: number;
     curZLayer: number;
+    sidebarCollapsed: boolean;
     automaticBordering: boolean;
     snapToPoint: boolean;
     adaptiveZoom: boolean;
@@ -144,8 +142,7 @@ interface DispatchToProps {
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onExpandObject(objectState: ObjectState): void;
-    onAddZLayer(): void;
-    onSwitchZLayer(cur: number): void;
+    onOpenLayerStack(zOrder: number, sidebarCollapsed: boolean): void;
     onChangeBrightnessLevel(level: number): void;
     onChangeContrastLevel(level: number): void;
     onChangeSaturationLevel(level: number): void;
@@ -178,10 +175,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 activatedAttributeID,
-                zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
+                zLayer: { cur: curZLayer },
                 highlightedConflict,
                 renderData,
             },
+            sidebarCollapsed,
             workspace,
         },
         settings: {
@@ -258,8 +256,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showTagsOnFrame,
         curZLayer,
-        minZLayer,
-        maxZLayer,
+        sidebarCollapsed,
         automaticBordering,
         snapToPoint,
         adaptiveZoom,
@@ -354,11 +351,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onExpandObject(objectState: ObjectState): void {
             dispatch(collapseObjectItems([objectState], false));
         },
-        onAddZLayer(): void {
-            dispatch(addZLayer());
-        },
-        onSwitchZLayer(cur: number): void {
-            dispatch(switchZLayer(cur));
+        onOpenLayerStack(zOrder: number, sidebarCollapsed: boolean): void {
+            if (sidebarCollapsed) {
+                dispatch(collapseSidebar());
+            }
+
+            openZLayerInObjectsSidebar(zOrder);
         },
         onChangeBrightnessLevel(level: number): void {
             dispatch(changeBrightnessLevel(level));
@@ -1145,9 +1143,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const {
-            maxZLayer,
             curZLayer,
-            minZLayer,
+            sidebarCollapsed,
             keyMap,
             automaticBordering,
             snapToPoint,
@@ -1158,8 +1155,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             focusedObjectPadding,
             onSwitchAutomaticBordering,
             onSwitchSnapToPoint,
-            onSwitchZLayer,
-            onAddZLayer,
+            onOpenLayerStack,
             onActivateObject,
             onExpandObject,
         } = this.props;
@@ -1249,21 +1245,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />
                 </Popover>
 
-                <div className='cvat-canvas-z-axis-wrapper'>
-                    <Slider
-                        disabled={minZLayer === maxZLayer}
-                        min={minZLayer}
-                        max={maxZLayer}
-                        value={curZLayer}
-                        vertical
-                        reverse
-                        defaultValue={0}
-                        onChange={(value: number): void => onSwitchZLayer(value as number)}
-                    />
-                    <CVATTooltip title={`Add new layer ${maxZLayer + 1} and switch to it`}>
-                        <PlusCircleOutlined onClick={onAddZLayer} />
-                    </CVATTooltip>
-                </div>
+                <CVATTooltip title='Open layer stack'>
+                    <button
+                        className='cvat-canvas-layer-stack-trigger'
+                        type='button'
+                        aria-label='Open layer stack'
+                        onClick={(): void => onOpenLayerStack(curZLayer, sidebarCollapsed)}
+                    >
+                        <Icon component={LayerStackIcon} />
+                    </button>
+                </CVATTooltip>
 
                 {showTagsOnFrame ? (
                     <div className='cvat-canvas-frame-tags'>
