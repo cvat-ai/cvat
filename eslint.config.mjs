@@ -5,6 +5,7 @@
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import _ from 'lodash';
 
 import js from '@eslint/js';
 import stylisticPlugin from '@stylistic/eslint-plugin';
@@ -38,6 +39,7 @@ const airbnbReactConfigs = [
     require('eslint-config-airbnb/rules/react'),
     require('eslint-config-airbnb/rules/react-a11y'),
 ];
+const airbnbTypeScriptConfig = require('eslint-config-airbnb-typescript/lib/shared');
 const airbnbReactBaseDir = dirname(require.resolve('eslint-config-airbnb'));
 const airbnbReactBaseConfigs = [
     require(join(airbnbReactBaseDir, 'node_modules/eslint-config-airbnb-base/rules/best-practices')),
@@ -62,6 +64,12 @@ function packageDir(name) {
     return join(rootDir, name);
 }
 
+function isSupportedTypeScriptEslintRule(ruleName) {
+    const prefix = '@typescript-eslint/';
+
+    return !ruleName.startsWith(prefix) || ruleName.slice(prefix.length) in tseslintPlugin.rules;
+}
+
 export function configDir(metaUrl) {
     return dirname(fileURLToPath(metaUrl));
 }
@@ -71,6 +79,8 @@ const airbnbBaseSettings = mergeSettings(airbnbBaseConfigs);
 const airbnbReactBaseRules = mergeRules(airbnbReactBaseConfigs);
 const airbnbReactRules = mergeRules(airbnbReactConfigs);
 const airbnbReactSettings = mergeSettings(airbnbReactConfigs);
+const airbnbTypeScriptRawRules = mergeRules([airbnbTypeScriptConfig]);
+const airbnbTypeScriptSettings = mergeSettings([airbnbTypeScriptConfig]);
 const importRecommendedRules = mergeRules([
     importPlugin.configs.errors,
     importPlugin.configs.warnings,
@@ -81,6 +91,12 @@ const importJavaScriptRules = mergeRules([
     importPlugin.configs.warnings,
 ]);
 const typeScriptRecommendedRules = mergeRules(tseslintPlugin.configs['flat/recommended']);
+
+const importOrderRule = {
+    'import/order': 'off',
+    // Disabled until eslint-plugin-import supports ESLint 10 SourceCode changes:
+    // https://github.com/import-js/eslint-plugin-import/issues/3227
+};
 
 // CVAT frontend packages run in browser code, Node-based tooling, and workers,
 // so the shared source config starts from both browser and Node globals.
@@ -182,7 +198,6 @@ const commonIgnores = [
     '.*/**',
     '**/node_modules/**',
     '**/dist/**',
-    '**/eslint.config.mjs',
     '**/lint-staged.config.js',
     '**/webpack.config.{js,cjs}',
 ];
@@ -229,7 +244,7 @@ const rootRules = {
     'function-paren-newline': 0,
     'global-require': 0,
     'import/no-unresolved': 'off',
-    'import/order': ['error', { groups: ['builtin', 'external', 'internal'] }],
+    ...importOrderRule,
     'import/prefer-default-export': 0,
     indent: 'off',
     'lines-between-class-members': 'off',
@@ -246,8 +261,6 @@ const rootRules = {
     'operator-linebreak': ['error', 'after'],
     'preserve-caught-error': 'off',
     quotes: ['error', 'single', { avoidEscape: true }],
-    'react/jsx-indent': 0,
-    'react/jsx-indent-props': 0,
     'valid-typeof': 0,
 };
 
@@ -315,6 +328,10 @@ const unsupportedAirbnbTypeScriptRules = {
     '@typescript-eslint/space-infix-ops': 'off',
 };
 
+const airbnbTypeScriptRules = _.omitBy(airbnbTypeScriptRawRules, (_, ruleName) => (
+    ruleName in unsupportedAirbnbTypeScriptRules || !isSupportedTypeScriptEslintRule(ruleName)
+));
+
 const typeScriptOverrideRules = {
     camelcase: 'off',
     'import/extensions': 'off',
@@ -372,7 +389,8 @@ const preSharedRules = {
 
 const typeScriptBaseRules = {
     ...js.configs.recommended.rules,
-    ...stylisticTypeScriptRules,
+    ...airbnbBaseRules,
+    ...airbnbTypeScriptRules,
     ...importRecommendedRules,
     ...typeScriptRecommendedRules,
 };
@@ -382,6 +400,7 @@ const typeScriptSettings = {
         version: reactVersion,
     },
     ...airbnbBaseSettings,
+    ...airbnbTypeScriptSettings,
     ...importPlugin.configs.typescript.settings,
 };
 
@@ -461,13 +480,7 @@ export function defineTypeScriptPackageConfig({
                 ...airbnbReactRules,
                 indent: 'off',
                 ...rootRules,
-                ...rules,
             },
-        });
-    } else if (Object.keys(rules).length) {
-        entries.push({
-            files,
-            rules,
         });
     }
 
@@ -478,6 +491,10 @@ export function defineTypeScriptPackageConfig({
                 ...disabledReactRules,
                 'local-react/jsx-filename-extension': ['error', { extensions: ['.tsx'] }],
             },
+        },
+        {
+            files,
+            rules: airbnbTypeScriptRules,
         },
         {
             files,
@@ -496,6 +513,13 @@ export function defineTypeScriptPackageConfig({
             rules: noParamReassignRules,
         },
     );
+
+    if (Object.keys(rules).length) {
+        entries.push({
+            files,
+            rules,
+        });
+    }
 
     return entries;
 }
@@ -537,10 +561,11 @@ export function defineUiConfig(files, tsconfigRootDir) {
             'react/no-unused-prop-types': 'off',
             'react/no-array-index-key': 'off',
             'react/prop-types': 'off',
+            'react/jsx-indent': 0,
+            'react/jsx-indent-props': 0,
             'react/jsx-props-no-spreading': 0,
             'jsx-quotes': ['error', 'prefer-single'],
             'react/static-property-placement': ['warn', 'static public field'],
-            'import/no-extraneous-dependencies': importNoExtraneousDependenciesRule(tsconfigRootDir),
         },
     });
 }
@@ -567,13 +592,12 @@ const testsGlobalRules = {
     'func-names': 0,
     quotes: ['error', 'single', { avoidEscape: true }],
     'no-underscore-dangle': ['error', { allowAfterThis: true }],
-    'import/order': ['error', { groups: ['builtin', 'external', 'internal'] }],
+    ...importOrderRule,
     'function-paren-newline': 0,
+    'import/no-extraneous-dependencies': importNoExtraneousDependenciesRule('tests')
 };
 
-const testsBaseRules = Object.fromEntries(
-    Object.entries(rootRules).filter(([ruleName]) => !ruleName.startsWith('@typescript-eslint')),
-);
+const testsBaseRules = _.omitBy(rootRules, (_, ruleName) => ruleName.startsWith('@typescript-eslint'));
 
 const cypressBaseRules = {
     ...js.configs.recommended.rules,
@@ -589,9 +613,9 @@ const cypressRootRules = {
 const cypressOverrideRules = {
     ...cypressPlugin.configs.recommended.rules,
     ...securityAndSanitizerRules,
-    'import/no-unresolved': 'off',
+    'import/no-unresolved': 'error',
     'import/extensions': 'off',
-    'no-prototype-builtins': 'off',
+    'no-prototype-builtins': 'error',
     'no-underscore-dangle': 'off',
     'cypress/no-unnecessary-waiting': 'off',
     'no-unused-expressions': 0,
@@ -710,4 +734,22 @@ export default [
         files: cypressTestFiles,
         pluginFiles: cypressPluginFiles,
     }),
+    {
+        files: ['eslint.config.mjs'],
+        plugins: {
+            '@stylistic': stylisticPlugin,
+            import: importPlugin,
+        },
+        rules: {
+            ...js.configs.recommended.rules,
+            ..._.omitBy(rootRules, (_, rule) => rule.startsWith('@typescript')),
+        },
+        languageOptions: {
+            sourceType: 'module',
+            parserOptions: {
+                parser: '@babel/eslint-parser',
+                sourceType: 'module',
+            }
+        }
+    }
 ];
