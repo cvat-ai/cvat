@@ -270,7 +270,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                 changeShowGroundTruth={changeShowGroundTruth}
             />
             <div className='cvat-objects-sidebar-states-list'>
-                {statesOrdering === StatesOrdering.Z_ORDER ? (
+                {statesOrdering === StatesOrdering.LAYER ? (
                     <div className='cvat-objects-sidebar-z-layers-panel'>
                         <div className='cvat-objects-sidebar-z-layers-title'>
                             <Text strong>Layer stack</Text>

@@ -348,7 +348,7 @@ function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): numb
         ));
     } else if (ordering === StatesOrdering.UPDATED) {
         sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => b.updated - a.updated);
-    } else if (ordering === StatesOrdering.Z_ORDER) {
+    } else if (ordering === StatesOrdering.LAYER) {
         sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => a.zOrder - b.zOrder);
     } else if (ordering === StatesOrdering.LABEL_NAME) {
         sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => {
@@ -436,7 +436,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private onOpenZLayerInSidebar = (): void => {
-        this.onChangeStatesOrdering(StatesOrdering.Z_ORDER);
+        this.onChangeStatesOrdering(StatesOrdering.LAYER);
     };
 
     private onLockAllStates = (): void => {
