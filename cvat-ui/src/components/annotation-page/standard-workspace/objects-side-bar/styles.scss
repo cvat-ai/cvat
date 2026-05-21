@@ -330,6 +330,9 @@
 
     &:has(.cvat-objects-sidebar-z-layers-title) {
         padding-top: 0;
+
+        // height of z layers title + padding of states list header
+        scroll-padding-top: $grid-unit-size * 4;
     }
 
     .cvat-objects-sidebar-state-item {
@@ -345,14 +348,13 @@
 .cvat-objects-sidebar-z-layers-panel {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    min-height: 100%;
 }
 
 .cvat-objects-sidebar-z-layers-stack {
     display: flex;
-    flex: 1;
+    flex: 1 0 auto;
     flex-direction: column;
-    min-height: 0;
 }
 
 .cvat-objects-sidebar-z-layers-title {

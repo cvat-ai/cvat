@@ -152,7 +152,7 @@ function ObjectListComponent(props: Props): JSX.Element {
             window.setTimeout((): void => {
                 window.document
                     .querySelector(`[data-z-order="${zOrder}"]`)
-                    ?.scrollIntoView({ block: 'nearest' });
+                    ?.scrollIntoView({ block: 'start', inline: 'nearest' });
             });
         };
 
