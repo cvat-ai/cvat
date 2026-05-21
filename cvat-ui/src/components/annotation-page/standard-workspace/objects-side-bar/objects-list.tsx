@@ -31,6 +31,7 @@ const LAYER_DROP_ID_PREFIX = 'layer:';
 const LAYER_INSERT_DROP_ID_PREFIX = 'insert-layer:';
 
 type LayerDragMode = 'move' | 'merge';
+type LayerPlacement = { exact: number } | { before: number } | { after: number };
 
 function objectDragID(clientID: number): string {
     return `${OBJECT_DRAG_ID_PREFIX}${clientID}`;
@@ -44,9 +45,16 @@ function layerDropID(zOrder: number): string {
     return `${LAYER_DROP_ID_PREFIX}${zOrder}`;
 }
 
-function layerInsertDropID(zOrder: number): string {
-    // Gap drop targets mean "insert a new layer at this z-order".
-    return `${LAYER_INSERT_DROP_ID_PREFIX}${zOrder}`;
+function layerInsertDropID(placement: LayerPlacement): string {
+    if ('exact' in placement) {
+        return `${LAYER_INSERT_DROP_ID_PREFIX}exact:${placement.exact}`;
+    }
+
+    if ('before' in placement) {
+        return `${LAYER_INSERT_DROP_ID_PREFIX}before:${placement.before}`;
+    }
+
+    return `${LAYER_INSERT_DROP_ID_PREFIX}after:${placement.after}`;
 }
 
 function parseObjectDragID(id: string): number | null {
@@ -76,13 +84,31 @@ function parseLayerDropID(id: string): number | null {
     return Number.isInteger(zOrder) ? zOrder : null;
 }
 
-function parseLayerInsertDropID(id: string): number | null {
+function parseLayerInsertDropID(id: string): LayerPlacement | null {
     if (!id.startsWith(LAYER_INSERT_DROP_ID_PREFIX)) {
         return null;
     }
 
-    const zOrder = Number(id.slice(LAYER_INSERT_DROP_ID_PREFIX.length));
-    return Number.isInteger(zOrder) ? zOrder : null;
+    const [kind, value] = id.slice(LAYER_INSERT_DROP_ID_PREFIX.length).split(':');
+    const zOrder = Number(value);
+
+    if (!Number.isInteger(zOrder)) {
+        return null;
+    }
+
+    if (kind === 'exact') {
+        return { exact: zOrder };
+    }
+
+    if (kind === 'before') {
+        return { before: zOrder };
+    }
+
+    if (kind === 'after') {
+        return { after: zOrder };
+    }
+
+    return null;
 }
 
 interface Props {
@@ -101,8 +127,8 @@ interface Props {
     changeStatesOrdering(value: StatesOrdering): void;
     selectLayer(zOrder: number): void;
     moveObjectToLayer(clientID: number, targetZOrder: number): void;
-    moveObjectToNewLayer(clientID: number, targetZOrder: number): void;
-    moveLayer(sourceZOrder: number, targetZOrder: number, mode: LayerDragMode): void;
+    moveObjectToNewLayer(clientID: number, placement: LayerPlacement): void;
+    moveLayer(sourceZOrder: number, targetZOrder: number | LayerPlacement, mode: LayerDragMode): void;
     compactLayers(): void;
     lockAllStates(): void;
     unlockAllStates(): void;
@@ -282,13 +308,13 @@ function ZLayerSection(props: ZLayerSectionProps): JSX.Element {
 }
 
 interface ZLayerInsertDropAreaProps {
-    zOrder: number;
+    placement: LayerPlacement;
     topmost?: boolean;
 }
 
 function ZLayerInsertDropArea(props: ZLayerInsertDropAreaProps): JSX.Element {
-    const { zOrder, topmost = false } = props;
-    const { isOver, setNodeRef } = useDroppable({ id: layerInsertDropID(zOrder) });
+    const { placement, topmost = false } = props;
+    const { isOver, setNodeRef } = useDroppable({ id: layerInsertDropID(placement) });
 
     return (
         <div
@@ -306,13 +332,15 @@ function getZLayers(objectStates: ObjectState[]): number[] {
         .sort((left: number, right: number): number => left - right);
 }
 
-function getInsertZOrder(zLayers: number[], index: number): number {
+function getInsertPlacement(zLayers: number[], index: number): LayerPlacement {
     if (index === 0) {
-        return zLayers[0] - 1;
+        return { exact: zLayers[0] - 1 };
     }
 
-    // Prefer an existing gap. The container shifts layers only when this value is already occupied.
-    return zLayers[index - 1] + 1;
+    const previousZOrder = zLayers[index - 1];
+    const nextZOrder = zLayers[index];
+
+    return nextZOrder - previousZOrder > 1 ? { exact: previousZOrder + 1 } : { before: nextZOrder };
 }
 
 function ObjectListComponent(props: Props): JSX.Element {
@@ -417,20 +445,20 @@ function ObjectListComponent(props: Props): JSX.Element {
         const clientID = parseObjectDragID(String(active.id));
         const sourceZOrder = parseLayerDragID(String(active.id));
         const zOrder = parseLayerDropID(String(over.id));
-        const insertZOrder = parseLayerInsertDropID(String(over.id));
+        const placement = parseLayerInsertDropID(String(over.id));
 
         if (clientID !== null && zOrder !== null) {
             // Dropping an object onto an existing layer moves it into that layer.
             moveObjectToLayer(clientID, zOrder);
-        } else if (clientID !== null && insertZOrder !== null) {
-            // Dropping an object between layers creates a new layer, shifting only if the index is occupied.
-            moveObjectToNewLayer(clientID, insertZOrder);
+        } else if (clientID !== null && placement !== null) {
+            // The layout-level drop area decides whether the insertion is exact, before, or after a layer.
+            moveObjectToNewLayer(clientID, placement);
         } else if (sourceZOrder !== null && zOrder !== null) {
             // Dropping a layer onto an existing layer merges both layers.
             moveLayer(sourceZOrder, zOrder, 'merge');
-        } else if (sourceZOrder !== null && insertZOrder !== null) {
-            // Dropping a layer between layers uses a free gap or shifts occupied upper layers.
-            moveLayer(sourceZOrder, insertZOrder, 'move');
+        } else if (sourceZOrder !== null && placement !== null) {
+            // The layout-level drop area decides whether the insertion is exact, before, or after a layer.
+            moveLayer(sourceZOrder, placement, 'move');
         }
     };
     const toggleLayerCollapsed = (zOrder: number): void => {
@@ -493,7 +521,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                             <div className='cvat-objects-sidebar-z-layers-stack'>
                                 {zLayers.map((zOrder: number, index: number): JSX.Element => (
                                     <React.Fragment key={zOrder}>
-                                        <ZLayerInsertDropArea zOrder={getInsertZOrder(zLayers, index)} />
+                                        <ZLayerInsertDropArea placement={getInsertPlacement(zLayers, index)} />
                                         <ZLayerSection
                                             zOrder={zOrder}
                                             objectIDs={zLayerIDs[zOrder] || []}
@@ -508,7 +536,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                     </React.Fragment>
                                 ))}
                                 {!!zLayers.length && (
-                                    <ZLayerInsertDropArea zOrder={zLayers[zLayers.length - 1] + 1} topmost />
+                                    <ZLayerInsertDropArea placement={{ after: zLayers[zLayers.length - 1] }} topmost />
                                 )}
                             </div>
                         </DndContext>

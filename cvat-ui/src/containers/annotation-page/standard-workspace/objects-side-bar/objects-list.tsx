@@ -41,6 +41,8 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 
+type LayerPlacement = { exact: number } | { before: number } | { after: number };
+
 interface StateToProps {
     jobInstance: any;
     frameNumber: any;
@@ -68,23 +70,19 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    updateAnnotations(states: any[]): void;
-    collapseStates(states: any[], value: boolean): void;
-    removeObject: (objectState: any, force: boolean) => void;
-    copyShape: (objectState: any) => void;
-    switchPropagateVisibility: (visible: boolean) => void;
-    switchSimplifyVisibility: (clientID: number | null) => void;
-    changeFrame(frame: number): void;
-    changeGroupColor(group: number, color: string): void;
-    changeShowGroundTruth(value: boolean): void;
-    changeHideEditedState(value: boolean): void;
-    updateLayer(
-        frame: number,
-        placement: { exact: number } | { before: number } | { after: number },
-        states: ObjectState[],
-    ): void;
-    compactLayers(frame: number): void;
-    selectLayer(zOrder: number): void;
+    updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void;
+    collapseStates(...args: Parameters<typeof collapseObjectItems>): void;
+    removeObject(...args: Parameters<typeof removeObjectAction>): void;
+    copyShape(...args: Parameters<typeof copyShapeAction>): void;
+    switchPropagateVisibility(...args: Parameters<typeof switchPropagateVisibilityAction>): void;
+    switchSimplifyVisibility(...args: Parameters<typeof switchSimplifyVisibilityAction>): void;
+    changeFrame(...args: Parameters<typeof changeFrameAsync>): void;
+    changeGroupColor(...args: Parameters<typeof changeGroupColorAsync>): void;
+    changeShowGroundTruth(...args: Parameters<typeof changeShowGroundTruthAction>): void;
+    changeHideEditedState(...args: Parameters<typeof changeHideActiveObjectAsync>): void;
+    updateLayer(...args: Parameters<typeof updateLayerAsync>): void;
+    compactLayers(...args: Parameters<typeof compactLayersAsync>): void;
+    selectLayer(...args: Parameters<typeof switchZLayer>): void;
 }
 
 const componentShortcuts = {
@@ -423,10 +421,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const { filteredStates } = this.state;
         const { maxZLayer, selectLayer } = this.props;
 
-        if (statesOrdering !== StatesOrdering.Z_ORDER) {
-            selectLayer(maxZLayer);
-        }
-
+        // whenever open or close layer ordering mode
+        // set maxium z layer as current to show everything
+        selectLayer(maxZLayer);
         this.setState({
             statesOrdering,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
@@ -434,11 +431,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private onOpenZLayerInSidebar = (): void => {
-        const { filteredStates } = this.state;
-        this.setState({
-            statesOrdering: StatesOrdering.Z_ORDER,
-            sortedStatesID: sortAndMap(filteredStates, StatesOrdering.Z_ORDER),
-        });
+        this.onChangeStatesOrdering(StatesOrdering.Z_ORDER);
     };
 
     private onLockAllStates = (): void => {
@@ -470,13 +463,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         changeShowGroundTruth(!showGroundTruth);
     };
 
-    private layerPlacement = (targetZOrder: number): { exact: number } | { before: number } => {
-        const { filteredStates } = this.state;
-        const targetOccupied = filteredStates.some((state: ObjectState): boolean => (
-            isLayerState(state) && state.zOrder === targetZOrder
-        ));
+    private isSamePlacement = (sourceZOrder: number, placement: LayerPlacement): boolean => {
+        if ('exact' in placement) {
+            return sourceZOrder === placement.exact;
+        }
 
-        return targetOccupied ? { before: targetZOrder } : { exact: targetZOrder };
+        if ('before' in placement) {
+            return sourceZOrder === placement.before;
+        }
+
+        return sourceZOrder === placement.after;
     };
 
     private moveObjectToLayer = (clientID: number, targetZOrder: number): void => {
@@ -491,23 +487,26 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         updateLayer(frameNumber, { exact: targetZOrder }, [objectState]);
     };
 
-    private moveObjectToNewLayer = (clientID: number, targetZOrder: number): void => {
+    private moveObjectToNewLayer = (clientID: number, placement: LayerPlacement): void => {
         const { frameNumber, updateLayer } = this.props;
         const { filteredStates } = this.state;
         const objectState = filteredStates.find((state: ObjectState): boolean => state.clientID === clientID);
 
-        if (!objectState || !isLayerState(objectState) || objectState.zOrder === targetZOrder) {
+        if (!objectState || !isLayerState(objectState) || this.isSamePlacement(objectState.zOrder, placement)) {
             return;
         }
 
-        updateLayer(frameNumber, this.layerPlacement(targetZOrder), [objectState]);
+        updateLayer(frameNumber, placement, [objectState]);
     };
 
-    private moveLayer = (sourceZOrder: number, targetZOrder: number, mode: 'move' | 'merge'): void => {
+    private moveLayer = (sourceZOrder: number, target: number | LayerPlacement, mode: 'move' | 'merge'): void => {
         const { frameNumber, updateLayer } = this.props;
         const { filteredStates } = this.state;
 
-        if (sourceZOrder === targetZOrder) {
+        if (
+            (typeof target === 'number' && sourceZOrder === target) ||
+            (typeof target !== 'number' && this.isSamePlacement(sourceZOrder, target))
+        ) {
             return;
         }
 
@@ -516,11 +515,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         ));
 
         if (statesToMove.length) {
-            updateLayer(
-                frameNumber,
-                mode === 'merge' ? { exact: targetZOrder } : this.layerPlacement(targetZOrder),
-                statesToMove,
-            );
+            const placement: LayerPlacement = mode === 'merge' ?
+                { exact: target as number } :
+                target as LayerPlacement;
+
+            updateLayer(frameNumber, placement, statesToMove);
         }
     };
 
