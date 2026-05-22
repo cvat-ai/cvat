@@ -280,6 +280,10 @@ class TestTaskVisionDataset:
         assert transformed["masks"].shape == (0, 5, 6)
         assert transformed["masks"].dtype == torch.uint8
 
+    def test_extract_instance_masks_rejects_unsupported_shape_types(self):
+        with pytest.raises(ValueError):
+            cvatpt.ExtractInstanceMasks(include_shape_types={"rectangle"})
+
     def test_extract_instance_masks_rejects_rotated_shapes(self):
         target = cvatpt.Target(
             annotations=cvatpt.FrameAnnotations(

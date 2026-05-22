@@ -33,8 +33,8 @@ def _draw_mask(shape: models.LabeledShape, image_size: tuple[int, int]) -> np.nd
     Rasterize a CVAT shape into a dense full-image boolean mask.
 
     `image_size` must be a (width, height) tuple. CVAT mask shapes are decoded from
-    their encoded `points` representation; polygon, rectangle, and ellipse shapes are
-    drawn into a binary PIL image and returned as a writable NumPy array.
+    their encoded `points` representation; polygon shapes are drawn into a binary
+    PIL image and returned as a writable NumPy array.
     """
 
     shape_type = shape.type.value
@@ -47,10 +47,6 @@ def _draw_mask(shape: models.LabeledShape, image_size: tuple[int, int]) -> np.nd
 
     if shape_type == "polygon":
         draw.polygon(list(zip(shape.points[0::2], shape.points[1::2])), fill=1)
-    elif shape_type == "rectangle":
-        draw.rectangle(shape.points, fill=1)
-    elif shape_type == "ellipse":
-        draw.ellipse(shape.points, fill=1)
     else:
         raise AssertionError(f"unsupported shape type: {shape_type!r}")
 

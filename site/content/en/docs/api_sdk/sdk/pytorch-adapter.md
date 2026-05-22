@@ -283,10 +283,8 @@ Constructor parameters:
 - `include_shape_types` (`Iterable[str]`).
   The values must be from the following list:
 
-  - `"ellipse"`
   - `"mask"`
   - `"polygon"`
-  - `"rectangle"`
 
 Effect: Gathers all shape annotations from the input target object
 whose types are contained in the value of `include_shape_types`.

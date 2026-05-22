@@ -16,7 +16,7 @@ from cvat_sdk.pytorch.common import Target
 from cvat_sdk.pytorch.utils import _draw_mask, _shape_bbox
 
 _SUPPORTED_SHAPE_TYPES = frozenset(["rectangle", "polygon", "polyline", "points", "ellipse"])
-_SUPPORTED_MASK_SHAPE_TYPES = frozenset(["rectangle", "polygon", "mask", "ellipse"])
+_SUPPORTED_MASK_SHAPE_TYPES = frozenset(["polygon", "mask"])
 
 
 class LabeledBoxes(TypedDict):
@@ -114,7 +114,7 @@ class ExtractInstanceMasks:
 
     Limitations:
 
-    * Only the following shape types are supported: rectangle, polygon, mask, ellipse.
+    * Only the following shape types are supported: polygon, mask.
     * Rotated shapes are not supported.
     """
 
