@@ -565,7 +565,7 @@ export function defineUiConfig(files, tsconfigRootDir) {
             'react/jsx-indent-props': 0,
             'react/jsx-props-no-spreading': 0,
             'jsx-quotes': ['error', 'prefer-single'],
-            'react/static-property-placement': ['warn', 'static public field'],
+            'react/static-property-placement': ['warn', 'static public field']
         },
     });
 }
@@ -735,7 +735,7 @@ export default [
         pluginFiles: cypressPluginFiles,
     }),
     {
-        files: ['eslint.config.mjs'],
+        files: ['./**/eslint.config.mjs'],
         plugins: {
             '@stylistic': stylisticPlugin,
             import: importPlugin,
@@ -743,6 +743,7 @@ export default [
         rules: {
             ...js.configs.recommended.rules,
             ..._.omitBy(rootRules, (_, rule) => rule.startsWith('@typescript')),
+            '@stylistic/comma-dangle': ['error', 'always-multiline']
         },
         languageOptions: {
             sourceType: 'module',
