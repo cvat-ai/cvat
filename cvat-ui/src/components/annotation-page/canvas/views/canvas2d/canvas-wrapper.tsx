@@ -142,7 +142,7 @@ interface DispatchToProps {
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onExpandObject(objectState: ObjectState): void;
-    onOpenLayerStack(zOrder: number, sidebarCollapsed: boolean): void;
+    onOpenLayerStack(sidebarCollapsed: boolean): void;
     onChangeBrightnessLevel(level: number): void;
     onChangeContrastLevel(level: number): void;
     onChangeSaturationLevel(level: number): void;
@@ -351,12 +351,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onExpandObject(objectState: ObjectState): void {
             dispatch(collapseObjectItems([objectState], false));
         },
-        onOpenLayerStack(zOrder: number, sidebarCollapsed: boolean): void {
+        onOpenLayerStack(sidebarCollapsed: boolean): void {
             if (sidebarCollapsed) {
                 dispatch(collapseSidebar());
             }
 
-            openZLayerInObjectsSidebar(zOrder);
+            openZLayerInObjectsSidebar();
         },
         onChangeBrightnessLevel(level: number): void {
             dispatch(changeBrightnessLevel(level));
@@ -1250,7 +1250,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                         className='cvat-canvas-layer-stack-trigger'
                         type='button'
                         aria-label={`Open layer stack. Current layer ${curZLayer}`}
-                        onClick={(): void => onOpenLayerStack(curZLayer, sidebarCollapsed)}
+                        onClick={(): void => onOpenLayerStack(sidebarCollapsed)}
                     >
                         <Icon component={LayerStackIcon} />
                         <span className='cvat-canvas-layer-stack-trigger-layer'>{curZLayer}</span>

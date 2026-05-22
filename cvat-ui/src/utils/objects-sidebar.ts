@@ -36,8 +36,6 @@ export function scrollAndExpandState(
     }));
 }
 
-export function openZLayerInObjectsSidebar(zOrder: number): void {
-    window.dispatchEvent(new CustomEvent(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, {
-        detail: { zOrder },
-    }));
+export function openZLayerInObjectsSidebar(): void {
+    window.dispatchEvent(new CustomEvent(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT));
 }

@@ -21,7 +21,6 @@ import ObjectItemContainer from 'containers/annotation-page/standard-workspace/o
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT,
-    OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT,
 } from 'utils/objects-sidebar';
 
 import ObjectListHeader from './objects-list-header';
@@ -104,6 +103,7 @@ function ObjectListComponent(props: Props): JSX.Element {
     const [collapsedLayers, setCollapsedLayers] = useState<Set<number>>(() => new Set());
     const [dragActive, setDragActive] = useState<boolean>(false);
     const [dragPointerPosition, setDragPointerPosition] = useState<PointerPosition | null>(null);
+    const [pendingExpandedLayerItemID, setPendingExpandedLayerItemID] = useState<string | null>(null);
     const layerObjectStates = objectStates.filter(isLayerState);
     const zLayers = Array.from(
         new Set(layerObjectStates.map((state) => state.zOrder)),
@@ -130,7 +130,20 @@ function ObjectListComponent(props: Props): JSX.Element {
         });
     }, [zLayers.join(',')]);
 
-    // React to external requests to expand, scroll to, or open a layer in the sidebar.
+    useEffect((): void => {
+        if (!pendingExpandedLayerItemID) {
+            return;
+        }
+
+        const sidebarItem = window.document.getElementById(pendingExpandedLayerItemID);
+
+        if (sidebarItem) {
+            sidebarItem.scrollIntoView({ block: 'nearest' });
+            setPendingExpandedLayerItemID(null);
+        }
+    }, [collapsedLayers, pendingExpandedLayerItemID]);
+
+    // React to external requests to expand the layer containing a target object.
     useEffect((): () => void => {
         const onExpandLayer = (event: Event): void => {
             const { clientID, parentID } = (
@@ -142,6 +155,14 @@ function ObjectListComponent(props: Props): JSX.Element {
             ));
 
             if (expandedState) {
+                if (collapsedLayers.has(expandedState.zOrder)) {
+                    const itemID = Number.isInteger(parentID) ?
+                        `cvat-objects-sidebar-state-item-element-${clientID}` :
+                        `cvat-objects-sidebar-state-item-${clientID}`;
+
+                    setPendingExpandedLayerItemID(itemID);
+                }
+
                 setCollapsedLayers((current: Set<number>): Set<number> => {
                     const next = new Set(current);
                     next.delete(expandedState.zOrder);
@@ -150,30 +171,12 @@ function ObjectListComponent(props: Props): JSX.Element {
             }
         };
 
-        const onOpenLayer = (event: Event): void => {
-            const { zOrder } = (event as CustomEvent<{ zOrder: number }>).detail;
-
-            setCollapsedLayers((current: Set<number>): Set<number> => {
-                const next = new Set(current);
-                next.delete(zOrder);
-                return next;
-            });
-
-            window.setTimeout((): void => {
-                window.document
-                    .querySelector(`[data-z-order="${zOrder}"]`)
-                    ?.scrollIntoView({ block: 'start', inline: 'nearest' });
-            });
-        };
-
         window.addEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandLayer);
-        window.addEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenLayer);
 
         return (): void => {
             window.removeEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandLayer);
-            window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenLayer);
         };
-    }, [objectStates]);
+    }, [collapsedLayers, objectStates]);
 
     // Track the pointer only during drag so nearby insert gaps can expand.
     useEffect((): (() => void) | undefined => {
