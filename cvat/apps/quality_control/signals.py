@@ -7,44 +7,19 @@ from django.dispatch import receiver
 
 from cvat.apps.engine.models import Label, Project, Task
 from cvat.apps.quality_control.models import (
-    QualityRequirement,
-    QualityRequirementAnnotationType,
     QualitySettings,
-)
-
-_DEFAULT_REQUIREMENT_ANNOTATION_TYPES = (
-    QualityRequirementAnnotationType.TAG,
-    QualityRequirementAnnotationType.RECTANGLE,
-    QualityRequirementAnnotationType.SKELETON,
-    QualityRequirementAnnotationType.SKELETON_KEYPOINT,
-    QualityRequirementAnnotationType.POINTS,
-    QualityRequirementAnnotationType.POLYLINE,
-    QualityRequirementAnnotationType.MASK,
-    QualityRequirementAnnotationType.POLYGON,
-    QualityRequirementAnnotationType.ELLIPSE,
+    ensure_default_quality_requirements,
 )
 
 
 def _ensure_default_requirements_for_task(task: Task) -> None:
     quality_settings, _ = QualitySettings.objects.get_or_create(task_id=task.id)
-    existing_annotation_types = set(
-        quality_settings.requirements.values_list("annotation_type", flat=True)
-    )
-    new_annotation_types = [
-        annotation_type
-        for annotation_type in _DEFAULT_REQUIREMENT_ANNOTATION_TYPES
-        if annotation_type not in existing_annotation_types
-    ]
+    ensure_default_quality_requirements(quality_settings)
 
-    if new_annotation_types:
-        for annotation_type in new_annotation_types:
-            QualityRequirement.objects.create(
-                settings=quality_settings,
-                name=f"default:{annotation_type}",
-                annotation_type=annotation_type,
-                enabled=False,
-            )
-        quality_settings.save()
+
+def _ensure_default_requirements_for_project(project: Project) -> None:
+    quality_settings, _ = QualitySettings.objects.get_or_create(project_id=project.id)
+    ensure_default_quality_requirements(quality_settings)
 
 
 @receiver(post_save, sender=Project)
@@ -52,13 +27,12 @@ def __save_project__initialize_quality_settings(
     instance: Project, created: bool, raw: bool, **kwargs
 ):
     if created and not raw:
-        QualitySettings.objects.get_or_create(project_id=instance.id)
+        _ensure_default_requirements_for_project(instance)
 
 
 @receiver(post_save, sender=Task)
 def __save_task__initialize_quality_settings(instance: Task, created: bool, **kwargs):
     if created and not kwargs.get("raw"):
-        QualitySettings.objects.get_or_create(task_id=instance.id)
         _ensure_default_requirements_for_task(instance)
 
 
@@ -72,5 +46,6 @@ def __save_label__initialize_default_quality_requirements(
     if instance.task_id:
         _ensure_default_requirements_for_task(instance.task)
     elif instance.project_id:
+        _ensure_default_requirements_for_project(instance.project)
         for task in instance.project.tasks.all():
             _ensure_default_requirements_for_task(task)

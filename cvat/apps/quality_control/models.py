@@ -340,6 +340,8 @@ class QualityRequirement(TimestampedModel):
 
     name = models.CharField(max_length=250, blank=False)
 
+    is_default = models.BooleanField(default=False)
+
     sort_order = models.IntegerField(default=0)
 
     annotation_type = models.CharField(
@@ -419,3 +421,69 @@ class QualityRequirement(TimestampedModel):
 
     def to_dict(self):
         return model_to_dict(self)
+
+
+_DEFAULT_REQUIREMENT_ANNOTATION_TYPES = (
+    QualityRequirementAnnotationType.TAG,
+    QualityRequirementAnnotationType.RECTANGLE,
+    QualityRequirementAnnotationType.SKELETON,
+    QualityRequirementAnnotationType.SKELETON_KEYPOINT,
+    QualityRequirementAnnotationType.POINTS,
+    QualityRequirementAnnotationType.POLYLINE,
+    QualityRequirementAnnotationType.MASK,
+    QualityRequirementAnnotationType.POLYGON,
+    QualityRequirementAnnotationType.ELLIPSE,
+)
+
+
+def get_default_requirement_name(annotation_type: str) -> str:
+    return f"default:{annotation_type}"
+
+
+def ensure_default_quality_requirements(quality_settings: QualitySettings) -> bool:
+    default_names = {
+        get_default_requirement_name(annotation_type)
+        for annotation_type in _DEFAULT_REQUIREMENT_ANNOTATION_TYPES
+    }
+    existing_default_names = set(
+        quality_settings.requirements.filter(name__in=default_names).values_list(
+            "name", flat=True
+        )
+    )
+
+    changed = False
+    if existing_default_names:
+        updated_count = quality_settings.requirements.filter(
+            name__in=existing_default_names,
+            is_default=False,
+        ).update(is_default=True)
+        changed = bool(updated_count)
+
+    requirements_to_create = []
+    for sort_order, annotation_type in enumerate(_DEFAULT_REQUIREMENT_ANNOTATION_TYPES):
+        name = get_default_requirement_name(annotation_type)
+        if name in existing_default_names:
+            continue
+
+        requirements_to_create.append(
+            QualityRequirement(
+                settings=quality_settings,
+                name=name,
+                is_default=True,
+                sort_order=sort_order,
+                annotation_type=annotation_type,
+                enabled=False,
+            )
+        )
+
+    if requirements_to_create:
+        QualityRequirement.objects.bulk_create(requirements_to_create)
+        changed = True
+
+    if changed:
+        prefetched_objects_cache = getattr(quality_settings, "_prefetched_objects_cache", None)
+        if prefetched_objects_cache is not None:
+            prefetched_objects_cache.pop("requirements", None)
+        quality_settings.touch()
+
+    return changed

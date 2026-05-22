@@ -476,6 +476,7 @@ class RequirementHandler(ABC):
             expression=getattr(self.requirement, "filter", "") or "",
             categories=self.context.categories,
             included_annotation_types=self.settings.included_annotation_types,
+            annotation_requirements=self.context.annotation_requirements,
         )
 
     def _create_comparison_parameters(self) -> ComparisonParameters:
@@ -579,6 +580,9 @@ class RequirementHandler(ABC):
         return RequirementFrameResult(summary=self._make_empty_frame_summary())
 
     def _filter_unassigned_item(self, item: dm.DatasetItem) -> dm.DatasetItem:
+        if not getattr(self.requirement, "enabled", True):
+            return item
+
         assigned_annotation_ids = self.context.annotation_requirements
         filtered_annotations = [
             ann for ann in item.annotations if id(ann) not in assigned_annotation_ids
@@ -590,6 +594,9 @@ class RequirementHandler(ABC):
         return item.wrap(annotations=filtered_annotations)
 
     def _mark_item_annotations_assigned(self, item: dm.DatasetItem) -> None:
+        if not getattr(self.requirement, "enabled", True):
+            return
+
         requirement_name = getattr(self.requirement, "name", "")
         for ann in item.annotations:
             self.context.annotation_requirements.setdefault(id(ann), set()).add(requirement_name)
@@ -1443,9 +1450,6 @@ class DatasetQualityEstimator:
         annotation_requirements: dict[int, set] = {}
 
         for requirement in self._requirements:
-            if not getattr(requirement, "enabled", True):
-                continue
-
             handler = RequirementHandler.for_requirement(
                 requirement,
                 context=MatchingContext(
@@ -1536,7 +1540,6 @@ class DatasetQualityEstimator:
                 total_frames=self._get_total_frames(),
             )
             for requirement in self._requirements
-            if getattr(requirement, "enabled", True)
         }
         requirement_stats = build_requirements_summary(self._requirements, group_reports)
         conflicts_by_severity = Counter(c.severity for c in conflicts)

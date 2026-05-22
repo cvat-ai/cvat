@@ -752,11 +752,16 @@ class QualityRequirementViewSet(
         return queryset
 
     def perform_destroy(self, instance):
+        if instance.is_default:
+            raise ValidationError("Default quality requirements cannot be deleted.")
+
         if instance.settings.requirements.count() <= 1:
             raise ValidationError("The last quality requirement cannot be deleted.")
 
         if instance.children.exists():
-            raise ValidationError("A quality requirement with child requirements cannot be deleted.")
+            raise ValidationError(
+                "A quality requirement with child requirements cannot be deleted."
+            )
 
         settings = instance.settings
         result = super().perform_destroy(instance)
