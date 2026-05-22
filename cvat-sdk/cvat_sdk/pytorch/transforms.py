@@ -68,6 +68,7 @@ class ExtractBoundingBoxes:
       points, ellipse.
     * Rotated shapes are not supported.
     """
+
     SUPPORTED_SHAPE_TYPES = frozenset(["rectangle", "polygon", "polyline", "points", "ellipse"])
 
     include_shape_types: frozenset[str] = attrs.field(
@@ -119,6 +120,7 @@ class ExtractInstanceMasks:
     * Only the following shape types are supported: polygon, mask.
     * Rotated shapes are not supported.
     """
+
     SUPPORTED_MASK_SHAPE_TYPES = frozenset(["polygon", "mask"])
 
     include_shape_types: frozenset[str] = attrs.field(
