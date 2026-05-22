@@ -105,6 +105,12 @@ class TestTaskVisionDataset:
                         type=models.ShapeType("points"),
                         points=[1.1, 2.1, 3.1, 4.1],
                     ),
+                    models.LabeledShapeRequest(
+                        frame=9,
+                        label_id=self.label_ids[0],
+                        type=models.ShapeType("polygon"),
+                        points=[1.0, 1.0, 4.0, 1.0, 4.0, 3.0, 1.0, 3.0],
+                    ),
                 ],
             ),
             action=AnnotationUpdateAction.CREATE,
@@ -202,15 +208,47 @@ class TestTaskVisionDataset:
             target_transform=cvatpt.ExtractBoundingBoxes(include_shape_types={"rectangle"}),
         )
 
-        assert torch.equal(dataset[0][1]["boxes"], torch.tensor([]))
-        assert torch.equal(dataset[0][1]["labels"], torch.tensor([]))
+        assert dataset[0][1]["boxes"].shape == (0, 4)
+        assert dataset[0][1]["boxes"].dtype == torch.float
+        assert dataset[0][1]["labels"].shape == (0,)
+        assert dataset[0][1]["labels"].dtype == torch.long
 
         assert torch.equal(dataset[6][1]["boxes"], torch.tensor([(1.0, 2.0, 3.0, 4.0)]))
         assert torch.equal(dataset[6][1]["labels"], torch.tensor([1]))
 
         # points are filtered out
-        assert torch.equal(dataset[7][1]["boxes"], torch.tensor([]))
-        assert torch.equal(dataset[7][1]["labels"], torch.tensor([]))
+        assert dataset[7][1]["boxes"].shape == (0, 4)
+        assert dataset[7][1]["boxes"].dtype == torch.float
+        assert dataset[7][1]["labels"].shape == (0,)
+        assert dataset[7][1]["labels"].dtype == torch.long
+
+    def test_extract_instance_masks_target_transform(self):
+        dataset = cvatpt.TaskVisionDataset(
+            self.client,
+            self.task.id,
+            transform=torchvision.transforms.PILToTensor(),
+            target_transform=cvatpt.ExtractInstanceMasks(include_shape_types={"polygon", "mask"}),
+        )
+
+        assert dataset[0][1]["boxes"].shape == (0, 4)
+        assert dataset[0][1]["boxes"].dtype == torch.float
+        assert dataset[0][1]["labels"].shape == (0,)
+        assert dataset[0][1]["labels"].dtype == torch.long
+        assert dataset[0][1]["masks"].shape == (0, 50, 100)
+        assert dataset[0][1]["masks"].dtype == torch.uint8
+
+        # rectangles are filtered out
+        assert dataset[6][1]["boxes"].shape == (0, 4)
+        assert dataset[6][1]["labels"].shape == (0,)
+        assert dataset[6][1]["labels"].dtype == torch.long
+        assert dataset[6][1]["masks"].shape == (0, 50, 100)
+
+        assert torch.equal(dataset[9][1]["boxes"], torch.tensor([(1.0, 1.0, 4.0, 3.0)]))
+        assert torch.equal(dataset[9][1]["labels"], torch.tensor([0]))
+
+        expected_mask = torch.zeros((50, 100), dtype=torch.uint8)
+        expected_mask[1:4, 1:5] = 1
+        assert torch.equal(dataset[9][1]["masks"], expected_mask.unsqueeze(0))
 
     def test_extract_instance_masks(self):
         from cvat_sdk.masks import encode_mask
@@ -276,7 +314,8 @@ class TestTaskVisionDataset:
 
         assert transformed["boxes"].shape == (0, 4)
         assert transformed["boxes"].dtype == torch.float
-        assert torch.equal(transformed["labels"], torch.tensor([]))
+        assert transformed["labels"].shape == (0,)
+        assert transformed["labels"].dtype == torch.long
         assert transformed["masks"].shape == (0, 5, 6)
         assert transformed["masks"].dtype == torch.uint8
 

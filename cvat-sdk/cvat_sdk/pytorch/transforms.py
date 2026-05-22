@@ -12,11 +12,8 @@ import torch.utils.data
 from torch import Tensor
 
 from cvat_sdk.datasets.common import UnsupportedDatasetError
+from cvat_sdk.pytorch._utils import draw_mask, shape_bbox
 from cvat_sdk.pytorch.common import Target
-from cvat_sdk.pytorch.utils import _draw_mask, _shape_bbox
-
-_SUPPORTED_SHAPE_TYPES = frozenset(["rectangle", "polygon", "polyline", "points", "ellipse"])
-_SUPPORTED_MASK_SHAPE_TYPES = frozenset(["polygon", "mask"])
 
 
 class LabeledBoxes(TypedDict):
@@ -71,10 +68,11 @@ class ExtractBoundingBoxes:
       points, ellipse.
     * Rotated shapes are not supported.
     """
+    SUPPORTED_SHAPE_TYPES = frozenset(["rectangle", "polygon", "polyline", "points", "ellipse"])
 
     include_shape_types: frozenset[str] = attrs.field(
         converter=frozenset,
-        validator=attrs.validators.deep_iterable(attrs.validators.in_(_SUPPORTED_SHAPE_TYPES)),
+        validator=attrs.validators.deep_iterable(attrs.validators.in_(SUPPORTED_SHAPE_TYPES)),
         kw_only=True,
     )
     """Shapes whose type is not in this set will be ignored."""
@@ -90,11 +88,15 @@ class ExtractBoundingBoxes:
             if shape.rotation != 0:
                 raise UnsupportedDatasetError("Rotated shapes are not supported")
 
-            boxes.append(_shape_bbox(shape=shape))
+            boxes.append(shape_bbox(shape=shape))
             labels.append(target.label_id_to_index[shape.label_id])
 
         return LabeledBoxes(
-            boxes=torch.tensor(boxes, dtype=torch.float),
+            boxes=(
+                torch.tensor(boxes, dtype=torch.float)
+                if boxes
+                else torch.empty((0, 4), dtype=torch.float)
+            ),
             labels=torch.tensor(labels, dtype=torch.long),
         )
 
@@ -117,18 +119,16 @@ class ExtractInstanceMasks:
     * Only the following shape types are supported: polygon, mask.
     * Rotated shapes are not supported.
     """
+    SUPPORTED_MASK_SHAPE_TYPES = frozenset(["polygon", "mask"])
 
     include_shape_types: frozenset[str] = attrs.field(
         converter=frozenset,
-        validator=attrs.validators.deep_iterable(attrs.validators.in_(_SUPPORTED_MASK_SHAPE_TYPES)),
+        validator=attrs.validators.deep_iterable(attrs.validators.in_(SUPPORTED_MASK_SHAPE_TYPES)),
         kw_only=True,
     )
     """Shapes whose type is not in this set will be ignored."""
 
     def __call__(self, target: Target) -> LabeledMasks:
-        if target.image_size is None:
-            raise ValueError("target image size is required to extract instance masks")
-
         boxes: list[Sequence[float]] = []
         labels: list[int] = []
         masks: list[torch.Tensor] = []
@@ -140,11 +140,11 @@ class ExtractInstanceMasks:
             if shape.rotation != 0:
                 raise UnsupportedDatasetError("Rotated shapes are not supported")
 
-            boxes.append(_shape_bbox(shape=shape))
+            boxes.append(shape_bbox(shape=shape))
             labels.append(target.label_id_to_index[shape.label_id])
             masks.append(
                 torch.as_tensor(
-                    _draw_mask(shape=shape, image_size=target.image_size), dtype=torch.uint8
+                    draw_mask(shape=shape, image_size=target.image_size), dtype=torch.uint8
                 )
             )
 

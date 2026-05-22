@@ -1,3 +1,7 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import numpy as np
 import PIL.Image
 import PIL.ImageDraw
@@ -6,7 +10,7 @@ from cvat_sdk import models
 from cvat_sdk.masks import decode_mask
 
 
-def _shape_bbox(shape: models.LabeledShape) -> tuple[float, float, float, float]:
+def shape_bbox(shape: models.LabeledShape) -> tuple[float, float, float, float]:
     """
     Return the unrotated bounding box of a CVAT shape as (x_min, y_min, x_max, y_max).
 
@@ -28,7 +32,7 @@ def _shape_bbox(shape: models.LabeledShape) -> tuple[float, float, float, float]
     return min(x_coords), min(y_coords), max(x_coords), max(y_coords)
 
 
-def _draw_mask(shape: models.LabeledShape, image_size: tuple[int, int]) -> np.ndarray:
+def draw_mask(shape: models.LabeledShape, image_size: tuple[int, int]) -> np.ndarray:
     """
     Rasterize a CVAT shape into a dense full-image boolean mask.
 

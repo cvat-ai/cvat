@@ -24,7 +24,7 @@ class Target:
     to an integer index. This mapping is consistent across all samples for a given task.
     """
 
-    image_size: tuple[int, int] | None = None
+    image_size: tuple[int, int]
     """
-    The size of the corresponding image as a (width, height) tuple, if known.
+    The size of the corresponding image as a (width, height) tuple.
     """
