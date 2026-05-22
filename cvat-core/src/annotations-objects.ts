@@ -8,19 +8,21 @@ import config from './config';
 import ObjectState, { SerializedData } from './object-state';
 import { checkObjectType } from './common';
 import { clamp } from './opencv/math-utils';
-import {
-    DataError, ArgumentError, ScriptingError,
-} from './exceptions';
+import { DataError, ArgumentError, ScriptingError } from './exceptions';
 import { Label } from './labels';
-import {
-    colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType, JobType,
-} from './enums';
+import { colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType, JobType } from './enums';
 import AnnotationHistory from './annotations-history';
 import { SerializedShape, SerializedTrack, SerializedTag } from './server-response-types';
 import { mask2Rle, rle2Mask } from './rle-utils';
 import {
-    checkNumberOfPoints, attrsAsAnObject, checkShapeArea,
-    computeWrappingBox, findAngleDiff, rotatePoint, validateAttributeValue, cropMask,
+    checkNumberOfPoints,
+    attrsAsAnObject,
+    checkShapeArea,
+    computeWrappingBox,
+    findAngleDiff,
+    rotatePoint,
+    validateAttributeValue,
+    cropMask,
 } from './object-utils';
 
 const defaultGroupColor = '#E0E0E0';
@@ -59,6 +61,10 @@ function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape 
 }
 
 function computeNewSource(currentSource: Source): Source {
+    if (currentSource === Source.GT) {
+        return Source.GT;
+    }
+
     if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
         return Source.SEMI_AUTO;
     }
@@ -143,12 +149,12 @@ class Annotation {
         this.color = color;
         this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
         this.score = data.score;
-        this.votes = injection.replicasCount !== undefined ?
-            Math.round(this.score * injection.replicasCount) : 0;
+        this.votes = injection.replicasCount !== undefined ? Math.round(this.score * injection.replicasCount) : 0;
         this.updated = Date.now();
         this.attributes = serverAttributesToDictionary(data.attributes);
         this.groupObject = Object.defineProperties(
-            {}, {
+            {},
+            {
                 color: {
                     get: () => {
                         if (this.group) {
@@ -365,7 +371,7 @@ class Annotation {
             ) {
                 throw new ArgumentError(
                     `Can not remove the latest keyframe of an object "${data.label.name}".` +
-                    'Consider removing the object instead',
+                        'Consider removing the object instead',
                 );
             }
         }
@@ -495,8 +501,7 @@ class Drawn extends Annotation {
         checkObjectType('rotation', rotation, 'number');
         points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number'));
 
-        if (parentID !== null || shapeType === ShapeType.CUBOID ||
-            shapeType === ShapeType.ELLIPSE || !!rotation) {
+        if (parentID !== null || shapeType === ShapeType.CUBOID || shapeType === ShapeType.ELLIPSE || !!rotation) {
             // cuboids and rotated bounding boxes cannot be fitted
             return points;
         }
@@ -514,7 +519,11 @@ class Drawn extends Annotation {
         return fittedPoints;
     }
 
-    protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
+    protected validateStateBeforeSave(
+        data: ObjectState,
+        updated: ObjectState['updateFlags'],
+        frame?: number,
+    ): number[] {
         super.validateStateBeforeSave(data, updated);
 
         let fittedPoints = [];
@@ -602,7 +611,9 @@ export class Shape extends Drawn {
         return result;
     }
 
-    public get(frame): { outside?: boolean } & Omit<Required<SerializedData>, 'keyframe' | 'keyframes' | 'elements' | 'outside'> {
+    public get(
+        frame,
+    ): { outside?: boolean } & Omit<Required<SerializedData>, 'keyframe' | 'keyframes' | 'elements' | 'outside'> {
         if (frame !== this.frame) {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
         }
@@ -915,19 +926,16 @@ export class Track extends Drawn {
                     z_order: this.shapes[frame].zOrder,
                     rotation: this.shapes[frame].rotation,
                     outside: this.shapes[frame].outside,
-                    attributes: Object.keys(this.shapes[frame].attributes).reduce(
-                        (attributeAccumulator, attrId) => {
-                            if (labelAttributes[attrId].mutable) {
-                                attributeAccumulator.push({
-                                    spec_id: +attrId,
-                                    value: this.shapes[frame].attributes[attrId],
-                                });
-                            }
+                    attributes: Object.keys(this.shapes[frame].attributes).reduce((attributeAccumulator, attrId) => {
+                        if (labelAttributes[attrId].mutable) {
+                            attributeAccumulator.push({
+                                spec_id: +attrId,
+                                value: this.shapes[frame].attributes[attrId],
+                            });
+                        }
 
-                            return attributeAccumulator;
-                        },
-                        [],
-                    ),
+                        return attributeAccumulator;
+                    }, []),
                     id: this.shapes[frame].serverID,
                     frame: +frame,
                 });
@@ -953,9 +961,7 @@ export class Track extends Drawn {
     }
 
     public get(frame: number): Omit<Required<SerializedData>, 'elements'> {
-        const {
-            prev, next, first, last,
-        } = this.boundedKeyframes(frame);
+        const { prev, next, first, last } = this.boundedKeyframes(frame);
 
         return {
             ...this.getPosition(frame, prev, next),
@@ -1138,7 +1144,8 @@ export class Track extends Drawn {
             if (!labelAttributes[attrID].mutable) {
                 redoAttributes[attrID] = attributes[attrID];
             } else if (attributes[attrID] !== current.attributes[attrID]) {
-                mutableAttributesUpdated = mutableAttributesUpdated ||
+                mutableAttributesUpdated =
+                    mutableAttributesUpdated ||
                     // not keyframe yet
                     !(frame in this.shapes) ||
                     // keyframe, but without this attrID
@@ -1226,8 +1233,7 @@ export class Track extends Drawn {
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-        const redoShape = wasKeyframe ?
-            { ...this.shapes[frame], rotation } : copyShape(this.get(frame), { rotation });
+        const redoShape = wasKeyframe ? { ...this.shapes[frame], rotation } : copyShape(this.get(frame), { rotation });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1246,8 +1252,7 @@ export class Track extends Drawn {
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-        const redoShape = wasKeyframe ?
-            { ...this.shapes[frame], points } : copyShape(this.get(frame), { points });
+        const redoShape = wasKeyframe ? { ...this.shapes[frame], points } : copyShape(this.get(frame), { points });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1266,9 +1271,7 @@ export class Track extends Drawn {
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-        const redoShape = wasKeyframe ?
-            { ...this.shapes[frame], outside } :
-            copyShape(this.get(frame), { outside });
+        const redoShape = wasKeyframe ? { ...this.shapes[frame], outside } : copyShape(this.get(frame), { outside });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1287,9 +1290,7 @@ export class Track extends Drawn {
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-        const redoShape = wasKeyframe ?
-            { ...this.shapes[frame], occluded } :
-            copyShape(this.get(frame), { occluded });
+        const redoShape = wasKeyframe ? { ...this.shapes[frame], occluded } : copyShape(this.get(frame), { occluded });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1308,9 +1309,7 @@ export class Track extends Drawn {
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-        const redoShape = wasKeyframe ?
-            { ...this.shapes[frame], zOrder } :
-            copyShape(this.get(frame), { zOrder });
+        const redoShape = wasKeyframe ? { ...this.shapes[frame], zOrder } : copyShape(this.get(frame), { zOrder });
 
         this.shapes[frame] = redoShape;
         this.source = redoSource;
@@ -1425,7 +1424,9 @@ export class Track extends Drawn {
     }
 
     protected getPosition(
-        targetFrame: number, leftKeyframe: number | null, rightFrame: number | null,
+        targetFrame: number,
+        leftKeyframe: number | null,
+        rightFrame: number | null,
     ): InterpolatedPosition & { keyframe: boolean } {
         const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
         const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
@@ -1495,10 +1496,23 @@ export class Tag extends Annotation {
         return result;
     }
 
-    public get(frame: number): Omit<Required<SerializedData>,
-    'elements' | 'occluded' | 'outside' | 'rotation' | 'zOrder' |
-    'points' | 'hidden' | 'pinned' | 'keyframe' | 'shapeType' |
-    'parentID' | 'descriptions' | 'keyframes'
+    public get(
+        frame: number,
+    ): Omit<
+        Required<SerializedData>,
+        | 'elements'
+        | 'occluded'
+        | 'outside'
+        | 'rotation'
+        | 'zOrder'
+        | 'points'
+        | 'hidden'
+        | 'pinned'
+        | 'keyframe'
+        | 'shapeType'
+        | 'parentID'
+        | 'descriptions'
+        | 'keyframes'
     > {
         if (frame !== this.frame) {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
@@ -1599,9 +1613,8 @@ export class EllipseShape extends Shape {
         const [rx, ry] = [rightX - cx, cy - topY];
         const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
         // https://math.stackexchange.com/questions/76457/check-if-a-point-is-within-an-ellipse
-        const pointWithinEllipse = (_x: number, _y: number): boolean => (
-            ((_x - cx) ** 2) / rx ** 2) + (((_y - cy) ** 2) / ry ** 2
-        ) <= 1;
+        const pointWithinEllipse = (_x: number, _y: number): boolean =>
+            (_x - cx) ** 2 / rx ** 2 + (_y - cy) ** 2 / ry ** 2 <= 1;
 
         if (!pointWithinEllipse(rotX, rotY)) {
             // Cursor is outside of an ellipse
@@ -1620,8 +1633,8 @@ export class EllipseShape extends Shape {
 
         // we have one point inside the ellipse, let's build two lines (horizontal and vertical) through the point
         // and find their interception with ellipse
-        const x2Equation = (_y: number): number => (((rx * ry) ** 2) - ((_y * rx) ** 2)) / (ry ** 2);
-        const y2Equation = (_x: number): number => (((rx * ry) ** 2) - ((_x * ry) ** 2)) / (rx ** 2);
+        const x2Equation = (_y: number): number => ((rx * ry) ** 2 - (_y * rx) ** 2) / ry ** 2;
+        const y2Equation = (_x: number): number => ((rx * ry) ** 2 - (_x * ry) ** 2) / rx ** 2;
 
         // shift x,y to the ellipse coordinate system to compute equation correctly
         // y axis is inverted
@@ -1709,10 +1722,7 @@ export class PolygonShape extends PolyShape {
                 distances.push(Math.sqrt((x - xCross) ** 2 + (y - yCross) ** 2));
             } else {
                 distances.push(
-                    Math.min(
-                        Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
-                        Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
-                    ),
+                    Math.min(Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2), Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2)),
                 );
             }
         }
@@ -1766,10 +1776,7 @@ export class PolylineShape extends PolyShape {
                 // In this case we don't use the computed distance
                 // Instead we use just distance to the nearest point
                 distances.push(
-                    Math.min(
-                        Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
-                        Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
-                    ),
+                    Math.min(Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2), Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2)),
                 );
             }
         }
@@ -1857,7 +1864,8 @@ export class CuboidShape extends Shape {
                 lowerHull.length === 1 &&
                 upperHull[0].x === lowerHull[0].x &&
                 upperHull[0].y === lowerHull[0].y
-            ) return upperHull;
+            )
+                return upperHull;
             return upperHull.concat(lowerHull);
         }
 
@@ -1916,7 +1924,8 @@ export class CuboidShape extends Shape {
             const p2 = points[i + 1] || points[0];
 
             // perpendicular from point to straight length
-            const distance = Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x) /
+            const distance =
+                Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x) /
                 Math.sqrt((p2.y - p1.y) ** 2 + (p2.x - p1.x) ** 2);
 
             // check if perpendicular belongs to the straight segment
@@ -1943,15 +1952,18 @@ export class SkeletonShape extends Shape {
         this.points = [];
         this.readOnlyFields = ['points', 'label', 'occluded'];
 
-        const [cx, cy] = data.elements.reduce((acc, element, idx) => {
-            const result = [acc[0] + element.points[0], acc[1] + element.points[1]];
-            if (idx === data.elements.length - 1) {
-                // length can not be 0 because we are inside reduce
-                result[0] /= data.elements.length;
-                result[1] /= data.elements.length;
-            }
-            return result;
-        }, [0, 0]);
+        const [cx, cy] = data.elements.reduce(
+            (acc, element, idx) => {
+                const result = [acc[0] + element.points[0], acc[1] + element.points[1]];
+                if (idx === data.elements.length - 1) {
+                    // length can not be 0 because we are inside reduce
+                    result[0] /= data.elements.length;
+                    result[1] /= data.elements.length;
+                }
+                return result;
+            },
+            [0, 0],
+        );
 
         this.elements = this.label.structure.sublabels.map((sublabel: Label) => {
             const element = data.elements.find((_element) => _element.label_id === sublabel.id);
@@ -1965,18 +1977,22 @@ export class SkeletonShape extends Shape {
             };
 
             // eslint-disable-next-line no-use-before-define
-            return shapeFactory({
-                ...elementData,
-                group: this.group,
-                z_order: this.zOrder,
-                source: this.source,
-                rotation: 0,
-                frame: data.frame,
-            }, injection.nextClientID(), {
-                ...injection,
-                parentID: this.clientID,
-                readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-            });
+            return shapeFactory(
+                {
+                    ...elementData,
+                    group: this.group,
+                    z_order: this.zOrder,
+                    source: this.source,
+                    rotation: 0,
+                    frame: data.frame,
+                },
+                injection.nextClientID(),
+                {
+                    ...injection,
+                    parentID: this.clientID,
+                    readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
+                },
+            );
         });
     }
 
@@ -2209,26 +2225,38 @@ export class SkeletonShape extends Shape {
         const updatedHidden = data.elements.filter((el) => el.updateFlags.hidden);
         const updatedLock = data.elements.filter((el) => el.updateFlags.lock);
 
-        updatedOccluded.forEach((el) => { el.updateFlags.occluded = false; });
-        updatedHidden.forEach((el) => { el.updateFlags.hidden = false; });
-        updatedLock.forEach((el) => { el.updateFlags.lock = false; });
+        updatedOccluded.forEach((el) => {
+            el.updateFlags.occluded = false;
+        });
+        updatedHidden.forEach((el) => {
+            el.updateFlags.hidden = false;
+        });
+        updatedLock.forEach((el) => {
+            el.updateFlags.lock = false;
+        });
 
         if (updatedPoints.length) {
             updateElements(updatedPoints, HistoryActions.CHANGED_POINTS, 'points');
         }
 
         if (updatedOccluded.length) {
-            updatedOccluded.forEach((el) => { el.updateFlags.occluded = true; });
+            updatedOccluded.forEach((el) => {
+                el.updateFlags.occluded = true;
+            });
             updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED, 'occluded');
         }
 
         if (updatedHidden.length) {
-            updatedHidden.forEach((el) => { el.updateFlags.hidden = true; });
+            updatedHidden.forEach((el) => {
+                el.updateFlags.hidden = true;
+            });
             updateElements(updatedHidden, HistoryActions.CHANGED_OUTSIDE, 'hidden');
         }
 
         if (updatedLock.length) {
-            updatedLock.forEach((el) => { el.updateFlags.lock = true; });
+            updatedLock.forEach((el) => {
+                el.updateFlags.lock = true;
+            });
             updateElements(updatedLock, HistoryActions.CHANGED_LOCK, 'lock');
         }
 
@@ -2257,7 +2285,11 @@ export class MaskShape extends Shape {
         this.shapeType = ShapeType.MASK;
     }
 
-    protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
+    protected validateStateBeforeSave(
+        data: ObjectState,
+        updated: ObjectState['updateFlags'],
+        frame?: number,
+    ): number[] {
         super.validateStateBeforeSave(data, updated, frame);
         if (updated.points) {
             const { width, height } = this.framesInfo[frame];
@@ -2266,14 +2298,13 @@ export class MaskShape extends Shape {
         return [];
     }
 
-    public removeUnderlyingPixels(frame: number):
-    {
-        clientIDs: number[],
+    public removeUnderlyingPixels(frame: number): {
+        clientIDs: number[];
         // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-        undo: Function,
+        undo: Function;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-        redo: Function,
-        emptyMaskOccurred: boolean,
+        redo: Function;
+        emptyMaskOccurred: boolean;
     } {
         if (frame !== this.frame) {
             throw new ArgumentError(
@@ -2281,8 +2312,9 @@ export class MaskShape extends Shape {
             );
         }
 
-        const others = this.getMasksOnFrame(frame)
-            .filter((mask: MaskShape) => mask.clientID !== this.clientID && !mask.removed);
+        const others = this.getMasksOnFrame(frame).filter(
+            (mask: MaskShape) => mask.clientID !== this.clientID && !mask.removed,
+        );
         const width = this.right - this.left + 1;
         const height = this.bottom - this.top + 1;
         const updatedObjects: Record<number, MaskShape> = {};
@@ -2303,10 +2335,9 @@ export class MaskShape extends Shape {
                     const translatedX = imageX - box.left;
                     const translatedY = imageY - box.top;
                     const [otherWidth, otherHeight] = [box.right - box.left + 1, box.bottom - box.top + 1];
-                    if (translatedX >= 0 && translatedX < otherWidth &&
-                        translatedY >= 0 && translatedY < otherHeight) {
-                        masks[other.clientID] = masks[other.clientID] ||
-                            rle2Mask(other.points, otherWidth, otherHeight);
+                    if (translatedX >= 0 && translatedX < otherWidth && translatedY >= 0 && translatedY < otherHeight) {
+                        masks[other.clientID] =
+                            masks[other.clientID] || rle2Mask(other.points, otherWidth, otherHeight);
                         const j = translatedY * otherWidth + translatedX;
                         masks[other.clientID][j] = 0;
                         updatedObjects[other.clientID] = other;
@@ -2413,13 +2444,7 @@ export class MaskShape extends Shape {
                 frame,
             );
         } else {
-            this.history.do(
-                HistoryActions.CHANGED_POINTS,
-                undo,
-                redo,
-                [this.clientID],
-                frame,
-            );
+            this.history.do(HistoryActions.CHANGED_POINTS, undo, redo, [this.clientID], frame);
         }
     }
 
@@ -2476,9 +2501,8 @@ export class RectangleTrack extends Track {
         return {
             points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
             rotation:
-                (leftPosition.rotation + findAngleDiff(
-                    rightPosition.rotation, leftPosition.rotation,
-                ) * offset + 360) % 360,
+                (leftPosition.rotation + findAngleDiff(rightPosition.rotation, leftPosition.rotation) * offset + 360) %
+                360,
             occluded: leftPosition.occluded,
             outside: leftPosition.outside,
             zOrder: leftPosition.zOrder,
@@ -2502,9 +2526,8 @@ export class EllipseTrack extends Track {
         return {
             points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
             rotation:
-                (leftPosition.rotation + findAngleDiff(
-                    rightPosition.rotation, leftPosition.rotation,
-                ) * offset + 360) % 360,
+                (leftPosition.rotation + findAngleDiff(rightPosition.rotation, leftPosition.rotation) * offset + 360) %
+                360,
             occluded: leftPosition.occluded,
             outside: leftPosition.outside,
             zOrder: leftPosition.zOrder,
@@ -2536,14 +2559,14 @@ class PolyTrack extends Track {
             };
         }
 
-        function toArray(points: { x: number; y: number; }[]): number[] {
+        function toArray(points: { x: number; y: number }[]): number[] {
             return points.reduce((acc, val) => {
                 acc.push(val.x, val.y);
                 return acc;
             }, []);
         }
 
-        function toPoints(array: number[]): { x: number; y: number; }[] {
+        function toPoints(array: number[]): { x: number; y: number }[] {
             return array.reduce((acc, _, index) => {
                 if (index % 2) {
                     acc.push({
@@ -2556,7 +2579,7 @@ class PolyTrack extends Track {
             }, []);
         }
 
-        function curveLength(points: { x: number; y: number; }[]): number {
+        function curveLength(points: { x: number; y: number }[]): number {
             return points.slice(1).reduce((acc, _, index) => {
                 const dx = points[index + 1].x - points[index].x;
                 const dy = points[index + 1].y - points[index].y;
@@ -2564,7 +2587,7 @@ class PolyTrack extends Track {
             }, 0);
         }
 
-        function curveToOffsetVec(points: { x: number; y: number; }[], length: number): number[] {
+        function curveToOffsetVec(points: { x: number; y: number }[], length: number): number[] {
             const offsetVector = [0]; // with initial value
             let accumulatedLength = 0;
 
@@ -2895,9 +2918,9 @@ export class CuboidTrack extends Track {
             // for 3D cuboids angle for different axies stored as a part of points array
             // we need to apply interpolation using the shortest arc for each angle
 
-            const [
-                angleX, angleY, angleZ,
-            ] = leftPosition.points.slice(3, 6).concat(rightPosition.points.slice(3, 6))
+            const [angleX, angleY, angleZ] = leftPosition.points
+                .slice(3, 6)
+                .concat(rightPosition.points.slice(3, 6))
                 .map((_angle: number) => {
                     if (_angle < 0) {
                         return _angle + Math.PI * 2;
@@ -2937,53 +2960,65 @@ export class SkeletonTrack extends Track {
         this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
         this.pinned = false;
 
-        const [cx, cy] = data.elements.reduce((acc, element, idx) => {
-            const shape = element.shapes[0];
-            if (!shape || shape.frame !== this.frame) {
-                return acc;
-            }
+        const [cx, cy] = data.elements.reduce(
+            (acc, element, idx) => {
+                const shape = element.shapes[0];
+                if (!shape || shape.frame !== this.frame) {
+                    return acc;
+                }
 
-            const result = [acc[0] + shape.points[0], acc[1] + shape.points[1], acc[2] + 1];
-            if (idx === data.elements.length - 1) {
-                // avoid division by 0, additionally
-                return [result[0] / (result[2] || 1), result[1] / (result[2] || 1)];
-            }
+                const result = [acc[0] + shape.points[0], acc[1] + shape.points[1], acc[2] + 1];
+                if (idx === data.elements.length - 1) {
+                    // avoid division by 0, additionally
+                    return [result[0] / (result[2] || 1), result[1] / (result[2] || 1)];
+                }
 
-            return result;
-        }, [0, 0, 0]);
+                return result;
+            },
+            [0, 0, 0],
+        );
 
-        this.elements = this.label.structure.sublabels.map((sublabel) => {
-            const element = data.elements.find((_element) => _element.label_id === sublabel.id);
-            const elementData = element || {
-                label_id: sublabel.id,
-                frame: this.frame,
-                attributes: [],
-                shapes: [{
-                    attributes: [],
-                    points: [cx, cy],
+        this.elements = this.label.structure.sublabels
+            .map((sublabel) => {
+                const element = data.elements.find((_element) => _element.label_id === sublabel.id);
+                const elementData = element || {
+                    label_id: sublabel.id,
                     frame: this.frame,
-                    occluded: false,
-                    outside: true,
-                    rotation: 0,
-                    type: sublabel.type as unknown as ShapeType,
-                }],
-            };
+                    attributes: [],
+                    shapes: [
+                        {
+                            attributes: [],
+                            points: [cx, cy],
+                            frame: this.frame,
+                            occluded: false,
+                            outside: true,
+                            rotation: 0,
+                            type: sublabel.type as unknown as ShapeType,
+                        },
+                    ],
+                };
 
-            // eslint-disable-next-line no-use-before-define
-            return trackFactory({
-                ...elementData,
-                group: this.group,
-                source: this.source,
-                shapes: elementData.shapes.map((shape) => ({
-                    ...shape,
-                    z_order: this.shapes[shape.frame]?.zOrder || 0,
-                })),
-            }, injection.nextClientID(), {
-                ...injection,
-                parentID: this.clientID,
-                readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-            });
-        }).filter(Boolean).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
+                // eslint-disable-next-line no-use-before-define
+                return trackFactory(
+                    {
+                        ...elementData,
+                        group: this.group,
+                        source: this.source,
+                        shapes: elementData.shapes.map((shape) => ({
+                            ...shape,
+                            z_order: this.shapes[shape.frame]?.zOrder || 0,
+                        })),
+                    },
+                    injection.nextClientID(),
+                    {
+                        ...injection,
+                        parentID: this.clientID,
+                        readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
+                    },
+                );
+            })
+            .filter(Boolean)
+            .sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
     }
 
     public updateFromServerResponse(body: SerializedTrack): void {
@@ -3084,8 +3119,7 @@ export class SkeletonTrack extends Track {
             element.shapes.forEach((shape) => {
                 shape.rotation = 0;
                 const { frame } = shape;
-                const skeletonShape = result.shapes
-                    .find((_skeletonShape) => _skeletonShape.frame === frame);
+                const skeletonShape = result.shapes.find((_skeletonShape) => _skeletonShape.frame === frame);
                 if (skeletonShape) {
                     shape.z_order = skeletonShape.z_order;
                 }
@@ -3142,24 +3176,31 @@ export class SkeletonTrack extends Track {
         for (const element of this.elements) {
             const keyframes = element.boundedKeyframes(targetFrame);
             if (keyframes.prev !== null) {
-                boundedKeyframes.prev = boundedKeyframes.prev === null || keyframes.prev > boundedKeyframes.prev ?
-                    keyframes.prev : boundedKeyframes.prev;
+                boundedKeyframes.prev =
+                    boundedKeyframes.prev === null || keyframes.prev > boundedKeyframes.prev
+                        ? keyframes.prev
+                        : boundedKeyframes.prev;
             }
 
             if (keyframes.next !== null) {
-                boundedKeyframes.next = boundedKeyframes.next === null || keyframes.next < boundedKeyframes.next ?
-                    keyframes.next : boundedKeyframes.next;
+                boundedKeyframes.next =
+                    boundedKeyframes.next === null || keyframes.next < boundedKeyframes.next
+                        ? keyframes.next
+                        : boundedKeyframes.next;
             }
 
             if (keyframes.first !== null) {
                 boundedKeyframes.first =
-                    boundedKeyframes.first === null || keyframes.first < boundedKeyframes.first ?
-                        keyframes.first : boundedKeyframes.first;
+                    boundedKeyframes.first === null || keyframes.first < boundedKeyframes.first
+                        ? keyframes.first
+                        : boundedKeyframes.first;
             }
 
             if (keyframes.last !== null) {
-                boundedKeyframes.last = boundedKeyframes.last === null || keyframes.last > boundedKeyframes.last ?
-                    keyframes.last : boundedKeyframes.last;
+                boundedKeyframes.last =
+                    boundedKeyframes.last === null || keyframes.last > boundedKeyframes.last
+                        ? keyframes.last
+                        : boundedKeyframes.last;
             }
         }
 
@@ -3201,7 +3242,8 @@ export class SkeletonTrack extends Track {
                     for (let i = 0; i < this.elements.length; i++) {
                         if (property) {
                             this.elements[i][property] = undoSkeletonProperties[i];
-                        } if (undoSkeletonShapes[i]) {
+                        }
+                        if (undoSkeletonShapes[i]) {
                             this.elements[i].shapes[frame] = undoSkeletonShapes[i];
                         } else if (redoSkeletonShapes[i]) {
                             delete this.elements[i].shapes[frame];
@@ -3241,28 +3283,44 @@ export class SkeletonTrack extends Track {
         const updatedHidden = data.elements.filter((el) => el.updateFlags.hidden);
         const updatedLock = data.elements.filter((el) => el.updateFlags.lock);
 
-        updatedOccluded.forEach((el) => { el.updateFlags.occluded = false; });
-        updatedOutside.forEach((el) => { el.updateFlags.outside = false; });
-        updatedKeyframe.forEach((el) => { el.updateFlags.keyframe = false; });
-        updatedHidden.forEach((el) => { el.updateFlags.hidden = false; });
-        updatedLock.forEach((el) => { el.updateFlags.lock = false; });
+        updatedOccluded.forEach((el) => {
+            el.updateFlags.occluded = false;
+        });
+        updatedOutside.forEach((el) => {
+            el.updateFlags.outside = false;
+        });
+        updatedKeyframe.forEach((el) => {
+            el.updateFlags.keyframe = false;
+        });
+        updatedHidden.forEach((el) => {
+            el.updateFlags.hidden = false;
+        });
+        updatedLock.forEach((el) => {
+            el.updateFlags.lock = false;
+        });
 
         if (updatedPoints.length) {
             updateElements(updatedPoints, HistoryActions.CHANGED_POINTS);
         }
 
         if (updatedOccluded.length) {
-            updatedOccluded.forEach((el) => { el.updateFlags.occluded = true; });
+            updatedOccluded.forEach((el) => {
+                el.updateFlags.occluded = true;
+            });
             updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED);
         }
 
         if (updatedOutside.length) {
-            updatedOutside.forEach((el) => { el.updateFlags.outside = true; });
+            updatedOutside.forEach((el) => {
+                el.updateFlags.outside = true;
+            });
             updateElements(updatedOutside, HistoryActions.CHANGED_OUTSIDE);
         }
 
         if (updatedKeyframe.length) {
-            updatedKeyframe.forEach((el) => { el.updateFlags.keyframe = true; });
+            updatedKeyframe.forEach((el) => {
+                el.updateFlags.keyframe = true;
+            });
             // todo: fix extra undo/redo change
             this.validateStateBeforeSave(data, data.updateFlags, frame);
             this.saveKeyframe(frame, data.keyframe);
@@ -3272,12 +3330,16 @@ export class SkeletonTrack extends Track {
         }
 
         if (updatedHidden.length) {
-            updatedHidden.forEach((el) => { el.updateFlags.hidden = true; });
+            updatedHidden.forEach((el) => {
+                el.updateFlags.hidden = true;
+            });
             updateElements(updatedHidden, HistoryActions.CHANGED_HIDDEN, 'hidden');
         }
 
         if (updatedLock.length) {
-            updatedLock.forEach((el) => { el.updateFlags.lock = true; });
+            updatedLock.forEach((el) => {
+                el.updateFlags.lock = true;
+            });
             updateElements(updatedLock, HistoryActions.CHANGED_LOCK, 'lock');
         }
 
@@ -3286,7 +3348,9 @@ export class SkeletonTrack extends Track {
     }
 
     protected getPosition(
-        targetFrame: number, leftKeyframe: number | null, rightKeyframe: number | null,
+        targetFrame: number,
+        leftKeyframe: number | null,
+        rightKeyframe: number | null,
     ): InterpolatedPosition & { keyframe: boolean } {
         const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
         const rightPosition = Number.isInteger(rightKeyframe) ? this.shapes[rightKeyframe] : null;
