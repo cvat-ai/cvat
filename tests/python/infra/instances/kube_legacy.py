@@ -159,7 +159,9 @@ def start(cvat_db_dir: Path | None = None) -> None:
 
     infra_health.wait_for_services()
 
-    exec_cvat(["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"])
+    exec_cvat(
+        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json"]
+    )
     exec_cvat_db(
         [
             "/bin/sh",

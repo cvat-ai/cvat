@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+import sys
 from pathlib import Path
-from subprocess import CalledProcessError, run
+from subprocess import CalledProcessError
 
 import pytest
 from infra import health as infra_health
@@ -35,6 +36,7 @@ def run_local_runtime_lifecycle(instance, *, runtime_mode: RuntimeMode, cleanup:
     if runtime_mode == RuntimeMode.DUMPDB:
         dump_db(
             prefixed_container_name=local_runtime.prefixed_container_name,
+            cvat_root_dir=instance.deps.cvat_root_dir,
             cvat_db_dir=instance.deps.cvat_db_dir,
         )
         pytest.exit("data.json has been updated", returncode=0)
@@ -124,7 +126,7 @@ def restore_runtime_state_from_assets(instance, local_runtime) -> None:
         [
             "sh",
             "-c",
-            "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json",
+            "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json",
         ]
     )
     run_command(
@@ -152,23 +154,24 @@ def restore_runtime_state_from_assets(instance, local_runtime) -> None:
     infra_health.wait_for_auth_login_ready()
 
 
-def dump_db(*, prefixed_container_name, cvat_db_dir: Path) -> None:
+def dump_db(*, prefixed_container_name, cvat_root_dir: Path, cvat_db_dir: Path) -> None:
     if prefixed_container_name("cvat_server") not in running_containers():
         pytest.exit("CVAT is not running")
-    with open(cvat_db_dir / "data.json", "w") as output:
-        try:
-            run(  # nosec
-                (
-                    f"docker exec {prefixed_container_name('cvat_server')} "
-                    "python manage.py dumpdata "
-                    "--indent 2 --natural-foreign "
-                    "--exclude=auth.permission --exclude=contenttypes"
-                ).split(),
-                stdout=output,
-                check=True,
-            )
-        except CalledProcessError:
-            pytest.exit("Database dump failed.\n")
+    try:
+        run_command(
+            [
+                sys.executable,
+                str(cvat_root_dir / "tests/python/shared/utils/dump_test_db.py"),
+                "--container",
+                prefixed_container_name("cvat_server"),
+                "--output",
+                str(cvat_db_dir / "data.json"),
+            ],
+            capture_output=False,
+            logger=logger,
+        )
+    except CalledProcessError:
+        pytest.exit("Database dump failed.\n")
 
 
 def _set_auto_started(local_runtime, value: bool) -> None:

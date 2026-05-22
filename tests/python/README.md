@@ -112,8 +112,8 @@ python tests/python/shared/utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-cat shared/assets/cvat_db/data.json | docker exec -i test_cvat_server_1 python manage.py loaddata_sorted
-cat shared/assets/cvat_db/cvat_data.tar.bz2 | docker exec -i test_cvat_server_1 tar --strip 3 -C /home/django/data/ -xj
+cat tests/python/shared/assets/cvat_db/data.json | docker exec -i test_cvat_server_1 python manage.py loaddata_sorted
+cat tests/python/shared/assets/cvat_db/cvat_data.tar.bz2 | docker exec -i test_cvat_server_1 tar --strip 3 -C /home/django/data/ -xj
 ```
 
 ## Assets directory structure
