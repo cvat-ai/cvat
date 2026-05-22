@@ -13,6 +13,8 @@ from .command_base import (
     GenericCreateFromBackupCommand,
     GenericDeleteCommand,
     GenericDownloadBackupCommand,
+    GenericExportDatasetCommand,
+    GenericImportDatasetCommand,
     GenericListCommand,
 )
 from .parsers import parse_label_arg
@@ -104,3 +106,16 @@ class ProjectBackup(GenericDownloadBackupCommand, GenericProjectCommand):
 @COMMANDS.command_class("create-from-backup")
 class ProjectCreateFromBackup(GenericCreateFromBackupCommand, GenericProjectCommand):
     pass
+
+
+@COMMANDS.command_class("export-dataset")
+class ProjectExportDataset(GenericExportDatasetCommand, GenericProjectCommand):
+    pass
+
+
+@COMMANDS.command_class("import-dataset")
+class ProjectImportDataset(GenericImportDatasetCommand, GenericProjectCommand):
+    description = textwrap.dedent("""\
+        Create tasks in a project from a dataset in the specified format
+        (e.g. 'YOLO 1.1'), including images and annotations.
+        """)

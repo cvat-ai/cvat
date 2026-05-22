@@ -62,9 +62,18 @@ def migration_001_add_access_token(client: clickhouse_connect.driver.client.Clie
         """))
 
 
+def migration_002_add_remote_addr(client: clickhouse_connect.driver.client.Client):
+    client.query(textwrap.dedent("""\
+        ALTER TABLE events
+        ADD COLUMN IF NOT EXISTS
+        `remote_addr` Nullable(String) DEFAULT NULL
+        """))
+
+
 migrations = [
     migration_000_initial,
     migration_001_add_access_token,
+    migration_002_add_remote_addr,
 ]
 
 
