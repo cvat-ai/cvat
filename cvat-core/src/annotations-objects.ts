@@ -61,10 +61,6 @@ function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape 
 }
 
 function computeNewSource(currentSource: Source): Source {
-    if (currentSource === Source.GT) {
-        return Source.GT;
-    }
-
     if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
         return Source.SEMI_AUTO;
     }
