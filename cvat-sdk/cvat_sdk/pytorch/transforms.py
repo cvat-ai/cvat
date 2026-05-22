@@ -87,7 +87,7 @@ class ExtractBoundingBoxes:
             if shape.type.value not in self.include_shape_types:
                 continue
 
-            if shape.get("rotation", 0) != 0:
+            if shape.rotation != 0:
                 raise UnsupportedDatasetError("Rotated shapes are not supported")
 
             boxes.append(_shape_bbox(shape=shape))
@@ -137,7 +137,7 @@ class ExtractInstanceMasks:
             if shape.type.value not in self.include_shape_types:
                 continue
 
-            if shape.get("rotation", 0) != 0:
+            if shape.rotation != 0:
                 raise UnsupportedDatasetError("Rotated shapes are not supported")
 
             boxes.append(_shape_bbox(shape=shape))
