@@ -134,7 +134,7 @@ export default interface CVATCore {
                 search?: string;
                 sort?: string;
                 filter?: string;
-            }
+            },
         ) => Promise<PaginatedResource<Project>>;
         searchNames: any;
     };
@@ -185,7 +185,7 @@ export default interface CVATCore {
             options: {
                 callback: (request: Request) => void,
                 initialRequest?: Request,
-            }
+            },
         ) => Promise<Request>;
         cancel: (rqID: string) => Promise<void>;
     };

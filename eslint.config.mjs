@@ -565,7 +565,7 @@ export function defineUiConfig(files, tsconfigRootDir) {
             'react/jsx-indent-props': 0,
             'react/jsx-props-no-spreading': 0,
             'jsx-quotes': ['error', 'prefer-single'],
-            'react/static-property-placement': ['warn', 'static public field']
+            'react/static-property-placement': ['warn', 'static public field'],
         },
     });
 }
@@ -594,7 +594,7 @@ const testsGlobalRules = {
     'no-underscore-dangle': ['error', { allowAfterThis: true }],
     ...importOrderRule,
     'function-paren-newline': 0,
-    'import/no-extraneous-dependencies': importNoExtraneousDependenciesRule('tests')
+    'import/no-extraneous-dependencies': importNoExtraneousDependenciesRule('tests'),
 };
 
 const testsBaseRules = _.omitBy(rootRules, (_, ruleName) => ruleName.startsWith('@typescript-eslint'));
@@ -743,14 +743,14 @@ export default [
         rules: {
             ...js.configs.recommended.rules,
             ..._.omitBy(rootRules, (_, rule) => rule.startsWith('@typescript')),
-            '@stylistic/comma-dangle': ['error', 'always-multiline']
+            '@stylistic/comma-dangle': ['error', 'always-multiline'],
         },
         languageOptions: {
             sourceType: 'module',
             parserOptions: {
                 parser: '@babel/eslint-parser',
                 sourceType: 'module',
-            }
-        }
-    }
+            },
+        },
+    },
 ];
