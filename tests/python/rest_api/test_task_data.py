@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import gzip
 import io
 import json
 import math
@@ -1828,9 +1829,12 @@ class TestPostTaskData:
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskData(TestTasksBase):
     @staticmethod
-    def _retrieve_data_with_range(api_client, resource, resource_id, *, range_header, **params):
+    def _retrieve_data_with_range(
+        api_client, resource, resource_id, *, range_header, extra_headers=None, **params
+    ):
         headers = api_client.get_common_headers()
         headers["Range"] = range_header
+        headers.update(extra_headers or {})
         query_params = list(params.items())
         api_client.update_params_for_auth(headers=headers, queries=query_params)
 
@@ -1891,6 +1895,26 @@ class TestTaskData(TestTasksBase):
         assert malformed_range_response.status == HTTPStatus.BAD_REQUEST
         assert malformed_range_response.data == b"Invalid Range header"
         assert "Content-Range" not in malformed_range_response.headers
+
+        gzip_range_response = self._retrieve_data_with_range(
+            api_client,
+            resource,
+            resource_id,
+            range_header=f"bytes=0-{len(full_chunk) - 1}",
+            extra_headers={"Accept-Encoding": "gzip"},
+            **params,
+        )
+
+        response_data = gzip_range_response.read(decode_content=False)
+        if gzip_range_response.headers.get("Content-Encoding") == "gzip":
+            response_data = gzip.decompress(response_data)
+
+        assert gzip_range_response.status == HTTPStatus.PARTIAL_CONTENT
+        assert response_data == full_chunk
+        assert gzip_range_response.headers["Accept-Ranges"] == "bytes"
+        assert gzip_range_response.headers["Content-Range"] == (
+            f"bytes 0-{len(full_chunk) - 1}/{len(full_chunk)}"
+        )
 
     def test_can_get_data_chunk_byte_ranges(self, fxt_uploaded_images_task: tuple[ITaskSpec, int]):
         _, task_id = fxt_uploaded_images_task
