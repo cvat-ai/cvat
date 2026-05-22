@@ -398,8 +398,8 @@
 }
 
 .cvat-objects-sidebar-z-layer-move-drop-area-active {
-    flex-basis: 24px;
-    height: 24px;
+    flex-basis: $grid-unit-size * 5;
+    height: $grid-unit-size * 5;
     margin: $grid-unit-size * 0.5 0;
     background: rgba($color: $completed-progress-color, $alpha: 18%);
 }

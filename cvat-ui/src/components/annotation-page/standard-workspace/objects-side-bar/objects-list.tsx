@@ -3,13 +3,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, {
-    useCallback, useEffect, useState,
-} from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import {
-    DndContext, DragEndEvent, PointerSensor, pointerWithin,
-    useSensor, useSensors,
+    DndContext, DragEndEvent, PointerSensor,
+    pointerWithin, useSensor, useSensors,
 } from '@dnd-kit/core';
 import {
     CaretDownOutlined, CaretRightOutlined, VerticalAlignMiddleOutlined,
@@ -18,28 +16,28 @@ import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
 import { StatesOrdering, Workspace } from 'reducers';
-import { ObjectState, ObjectType } from 'cvat-core-wrapper';
+import { ObjectState } from 'cvat-core-wrapper';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT,
     OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT,
 } from 'utils/objects-sidebar';
+
+import ObjectListHeader from './objects-list-header';
 import {
-    isLayerDroppedBesideItself,
     type LayerPlacement,
+    type PointerPosition,
+    type LayerMoveSource,
+    isLayerState,
+    isLayerDroppedBesideItself,
     parseLayerDragID,
     parseLayerDropID,
     parseLayerInsertDropID,
     parseObjectDragID,
-    type PointerPosition,
-    ZLayerInsertDropArea,
-    ZLayerSection,
-} from './z-layer-drag-and-drop';
-import ObjectListHeader from './objects-list-header';
-
-export type { LayerPlacement } from './z-layer-drag-and-drop';
-export type LayerMoveSource = { clientID: number } | { zOrder: number };
+} from './drag-and-drop';
+import LayerInsertDropArea from './drag-and-drop/layer-insert-drop-area';
+import LayerSection from './drag-and-drop/layer-section';
 
 interface Props {
     workspace: Workspace;
@@ -47,7 +45,7 @@ interface Props {
     statesLocked: boolean;
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
-    currentZLayer: number;
+    currentLayer: number;
     sortedStatesID: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
@@ -68,11 +66,6 @@ interface Props {
     changeShowGroundTruth(): void;
 }
 
-function getZLayers(objectStates: ObjectState[]): number[] {
-    return Array.from(new Set(objectStates.map((state: ObjectState): number => state.zOrder)))
-        .sort((left: number, right: number): number => left - right);
-}
-
 function ObjectListComponent(props: Props): JSX.Element {
     const {
         workspace,
@@ -80,7 +73,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesLocked,
         statesCollapsedAll,
         statesOrdering,
-        currentZLayer,
+        currentLayer,
         sortedStatesID,
         objectStates,
         visibleSkeletonElements,
@@ -107,26 +100,39 @@ function ObjectListComponent(props: Props): JSX.Element {
         },
     }));
 
-    const [collapsedZLayers, setCollapsedZLayers] = useState<number[]>([]);
+    // Keep collapse state in the list so expand/open events and collapse-all can coordinate all sections.
+    const [collapsedLayers, setCollapsedLayers] = useState<Set<number>>(() => new Set());
     const [dragActive, setDragActive] = useState<boolean>(false);
     const [dragPointerPosition, setDragPointerPosition] = useState<PointerPosition | null>(null);
-    const layerObjectStates = objectStates.filter((state: ObjectState): boolean => state.objectType !== ObjectType.TAG);
-    const zLayers = Array.from(new Set([...getZLayers(layerObjectStates), currentZLayer]))
-        .sort((left: number, right: number): number => left - right);
+    const layerObjectStates = objectStates.filter(isLayerState);
+    const zLayers = Array.from(
+        new Set(layerObjectStates.map((state) => state.zOrder)),
+    ).sort((left: number, right: number): number => left - right);
+
     const allLayersCollapsed = !!zLayers.length && zLayers.every((zOrder: number): boolean => (
-        collapsedZLayers.includes(zOrder)
+        collapsedLayers.has(zOrder)
     ));
 
     // Remove collapse markers for layers that disappeared after filtering or z-order changes.
     useEffect((): void => {
-        setCollapsedZLayers((current: number[]): number[] => (
-            current.filter((zOrder: number): boolean => zLayers.includes(zOrder))
-        ));
+        const availableLayers = new Set(zLayers);
+
+        setCollapsedLayers((current: Set<number>): Set<number> => {
+            const next = new Set<number>();
+
+            current.forEach((zOrder: number): void => {
+                if (availableLayers.has(zOrder)) {
+                    next.add(zOrder);
+                }
+            });
+
+            return next;
+        });
     }, [zLayers.join(',')]);
 
     // React to external requests to expand, scroll to, or open a layer in the sidebar.
     useEffect((): () => void => {
-        const onExpandZLayer = (event: Event): void => {
+        const onExpandLayer = (event: Event): void => {
             const { clientID, parentID } = (
                 event as CustomEvent<{ clientID: number; parentID: number | null }>
             ).detail;
@@ -136,18 +142,22 @@ function ObjectListComponent(props: Props): JSX.Element {
             ));
 
             if (expandedState) {
-                setCollapsedZLayers((current: number[]): number[] => (
-                    current.filter((zOrder: number): boolean => zOrder !== expandedState.zOrder)
-                ));
+                setCollapsedLayers((current: Set<number>): Set<number> => {
+                    const next = new Set(current);
+                    next.delete(expandedState.zOrder);
+                    return next;
+                });
             }
         };
 
-        const onOpenZLayer = (event: Event): void => {
+        const onOpenLayer = (event: Event): void => {
             const { zOrder } = (event as CustomEvent<{ zOrder: number }>).detail;
 
-            setCollapsedZLayers((current: number[]): number[] => (
-                current.filter((currentZOrder: number): boolean => currentZOrder !== zOrder)
-            ));
+            setCollapsedLayers((current: Set<number>): Set<number> => {
+                const next = new Set(current);
+                next.delete(zOrder);
+                return next;
+            });
 
             window.setTimeout((): void => {
                 window.document
@@ -156,12 +166,12 @@ function ObjectListComponent(props: Props): JSX.Element {
             });
         };
 
-        window.addEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandZLayer);
-        window.addEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenZLayer);
+        window.addEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandLayer);
+        window.addEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenLayer);
 
         return (): void => {
-            window.removeEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandZLayer);
-            window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenZLayer);
+            window.removeEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandLayer);
+            window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenLayer);
         };
     }, [objectStates]);
 
@@ -237,15 +247,21 @@ function ObjectListComponent(props: Props): JSX.Element {
     }, []);
 
     const toggleLayerCollapsed = (zOrder: number): void => {
-        setCollapsedZLayers((current: number[]): number[] => (
-            current.includes(zOrder) ?
-                current.filter((currentZOrder: number): boolean => currentZOrder !== zOrder) :
-                [...current, zOrder]
-        ));
+        setCollapsedLayers((current: Set<number>): Set<number> => {
+            const next = new Set(current);
+
+            if (next.has(zOrder)) {
+                next.delete(zOrder);
+            } else {
+                next.add(zOrder);
+            }
+
+            return next;
+        });
     };
 
     const toggleAllLayersCollapsed = (): void => {
-        setCollapsedZLayers(allLayersCollapsed ? [] : [...zLayers]);
+        setCollapsedLayers(allLayersCollapsed ? new Set() : new Set(zLayers));
     };
 
     return (
@@ -308,18 +324,18 @@ function ObjectListComponent(props: Props): JSX.Element {
 
                                     return (
                                         <React.Fragment key={zOrder}>
-                                            <ZLayerInsertDropArea
+                                            <LayerInsertDropArea
                                                 placement={placement}
                                                 pointerPosition={dragPointerPosition}
                                             />
-                                            <ZLayerSection
+                                            <LayerSection
                                                 zOrder={zOrder}
                                                 layerObjectIds={objectIdsByLayer[zOrder] || []}
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
-                                                selected={zOrder === currentZLayer}
-                                                visible={zOrder <= currentZLayer}
-                                                collapsed={collapsedZLayers.includes(zOrder)}
+                                                selected={zOrder === currentLayer}
+                                                visible={zOrder <= currentLayer}
+                                                collapsed={collapsedLayers.has(zOrder)}
                                                 selectLayer={selectLayer}
                                                 toggleLayerCollapsed={toggleLayerCollapsed}
                                             />
@@ -327,7 +343,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                     );
                                 })}
                                 {!!zLayers.length && (
-                                    <ZLayerInsertDropArea
+                                    <LayerInsertDropArea
                                         placement={{ after: zLayers[zLayers.length - 1] }}
                                         pointerPosition={dragPointerPosition}
                                     />

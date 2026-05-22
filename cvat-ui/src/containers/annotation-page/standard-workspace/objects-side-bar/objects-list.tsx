@@ -39,8 +39,10 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import {
-    type LayerPlacement, type LayerMoveSource,
-} from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
+    type LayerPlacement,
+    type LayerMoveSource,
+    isLayerState,
+} from 'components/annotation-page/standard-workspace/objects-side-bar/drag-and-drop';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 
@@ -210,10 +212,6 @@ const componentShortcuts = {
 };
 
 registerComponentShortcuts(componentShortcuts);
-
-function isLayerState(state: ObjectState): boolean {
-    return [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType);
-}
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -777,7 +775,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesCollapsedAll={statesCollapsedAll}
                     workspace={workspace}
                     statesOrdering={statesOrdering}
-                    currentZLayer={curZLayer}
+                    currentLayer={curZLayer}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}
