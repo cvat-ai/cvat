@@ -388,6 +388,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
                     "Datumaro 3D 1.0",
+                    "Generic TSV 1.0",
                 ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -530,6 +531,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
                     "Datumaro 3D 1.0",
+                    "Generic TSV 1.0",
                 ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -972,8 +974,9 @@ class TaskDumpUploadTest(_DbTestBase):
 
         with TestDir() as test_dir:
             for dump_format in dump_formats:
-                if not dump_format.ENABLED:
+                if not dump_format.ENABLED or dump_format.DISPLAY_NAME == "Generic TSV 1.0":
                     continue
+
                 dump_format_name = dump_format.DISPLAY_NAME
                 with self.subTest(format=dump_format_name):
                     images = self._generate_task_images(3)
@@ -1035,6 +1038,8 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Cityscapes 1.0",  # expanding annotations due to background mask
                     ]:
                         self.skipTest("Format is fail")
+                    elif dump_format_name == "Generic TSV 1.0":
+                        self.skipTest("Not relevant")  # requires an audio task
 
                     images = self._generate_task_images(3)
                     if dump_format_name in [
@@ -1171,6 +1176,10 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Datumaro 3D 1.0",
                     ]:
                         self.skipTest("Format is fail")
+                    elif dump_format_name == "Generic TSV 1.0":
+                        self.skipTest(
+                            "Not relevant"
+                        )  # requires an audio task, not available in datumaro
 
                     # create task
                     images = self._generate_task_images(3)
@@ -2299,6 +2308,7 @@ class ProjectDumpUpload(_DbTestBase):
                 if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
+                    "Generic TSV 1.0",
                 ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -2425,7 +2435,7 @@ class ProjectDumpUpload(_DbTestBase):
             for dump_format in dump_formats:
                 if (
                     not dump_format.ENABLED
-                    or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D
+                    or dump_format.DIMENSION != dm.bindings.DimensionType.DIM_2D
                 ):
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME

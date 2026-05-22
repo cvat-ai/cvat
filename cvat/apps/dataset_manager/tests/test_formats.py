@@ -265,38 +265,39 @@ class TaskExportTest(_DbTestBase):
         self.assertEqual(
             {f.DISPLAY_NAME for f in formats},
             {
+                "CamVid 1.0",
+                "Cityscapes 1.0",
                 "COCO 1.0",
                 "COCO Keypoints 1.0",
                 "CVAT for images 1.1",
                 "CVAT for video 1.1",
                 "Datumaro 1.0",
                 "Datumaro 3D 1.0",
+                "Generic TSV 1.0",
+                "ICDAR Localization 1.0",
+                "ICDAR Recognition 1.0",
+                "ICDAR Segmentation 1.0",
+                "ImageNet 1.0",
+                "KITTI 1.0",
+                "Kitti Raw Format 1.0",
                 "LabelMe 3.0",
+                "LFW 1.0",
+                "Market-1501 1.0",
                 "MOT 1.1",
                 "MOTS PNG 1.0",
+                "Open Images V6 1.0",
                 "PASCAL VOC 1.1",
                 "Segmentation mask 1.1",
-                "YOLO 1.1",
-                "ImageNet 1.0",
-                "CamVid 1.0",
-                "WiderFace 1.0",
-                "VGGFace2 1.0",
-                "Market-1501 1.0",
-                "ICDAR Recognition 1.0",
-                "ICDAR Localization 1.0",
-                "ICDAR Segmentation 1.0",
-                "Kitti Raw Format 1.0",
                 "Sly Point Cloud Format 1.0",
-                "KITTI 1.0",
-                "LFW 1.0",
-                "Cityscapes 1.0",
-                "Open Images V6 1.0",
                 "Ultralytics YOLO Classification 1.0",
-                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
                 "Ultralytics YOLO Detection 1.0",
                 "Ultralytics YOLO Detection Track 1.0",
+                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
                 "Ultralytics YOLO Pose 1.0",
                 "Ultralytics YOLO Segmentation 1.0",
+                "VGGFace2 1.0",
+                "WiderFace 1.0",
+                "YOLO 1.1",
             },
         )
 
@@ -306,36 +307,37 @@ class TaskExportTest(_DbTestBase):
         self.assertEqual(
             {f.DISPLAY_NAME for f in formats},
             {
+                "CamVid 1.0",
+                "Cityscapes 1.0",
                 "COCO 1.0",
                 "COCO Keypoints 1.0",
                 "CVAT 1.1",
-                "LabelMe 3.0",
-                "MOT 1.1",
-                "MOTS PNG 1.0",
-                "PASCAL VOC 1.1",
-                "Segmentation mask 1.1",
-                "YOLO 1.1",
-                "ImageNet 1.0",
-                "CamVid 1.0",
-                "WiderFace 1.0",
-                "VGGFace2 1.0",
-                "Market-1501 1.0",
-                "ICDAR Recognition 1.0",
-                "ICDAR Localization 1.0",
-                "ICDAR Segmentation 1.0",
-                "Kitti Raw Format 1.0",
-                "Sly Point Cloud Format 1.0",
-                "KITTI 1.0",
-                "LFW 1.0",
-                "Cityscapes 1.0",
-                "Open Images V6 1.0",
                 "Datumaro 1.0",
                 "Datumaro 3D 1.0",
+                "Generic TSV 1.0",
+                "ICDAR Localization 1.0",
+                "ICDAR Recognition 1.0",
+                "ICDAR Segmentation 1.0",
+                "ImageNet 1.0",
+                "KITTI 1.0",
+                "Kitti Raw Format 1.0",
+                "LabelMe 3.0",
+                "LFW 1.0",
+                "Market-1501 1.0",
+                "MOT 1.1",
+                "MOTS PNG 1.0",
+                "Open Images V6 1.0",
+                "PASCAL VOC 1.1",
+                "Segmentation mask 1.1",
+                "Sly Point Cloud Format 1.0",
                 "Ultralytics YOLO Classification 1.0",
-                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
                 "Ultralytics YOLO Detection 1.0",
+                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
                 "Ultralytics YOLO Pose 1.0",
                 "Ultralytics YOLO Segmentation 1.0",
+                "VGGFace2 1.0",
+                "WiderFace 1.0",
+                "YOLO 1.1",
             },
         )
 
@@ -354,7 +356,7 @@ class TaskExportTest(_DbTestBase):
                 with self.subTest(format=format_name, save_images=save_images):
                     if not f.ENABLED:
                         self.skipTest("Format is disabled")
-                    if format_name == "VGGFace2 1.0":
+                    if format_name in ("VGGFace2 1.0", "Generic TSV 1.0"):
                         self.skipTest("Format is disabled")
 
                     self._test_export(check, task, format_name, save_images=save_images)
@@ -1011,6 +1013,8 @@ class TaskAnnotationsImportTest(_DbTestBase):
             with self.subTest(format=format_name):
                 if not f.ENABLED:
                     self.skipTest("Format is disabled")
+                elif f.DISPLAY_NAME == "Generic TSV 1.0":
+                    self.skipTest("Not relevant")
 
                 self._test_can_import_annotations(task, format_name)
 
