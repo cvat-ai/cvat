@@ -3,15 +3,16 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
-import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
+import { Canvas, CanvasMode, RenderData } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    DimensionType, JobStage, Label, LabelType, ObjectType, ShapeType,
+    DimensionType, getCore, JobStage, Label, LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
@@ -23,8 +24,17 @@ import {
     Workspace,
 } from '.';
 
-function updateActivatedStateID(newStates: any[], prevActivatedStateID: number | null): number | null {
-    return prevActivatedStateID === null || newStates.some((_state: any) => _state.clientID === prevActivatedStateID) ?
+const cvat = getCore();
+
+function getAnnotationsRenderData(states: ObjectState[], filters: object[]): RenderData {
+    return {
+        visibleSkeletonElements: cvat.utils.getVisibleSkeletonElements(states, filters),
+    };
+}
+
+function updateActivatedStateID(newStates: ObjectState[], prevActivatedStateID: number | null): number | null {
+    return prevActivatedStateID === null ||
+        newStates.some((_state: ObjectState) => _state.clientID === prevActivatedStateID) ?
         prevActivatedStateID :
         null;
 }
@@ -111,6 +121,7 @@ const defaultState: AnnotationState = {
         activeShapeType: ShapeType.RECTANGLE,
         activeLabelID: null,
         activeObjectType: ObjectType.SHAPE,
+        activeInteractorParameters: {},
     },
     editing: {
         objectState: null,
@@ -128,6 +139,9 @@ const defaultState: AnnotationState = {
         collapsedAll: true,
         states: [],
         filters: [],
+        renderData: {
+            visibleSkeletonElements: {},
+        },
         resetGroupFlag: false,
         initialized: false,
         history: {
@@ -154,6 +168,10 @@ const defaultState: AnnotationState = {
     },
     propagate: {
         visible: false,
+    },
+    simplify: {
+        objectState: null,
+        originalPoints: null,
     },
     colors: [],
     sidebarCollapsed: false,
@@ -235,7 +253,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     meta: jobMeta,
                     labels: job.labels,
                     attributes: job.labels
-                        .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {
+                        .reduce((acc: Record<number, Label['attributes']>, label: Label) => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
@@ -377,6 +395,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     highlightedConflict: null,
                     states,
+                    renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,
                     zLayer: {
                         min: minZ,
@@ -610,7 +629,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
 
-            const clientIDs = prevStates.map((prevState: any): number => prevState.clientID);
+            const clientIDs = prevStates.map((prevState: ObjectState): number => prevState.clientID);
             for (const updatedState of updatedStates) {
                 const index = clientIDs.indexOf(updatedState.clientID);
                 if (index !== -1) {
@@ -631,6 +650,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         cur: clamp(state.annotations.zLayer.cur, minZLayer, maxZLayer),
                     },
                     states: nextStates,
+                    renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                     history,
                 },
             };
@@ -714,6 +734,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { objectState, history } = action.payload;
             const contextMenuClientID = state.canvas.contextMenu.clientID;
             const contextMenuVisible = state.canvas.contextMenu.visible;
+            const nextStates = state.annotations.states.filter(
+                (_objectState: ObjectState) => _objectState.clientID !== objectState.clientID,
+            );
 
             return {
                 ...state,
@@ -721,9 +744,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                     activatedStateID: null,
-                    states: state.annotations.states.filter(
-                        (_objectState: any) => _objectState.clientID !== objectState.clientID,
-                    ),
+                    states: nextStates,
+                    renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                 },
                 canvas: {
                     ...state.canvas,
@@ -793,6 +815,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 propagate: {
                     visible,
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_SIMPLIFY_VISIBILITY: {
+            const { objectState, originalPoints } = action.payload;
+            return {
+                ...state,
+                simplify: {
+                    objectState,
+                    originalPoints,
                 },
             };
         }
@@ -883,6 +915,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history: { undo: [], redo: [] },
                     states: [],
+                    renderData: getAnnotationsRenderData([], state.annotations.filters),
                     activatedStateID: null,
                     activatedElementID: null,
                     activatedAttributeID: null,
@@ -949,6 +982,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
+                    renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,
                     initialized: true,
                     zLayer: {
@@ -975,6 +1009,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     filters,
+                    renderData: getAnnotationsRenderData(state.annotations.states, filters),
                 },
             };
         }
@@ -984,7 +1019,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             let { activatedStateID } = state.annotations;
             if (activatedStateID !== null) {
-                const idx = state.annotations.states.map((_state: any) => _state.clientID).indexOf(activatedStateID);
+                const idx = state.annotations.states
+                    .map((_state: ObjectState) => _state.clientID)
+                    .indexOf(activatedStateID);
                 if (idx !== -1) {
                     if (state.annotations.states[idx].zOrder > cur) {
                         activatedStateID = null;
@@ -1031,7 +1068,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 drawing: {
                     ...state.drawing,
                     activeInteractor,
-                    activeInteractorParameters,
+                    activeInteractorParameters: _.cloneDeep(activeInteractorParameters),
                     activeLabelID,
                 },
                 canvas: {
@@ -1060,13 +1097,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             if (state.canvas.activeControl !== ActiveControl.CURSOR && state.workspace !== Workspace.SINGLE_SHAPE) {
                 return state;
             }
+            const nextStates = state.annotations.states.filter((_state) => !_state.isGroundTruth);
 
             return {
                 ...state,
                 workspace,
                 annotations: {
                     ...state.annotations,
-                    states: state.annotations.states.filter((_state) => !_state.isGroundTruth),
+                    states: nextStates,
+                    renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                     activatedStateID: null,
                     activatedAttributeID: null,
 

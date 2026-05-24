@@ -5,7 +5,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    Storage, ProjectOrTaskOrJob, Job, getCore, StorageLocation,
+    Storage, ProjectOrTaskOrJob, Job, getCore, StorageLocation, RQStatus,
 } from 'cvat-core-wrapper';
 import {
     RequestInstanceType, listen,
@@ -98,9 +98,11 @@ export const exportDatasetAsync = (
             .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
 
         if (rqID) {
-            await core.requests.listen(rqID, {
+            const result = await core.requests.listen(rqID, {
                 callback: (updatedRequest) => updateRequestProgress(updatedRequest, dispatch),
             });
+            if (result.status === RQStatus.CANCELED) return;
+
             const target = targetStorage.location;
             dispatch(exportActions.exportDatasetSuccess(
                 instance, instanceType, format, resource, target,
@@ -129,9 +131,11 @@ export const exportBackupAsync = (
     try {
         const rqID = await instance.backup(targetStorage, useDefaultSetting, fileName, lightweight);
         if (rqID) {
-            await core.requests.listen(rqID, {
+            const result = await core.requests.listen(rqID, {
                 callback: (updatedRequest) => updateRequestProgress(updatedRequest, dispatch),
             });
+            if (result.status === RQStatus.CANCELED) return;
+
             const target = targetStorage.location;
             dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
         } else {
@@ -160,6 +164,8 @@ export async function listenExportDatasetAsync(
     const instanceType = getInstanceType(instance);
     try {
         const result = await listen(rqID, dispatch);
+        if (result.status === RQStatus.CANCELED) return;
+
         const target = !result?.url ? StorageLocation.CLOUD_STORAGE : StorageLocation.LOCAL;
         dispatch(exportActions.exportDatasetSuccess(
             instance, instanceType, format, resource, target,
@@ -184,6 +190,8 @@ export async function listenExportBackupAsync(
 
     try {
         const result = await listen(rqID, dispatch);
+        if (result.status === RQStatus.CANCELED) return;
+
         const target = !result?.url ? StorageLocation.CLOUD_STORAGE : StorageLocation.LOCAL;
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
     } catch (error) {

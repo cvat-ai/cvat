@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import gzip
 import io
 import json
 import math
@@ -20,6 +21,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+from attrs.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -70,21 +72,6 @@ class TestPostTaskData:
     def test_can_create_task_with_defined_start_and_stop_frames(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with defined start and stop frames",
-            "labels": [
-                {
-                    "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [
-                        {
-                            "name": "a",
-                            "mutable": True,
-                            "input_type": "number",
-                            "default_value": "5",
-                            "values": ["4", "5", "6"],
-                        }
-                    ],
-                }
-            ],
         }
 
         task_data = {
@@ -104,7 +91,6 @@ class TestPostTaskData:
     def test_default_overlap_for_small_segment_size(self):
         task_spec = {
             "name": f"test {self._USERNAME} with default overlap and small segment_size",
-            "labels": [{"name": "car"}],
             "segment_size": 5,
         }
 
@@ -142,7 +128,6 @@ class TestPostTaskData:
     def test_task_segmentation(self, size, expected_segments):
         task_spec = {
             "name": f"test {self._USERNAME} to check segmentation into jobs",
-            "labels": [{"name": "car"}],
             "segment_size": 3,
             "overlap": 1,
         }
@@ -166,11 +151,6 @@ class TestPostTaskData:
     def test_can_create_task_with_exif_rotated_images(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated images",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         image_files = ["images/exif_rotated/left.jpg", "images/exif_rotated/right.jpg"]
@@ -210,11 +190,6 @@ class TestPostTaskData:
 
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with big images",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         # We need a big file to reproduce the problem
@@ -251,11 +226,6 @@ class TestPostTaskData:
     def test_can_create_task_with_exif_rotated_tif_image(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated tif image",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         image_files = ["images/exif_rotated/tif_left.tif"]
@@ -289,11 +259,6 @@ class TestPostTaskData:
     def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a custom sorting method",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         image_files = generate_image_files(15)
@@ -317,11 +282,6 @@ class TestPostTaskData:
     def test_can_create_task_with_video_without_keyframes(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a video without keyframes",
-            "labels": [
-                {
-                    "name": "label1",
-                }
-            ],
         }
 
         task_data = {
@@ -339,11 +299,6 @@ class TestPostTaskData:
     def test_can_create_task_with_sorting_method_predefined(self, data_source):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a custom sorting method",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         if data_source == "client_files":
@@ -591,6 +546,99 @@ class TestPostTaskData:
         kwargs = {"org_id": org_id} if org_id else {}
         create_task(self._USERNAME, task_spec, data_spec, **kwargs)
 
+    @pytest.mark.with_external_services
+    @pytest.mark.timeout(60)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)) is False,
+        reason="requires CVAT_ALLOW_STATIC_CACHE=true on the worker",
+    )
+    def test_cannot_create_task_with_cloud_storage_without_cache_when_server_file_is_missing(
+        self, cloud_storages
+    ):
+        cloud_storage = cloud_storages[1]
+        missing_key = "this_file_does_not_exist_for_full_download.png"
+
+        task_spec = {"name": "missing key, no cache", "labels": [{"name": "car"}]}
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": False,
+            "cloud_storage_id": cloud_storage["id"],
+            "server_files": [missing_key],
+        }
+
+        request_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+
+        message = request_details.message
+        assert "rest_framework.exceptions.NotFound" in message, message
+        assert f"The file '{missing_key}' not found" in message, message
+
+    @pytest.mark.with_external_services
+    @pytest.mark.timeout(60)
+    def test_can_create_task_with_cloud_storage_and_manifest_when_manifest_references_missing_file(
+        self, request, cloud_storages
+    ):
+        cloud_storage = cloud_storages[1]
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
+
+        prefix = "test_lying_manifest"
+        present_name = "01_present.png"
+        ghost_name = "02_ghost.png"
+        present_image = generate_image_file(filename=present_name)
+        present_image.seek(0)
+        s3_client.create_file(filename=f"{prefix}/{present_name}", data=present_image.getvalue())
+        request.addfinalizer(partial(s3_client.remove_file, filename=f"{prefix}/{present_name}"))
+
+        manifest_body = (
+            '{"version":"1.0"}\n'
+            '{"type":"images"}\n'
+            '{"name":"01_present","extension":".png","width":100,"height":50}\n'
+            '{"name":"02_ghost","extension":".png","width":100,"height":50}\n'
+        ).encode()
+        s3_client.create_file(filename=f"{prefix}/manifest.jsonl", data=manifest_body)
+        request.addfinalizer(partial(s3_client.remove_file, filename=f"{prefix}/manifest.jsonl"))
+
+        task_spec = {"name": "manifest lies", "labels": [{"name": "car"}]}
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage["id"],
+            "chunk_size": 1,
+            "server_files": [
+                f"{prefix}/{present_name}",
+                f"{prefix}/{ghost_name}",
+                f"{prefix}/manifest.jsonl",
+            ],
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
+
+        with make_api_client(self._USERNAME) as api_client:
+            task, _ = api_client.tasks_api.retrieve(task_id)
+
+        assert task.size == 2, task.size
+
+    @pytest.mark.with_external_services
+    @pytest.mark.timeout(60)
+    def test_cannot_create_task_with_cloud_storage_without_manifest_when_server_file_is_missing(
+        self, cloud_storages
+    ):
+        cloud_storage = cloud_storages[1]
+        missing_key = "this_file_does_not_exist_for_header_download.png"
+
+        task_spec = {"name": "missing key, cache, no manifest", "labels": [{"name": "car"}]}
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage["id"],
+            "server_files": [missing_key],
+        }
+
+        request_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+
+        message = request_details.message
+        assert "rest_framework.exceptions.NotFound" in message, message
+        assert f"The file '{missing_key}' not found" in message, message
+
     def _create_task_with_cloud_data(
         self,
         request,
@@ -801,11 +849,6 @@ class TestPostTaskData:
 
         task_spec = {
             "name": f"Task with files from foreign cloud storage {storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         data_spec = {
@@ -853,7 +896,7 @@ class TestPostTaskData:
             ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2, ""),
             ("abc_manifest.jsonl", "[d]*.jpeg", False, 1, ""),
             ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0, "No media data found"),
-            (None, "*", True, 0, "Only one video, archive, pdf, zip"),
+            (None, "*", True, 0, "Only one video, audio, archive, pdf, zip"),
             (None, "test/*", True, 3, ""),
             (None, "test/sub*1.jpeg", True, 1, ""),
             (None, "*image*.jpeg", True, 3, ""),
@@ -919,11 +962,6 @@ class TestPostTaskData:
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
         data_spec = {
@@ -1072,7 +1110,6 @@ class TestPostTaskData:
     def test_can_specify_file_job_mapping(self):
         task_spec = {
             "name": f"test file-job mapping",
-            "labels": [{"name": "car"}],
         }
 
         files = generate_image_files(7)
@@ -1247,7 +1284,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": fxt_test_name,
-            "labels": [{"name": "a"}],
             "segment_size": base_segment_size,
         }
 
@@ -1344,7 +1380,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": fxt_test_name,
-            "labels": [{"name": "a"}],
             "segment_size": base_segment_size,
         }
 
@@ -1443,7 +1478,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": request.node.name,
-            "labels": [{"name": "a"}],
             "segment_size": segment_size,
         }
 
@@ -1564,7 +1598,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": request.node.name,
-            "labels": [{"name": "a"}],
             "segment_size": segment_size,
         }
 
@@ -1721,7 +1754,6 @@ class TestPostTaskData:
 
         task_params = {
             "name": request.node.name,
-            "labels": [{"name": "a"}],
             "segment_size": segment_size,
             "consensus_replicas": replication,
         }
@@ -1796,6 +1828,133 @@ class TestPostTaskData:
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskData(TestTasksBase):
+    @staticmethod
+    def _retrieve_data_with_range(
+        api_client, resource, resource_id, *, range_header, extra_headers=None, **params
+    ):
+        headers = api_client.get_common_headers()
+        headers["Range"] = range_header
+        headers.update(extra_headers or {})
+        query_params = list(params.items())
+        api_client.update_params_for_auth(headers=headers, queries=query_params)
+
+        return api_client.rest_client.GET(
+            f"{api_client.configuration.host}/api/{resource}/{resource_id}/data",
+            headers=headers,
+            query_params=query_params,
+            _check_status=False,
+            _parse_response=False,
+        )
+
+    def _check_chunk_ranges(self, api_client, resource, resource_id, full_chunk, **params):
+        partial_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header="bytes=0-99", **params
+        )
+
+        assert partial_response.status == HTTPStatus.PARTIAL_CONTENT
+        assert partial_response.data == full_chunk[:100]
+        assert partial_response.headers["Accept-Ranges"] == "bytes"
+        assert partial_response.headers["Content-Range"] == f"bytes 0-99/{len(full_chunk)}"
+        assert partial_response.headers["Content-Length"] == "100"
+        assert "X-Checksum" in partial_response.headers
+        assert "X-Updated-Date" in partial_response.headers
+
+        range_start = min(100, len(full_chunk) - 1)
+        open_ended_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header=f"bytes={range_start}-", **params
+        )
+
+        assert open_ended_response.status == HTTPStatus.PARTIAL_CONTENT
+        assert open_ended_response.data == full_chunk[range_start:]
+        assert open_ended_response.headers["Content-Range"] == (
+            f"bytes {range_start}-{len(full_chunk) - 1}/{len(full_chunk)}"
+        )
+
+        invalid_range_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header=f"bytes={len(full_chunk)}-", **params
+        )
+
+        assert invalid_range_response.status == HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE
+        assert invalid_range_response.data == b""
+        assert invalid_range_response.headers["Accept-Ranges"] == "bytes"
+        assert invalid_range_response.headers["Content-Range"] == f"bytes */{len(full_chunk)}"
+
+        unsupported_unit_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header="items=0-99", **params
+        )
+
+        assert unsupported_unit_response.status == HTTPStatus.OK
+        assert unsupported_unit_response.data == full_chunk
+        assert unsupported_unit_response.headers["Accept-Ranges"] == "bytes"
+        assert "Content-Range" not in unsupported_unit_response.headers
+
+        malformed_range_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header="bytes=abc", **params
+        )
+
+        assert malformed_range_response.status == HTTPStatus.BAD_REQUEST
+        assert malformed_range_response.data == b"Invalid Range header"
+        assert "Content-Range" not in malformed_range_response.headers
+
+        gzip_range_response = self._retrieve_data_with_range(
+            api_client,
+            resource,
+            resource_id,
+            range_header=f"bytes=0-{len(full_chunk) - 1}",
+            extra_headers={"Accept-Encoding": "gzip"},
+            **params,
+        )
+
+        response_data = gzip_range_response.read(decode_content=False)
+        if gzip_range_response.headers.get("Content-Encoding") == "gzip":
+            response_data = gzip.decompress(response_data)
+
+        assert gzip_range_response.status == HTTPStatus.PARTIAL_CONTENT
+        assert response_data == full_chunk
+        assert gzip_range_response.headers["Accept-Ranges"] == "bytes"
+        assert gzip_range_response.headers["Content-Range"] == (
+            f"bytes 0-{len(full_chunk) - 1}/{len(full_chunk)}"
+        )
+
+    def test_can_get_data_chunk_byte_ranges(self, fxt_uploaded_images_task: tuple[ITaskSpec, int]):
+        _, task_id = fxt_uploaded_images_task
+
+        with make_api_client(self._USERNAME) as api_client:
+            _, task_chunk_response = api_client.tasks_api.retrieve_data(
+                task_id, type="chunk", quality="compressed", number=0, _parse_response=False
+            )
+            assert task_chunk_response.status == HTTPStatus.OK
+            assert task_chunk_response.headers["Accept-Ranges"] == "bytes"
+
+            self._check_chunk_ranges(
+                api_client,
+                "tasks",
+                task_id,
+                task_chunk_response.data,
+                type="chunk",
+                quality="compressed",
+                number=0,
+            )
+
+            jobs, _ = api_client.jobs_api.list(task_id=task_id)
+            job_id = jobs.results[0].id
+
+            _, job_chunk_response = api_client.jobs_api.retrieve_data(
+                job_id, type="chunk", quality="compressed", index=0, _parse_response=False
+            )
+            assert job_chunk_response.status == HTTPStatus.OK
+            assert job_chunk_response.headers["Accept-Ranges"] == "bytes"
+
+            self._check_chunk_ranges(
+                api_client,
+                "jobs",
+                job_id,
+                job_chunk_response.data,
+                type="chunk",
+                quality="compressed",
+                index=0,
+            )
+
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
 
@@ -1942,6 +2101,31 @@ class TestTaskData(TestTasksBase):
                             and quality == "original"
                         ),
                     )
+
+    def test_can_get_cloud_bin_pointcloud_task_chunks(
+        self, fxt_cloud_bin_pointcloud_task: tuple[ITaskSpec, int]
+    ):
+        _, task_id = fxt_cloud_bin_pointcloud_task
+
+        with make_api_client(self._USERNAME) as api_client:
+            task, _ = api_client.tasks_api.retrieve(task_id)
+
+            assert task.data_original_chunk_type == "imageset"
+            assert task.data_compressed_chunk_type == "imageset"
+
+            for quality in ["original", "compressed"]:
+                _, response = api_client.tasks_api.retrieve_data(
+                    task_id, type="chunk", quality=quality, number=0, _parse_response=False
+                )
+
+                chunk_file = io.BytesIO(response.data)
+                with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
+                    pcd_bytes = chunk_archive.read("000000.pcd")
+
+                assert b"POINTS 100\n" in pcd_bytes
+                data_marker = b"DATA binary\n"
+                data_start = pcd_bytes.find(data_marker) + len(data_marker)
+                assert len(pcd_bytes) - data_start == 100 * 16
 
     @pytest.mark.timeout(
         # This test has to check all the task chunks availability, it can make many requests

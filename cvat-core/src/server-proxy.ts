@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import FormData from 'form-data';
-import store from 'store';
 import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
@@ -14,7 +13,7 @@ import { axiosTusHttpStack } from './axios-tus';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
-    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, SerializedFunctionRequest,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
@@ -39,7 +38,10 @@ type Params = {
     filename?: string,
     action?: string,
     save_images?: boolean,
+    import_mode?: 'replace' | 'append',
 };
+
+type HealthCheckResponse = Record<string, string>;
 
 tus.defaultOptions.storeFingerprintForResuming = false;
 
@@ -167,6 +169,30 @@ function filterPythonTraceback(data: string): string {
     return data;
 }
 
+function generateHealthCheckError(errorData: AxiosError<unknown>): ServerError | null {
+    const { response } = errorData;
+    if (!response || response.data === null || Array.isArray(response.data) || typeof response.data !== 'object') {
+        return null;
+    }
+
+    const checks = Object.entries(response.data);
+    if (!checks.every(([, checkStatus]) => typeof checkStatus === 'string')) {
+        return null;
+    }
+
+    const failedChecks = checks.filter(([, checkStatus]) => checkStatus !== 'working');
+    if (!failedChecks.length) {
+        return null;
+    }
+
+    const message = [
+        'Server health check failed. CVAT cannot start while required services report errors:',
+        ...failedChecks.map(([checkName, checkStatus]) => `${checkName} - ${checkStatus}`),
+    ].join('\n');
+
+    return new ServerError(message, response.status);
+}
+
 function generateError(errorData: AxiosError): ServerError {
     if (errorData.response) {
         if (errorData.response.status >= 500 && typeof errorData.response.data === 'string') {
@@ -229,8 +255,13 @@ function generateError(errorData: AxiosError): ServerError {
         );
     }
 
+    if (errorData.code === 'ECONNABORTED' || errorData.message.toLowerCase().includes('timeout')) {
+        return new ServerError('The request timed out. The CVAT server did not respond in time.', 0);
+    }
+
     // Server is unavailable (no any response)
-    const message = `${errorData.message}.`; // usually is "Error Network"
+    const message = errorData.message === 'Network Error' ?
+        'Network error. The CVAT server is not reachable.' : `${errorData.message}.`;
     return new ServerError(message, 0);
 }
 
@@ -242,7 +273,7 @@ function prepareData(details) {
                 data.append(`${key}[${idx}]`, element);
             });
         } else {
-            data.set(key, value);
+            (data as any).set(key, value);
         }
     }
     return data;
@@ -331,6 +362,7 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    // eslint-disable-next-line no-param-reassign
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
 });
@@ -347,11 +379,6 @@ Axios.interceptors.response.use((response) => {
 
     return response;
 });
-
-// Previously, we used to store an additional authentication token in local storage.
-// Now we don't, and if the user still has one stored, we'll remove it to prevent
-// unnecessary credential exposure.
-store.remove('token');
 
 function setAuthData(response: AxiosResponse): void {
     if (response.headers['set-cookie']) {
@@ -430,7 +457,7 @@ async function register(
     lastName: string,
     email: string,
     password: string,
-    confirmations: Record<string, string>,
+    confirmations: { name: string; value: boolean; }[],
 ): Promise<SerializedRegister> {
     let response = null;
     try {
@@ -558,7 +585,7 @@ async function authenticated(): Promise<boolean> {
     return true;
 }
 
-async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedRequest>> {
+async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedApiToken>> {
     const { backendAPI } = config;
 
     let response = null;
@@ -620,7 +647,7 @@ async function healthCheck(
     checkPeriod: number,
     requestTimeout: number,
     progressCallback?: (status: string) => void,
-): Promise<void> {
+): Promise<HealthCheckResponse> {
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health/?format=json`;
 
@@ -628,14 +655,14 @@ async function healthCheck(
     const adjustedCheckPeriod = Math.max(100, checkPeriod);
     const adjustedRequestTimeout = Math.max(500, requestTimeout);
 
-    let lastError: AxiosError = null;
+    let lastError: AxiosError<unknown> = null;
     for (let attempt = 1; attempt <= adjustedMaxRetries; attempt++) {
         if (progressCallback) {
             progressCallback(`${attempt}/${adjustedMaxRetries}`);
         }
 
         try {
-            const response = await Axios.get(url, { timeout: adjustedRequestTimeout });
+            const response = await Axios.get<HealthCheckResponse>(url, { timeout: adjustedRequestTimeout });
             return response.data;
         } catch (error) {
             lastError = error;
@@ -645,7 +672,7 @@ async function healthCheck(
         }
     }
 
-    throw generateError(lastError);
+    throw generateHealthCheckError(lastError) || generateError(lastError);
 }
 
 export interface ServerRequestConfig {
@@ -774,7 +801,7 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
     return response.data.results;
 }
 
-async function saveProject(id: number, projectData: Partial<SerializedProject>): Promise<SerializedProject> {
+async function saveProject(id: number, projectData: Record<string, unknown>): Promise<SerializedProject> {
     const { backendAPI } = config;
 
     let response = null;
@@ -846,7 +873,7 @@ async function getTasks(
     return response.data.results;
 }
 
-async function saveTask(id: number, taskData: Partial<SerializedTask>): Promise<SerializedTask> {
+async function saveTask(id: number, taskData: Record<string, unknown>): Promise<SerializedTask> {
     const { backendAPI } = config;
 
     let response = null;
@@ -887,7 +914,10 @@ async function mergeConsensusJobs(id: number, instanceType: string): Promise<str
                 if (status === 202) {
                     resolve(rqID);
                 } else {
-                    reject(generateError(response));
+                    reject(new ServerError(
+                        response.statusText || 'Unexpected response while merging consensus jobs',
+                        response.status,
+                    ));
                 }
             } catch (errorData) {
                 reject(generateError(errorData));
@@ -1162,7 +1192,7 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
 
     try {
         if (isCloudStorage) {
-            params.filename = file;
+            params.filename = file as string;
             response = await Axios.post(url,
                 new FormData(),
                 {
@@ -1218,6 +1248,7 @@ async function createTask(
         }
         totalSize += file.size;
     }
+    // eslint-disable-next-line no-param-reassign
     delete taskDataSpec.client_files;
 
     const taskData = new FormData();
@@ -1227,7 +1258,7 @@ async function createTask(
                 taskData.append(`${key}[${idx}]`, element);
             });
         } else if (typeof value !== 'object') {
-            taskData.set(key, value);
+            (taskData as any).set(key, value);
         }
     }
 
@@ -1281,7 +1312,7 @@ async function createTask(
                 headers: { 'Upload-Multiple': true },
             });
             for (let i = 0; i < fileBulks[currentChunkNumber].files.length; i++) {
-                taskData.delete(`client_files[${i}]`);
+                (taskData as any).delete(`client_files[${i}]`);
             }
             totalSentSize += fileBulks[currentChunkNumber].size;
             currentChunkNumber++;
@@ -1388,14 +1419,14 @@ async function getIssues(filter) {
                 ...organization,
             });
 
-            const issuesById = response.results.reduce((acc, val: { id: number }) => {
+            const issuesById = response.results.reduce((acc, val) => {
                 acc[val.id] = val;
                 return acc;
             }, {});
 
             const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
-                acc[val.issue] = acc[val.issue] || [];
-                acc[val.issue].push(val);
+                acc[(val as any).issue] = acc[(val as any).issue] ?? [];
+                acc[(val as any).issue].push(val);
                 return acc;
             }, {});
 
@@ -1470,7 +1501,8 @@ async function deleteIssue(issueID: number): Promise<void> {
     }
 }
 
-async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+type JobWritePayload = Partial<Omit<SerializedJob, 'assignee'> & { assignee: number | null }>;
+async function saveJob(id: number, jobData: JobWritePayload): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1483,7 +1515,7 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
     return response.data;
 }
 
-async function createJob(jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+async function createJob(jobData: JobWritePayload): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1528,7 +1560,7 @@ const validationLayout = (instance: 'tasks' | 'jobs') => async (
     }
 };
 
-async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]> {
+async function getUsers(filter: Record<string, unknown> = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1599,7 +1631,7 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
     }
 }
 
-async function getData(jid: number, chunk: number, quality: ChunkQuality, retry = 0): Promise<ArrayBuffer> {
+async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
     try {
@@ -1612,28 +1644,6 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
             },
             responseType: 'arraybuffer',
         });
-
-        const contentLength = +(response.headers || {})['content-length'];
-        if (Number.isInteger(contentLength) && response.data.byteLength < +contentLength) {
-            if (retry < 10) {
-                // corrupted zip tmp workaround
-                // if content length more than received byteLength, request the chunk again
-                // and log this error
-                setTimeout(() => {
-                    throw new Error(
-                        `Truncated chunk, try: ${retry}. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
-                        `Body size: ${response.data.byteLength}`,
-                    );
-                });
-                return await getData(jid, chunk, quality, retry + 1);
-            }
-
-            // not to try anymore, throw explicit error
-            throw new Error(
-                `Truncated chunk. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
-                `Body size: ${response.data.byteLength}`,
-            );
-        }
 
         return response.data;
     } catch (errorData) {
@@ -1721,7 +1731,7 @@ async function uploadAnnotations(
     useDefaultLocation: boolean,
     sourceStorage: Storage,
     file: File | string,
-    options: { convMaskToPoly: boolean },
+    options: { convMaskToPoly: boolean, importMode: 'replace' | 'append' },
 ): Promise<string> {
     const { backendAPI, origin } = config;
     const params: Params & { conv_mask_to_poly: boolean } = {
@@ -1730,6 +1740,7 @@ async function uploadAnnotations(
         format,
         filename: typeof file === 'string' ? file : file.name,
         conv_mask_to_poly: options.convMaskToPoly,
+        import_mode: options.importMode,
     };
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
@@ -1849,7 +1860,7 @@ async function getLambdaFunctions(): Promise<SerializedModel[]> {
     }
 }
 
-async function runLambdaRequest(body) {
+async function runLambdaRequest(body): Promise<SerializedFunctionRequest> {
     const { backendAPI } = config;
 
     try {
@@ -1873,7 +1884,7 @@ async function callLambdaFunction(funId, body) {
     }
 }
 
-async function getLambdaRequests() {
+async function getLambdaRequests(): Promise<SerializedFunctionRequest[]> {
     const { backendAPI } = config;
 
     try {
@@ -1970,7 +1981,7 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
     }
 }
 
-async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
+async function getCloudStorageContent(id: number, path?: string, nextToken?: string, manifestPath?: string):
 Promise<{ content: SerializedRemoteFile[], next: string | null }> {
     const { backendAPI } = config;
 
@@ -2473,7 +2484,6 @@ async function getQualityReports(
 
 export default Object.freeze({
     server: Object.freeze({
-        setAuthData,
         about,
         share,
         formats,

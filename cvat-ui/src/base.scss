@@ -38,6 +38,7 @@ $box-shadow-transition: 0.2s;
 $monospaced-fonts-stack: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono,
     Courier New, monospace;
 $scroll-breakpoint: 1300px;
+$annotation-view-control-transition: 0.1s transform;
 
 .cvat-base-preview {
     .ant-spin {
@@ -186,8 +187,15 @@ $scroll-breakpoint: 1300px;
     > .cvat-resource-list-wrapper {
         flex-grow: 1;
         overflow-y: auto;
+        scrollbar-gutter: stable;
         padding-top: $grid-unit-size;
         align-items: start;
+    }
+
+    > .cvat-resource-top-bar-wrapper {
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+        min-height: fit-content;
     }
 
     > .cvat-resource-pagination-wrapper {

@@ -7,8 +7,9 @@ import { Attribute } from './labels';
 import { ShapeType, AttributeType, ObjectType } from './enums';
 import { SerializedShape } from './server-response-types';
 import ObjectState, { SerializedData } from './object-state';
+import AnnotationsFilter from './annotations-filter';
 
-export function checkNumberOfPoints(shapeType: ShapeType, points: number[]): void {
+export function checkNumberOfPoints(shapeType: ShapeType, points: ArrayLike<number>): void {
     if (shapeType === ShapeType.RECTANGLE) {
         if (points.length / 2 !== 2) {
             throw new DataError(`Rectangle must have 2 points, but got ${points.length / 2}`);
@@ -38,7 +39,11 @@ export function checkNumberOfPoints(shapeType: ShapeType, points: number[]): voi
             throw new DataError('Mask must not be empty');
         }
 
-        const [left, top, right, bottom] = points.slice(-4);
+        const { length } = points;
+        const left = points[length - 4];
+        const top = points[length - 3];
+        const right = points[length - 2];
+        const bottom = points[length - 1];
         const [width, height] = [right - left, bottom - top];
         if (width < 0 || !Number.isInteger(width) || height < 0 || !Number.isInteger(height)) {
             throw new DataError(`Mask width, height must be positive integers, but got ${width}x${height}`);
@@ -66,7 +71,7 @@ export function findAngleDiff(rightAngle: number, leftAngle: number): number {
     return angleDiff;
 }
 
-export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean {
+export function checkShapeArea(shapeType: ShapeType, points: ArrayLike<number>): boolean {
     const MIN_SHAPE_SIZE = 1;
 
     if (shapeType === ShapeType.POINTS) {
@@ -77,14 +82,18 @@ export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean 
     let height = 0;
 
     if (shapeType === ShapeType.MASK) {
-        const [left, top, right, bottom] = points.slice(-4);
+        const { length } = points;
+        const left = points[length - 4];
+        const top = points[length - 3];
+        const right = points[length - 2];
+        const bottom = points[length - 1];
         [width, height] = [right - left + 1, bottom - top + 1];
     } else if (shapeType === ShapeType.RECTANGLE) {
-        const [xtl, ytl, xbr, ybr] = points;
-        [width, height] = [xbr - xtl, ybr - ytl];
+        width = points[2] - points[0];
+        height = points[3] - points[1];
     } else if (shapeType === ShapeType.ELLIPSE) {
-        const [cx, cy, rightX, topY] = points;
-        [width, height] = [(rightX - cx) * 2, (cy - topY) * 2];
+        width = (points[2] - points[0]) * 2;
+        height = (points[1] - points[3]) * 2;
     } else {
         // polygon, polyline, cuboid, skeleton
         let xmin = Number.MAX_SAFE_INTEGER;
@@ -119,7 +128,7 @@ export function rotatePoint(x: number, y: number, angle: number, cx = 0, cy = 0)
     return [rotX, rotY];
 }
 
-export function computeWrappingBox(points: number[], margin = 0): {
+export function computeWrappingBox(points: ArrayLike<number>, margin = 0): {
     xtl: number;
     ytl: number;
     xbr: number;
@@ -181,25 +190,26 @@ export function validateAttributeValue(value: string, attr: Attribute): boolean 
     return values.includes(value);
 }
 
-// Method computes correct mask wrapping bbox
-// Taking into account image size and removing leading/terminating zeros, minimizing the mask size
-function findMaskBorders(rle: number[], width: number, height: number): {
+/**
+ * Computes the minimal image-space bounding box of non-zero mask pixels.
+ * Pixels outside the image bounds are ignored.
+ * Returns null if the mask has no visible non-zero pixels inside the image.
+ */
+function findMaskBorders(rle: ArrayLike<number>, width: number, height: number): {
     top: number,
     left: number,
     right: number,
     bottom: number,
-} {
-    const [currentLeft, currentTop, currentRight, currentBottom] = rle.slice(-4);
-    const [currentWidth, currentHeight] = [currentRight - currentLeft + 1, currentBottom - currentTop + 1];
-    const empty = {
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-    };
+} | null {
+    const currentLeft = rle[rle.length - 4];
+    const currentTop = rle[rle.length - 3];
+    const currentRight = rle[rle.length - 2];
+    const currentBottom = rle[rle.length - 1];
+    const currentWidth = currentRight - currentLeft + 1;
+    const currentHeight = currentBottom - currentTop + 1;
 
-    if (currentWidth < 0 || currentHeight < 0) {
-        return empty;
+    if (currentWidth <= 0 || currentHeight <= 0) {
+        return null;
     }
 
     let x = 0; // mask-relative
@@ -221,15 +231,13 @@ function findMaskBorders(rle: number[], width: number, height: number): {
             const absY = y + currentTop;
             const absX = x + currentLeft;
 
-            if (!(absX >= width || absY >= height || absX < 0 || absY < 0) && value) {
-                if (value) {
-                    // update coordinates to fit them around non-zero values
-                    atLeastOnePixel = true;
-                    left = Math.min(left, absX);
-                    top = Math.min(top, absY);
-                    right = Math.max(right, absX);
-                    bottom = Math.max(bottom, absY);
-                }
+            if (value && absX >= 0 && absX < width && absY >= 0 && absY < height) {
+                // update coordinates to fit them around non-zero values
+                atLeastOnePixel = true;
+                left = Math.min(left, absX);
+                top = Math.min(top, absY);
+                right = Math.max(right, absX);
+                bottom = Math.max(bottom, absY);
             }
 
             // shift coordinates and count
@@ -246,7 +254,7 @@ function findMaskBorders(rle: number[], width: number, height: number): {
     }
 
     if (!atLeastOnePixel) {
-        return empty;
+        return null;
     }
 
     return {
@@ -254,25 +262,29 @@ function findMaskBorders(rle: number[], width: number, height: number): {
     };
 }
 
-// Method performs cropping of a mask in RLE format
-// It cuts mask parts that are out of the image width/height
-// Also it cuts leading/terminating zeros and minimizes mask wrapping bounding box
-export function cropMask(rle: number[], width: number, height: number): number[] {
-    const [currentLeft, currentTop, currentRight] = rle.slice(-4, -1);
+/**
+ * Crops an RLE mask to the visible image area and minimizes its wrapping box.
+ * Parts of the mask outside image bounds are discarded.
+ * Returns an empty mask RLE if no visible area remains after cropping.
+ */
+export function cropMask(rle: ArrayLike<number>, width: number, height: number): number[] {
+    const currentLeft = rle[rle.length - 4];
+    const currentTop = rle[rle.length - 3];
+    const currentRight = rle[rle.length - 2];
+    const borders = findMaskBorders(rle, width, height);
+    if (!borders) {
+        return [0, 0, 0, 0, 0];
+    }
+
     const {
         top, left, right, bottom,
-    } = findMaskBorders(rle, width, height);
-
-    if (top === bottom || left === right) {
-        return [0, 0, 0, 0];
-    }
+    } = borders;
 
     const maskWidth = currentRight - currentLeft + 1;
     const croppedRLE = [];
 
     let x = 0; // mask-relative
     let y = 0; // mask-relative
-    let value = 0;
     let croppedCount = 0;
     for (let idx = 0; idx < rle.length - 4; idx++) {
         let count = rle[idx];
@@ -281,8 +293,8 @@ export function cropMask(rle: number[], width: number, height: number): number[]
             const absY = y + currentTop;
             const absX = x + currentLeft;
 
-            if (!(absX > right || absY > bottom || absX < left || absY < top)) {
-                // absolute coordinates stay within the image
+            if (absX >= left && absX <= right && absY >= top && absY <= bottom) {
+                // absolute coordinates stay within the cropped bounding box
                 croppedCount++;
             }
 
@@ -294,9 +306,6 @@ export function cropMask(rle: number[], width: number, height: number): number[]
             }
             count--;
         }
-
-        // switch current rle value
-        value = Math.abs(value - 1);
 
         // length - 5 === latest iteration
         // after this iteration we do not need to pop value
@@ -311,55 +320,10 @@ export function cropMask(rle: number[], width: number, height: number): number[]
 
     croppedRLE.push(left, top, right, bottom);
     if (!checkShapeArea(ShapeType.MASK, croppedRLE)) {
-        return [0, 0, 0, 0];
+        return [0, 0, 0, 0, 0];
     }
 
     return croppedRLE;
-}
-
-export function mask2Rle(mask: number[]): number[] {
-    return mask.reduce((acc, val, idx, arr) => {
-        if (idx > 0) {
-            if (arr[idx - 1] === val) {
-                acc[acc.length - 1] += 1;
-            } else {
-                acc.push(1);
-            }
-
-            return acc;
-        }
-
-        if (val > 0) {
-            // 0, 0, 0, 1 => [3, 1]
-            // 1, 1, 0, 0 => [0, 2, 2]
-            acc.push(0, 1);
-        } else {
-            acc.push(1);
-        }
-
-        return acc;
-    }, []);
-}
-
-export function rle2Mask(rle: number[], width: number, height: number): number[] {
-    const decoded = Array(width * height).fill(0);
-    const { length } = rle;
-    let decodedIdx = 0;
-    let value = 0;
-    let i = 0;
-
-    while (i < length) {
-        let count = rle[i];
-        while (count > 0) {
-            decoded[decodedIdx] = value;
-            decodedIdx++;
-            count--;
-        }
-        i++;
-        value = Math.abs(value - 1);
-    }
-
-    return decoded;
 }
 
 export function propagateShapes<T extends SerializedShape | ObjectState>(
@@ -379,7 +343,7 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
                 rotation: shape.rotation,
                 frame: from,
                 elements: shape.shapeType === 'skeleton' ? shape.elements
-                    .map((element: ObjectState): any => getCopy(element as T)) : [],
+                    .map((element: ObjectState): SerializedData => getCopy(element as T) as SerializedData) : [],
                 source: shape.source,
             };
         }
@@ -429,4 +393,12 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
     }
 
     return states;
+}
+
+export function getVisibleSkeletonElements(
+    objectStates: ObjectState[],
+    filters: object[],
+): Record<number, number[]> {
+    const serializedStates = objectStates.map((objectState: ObjectState): SerializedData => objectState.serialize());
+    return new AnnotationsFilter().filterSerializedSkeletonElements(serializedStates, filters);
 }

@@ -11,7 +11,8 @@ import {
     CombinedState,
 } from 'reducers';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
-import { ImageFilter, ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
+import { SerializedImageFilter } from 'cvat-core-wrapper';
+import { ImageFilter, ImageFilterAlias } from 'utils/image-processing';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correction';
 import { resolveConflicts } from 'utils/conflict-detector';
 import { shortcutsActions } from './shortcuts-actions';
@@ -45,6 +46,7 @@ export enum SettingsActionTypes {
     CHANGE_FOCUSED_OBJECT_PADDING = 'CHANGE_FOCUSED_OBJECT_PADDING',
     CHANGE_DEFAULT_APPROX_POLY_THRESHOLD = 'CHANGE_DEFAULT_APPROX_POLY_THRESHOLD',
     SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
+    SWITCH_SNAP_TO_POINT = 'SWITCH_SNAP_TO_POINT',
     SWITCH_ADAPTIVE_ZOOM = 'SWITCH_ADAPTIVE_ZOOM',
     SWITCH_INTELLIGENT_POLYGON_CROP = 'SWITCH_INTELLIGENT_POLYGON_CROP',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
@@ -328,6 +330,15 @@ export function switchAutomaticBordering(automaticBordering: boolean): AnyAction
         type: SettingsActionTypes.SWITCH_AUTOMATIC_BORDERING,
         payload: {
             automaticBordering,
+        },
+    };
+}
+
+export function switchSnapToPoint(snapToPoint: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SNAP_TO_POINT,
+        payload: {
+            snapToPoint,
         },
     };
 }

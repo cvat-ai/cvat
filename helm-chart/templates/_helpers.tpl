@@ -119,6 +119,12 @@ The name of the service account to use for backend pods
       name: "{{ tpl (.Values.postgresql.secret.name) . }}"
       key: password
 
+- name: CVAT_NUM_PROXIES
+  value: "{{ .Values.cvat.backend.numProxies }}"
+
+- name: CVAT_OPA_URL
+  value: "http://{{ .Release.Name }}-opa-service:8181"
+
 {{- if .Values.analytics.enabled}}
 - name: CVAT_ANALYTICS
   value: "1"
@@ -167,6 +173,43 @@ The name of the service account to use for backend pods
 {{- range $envName, $envValueTemplate := .Values.cvat.backend.extensionEnv }}
 - name: {{ $envName | toYaml }}
   value: {{ tpl $envValueTemplate $ | toYaml }}
+{{- end }}
+{{- end }}
+
+{{- define "cvat.backend.initContainers" -}}
+{{- $localValues := .Values.cvat.backend.server }}
+{{- if .Values.cvat.backend.permissionFix.enabled -}}
+- name: user-data-permission-fix
+  image: {{ .Values.cvat.backend.permissionFix.image }}:{{ .Values.cvat.backend.permissionFix.tag }}
+  imagePullPolicy: {{ .Values.cvat.backend.permissionFix.imagePullPolicy }}
+  command: ["/bin/sh", "-c"]
+  args:
+  {{- if not .Values.cvat.backend.permissionFix.commandOverride -}}
+  {{- with join " " .Values.cvat.backend.permissionFix.paths }}
+    - "chmod -R 777 {{ . }}"
+  {{- end -}}
+  {{ else }}
+  {{- toYaml .Values.cvat.backend.permissionFix.commandOverride | nindent 3 }}
+  {{- end }}
+  {{- with merge $localValues.resources .Values.cvat.backend.resources }}
+  resources:
+  {{- toYaml . | nindent 3 }}
+  {{- end }}
+  volumeMounts:
+  {{- if .Values.cvat.backend.defaultStorage.enabled }}
+    - mountPath: /home/django/data
+      name: cvat-backend-data
+      subPath: data
+    - mountPath: /home/django/keys
+      name: cvat-backend-data
+      subPath: keys
+    - mountPath: /home/django/logs
+      name: cvat-backend-data
+      subPath: logs
+  {{- end }}
+  {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}
 

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { SerializedConsensusSettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';

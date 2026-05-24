@@ -47,7 +47,7 @@ from cvat.apps.webhooks.serializers import WebhookReadSerializer
 
 from .cache import get_cache
 from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
-from .event import event_scope, record_server_event
+from .event import event_scope, get_remote_addr, record_server_event
 from .utils import compute_working_time_per_ids
 
 
@@ -166,6 +166,9 @@ def request_info(instance=None):
     access_token = getattr(request, "auth", None)
     if isinstance(access_token, AccessToken):
         data["access_token_id"] = access_token.id
+
+    if remote_addr := get_remote_addr(request):
+        data["remote_addr"] = remote_addr
 
     return data
 
@@ -762,6 +765,35 @@ def handle_cache_item_create(
 ) -> None:
     record_server_event(
         scope=event_scope("create", "cache_item"),
+        request_info=request_info(),
+        user_id=user_id(),
+        user_name=user_name(),
+        user_email=user_email(),
+        payload={
+            "cache_item": {
+                "type": item_type,
+                "target": target,
+                "target_id": target_id,
+                "number": number,
+                "size": size,
+                "quality": quality,
+            },
+            **payload_fields,
+        },
+    )
+
+
+def handle_cache_item_read(
+    item_type: str,
+    target: str | None = None,
+    target_id: int | None = None,
+    size: int = 0,
+    number: int | None = None,
+    quality: int | None = None,
+    **payload_fields,
+) -> None:
+    record_server_event(
+        scope=event_scope("read", "cache_item"),
         request_info=request_info(),
         user_id=user_id(),
         user_name=user_name(),

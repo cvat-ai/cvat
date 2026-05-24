@@ -56,12 +56,17 @@ class TestCreateFromRemote:
 
         response_json = _wait_until_task_is_created(user, rq_id)
         assert response_json["status"] == "failed"
+        return response_json
 
-    def test_cannot_create(self, find_users):
+    def test_can_report_failed_remote_file_download(self, find_users):
         user = find_users(privilege="admin")[0]["username"]
         remote_resources = ["http://localhost/favicon.ico"]
 
-        self._test_cannot_create(user, self.task_id, remote_resources)
+        response_json = self._test_cannot_create(user, self.task_id, remote_resources)
+
+        message = response_json["message"]
+        assert "rest_framework.exceptions.ValidationError" in message, message
+        assert f"Failed to download {remote_resources[0]}" in message, message
 
     def test_can_create(self, find_users):
         user = find_users(privilege="admin")[0]["username"]

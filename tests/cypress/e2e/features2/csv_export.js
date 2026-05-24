@@ -12,9 +12,9 @@ context('CSV Export from different pages', () => {
     const taskNames = ['CSV Export Task 1', 'CSV Export Task 2'];
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
 
-    let projectID = null;
-    const taskIDs = [];
-    const jobIDs = [];
+    let projectId = null;
+    const taskIds = [];
+    const jobIds = [];
 
     function verifyDescendingOrder(ids) {
         for (let i = 0; i < ids.length - 1; i++) {
@@ -26,21 +26,21 @@ context('CSV Export from different pages', () => {
     const validators = {
         jobId: (columns) => {
             const jobId = parseInt(columns[0], 10);
-            expect(jobIDs).to.include(jobId);
+            expect(jobIds).to.include(jobId);
         },
         taskId: (expectedTaskId = null) => (columns) => {
             const taskId = parseInt(columns[2], 10);
-            expect(taskIDs).to.include(taskId);
+            expect(taskIds).to.include(taskId);
             if (expectedTaskId !== null) {
                 expect(taskId).to.equal(expectedTaskId);
             }
         },
         taskIdFromColumn: (columnIndex) => (columns) => {
             const taskId = parseInt(columns[columnIndex], 10);
-            expect(taskIDs).to.include(taskId);
+            expect(taskIds).to.include(taskId);
         },
         taskName: (columnIndex) => (columns) => {
-            const taskName = columns[columnIndex];
+            const taskName = columns[columnIndex].replace(/^"|"$/g, '');
             expect(taskNames).to.include(taskName);
         },
         jobUrls: (columns) => {
@@ -48,19 +48,20 @@ context('CSV Export from different pages', () => {
             const taskId = parseInt(columns[2], 10);
             expect(columns[1]).to.include(`/tasks/${taskId}/jobs/${jobId}`);
             expect(columns[4]).to.include(`/tasks/${taskId}`);
-            expect(columns[7]).to.include(`/projects/${projectID}`);
+            expect(columns[7]).to.include(`/projects/${projectId}`);
         },
         taskUrls: (columns) => {
             const taskId = parseInt(columns[0], 10);
             expect(columns[2]).to.include(`/tasks/${taskId}`);
-            expect(columns[5]).to.include(`/projects/${projectID}`);
+            expect(columns[5]).to.include(`/projects/${projectId}`);
         },
         projectData: (idColumn, nameColumn) => (columns) => {
-            expect(columns[idColumn]).to.equal(String(projectID));
-            expect(columns[nameColumn]).to.equal(projectName);
+            expect(columns[idColumn]).to.equal(String(projectId));
+            const projectNameValue = columns[nameColumn].replace(/^"|"$/g, '');
+            expect(projectNameValue).to.equal(projectName);
         },
         hasTaskName: (columns, row) => {
-            const hasTaskName = taskNames.some((name) => row.includes(name));
+            const hasTaskName = taskNames.some((name) => row.includes(`"${name}"`));
             expect(hasTaskName).to.equal(true);
         },
     };
@@ -100,18 +101,18 @@ context('CSV Export from different pages', () => {
             name: projectName,
             labels: [{ name: labelName, attributes: [], type: 'any' }],
         }).then((response) => {
-            projectID = response.projectID;
+            projectId = response.projectId;
 
             const createTaskPromises = taskNames.map((taskName) => {
                 const { taskSpec, dataSpec, extras } = defaultTaskSpec({
                     taskName,
                     serverFiles,
-                    projectID,
+                    projectId,
                 });
                 delete taskSpec.labels;
                 return cy.headlessCreateTask(taskSpec, dataSpec, extras).then((taskResponse) => {
-                    taskIDs.push(taskResponse.taskID);
-                    jobIDs.push(taskResponse.jobIDs[0]);
+                    taskIds.push(taskResponse.taskId);
+                    jobIds.push(taskResponse.jobIds[0]);
                 });
             });
 
@@ -120,8 +121,8 @@ context('CSV Export from different pages', () => {
     });
 
     after(() => {
-        if (projectID) {
-            cy.headlessDeleteProject(projectID);
+        if (projectId) {
+            cy.headlessDeleteProject(projectId);
         }
     });
 
@@ -195,7 +196,7 @@ context('CSV Export from different pages', () => {
 
     describe('Test CSV export from Task page', () => {
         it('Export task jobs as CSV from Task page', () => {
-            cy.openTaskById(taskIDs[0]);
+            cy.openTaskById(taskIds[0]);
             cy.get('.cvat-task-details').should('exist').and('be.visible');
 
             cy.get('.cvat-jobs-export-csv-button').click();
@@ -208,14 +209,14 @@ context('CSV Export from different pages', () => {
                 expectedFileName,
                 'ID,Job URL,Task ID,Task Name,Task URL,Project ID,Project Name,Project URL',
                 2,
-                createJobRowValidator(taskIDs[0]),
+                createJobRowValidator(taskIds[0]),
             );
         });
     });
 
     describe('Test CSV export from Project page', () => {
         it('Export project tasks as CSV from Project page', () => {
-            cy.visit(`/projects/${projectID}`);
+            cy.visit(`/projects/${projectId}`);
             cy.get('.cvat-project-details').should('exist').and('be.visible');
             cy.get('.cvat-spinner').should('not.exist');
 
@@ -265,10 +266,11 @@ context('CSV Export from different pages', () => {
                 2,
                 (row) => {
                     const columns = row.split(',');
-                    const projectId = parseInt(columns[0], 10);
-                    expect(projectId).to.equal(projectID);
-                    expect(columns[1]).to.equal(projectName);
-                    expect(columns[2]).to.include(`/projects/${projectID}`);
+                    const pid = parseInt(columns[0], 10);
+                    expect(pid).to.equal(projectId);
+                    const projectNameValue = columns[1].replace(/^"|"$/g, '');
+                    expect(projectNameValue).to.equal(projectName);
+                    expect(columns[2]).to.include(`/projects/${projectId}`);
                 },
             );
         });

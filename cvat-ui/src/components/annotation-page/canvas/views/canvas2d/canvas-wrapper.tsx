@@ -19,7 +19,9 @@ import {
     ColorBy, GridColor, Workspace, ActiveControl, CombinedState,
 } from 'reducers';
 import { EventScope } from 'cvat-logger';
-import { Canvas, HighlightSeverity, CanvasHint } from 'cvat-canvas-wrapper';
+import {
+    Canvas, HighlightSeverity, CanvasHint, RenderData,
+} from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     AnnotationConflict, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
@@ -48,6 +50,7 @@ import {
     canvasErrorOccurred,
     updateEditedStateAsync,
     collapseObjectItems,
+    AnnotationSource,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -57,6 +60,7 @@ import {
     changeContrastLevel,
     changeSaturationLevel,
     switchAutomaticBordering,
+    switchSnapToPoint,
 } from 'actions/settings-actions';
 import { reviewActions } from 'actions/review-actions';
 
@@ -78,6 +82,7 @@ interface StateToProps {
     activatedElementID: number | null;
     activatedAttributeID: number | null;
     annotations: ObjectState[];
+    renderData: RenderData;
     frameData: any;
     frameAngle: number;
     canvasIsReady: boolean;
@@ -112,6 +117,7 @@ interface StateToProps {
     maxZLayer: number;
     curZLayer: number;
     automaticBordering: boolean;
+    snapToPoint: boolean;
     adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     switchableAutomaticBordering: boolean;
@@ -130,11 +136,11 @@ interface DispatchToProps {
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateAnnotations(states: ObjectState[]): void;
-    onCreateAnnotations(states: ObjectState[]): void;
+    onCreateAnnotations(states: ObjectState[], source?: AnnotationSource): void;
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
-    onJoinAnnotations(states: ObjectState[], points: number[]): void;
+    onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onExpandObject(objectState: ObjectState): void;
@@ -147,6 +153,7 @@ interface DispatchToProps {
     onChangeGridColor(color: GridColor): void;
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchSnapToPoint(enabled: boolean): void;
     onFetchAnnotation(): void;
     onGetDataFailed(error: Error): void;
     onCanvasErrorOccurred(error: Error): void;
@@ -173,6 +180,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedAttributeID,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
                 highlightedConflict,
+                renderData,
             },
             workspace,
         },
@@ -194,6 +202,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 showAllInterpolationTracks,
                 showTagsOnFrame,
                 automaticBordering,
+                snapToPoint,
                 adaptiveZoom,
                 intelligentPolygonCrop,
                 textFontSize,
@@ -221,6 +230,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedElementID,
         activatedAttributeID,
         annotations,
+        renderData,
         opacity: opacity / 100,
         colorBy,
         selectedOpacity: selectedOpacity / 100,
@@ -251,6 +261,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         minZLayer,
         maxZLayer,
         automaticBordering,
+        snapToPoint,
         adaptiveZoom,
         intelligentPolygonCrop,
         workspace,
@@ -271,9 +282,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 const componentShortcuts = {
     SWITCH_AUTOMATIC_BORDERING: {
-        name: 'Switch automatic bordering',
-        description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
-        sequences: ['ctrl+a'],
+        name: 'Toggle snap to contour',
+        description: 'Toggle automatic snap to contour for polygons and polylines during drawing/editing',
+        sequences: [],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_SNAP_TO_POINT: {
+        name: 'Toggle snap to point',
+        description: 'Toggle automatic snapping to nearby points',
+        sequences: [],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
     NEXT_OBJECT: {
@@ -306,8 +323,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        onCreateAnnotations(states: ObjectState[]): void {
-            dispatch(createAnnotationsAsync(states));
+        onCreateAnnotations(
+            states: ObjectState[],
+            source: AnnotationSource = AnnotationSource.OTHER,
+        ): void {
+            dispatch(createAnnotationsAsync(states, source));
         },
         onMergeAnnotations(states: ObjectState[]): void {
             dispatch(mergeAnnotationsAsync(states));
@@ -315,7 +335,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onGroupAnnotations(states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(states));
         },
-        onJoinAnnotations(states: ObjectState[], points: number[]): void {
+        onJoinAnnotations(states: ObjectState[], points: number[][]): void {
             dispatch(joinAnnotationsAsync(states, points));
         },
         onSliceAnnotations(state: ObjectState, results: number[][]): void {
@@ -361,6 +381,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSwitchAutomaticBordering(enabled: boolean): void {
             dispatch(switchAutomaticBordering(enabled));
         },
+        onSwitchSnapToPoint(enabled: boolean): void {
+            dispatch(switchSnapToPoint(enabled));
+        },
         onFetchAnnotation(): void {
             dispatch(fetchAnnotationsAsync());
         },
@@ -388,6 +411,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
             automaticBordering,
+            snapToPoint,
             adaptiveZoom,
             intelligentPolygonCrop,
             showObjectsTextAlways,
@@ -417,6 +441,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
+            snapToPoint,
             adaptiveZoom,
             showProjections,
             showConflicts: showGroundTruth,
@@ -466,6 +491,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textContent,
             showAllInterpolationTracks,
             automaticBordering,
+            snapToPoint,
             adaptiveZoom,
             intelligentPolygonCrop,
             showProjections,
@@ -475,12 +501,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             highlightedConflict,
             imageFilters,
             focusedObjectPadding,
+            renderData,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
         if (
             prevProps.showObjectsTextAlways !== showObjectsTextAlways ||
             prevProps.automaticBordering !== automaticBordering ||
+            prevProps.snapToPoint !== snapToPoint ||
             prevProps.adaptiveZoom !== adaptiveZoom ||
             prevProps.showProjections !== showProjections ||
             prevProps.intelligentPolygonCrop !== intelligentPolygonCrop ||
@@ -502,6 +530,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
                 displayAllText: showObjectsTextAlways,
                 autoborders: automaticBordering,
+                snapToPoint,
                 adaptiveZoom,
                 showProjections,
                 intelligentPolygonCrop,
@@ -580,7 +609,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (
             prevProps.annotations !== annotations ||
             prevProps.frameData !== frameData ||
-            prevProps.curZLayer !== curZLayer
+            prevProps.curZLayer !== curZLayer ||
+            prevProps.renderData !== renderData
         ) {
             this.updateCanvas();
         } else if (prevProps.imageFilters !== imageFilters) {
@@ -636,6 +666,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().removeEventListener('canvas.warning', this.onCanvasWarningOccurrence);
         canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
@@ -648,6 +679,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             const { onCanvasErrorOccurred } = this.props;
             onCanvasErrorOccurred(exception);
         }
+    };
+
+    private onCanvasWarningOccurrence = (event: any): void => {
+        const { message, domain } = event.detail;
+        notification.warning({
+            message: domain ? `${domain}` : 'Warning',
+            description: message,
+            duration: 5,
+            className: 'cvat-notification-warning-canvas',
+        });
     };
 
     private onCanvasMessage = (event: CustomEvent<{ messages: CanvasHint[] | null, topic: string }>): void => {
@@ -665,7 +706,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             updateActiveControl(ActiveControl.CURSOR);
         }
 
-        const { state, duration } = event.detail;
+        const { state, duration, simplifyPoly } = event.detail;
         const isDrawnFromScratch = !state.label;
 
         state.objectType = state.shapeType === ShapeType.MASK ?
@@ -693,9 +734,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         } else {
             jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration });
         }
-
         const objectState = new cvat.classes.ObjectState(state);
-        onCreateAnnotations([objectState]);
+
+        const source = simplifyPoly && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType) ?
+            AnnotationSource.DRAW_SIMPLIFIED_POLY : AnnotationSource.OTHER;
+
+        onCreateAnnotations([objectState], source);
         onUpdateEditedObject(null);
     };
 
@@ -738,7 +782,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             duration,
             count: states.length,
         });
-        onJoinAnnotations(states, points);
+
+        const pointsArray = points as number[][];
+        onJoinAnnotations(states, pointsArray);
     };
 
     private onCanvasTrackSplitted = (event: any): void => {
@@ -963,7 +1009,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private updateCanvas(): void {
         const {
             curZLayer, annotations, frameData,
-            workspace, frame, imageFilters,
+            workspace, frame, imageFilters, renderData,
         } = this.props;
 
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
@@ -1019,6 +1065,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 proxy,
                 frameData.deleted ? [] : filteredAnnotations,
                 curZLayer,
+                renderData,
             );
             canvasInstance.configure({ forceFrameUpdate: false });
         }
@@ -1092,6 +1139,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().addEventListener('canvas.warning', this.onCanvasWarningOccurrence);
         canvasInstance.html().addEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
@@ -1101,14 +1149,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             curZLayer,
             minZLayer,
             keyMap,
-            switchableAutomaticBordering,
             automaticBordering,
+            snapToPoint,
             showTagsOnFrame,
             canvasIsReady,
             annotations,
             activatedStateID,
             focusedObjectPadding,
             onSwitchAutomaticBordering,
+            onSwitchSnapToPoint,
             onSwitchZLayer,
             onAddZLayer,
             onActivateObject,
@@ -1147,10 +1196,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_AUTOMATIC_BORDERING: (event: KeyboardEvent | undefined) => {
-                if (switchableAutomaticBordering) {
-                    preventDefault(event);
-                    onSwitchAutomaticBordering(!automaticBordering);
-                }
+                preventDefault(event);
+                onSwitchAutomaticBordering(!automaticBordering);
+            },
+            SWITCH_SNAP_TO_POINT: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                onSwitchSnapToPoint(!snapToPoint);
             },
             NEXT_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);

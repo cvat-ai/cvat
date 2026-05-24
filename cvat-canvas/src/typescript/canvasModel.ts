@@ -29,6 +29,10 @@ export interface CanvasHint {
     icon?: 'info' | 'loading';
 }
 
+export interface RenderData {
+    visibleSkeletonElements: Record<number, number[]>;
+}
+
 export interface Geometry {
     image: Size;
     canvas: Size;
@@ -78,6 +82,7 @@ export enum ColorBy {
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
+    snapToPoint?: boolean;
     adaptiveZoom?: boolean;
     displayAllText?: boolean;
     textFontSize?: number;
@@ -98,6 +103,7 @@ export interface Configuration {
     resetZoom?: boolean;
     hideEditedObject?: boolean;
     focusedObjectPadding?: number;
+    snapRadius?: number;
 }
 
 export interface BrushTool {
@@ -120,29 +126,32 @@ export interface DrawData {
     crosshair?: boolean;
     brushTool?: BrushTool;
     redraw?: number;
+    simplifyPoly?: boolean;
     onDrawDone?: (data: object) => void;
     onUpdateConfiguration?: (configuration: { brushTool?: Pick<BrushTool, 'size'> }) => void;
 }
 
 export interface InteractionData {
     enabled: boolean;
-    shapeType?: string;
-    crosshair?: boolean;
-    minPosVertices?: number;
-    minNegVertices?: number;
-    startWithBox?: boolean;
-    enableSliding?: boolean;
-    allowRemoveOnlyLast?: boolean;
-    intermediateShape?: {
-        shapeType: string;
-        points: number[];
+    command?: 'draw_points' | 'draw_box' | 'put_shapes' | 'refine';
+    payload?: {
+        shapes: {
+            shapeType: string;
+            points: ArrayLike<number>;
+        }[];
+    };
+    settings?: {
+        crosshair?: boolean; // default is false
+        points_type?: 'any' | 'positive' | 'negative'; // default is any
+        removalStrategy?: 'any' | 'last'; // default is any
+        appendCursorPositionAsPoint?: boolean; // default is false
     };
 }
 
 export interface InteractionResult {
     points: number[];
     shapeType: string;
-    button: number;
+    type: 'positive' | 'negative';
 }
 
 export interface PolyEditData {
@@ -177,7 +186,7 @@ export interface JoinData {
 export interface SliceData {
     enabled: boolean;
     clientID?: number;
-    getContour?: (state: any) => Promise<number[]>;
+    getContour?: (state: any) => Promise<[number, number][]>;
 }
 
 export enum FrameZoom {
@@ -243,6 +252,7 @@ export interface CanvasModel {
     readonly image: Image | null;
     readonly issueRegions: Record<number, { hidden: boolean; points: number[] }>;
     readonly objects: any[];
+    readonly renderData: RenderData;
     readonly zLayer: number | null;
     readonly gridSize: Size;
     readonly focusData: FocusData;
@@ -265,7 +275,7 @@ export interface CanvasModel {
     zoom(x: number, y: number, deltaY: number): void;
     move(topOffset: number, leftOffset: number): void;
 
-    setup(frameData: any, objectStates: any[], zLayer: number): void;
+    setup(frameData: any, objectStates: any[], zLayer: number, renderData?: RenderData): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     activate(clientID: number | null, attributeID: number | null): void;
     highlight(clientIDs: number[], severity: HighlightSeverity): void;
@@ -362,6 +372,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         focusData: FocusData;
         gridSize: Size;
         objects: any[];
+        renderData: RenderData;
         issueRegions: Record<number, { hidden: boolean; points: number[] }>;
         scale: number;
         top: number;
@@ -401,6 +412,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             configuration: {
                 smoothImage: true,
                 autoborders: false,
+                snapToPoint: false,
+                snapRadius: 10,
                 adaptiveZoom: true,
                 displayAllText: false,
                 showProjections: false,
@@ -439,6 +452,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 width: 100,
             },
             objects: [],
+            renderData: {
+                visibleSkeletonElements: {},
+            },
             issueRegions: {},
             scale: 1,
             top: 0,
@@ -549,7 +565,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer: number): void {
+    public setup(frameData: any, objectStates: any[], zLayer: number, renderData: RenderData = {
+        visibleSkeletonElements: {},
+    }): void {
         if (this.data.imageID !== frameData.number) {
             if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -561,6 +579,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         ) {
             this.data.zLayer = zLayer;
             this.data.objects = objectStates;
+            this.data.renderData = renderData;
             if (this.data.image) {
                 // display objects only if there is a drawn image
                 // if there is not, UpdateReasons.OBJECTS_UPDATED will be triggered after image is set
@@ -578,7 +597,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.angle = 0;
         }
 
-        const { zLayer: prevZLayer, objects: prevObjects } = this.data;
+        const { zLayer: prevZLayer, objects: prevObjects, renderData: prevRenderData } = this.data;
         frameData
             .data((): void => {
                 this.data.image = null;
@@ -617,10 +636,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
                 this.notify(UpdateReasons.IMAGE_CHANGED);
 
-                if (prevZLayer === this.data.zLayer && prevObjects === this.data.objects) {
+                if (
+                    prevZLayer === this.data.zLayer &&
+                    prevObjects === this.data.objects &&
+                    prevRenderData === this.data.renderData
+                ) {
                     // check the request is relevant, other setup() may have been called while promise resolving
                     this.data.zLayer = zLayer;
                     this.data.objects = objectStates;
+                    this.data.renderData = renderData;
                 }
 
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
@@ -838,16 +862,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
-        if (interactionData.enabled) {
-            if (!this.data.interactionData.enabled && !interactionData.shapeType) {
-                throw new Error('A shape type was not specified');
-            }
-        }
-        this.data.interactionData = interactionData;
-        if (typeof this.data.interactionData.crosshair !== 'boolean') {
-            this.data.interactionData.crosshair = true;
-        }
 
+        this.data.interactionData = interactionData;
         this.notify(UpdateReasons.INTERACT);
     }
 
@@ -965,6 +981,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (typeof configuration.autoborders === 'boolean') {
             this.data.configuration.autoborders = configuration.autoborders;
+        }
+        if (typeof configuration.snapToPoint === 'boolean') {
+            this.data.configuration.snapToPoint = configuration.snapToPoint;
+        }
+        if (typeof configuration.snapRadius === 'number' && configuration.snapRadius > 0) {
+            this.data.configuration.snapRadius = configuration.snapRadius;
         }
         if (typeof configuration.adaptiveZoom === 'boolean') {
             this.data.configuration.adaptiveZoom = configuration.adaptiveZoom;
@@ -1098,6 +1120,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         return this.data.objects;
+    }
+
+    public get renderData(): RenderData {
+        return {
+            visibleSkeletonElements: { ...this.data.renderData.visibleSkeletonElements },
+        };
     }
 
     public get gridSize(): Size {

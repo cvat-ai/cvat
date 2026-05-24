@@ -55,6 +55,7 @@ interface Props {
     runAnnotationAction(): void;
     edit(): void;
     slice(): void;
+    simplify(): void;
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
@@ -96,6 +97,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         runAnnotationAction,
         edit,
         slice,
+        simplify,
         jobInstance,
     } = props;
 
@@ -181,6 +183,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             setColorPickerVisible,
                             edit,
                             slice,
+                            simplify,
                             runAnnotationAction,
                         })}
                     >

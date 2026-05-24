@@ -4,7 +4,9 @@
 
 import './styles.scss';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, {
+    useState, useEffect, useRef, useCallback, useMemo,
+} from 'react';
 import { useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
@@ -12,6 +14,7 @@ import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import { PaperClipOutlined } from '@ant-design/icons';
 import MDEditor, { commands } from '@uiw/react-md-editor';
+import rehypeSanitize from 'rehype-sanitize';
 
 import { getCore, AnnotationGuide } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
@@ -71,6 +74,7 @@ function AnnotationGuidePage(): JSX.Element {
                     .then((result: AnnotationGuide) => {
                         setValue(result.markdown);
                         setGuide(result);
+                        notification.info({ message: 'Annotation guide was saved successfully' });
                     })
                     .catch((error: unknown) => {
                         notification.error({
@@ -139,7 +143,7 @@ function AnnotationGuidePage(): JSX.Element {
                 await submit(computeNewValue());
             }
         },
-        [guide, value],
+        [guide, value, submit],
     );
 
     handleInsertFilesRef.current = handleInsertFiles;
@@ -176,6 +180,7 @@ function AnnotationGuidePage(): JSX.Element {
                             handleInsertFilesRef.current(files);
                         }
                         // reset so the same file can be selected again
+                        // eslint-disable-next-line no-param-reassign
                         event.target.value = '';
                     }}
                 />
@@ -207,6 +212,7 @@ function AnnotationGuidePage(): JSX.Element {
                         }}
                         style={{ whiteSpace: 'pre-wrap' }}
                         extraCommands={[uploadFileCommand]}
+                        previewOptions={{ rehypePlugins: [[rehypeSanitize]] }}
                     />
                 </div>
                 <Space align='end' className='cvat-guide-page-bottom'>

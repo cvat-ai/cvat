@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
-
 import { ChunkQuality } from 'cvat-data';
 import {
     ChunkType, DimensionType, HistoryActions, JobStage,
@@ -40,7 +38,7 @@ function buildDuplicatedAPI(prototype) {
                     useDefaultLocation: boolean,
                     sourceStorage: Storage,
                     file: File | string,
-                    options?: { convMaskToPoly?: boolean },
+                    options?: { convMaskToPoly?: boolean, importMode?: 'replace' | 'append' },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -359,7 +357,7 @@ export class Session {
         merge: (objectStates: ObjectState[]) => Promise<void>;
         split: (objectState: ObjectState, frame: number) => Promise<void>;
         group: (objectStates: ObjectState[], reset: boolean) => Promise<number>;
-        join: (objectStates: ObjectState[], points: number[]) => Promise<void>;
+        join: (objectStates: ObjectState[], points: number[][]) => Promise<void>;
         slice: (state: ObjectState, results: number[][]) => Promise<void>;
         clear: (options?: {
             reload?: boolean;
@@ -388,6 +386,7 @@ export class Session {
             file: File | string,
             options?: {
                 convMaskToPoly?: boolean,
+                importMode?: 'replace' | 'append',
                 updateStatusCallback?: (s: string, n: number) => void,
             },
         ) => Promise<string>;
@@ -794,7 +793,7 @@ export class Task extends Session {
     public assignee: User | null;
     public bugTracker: string;
     public subset: string;
-    public labels: Label[];
+    public readonly labels: Label[];
     public sourceStorage: Storage;
     public targetStorage: Storage;
     public readonly guideId: number | null;
@@ -833,6 +832,7 @@ export class Task extends Session {
     public readonly validationFramesPercent: number;
     public readonly validationFramesPerJobPercent: number;
     public readonly frameSelectionMethod: string;
+    public readonly _updateTrigger: FieldUpdateTrigger;
 
     public meta: {
         get: () => Promise<FramesMetaData>;
@@ -883,7 +883,6 @@ export class Task extends Session {
             use_cache: undefined,
             copy_data: undefined,
             sorting_method: undefined,
-            files: undefined,
             consensus_enabled: undefined,
 
             validation_mode: null,
@@ -912,12 +911,6 @@ export class Task extends Session {
                 (initialData.progress?.validation || 0) -
                 (initialData.progress?.completed || 0),
         };
-
-        data.files = Object.freeze({
-            server_files: [],
-            client_files: [],
-            remote_files: [],
-        });
 
         if (Array.isArray(initialData.labels)) {
             data.labels = initialData.labels
@@ -1020,7 +1013,7 @@ export class Task extends Session {
                     get: () => data.assignee,
                     set: (assignee) => {
                         if (assignee !== null && !(assignee instanceof User)) {
-                            throw new ArgumentError('Value must be a user instance');
+                            throw new ArgumentError('Value must be a user instance or null');
                         }
                         updateTrigger.update('assignee');
                         data.assignee = assignee;
@@ -1081,112 +1074,9 @@ export class Task extends Session {
                 },
                 labels: {
                     get: () => [...data.labels],
-                    set: (labels: Label[]) => {
-                        if (!Array.isArray(labels)) {
-                            throw new ArgumentError('Value must be an array of Labels');
-                        }
-
-                        if (!Array.isArray(labels) || labels.some((label) => !(label instanceof Label))) {
-                            throw new ArgumentError(
-                                'Each array value must be an instance of Label',
-                            );
-                        }
-
-                        const oldIDs = data.labels.map((_label) => _label.id);
-                        const newIDs = labels.map((_label) => _label.id);
-
-                        // find any deleted labels and mark them
-                        data.labels.filter((_label) => !newIDs.includes(_label.id))
-                            .forEach((_label) => {
-                                // for deleted labels let's specify that they are deleted
-                                _label.deleted = true;
-                            });
-
-                        // find any patched labels and mark them
-                        labels.forEach((_label) => {
-                            const { id } = _label;
-                            if (oldIDs.includes(id)) {
-                                const oldLabelIndex = data.labels.findIndex((__label) => __label.id === id);
-                                if (oldLabelIndex !== -1) {
-                                    // replace current label by the patched one
-                                    const oldLabel = data.labels[oldLabelIndex];
-                                    data.labels.splice(oldLabelIndex, 1, _label);
-                                    if (!_.isEqual(_label.toJSON(), oldLabel.toJSON())) {
-                                        _label.patched = true;
-                                    }
-                                }
-                            }
-                        });
-
-                        // find new labels to append them to the end
-                        const newLabels = labels.filter((_label) => !Number.isInteger(_label.id));
-                        data.labels = [...data.labels, ...newLabels];
-
-                        updateTrigger.update('labels');
-                    },
                 },
                 jobs: {
                     get: () => [...(data.jobs || [])],
-                },
-                serverFiles: {
-                    get: () => [...data.files.server_files],
-                    set: (serverFiles) => {
-                        if (!Array.isArray(serverFiles)) {
-                            throw new ArgumentError(
-                                `Value must be an array. But ${typeof serverFiles} has been got.`,
-                            );
-                        }
-
-                        for (const value of serverFiles) {
-                            if (typeof value !== 'string') {
-                                throw new ArgumentError(
-                                    `Array values must be a string. But ${typeof value} has been got.`,
-                                );
-                            }
-                        }
-
-                        Array.prototype.push.apply(data.files.server_files, serverFiles);
-                    },
-                },
-                clientFiles: {
-                    get: () => [...data.files.client_files],
-                    set: (clientFiles) => {
-                        if (!Array.isArray(clientFiles)) {
-                            throw new ArgumentError(
-                                `Value must be an array. But ${typeof clientFiles} has been got.`,
-                            );
-                        }
-
-                        for (const value of clientFiles) {
-                            if (!(value instanceof File)) {
-                                throw new ArgumentError(
-                                    'Array values must be a File.',
-                                );
-                            }
-                        }
-
-                        Array.prototype.push.apply(data.files.client_files, clientFiles);
-                    },
-                },
-                remoteFiles: {
-                    get: () => [...data.files.remote_files],
-                    set: (remoteFiles) => {
-                        if (!Array.isArray(remoteFiles)) {
-                            throw new ArgumentError(
-                                `Value must be an array. But ${typeof remoteFiles} has been got.`,
-                            );
-                        }
-
-                        for (const value of remoteFiles) {
-                            if (typeof value !== 'string') {
-                                throw new ArgumentError(
-                                    `Array values must be a string. But ${typeof value} has been got.`,
-                                );
-                            }
-                        }
-
-                        Array.prototype.push.apply(data.files.remote_files, remoteFiles);
-                    },
                 },
                 frameFilter: {
                     get: () => data.frame_filter,
@@ -1270,7 +1160,13 @@ export class Task extends Session {
     }
 
     async save(
-        fields: Record<string, any> = {},
+        fields?: {
+            [index: string]: any;
+            clientFiles?: File[];
+            serverFiles?: string[];
+            remoteFiles?: string[];
+            labels?: Label[];
+        },
         options?: { updateStatusCallback?: (updateData: Request | UpdateStatusData) => void },
     ): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, fields, options);
