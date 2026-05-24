@@ -19,6 +19,7 @@ context('Canvas 3D functionality. Cuboid context menu.', () => {
         cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
     });

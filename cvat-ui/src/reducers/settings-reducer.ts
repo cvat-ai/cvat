@@ -33,6 +33,7 @@ const defaultState: SettingsState = {
         autoSaveInterval: 15 * 60 * 1000,
         focusedObjectPadding: 50,
         automaticBordering: false,
+        snapToPoint: false,
         adaptiveZoom: true,
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
@@ -345,6 +346,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.SWITCH_SNAP_TO_POINT: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    snapToPoint: action.payload.snapToPoint,
+                },
+            };
+        }
         case SettingsActionTypes.SWITCH_ADAPTIVE_ZOOM: {
             return {
                 ...state,
@@ -450,6 +460,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 filters.splice(index, 1);
             }
             filters.forEach((imageFilter) => {
+                // eslint-disable-next-line no-param-reassign
                 imageFilter.modifier.currentProcessedImage = null;
             });
             return {
@@ -466,6 +477,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const filters = [...state.imageFilters];
             filters.forEach((imageFilter) => {
+                // eslint-disable-next-line no-param-reassign
                 imageFilter.modifier.currentProcessedImage = null;
             });
 

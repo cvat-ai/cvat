@@ -23,6 +23,9 @@ const defaultState: PluginsState = {
         },
     },
     overridableComponents: {
+        app: {
+            serverUnavailable: [],
+        },
         annotationPage: {
             header: {
                 // not used

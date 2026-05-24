@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
 import { DimensionType, ProjectStatus, StorageLocation } from './enums';
 import { Storage } from './storage';
 import { SerializedLabel, SerializedProject } from './server-response-types';
@@ -16,6 +15,7 @@ import AnnotationGuide from './guide';
 
 export default class Project {
     public readonly id: number;
+    public readonly _updateTrigger: FieldUpdateTrigger;
     public name: string;
     public organizationId: number | null;
     public assignee: User | null;
@@ -29,7 +29,7 @@ export default class Project {
     public readonly updatedDate: string;
     public readonly subsets: string[];
     public readonly dimension: DimensionType;
-    public labels: Label[];
+    public readonly labels: Label[];
     public annotations: {
         exportDataset: (
             format: string,
@@ -158,49 +158,6 @@ export default class Project {
                 },
                 labels: {
                     get: () => [...data.labels],
-                    set: (labels: Label[]) => {
-                        if (!Array.isArray(labels)) {
-                            throw new ArgumentError('Value must be an array of Labels');
-                        }
-
-                        if (!Array.isArray(labels) || labels.some((label) => !(label instanceof Label))) {
-                            throw new ArgumentError(
-                                'Each array value must be an instance of Label',
-                            );
-                        }
-
-                        const oldIDs = data.labels.map((_label) => _label.id);
-                        const newIDs = labels.map((_label) => _label.id);
-
-                        // find any deleted labels and mark them
-                        data.labels.filter((_label) => !newIDs.includes(_label.id))
-                            .forEach((_label) => {
-                                // for deleted labels let's specify that they are deleted
-                                _label.deleted = true;
-                            });
-
-                        // find any patched labels and mark them
-                        labels.forEach((_label) => {
-                            const { id } = _label;
-                            if (oldIDs.includes(id)) {
-                                const oldLabelIndex = data.labels.findIndex((__label) => __label.id === id);
-                                if (oldLabelIndex !== -1) {
-                                    // replace current label by the patched one
-                                    const oldLabel = data.labels[oldLabelIndex];
-                                    data.labels.splice(oldLabelIndex, 1, _label);
-                                    if (!_.isEqual(_label.toJSON(), oldLabel.toJSON())) {
-                                        _label.patched = true;
-                                    }
-                                }
-                            }
-                        });
-
-                        // find new labels to append them to the end
-                        const newLabels = labels.filter((_label) => !Number.isInteger(_label.id));
-                        data.labels = [...data.labels, ...newLabels];
-
-                        updateTrigger.update('labels');
-                    },
                 },
                 subsets: {
                     get: () => [...data.task_subsets],
@@ -247,8 +204,8 @@ export default class Project {
         return result;
     }
 
-    async save(): Promise<Project> {
-        const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.save);
+    async save(fields?: { labels?: Label[] }): Promise<Project> {
+        const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.save, fields);
         return result;
     }
 

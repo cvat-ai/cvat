@@ -86,7 +86,7 @@ export default class PluginRegistry {
                         typeof api === 'function' &&
                         typeof (plugin[key] === 'function')
                     ) {
-                        decorator.callback = api;
+                        (decorator as any).callback = api;
                         decorator[key] = plugin[key];
                     }
                 }

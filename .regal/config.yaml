@@ -21,6 +21,9 @@ rules:
       # Mainly a style preference
       # https://docs.styra.com/regal/rules/style/avoid-get-and-list-prefix
       level: ignore
+    external-reference:
+      # https://docs.styra.com/regal/rules/style/external-reference
+      level: ignore
     opa-fmt:
       # https://docs.styra.com/regal/rules/style/opa-fmt
       level: ignore

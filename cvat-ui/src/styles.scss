@@ -7,7 +7,7 @@
 
 hr {
     border: none;
-    border-top: 1px solid $border-color-1;
+    border-top: 1px solid $objects-bar-tabs-color;
     height: 1px;
 }
 
@@ -26,6 +26,52 @@ html, body {
 
 .cvat-disconnected {
     font-size: 36px;
+}
+
+.cvat-server-unavailable {
+    max-width: 720px;
+    width: calc(100vw - 48px);
+    text-align: center;
+}
+
+.cvat-server-unavailable-title {
+    font-size: 18px;
+}
+
+.cvat-server-unavailable-content {
+    line-height: 1.5;
+    width: 100%;
+}
+
+.cvat-server-unavailable-message {
+    margin-bottom: $grid-unit-size * 2;
+}
+
+.cvat-health-check-error {
+    text-align: left;
+}
+
+.cvat-health-check-list {
+    display: flex;
+    flex-direction: column;
+    gap: $grid-unit-size;
+    width: 100%;
+}
+
+.cvat-health-check-item {
+    align-items: flex-start;
+    display: flex;
+    gap: $grid-unit-size;
+}
+
+.cvat-health-check-icon {
+    color: $danger-icon-color;
+    font-size: 16px;
+    margin-top: $grid-unit-size;
+}
+
+.cvat-health-check-status {
+    display: block;
 }
 
 .cvat-spinner-container {

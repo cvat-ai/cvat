@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import { getCore, Webhook } from 'cvat-core-wrapper';
-import { Store } from 'redux';
 import { WebhooksQuery } from 'reducers';
 import {
     ActionUnion, createAction, ThunkAction, ThunkDispatch,
@@ -68,7 +67,8 @@ export const getWebhooksAsync = (query: WebhooksQuery): ThunkAction => (
     }
 );
 
-export function createWebhookAsync(webhookData: Store): ThunkAction {
+type WebhookData = ConstructorParameters<typeof Webhook>[0];
+export function createWebhookAsync(webhookData: WebhookData): ThunkAction {
     return async function (dispatch) {
         const webhook = new cvat.classes.Webhook(webhookData);
         dispatch(webhooksActions.createWebhook());

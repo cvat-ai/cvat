@@ -4,19 +4,21 @@
 
 import './styles.scss';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation, useParams, useHistory } from 'react-router';
+import React, {
+    useState, useEffect, useRef, useCallback,
+} from 'react';
+import { useLocation, useParams } from 'react-router';
 import { Prompt } from 'react-router-dom';
-import { LeftOutlined } from '@ant-design/icons';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
-import Text from 'antd/lib/typography/Text';
 import Space from 'antd/lib/space';
 import MDEditor, { commands } from '@uiw/react-md-editor';
+import rehypeSanitize from 'rehype-sanitize';
 
 import { getCore, AnnotationGuide } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
+import GoBackButton from 'components/common/go-back-button';
 import dimensions from 'utils/dimensions';
 
 const core = getCore();
@@ -27,7 +29,6 @@ function localStorageKey(instanceType: string, id: number): string {
 
 function AnnotationGuidePage(): JSX.Element {
     const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
-    const history = useHistory();
     const location = useLocation();
     const [value, setValue] = useState('');
     const instanceType = location.pathname.includes('projects') ? 'project' : 'task';
@@ -47,47 +48,25 @@ function AnnotationGuidePage(): JSX.Element {
                         ...(instanceType === 'project' ? { project_id: id } : { task_id: id }),
                         markdown: '',
                     });
-                    return newGuide.save();
+                    setGuide(newGuide);
+                    return;
                 }
 
-                return existingGuide;
-            })
-            .then((guideInstance: AnnotationGuide) => {
-                savedValueRef.current = guideInstance.markdown;
-                setGuide(guideInstance);
+                const checkExistValue = localStorage.getItem(localStorageKey(instanceType, id));
 
-                const draftKey = localStorageKey(instanceType, id);
-                const draft = localStorage.getItem(draftKey);
-
-                if (draft !== null && draft !== guideInstance.markdown) {
-                    setValue(draft);
+                if (checkExistValue) {
+                    setValue(checkExistValue);
                     setIsDirty(true);
-                    notification.info({
-                        message: 'Unsaved draft found',
-                        description:
-                            'An unsaved local draft was found for this guide. It has been restored for you. Submit to save it, or discard it to revert to the last saved version.',
-                        duration: 0,
-                        btn: (
-                            <Button
-                                size='small'
-                                onClick={() => {
-                                    localStorage.removeItem(draftKey);
-                                    setValue(guideInstance.markdown);
-                                    setIsDirty(false);
-                                    notification.destroy();
-                                }}
-                            >
-                                Discard draft
-                            </Button>
-                        ),
-                    });
                 } else {
-                    setValue(guideInstance.markdown);
+                    setValue(existingGuide.markdown);
+                    setIsDirty(false);
                 }
+                savedValueRef.current = existingGuide.markdown;
+                setGuide(existingGuide);
             })
             .catch((error: unknown) => {
                 notification.error({
-                    message: `Could not receive guide for the ${instanceType} ${id}`,
+                    message: 'Could not fetch guide from the server',
                     description: error instanceof Error ? error.message : '',
                 });
             })
@@ -124,6 +103,7 @@ function AnnotationGuidePage(): JSX.Element {
                         setGuide(result);
                         setIsDirty(false);
                         localStorage.removeItem(localStorageKey(instanceType, id));
+                        notification.info({ message: 'Annotation guide was saved successfully' });
                     })
                     .catch((error: unknown) => {
                         notification.error({
@@ -196,7 +176,7 @@ function AnnotationGuidePage(): JSX.Element {
                 await submit(computeNewValue());
             }
         },
-        [guide, value, instanceType, id],
+        [guide, value, instanceType, id, submit],
     );
 
     return (
@@ -209,16 +189,7 @@ function AnnotationGuidePage(): JSX.Element {
                 {fetching && <CVATLoadingSpinner />}
                 <Col {...dimensions}>
                     <div className='cvat-guide-page-top'>
-                        <Button
-                            className='cvat-back-btn'
-                            style={{ marginRight: 8 }}
-                            onClick={() => history.push(`/${instanceType === 'project' ? 'projects' : 'tasks'}/${id}`)}
-                        >
-                            <LeftOutlined />
-                        </Button>
-                        <Text style={{ userSelect: 'none' }} strong>
-                            Back
-                        </Text>
+                        <GoBackButton />
                     </div>
                     <div className='cvat-guide-page-editor-wrapper'>
                         <MDEditor
@@ -254,10 +225,15 @@ function AnnotationGuidePage(): JSX.Element {
                                 }
                             }}
                             style={{ whiteSpace: 'pre-wrap' }}
+                            previewOptions={{ rehypePlugins: [[rehypeSanitize]] }}
                         />
                     </div>
                     <Space align='end' className='cvat-guide-page-bottom'>
-                        <Button type='primary' disabled={fetching || !guide?.id} onClick={() => submit(value)}>
+                        <Button
+                            type='primary'
+                            disabled={fetching || !guide?.id}
+                            onClick={() => submit(value)}
+                        >
                             Submit
                         </Button>
                     </Space>

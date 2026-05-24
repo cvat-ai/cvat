@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import os
-import os.path
 import shutil
 from pathlib import Path
 from textwrap import dedent
@@ -35,12 +33,9 @@ from cvat.apps.engine.tus import (
 )
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.serializers import RqIdSerializer
+from cvat.utils.paths import join_untrusted_path
 
 slogger = ServerLogManager(__name__)
-
-
-class UploadedFileError(ValueError):
-    pass
 
 
 class UploadMixin:
@@ -143,15 +138,15 @@ class UploadMixin:
                 )
 
             try:
-                self.validate_uploaded_file_name(filename=metadata.filename, upload_dir=upload_dir)
-            except UploadedFileError:
+                destination_path = join_untrusted_path(upload_dir, metadata.filename)
+            except ValueError:
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST,
                     data=f"File name {metadata.filename} is not allowed",
                     content_type="text/plain",
                 )
 
-            if (upload_dir / metadata.filename).exists():
+            if destination_path.exists():
                 return self._tus_response(
                     status=status.HTTP_409_CONFLICT, data="File with same name already exists"
                 )
@@ -237,13 +232,6 @@ class UploadMixin:
             },
         )
 
-    def validate_uploaded_file_name(self, *, filename: str, upload_dir: Path) -> None:
-        """Checks the file name to be valid"""
-
-        file_path = upload_dir / filename
-        if not file_path.resolve().is_relative_to(upload_dir):
-            raise UploadedFileError
-
     def get_upload_dir(self) -> Path:
         return self._object.data.get_upload_dirname()
 
@@ -264,15 +252,15 @@ class UploadMixin:
             for client_file in client_files:
                 filename = client_file["file"].name
                 try:
-                    self.validate_uploaded_file_name(filename=filename, upload_dir=upload_dir)
-                except UploadedFileError:
+                    destination_path = join_untrusted_path(upload_dir, filename)
+                except ValueError:
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST,
                         data=f"File name {filename} is not allowed",
                         content_type="text/plain",
                     )
 
-                with open(os.path.join(upload_dir, filename), "ab+") as destination:
+                with open(destination_path, "ab+") as destination:
                     shutil.copyfileobj(client_file["file"], destination)
 
         return Response(status=status.HTTP_200_OK)

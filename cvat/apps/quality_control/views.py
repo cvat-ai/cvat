@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.db.models import Q
 from django.http import HttpResponse
-from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -73,24 +72,12 @@ from cvat.apps.redis_handler.serializers import RqIdSerializer
 class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = AnnotationConflict.objects.prefetch_related("annotation_ids")
 
-    iam_organization_field = [
-        "report__job__segment__task__organization",
-        "report__task__organization",
-        "report__project__organization",
-    ]
+    iam_supports_organization_params = True
     iam_permission_class = AnnotationConflictPermission
 
     search_fields = []
-    filter_fields = list(search_fields) + [
-        "id",
-        "frame",
-        "type",
-        "job_id",
-        "task_id",
-        "project_id",
-        "severity",
-    ]
-    simple_filters = set(filter_fields) - {"id"}
+    simple_filters = ("frame", "type", "job_id", "task_id", "project_id", "severity")
+    filter_fields = (*simple_filters, "id")
     lookup_fields = {
         "job_id": "report__job__id",
         "task_id": "report__job__segment__task__id",  # task reports do not have own conflicts
@@ -126,6 +113,8 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                     queryset = queryset.filter(report__parents__parents=report)
                 else:
                     assert False
+
+                queryset = AnnotationConflictPermission.add_org_filter_proof(queryset)
             else:
                 perm = AnnotationConflictPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
@@ -197,24 +186,20 @@ class QualityReportViewSet(
 ):
     queryset = QualityReport.objects.prefetch_related("assignee")
 
-    iam_organization_field = [
-        "job__segment__task__organization",
-        "task__organization",
-        "project__organization",
-    ]
+    iam_supports_organization_params = True
     iam_permission_class = QualityReportPermission
 
     search_fields = []
-    filter_fields = list(search_fields) + [
+    simple_filters = ["job_id"]
+    filter_fields = (
+        *simple_filters,
         "id",
-        "job_id",
         "task_id",
         "project_id",
         "created_date",
         "gt_last_updated",
         "target_last_updated",
-    ]
-    simple_filters = ["job_id"]
+    )
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
@@ -518,12 +503,12 @@ class QualitySettingsViewSet(
 ):
     queryset = QualitySettings.objects
 
-    iam_organization_field = ["task__organization", "project__organization"]
+    iam_supports_organization_params = True
     iam_permission_class = QualitySettingPermission
 
     search_fields = []
-    filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]
-    simple_filters = ["task_id", "inherit"]
+    simple_filters = ("task_id", "inherit")
+    filter_fields = (*simple_filters, "id", "project_id", "created_date", "updated_date")
     ordering_fields = list(filter_fields)
     ordering = "id"
 

@@ -51,7 +51,7 @@ function ReviewSummaryComponent({ jobInstance }: Readonly<{ jobInstance: Job }>)
     useEffect(() => {
         setError(null);
         jobInstance
-            .issues(jobInstance.id)
+            .issues()
             .then((issues: any[]) => {
                 if (isMounted()) {
                     setSummary({
@@ -62,7 +62,6 @@ function ReviewSummaryComponent({ jobInstance }: Readonly<{ jobInstance: Job }>)
             })
             .catch((_error: any) => {
                 if (isMounted()) {
-                    // eslint-disable-next-line
                     console.log(_error);
                     setError(_error);
                 }
