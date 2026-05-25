@@ -47,7 +47,7 @@ from cvat.apps.webhooks.serializers import WebhookReadSerializer
 
 from .cache import get_cache
 from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
-from .event import event_scope, record_server_event
+from .event import event_scope, get_remote_addr, record_server_event
 from .utils import compute_working_time_per_ids
 
 
@@ -166,6 +166,9 @@ def request_info(instance=None):
     access_token = getattr(request, "auth", None)
     if isinstance(access_token, AccessToken):
         data["access_token_id"] = access_token.id
+
+    if remote_addr := get_remote_addr(request):
+        data["remote_addr"] = remote_addr
 
     return data
 

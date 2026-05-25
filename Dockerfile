@@ -203,7 +203,7 @@ RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
 USER 1000:1000
 WORKDIR ${HOME}
 
-RUN mkdir -p data share keys logs /tmp/supervisord static
+RUN mkdir -p data share keys logs /tmp/supervisord /tmp/cvat static
 
 EXPOSE 8080
 ENTRYPOINT ["./backend_entrypoint.sh"]

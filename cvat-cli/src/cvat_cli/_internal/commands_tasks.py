@@ -5,16 +5,13 @@
 from __future__ import annotations
 
 import argparse
-import os
 import textwrap
 from collections.abc import Sequence
 
 import cvat_sdk.auto_annotation as cvataa
-from attr.converters import to_bool
 from cvat_sdk import Client, models
 from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
-from cvat_sdk.core.proxies.types import Location
 
 from .command_base import (
     CommandGroup,
@@ -22,6 +19,8 @@ from .command_base import (
     GenericCreateFromBackupCommand,
     GenericDeleteCommand,
     GenericDownloadBackupCommand,
+    GenericExportDatasetCommand,
+    GenericImportDatasetCommand,
     GenericListCommand,
 )
 from .common import FunctionLoader, configure_function_implementation_arguments
@@ -261,99 +260,17 @@ class TaskFrames:
 
 
 @COMMANDS.command_class("export-dataset")
-class TaskExportDataset:
-    description = textwrap.dedent("""\
-        Export a task as a dataset in the specified format (e.g. 'YOLO 1.1').
-        """)
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("task_id", type=int, help="task ID")
-        parser.add_argument(
-            "filename",
-            type=str,
-            nargs="?",
-            default="",
-            help="output file or directory (default: current directory)",
-        )
-        parser.add_argument(
-            "--format",
-            dest="fileformat",
-            type=str,
-            default="CVAT for images 1.1",
-            help="annotation format (default: %(default)s)",
-        )
-        parser.add_argument(
-            "--completion_verification_period",
-            dest="status_check_period",
-            default=2,
-            type=float,
-            help="number of seconds to wait until checking if dataset building finished",
-        )
-        parser.add_argument(
-            "--with-images",
-            type=to_bool,
-            default=False,
-            dest="include_images",
-            help="Whether to include images or not (default: %(default)s)",
-        )
-
-    def execute(
-        self,
-        client: Client,
-        *,
-        task_id: int,
-        fileformat: str,
-        filename: str,
-        status_check_period: int,
-        include_images: bool,
-    ) -> None:
-        if not filename:
-            filename = os.getcwd()
-
-        if filename.endswith((os.sep, os.altsep or os.sep)):
-            os.makedirs(filename, exist_ok=True)
-
-        client.tasks.retrieve(obj_id=task_id).export_dataset(
-            format_name=fileformat,
-            filename=filename,
-            pbar=DeferredTqdmProgressReporter(),
-            status_check_period=status_check_period,
-            include_images=include_images,
-            location=Location.LOCAL,
-        )
+class TaskExportDataset(GenericExportDatasetCommand, GenericTaskCommand):
+    pass
 
 
 @COMMANDS.command_class("import-dataset")
-class TaskImportDataset:
+class TaskImportDataset(GenericImportDatasetCommand, GenericTaskCommand):
     description = textwrap.dedent("""\
         Import annotations into a task from a dataset in the specified format
         (e.g. 'YOLO 1.1').
         """)
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("task_id", type=int, help="task ID")
-        parser.add_argument("filename", type=str, help="upload file")
-        parser.add_argument(
-            "--format",
-            dest="fileformat",
-            type=str,
-            default="CVAT 1.1",
-            help="annotation format (default: %(default)s)",
-        )
-
-    def execute(
-        self,
-        client: Client,
-        *,
-        task_id: int,
-        fileformat: str,
-        filename: str,
-    ) -> None:
-        client.tasks.retrieve(obj_id=task_id).import_annotations(
-            format_name=fileformat,
-            filename=filename,
-            pbar=DeferredTqdmProgressReporter(),
-        )
+    import_method_name = "import_annotations"
 
 
 @COMMANDS.command_class("backup")
