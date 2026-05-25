@@ -4912,7 +4912,6 @@ paths:
           - mask
           - polygon
           - ellipse
-          - attribute
       - name: enabled
         in: query
         description: A simple equality filter for the enabled field
@@ -4931,7 +4930,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'settings_id', 'task_id', 'project_id', 'annotation_type', 'enabled', 'created_date', 'updated_date'].
+           Available filter_fields: ['annotation_type', 'created_date', 'enabled', 'id', 'project_id', 'settings_id', 'task_id', 'updated_date'].
         schema:
           type: string
       - name: org
@@ -4970,8 +4969,8 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''settings_id'', ''task_id'', ''project_id'', ''annotation_type'',
-          ''enabled'', ''created_date'', ''updated_date'', ''name'']'
+          [''annotation_type'', ''created_date'', ''enabled'', ''id'', ''name'', ''project_id'',
+          ''settings_id'', ''sort_order'', ''task_id'', ''updated_date'']'
         schema:
           type: string
       - in: query
@@ -7508,7 +7507,6 @@ components:
       - mask
       - polygon
       - ellipse
-      - attribute
       type: string
       description: |-
         * `tag` - Tag
@@ -7520,7 +7518,6 @@ components:
         * `mask` - Mask
         * `polygon` - Polygon
         * `ellipse` - Ellipse
-        * `attribute` - Attribute
     AssetRead:
       type: object
       properties:
@@ -7683,6 +7680,9 @@ components:
           maxLength: 150
       required:
       - username
+    BlankEnum:
+      enum:
+      - ''
     Chapter:
       type: object
       properties:
@@ -10401,44 +10401,57 @@ components:
           type: string
           minLength: 1
           maxLength: 250
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
         filter:
           type: string
         enabled:
           type: boolean
         annotation_type:
-          $ref: '#/components/schemas/AnnotationTypeEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AnnotationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         metric:
-          allOf:
-          - $ref: '#/components/schemas/QualityTargetMetric'
+          nullable: true
           description: |-
             The primary metric used for quality estimation
 
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+          oneOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          - $ref: '#/components/schemas/NullEnum'
         required_score:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: Defines the minimal quality requirements in terms of the selected
             target metric.
         parent_requirement:
           type: integer
           nullable: true
-          description: The parent requirement. Must be specified if the annotation
-            type is attribute
+          description: The parent requirement. Child requirements inherit comparison
+            settings from it.
         iou_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: Used for distinction between matched / unmatched shapes
         point_size:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |-
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -10446,8 +10459,7 @@ components:
             height, the "side" is computed as a geometric mean of the width and height.
             Read more: https://cocodataset.org/#keypoints-eval
         point_size_base:
-          allOf:
-          - $ref: '#/components/schemas/QualityPointSizeBase'
+          nullable: true
           description: |-
             When comparing point annotations (including both separate points and point groups),
             the point size parameter defines matching area for each GT point based to the
@@ -10463,11 +10475,16 @@ components:
 
             * `image_size` - IMAGE_SIZE
             * `group_bbox_size` - GROUP_BBOX_SIZE
+          oneOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         line_thickness:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -10477,33 +10494,39 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         match_orientation:
           type: boolean
+          nullable: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'match_orientation' parameter is true
         match_groups:
           type: boolean
+          nullable: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'match_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          nullable: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
@@ -10511,19 +10534,26 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         match_attributes:
           type: boolean
+          nullable: true
           description: Enables or disables annotation attribute comparison
+        attribute_comparison:
+          type: object
+          nullable: true
         empty_is_annotated:
           type: boolean
+          nullable: true
           default: false
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
@@ -10913,24 +10943,6 @@ components:
       - included
       - not_checkable
       - total
-    QualityReportRequirementsSummary:
-      type: object
-      properties:
-        total:
-          type: integer
-        enabled:
-          type: integer
-        completed:
-          type: integer
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/QualityReportRequirementSummaryItem'
-      required:
-      - completed
-      - enabled
-      - items
-      - total
     QualityReportRequirementSummaryItem:
       type: object
       properties:
@@ -10950,6 +10962,24 @@ components:
       - name
       - score
       - threshold
+    QualityReportRequirementsSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        enabled:
+          type: integer
+        completed:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityReportRequirementSummaryItem'
+      required:
+      - completed
+      - enabled
+      - items
+      - total
     QualityReportSummary:
       type: object
       properties:
@@ -11076,44 +11106,63 @@ components:
         name:
           type: string
           maxLength: 250
+        is_default:
+          type: boolean
+          readOnly: true
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
         filter:
           type: string
         enabled:
           type: boolean
         annotation_type:
-          $ref: '#/components/schemas/AnnotationTypeEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AnnotationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         metric:
-          allOf:
-          - $ref: '#/components/schemas/QualityTargetMetric'
+          nullable: true
           description: |-
             The primary metric used for quality estimation
 
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+          oneOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          - $ref: '#/components/schemas/NullEnum'
         required_score:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: Defines the minimal quality requirements in terms of the selected
             target metric.
         parent_requirement:
           type: integer
           nullable: true
-          description: The parent requirement. Must be specified if the annotation
-            type is attribute
+          description: The parent requirement. Child requirements inherit comparison
+            settings from it.
+        effective:
+          type: object
+          readOnly: true
         iou_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: Used for distinction between matched / unmatched shapes
         point_size:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |-
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -11121,8 +11170,7 @@ components:
             height, the "side" is computed as a geometric mean of the width and height.
             Read more: https://cocodataset.org/#keypoints-eval
         point_size_base:
-          allOf:
-          - $ref: '#/components/schemas/QualityPointSizeBase'
+          nullable: true
           description: |-
             When comparing point annotations (including both separate points and point groups),
             the point size parameter defines matching area for each GT point based to the
@@ -11138,11 +11186,16 @@ components:
 
             * `image_size` - IMAGE_SIZE
             * `group_bbox_size` - GROUP_BBOX_SIZE
+          oneOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         line_thickness:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -11152,33 +11205,39 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         match_orientation:
           type: boolean
+          nullable: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'match_orientation' parameter is true
         match_groups:
           type: boolean
+          nullable: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'match_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          nullable: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
@@ -11186,19 +11245,26 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         match_attributes:
           type: boolean
+          nullable: true
           description: Enables or disables annotation attribute comparison
+        attribute_comparison:
+          type: object
+          nullable: true
         empty_is_annotated:
           type: boolean
+          nullable: true
           default: false
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
@@ -11222,44 +11288,57 @@ components:
           type: string
           minLength: 1
           maxLength: 250
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
         filter:
           type: string
         enabled:
           type: boolean
         annotation_type:
-          $ref: '#/components/schemas/AnnotationTypeEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AnnotationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         metric:
-          allOf:
-          - $ref: '#/components/schemas/QualityTargetMetric'
+          nullable: true
           description: |-
             The primary metric used for quality estimation
 
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+          oneOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          - $ref: '#/components/schemas/NullEnum'
         required_score:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: Defines the minimal quality requirements in terms of the selected
             target metric.
         parent_requirement:
           type: integer
           nullable: true
-          description: The parent requirement. Must be specified if the annotation
-            type is attribute
+          description: The parent requirement. Child requirements inherit comparison
+            settings from it.
         iou_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: Used for distinction between matched / unmatched shapes
         point_size:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |-
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -11267,8 +11346,7 @@ components:
             height, the "side" is computed as a geometric mean of the width and height.
             Read more: https://cocodataset.org/#keypoints-eval
         point_size_base:
-          allOf:
-          - $ref: '#/components/schemas/QualityPointSizeBase'
+          nullable: true
           description: |-
             When comparing point annotations (including both separate points and point groups),
             the point size parameter defines matching area for each GT point based to the
@@ -11284,11 +11362,16 @@ components:
 
             * `image_size` - IMAGE_SIZE
             * `group_bbox_size` - GROUP_BBOX_SIZE
+          oneOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         line_thickness:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -11298,33 +11381,39 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         match_orientation:
           type: boolean
+          nullable: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'match_orientation' parameter is true
         match_groups:
           type: boolean
+          nullable: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'match_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          nullable: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
@@ -11332,19 +11421,26 @@ components:
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         match_attributes:
           type: boolean
+          nullable: true
           description: Enables or disables annotation attribute comparison
+        attribute_comparison:
+          type: object
+          nullable: true
         empty_is_annotated:
           type: boolean
+          nullable: true
           default: false
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
