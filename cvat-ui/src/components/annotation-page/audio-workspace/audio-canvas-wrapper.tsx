@@ -238,6 +238,7 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
                         barWidth={2}
                         barRadius={3}
                         cursorWidth={2}
+                        normalize
                         onTimeupdate={handleTimeupdate}
                         onFinish={handleFinish}
                         plugins={plugins}
