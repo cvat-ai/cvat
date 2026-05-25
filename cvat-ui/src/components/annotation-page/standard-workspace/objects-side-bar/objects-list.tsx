@@ -6,11 +6,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import {
-    DndContext, DragEndEvent, PointerSensor,
+    DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor,
     pointerWithin, useSensor, useSensors,
 } from '@dnd-kit/core';
 import {
-    CaretDownOutlined, CaretRightOutlined, VerticalAlignMiddleOutlined,
+    CaretDownOutlined, CaretRightOutlined, EyeInvisibleOutlined,
+    EyeOutlined, VerticalAlignMiddleOutlined,
 } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -102,6 +103,7 @@ function ObjectListComponent(props: Props): JSX.Element {
     // Keep collapse state in the list so expand/open events and collapse-all can coordinate all sections.
     const [collapsedLayers, setCollapsedLayers] = useState<Set<number>>(() => new Set());
     const [dragActive, setDragActive] = useState<boolean>(false);
+    const [activeDragID, setActiveDragID] = useState<string | null>(null);
     const [dragPointerPosition, setDragPointerPosition] = useState<PointerPosition | null>(null);
     const [pendingExpandedLayerItemID, setPendingExpandedLayerItemID] = useState<string | null>(null);
     const layerObjectStates = objectStates.filter(isLayerState);
@@ -210,6 +212,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         const { active, over } = event;
 
         setDragActive(false);
+        setActiveDragID(null);
         setDragPointerPosition(null);
 
         if (!over) {
@@ -240,12 +243,14 @@ function ObjectListComponent(props: Props): JSX.Element {
         }
     }, [moveObjectsOnNewLayer, moveObjectsToLayer]);
 
-    const onDragStart = useCallback((): void => {
+    const onDragStart = useCallback((event: DragStartEvent): void => {
         setDragActive(true);
+        setActiveDragID(String(event.active.id));
     }, []);
 
     const onDragCancel = useCallback((): void => {
         setDragActive(false);
+        setActiveDragID(null);
         setDragPointerPosition(null);
     }, []);
 
@@ -265,6 +270,45 @@ function ObjectListComponent(props: Props): JSX.Element {
 
     const toggleAllLayersCollapsed = (): void => {
         setCollapsedLayers(allLayersCollapsed ? new Set() : new Set(zLayers));
+    };
+
+    const renderDragOverlay = (): JSX.Element | null => {
+        if (!activeDragID) {
+            return null;
+        }
+
+        const clientID = parseObjectDragID(activeDragID);
+
+        if (clientID !== null) {
+            return (
+                <div className='cvat-objects-sidebar-z-layer-drag-overlay'>
+                    <ObjectItemContainer
+                        objectStates={objectStates}
+                        clientID={clientID}
+                        visibleSkeletonElements={visibleSkeletonElements}
+                        allowSimplifyLifecycle
+                        zLayerDragging
+                    />
+                </div>
+            );
+        }
+
+        const zOrder = parseLayerDragID(activeDragID);
+
+        if (zOrder === null) {
+            return null;
+        }
+
+        const visible = zOrder <= currentLayer;
+
+        return (
+            <div className='cvat-objects-sidebar-z-layer-mark cvat-objects-sidebar-z-layer-mark-dragging'>
+                <Text strong>Layer {zOrder}</Text>
+                <span className='cvat-objects-sidebar-z-layer-visibility-indicator'>
+                    {visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                </span>
+            </div>
+        );
     };
 
     return (
@@ -352,6 +396,9 @@ function ObjectListComponent(props: Props): JSX.Element {
                                     />
                                 )}
                             </div>
+                            <DragOverlay>
+                                {renderDragOverlay()}
+                            </DragOverlay>
                         </DndContext>
                     </div>
                 ) : sortedStatesID.map((id: number): JSX.Element => (

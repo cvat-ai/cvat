@@ -24,15 +24,13 @@ function DraggableObjectItem(props: Props): JSX.Element {
     } = props;
 
     const {
-        attributes, listeners, setNodeRef, transform, isDragging,
+        attributes, listeners, setNodeRef, isDragging,
     } = useDraggable({
         id: objectDragID(clientID),
         disabled: !draggable,
     });
 
-    // dnd-kit exposes the live drag offset; applying it makes the dragged card follow the pointer.
     const style = {
-        ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {}),
         ...(isDragging ? { pointerEvents: 'none' as const } : {}),
     };
 

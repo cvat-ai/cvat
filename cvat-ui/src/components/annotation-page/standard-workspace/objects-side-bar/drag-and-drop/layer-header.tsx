@@ -31,14 +31,10 @@ function LayerHeader(props: LayerHeaderProps): JSX.Element {
     } = props;
 
     const {
-        attributes, listeners, setNodeRef, transform, isDragging,
+        attributes, listeners, setNodeRef, isDragging,
     } = useDraggable({ id: layerDragID(zOrder) });
 
-    // dnd-kit exposes the live drag offset; applying it makes the dragged layer follow the pointer.
-    const style = {
-        ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {}),
-        ...(isDragging ? { pointerEvents: 'none' as const } : {}),
-    };
+    const style = isDragging ? { pointerEvents: 'none' as const } : {};
 
     const className = [
         'cvat-objects-sidebar-z-layer-mark',
