@@ -20,7 +20,8 @@ from rq.job import Job, JobStatus
 from rq.queue import Queue
 from rq.registry import StartedJobRegistry
 from rq.utils import utcnow
-from rq.worker import BaseWorker, DequeueStrategy, StopRequested, WorkerStatus
+from rq.worker import BaseWorker as _RqBaseWorker
+from rq.worker import DequeueStrategy, StopRequested, WorkerStatus
 
 from cvat.apps.redis_handler.mixins import RqWorkerPortMixin
 from cvat.apps.redis_handler.utils import NoOpDeathPenalty
@@ -30,7 +31,11 @@ _POOL_FULL_POLL_INTERVAL: float = 0.1
 _JOB_HEARTBEAT_REFRESH_BUFFER_SEC: int = 15
 
 
-class RqThreadPoolWorker(RqWorkerPortMixin, BaseWorker):
+class BaseWorker(_RqBaseWorker, RqWorkerPortMixin):
+    pass
+
+
+class RqThreadPoolWorker(BaseWorker):
     def __init__(
         self,
         *args,
