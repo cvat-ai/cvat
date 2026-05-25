@@ -29,18 +29,6 @@ import jiwer
 import numpy as np
 import regex
 
-# `\X` matches one extended grapheme cluster — keeps combining marks
-# (Indic, Arabic diacritics) and emoji ZWJ sequences as a single unit.
-_GRAPHEMES_RE = regex.compile(r"\X")
-
-
-def _iter_graphemes(text: str) -> Iterator[str]:
-    """Yield each extended grapheme cluster in `text`. Single source of
-    truth for character-level iteration across char-granularity
-    tokenization and the char-stream alignment paths."""
-    for m in _GRAPHEMES_RE.finditer(text):
-        yield m.group()
-
 from .config import TranscriptionRequirement
 from .data import (
     AlignMode,
@@ -60,6 +48,19 @@ from .reports import (
     GroupAlignment,
     TranscriptionReport,
 )
+
+# `\X` matches one extended grapheme cluster — keeps combining marks
+# (Indic, Arabic diacritics) and emoji ZWJ sequences as a single unit.
+_GRAPHEMES_RE = regex.compile(r"\X")
+
+
+def _iter_graphemes(text: str) -> Iterator[str]:
+    """Yield each extended grapheme cluster in `text`. Single source of
+    truth for character-level iteration across char-granularity
+    tokenization and the char-stream alignment paths."""
+    for m in _GRAPHEMES_RE.finditer(text):
+        yield m.group()
+
 
 # ============================ Tokenization ====================================
 
@@ -335,7 +336,7 @@ def _align_pair(
         ref_units=list(refs_actual),
         hyp_units=list(hyps_actual),
         edits=edits,
-        wer=float(rate),
+        error_rate=float(rate),
         substitutions=out.substitutions,
         insertions=out.insertions,
         deletions=out.deletions,
@@ -862,7 +863,7 @@ def _align_group_via_chars(
         ref_units=ref_word_strs,
         hyp_units=hyp_word_strs,
         edits=word_edits,
-        wer=wer,
+        error_rate=wer,
         substitutions=subs,
         insertions=ins,
         deletions=dels,
@@ -944,7 +945,7 @@ def _align_group_with_overlap(
         hyp_origins,
         overlap,
     )
-    wer = (subs + ins + dels + boundaries) / len(ref_units)
+    error_rate = (subs + ins + dels + boundaries) / len(ref_units)
     return AlignmentResult(
         granularity=granularity,
         ref_normalized=ref_norm_joined,
@@ -952,7 +953,7 @@ def _align_group_with_overlap(
         ref_units=list(ref_units),
         hyp_units=list(hyp_units),
         edits=edits,
-        wer=wer,
+        error_rate=error_rate,
         substitutions=subs,
         insertions=ins,
         deletions=dels,

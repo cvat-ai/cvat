@@ -59,7 +59,8 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.utils import take_by
 from cvat.apps.profiler import silk_profile
-from cvat.apps.quality_control import audio, models
+from cvat.apps.quality_control import audio as audio_qa
+from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
     AnnotationConflictSeverity,
     AnnotationConflictType,
@@ -2223,16 +2224,14 @@ class _Comparator:
 
 @define(slots=False)
 class _AttributeIndex:
-    """Attribute-spec lookups used throughout the interval-quality pipeline."""
-
     by_id: dict[int, AttributeSpec]
     by_path: dict[AttributePath, AttributeSpec]
     transcription_attr_ids: set[int]
 
 
 @define(slots=False)
-class _IntervalPairView:
-    """CVAT-side dict pairs recovered from `audio.compare()` output, plus
+class _IntervalMatches:
+    """CVAT-side dict pairs recovered from `audio_qa.compare()` output, plus
     the lookup tables needed to score / aggregate them.
 
     `matches` / `gt_unmatched` / `ds_unmatched` are mutated by the
@@ -2245,7 +2244,7 @@ class _IntervalPairView:
     gt_unmatched: list[dict]
     ds_unmatched: list[dict]
     iou_by_pair: dict[tuple[int, int], float]
-    pair_alignment_by_req: list[dict[tuple[int, int], audio.AlignmentResult]]
+    pair_alignment_by_req: list[dict[tuple[int, int], audio_qa.AlignmentResult]]
 
 
 class DatasetComparator:
@@ -2332,20 +2331,20 @@ class DatasetComparator:
         gt_intervals = self._gt_data_provider.job_annotation.ir_data.intervals
         ds_intervals = self._ds_data_provider.job_annotation.ir_data.intervals
 
-        audio_gt, audio_ds, audio_settings, active_requirements = (
-            self._build_interval_audio_inputs(gt_intervals, ds_intervals, attr_index=attr_index)
+        audio_gt, audio_ds, audio_settings, active_requirements = self._build_interval_audio_inputs(
+            gt_intervals, ds_intervals, attr_index=attr_index
         )
-        audio_report = audio.compare(audio_gt, audio_ds, settings=audio_settings)
+        audio_report = audio_qa.compare(audio_gt, audio_ds, settings=audio_settings)
 
-        view = self._recover_interval_pair_view(audio_report, gt_intervals, ds_intervals)
+        matching_results = self._recover_interval_matches(audio_report, gt_intervals, ds_intervals)
 
         results = self._intermediate_results
         conflicts = results.setdefault("conflicts", [])
         attribute_summaries: dict = {}
 
-        self._emit_interval_l1_conflicts(conflicts, view)
+        self._emit_interval_conflicts(conflicts, matching_results)
         self._score_interval_transcriptions(
-            view=view,
+            matching_results=matching_results,
             active_requirements=active_requirements,
             attr_index=attr_index,
             cvat_dm_label_id_map=cvat_dm_label_id_map,
@@ -2353,14 +2352,17 @@ class DatasetComparator:
             attribute_summaries=attribute_summaries,
         )
 
-        confusion_matrix_labels, confusion_matrix = (
-            self._build_interval_confusion_matrix(view, cvat_dm_label_id_map)
+        confusion_matrix_labels, confusion_matrix = self._build_interval_confusion_matrix(
+            matching_results, cvat_dm_label_id_map=cvat_dm_label_id_map
         )
         annotations_summary = self._compute_annotations_summary(
             confusion_matrix, confusion_matrix_labels
         )
         component_summaries = self._build_interval_component_summaries(
-            view, gt_intervals, ds_intervals, attribute_summaries,
+            matching_results=matching_results,
+            gt_intervals=gt_intervals,
+            ds_intervals=ds_intervals,
+            attribute_summaries=attribute_summaries,
         )
 
         results.setdefault(
@@ -2386,7 +2388,8 @@ class DatasetComparator:
             by_path[req.attribute].id for req in self.settings.transcription_requirements
         }
         return _AttributeIndex(
-            by_id=by_id, by_path=by_path,
+            by_id=by_id,
+            by_path=by_path,
             transcription_attr_ids=transcription_attr_ids,
         )
 
@@ -2414,22 +2417,19 @@ class DatasetComparator:
         *,
         attr_index: _AttributeIndex,
     ) -> tuple[
-        list[audio.Interval],
-        list[audio.Interval],
-        audio.QualitySettings,
+        list[audio_qa.Interval],
+        list[audio_qa.Interval],
+        audio_qa.QualitySettings,
         list[tuple[models.TranscriptionQualityRequirement, AttributeSpec]],
     ]:
-        def to_audio_intervals(intervals: list[dict]) -> list[audio.Interval]:
+        def to_audio_intervals(intervals: list[dict]) -> list[audio_qa.Interval]:
             return [
-                audio.Interval(
+                audio_qa.Interval(
                     id=iv["id"],
                     start=iv["start"],
                     stop=iv["stop"],
                     label=str(iv["label_id"]),
-                    extra={
-                        str(a["spec_id"]): a["value"] or ""
-                        for a in iv["attributes"]
-                    },
+                    extra={str(a["spec_id"]): a["value"] or "" for a in iv["attributes"]},
                 )
                 for iv in intervals
             ]
@@ -2439,33 +2439,33 @@ class DatasetComparator:
 
         # Per-requirement audio config. Skip requirements whose attribute spec
         # is missing or not TEXT silently.
-        audio_reqs: list[audio.TranscriptionRequirement] = []
-        active_requirements: list[
-            tuple[models.TranscriptionQualityRequirement, AttributeSpec]
-        ] = []
+        audio_reqs: list[audio_qa.TranscriptionRequirement] = []
+        active_requirements: list[tuple[models.TranscriptionQualityRequirement, AttributeSpec]] = []
         for requirement in self.settings.transcription_requirements:
             attribute_spec = attr_index.by_path.get(requirement.attribute)
             if attribute_spec is None or attribute_spec.input_type != AttributeType.TEXT:
                 continue
 
-            audio_reqs.append(audio.TranscriptionRequirement(
-                name=f"attr_{attribute_spec.id}",
-                text_attribute=str(attribute_spec.id),
-                granularity=(
-                    audio.Granularity.CHARACTER
-                    if requirement.metric == TranscriptionQualityMetric.CER
-                    else audio.Granularity.WORD
-                ),
-                align=audio.AlignMode.CHAR,
-                metric=audio.Metric.EQUALITY,
-                normalizer=audio.NormalizerConfig(mode=audio.NormalizerMode.BASIC),
-                grouping=audio.GroupingConfig(strategy=audio.GroupingStrategy.FILTER),
-                iou_threshold=self.settings.iou_threshold,
-            ))
+            audio_reqs.append(
+                audio_qa.TranscriptionRequirement(
+                    name=f"attr_{attribute_spec.id}",
+                    text_attribute=str(attribute_spec.id),
+                    granularity=(
+                        audio_qa.Granularity.CHARACTER
+                        if requirement.metric == TranscriptionQualityMetric.CER
+                        else audio_qa.Granularity.WORD
+                    ),
+                    align=audio_qa.AlignMode.CHAR,
+                    metric=audio_qa.Metric.EQUALITY,
+                    normalizer=audio_qa.NormalizerConfig(mode=audio_qa.NormalizerMode.BASIC),
+                    grouping=audio_qa.GroupingConfig(strategy=audio_qa.GroupingStrategy.FILTER),
+                    iou_threshold=self.settings.iou_threshold,
+                )
+            )
             active_requirements.append((requirement, attribute_spec))
 
-        audio_settings = audio.QualitySettings(
-            interval_matching=audio.IntervalMatchingConfig(
+        audio_settings = audio_qa.QualitySettings(
+            interval_matching=audio_qa.IntervalMatchingConfig(
                 iou_threshold=self.settings.iou_threshold,
                 low_overlap_threshold=self.settings.low_overlap_threshold,
             ),
@@ -2473,27 +2473,24 @@ class DatasetComparator:
         )
         return gt_audio, ds_audio, audio_settings, active_requirements
 
-    def _recover_interval_pair_view(
+    def _recover_interval_matches(
         self,
-        audio_report: audio.ComparisonReport,
+        audio_report: audio_qa.ComparisonReport,
         gt_intervals: list[dict],
         ds_intervals: list[dict],
-    ) -> _IntervalPairView:
+    ) -> _IntervalMatches:
         """Map audio's id-only references back to CVAT interval dicts and
         build per-pair lookup tables (IoU + per-requirement alignment)."""
 
         gt_by_id = {iv["id"]: iv for iv in gt_intervals}
         ds_by_id = {iv["id"]: iv for iv in ds_intervals}
-        matches = [
-            (gt_by_id[m.gt.id], ds_by_id[m.ds.id])
-            for m in audio_report.intervals.matches
-        ]
+        matches = [(gt_by_id[m.gt.id], ds_by_id[m.ds.id]) for m in audio_report.intervals.matches]
         mismatches = [
-            (gt_by_id[m.gt.id], ds_by_id[m.ds.id])
-            for m in audio_report.intervals.label_mismatches
+            (gt_by_id[m.gt.id], ds_by_id[m.ds.id]) for m in audio_report.intervals.label_mismatches
         ]
         gt_unmatched = [gt_by_id[iv.id] for iv in audio_report.intervals.gt_unmatched]
         ds_unmatched = [ds_by_id[iv.id] for iv in audio_report.intervals.ds_unmatched]
+
         iou_by_pair = {
             (m.gt.id, m.ds.id): m.iou
             for m in itertools.chain(
@@ -2501,13 +2498,15 @@ class DatasetComparator:
                 audio_report.intervals.label_mismatches,
             )
         }
-        # Audio's filter strategy re-pairs intervals per requirement; with
-        # same iou_threshold + group-by-label the pairings match L1's.
+
+        # Each transcription requirement works at the transcription attribute level,
+        # and produces its own interval matching, even though the IoU stays the same.
+        # Specifically, it happens with the "filter" matching strategy.
         pair_alignment_by_req = [
             {(p.gt.id, p.ds.id): p.alignment for p in tr.pairs}
             for tr in audio_report.transcriptions
         ]
-        return _IntervalPairView(
+        return _IntervalMatches(
             matches=matches,
             mismatches=mismatches,
             gt_unmatched=gt_unmatched,
@@ -2516,61 +2515,63 @@ class DatasetComparator:
             pair_alignment_by_req=pair_alignment_by_req,
         )
 
-    def _emit_interval_l1_conflicts(
-        self, conflicts: list[AnnotationConflict], view: _IntervalPairView
+    def _emit_interval_conflicts(
+        self, conflicts: list[AnnotationConflict], matches: _IntervalMatches
     ) -> None:
-        """Push the four L1 conflict types: LOW_OVERLAP for low-IoU matches /
-        mismatches, MISSING/EXTRA for unmatched intervals, MISMATCHING_LABEL
-        for cross-label pairs."""
-
         gt_job_id = self._gt_data_provider.job_id
         ds_job_id = self._ds_data_provider.job_id
 
-        def ann_id(iv: dict, job_id: int) -> AnnotationId:
+        def ann_id(interval: dict, job_id: int) -> AnnotationId:
             return AnnotationId(
-                obj_id=iv["id"],
+                obj_id=interval["id"],
                 job_id=job_id,
                 type=AnnotationType.INTERVAL,
                 shape_type=None,
             )
 
-        for gt_ann, ds_ann in itertools.chain(view.matches, view.mismatches):
-            similarity = view.iou_by_pair.get((gt_ann["id"], ds_ann["id"]))
+        for gt_ann, ds_ann in itertools.chain(matches.matches, matches.mismatches):
+            similarity = matches.iou_by_pair.get((gt_ann["id"], ds_ann["id"]))
             if similarity and similarity < self.settings.low_overlap_threshold:
-                conflicts.append(AnnotationConflict(
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=None,
+                        type=AnnotationConflictType.LOW_OVERLAP,
+                        annotation_ids=[ann_id(ds_ann, ds_job_id), ann_id(gt_ann, gt_job_id)],
+                    )
+                )
+
+        for interval in matches.gt_unmatched:
+            conflicts.append(
+                AnnotationConflict(
                     frame_id=None,
-                    type=AnnotationConflictType.LOW_OVERLAP,
+                    type=AnnotationConflictType.MISSING_ANNOTATION,
+                    annotation_ids=[ann_id(interval, gt_job_id)],
+                )
+            )
+
+        for interval in matches.ds_unmatched:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=None,
+                    type=AnnotationConflictType.EXTRA_ANNOTATION,
+                    annotation_ids=[ann_id(interval, ds_job_id)],
+                )
+            )
+
+        for gt_ann, ds_ann in matches.mismatches:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=None,
+                    type=AnnotationConflictType.MISMATCHING_LABEL,
                     annotation_ids=[ann_id(ds_ann, ds_job_id), ann_id(gt_ann, gt_job_id)],
-                ))
-
-        for iv in view.gt_unmatched:
-            conflicts.append(AnnotationConflict(
-                frame_id=None,
-                type=AnnotationConflictType.MISSING_ANNOTATION,
-                annotation_ids=[ann_id(iv, gt_job_id)],
-            ))
-
-        for iv in view.ds_unmatched:
-            conflicts.append(AnnotationConflict(
-                frame_id=None,
-                type=AnnotationConflictType.EXTRA_ANNOTATION,
-                annotation_ids=[ann_id(iv, ds_job_id)],
-            ))
-
-        for gt_ann, ds_ann in view.mismatches:
-            conflicts.append(AnnotationConflict(
-                frame_id=None,
-                type=AnnotationConflictType.MISMATCHING_LABEL,
-                annotation_ids=[ann_id(ds_ann, ds_job_id), ann_id(gt_ann, gt_job_id)],
-            ))
+                )
+            )
 
     def _score_interval_transcriptions(
         self,
         *,
-        view: _IntervalPairView,
-        active_requirements: list[
-            tuple[models.TranscriptionQualityRequirement, AttributeSpec]
-        ],
+        matching_results: _IntervalMatches,
+        active_requirements: list[tuple[models.TranscriptionQualityRequirement, AttributeSpec]],
         attr_index: _AttributeIndex,
         cvat_dm_label_id_map: dict[int, int],
         conflicts: list[AnnotationConflict],
@@ -2583,19 +2584,21 @@ class DatasetComparator:
         gt_job_id = self._gt_data_provider.job_id
         ds_job_id = self._ds_data_provider.job_id
 
-        def ann_id(iv: dict, job_id: int) -> AnnotationId:
+        def ann_id(interval: dict, job_id: int) -> AnnotationId:
             return AnnotationId(
-                obj_id=iv["id"],
+                obj_id=interval["id"],
                 job_id=job_id,
                 type=AnnotationType.INTERVAL,
                 shape_type=None,
             )
 
         match_idx = 0
-        while match_idx < len(view.matches):
-            gt_ann, ds_ann = view.matches[match_idx]
-            match_confirmed = True
+        while match_idx < len(matching_results.matches):
+            gt_ann, ds_ann = matching_results.matches[match_idx]
 
+            # Iterate over the requirements, potentially demoting a match to mismatch
+            # if any attribute requirement is not satisfied.
+            match_confirmed = True
             for req_idx, (requirement, attribute_spec) in enumerate(active_requirements):
                 if (
                     attribute_spec.id
@@ -2605,26 +2608,26 @@ class DatasetComparator:
                 ):
                     continue
 
-                alignment = view.pair_alignment_by_req[req_idx].get(
+                pair_alignment = matching_results.pair_alignment_by_req[req_idx][
                     (gt_ann["id"], ds_ann["id"])
-                )
-                if alignment is None:
-                    # Pairing dropped by audio's filter strategy (shouldn't
-                    # happen with same iou_threshold + group-by-label).
-                    continue
-                req_satisfied = alignment.wer < requirement.acceptance_threshold
+                ]
+                req_satisfied = pair_alignment.error_rate < requirement.acceptance_threshold
 
                 if not req_satisfied:
                     match_confirmed = False
-                    conflicts.append(AnnotationConflict(
-                        type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
-                        frame_id=None,
-                        annotation_ids=[
-                            ann_id(ds_ann, ds_job_id),
-                            ann_id(gt_ann, gt_job_id),
-                        ],
-                        attributes=[attribute_spec.name],
-                    ))
+                    conflicts.append(
+                        AnnotationConflict(
+                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                            frame_id=None,
+                            annotation_ids=[
+                                ann_id(ds_ann, ds_job_id),
+                                ann_id(gt_ann, gt_job_id),
+                            ],
+                            attributes=[attribute_spec.name],
+                        )
+                    )
+
+                    # Need to collect stats for all the requirements, so no early return
 
                 attribute_summary = ComparisonReportAnnotationAttributeSummary(
                     attribute=requirement.attribute,
@@ -2638,16 +2641,20 @@ class DatasetComparator:
                 ).accumulate(attribute_summary)
 
             if not match_confirmed:
-                view.matches.pop(match_idx)
-                view.gt_unmatched.append(gt_ann)
-                view.ds_unmatched.append(ds_ann)
+                matching_results.matches.pop(match_idx)
+                matching_results.gt_unmatched.append(gt_ann)
+                matching_results.ds_unmatched.append(ds_ann)
             else:
                 match_idx += 1
 
             if self.settings.compare_attributes:
                 self._match_interval_non_text_attributes(
-                    gt_ann, ds_ann, attr_index, cvat_dm_label_id_map,
-                    conflicts, attribute_summaries,
+                    gt_ann,
+                    ds_ann,
+                    attr_index,
+                    cvat_dm_label_id_map,
+                    conflicts,
+                    attribute_summaries,
                 )
 
     def _match_interval_non_text_attributes(
@@ -2698,41 +2705,37 @@ class DatasetComparator:
         )
 
     def _build_interval_confusion_matrix(
-        self, view: _IntervalPairView, cvat_dm_label_id_map: dict[int, int]
+        self, matching_results: _IntervalMatches, *, cvat_dm_label_id_map: dict[int, int]
     ) -> tuple[list[str], np.ndarray]:
-        confusion_matrix_labels, confusion_matrix, label_id_map = (
-            self._make_zero_confusion_matrix()
-        )
+        confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
         cvat_label_to_idx = {
             cvat_label_id: label_id_map[dm_label_id]
             for cvat_label_id, dm_label_id in cvat_dm_label_id_map.items()
         }
         for gt_ann, ds_ann in itertools.chain(
-            view.matches,
-            view.mismatches,
-            zip(itertools.repeat(None), view.ds_unmatched),
-            zip(view.gt_unmatched, itertools.repeat(None)),
+            matching_results.matches,
+            matching_results.mismatches,
+            zip(itertools.repeat(None), matching_results.ds_unmatched),
+            zip(matching_results.gt_unmatched, itertools.repeat(None)),
         ):
-            ds_label_idx = (
-                cvat_label_to_idx[ds_ann["label_id"]] if ds_ann else self._UNMATCHED_IDX
-            )
-            gt_label_idx = (
-                cvat_label_to_idx[gt_ann["label_id"]] if gt_ann else self._UNMATCHED_IDX
-            )
+            ds_label_idx = cvat_label_to_idx[ds_ann["label_id"]] if ds_ann else self._UNMATCHED_IDX
+            gt_label_idx = cvat_label_to_idx[gt_ann["label_id"]] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
+
         return confusion_matrix_labels, confusion_matrix
 
     def _build_interval_component_summaries(
         self,
-        view: _IntervalPairView,
+        *,
+        matching_results: _IntervalMatches,
         gt_intervals: list[dict],
         ds_intervals: list[dict],
         attribute_summaries: dict,
     ) -> ComparisonReportAnnotationComponentsSummary:
-        n_matches = len(view.matches)
-        n_mismatches = len(view.mismatches)
-        n_gt_unmatched = len(view.gt_unmatched)
-        n_ds_unmatched = len(view.ds_unmatched)
+        n_matches = len(matching_results.matches)
+        n_mismatches = len(matching_results.mismatches)
+        n_gt_unmatched = len(matching_results.gt_unmatched)
+        n_ds_unmatched = len(matching_results.ds_unmatched)
         return ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
                 valid_count=n_matches + n_mismatches,
