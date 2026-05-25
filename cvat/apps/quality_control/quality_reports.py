@@ -2348,7 +2348,6 @@ class DatasetComparator:
                     start=iv["start"],
                     stop=iv["stop"],
                     label=str(iv["label_id"]),
-                    text="",
                     extra=extra,
                 ))
             return audio.DatasetItem(name=name, filename="", intervals=items)

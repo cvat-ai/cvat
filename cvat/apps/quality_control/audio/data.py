@@ -10,7 +10,6 @@ class Interval:
     start: float  # seconds
     stop: float  # seconds
     label: str
-    text: str
     source: str = ""
     score: float = 1.0
     extra: dict[str, str] = field(default_factory=dict)
