@@ -2336,24 +2336,23 @@ class DatasetComparator:
         gt_by_id = {iv["id"]: iv for iv in gt_intervals}
         ds_by_id = {iv["id"]: iv for iv in ds_intervals}
 
-        def _to_dataset_item(intervals: list[dict], name: str) -> audio.DatasetItem:
-            items: list[audio.Interval] = []
-            for iv in intervals:
-                extra = {
-                    str(a["spec_id"]): a["value"] or ""
-                    for a in iv["attributes"]
-                }
-                items.append(audio.Interval(
+        def _to_audio_intervals(intervals: list[dict]) -> list[audio.Interval]:
+            return [
+                audio.Interval(
                     id=iv["id"],
                     start=iv["start"],
                     stop=iv["stop"],
                     label=str(iv["label_id"]),
-                    extra=extra,
-                ))
-            return audio.DatasetItem(name=name, filename="", intervals=items)
+                    extra={
+                        str(a["spec_id"]): a["value"] or ""
+                        for a in iv["attributes"]
+                    },
+                )
+                for iv in intervals
+            ]
 
-        gt_item = _to_dataset_item(gt_intervals, "gt")
-        ds_item = _to_dataset_item(ds_intervals, "ds")
+        gt_audio = _to_audio_intervals(gt_intervals)
+        ds_audio = _to_audio_intervals(ds_intervals)
 
         # Per-requirement audio config. Skip requirements whose attribute spec
         # is missing or not TEXT — same silent-skip behavior as before.
@@ -2388,7 +2387,7 @@ class DatasetComparator:
             ),
             transcriptions=audio_reqs,
         )
-        audio_report = audio.compare(gt_item, ds_item, settings=audio_settings)
+        audio_report = audio.compare(gt_audio, ds_audio, settings=audio_settings)
 
         # Recover CVAT-side dict pairs from audio's id-only references.
         matches: list[tuple[dict, dict]] = [
