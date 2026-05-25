@@ -1,7 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import Icon from '@ant-design/icons';
-import { AudioLoopIcon } from 'icons';
+import { RetweetOutlined } from '@ant-design/icons';
 
 import { CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -48,8 +47,7 @@ function LoopControl(props: Props): JSX.Element {
                 handlers={handlers}
             />
             <CVATTooltip title={`Loop interval playback${loop ? ' (on)' : ''} (R)`} placement='right'>
-                <Icon
-                    component={AudioLoopIcon}
+                <RetweetOutlined
                     className={
                         loop ?
                             'cvat-active-canvas-control cvat-audio-loop-control' :

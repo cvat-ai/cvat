@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import Icon from '@ant-design/icons';
-import { AudioRecordRegionIcon } from 'icons';
+import { PlayCircleOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -158,8 +157,7 @@ function RecordRegionControl(props: Props): JSX.Element {
                     }
                     placement='right'
                 >
-                    <Icon
-                        component={AudioRecordRegionIcon}
+                    <PlayCircleOutlined
                         className={
                             (isActive ?
                                 'cvat-active-canvas-control cvat-audio-record-region-control' :

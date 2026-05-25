@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import Icon from '@ant-design/icons';
-import { AudioExtendRegionIcon } from 'icons';
+import { ColumnWidthOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -157,8 +156,7 @@ function ExtendRegionControl(props: Props): JSX.Element {
                     }
                     placement='right'
                 >
-                    <Icon
-                        component={AudioExtendRegionIcon}
+                    <ColumnWidthOutlined
                         className={
                             `cvat-audio-extend-region-control${
                                 noLabels ? ' cvat-audio-extend-region-control-disabled' : ''

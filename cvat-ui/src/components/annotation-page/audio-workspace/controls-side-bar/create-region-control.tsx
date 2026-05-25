@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import Icon from '@ant-design/icons';
-import { AudioCreateRegionIcon } from 'icons';
+import { PlusOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -152,8 +151,7 @@ function CreateRegionControl(props: Props): JSX.Element {
                     }
                     placement='right'
                 >
-                    <Icon
-                        component={AudioCreateRegionIcon}
+                    <PlusOutlined
                         className={
                             (isActive ?
                                 'cvat-active-canvas-control cvat-audio-create-region-control' :

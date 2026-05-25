@@ -1,6 +1,5 @@
 import React from 'react';
-import Icon from '@ant-design/icons';
-import { AudioSpeedIcon } from 'icons';
+import { DashboardOutlined } from '@ant-design/icons';
 
 import AudioSliderControl from './audio-slider-control';
 
@@ -14,7 +13,7 @@ function SpeedControl(props: Props): JSX.Element {
 
     return (
         <AudioSliderControl
-            icon={<Icon component={AudioSpeedIcon} />}
+            icon={<DashboardOutlined />}
             tooltip='Speed'
             value={playbackRate}
             min={0.1}

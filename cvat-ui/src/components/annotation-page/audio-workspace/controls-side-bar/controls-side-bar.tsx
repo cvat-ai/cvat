@@ -107,6 +107,7 @@ export default function AudioControlsSideBarComponent(props: Props): JSX.Element
                 loop={loop}
                 onLoopChange={onLoopChange}
             />
+            <div className='cvat-audio-controls-divider' />
             <ObservedZoomControl
                 zoom={zoom}
                 maxZoom={maxZoom}

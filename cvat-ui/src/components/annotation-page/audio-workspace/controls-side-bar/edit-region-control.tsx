@@ -1,6 +1,5 @@
 import React from 'react';
-import Icon from '@ant-design/icons';
-import { AudioEditRegionIcon } from 'icons';
+import { EditOutlined } from '@ant-design/icons';
 
 import { ActiveControl, CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -53,8 +52,7 @@ function EditRegionControl(props: Props): JSX.Element {
                 handlers={handlers}
             />
             <CVATTooltip title={`Edit interval ${editRegionShortkey}`} placement='right'>
-                <Icon
-                    component={AudioEditRegionIcon}
+                <EditOutlined
                     className={
                         isActive ?
                             'cvat-active-canvas-control cvat-audio-edit-region-control' :
