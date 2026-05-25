@@ -4,7 +4,46 @@
 
 /// <reference types="cypress" />
 
+import {
+    taskName as AUDIO_TASK_NAME,
+    firstLabelName as AUDIO_FIRST_LABEL,
+    secondLabelName as AUDIO_SECOND_LABEL,
+    attrName as AUDIO_ATTR_NAME,
+    attrDefaultValue as AUDIO_ATTR_DEFAULT,
+    audioFile as AUDIO_FILE,
+} from './const_audio';
+import { defaultTaskSpec } from './default-specs';
+
 const WAVEFORM_TIMEOUT = 30000;
+
+Cypress.Commands.add('ensureAudioTask', () => {
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    cy.window().then((win) => cy.wrap(win.cvat.tasks.get({ search: AUDIO_TASK_NAME }))).then((tasks) => {
+        const existing = tasks.find((t) => t.name === AUDIO_TASK_NAME);
+        if (existing) return;
+
+        const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+            taskName: AUDIO_TASK_NAME,
+            labelName: AUDIO_FIRST_LABEL,
+            attributes: [{ name: AUDIO_ATTR_NAME, values: AUDIO_ATTR_DEFAULT, type: 'text' }],
+            serverFiles: [AUDIO_FILE],
+        });
+        taskSpec.labels.push({ name: AUDIO_SECOND_LABEL, attributes: [], type: 'any' });
+
+        cy.intercept('POST', '/api/tasks**').as('createAudioTaskRequest');
+        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ jobIds }) => {
+            cy.wait('@createAudioTaskRequest');
+            const jobId = jobIds[0];
+            cy.request({
+                method: 'GET',
+                url: `/api/jobs/${jobId}/data?quality=compressed&type=chunk&index=0`,
+                auth: { username: Cypress.env('user'), password: Cypress.env('password') },
+                timeout: 60000,
+                failOnStatusCode: false,
+            });
+        });
+    });
+});
 
 Cypress.Commands.add('assertWaveformReady', () => {
     cy.get('.cvat-audio-canvas-wrapper', { timeout: WAVEFORM_TIMEOUT }).should('exist');
@@ -18,10 +57,11 @@ Cypress.Commands.add('openAudioJob', (taskName) => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.window().then((win) => cy.wrap(win.cvat.users.get({ self: true })))
         .its('0').should('not.be.undefined');
+    cy.ensureAudioTask();
     cy.window().then((win) => cy.wrap(win.cvat.tasks.get({ search: taskName }))).then((tasks) => {
         const task = tasks.find((t) => t.name === taskName);
         if (!task) {
-            throw new Error(`Audio task "${taskName}" not found. Make sure setup_audio.js ran first.`);
+            throw new Error(`Audio task "${taskName}" not found after ensureAudioTask.`);
         }
         return cy.window().then((win) => cy.wrap(win.cvat.jobs.get({ taskID: task.id }))).then((jobs) => {
             const job = jobs.find((j) => j.type === 'annotation');
