@@ -410,10 +410,7 @@ def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> list[str]:
 def wait_until_task_is_created(
     api: apis.RequestsApi, rq_id: str, *, sleep_interval: float = 0.1, max_wait: float = 100.0
 ) -> models.Request:
-    # Poll at 100 ms intervals (matches the RQ status pollers elsewhere in the
-    # test utils). At the previous 1-second interval each test paid up to
-    # ~1 s of polling overshoot waiting for an already-finished RQ job, which
-    # added up to many seconds across files like test_resource_import_export.py.
+    # 100 ms poll matches the cadence of resource_import_export._wait_request.
     deadline = perf_counter() + max_wait
     while perf_counter() < deadline:
         request_details, _ = api.retrieve(rq_id)

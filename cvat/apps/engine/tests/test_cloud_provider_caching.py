@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
+import inspect
 import os
 import time
 import unittest
@@ -15,6 +16,7 @@ from cvat.apps.engine import cloud_provider
 from cvat.apps.engine.cloud_provider import (
     _SHARED_BOTOCORE_LOADER,
     S3CloudStorage,
+    _build_storage_instance,
     _build_storage_instance_cached,
     _FrozenEventEmitter,
     _make_boto3_session,
@@ -30,7 +32,6 @@ def _make_cloud_storage(
     credentials_type="ANONYMOUS_ACCESS",
     credentials="",
     specific_attributes="",
-    updated_date_iso="2025-05-20T10:00:00+00:00",
 ):
     return CloudStorage(
         provider_type=provider_type,
@@ -38,7 +39,9 @@ def _make_cloud_storage(
         credentials_type=credentials_type,
         credentials=credentials,
         specific_attributes=specific_attributes,
-        updated_date=datetime.datetime.fromisoformat(updated_date_iso),
+        # updated_date is set so model.full_clean() etc. don't choke; not part
+        # of the cache key, so use a fixed value.
+        updated_date=datetime.datetime(2025, 5, 20, 10, 0, 0, tzinfo=datetime.timezone.utc),
     )
 
 
@@ -68,48 +71,57 @@ class TestSharedBotocoreLoader(unittest.TestCase):
             s2._session.get_component("data_loader"),
         )
 
+    def test_lock_protects_shared_loader_load_service_model(self):
+        # `_S3_BUILD_LOCK` exists to serialize first-miss reads through the
+        # shared botocore Loader. If a future boto3 refactor bypassed the
+        # Loader during session.resource/client construction, the lock would
+        # guard nothing. Spy `load_service_model` and confirm it's called for
+        # the `s3` service during `S3CloudStorage.__init__`.
+        with patch.object(
+            cloud_provider._SHARED_BOTOCORE_LOADER,
+            "load_service_model",
+            wraps=cloud_provider._SHARED_BOTOCORE_LOADER.load_service_model,
+        ) as spy:
+            S3CloudStorage(bucket="test-bucket")
+
+        self.assertTrue(spy.called, "shared Loader.load_service_model was not exercised")
+        s3_calls = [c for c in spy.call_args_list if "s3" in c.args or c.kwargs.get("service_name") == "s3"]
+        self.assertTrue(
+            s3_calls,
+            f"shared Loader was used but not for the s3 service: {spy.call_args_list}",
+        )
+
 
 class TestCredentialResolverHardened(unittest.TestCase):
-    """No silent fall-through to env/file/IMDS. CloudStorage credentials must
-    come from the DB row."""
-
-    def test_session_credential_resolver_has_no_providers(self):
-        # Default botocore resolver chains env vars -> ~/.aws/credentials ->
-        # ~/.aws/config -> IMDS -> container metadata. Any of these would let
-        # ambient host credentials bleed into a CloudStorage that should be
-        # anonymous (or whose creds the row didn't supply). An empty provider
-        # list proves the resolver was replaced, so `session.get_credentials()`
-        # can never fall through to host-level secrets or stall on IMDS.
-        session = _make_boto3_session(
-            access_key_id=None, secret_key=None, session_token=None, region=None
-        )
-        resolver = session._session.get_component("credential_provider")
-        self.assertEqual(resolver.providers, [])
+    """Anonymous CS uses `Config(signature_version=UNSIGNED)`, which makes
+    `botocore.session.create_client` skip credential resolution entirely
+    (see the `signature_version is UNSIGNED` branch in
+    botocore/session.py). Signed CS pass explicit credentials via the
+    `boto3.Session(...)` kwargs, which boto3 stores directly on the session
+    via `set_credentials(...)` — `get_credentials()` returns them without
+    invoking the resolver chain. Either way the env/file/IMDS chain never
+    runs in practice."""
 
     def test_anonymous_session_ignores_ambient_aws_env_vars(self):
-        # Behavioral check that no chain provider actually fires: botocore's
-        # EnvProvider is the first link in the default chain, so if our
-        # resolver swap is dropped or bypassed, these sentinel env vars would
-        # propagate into the session and get_credentials() would return them.
-        # With the empty resolver, the call must return None.
+        # End-to-end behavioral guarantee: even with sentinel AWS_* env vars
+        # set (which the default credential chain would happily pick up), an
+        # anonymous S3CloudStorage's client must end up with UNSIGNED signing
+        # and no credentials attached. If anything ever routed an anonymous
+        # client through the credential chain, this test catches it.
         sentinel_env = {
             "AWS_ACCESS_KEY_ID": "SENTINEL-SHOULD-NOT-LEAK",
             "AWS_SECRET_ACCESS_KEY": "SENTINEL-SHOULD-NOT-LEAK",
             "AWS_SESSION_TOKEN": "SENTINEL-SHOULD-NOT-LEAK",
         }
         with patch.dict(os.environ, sentinel_env):
-            session = _make_boto3_session(
-                access_key_id=None,
-                secret_key=None,
-                session_token=None,
-                region=None,
-            )
-            self.assertIsNone(session.get_credentials())
+            s3 = S3CloudStorage(bucket="test-bucket")
+        self.assertIs(s3._client._request_signer.signature_version, UNSIGNED)
+        self.assertIsNone(s3._client._request_signer._credentials)
 
-    def test_explicit_credentials_survive_resolver_swap(self):
-        # boto3.Session(aws_access_key_id=..., ...) calls set_credentials
-        # directly on the botocore session, which stores them outside the
-        # resolver chain. Verify our resolver swap doesn't drop them.
+    def test_explicit_credentials_attached_to_signer(self):
+        # boto3.Session(aws_access_key_id=..., ...) stores credentials on the
+        # session via set_credentials, so they reach the client's request
+        # signer directly — without going through the resolver chain.
         access_key = "AKIA-EXPLICIT-KEY"
         secret_key = "explicit-secret-value"
         s3 = S3CloudStorage(
@@ -131,8 +143,9 @@ class TestCredentialResolverHardened(unittest.TestCase):
     def test_anonymous_clients_use_unsigned(self):
         # Anonymous CS must use Config(signature_version=UNSIGNED) on both
         # the main client and the status-check client, replacing the legacy
-        # disable_signing event handler trick. Together with the empty
-        # resolver, this means anonymous requests never look up credentials.
+        # disable_signing event handler trick. UNSIGNED makes botocore skip
+        # credential resolution entirely in `create_client`, so anonymous
+        # requests never look up credentials.
         s3 = S3CloudStorage(bucket="test-bucket")
         self.assertIs(s3._client._request_signer.signature_version, UNSIGNED)
         self.assertIs(s3._status_client._request_signer.signature_version, UNSIGNED)
@@ -172,6 +185,77 @@ class TestFrozenSessionEvents(unittest.TestCase):
         s3._client.meta.events.register("before-call.s3.HeadObject", lambda **kw: None)
 
 
+class TestCloudStorageFieldsCoverage(unittest.TestCase):
+    """If a CloudStorage field is added/renamed or the cached-build function
+    grows a new input, force a reviewer to confirm the cache key still
+    covers everything that affects S3/Azure/GCS client construction."""
+
+    # Fields that, if changed on the model, must invalidate a cached client
+    # (they participate in the cache key of `_build_storage_instance`).
+    SESSION_AFFECTING_FIELDS = frozenset(
+        {
+            "provider_type",
+            "resource",
+            "credentials_type",
+            "credentials",
+            "specific_attributes",
+        }
+    )
+
+    # Fields that exist on the model but are irrelevant to session
+    # construction (display labels, owner, timestamps, FK back-refs, etc.).
+    NON_SESSION_AFFECTING_FIELDS = frozenset(
+        {
+            "id",
+            "created_date",
+            "updated_date",
+            "display_name",
+            "owner",
+            "description",
+            "organization",
+            "data",
+            "manifest",
+        }
+    )
+
+    def test_cloud_storage_field_set_is_stable(self):
+        actual = {f.name for f in CloudStorage._meta.get_fields()}
+        expected = self.SESSION_AFFECTING_FIELDS | self.NON_SESSION_AFFECTING_FIELDS
+        self.assertEqual(
+            actual,
+            expected,
+            (
+                f"CloudStorage model fields changed: added={actual - expected}, "
+                f"removed={expected - actual}. Review whether the new field "
+                f"affects S3/Azure/GCS client construction in "
+                f"cvat.apps.engine.cloud_provider._build_storage_instance; "
+                f"then update SESSION_AFFECTING_FIELDS / "
+                f"NON_SESSION_AFFECTING_FIELDS and, if it does, the cache key "
+                f"in db_storage_to_storage_instance accordingly."
+            ),
+        )
+
+    def test_build_storage_instance_signature_is_stable(self):
+        params = set(inspect.signature(_build_storage_instance).parameters)
+        expected = {
+            "cloud_provider",
+            "resource",
+            "credentials_type",
+            "credentials_value",
+            "specific_attributes_str",
+        }
+        self.assertEqual(
+            params,
+            expected,
+            (
+                "_build_storage_instance signature changed. The parameter set IS "
+                "the cache key; review whether every parameter affects client "
+                "construction, and update db_storage_to_storage_instance to "
+                "thread the new value through."
+            ),
+        )
+
+
 def _reset_cs_client_instance_cache():
     _build_storage_instance_cached.cache_clear()
 
@@ -199,11 +283,6 @@ class TestS3CloudStorageClientCaching(unittest.TestCase):
                 "specific_attributes",
                 {"specific_attributes": "region=us-east-1"},
                 {"specific_attributes": "region=eu-west-1"},
-            ),
-            (
-                "updated_date",
-                {"updated_date_iso": "2025-01-01T00:00:00+00:00"},
-                {"updated_date_iso": "2025-01-02T00:00:00+00:00"},
             ),
         ]
         for label, kwargs_a, kwargs_b in cases:

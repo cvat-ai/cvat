@@ -20,7 +20,6 @@ from queue import Queue
 from typing import Any, BinaryIO, Concatenate, ParamSpec, TypeVar
 
 import boto3
-import botocore.credentials
 import botocore.hooks
 import botocore.loaders
 import cachetools
@@ -667,17 +666,15 @@ class _FrozenEventEmitter:
     unregister = register
 
 
-# boto3 Session objects (and the resources/clients they build) are NOT
-# thread-safe to construct; only low-level Clients are thread-safe to USE once
-# built. See:
-#   https://boto3.amazonaws.com/v1/documentation/api/latest/guide/session.html#multithreading-and-multiprocessing
-#   https://boto3.amazonaws.com/v1/documentation/api/latest/guide/clients.html#multithreading-or-multiprocessing-with-clients
-#   https://boto3.amazonaws.com/v1/documentation/api/latest/guide/resources.html#multithreading-or-multiprocessing-with-resources
-# With a process-shared Loader, the additional shared-state risk is the
-# Loader's read-modify-write of its service-model cache on first miss. Serialize
-# Session.resource/client construction so neither the per-Session build path
-# nor the shared loader race under concurrent first-builds. After both calls
-# return, low-level clients are safe to use from many threads.
+# Serializes the first calls to session.resource("s3") / session.client("s3"):
+# they reach into the process-shared botocore Loader to read+cache
+# s3/service-2.json, s3/resources-1.json, and the endpoint rule set. The
+# Loader does a read-modify-write on its internal cache dict on first miss;
+# concurrent first-builds would race on it. After the loader is primed,
+# subsequent builds are dict reads and the lock is not contended.
+# A unit test (test_lock_protects_shared_loader_load_service_model) confirms
+# the loader is actually exercised by these calls — if a future boto3 change
+# bypassed the shared Loader, the lock would be guarding nothing.
 _S3_BUILD_LOCK = threading.Lock()
 
 
@@ -688,9 +685,15 @@ def _make_boto3_session(
     session_token: str | None,
     region: str | None,
 ) -> boto3.Session:
-    """Build a Session that uses the shared loader and never falls back to
-    env/file/IMDS credential resolution. Credentials must be explicit (from the
-    CloudStorage model) or the resulting clients must use an UNSIGNED Config.
+    """Build a Session using the process-shared botocore Loader.
+
+    CloudStorage credentials must come from the DB row: signed CS rows pass
+    them via the `boto3.Session(...)` kwargs (boto3 stores them via
+    `botocore_session.set_credentials(...)` so subsequent `get_credentials()`
+    returns them directly, bypassing the resolver chain); anonymous CS rows
+    must use `Config(signature_version=UNSIGNED)` on the resulting clients
+    so botocore short-circuits credential resolution entirely (see
+    `botocore.session.create_client`).
     """
     kwargs = {}
     for key, arg_v in (
@@ -707,15 +710,6 @@ def _make_boto3_session(
     # Inject the process-shared loader so every Session reuses the parsed
     # service-2.json/resources-1.json/endpoint-ruleset instead of re-parsing.
     session._session.register_component("data_loader", _SHARED_BOTOCORE_LOADER)
-
-    # Block env/file/IMDS credential discovery. CloudStorage credentials must
-    # come from the DB row; anonymous access uses Config(signature_version=UNSIGNED).
-    # Replacing the resolver with an empty one keeps `session.get_credentials()`
-    # from ever stalling on the metadata service.
-    session._session.register_component(
-        "credential_provider",
-        botocore.credentials.CredentialResolver(providers=[]),
-    )
 
     return session
 
@@ -1428,7 +1422,6 @@ def _build_storage_instance(
     credentials_type: str,
     credentials_value: str,
     specific_attributes_str: str,
-    updated_date_iso: str,  # noqa: ARG001  invalidates cache when storage row changes
 ) -> AbstractCloudStorage:
     credentials = Credentials()
     credentials.convert_from_db({"type": credentials_type, "value": credentials_value})
@@ -1458,17 +1451,19 @@ def _build_storage_instance_cached():
 
 
 def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
-    # Cache key uses raw DB fields (incl. credentials + specific_attributes strings)
-    # plus updated_date, so any modification to the storage row invalidates the entry.
-    # Constructing boto3/Azure/GCS clients is expensive (~100ms each); reuse the
-    # built instance across calls in the same process.
+    # The kwargs passed here IS the cache key for the cached build. Pass every
+    # CloudStorage field that affects S3/Azure/GCS session construction; if
+    # none of them change, reusing the cached client is correct (cs clients
+    # are expensive to build, ~25-150 ms each). Two guard tests anchor this:
+    # `test_cloud_storage_field_set_is_stable` (catches new model fields) and
+    # `test_build_storage_instance_signature_is_stable` (catches new kwargs);
+    # both fail loudly so a reviewer classifies the change.
     return _build_storage_instance_cached()(
         cloud_provider=db_storage.provider_type,
         resource=db_storage.resource,
         credentials_type=db_storage.credentials_type,
         credentials_value=db_storage.credentials,
         specific_attributes_str=db_storage.specific_attributes,
-        updated_date_iso=db_storage.updated_date.isoformat(),
     )
 
 
