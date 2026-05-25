@@ -546,9 +546,11 @@ export function extendAudioRegionFromLastAsync(labelId: number | null): ThunkAct
         const { regions, currentTime, duration } = getState().audio.player;
         const { labels } = getState().annotation.job;
 
-        const lastRegion = regions.length > 0 ? regions[regions.length - 1] : null;
-        const start = lastRegion ? lastRegion.end : 0;
         const end = Math.min(currentTime, duration || currentTime);
+        const leftRegions = regions.filter((r) => r.end <= end);
+        const nearestLeft = leftRegions.length > 0 ?
+            leftRegions.reduce((best, r) => (r.end > best.end ? r : best)) : null;
+        const start = nearestLeft ? nearestLeft.end : 0;
         if (end - start <= 0.001) return;
 
         const matchingLabel = labelId !== null ? labels.find((l) => l.id === labelId) : null;
