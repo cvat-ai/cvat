@@ -208,8 +208,9 @@ class RequestViewSet(viewsets.GenericViewSet):
 
         worker_key = f"{RQWorker.redis_worker_namespace_prefix}{rq_job.worker_name}"
         # The marker is CVAT-specific and can be absent on already running or older production
-        # workers. Only SimpleWorker writes "0", so default to "can stop" for backward
-        # compatibility.
+        # workers. Workers that cannot stop a started job write "0" (SimpleWorker, which runs
+        # in-process, and ThreadPoolWorker, which can't interrupt a running thread); everything
+        # else defaults to "can stop" for backward compatibility.
         can_stop_started_jobs = (
             rq_job.connection.hget(worker_key, CVAT_CAN_STOP_STARTED_JOBS_KEY) or "1"
         )
