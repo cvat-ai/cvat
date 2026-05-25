@@ -30,7 +30,6 @@ import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 import { EventScope } from 'cvat-core/src/enums';
-import { useAudioAnnotationsEnabled } from 'utils/feature-flags';
 import SearchFramesModal from './top-bar/search-modal';
 
 interface Props {
@@ -140,8 +139,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         }
     }, [job, workspace]);
 
-    const audioEnabled = useAudioAnnotationsEnabled();
-    const isAudio = workspace === Workspace.AUDIO && audioEnabled;
+    const isAudio = workspace === Workspace.AUDIO;
 
     if (job === null || (!annotationsInitialized && !isAudio)) {
         return <Spin size='large' className='cvat-spinner' />;

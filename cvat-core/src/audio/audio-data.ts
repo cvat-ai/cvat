@@ -1,5 +1,5 @@
 import { ChunkQuality } from 'cvat-data';
-import audioProxy from './audio-proxy';
+import serverProxy from '../server-proxy';
 
 function encodeWav(buffer: AudioBuffer): Blob {
     const { numberOfChannels, sampleRate, length } = buffer;
@@ -51,7 +51,7 @@ export async function fetchAndAssembleAudio(
     const chunkCount = Math.ceil(totalFrames / chunkSize);
 
     if (chunkCount === 1) {
-        const { data } = await audioProxy.getAudioChunk(jobId, 0, quality);
+        const { data } = await serverProxy.frames.getAudioChunk(jobId, 0, quality);
         return new Blob([data], { type: 'audio/mpeg' });
     }
 
@@ -59,7 +59,7 @@ export async function fetchAndAssembleAudio(
     try {
         const rawChunks = await Promise.all(
             Array.from({ length: chunkCount }, (_, i) => (
-                audioProxy.getAudioChunk(jobId, i, quality)
+                serverProxy.frames.getAudioChunk(jobId, i, quality)
             )),
         );
 

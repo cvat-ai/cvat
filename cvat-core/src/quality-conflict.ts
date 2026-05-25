@@ -9,11 +9,6 @@ export enum QualityConflictType {
     EXTRA = 'extra_annotation',
     MISMATCHING = 'mismatching_label',
     MISSING = 'missing_annotation',
-    LOW_OVERLAP = 'low_overlap',
-    MISMATCHING_DIRECTION = 'mismatching_direction',
-    MISMATCHING_ATTRIBUTES = 'mismatching_attributes',
-    MISMATCHING_GROUPS = 'mismatching_groups',
-    COVERED_ANNOTATION = 'covered_annotation',
 }
 
 export enum ConflictSeverity {

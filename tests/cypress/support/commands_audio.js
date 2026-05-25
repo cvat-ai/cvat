@@ -86,14 +86,14 @@ Cypress.Commands.add('audioExtendViaHotkey', () => {
 
 Cypress.Commands.add('audioOpenSlider', (controlClass) => {
     cy.get(`.${controlClass}`).click();
-    cy.get('.cvat-audio-slider-popover-overlay:visible', { timeout: 5000 }).should('exist');
+    cy.get('.cvat-audio-slider-popover-overlay', { timeout: 5000 }).should('exist').and('be.visible');
 });
 
 Cypress.Commands.add('audioSliderSetValue', (controlClass, arrowDirection, steps) => {
     cy.audioOpenSlider(controlClass);
-    cy.get('.cvat-audio-slider-popover-overlay:visible .ant-slider-handle').focus();
+    cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').should('be.visible').focus();
     for (let i = 0; i < steps; i += 1) {
-        cy.get('.cvat-audio-slider-popover-overlay:visible .ant-slider-handle').type(arrowDirection);
+        cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').type(arrowDirection);
     }
     cy.get('.cvat-audio-canvas-wrapper').click('topLeft', { force: true });
 });

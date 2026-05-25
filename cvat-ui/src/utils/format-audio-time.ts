@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 export function formatTimeShort(seconds: number): string {
     const safe = Math.max(0, seconds);
     const totalMins = Math.floor(safe / 60);

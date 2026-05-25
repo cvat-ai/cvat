@@ -1,6 +1,10 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 const FALLBACK_HEX = 'ffffff';
 
-export function normalizeHex(hex: string): string {
+function normalizeHex(hex: string): string {
     let clean = hex.replace('#', '');
     if (clean.length === 3) {
         clean = clean.split('').map((ch) => ch + ch).join('');
@@ -11,7 +15,7 @@ export function normalizeHex(hex: string): string {
     return clean;
 }
 
-export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
     const clean = normalizeHex(hex);
     return {
         r: parseInt(clean.substring(0, 2), 16),
