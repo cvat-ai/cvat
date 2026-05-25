@@ -20,7 +20,6 @@ import datumaro.components.annotations.matcher
 import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
-import jiwer
 import json_stream
 import numpy as np
 from attrs import asdict, define, fields_dict
@@ -60,7 +59,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.utils import take_by
 from cvat.apps.profiler import silk_profile
-from cvat.apps.quality_control import models
+from cvat.apps.quality_control import audio, models
 from cvat.apps.quality_control.models import (
     AnnotationConflictSeverity,
     AnnotationConflictType,
@@ -2300,46 +2299,6 @@ class DatasetComparator:
         )
 
     def _process_intervals(self):
-        def range_iou(a: tuple[float, float], b: tuple[float, float]) -> float:
-            int_lb = max(a[0], b[0])
-            int_ub = min(a[1], b[1])
-            intersection = int_ub - int_lb
-            if intersection <= 0:
-                return 0
-
-            uni_lb = min(a[0], b[0])
-            uni_ub = max(a[1], b[1])
-            union = uni_ub - uni_lb
-            return intersection / union
-
-        def label_eq(a: dict[str, Any], b: dict[str, Any]) -> bool:
-            return a["label_id"] == b["label_id"]
-
-        def interval_iou(a: dict[str, Any], b: dict[str, Any]) -> float:
-            return range_iou((a["start"], a["stop"]), (b["start"], b["stop"]))
-
-        def interval_iou_with_label(a: dict[str, Any], b: dict[str, Any]) -> float:
-            if not label_eq(a, b):
-                return 0
-
-            return interval_iou(a, b)
-
-        def interval_wer(a: dict[str, Any], b: dict[str, Any], *, attr_id: int) -> float:
-            a_value = next(a for a in a["attributes"] if a["spec_id"] == attr_id)["value"]
-            b_value = next(a for a in b["attributes"] if a["spec_id"] == attr_id)["value"]
-            return jiwer.wer(a_value, b_value)
-
-        def interval_cer(a: dict[str, Any], b: dict[str, Any], *, attr_id: int) -> float:
-            # TODO: change to maximum CER over word-aligned matches?
-            a_value = next(a for a in a["attributes"] if a["spec_id"] == attr_id)["value"]
-            b_value = next(a for a in b["attributes"] if a["spec_id"] == attr_id)["value"]
-            return jiwer.cer(a_value.split(), b_value.split())
-
-        metrics = {
-            TranscriptionQualityMetric.WER: interval_wer,
-            TranscriptionQualityMetric.CER: interval_cer,
-        }
-
         attribute_specs_by_id = {
             spec.id: spec
             for label_attrs in self._gt_data_provider.job_data._attribute_mapping.values()
@@ -2373,38 +2332,100 @@ class DatasetComparator:
         gt_intervals = self._gt_data_provider.job_annotation.ir_data.intervals
         ds_intervals = self._ds_data_provider.job_annotation.ir_data.intervals
 
-        # In the case of audio, there can be many heavily-overlapping annotations.
-        # We prioritize same-label matching over position matching in this case.
-        distances = {}
+        # Build audio inputs + settings and delegate L1 / L2 to audio.compare().
+        gt_by_id = {iv["id"]: iv for iv in gt_intervals}
+        ds_by_id = {iv["id"]: iv for iv in ds_intervals}
 
-        # match with the same label first
-        distance_func, distances_with_label = (
-            self.comparator._annotation_comparator._make_memoizing_distance(interval_iou_with_label)
-        )
-        matches, _, gt_unmatched, ds_unmatched = match_segments(
-            gt_intervals,
-            ds_intervals,
-            distance=distance_func,
-            dist_thresh=self.settings.iou_threshold,
-            label_matcher=label_eq,
-        )
-        distances.update(distances_with_label)
+        def _to_dataset_item(intervals: list[dict], name: str) -> audio.DatasetItem:
+            items: list[audio.Interval] = []
+            for iv in intervals:
+                extra = {
+                    str(a["spec_id"]): a["value"] or ""
+                    for a in iv["attributes"]
+                }
+                items.append(audio.Interval(
+                    id=iv["id"],
+                    start=iv["start"],
+                    stop=iv["stop"],
+                    label=str(iv["label_id"]),
+                    text="",
+                    extra=extra,
+                ))
+            return audio.DatasetItem(name=name, filename="", intervals=items)
 
-        # find matches with different labels
-        distance_func, distances_without_label = (
-            self.comparator._annotation_comparator._make_memoizing_distance(interval_iou)
+        gt_item = _to_dataset_item(gt_intervals, "gt")
+        ds_item = _to_dataset_item(ds_intervals, "ds")
+
+        # Per-requirement audio config. Skip requirements whose attribute spec
+        # is missing or not TEXT — same silent-skip behavior as before.
+        audio_reqs: list[audio.TranscriptionRequirement] = []
+        active_requirements: list[
+            tuple[models.TranscriptionQualityRequirement, AttributeSpec]
+        ] = []
+        for requirement in self.settings.transcription_requirements:
+            attribute_spec = attribute_specs.get(requirement.attribute)
+            if attribute_spec is None or attribute_spec.input_type != AttributeType.TEXT:
+                continue
+            audio_reqs.append(audio.TranscriptionRequirement(
+                name=f"attr_{attribute_spec.id}",
+                text_attribute=str(attribute_spec.id),
+                granularity=(
+                    audio.Granularity.CHARACTER
+                    if requirement.metric == TranscriptionQualityMetric.CER
+                    else audio.Granularity.WORD
+                ),
+                align=audio.AlignMode.CHAR,
+                metric=audio.Metric.EQUALITY,
+                normalizer=audio.NormalizerConfig(mode=audio.NormalizerMode.BASIC),
+                grouping=audio.GroupingConfig(strategy=audio.GroupingStrategy.FILTER),
+                iou_threshold=self.settings.iou_threshold,
+            ))
+            active_requirements.append((requirement, attribute_spec))
+
+        audio_settings = audio.QualitySettings(
+            interval_matching=audio.IntervalMatchingConfig(
+                iou_threshold=self.settings.iou_threshold,
+                low_overlap_threshold=self.settings.low_overlap_threshold,
+            ),
+            transcriptions=audio_reqs,
         )
-        _, mismatches, gt_unmatched, ds_unmatched = match_segments(
-            gt_unmatched,
-            ds_unmatched,
-            distance=distance_func,
-            dist_thresh=self.settings.iou_threshold,
-            label_matcher=label_eq,
-        )
-        distances.update(distances_without_label)
+        audio_report = audio.compare(gt_item, ds_item, settings=audio_settings)
+
+        # Recover CVAT-side dict pairs from audio's id-only references.
+        matches: list[tuple[dict, dict]] = [
+            (gt_by_id[m.gt.id], ds_by_id[m.ds.id])
+            for m in audio_report.intervals.matches
+        ]
+        mismatches: list[tuple[dict, dict]] = [
+            (gt_by_id[m.gt.id], ds_by_id[m.ds.id])
+            for m in audio_report.intervals.label_mismatches
+        ]
+        gt_unmatched: list[dict] = [
+            gt_by_id[iv.id] for iv in audio_report.intervals.gt_unmatched
+        ]
+        ds_unmatched: list[dict] = [
+            ds_by_id[iv.id] for iv in audio_report.intervals.ds_unmatched
+        ]
+
+        # IoU lookup per pair (used for LOW_OVERLAP conflict gating).
+        iou_by_pair: dict[tuple[int, int], float] = {
+            (m.gt.id, m.ds.id): m.iou
+            for m in itertools.chain(
+                audio_report.intervals.matches,
+                audio_report.intervals.label_mismatches,
+            )
+        }
 
         def _get_similarity(gt_ann: dict, ds_ann: dict) -> float | None:
-            return self.comparator.get_distance(distances, gt_ann, ds_ann)
+            return iou_by_pair.get((gt_ann["id"], ds_ann["id"]))
+
+        # Per-requirement pair-alignment lookup. Audio's filter strategy
+        # re-pairs intervals per requirement; with same iou_threshold +
+        # group-by-label the pairings match L1's matches.
+        pair_alignment_by_req: list[dict[tuple[int, int], audio.AlignmentResult]] = [
+            {(p.gt.id, p.ds.id): p.alignment for p in tr.pairs}
+            for tr in audio_report.transcriptions
+        ]
 
         results = self._intermediate_results
         conflicts = results.setdefault("conflicts", [])
@@ -2510,9 +2531,7 @@ class DatasetComparator:
             gt_ann, ds_ann = matches[match_idx]
             match_confirmed = True
 
-            for requirement in self.settings.transcription_requirements:
-                attribute_spec = attribute_specs.get(requirement.attribute)
-
+            for req_idx, (requirement, attribute_spec) in enumerate(active_requirements):
                 if (
                     attribute_spec.id
                     not in self._gt_data_provider.job_data._attribute_mapping_merged[
@@ -2521,12 +2540,14 @@ class DatasetComparator:
                 ):
                     continue
 
-                if attribute_spec is None or attribute_spec.input_type != AttributeType.TEXT:
-                    # Silently ignore, as the settings can be out of sync with labels
+                alignment = pair_alignment_by_req[req_idx].get(
+                    (gt_ann["id"], ds_ann["id"])
+                )
+                if alignment is None:
+                    # Pairing dropped by audio's filter strategy (shouldn't
+                    # happen with same iou_threshold + group-by-label).
                     continue
-
-                distance_func = partial(metrics[requirement.metric], attr_id=attribute_spec.id)
-                distance = distance_func(gt_ann, ds_ann)
+                distance = alignment.wer
                 req_satisfied = distance < requirement.acceptance_threshold
 
                 if not req_satisfied:

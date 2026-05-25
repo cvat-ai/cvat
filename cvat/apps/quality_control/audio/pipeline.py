@@ -11,6 +11,8 @@ def compare(gt: DatasetItem, ds: DatasetItem, *, settings: QualitySettings) -> C
     return ComparisonReport(
         gt=gt,
         ds=ds,
-        intervals=match_intervals(gt, ds, settings.interval_matching),
-        transcriptions=[match_transcriptions(gt, ds, req) for req in settings.transcriptions],
+        intervals=match_intervals(gt, ds, config=settings.interval_matching),
+        transcriptions=[
+            match_transcriptions(gt, ds, req=req) for req in settings.transcriptions
+        ],
     )
