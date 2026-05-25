@@ -782,12 +782,17 @@ class S3CloudStorage(AbstractCloudStorage):
         # Everything else — Session, Config, post-build attribute assignment —
         # is per-instance and safe to run concurrently.
         with _S3_BUILD_LOCK:
+            # boto3 low-level Clients are documented as thread-safe to use once
+            # built; boto3 resources (e.g. session.resource("s3"), Bucket) are
+            # NOT, because methods can mutate `meta.data` via lazy load() and
+            # sub-resource construction shares identifier state. Cache only the
+            # client objects and pass the bucket name explicitly.
             # Status checks are part of the control plane, not the data-transfer path, so
             # Bucket status probes should fail fast when the endpoint is unreachable or
             # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
-            # the regular resource/client retain their standard retry behavior for normal
+            # the regular client retains standard retry behavior for normal
             # storage operations.
-            self._s3 = session.resource(
+            self._client = session.client(
                 "s3",
                 endpoint_url=endpoint_url,
                 config=Config(**resource_config_kwargs),
@@ -807,17 +812,12 @@ class S3CloudStorage(AbstractCloudStorage):
                 _FrozenEventEmitter(session._session.get_component("event_emitter")),
             )
 
-        self._client = self._s3.meta.client
-        self._bucket = self._s3.Bucket(bucket)
+        self._bucket_name: str = bucket
         self.region = region
 
     @property
-    def bucket(self):
-        return self._bucket
-
-    @property
     def name(self):
-        return self._bucket.name
+        return self._bucket_name
 
     def _head(self):
         # Bucket status checks use the dedicated fast-fail client.
@@ -875,8 +875,9 @@ class S3CloudStorage(AbstractCloudStorage):
 
     @validate_bucket_status
     def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
-        self._bucket.upload_fileobj(
+        self._client.upload_fileobj(
             Fileobj=file_obj,
+            Bucket=self._bucket_name,
             Key=key,
             Config=TransferConfig(max_io_queue=self.transfer_config["max_io_queue"]),
         )
@@ -884,9 +885,10 @@ class S3CloudStorage(AbstractCloudStorage):
     @validate_bucket_status
     def upload_file(self, file_path: Path, key: str | None = None, /):
         try:
-            self._bucket.upload_file(
-                os.fspath(file_path),
-                key or file_path.name,
+            self._client.upload_file(
+                Filename=os.fspath(file_path),
+                Bucket=self._bucket_name,
+                Key=key or file_path.name,
                 Config=TransferConfig(max_io_queue=self.transfer_config["max_io_queue"]),
             )
         except ClientError as ex:
@@ -925,7 +927,8 @@ class S3CloudStorage(AbstractCloudStorage):
         }
 
     def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
-        self.bucket.download_fileobj(
+        self._client.download_fileobj(
+            Bucket=self._bucket_name,
             Key=key,
             Fileobj=stream,
             Config=TransferConfig(max_io_queue=self.transfer_config["max_io_queue"]),
@@ -934,7 +937,7 @@ class S3CloudStorage(AbstractCloudStorage):
     def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
         try:
             return self._client.get_object(
-                Bucket=self.bucket.name, Key=key, Range=f"bytes={start_byte}-{stop_byte}"
+                Bucket=self._bucket_name, Key=key, Range=f"bytes={start_byte}-{stop_byte}"
             )["Body"].read()
         except ClientError as ex:
             if "InvalidRange" in str(ex):
@@ -958,7 +961,7 @@ class S3CloudStorage(AbstractCloudStorage):
     def supported_actions(self):
         allowed_actions = set()
         try:
-            bucket_policy = self._bucket.Policy().policy
+            bucket_policy = self._client.get_bucket_policy(Bucket=self._bucket_name)["Policy"]
         except ClientError as ex:
             if "NoSuchBucketPolicy" in str(ex):
                 return Permissions.all()
