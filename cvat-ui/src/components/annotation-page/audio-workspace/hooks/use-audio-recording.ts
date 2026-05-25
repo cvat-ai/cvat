@@ -44,6 +44,7 @@ export function useAudioRecording(params: Params): void {
     const recordingIdRef = useRef<string | null>(null);
     const recordingStartRef = useRef<number>(0);
     const recordingLabelIdRef = useRef<number | null>(null);
+    const cancelledRef = useRef<boolean>(false);
 
     const regionsRef = useRef(regions);
     const labelsRef = useRef(labels);
@@ -89,6 +90,11 @@ export function useAudioRecording(params: Params): void {
             phantomRegionIdsRef.current.delete(id);
         }
 
+        if (cancelledRef.current) {
+            cancelledRef.current = false;
+            return;
+        }
+
         if (end - start < MIN_RECORDING_DURATION) return;
 
         const currentRegions = regionsRef.current;
@@ -125,6 +131,7 @@ export function useAudioRecording(params: Params): void {
         const wasRecording = recordingIdRef.current !== null;
 
         if (isRecord && !wasRecording) {
+            cancelledRef.current = false;
             const start = ws.getCurrentTime();
             const phantomId = generatePhantomId();
             phantomRegionIdsRef.current.add(phantomId);
@@ -169,6 +176,16 @@ export function useAudioRecording(params: Params): void {
             onUpdateActiveControlRef.current(ActiveControl.CURSOR);
         }
     }, [isPlaying]);
+
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent): void => {
+            if (event.key !== 'Escape') return;
+            if (recordingIdRef.current === null) return;
+            cancelledRef.current = true;
+        };
+        window.addEventListener('keydown', onKeyDown, true);
+        return () => window.removeEventListener('keydown', onKeyDown, true);
+    }, []);
 
     useEffect(() => {
         if (!wavesurfer) return undefined;
