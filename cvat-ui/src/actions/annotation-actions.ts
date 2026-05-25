@@ -459,17 +459,25 @@ export function saveAudioAnnotationsAsync(): ThunkAction {
         });
 
         try {
-            const intervals: SerializedInterval[] = regions.map((region: AudioRegion) => ({
-                label_id: region.labelId as number,
-                start: Math.round(region.start * 1000),
-                stop: Math.round(region.end * 1000),
-                group: region.group || 0,
-                source: (region.source || 'manual') as Source,
-                attributes: Object.entries(region.attributes || {}).map(([specId, value]) => ({
-                    spec_id: Number(specId),
-                    value: String(value),
-                })),
-            }));
+            const intervals: SerializedInterval[] = regions.reduce<SerializedInterval[]>((acc, region: AudioRegion) => {
+                const startMs = Math.max(jobInstance.startFrame, Math.round(region.start * 1000));
+                const stopMs = Math.min(jobInstance.stopFrame, Math.round(region.end * 1000));
+                if (stopMs <= startMs) {
+                    return acc;
+                }
+                acc.push({
+                    label_id: region.labelId as number,
+                    start: startMs,
+                    stop: stopMs,
+                    group: region.group || 0,
+                    source: (region.source || 'manual') as Source,
+                    attributes: Object.entries(region.attributes || {}).map(([specId, value]) => ({
+                        spec_id: Number(specId),
+                        value: String(value),
+                    })),
+                });
+                return acc;
+            }, []);
 
             const response = await serverProxy.annotations.updateAnnotations(
                 'job',
