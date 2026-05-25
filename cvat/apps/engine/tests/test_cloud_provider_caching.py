@@ -263,6 +263,28 @@ class TestS3CloudStorageClientCaching(unittest.TestCase):
             db_storage_to_storage_instance(cloud_storage),
         )
 
+    def test_caching_is_limited_to_s3(self):
+        # boto3 low-level Clients are thread-safe to share; Azure/GCS clients
+        # keep mutable per-request state that we haven't verified. Only S3
+        # rows go through the LRU cache; the other providers rebuild per call.
+        with patch.object(
+            cloud_provider, "get_cloud_storage_instance", side_effect=lambda **kw: object()
+        ):
+            for provider, should_cache in [
+                ("AWS_S3_BUCKET", True),
+                ("AZURE_CONTAINER", False),
+                ("GOOGLE_CLOUD_STORAGE", False),
+            ]:
+                with self.subTest(provider=provider):
+                    _reset_cs_client_instance_cache()
+                    cs = _make_cloud_storage(provider_type=provider)
+                    a = db_storage_to_storage_instance(cs)
+                    b = db_storage_to_storage_instance(cs)
+                    if should_cache:
+                        self.assertIs(a, b, f"{provider} should be cached")
+                    else:
+                        self.assertIsNot(a, b, f"{provider} must not be cached")
+
     def test_field_change_invalidates(self):
         cases = [
             ("resource", {"resource": "bucket-1"}, {"resource": "bucket-2"}),

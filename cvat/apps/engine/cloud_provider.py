@@ -1455,13 +1455,24 @@ def _build_storage_instance_cached():
 
 def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
     # The kwargs passed here IS the cache key for the cached build. Pass every
-    # CloudStorage field that affects S3/Azure/GCS session construction; if
-    # none of them change, reusing the cached client is correct (cs clients
-    # are expensive to build, ~25-150 ms each). Two guard tests anchor this:
+    # CloudStorage field that affects session construction; if none of them
+    # change, reusing the cached client is correct (cs clients are expensive
+    # to build, ~25-150 ms each). Two guard tests anchor this:
     # `test_cloud_storage_field_set_is_stable` (catches new model fields) and
     # `test_build_storage_instance_signature_is_stable` (catches new kwargs);
     # both fail loudly so a reviewer classifies the change.
-    return _build_storage_instance_cached()(
+    #
+    # Only S3 is cached: S3CloudStorage only retains boto3 low-level Clients,
+    # which boto3 documents as thread-safe to share. Azure (`BlobServiceClient`)
+    # and GCS (`storage.Client` + `storage.Bucket`) keep mutable per-request
+    # state that boto3-style proof of thread-safety doesn't extend to, so they
+    # are rebuilt per call until verified.
+    build = (
+        _build_storage_instance_cached()
+        if db_storage.provider_type == CloudProviderChoice.AMAZON_S3
+        else _build_storage_instance
+    )
+    return build(
         cloud_provider=db_storage.provider_type,
         resource=db_storage.resource,
         credentials_type=db_storage.credentials_type,
