@@ -147,9 +147,9 @@ export default function audioReducer(state: AudioState = defaultState, action: A
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job } = action.payload;
             return {
-                ...state,
+                ...defaultState,
                 player: {
-                    ...state.player,
+                    ...defaultState.player,
                     activeLabelId: job.labels.length ? job.labels[0].id : null,
                 },
             };

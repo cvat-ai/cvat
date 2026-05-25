@@ -10,7 +10,9 @@ import {
     RectangleShape, PolylineShape, PointsShape, EllipseShape,
     InterpolationNotPossibleError,
 } from './annotations-objects';
-import { SerializedCollection, SerializedShape, SerializedTrack } from './server-response-types';
+import {
+    SerializedCollection, SerializedShape, SerializedTrack, SerializedInterval,
+} from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
@@ -241,6 +243,12 @@ export default class Collection {
             ),
             frame,
         );
+    }
+
+    public getAllIntervals(): SerializedInterval[] {
+        return this.intervals
+            .filter((interval) => !interval.removed)
+            .map((interval) => interval.toJSON());
     }
 
     public export(): Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags' | 'intervals'> {
@@ -1049,6 +1057,10 @@ export default class Collection {
 
         for (const object of Object.values(this.objects)) {
             if (object.removed) {
+                continue;
+            }
+
+            if (object instanceof Interval) {
                 continue;
             }
 

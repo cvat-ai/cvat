@@ -14,6 +14,7 @@ import { Task, Job } from './session';
 import { ArgumentError } from './exceptions';
 import { getFramesMeta, getJobFramesMetaSync } from './frames';
 import { JobType } from './enums';
+import { SerializedInterval } from './server-response-types';
 
 const jobCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
 const taskCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
@@ -146,6 +147,30 @@ export async function getAnnotations(
         if (error instanceof InstanceNotInitializedError) {
             await getAnnotationsFromServer(session);
             return getCollection(session).get(frame, allTracks, filters);
+        }
+        throw error;
+    }
+}
+
+export async function getAllIntervals(session: Job | Task): Promise<SerializedInterval[]> {
+    try {
+        return getCollection(session).getAllIntervals();
+    } catch (error) {
+        if (error instanceof InstanceNotInitializedError) {
+            await getAnnotationsFromServer(session);
+            return getCollection(session).getAllIntervals();
+        }
+        throw error;
+    }
+}
+
+export async function getAnnotationsVersion(session: Job | Task): Promise<number> {
+    try {
+        return getSaver(session).version;
+    } catch (error) {
+        if (error instanceof InstanceNotInitializedError) {
+            await getAnnotationsFromServer(session);
+            return getSaver(session).version;
         }
         throw error;
     }

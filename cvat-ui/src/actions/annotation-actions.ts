@@ -396,16 +396,12 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { job: { instance: jobInstance } } = getState().annotation;
         if (!jobInstance) {
-            dispatch({
-                type: AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS,
-                payload: { regions: [], version: 0 },
-            });
             return;
         }
 
         try {
-            const response = await serverProxy.annotations.getAnnotations('job', jobInstance.id);
-            const intervals: SerializedInterval[] = response.intervals || [];
+            const intervals: SerializedInterval[] = await jobInstance.annotations.intervals();
+            const version: number = await jobInstance.annotations.version();
 
             const regions: AudioRegion[] = intervals.reduce<AudioRegion[]>((acc, interval, index) => {
                 const startSec = interval.start / 1000;
@@ -436,7 +432,7 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
 
             dispatch({
                 type: AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS,
-                payload: { regions, version: response.version ?? 0 },
+                payload: { regions, version },
             });
         } catch (error) {
             dispatch({

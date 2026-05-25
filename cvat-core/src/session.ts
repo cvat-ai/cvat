@@ -16,7 +16,7 @@ import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
 import {
-    SerializedCollection, SerializedJob,
+    SerializedCollection, SerializedJob, SerializedInterval,
     SerializedLabel, SerializedTask,
 } from './server-response-types';
 import AnnotationGuide from './guide';
@@ -85,6 +85,22 @@ function buildDuplicatedAPI(prototype) {
                         frame,
                         allTracks,
                         filters,
+                    );
+                    return result;
+                },
+
+                async intervals() {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.intervals,
+                    );
+                    return result;
+                },
+
+                async version() {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.version,
                     );
                     return result;
                 },
@@ -353,6 +369,8 @@ function buildDuplicatedAPI(prototype) {
 export class Session {
     public annotations: {
         get: (frame: number, allTracks: boolean, filters: object[]) => Promise<ObjectState[]>;
+        intervals: () => Promise<SerializedInterval[]>;
+        version: () => Promise<number>;
         put: (objectStates: ObjectState[]) => Promise<number[]>;
         merge: (objectStates: ObjectState[]) => Promise<void>;
         split: (objectState: ObjectState, frame: number) => Promise<void>;
@@ -460,6 +478,8 @@ export class Session {
         // So, we need return it
         this.annotations = {
             get: Object.getPrototypeOf(this).annotations.get.bind(this),
+            intervals: Object.getPrototypeOf(this).annotations.intervals.bind(this),
+            version: Object.getPrototypeOf(this).annotations.version.bind(this),
             put: Object.getPrototypeOf(this).annotations.put.bind(this),
             save: Object.getPrototypeOf(this).annotations.save.bind(this),
             merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
