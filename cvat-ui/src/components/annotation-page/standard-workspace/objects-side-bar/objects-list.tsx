@@ -99,7 +99,6 @@ function ObjectListComponent(props: Props): JSX.Element {
             distance: 6,
         },
     }));
-
     // Keep collapse state in the list so expand/open events and collapse-all can coordinate all sections.
     const [collapsedLayers, setCollapsedLayers] = useState<Set<number>>(() => new Set());
     const [dragActive, setDragActive] = useState<boolean>(false);
@@ -396,7 +395,10 @@ function ObjectListComponent(props: Props): JSX.Element {
                                     />
                                 )}
                             </div>
-                            <DragOverlay>
+                            <DragOverlay
+                                // Let wheel/pointer events reach the sidebar under the drag preview.
+                                style={{ pointerEvents: 'none' }}
+                            >
                                 {renderDragOverlay()}
                             </DragOverlay>
                         </DndContext>
