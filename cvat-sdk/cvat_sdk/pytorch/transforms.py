@@ -121,11 +121,11 @@ class ExtractInstanceMasks:
     * Rotated shapes are not supported.
     """
 
-    SUPPORTED_MASK_SHAPE_TYPES = frozenset(["polygon", "mask"])
+    SUPPORTED_SHAPE_TYPES = frozenset(["polygon", "mask"])
 
     include_shape_types: frozenset[str] = attrs.field(
         converter=frozenset,
-        validator=attrs.validators.deep_iterable(attrs.validators.in_(SUPPORTED_MASK_SHAPE_TYPES)),
+        validator=attrs.validators.deep_iterable(attrs.validators.in_(SUPPORTED_SHAPE_TYPES)),
         kw_only=True,
     )
     """Shapes whose type is not in this set will be ignored."""
