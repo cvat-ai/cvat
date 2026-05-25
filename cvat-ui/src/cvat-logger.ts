@@ -34,7 +34,7 @@ export function logError(
         }
 
         const filename = stackFrames[0].fileName;
-        const payload = {
+        const payload: Record<string, unknown> = {
             filename,
             line: stackFrames[0].lineNumber,
             message: error.message,
@@ -42,6 +42,13 @@ export function logError(
             stack: error.stack,
             ...extras,
         };
+
+        if ('code' in error && typeof error.code === 'number') {
+            payload.code = error.code;
+            if (error.code === 0 && 'onLine' in navigator) {
+                payload.is_online = navigator.onLine;
+            }
+        }
 
         if (!filename || ignoredSources.some((source) => filename.startsWith(source))) {
             // filename is missing or the error comes from external script (extension, console, snippets, etc)

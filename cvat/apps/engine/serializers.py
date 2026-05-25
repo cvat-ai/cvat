@@ -66,9 +66,21 @@ from cvat.apps.engine.utils import (
 from cvat.apps.iam.permissions import get_iam_context
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
+from cvat.utils.paths import problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
+
+
+class CanonicalRelativePathValidator:
+    def __init__(self, *, allow_trailing_slash: bool = False) -> None:
+        self.allow_trailing_slash = allow_trailing_slash
+
+    def __call__(self, value: str) -> None:
+        if problem := problem_with_untrusted_path(
+            value, allow_trailing_slash=self.allow_trailing_slash
+        ):
+            raise serializers.ValidationError(problem)
 
 
 class WriteOnceMixin:
@@ -529,6 +541,45 @@ class LabelSerializer(SublabelSerializer):
                 encountered_names.add(attr_name)
 
     @staticmethod
+    def check_attribute_names_available(
+        db_attributes: dict[int, str], attrs: list[dict[str, Any]]
+    ) -> None:
+        requested_attribute_names = {
+            attr["id"]: attr["name"]
+            for attr in attrs
+            if attr.get("id") is not None and attr.get("name") is not None
+        }
+
+        if not requested_attribute_names:
+            return
+
+        current_attribute_ids = {name: attr_id for attr_id, name in db_attributes.items()}
+        swapped_attr_names = set()
+        occupied_attr_names = set()
+
+        for attr_id, attr_name in requested_attribute_names.items():
+            current_attr_id = current_attribute_ids.get(attr_name)
+            if current_attr_id is None or current_attr_id == attr_id:
+                continue
+
+            if current_attr_id in requested_attribute_names:
+                swapped_attr_names.add(attr_name)
+                if current_name := db_attributes.get(attr_id):
+                    swapped_attr_names.add(current_name)
+            else:
+                occupied_attr_names.add(attr_name)
+
+        if swapped_attr_names:
+            attr_names = ", ".join(f'"{name}"' for name in swapped_attr_names)
+            raise serializers.ValidationError(f"Cannot swap attribute names {attr_names}")
+
+        if occupied_attr_names:
+            attr_names = ", ".join(f'"{name}"' for name in occupied_attr_names)
+            raise serializers.ValidationError(
+                f"Attribute names are already used by this label: {attr_names}"
+            )
+
+    @staticmethod
     def _split_attribute_values(values: str) -> list[str]:
         return values.split("\n") if values else []
 
@@ -700,6 +751,10 @@ class LabelSerializer(SublabelSerializer):
             db_attr = get_db_attr(attr_id)
             logger.info("{} attribute for {} label was deleted".format(db_attr.name, db_label.name))
             db_attr.delete()
+
+        if label_exists:
+            db_attributes = dict(db_label.attributespec_set.values_list("id", "name"))
+            cls.check_attribute_names_available(db_attributes, upserted_attributes)
 
         for attr in upserted_attributes:
             attr_id = attr.get("id", None)
@@ -2253,10 +2308,12 @@ class ServerFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ServerFile
         fields = ("file",)
+        extra_kwargs = {
+            "file": {"validators": [CanonicalRelativePathValidator(allow_trailing_slash=True)]}
+        }
 
-    # pylint: disable=no-self-use
     def to_internal_value(self, data):
-        return {"file": data}
+        return super().to_internal_value({"file": data})
 
     # pylint: disable=no-self-use
     def to_representation(self, instance):
@@ -2536,7 +2593,10 @@ class DataSerializer(serializers.ModelSerializer):
     server_files_exclude = serializers.ListField(
         required=False,
         default=[],
-        child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
+        child=serializers.CharField(
+            max_length=MAX_FILENAME_LENGTH,
+            validators=[CanonicalRelativePathValidator(allow_trailing_slash=True)],
+        ),
         help_text=textwrap.dedent("""\
             Paths to files and directories from a file share mounted on the server, or from a cloud storage
             that should be excluded from the directories specified in server_files.
@@ -4053,6 +4113,29 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
         return convert_track(instance)
 
 
+class LabeledIntervalSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
+    def to_representation(self, instance):
+        def convert_interval(interval):
+            result = _convert_annotation(
+                interval,
+                [
+                    "id",
+                    "label_id",
+                    "start",
+                    "stop",
+                    "group",
+                    "source",
+                    "score",
+                ],
+            )
+            result["attributes"] = _convert_attributes(interval["attributes"])
+            return result
+
+        return convert_interval(instance)
+
+
 class TrackedShapeSerializer(ShapeSerializer, AttributedAnnotationSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
@@ -4068,11 +4151,21 @@ class LabeledTrackSerializer(SubLabeledTrackSerializer):
     elements = SubLabeledTrackSerializer(many=True, required=False)
 
 
+class LabeledIntervalSerializer(
+    AnnotationSerializer,
+    AttributedAnnotationSerializer,
+    ScoredAnnotationSerializer,
+):
+    start = serializers.IntegerField(min_value=0)
+    stop = serializers.IntegerField(min_value=0, allow_null=True)
+
+
 class LabeledDataSerializer(serializers.Serializer):
     version = serializers.IntegerField(default=0)  # TODO: remove
     tags = LabeledImageSerializer(many=True, default=[])
     shapes = LabeledShapeSerializer(many=True, default=[])
     tracks = LabeledTrackSerializer(many=True, default=[])
+    intervals = LabeledIntervalSerializer(many=True, default=[])
 
 
 class FileInfoSerializer(serializers.Serializer):
@@ -4177,10 +4270,10 @@ class ManifestSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Manifest
         fields = ("filename",)
+        extra_kwargs = {"filename": {"validators": [CanonicalRelativePathValidator()]}}
 
-    # pylint: disable=no-self-use
     def to_internal_value(self, data):
-        return {"filename": data}
+        return super().to_internal_value({"filename": data})
 
     # pylint: disable=no-self-use
     def to_representation(self, instance):

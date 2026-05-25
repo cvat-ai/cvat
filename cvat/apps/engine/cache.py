@@ -54,6 +54,7 @@ from cvat.apps.engine.utils import (
     get_rq_lock_for_job,
     md5_hash,
 )
+from cvat.utils.paths import join_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 from utils.dataset_manifest.utils import Openable
 
@@ -673,7 +674,7 @@ class MediaCache:
                 media = []
                 if db_data.local_storage_backing_cs_id:
                     for frame_path in requested_db_images():
-                        abs_frame_path = tmp_dir / frame_path
+                        abs_frame_path = join_untrusted_path(tmp_dir, frame_path)
 
                         files_to_download.append((frame_path, abs_frame_path))
                         checksums.append(None)
@@ -686,7 +687,7 @@ class MediaCache:
                         frame_path = item.get("meta", {}).get(
                             "original_name", f"{item['name']}{item['extension']}"
                         )
-                        abs_frame_path = tmp_dir / frame_path
+                        abs_frame_path = join_untrusted_path(tmp_dir, frame_path)
 
                         files_to_download.append((frame_path, abs_frame_path))
                         checksums.append(item.get("checksum", None))
@@ -720,7 +721,7 @@ class MediaCache:
             raw_data_dir = db_data.get_raw_data_dirname()
             media = []
             for frame_path in requested_db_images():
-                source_path = os.path.join(raw_data_dir, frame_path)
+                source_path = join_untrusted_path(raw_data_dir, frame_path)
                 media.append((source_path, source_path))
 
             if db_task.dimension == models.DimensionType.DIM_2D and decode:
@@ -739,14 +740,6 @@ class MediaCache:
     ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str]], None, None]:
         raw_data_dir = db_data.get_raw_data_dirname()
 
-        def _validate_ri_path(path: str) -> PurePath:
-            abs_path = (raw_data_dir / path).resolve()
-
-            try:
-                return abs_path.relative_to(raw_data_dir)
-            except ValueError as ex:
-                raise Exception("Invalid related image path") from ex
-
         with ExitStack() as es:
             ThroughModel = models.RelatedFile.images.through
 
@@ -757,15 +750,17 @@ class MediaCache:
             )
 
             media = [
-                (frame_id, [_validate_ri_path(ri_path) for _, ri_path in frame_ris])
+                (frame_id, [ri_path for _, ri_path in frame_ris])
                 for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0])
             ]
 
             if storage_client := db_data.get_cloud_storage_instance():
                 tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
-                files_to_download: list[PurePath] = []
+                files_to_download: list[tuple[str, PurePath]] = []
                 for _, frame_media in media:
-                    files_to_download.extend(frame_media)
+                    for ri_path in frame_media:
+                        abs_ri_path = join_untrusted_path(tmp_dir, ri_path)
+                        files_to_download.append((ri_path, abs_ri_path))
 
                 storage_client.bulk_download_to_dir(files_to_download, upload_dir=tmp_dir)
                 media_base_dir = tmp_dir
@@ -778,12 +773,16 @@ class MediaCache:
                     common_prefix = os.path.commonpath(os.path.dirname(m) for m in frame_media)
 
                     frame_media_tuples = [
-                        (os.path.join(media_base_dir, m), os.path.relpath(m, common_prefix))
+                        (
+                            os.fspath(join_untrusted_path(media_base_dir, m)),
+                            os.path.relpath(m, common_prefix),
+                        )
                         for m in frame_media
                     ]
                 else:
                     frame_media_tuples = [
-                        (os.path.join(media_base_dir, m), os.fspath(m)) for m in frame_media
+                        (os.fspath(join_untrusted_path(media_base_dir, m)), os.fspath(m))
+                        for m in frame_media
                     ]
 
                 for m in frame_media_tuples:
@@ -1089,16 +1088,16 @@ class MediaCache:
         for db_manifest in db_storage.manifests.all():
             manifest_prefix = os.path.dirname(db_manifest.filename)
 
-            full_manifest_path = db_storage.get_storage_dirname() / db_manifest.filename
+            full_manifest_path = join_untrusted_path(
+                db_storage.get_storage_dirname(), db_manifest.filename
+            )
+
             if not full_manifest_path.exists() or datetime.fromtimestamp(
                 full_manifest_path.stat().st_mtime, tz=timezone.utc
             ) < storage.get_file_last_modified(db_manifest.filename):
                 storage.download_file(db_manifest.filename, full_manifest_path)
 
-            manifest = ImageManifestManager(
-                db_storage.get_storage_dirname() / db_manifest.filename,
-                db_storage.get_storage_dirname(),
-            )
+            manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
             # need to update index
             manifest.set_index()
             if not len(manifest):

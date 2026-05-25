@@ -16,6 +16,151 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.65.0'></a>
+## \[2.65.0\] - 2026-05-19
+
+### Added
+
+- Support filtering by skeleton sub-label and sub-label attributes in the Filters modal
+  (<https://github.com/cvat-ai/cvat/pull/10195>)
+
+- \[Server API\] The `media_type` field for tasks and jobs
+  (<https://github.com/cvat-ai/cvat/pull/10538>)
+
+- \[Server API\] An option to create audio-based tasks
+  (<https://github.com/cvat-ai/cvat/pull/10560>)
+
+- An option to import annotations without removing the existing ones
+  in task and job annotation uploads.
+  (<https://github.com/cvat-ai/cvat/pull/10573>)
+
+- \[Server API\] New filter parameters: `read_only` on `/api/access_tokens`; `user_id` and
+  `accepted` on `/api/invitations`; `org_id` on `/api/requests`. The `accepted` field is now
+  also returned by `/api/invitations`, and `operation.org_id` by `/api/requests`
+  (<https://github.com/cvat-ai/cvat/pull/10569>)
+
+- Webhook deliveries are now retried automatically on 5xx, connection errors,
+  and timeouts, with backoff 5s → 5min → 30min → 3h → 24h × 4
+  (<https://github.com/cvat-ai/cvat/pull/10578>)
+
+- \[Server API\] Ground truth jobs can now be created in audio tasks
+  (<https://github.com/cvat-ai/cvat/pull/10582>)
+
+- \[Server API\] Webhook events `create:export` and `create:backup` that
+  fire when a dataset export or a project/task backup finishes (success
+  or failure), so subscribers no longer need to poll `/api/requests` for
+  the outcome
+  (<https://github.com/cvat-ai/cvat/pull/10585>)
+
+- Username updates are now available from the profile page
+  (<https://github.com/cvat-ai/cvat/pull/10595>)
+
+- Added support for deleting label attributes from the label editor and REST API
+  (<https://github.com/cvat-ai/cvat/pull/10596>)
+
+- Added support for adding, editing, and deleting skeleton element attributes after task or project creation
+  (<https://github.com/cvat-ai/cvat/pull/10596>)
+
+- Added raw label editor warnings when removing saved attributes, including skeleton element attributes
+  (<https://github.com/cvat-ai/cvat/pull/10596>)
+
+- Added cancellation support for export requests that are already in progress
+  (<https://github.com/cvat-ai/cvat/pull/10600>)
+
+- A shortcut to show or hide the bitmap layer on 2D annotation view.
+  (<https://github.com/cvat-ai/cvat/pull/10603>)
+
+### Changed
+
+- \[Server API\] Annotations now use `0` as the default value for groups instead of `null`.
+  It worked this way already, but wasn't reflected in the server API. No behavior or logic changes.
+  (<https://github.com/cvat-ai/cvat/pull/10522>)
+
+- Change case of 'Checkbox' var names in label editor to lower case
+  (<https://github.com/cvat-ai/cvat/pull/10535>)
+
+-\[Server API\] The `dimension` field of tasks without data will now be empty instead of `2d`
+  (<https://github.com/cvat-ai/cvat/pull/10538>)
+
+- \[Server API\] Tasks without data will not report their chunk types or chunk size
+  (<https://github.com/cvat-ai/cvat/pull/10551>)
+
+- \[Server API\] The minimum accepted value of `image_quality` in
+  `/api/tasks/<id>/data` is now 1 (was 0); `0` was never a usable JPEG quality
+  (<https://github.com/cvat-ai/cvat/pull/10551>)
+
+- \[Server API\] Enum-like fields (e.g. `status`, `state`, `role`, `type`, `provider_type`) are
+  no longer matched by the `?search=` parameter on list endpoints; use the corresponding
+  exact-match filter instead
+  (<https://github.com/cvat-ai/cvat/pull/10569>)
+
+- Updated Django to 5.2.x
+  (<https://github.com/cvat-ai/cvat/pull/9896>)
+
+- The server Docker image is now based on Ubuntu 24.04
+  (<https://github.com/cvat-ai/cvat/pull/10597>)
+
+- Restricted updates of existing label attributes to fields that do not invalidate annotations
+  (<https://github.com/cvat-ai/cvat/pull/10601>)
+
+- \[Server API\] Made the requirements for inputs representing paths in
+  cloud storage or attached file share more strict in several endpoints;
+  empty, `..` and `.` components are no longer accepted and neither are
+  leading slashes
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-6f87-4g86-p9gw>)
+
+### Deprecated
+
+- \[Server API\] The use of `null` for the `group` field in annotations. Use 0 instead.
+  (<https://github.com/cvat-ai/cvat/pull/10522>)
+
+- \[Server API\] `image_quality` in `/api/tasks[/<id>]` and `/api/{tasks,jobs}/<id>/data/meta`
+  endpoints for 3D tasks
+  (<https://github.com/cvat-ai/cvat/pull/10551>)
+
+### Fixed
+
+- Backend chunk job failures now preserve more meaningful exception details
+  (<https://github.com/cvat-ai/cvat/pull/10495>)
+- S3 cloud-storage status probes now fail fast on unreachable or misconfigured
+  endpoints
+  (<https://github.com/cvat-ai/cvat/pull/10495>)
+
+- Helm deployments now support multiple releases in one namespace by rendering
+  OPA, Redis, and Kvrocks wiring with release-scoped service and secret names
+  (<https://github.com/cvat-ai/cvat/pull/10496>)
+
+- Updated `psycopg2-binary` to avoid local macOS test startup failures caused
+  by older bundled libpq versions, including `SCRAM authentication requires
+  libpq version 10 or above` when connecting to PostgreSQL
+  (<https://github.com/cvat-ai/cvat/pull/10497>)
+
+- Task creation with `remote_files` now returns a readable validation error
+  when a URL is unreachable or uses an unsupported scheme, instead of a 500
+  with a raw traceback
+  (<https://github.com/cvat-ai/cvat/pull/10554>)
+
+- Fixed polygon/polyline auto simplification switch state is shared
+  (<https://github.com/cvat-ai/cvat/pull/10568>)
+
+- \[Server API\] Improved performance of the organization, membership, and invitation endpoints
+  (<https://github.com/cvat-ai/cvat/pull/10576>)
+
+- Show server health-check failures and timeout details when CVAT cannot reach required services
+  (<https://github.com/cvat-ai/cvat/pull/10579>)
+
+- Clarified 3D cuboid size labels in the object details sidebar to use Length, Width, and Height terminology.
+  (<https://github.com/cvat-ai/cvat/pull/10586>)
+
+- Fixed task backup export for tasks with media stored in cloud storage
+  when image database rows are returned out of frame order
+  (<https://github.com/cvat-ai/cvat/pull/10589>)
+
+### Security
+
+- Fixed multiple path traversal vulnerabilities
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-6f87-4g86-p9gw>)
+
 <a id='changelog-2.64.0'></a>
 ## \[2.64.0\] - 2026-04-29
 

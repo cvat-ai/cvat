@@ -9,7 +9,7 @@ from itertools import product
 from pathlib import Path, PurePosixPath
 
 import pytest
-from cvat_sdk import models
+from cvat_sdk import exceptions, models
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
@@ -263,3 +263,133 @@ class TestAudioTasks:
 
         assert gt_job.type == "ground_truth"
         assert gt_job.frame_count == task.size
+
+    @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
+    def test_cant_export_dataset(self, task: Task):
+        with pytest.raises(BackgroundRequestException) as capture:
+            task.export_dataset("Generic TSV 1.0", filename=self.tmp_dir, include_images=True)
+
+        assert "export as dataset is not supported for audio" in str(capture.value)
+
+    @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
+    def test_cant_import_dataset(self, task: Task, fxt_test_name: str):
+        project = self.client.projects.create({"name": fxt_test_name})
+
+        temp_file = self.tmp_dir / "test.tsv"
+        temp_file.write_text("test")
+
+        with pytest.raises(BackgroundRequestException) as capture:
+            project.import_dataset("Generic TSV 1.0", filename=temp_file)
+
+        assert "import from dataset is not supported for audio" in str(capture.value)
+
+
+class TestAudioAnnotations:
+    @pytest.fixture(autouse=True)
+    def setup(
+        self,
+        restore_db_per_function,
+        admin_user: str,
+    ):
+        self.user = admin_user
+
+        with make_sdk_client(self.user) as client:
+            self.client = client
+            yield
+
+    @parametrize("instance_type", ["task", "job"])
+    def test_can_save_intervals(self, tasks, instance_type: str):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+
+        task = self.client.tasks.retrieve(task_id)
+        task.update({"labels": [{"name": "test", "type": "interval"}]})
+        label = task.get_labels()[-1]
+
+        payload = models.LabeledDataRequest(
+            intervals=[
+                models.LabeledIntervalRequest(
+                    label_id=label.id,
+                    start=0,
+                    stop=task.size - 1,
+                ),
+            ]
+        )
+
+        if instance_type == "task":
+            instance = task
+        elif instance_type == "job":
+            instance = task.get_jobs()[0]
+        else:
+            assert False, instance_type
+
+        instance.set_annotations(payload)
+
+        server_annotations = instance.get_annotations()
+
+        assert len(server_annotations.intervals) == 1
+        assert server_annotations.intervals[0].label_id == payload.intervals[0].label_id
+        assert server_annotations.intervals[0].start == payload.intervals[0].start
+        assert server_annotations.intervals[0].stop == payload.intervals[0].stop
+
+    @parametrize("instance_type", ["task", "job"])
+    def test_can_save_interval_with_null_stop(self, tasks, instance_type: str):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+
+        task = self.client.tasks.retrieve(task_id)
+        task.update({"labels": [{"name": "test", "type": "interval"}]})
+        label = task.get_labels()[-1]
+
+        payload = models.LabeledDataRequest(
+            intervals=[
+                models.LabeledIntervalRequest(
+                    label_id=label.id,
+                    start=0,
+                    stop=None,
+                ),
+            ]
+        )
+
+        if instance_type == "task":
+            instance = task
+        elif instance_type == "job":
+            instance = task.get_jobs()[0]
+        else:
+            assert False, instance_type
+
+        instance.set_annotations(payload)
+
+        server_annotations = instance.get_annotations()
+
+        assert len(server_annotations.intervals) == 1
+        assert server_annotations.intervals[0].label_id == payload.intervals[0].label_id
+        assert server_annotations.intervals[0].start == payload.intervals[0].start
+        assert server_annotations.intervals[0].stop is None
+
+    @parametrize("instance_type", ["task", "job"])
+    def test_cant_save_intervals_outside_range(self, tasks, instance_type: str):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+
+        task = self.client.tasks.retrieve(task_id)
+        labels = task.get_labels()
+
+        payload = models.LabeledDataRequest(
+            intervals=[
+                models.LabeledIntervalRequest(
+                    label_id=labels[0].id,
+                    start=0,
+                    stop=task.size,
+                ),
+            ]
+        )
+
+        if instance_type == "task":
+            instance = task
+        elif instance_type == "job":
+            instance = task.get_jobs()[0]
+        else:
+            assert False, instance_type
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            instance.set_annotations(payload)
+
+        assert "cannot be outside" in str(capture.value)

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import gzip
 import io
 import json
 import math
@@ -1827,6 +1828,133 @@ class TestPostTaskData:
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskData(TestTasksBase):
+    @staticmethod
+    def _retrieve_data_with_range(
+        api_client, resource, resource_id, *, range_header, extra_headers=None, **params
+    ):
+        headers = api_client.get_common_headers()
+        headers["Range"] = range_header
+        headers.update(extra_headers or {})
+        query_params = list(params.items())
+        api_client.update_params_for_auth(headers=headers, queries=query_params)
+
+        return api_client.rest_client.GET(
+            f"{api_client.configuration.host}/api/{resource}/{resource_id}/data",
+            headers=headers,
+            query_params=query_params,
+            _check_status=False,
+            _parse_response=False,
+        )
+
+    def _check_chunk_ranges(self, api_client, resource, resource_id, full_chunk, **params):
+        partial_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header="bytes=0-99", **params
+        )
+
+        assert partial_response.status == HTTPStatus.PARTIAL_CONTENT
+        assert partial_response.data == full_chunk[:100]
+        assert partial_response.headers["Accept-Ranges"] == "bytes"
+        assert partial_response.headers["Content-Range"] == f"bytes 0-99/{len(full_chunk)}"
+        assert partial_response.headers["Content-Length"] == "100"
+        assert "X-Checksum" in partial_response.headers
+        assert "X-Updated-Date" in partial_response.headers
+
+        range_start = min(100, len(full_chunk) - 1)
+        open_ended_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header=f"bytes={range_start}-", **params
+        )
+
+        assert open_ended_response.status == HTTPStatus.PARTIAL_CONTENT
+        assert open_ended_response.data == full_chunk[range_start:]
+        assert open_ended_response.headers["Content-Range"] == (
+            f"bytes {range_start}-{len(full_chunk) - 1}/{len(full_chunk)}"
+        )
+
+        invalid_range_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header=f"bytes={len(full_chunk)}-", **params
+        )
+
+        assert invalid_range_response.status == HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE
+        assert invalid_range_response.data == b""
+        assert invalid_range_response.headers["Accept-Ranges"] == "bytes"
+        assert invalid_range_response.headers["Content-Range"] == f"bytes */{len(full_chunk)}"
+
+        unsupported_unit_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header="items=0-99", **params
+        )
+
+        assert unsupported_unit_response.status == HTTPStatus.OK
+        assert unsupported_unit_response.data == full_chunk
+        assert unsupported_unit_response.headers["Accept-Ranges"] == "bytes"
+        assert "Content-Range" not in unsupported_unit_response.headers
+
+        malformed_range_response = self._retrieve_data_with_range(
+            api_client, resource, resource_id, range_header="bytes=abc", **params
+        )
+
+        assert malformed_range_response.status == HTTPStatus.BAD_REQUEST
+        assert malformed_range_response.data == b"Invalid Range header"
+        assert "Content-Range" not in malformed_range_response.headers
+
+        gzip_range_response = self._retrieve_data_with_range(
+            api_client,
+            resource,
+            resource_id,
+            range_header=f"bytes=0-{len(full_chunk) - 1}",
+            extra_headers={"Accept-Encoding": "gzip"},
+            **params,
+        )
+
+        response_data = gzip_range_response.read(decode_content=False)
+        if gzip_range_response.headers.get("Content-Encoding") == "gzip":
+            response_data = gzip.decompress(response_data)
+
+        assert gzip_range_response.status == HTTPStatus.PARTIAL_CONTENT
+        assert response_data == full_chunk
+        assert gzip_range_response.headers["Accept-Ranges"] == "bytes"
+        assert gzip_range_response.headers["Content-Range"] == (
+            f"bytes 0-{len(full_chunk) - 1}/{len(full_chunk)}"
+        )
+
+    def test_can_get_data_chunk_byte_ranges(self, fxt_uploaded_images_task: tuple[ITaskSpec, int]):
+        _, task_id = fxt_uploaded_images_task
+
+        with make_api_client(self._USERNAME) as api_client:
+            _, task_chunk_response = api_client.tasks_api.retrieve_data(
+                task_id, type="chunk", quality="compressed", number=0, _parse_response=False
+            )
+            assert task_chunk_response.status == HTTPStatus.OK
+            assert task_chunk_response.headers["Accept-Ranges"] == "bytes"
+
+            self._check_chunk_ranges(
+                api_client,
+                "tasks",
+                task_id,
+                task_chunk_response.data,
+                type="chunk",
+                quality="compressed",
+                number=0,
+            )
+
+            jobs, _ = api_client.jobs_api.list(task_id=task_id)
+            job_id = jobs.results[0].id
+
+            _, job_chunk_response = api_client.jobs_api.retrieve_data(
+                job_id, type="chunk", quality="compressed", index=0, _parse_response=False
+            )
+            assert job_chunk_response.status == HTTPStatus.OK
+            assert job_chunk_response.headers["Accept-Ranges"] == "bytes"
+
+            self._check_chunk_ranges(
+                api_client,
+                "jobs",
+                job_id,
+                job_chunk_response.data,
+                type="chunk",
+                quality="compressed",
+                index=0,
+            )
+
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
 
