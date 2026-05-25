@@ -152,6 +152,7 @@ cmd_run() {
         fi
         export CVAT_QUEUES=$queue_list
         export CVAT_RQWORKER_EXTRA_FLAGS="${extra_flags[*]:-}"
+        export CVAT_RQWORKER_CLASS="${CVAT_RQWORKER_CLASS:-cvat.rqworker.DefaultWorker}"
 
         postgres_app_name+=":${queue_list// /+}"
 

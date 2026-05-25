@@ -4,6 +4,8 @@
 
 from http import HTTPStatus
 
+from django.db import connection
+
 from . import services
 from .exceptions import WebhookDeliveryError
 from .models import Webhook, WebhookDelivery
@@ -17,6 +19,8 @@ def send_webhook(
     webhook = Webhook.objects.filter(pk=webhook_id, is_active=True).first()
     if webhook is None:
         return None
+
+    connection.close()
 
     delivery = services.send_webhook(webhook=webhook, payload=payload, redelivery=redelivery)
 
