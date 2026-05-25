@@ -78,6 +78,7 @@ import SVGSimplifyIcon from './assets/simplify-icon.svg';
 import SVGSnapToolsIcon from './assets/snap-tools-icon.svg';
 import SVGSnapToContourIcon from './assets/snap-to-contour-icon.svg';
 import SVGSnapToPointIcon from './assets/snap-to-point-icon.svg';
+import SVGLayerStackIcon from './assets/layer-stack-icon.svg';
 
 export const CVATIcon = React.memo((): JSX.Element => <SVGCVATIcon />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -152,3 +153,4 @@ export const SimplifyIcon = React.memo((): JSX.Element => <SVGSimplifyIcon />);
 export const SnapToolsIcon = React.memo((): JSX.Element => <SVGSnapToolsIcon />);
 export const SnapToContourIcon = React.memo((): JSX.Element => <SVGSnapToContourIcon />);
 export const SnapToPointIcon = React.memo((): JSX.Element => <SVGSnapToPointIcon />);
+export const LayerStackIcon = React.memo((): JSX.Element => <SVGLayerStackIcon />);

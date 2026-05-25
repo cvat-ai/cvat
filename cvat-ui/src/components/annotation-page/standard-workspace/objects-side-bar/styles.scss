@@ -173,7 +173,7 @@
     width: 100%;
     margin: 0;
     padding: $grid-unit-size;
-    border: 1px solid rgba(0, 0, 0, 8%);
+    border: 2px solid rgba(0, 0, 0, 8%);
     border-left: 3px solid #ff7300;
     border-radius: $border-radius-base;
     background: rgba(255, 255, 255, 82%);
@@ -210,7 +210,7 @@
     width: 100%;
     margin: 0;
     padding: $grid-unit-size;
-    border: 1px solid rgba(0, 0, 0, 8%);
+    border: 2px solid rgba(0, 0, 0, 8%);
     border-left: 3px solid #e10602;
     border-radius: $border-radius-base;
     background: rgba(255, 255, 255, 82%);
@@ -238,8 +238,8 @@
 }
 
 .cvat-objects-sidebar-item-active {
-    border-color: rgba(0, 0, 0, 42%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 12%);
+    border: 2px solid rgba(0, 0, 0, 66%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
 }
 
 .cvat-objects-sidebar-issue-resolved {
@@ -328,6 +328,13 @@
     overflow-y: auto;
     padding: $grid-unit-size * 0.5;
 
+    &:has(.cvat-objects-sidebar-z-layers-title) {
+        padding-top: 0;
+
+        // height of z layers title + padding of states list header
+        scroll-padding-top: $grid-unit-size * 4;
+    }
+
     .cvat-objects-sidebar-state-item {
         // opacity 0.53 in sidebar to keep the same look as before on sidebar
         background-color: rgba(var(--state-item-background), 0.53);
@@ -338,20 +345,184 @@
     }
 }
 
+.cvat-objects-sidebar-z-layers-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.cvat-objects-sidebar-z-layers-stack {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+}
+
+.cvat-objects-sidebar-z-layers-title {
+    align-items: center;
+    display: flex;
+    justify-content: flex-start;
+    margin: 0 (-$grid-unit-size * 0.5);
+    height: $grid-unit-size * 4;
+    padding: $grid-unit-size;
+    border: 1px solid rgba(0, 0, 0, 6%);
+    background: $background-color-2;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    > .ant-typography {
+        flex: 1;
+        font-weight: 600;
+    }
+}
+
+.cvat-objects-sidebar-z-layers-compact-button,
+.cvat-objects-sidebar-z-layers-collapse-all-button {
+    border-radius: $border-radius-base;
+
+    &:hover {
+        opacity: 0.82;
+    }
+}
+
+.cvat-objects-sidebar-z-layer-move-drop-area {
+    flex: 0 0 8px;
+    height: 8px;
+    margin: 0;
+    border-radius: $border-radius-base;
+    transition:
+        background-color $box-shadow-transition,
+        box-shadow $box-shadow-transition,
+        flex-basis $box-shadow-transition,
+        height $box-shadow-transition;
+}
+
+.cvat-objects-sidebar-z-layer-move-drop-area-active {
+    flex-basis: $grid-unit-size * 5;
+    height: $grid-unit-size * 5;
+    margin: $grid-unit-size * 0.5 0;
+    background: rgba($color: $completed-progress-color, $alpha: 18%);
+}
+
 .cvat-objects-sidebar-z-layer-mark {
-    text-align: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 46%);
+    border-bottom: 1px solid rgba(0, 0, 0, 7%);
+    display: flex;
+    justify-content: space-between;
+    height: $grid-unit-size * 4;
+    padding: $grid-unit-size * 0.5 $grid-unit-size $grid-unit-size * 0.25 $grid-unit-size * 0.25;
+    position: relative;
+}
+
+.cvat-objects-sidebar-z-layer-mark-dragging {
+    opacity: 0.7;
+    z-index: 1000;
+}
+
+.cvat-objects-sidebar-z-layer-mark-invisible {
+    opacity: 0.3;
+}
+
+.cvat-objects-sidebar-z-layer-collapse-button,
+.cvat-objects-sidebar-z-layer-select-button,
+.cvat-objects-sidebar-z-layer-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: $border-radius-base;
+    color: $objects-bar-icons-color;
+}
+
+.cvat-objects-sidebar-z-layer-select-button[disabled] {
+    opacity: 1;
+}
+
+.cvat-objects-sidebar-z-layer-id {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cvat-objects-sidebar-z-layer-drag-handle {
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+.cvat-objects-sidebar-z-layer {
+    border: 1px solid rgba(0, 0, 0, 8%);
+    flex: 0 0 auto;
+    overflow: visible;
+    position: relative;
+    transition:
+        background-color $box-shadow-transition,
+        border-color $box-shadow-transition,
+        box-shadow $box-shadow-transition;
+
+    &:hover {
+        border-color: rgba(0, 0, 0, 18%);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 8%);
+    }
+
+    .cvat-objects-sidebar-state-item {
+        margin: $grid-unit-size * 0.5;
+    }
+}
+
+.cvat-objects-sidebar-z-layer-active {
+    background-color: rgba($color: $completed-progress-color, $alpha: 8%);
+    border-color: rgba($color: $completed-progress-color, $alpha: 35%);
+    box-shadow: 0 0 0 1px rgba($color: $completed-progress-color, $alpha: 10%);
+}
+
+.cvat-objects-sidebar-z-layer-dragging {
+    opacity: 0.55;
+    position: relative;
+    z-index: 1000;
+}
+
+.cvat-objects-sidebar-state-item-draggable {
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+.cvat-object-item-menu-to-layer-popover {
+    align-items: center;
+    display: flex;
+    gap: $grid-unit-size;
+    padding: 0 $grid-unit-size;
+
+    .ant-input-number {
+        width: $grid-unit-size * 14;
+    }
+}
+
+.cvat-object-item-menu-to-layer-close-button {
+    padding: 0;
+}
+
+.cvat-objects-sidebar-state-item-dragging {
+    box-shadow: $box-shadow-base;
 }
 
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {
     box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
-    border: 1px solid rgba(0, 0, 0, 42%);
+    border: 2px solid rgba(0, 0, 0, 66%);
 }
 
 .cvat-objects-sidebar-state-item {
     width: 100%;
     background-color: rgba(var(--state-item-background), 1);
     transition: border-color $box-shadow-transition, box-shadow $box-shadow-transition;
-    border: 1px solid rgba(0, 0, 0, 8%);
+    border: 2px solid rgba(0, 0, 0, 8%);
     border-radius: $border-radius-base;
     padding: $grid-unit-size * 0.75;
     margin-left: 0;
@@ -527,14 +698,14 @@
 
 .cvat-objects-sidebar-label-active-item {
     background: rgba(255, 255, 255, 92%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 12%);
-    border: 1px solid rgba(0, 0, 0, 24%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
+    border: 2px solid rgba(0, 0, 0, 66%);
 }
 
 .cvat-objects-sidebar-label-item {
     min-height: $grid-unit-size * 5;
     transition: border-color $box-shadow-transition, box-shadow $box-shadow-transition, background-color $box-shadow-transition;
-    border: 1px solid rgba(0, 0, 0, 8%);
+    border: 2px solid rgba(0, 0, 0, 8%);
     border-radius: $border-radius-base;
     padding: $grid-unit-size * 0.5 $grid-unit-size * 0.75;
     margin-left: $grid-unit-size * 0.5;

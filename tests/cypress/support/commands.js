@@ -1828,7 +1828,6 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
 });
 
 Cypress.Commands.add('hideTooltips', () => {
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500); // FIXME: wait while tooltips are opened
 
     cy.document().then((doc) => {

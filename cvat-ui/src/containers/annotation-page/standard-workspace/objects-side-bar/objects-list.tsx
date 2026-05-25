@@ -20,6 +20,9 @@ import {
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
     changeHideActiveObjectAsync,
+    updateLayerAsync,
+    compactLayersAsync,
+    switchZLayer,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -35,7 +38,13 @@ import { filterAnnotations } from 'utils/filter-annotations';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
+import {
+    type LayerPlacement,
+    type LayerMoveSource,
+    isLayerState,
+} from 'components/annotation-page/standard-workspace/objects-side-bar/drag-and-drop';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
+import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 
 interface StateToProps {
     jobInstance: any;
@@ -53,6 +62,7 @@ interface StateToProps {
     activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
+    curZLayer: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
@@ -63,16 +73,19 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    updateAnnotations(states: any[]): void;
-    collapseStates(states: any[], value: boolean): void;
-    removeObject: (objectState: any, force: boolean) => void;
-    copyShape: (objectState: any) => void;
-    switchPropagateVisibility: (visible: boolean) => void;
-    switchSimplifyVisibility: (clientID: number | null) => void;
-    changeFrame(frame: number): void;
-    changeGroupColor(group: number, color: string): void;
-    changeShowGroundTruth(value: boolean): void;
-    changeHideEditedState(value: boolean): void;
+    updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void;
+    collapseStates(...args: Parameters<typeof collapseObjectItems>): void;
+    removeObject(...args: Parameters<typeof removeObjectAction>): void;
+    copyShape(...args: Parameters<typeof copyShapeAction>): void;
+    switchPropagateVisibility(...args: Parameters<typeof switchPropagateVisibilityAction>): void;
+    switchSimplifyVisibility(...args: Parameters<typeof switchSimplifyVisibilityAction>): void;
+    changeFrame(...args: Parameters<typeof changeFrameAsync>): void;
+    changeGroupColor(...args: Parameters<typeof changeGroupColorAsync>): void;
+    changeShowGroundTruth(...args: Parameters<typeof changeShowGroundTruthAction>): void;
+    changeHideEditedState(...args: Parameters<typeof changeHideActiveObjectAsync>): void;
+    updateLayer(...args: Parameters<typeof updateLayerAsync>): void;
+    compactLayers(...args: Parameters<typeof compactLayersAsync>): void;
+    selectLayer(...args: Parameters<typeof switchZLayer>): void;
 }
 
 const componentShortcuts = {
@@ -211,7 +224,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsedAll,
                 activatedStateID,
                 activatedElementID,
-                zLayer: { min: minZLayer, max: maxZLayer },
+                zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
             job: { instance: jobInstance },
             player: {
@@ -236,7 +249,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     objectStates.forEach((objectState: ObjectState) => {
         const { lock } = objectState;
         if (!lock) {
-            if (objectState.objectType !== ObjectType.TAG) {
+            if (objectState.objectType === ObjectType.SHAPE || objectState.objectType === ObjectType.TRACK) {
                 if (objectState.shapeType === ShapeType.SKELETON) {
                     objectState.elements.forEach((element: ObjectState) => {
                         statesHidden = statesHidden && (element.lock || element.hidden);
@@ -265,6 +278,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedElementID,
         minZLayer,
         maxZLayer,
+        curZLayer,
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
@@ -277,36 +291,45 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        updateAnnotations(states: ObjectState[]): void {
-            dispatch(updateAnnotationsAsync(states));
+        updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void {
+            dispatch(updateAnnotationsAsync(...args));
         },
-        collapseStates(states: ObjectState[], collapsed: boolean): void {
-            dispatch(collapseObjectItems(states, collapsed));
+        collapseStates(...args: Parameters<typeof collapseObjectItems>): void {
+            dispatch(collapseObjectItems(...args));
         },
-        removeObject(objectState: ObjectState, force: boolean): void {
-            dispatch(removeObjectAction(objectState, force));
+        removeObject(...args: Parameters<typeof removeObjectAction>): void {
+            dispatch(removeObjectAction(...args));
         },
-        copyShape(objectState: ObjectState): void {
-            dispatch(copyShapeAction(objectState));
+        copyShape(...args: Parameters<typeof copyShapeAction>): void {
+            dispatch(copyShapeAction(...args));
         },
-        switchPropagateVisibility(visible: boolean): void {
-            dispatch(switchPropagateVisibilityAction(visible));
+        switchPropagateVisibility(...args: Parameters<typeof switchPropagateVisibilityAction>): void {
+            dispatch(switchPropagateVisibilityAction(...args));
         },
-        switchSimplifyVisibility(clientID: number | null): void {
-            dispatch(switchSimplifyVisibilityAction(clientID));
+        switchSimplifyVisibility(...args: Parameters<typeof switchSimplifyVisibilityAction>): void {
+            dispatch(switchSimplifyVisibilityAction(...args));
         },
-        changeFrame(frame: number): void {
-            dispatch(changeFrameAsync(frame));
+        changeFrame(...args: Parameters<typeof changeFrameAsync>): void {
+            dispatch(changeFrameAsync(...args));
         },
-        changeGroupColor(group: number, color: string): void {
-            dispatch(changeGroupColorAsync(group, color));
+        changeGroupColor(...args: Parameters<typeof changeGroupColorAsync>): void {
+            dispatch(changeGroupColorAsync(...args));
         },
-        changeShowGroundTruth(value: boolean): void {
-            dispatch(changeShowGroundTruthAction(value));
+        changeShowGroundTruth(...args: Parameters<typeof changeShowGroundTruthAction>): void {
+            dispatch(changeShowGroundTruthAction(...args));
             dispatch(fetchAnnotationsAsync());
         },
-        changeHideEditedState(value: boolean): void {
-            dispatch(changeHideActiveObjectAsync(value));
+        changeHideEditedState(...args: Parameters<typeof changeHideActiveObjectAsync>): void {
+            dispatch(changeHideActiveObjectAsync(...args));
+        },
+        updateLayer(...args: Parameters<typeof updateLayerAsync>): void {
+            dispatch(updateLayerAsync(...args));
+        },
+        compactLayers(...args: Parameters<typeof compactLayersAsync>): void {
+            dispatch(compactLayersAsync(...args));
+        },
+        selectLayer(...args: Parameters<typeof switchZLayer>): void {
+            dispatch(switchZLayer(...args));
         },
     };
 }
@@ -323,7 +346,7 @@ function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): numb
         ));
     } else if (ordering === StatesOrdering.UPDATED) {
         sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => b.updated - a.updated);
-    } else if (ordering === StatesOrdering.Z_ORDER) {
+    } else if (ordering === StatesOrdering.LAYER) {
         sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => a.zOrder - b.zOrder);
     } else if (ordering === StatesOrdering.LABEL_NAME) {
         sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => {
@@ -362,6 +385,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.updateObjects();
+        window.addEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, this.onOpenZLayerInSidebar);
+    }
+
+    public componentWillUnmount(): void {
+        window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, this.onOpenZLayerInSidebar);
     }
 
     public componentDidUpdate(): void {
@@ -389,11 +417,24 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
-        const { filteredStates } = this.state;
+        const { filteredStates, statesOrdering: currentStatesOrdering } = this.state;
+        const { maxZLayer, selectLayer } = this.props;
+
+        if (statesOrdering === currentStatesOrdering) {
+            return;
+        }
+
+        // whenever open or close layer ordering mode
+        // set maximum z layer as current to show everything
+        selectLayer(maxZLayer);
         this.setState({
             statesOrdering,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
         });
+    };
+
+    private onOpenZLayerInSidebar = (): void => {
+        this.onChangeStatesOrdering(StatesOrdering.LAYER);
     };
 
     private onLockAllStates = (): void => {
@@ -423,6 +464,48 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     private changeShowGroundTruth = (): void => {
         const { showGroundTruth, changeShowGroundTruth } = this.props;
         changeShowGroundTruth(!showGroundTruth);
+    };
+
+    private statesFromMoveSource(source: LayerMoveSource): ObjectState[] {
+        const { filteredStates } = this.state;
+
+        if ('clientID' in source) {
+            const objectState = filteredStates.find((state: ObjectState): boolean => (
+                state.clientID === source.clientID
+            ));
+            return objectState && isLayerState(objectState) ? [objectState] : [];
+        }
+
+        return filteredStates.filter((state: ObjectState): boolean => (
+            isLayerState(state) && state.zOrder === source.zOrder
+        ));
+    }
+
+    private moveObjectsToLayer = (source: LayerMoveSource, targetZOrder: number): void => {
+        const { frameNumber, updateLayer } = this.props;
+        const statesToMove = this.statesFromMoveSource(source);
+
+        if (!statesToMove.length) {
+            return;
+        }
+
+        updateLayer(frameNumber, { exact: targetZOrder }, statesToMove);
+    };
+
+    private moveObjectsOnNewLayer = (source: LayerMoveSource, placement: LayerPlacement): void => {
+        const { frameNumber, updateLayer } = this.props;
+        const statesToMove = this.statesFromMoveSource(source);
+
+        if (!statesToMove.length) {
+            return;
+        }
+
+        updateLayer(frameNumber, placement, statesToMove);
+    };
+
+    private compactLayers = (): void => {
+        const { frameNumber, compactLayers } = this.props;
+        compactLayers(frameNumber);
     };
 
     private lockAllStates(locked: boolean): void {
@@ -466,6 +549,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             activatedElementID,
             maxZLayer,
             minZLayer,
+            curZLayer,
             keyMap,
             normalizedKeyMap,
             colors,
@@ -544,7 +628,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_OCCLUDED: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.occluded = !state.occluded;
                     updateAnnotations([state]);
                 }
@@ -603,7 +687,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_BACKGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder = minZLayer - 1;
                     updateAnnotations([state]);
                 }
@@ -611,7 +695,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_FOREGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder = maxZLayer + 1;
                     updateAnnotations([state]);
                 }
@@ -619,7 +703,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_ONE_LAYER_BACKWARD: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder -= 1;
                     updateAnnotations([state]);
                 }
@@ -627,7 +711,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_ONE_LAYER_FORWARD: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder += 1;
                     updateAnnotations([state]);
                 }
@@ -691,6 +775,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesCollapsedAll={statesCollapsedAll}
                     workspace={workspace}
                     statesOrdering={statesOrdering}
+                    currentLayer={curZLayer}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}
@@ -698,6 +783,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
+                    selectLayer={this.props.selectLayer}
+                    moveObjectsToLayer={this.moveObjectsToLayer}
+                    moveObjectsOnNewLayer={this.moveObjectsOnNewLayer}
+                    compactLayers={this.compactLayers}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}
                     collapseAllStates={this.onCollapseAllStates}
