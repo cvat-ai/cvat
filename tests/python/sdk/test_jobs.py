@@ -15,9 +15,10 @@ from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
 from shared.fixtures.data import CloudStorageAssets
+from shared.utils.config import make_sdk_client
 
 from .common import TestDatasetExport
-from .util import make_pbar
+from .util import create_org_resource_hierarchy, make_pbar
 
 
 class TestJobUsecases(TestDatasetExport):
@@ -261,6 +262,21 @@ class TestJobUsecases(TestDatasetExport):
 
         assert {issue.id} == job_issue_ids
         assert self.stdout.getvalue() == ""
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_org_maintainer_can_get_job_resources_without_explicit_org_context(
+        self, fxt_image_file: Path
+    ):
+        resources = create_org_resource_hierarchy(fxt_image_file, include_issue=True)
+
+        with make_sdk_client(resources.maintainer_username) as maintainer_client:
+            job = maintainer_client.jobs.retrieve(resources.job_id)
+            labels = job.get_labels()
+            issues = job.get_issues()
+
+            assert maintainer_client.organization_slug is None
+            assert {label.name for label in labels} == {"car"}
+            assert [issue.id for issue in issues] == [resources.issue_id]
 
     def test_can_get_annotations(self, fxt_task_with_shapes: Task):
         anns = fxt_task_with_shapes.get_jobs()[0].get_annotations()

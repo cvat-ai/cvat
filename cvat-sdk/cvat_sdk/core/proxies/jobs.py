@@ -23,6 +23,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
+    organization_context_for,
 )
 from cvat_sdk.core.uploading import AnnotationUploader
 
@@ -130,9 +131,10 @@ class Job(
         return meta
 
     def get_labels(self) -> list[models.ILabel]:
-        return get_paginated_collection(
-            self._client.api_client.labels_api.list_endpoint, job_id=self.id
-        )
+        with organization_context_for(self._client, self.organization):
+            return get_paginated_collection(
+                self._client.api_client.labels_api.list_endpoint, job_id=self.id
+            )
 
     def get_frames_info(self) -> list[models.IFrameMeta]:
         return self.get_meta().frames
@@ -146,12 +148,13 @@ class Job(
         )
 
     def get_issues(self) -> list[Issue]:
-        return [
-            Issue(self._client, m)
-            for m in get_paginated_collection(
-                self._client.api_client.issues_api.list_endpoint, job_id=self.id
-            )
-        ]
+        with organization_context_for(self._client, self.organization):
+            return [
+                Issue(self._client, m)
+                for m in get_paginated_collection(
+                    self._client.api_client.issues_api.list_endpoint, job_id=self.id
+                )
+            ]
 
 
 class JobsRepo(

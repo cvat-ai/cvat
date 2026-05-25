@@ -22,6 +22,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
+    organization_context_for,
 )
 from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.core.uploading import DatasetUploader, Uploader
@@ -76,17 +77,19 @@ class Project(
         return annotations
 
     def get_tasks(self) -> list[Task]:
-        return [
-            Task(self._client, m)
-            for m in get_paginated_collection(
-                self._client.api_client.tasks_api.list_endpoint, project_id=self.id
-            )
-        ]
+        with organization_context_for(self._client, self.organization):
+            return [
+                Task(self._client, m)
+                for m in get_paginated_collection(
+                    self._client.api_client.tasks_api.list_endpoint, project_id=self.id
+                )
+            ]
 
     def get_labels(self) -> list[models.ILabel]:
-        return get_paginated_collection(
-            self._client.api_client.labels_api.list_endpoint, project_id=self.id
-        )
+        with organization_context_for(self._client, self.organization):
+            return get_paginated_collection(
+                self._client.api_client.labels_api.list_endpoint, project_id=self.id
+            )
 
     def get_preview(
         self,

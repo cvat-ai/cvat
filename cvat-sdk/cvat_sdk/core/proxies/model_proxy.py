@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from abc import ABC
 from collections.abc import Callable, Sequence
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
@@ -84,6 +85,20 @@ class Repo(ModelProxy[ModelType, ApiType]):
     """
 
     _entity_type: type[Entity[ModelType, ApiType]]
+
+
+@contextmanager
+def organization_context_for(client: Client, organization_id: int | None):
+    if not organization_id:
+        yield
+        return
+
+    org = client.organizations.retrieve(organization_id)
+    if client.organization_slug == org.slug:
+        yield
+    else:
+        with client.organization_context(org.slug):
+            yield
 
 
 ### Utilities

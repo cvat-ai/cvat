@@ -17,10 +17,10 @@ from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
 from shared.fixtures.data import CloudStorageAssets
-from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
+from shared.utils.config import IMPORT_EXPORT_BUCKET_ID, make_sdk_client
 
 from .common import TestDatasetExport
-from .util import make_pbar
+from .util import create_org_resource_hierarchy, make_pbar
 
 
 class TestProjectUsecases(TestDatasetExport):
@@ -221,6 +221,22 @@ class TestProjectUsecases(TestDatasetExport):
 
         assert len(tasks) == 1
         assert tasks[0].project_id == fxt_project_with_shapes.id
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_org_maintainer_can_get_project_resources_without_explicit_org_context(
+        self, fxt_image_file: Path
+    ):
+        resources = create_org_resource_hierarchy(fxt_image_file)
+
+        with make_sdk_client(resources.maintainer_username) as maintainer_client:
+            project = maintainer_client.projects.retrieve(resources.project_id)
+            tasks = project.get_tasks()
+            labels = project.get_labels()
+
+            assert maintainer_client.organization_slug is None
+            assert len(tasks) == 1
+            assert tasks[0].project_id == resources.project_id
+            assert {label.name for label in labels} == {"car"}
 
     def test_can_get_labels(self, fxt_project_with_shapes: Project):
         expected_labels = {"car", "person"}

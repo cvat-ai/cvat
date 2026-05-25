@@ -31,6 +31,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
+    organization_context_for,
 )
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
 from cvat_sdk.core.utils import filter_dict
@@ -246,21 +247,23 @@ class Task(
             im.save(outdir / outfile)
 
     def get_jobs(self) -> list[Job]:
-        return [
-            Job(self._client, model=m)
-            for m in get_paginated_collection(
-                self._client.api_client.jobs_api.list_endpoint, task_id=self.id
-            )
-        ]
+        with organization_context_for(self._client, self.organization):
+            return [
+                Job(self._client, model=m)
+                for m in get_paginated_collection(
+                    self._client.api_client.jobs_api.list_endpoint, task_id=self.id
+                )
+            ]
 
     def get_meta(self) -> models.IDataMetaRead:
         meta, _ = self.api.retrieve_data_meta(self.id)
         return meta
 
     def get_labels(self) -> list[models.ILabel]:
-        return get_paginated_collection(
-            self._client.api_client.labels_api.list_endpoint, task_id=self.id
-        )
+        with organization_context_for(self._client, self.organization):
+            return get_paginated_collection(
+                self._client.api_client.labels_api.list_endpoint, task_id=self.id
+            )
 
     def get_frames_info(self) -> list[models.IFrameMeta]:
         return self.get_meta().frames

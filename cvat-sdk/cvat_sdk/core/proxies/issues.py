@@ -13,6 +13,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
+    organization_context_for,
 )
 
 _CommentEntityBase, _CommentRepoBase = build_model_bases(
@@ -52,12 +53,15 @@ class Issue(
     _model_partial_update_arg = "patched_issue_write_request"
 
     def get_comments(self) -> list[Comment]:
-        return [
-            Comment(self._client, m)
-            for m in get_paginated_collection(
-                self._client.api_client.comments_api.list_endpoint, issue_id=self.id
-            )
-        ]
+        with organization_context_for(
+            self._client, self._client.jobs.retrieve(self.job).organization
+        ):
+            return [
+                Comment(self._client, m)
+                for m in get_paginated_collection(
+                    self._client.api_client.comments_api.list_endpoint, issue_id=self.id
+                )
+            ]
 
 
 class IssuesRepo(
