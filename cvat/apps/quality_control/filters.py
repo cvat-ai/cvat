@@ -103,7 +103,6 @@ class _ShapeFilterContext:
     _ann: dm.Annotation
     _categories: dm.Categories
     _attributes: dict[str, Any]
-    _requirements: Collection[str] = attrs.field(factory=tuple)
     _include_track: bool = True
 
     @classmethod
@@ -112,14 +111,12 @@ class _ShapeFilterContext:
         ann: dm.Annotation,
         *,
         categories: dm.Categories,
-        annotation_requirements: dict[int, Collection[str]] | None = None,
         include_track: bool = True,
     ) -> "_ShapeFilterContext":
         return cls(
             ann,
             categories,
             dict(getattr(ann, "attributes", {}) or {}),
-            tuple(sorted((annotation_requirements or {}).get(id(ann), ()))),
             include_track=include_track,
         )
 
@@ -155,10 +152,6 @@ class _ShapeFilterContext:
     def keyframe(self) -> Any:
         return self._attributes.get("keyframe")
 
-    @property
-    def requirement(self) -> list[str]:
-        return list(self._requirements)
-
     @cached_property
     def attribute(self) -> _AnnotationAttributesFilterContext:
         return _AnnotationAttributesFilterContext(self._attributes)
@@ -180,7 +173,6 @@ class _ShapeFilterContext:
             self._ann,
             self._categories,
             self._attributes,
-            self._requirements,
             include_track=False,
         )
 
@@ -203,7 +195,6 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         "track_id",
         "outside",
         "keyframe",
-        "requirement",
     )
 
     _ATTRIBUTE_FILTER_FIELDS = (
@@ -261,11 +252,9 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         expression: str,
         categories: dm.Categories,
         included_annotation_types: Collection[dm.AnnotationType],
-        annotation_requirements: dict[int, Collection[str]] | None = None,
     ) -> None:
         self._categories = categories
         self._included_annotation_types = set(included_annotation_types)
-        self._annotation_requirements = annotation_requirements or {}
 
         filter_expression = expression.strip()
         self._rules = (
@@ -668,7 +657,6 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         return _ShapeFilterContext.from_annotation(
             ann,
             categories=self._categories,
-            annotation_requirements=self._annotation_requirements,
         )
 
     def _build_shape_filter_context(self, ann: dm.Annotation) -> _FilterContext:

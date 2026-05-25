@@ -640,26 +640,6 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             {"==": [{"var": "shape.skeleton.label"}, "person"]}
         )
 
-    def test_create_requirement_accepts_shape_requirement_filter_term(
-        self, admin_user, find_sandbox_task_without_gt
-    ):
-        task, _ = find_sandbox_task_without_gt(True)
-        settings = self._get_task_settings(admin_user, task_id=task["id"])
-        filter_expression = json.dumps({"==": [{"var": "shape.requirement"}, "cars"]})
-
-        created_requirement, response = self._create_requirement(
-            admin_user,
-            self._build_requirement_payload(
-                f"shape-requirement-filter-{task['id']}",
-                settings_id=settings["id"],
-                annotation_type="rectangle",
-                filter_expression=filter_expression,
-            ),
-        )
-
-        assert response.status_code == HTTPStatus.CREATED
-        assert created_requirement["filter"] == filter_expression
-
     def test_create_requirement_rejects_attribute_root_terms_for_shape_requirements(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -1151,7 +1131,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert report_data["comparison_summary"]["warning_count"] == 0
         assert report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 1
 
-    def test_task_report_uses_first_matching_leaf_requirement(self, admin_user):
+    def test_task_report_counts_overlapping_leaf_requirements_independently(self, admin_user):
         (
             task_id,
             settings,
@@ -1160,7 +1140,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             attribute_ids,
         ) = self._create_attribute_quality_task(
             admin_user,
-            name="first-matching-leaf-report",
+            name="overlapping-leaf-report",
         )
 
         rectangle_root = next(
@@ -1223,8 +1203,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         ] == 1
         assert report_data["groups"][second_leaf_name]["comparison_summary"]["annotations"][
             "total_count"
-        ] == 0
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
+        ] == 1
+        assert report_data["comparison_summary"]["annotations"]["total_count"] == 2
 
     def test_task_report_data_contains_groups_and_requirements(self, admin_user):
         task_id, _ = create_task(

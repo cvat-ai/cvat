@@ -54,7 +54,6 @@ class MatchingContext:
     frame_id: int
     estimator: DatasetQualityEstimator
     categories: dm.Categories
-    annotation_requirements: dict[int, set]  # ann_id -> set of requirement names
 
 
 @attrs.define(slots=False)
@@ -476,7 +475,6 @@ class RequirementHandler(ABC):
             expression=getattr(self.requirement, "filter", "") or "",
             categories=self.context.categories,
             included_annotation_types=self.settings.included_annotation_types,
-            annotation_requirements=self.context.annotation_requirements,
         )
 
     def _create_comparison_parameters(self) -> ComparisonParameters:
@@ -578,28 +576,6 @@ class RequirementHandler(ABC):
 
     def _empty_result(self) -> RequirementFrameResult:
         return RequirementFrameResult(summary=self._make_empty_frame_summary())
-
-    def _filter_unassigned_item(self, item: dm.DatasetItem) -> dm.DatasetItem:
-        if not getattr(self.requirement, "enabled", True):
-            return item
-
-        assigned_annotation_ids = self.context.annotation_requirements
-        filtered_annotations = [
-            ann for ann in item.annotations if id(ann) not in assigned_annotation_ids
-        ]
-
-        if len(filtered_annotations) == len(item.annotations):
-            return item
-
-        return item.wrap(annotations=filtered_annotations)
-
-    def _mark_item_annotations_assigned(self, item: dm.DatasetItem) -> None:
-        if not getattr(self.requirement, "enabled", True):
-            return
-
-        requirement_name = getattr(self.requirement, "name", "")
-        for ann in item.annotations:
-            self.context.annotation_requirements.setdefault(id(ann), set()).add(requirement_name)
 
     @staticmethod
     def _levenshtein_similarity(left: Any, right: Any) -> float:
@@ -940,10 +916,6 @@ class TagRequirementHandler(RequirementHandler):
         frame_id = self.context.frame_id
         gt_item = self._filter.filter_item(gt_item)
         ds_item = self._filter.filter_item(ds_item)
-        gt_item = self._filter_unassigned_item(gt_item)
-        ds_item = self._filter_unassigned_item(ds_item)
-        self._mark_item_annotations_assigned(gt_item)
-        self._mark_item_annotations_assigned(ds_item)
 
         # Call comparator to match annotations
         matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
@@ -1045,10 +1017,6 @@ class ShapeRequirementHandler(RequirementHandler):
         ds_item = self._prepare_item_for_requirement(ds_item)
         gt_item = self._filter.filter_item(gt_item)
         ds_item = self._filter.filter_item(ds_item)
-        gt_item = self._filter_unassigned_item(gt_item)
-        ds_item = self._filter_unassigned_item(ds_item)
-        self._mark_item_annotations_assigned(gt_item)
-        self._mark_item_annotations_assigned(ds_item)
 
         # Call comparator to match annotations
         matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
@@ -1446,9 +1414,6 @@ class DatasetQualityEstimator:
         if not self._requirements:
             return
 
-        per_requirement_results = {}
-        annotation_requirements: dict[int, set] = {}
-
         for requirement in self._requirements:
             handler = RequirementHandler.for_requirement(
                 requirement,
@@ -1456,12 +1421,10 @@ class DatasetQualityEstimator:
                     frame_id=frame_id,
                     estimator=self,
                     categories=self._gt_dataset.categories(),
-                    annotation_requirements=annotation_requirements,
                 ),
             )
 
             result = handler.match_annotations(ds_item=ds_item, gt_item=gt_item)
-            per_requirement_results[requirement.name] = result
             self._results.setdefault(requirement.name, {})[frame_id] = result.summary
 
     def _aggregate_all_results(
