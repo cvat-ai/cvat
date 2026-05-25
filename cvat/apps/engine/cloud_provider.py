@@ -596,12 +596,12 @@ def _botocore_load_file_plaindict(self, full_path, open_method):
     # Drop-in replacement for botocore.loaders.JSONFileLoader._load_file that
     # parses with stdlib json into plain dicts instead of OrderedDicts.
     #
-    # botocore's loader caches large service-model JSON (service-2.json,
-    # resources-1.json, endpoint-rule-sets) and historically built them as
-    # OrderedDicts via `object_pairs_hook=OrderedDict`. On Python 3.7+ regular
-    # dicts already preserve insertion order, and OrderedDict carries a
-    # doubly-linked list per item — measured RSS overhead is ~3x compared to
-    # plain dicts for these models (e.g. 1 S3CloudStorage: 29 MB -> 11 MB).
+    # botocore's loader parses large service-model JSON (e.g. service-2.json,
+    # endpoint-rule-sets) and historically built them as OrderedDicts via
+    # `object_pairs_hook=OrderedDict`. On Python 3.7+ regular dicts already
+    # preserve insertion order, and OrderedDict carries a doubly-linked list
+    # per item — measured RSS overhead is ~3x compared to plain dicts for these
+    # models (e.g. 1 S3CloudStorage: 29 MB -> 11 MB).
     # No code in botocore relies on OrderedDict-specific methods on loaded
     # service-model data (verified by grep for move_to_end / popitem(last=...)).
     if not os.path.isfile(full_path):
@@ -615,10 +615,10 @@ botocore.loaders.JSONFileLoader._load_file = _botocore_load_file_plaindict
 
 
 # Shared across all S3 sessions in this process. botocore caches the parsed
-# service-2.json / resources-1.json / endpoint-rule-set JSON on the Loader, so
-# a single Loader instance lets every session reuse them — drops ~7MB per
-# cached S3CloudStorage and removes ~80ms of JSON parsing per build. Loader is
-# injected into each Session via the "data_loader" component override, see:
+# service-2.json and endpoint-rule-set JSON on the Loader, so a single Loader
+# instance lets every session reuse them — drops ~7MB per cached S3CloudStorage
+# and removes ~80ms of JSON parsing per build. Loader is injected into each
+# Session via the "data_loader" component override, see:
 #   https://botocore.amazonaws.com/v1/documentation/api/latest/reference/loaders.html
 _SHARED_BOTOCORE_LOADER = botocore.loaders.create_loader()
 
@@ -666,12 +666,12 @@ class _FrozenEventEmitter:
     unregister = register
 
 
-# Serializes the first calls to session.resource("s3") / session.client("s3"):
-# they reach into the process-shared botocore Loader to read+cache
-# s3/service-2.json, s3/resources-1.json, and the endpoint rule set. The
-# Loader does a read-modify-write on its internal cache dict on first miss;
-# concurrent first-builds would race on it. After the loader is primed,
-# subsequent builds are dict reads and the lock is not contended.
+# Serializes the first calls to session.client("s3"): they reach into the
+# process-shared botocore Loader to read+cache s3/service-2.json and the
+# endpoint rule set. The Loader does a read-modify-write on its internal
+# cache dict on first miss; concurrent first-builds would race on it. After
+# the loader is primed, subsequent builds are dict reads and the lock is
+# not contended.
 # A unit test (test_lock_protects_shared_loader_load_service_model) confirms
 # the loader is actually exercised by these calls — if a future boto3 change
 # bypassed the shared Loader, the lock would be guarding nothing.
@@ -708,7 +708,7 @@ def _make_boto3_session(
     session = boto3.Session(**kwargs)
 
     # Inject the process-shared loader so every Session reuses the parsed
-    # service-2.json/resources-1.json/endpoint-ruleset instead of re-parsing.
+    # service-2.json + endpoint-ruleset instead of re-parsing.
     session._session.register_component("data_loader", _SHARED_BOTOCORE_LOADER)
 
     return session
@@ -775,20 +775,20 @@ class S3CloudStorage(AbstractCloudStorage):
             resource_config_kwargs["signature_version"] = UNSIGNED
             status_config_kwargs["signature_version"] = UNSIGNED
 
-        # Lock only the calls that touch the process-shared botocore Loader
-        # cache (read-modify-write of service-model/resource/endpoint JSON on
-        # first miss) and that exercise the documented non-thread-safe
-        # construction paths in boto3 (see _S3_BUILD_LOCK definition above).
-        # Everything else — Session, Config, post-build attribute assignment —
-        # is per-instance and safe to run concurrently.
+        # Lock only the session.client() calls — they touch the process-shared
+        # botocore Loader's service-model cache on first miss (see
+        # _S3_BUILD_LOCK definition above). Everything else — Session, Config,
+        # post-build attribute assignment — is per-instance and safe to run
+        # concurrently.
         with _S3_BUILD_LOCK:
-            # boto3 low-level Clients are documented as thread-safe to use once
-            # built; boto3 resources (e.g. session.resource("s3"), Bucket) are
-            # NOT, because methods can mutate `meta.data` via lazy load() and
-            # sub-resource construction shares identifier state. Cache only the
-            # client objects and pass the bucket name explicitly.
+            # We cache only the low-level Clients (documented as thread-safe to
+            # share once built). boto3 resources (`session.resource("s3")`,
+            # `Bucket`, etc.) are not cached: their methods can mutate
+            # `meta.data` via lazy load()/reload() and sub-resource
+            # construction shares identifier state. The bucket name is passed
+            # explicitly into every Client call instead.
             # Status checks are part of the control plane, not the data-transfer path, so
-            # Bucket status probes should fail fast when the endpoint is unreachable or
+            # bucket status probes should fail fast when the endpoint is unreachable or
             # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
             # the regular client retains standard retry behavior for normal
             # storage operations.
@@ -1454,19 +1454,18 @@ def _build_storage_instance_cached():
 
 
 def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
-    # The kwargs passed here IS the cache key for the cached build. Pass every
-    # CloudStorage field that affects session construction; if none of them
-    # change, reusing the cached client is correct (cs clients are expensive
-    # to build, ~25-150 ms each). Two guard tests anchor this:
+    # Here we cache the clients created, as they can be expensive to build -
+    # e.g. for S3 clients, building takes ~25-150 ms each.
+    #
+    # Two guard tests anchor this:
     # `test_cloud_storage_field_set_is_stable` (catches new model fields) and
     # `test_build_storage_instance_signature_is_stable` (catches new kwargs);
     # both fail loudly so a reviewer classifies the change.
     #
-    # Only S3 is cached: S3CloudStorage only retains boto3 low-level Clients,
-    # which boto3 documents as thread-safe to share. Azure (`BlobServiceClient`)
-    # and GCS (`storage.Client` + `storage.Bucket`) keep mutable per-request
-    # state that boto3-style proof of thread-safety doesn't extend to, so they
-    # are rebuilt per call until verified.
+    # Currently, only S3 is cached: S3CloudStorage is adapted to cache only
+    # boto3 low-level Clients, which boto3 documents as thread-safe to share.
+    # Azure and GCS clients are not checked for caching safety, so they are not cached.
+    # TODO: implement caching for Azure and GCS too, if they show significant load.
     build = (
         _build_storage_instance_cached()
         if db_storage.provider_type == CloudProviderChoice.AMAZON_S3
