@@ -810,6 +810,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { workspace, activatedStateID, onActivateObject } = this.props;
 
         if ((e.target as HTMLElement).tagName === 'svg' && e.button !== 2) {
+            // Native double-click selection can escape from the SVG canvas to nearby UI text.
+            // Prevent only repeated SVG clicks, keeping regular canvas clicks and drags unchanged.
+            if (e.detail > 1) {
+                e.preventDefault();
+            }
+
             if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTES) {
                 onActivateObject(null, null);
             }
