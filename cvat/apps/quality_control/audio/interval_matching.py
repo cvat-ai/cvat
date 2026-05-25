@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, Sequence
 
 from .config import IntervalMatchingConfig
-from .data import DatasetItem, Interval
+from .data import Interval
 from .reports import BoundaryAgreement, IntervalPairMetrics, IntervalReport
 
 
@@ -102,7 +102,7 @@ def boundary_f1(
 
 
 def match_intervals(
-    gt: DatasetItem, ds: DatasetItem, *, config: IntervalMatchingConfig
+    gt: Sequence[Interval], ds: Sequence[Interval], *, config: IntervalMatchingConfig
 ) -> IntervalReport:
     """
     Compare intervals at the boundary level. This function does not touch transcriptions.
@@ -115,7 +115,7 @@ def match_intervals(
     """
 
     matches, mispred, gt_unmatched, ds_unmatched = _two_stage_match(
-        gt.intervals, ds.intervals, iou_thresh=config.iou_threshold
+        gt, ds, iou_thresh=config.iou_threshold
     )
 
     def to_metric(a: Interval, b: Interval) -> IntervalPairMetrics:
@@ -129,8 +129,8 @@ def match_intervals(
         )
 
     boundary = boundary_f1(
-        _collect_boundaries(gt.intervals),
-        _collect_boundaries(ds.intervals),
+        _collect_boundaries(gt),
+        _collect_boundaries(ds),
         tolerance_s=config.boundary_tolerance_s,
     )
 

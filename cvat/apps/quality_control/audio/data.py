@@ -19,16 +19,6 @@ class Interval:
         return self.stop - self.start
 
 
-@dataclass
-class DatasetItem:
-    name: str
-    filename: str
-    intervals: list[Interval]
-
-    def __len__(self) -> int:
-        return len(self.intervals)
-
-
 class Granularity(str, Enum):
     """Output unit of the reported rate (CER / WER / SER scope)."""
 

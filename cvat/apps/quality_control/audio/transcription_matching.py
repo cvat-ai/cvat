@@ -40,7 +40,6 @@ def _iter_graphemes(text: str) -> Iterator[str]:
 from .config import TranscriptionRequirement
 from .data import (
     AlignMode,
-    DatasetItem,
     EditOp,
     Granularity,
     GroupingStrategy,
@@ -963,12 +962,12 @@ def _align_group_with_overlap(
 
 
 def match_transcriptions(
-    gt: DatasetItem, ds: DatasetItem, *, req: TranscriptionRequirement
+    gt: Sequence[Interval], ds: Sequence[Interval], *, req: TranscriptionRequirement
 ) -> TranscriptionReport:
     normalizer = Normalizer(req.normalizer)
 
-    gt_groups = group_intervals(gt.intervals, attribute=req.grouping.attribute)
-    ds_groups = group_intervals(ds.intervals, attribute=req.grouping.attribute)
+    gt_groups = group_intervals(gt, attribute=req.grouping.attribute)
+    ds_groups = group_intervals(ds, attribute=req.grouping.attribute)
 
     groups: list[GroupAlignment] = []
     missing: list[tuple[GroupKey, list[Interval]]] = []

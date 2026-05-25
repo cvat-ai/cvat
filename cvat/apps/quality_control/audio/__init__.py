@@ -16,7 +16,6 @@ from .config import (
 )
 from .data import (
     AlignMode,
-    DatasetItem,
     EditOp,
     Granularity,
     GroupingStrategy,
@@ -52,7 +51,6 @@ from .transcription_matching import match_transcriptions
 __all__ = [
     # data
     "Interval",
-    "DatasetItem",
     "Granularity",
     "GroupKey",
     "AlignMode",

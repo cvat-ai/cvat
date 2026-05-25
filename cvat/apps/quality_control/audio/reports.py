@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .config import TranscriptionRequirement
-from .data import DatasetItem, EditOp, Granularity, GroupKey, Interval
+from .data import EditOp, Granularity, GroupKey, Interval
 
 # ============================ Interval matching layer ============================
 
@@ -152,7 +152,7 @@ class TranscriptionReport:
 
 @dataclass
 class ComparisonReport:
-    gt: DatasetItem
-    ds: DatasetItem
+    gt: list[Interval]
+    ds: list[Interval]
     intervals: IntervalReport
     transcriptions: list[TranscriptionReport]
