@@ -2222,7 +2222,7 @@ class _Comparator:
 
 
 @define(slots=False)
-class _IntervalAttributeSpecs:
+class _AttributeIndex:
     """Attribute-spec lookups used throughout the interval-quality pipeline."""
 
     by_id: dict[int, AttributeSpec]
@@ -2326,16 +2326,16 @@ class DatasetComparator:
         )
 
     def _process_intervals(self):
-        specs = self._build_interval_attribute_specs()
+        attr_index = self._build_attribute_index()
         cvat_dm_label_id_map = self._build_cvat_dm_label_id_map()
 
         gt_intervals = self._gt_data_provider.job_annotation.ir_data.intervals
         ds_intervals = self._ds_data_provider.job_annotation.ir_data.intervals
 
-        gt_audio, ds_audio, audio_settings, active_requirements = (
-            self._build_interval_audio_inputs(gt_intervals, ds_intervals, specs)
+        audio_gt, audio_ds, audio_settings, active_requirements = (
+            self._build_interval_audio_inputs(gt_intervals, ds_intervals, attr_index=attr_index)
         )
-        audio_report = audio.compare(gt_audio, ds_audio, settings=audio_settings)
+        audio_report = audio.compare(audio_gt, audio_ds, settings=audio_settings)
 
         view = self._recover_interval_pair_view(audio_report, gt_intervals, ds_intervals)
 
@@ -2345,8 +2345,12 @@ class DatasetComparator:
 
         self._emit_interval_l1_conflicts(conflicts, view)
         self._score_interval_transcriptions(
-            view, active_requirements, specs, cvat_dm_label_id_map,
-            conflicts, attribute_summaries,
+            view=view,
+            active_requirements=active_requirements,
+            attr_index=attr_index,
+            cvat_dm_label_id_map=cvat_dm_label_id_map,
+            conflicts=conflicts,
+            attribute_summaries=attribute_summaries,
         )
 
         confusion_matrix_labels, confusion_matrix = (
@@ -2366,9 +2370,7 @@ class DatasetComparator:
             "annotation_components", ComparisonReportAnnotationComponentsSummary.create_empty()
         ).accumulate(component_summaries)
 
-    # ------------------------------------------------------------------ helpers
-
-    def _build_interval_attribute_specs(self) -> _IntervalAttributeSpecs:
+    def _build_attribute_index(self) -> _AttributeIndex:
         by_id = {
             spec.id: spec
             for label_attrs in self._gt_data_provider.job_data._attribute_mapping.values()
@@ -2383,12 +2385,14 @@ class DatasetComparator:
         transcription_attr_ids = {
             by_path[req.attribute].id for req in self.settings.transcription_requirements
         }
-        return _IntervalAttributeSpecs(
+        return _AttributeIndex(
             by_id=by_id, by_path=by_path,
             transcription_attr_ids=transcription_attr_ids,
         )
 
     def _build_cvat_dm_label_id_map(self) -> dict[int, int]:
+        """Returns {cvat_label_id -> dm_label_id} mapping"""
+
         return {
             self._gt_data_provider.job_data._get_label_id(
                 dm_label.name,
@@ -2407,7 +2411,8 @@ class DatasetComparator:
         self,
         gt_intervals: list[dict],
         ds_intervals: list[dict],
-        specs: _IntervalAttributeSpecs,
+        *,
+        attr_index: _AttributeIndex,
     ) -> tuple[
         list[audio.Interval],
         list[audio.Interval],
@@ -2433,15 +2438,16 @@ class DatasetComparator:
         ds_audio = to_audio_intervals(ds_intervals)
 
         # Per-requirement audio config. Skip requirements whose attribute spec
-        # is missing or not TEXT — same silent-skip behavior as before.
+        # is missing or not TEXT silently.
         audio_reqs: list[audio.TranscriptionRequirement] = []
         active_requirements: list[
             tuple[models.TranscriptionQualityRequirement, AttributeSpec]
         ] = []
         for requirement in self.settings.transcription_requirements:
-            attribute_spec = specs.by_path.get(requirement.attribute)
+            attribute_spec = attr_index.by_path.get(requirement.attribute)
             if attribute_spec is None or attribute_spec.input_type != AttributeType.TEXT:
                 continue
+
             audio_reqs.append(audio.TranscriptionRequirement(
                 name=f"attr_{attribute_spec.id}",
                 text_attribute=str(attribute_spec.id),
@@ -2560,11 +2566,12 @@ class DatasetComparator:
 
     def _score_interval_transcriptions(
         self,
+        *,
         view: _IntervalPairView,
         active_requirements: list[
             tuple[models.TranscriptionQualityRequirement, AttributeSpec]
         ],
-        specs: _IntervalAttributeSpecs,
+        attr_index: _AttributeIndex,
         cvat_dm_label_id_map: dict[int, int],
         conflicts: list[AnnotationConflict],
         attribute_summaries: dict,
@@ -2639,7 +2646,7 @@ class DatasetComparator:
 
             if self.settings.compare_attributes:
                 self._match_interval_non_text_attributes(
-                    gt_ann, ds_ann, specs, cvat_dm_label_id_map,
+                    gt_ann, ds_ann, attr_index, cvat_dm_label_id_map,
                     conflicts, attribute_summaries,
                 )
 
@@ -2647,7 +2654,7 @@ class DatasetComparator:
         self,
         gt_ann: dict,
         ds_ann: dict,
-        specs: _IntervalAttributeSpecs,
+        specs: _AttributeIndex,
         cvat_dm_label_id_map: dict[int, int],
         conflicts: list[AnnotationConflict],
         attribute_summaries: dict,
