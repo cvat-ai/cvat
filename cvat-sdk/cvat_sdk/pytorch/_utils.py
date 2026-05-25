@@ -54,4 +54,4 @@ def draw_mask(shape: models.LabeledShape, image_size: tuple[int, int]) -> np.nda
     else:
         raise AssertionError(f"unsupported shape type: {shape_type!r}")
 
-    return np.array(image)
+    return np.asarray(image)
