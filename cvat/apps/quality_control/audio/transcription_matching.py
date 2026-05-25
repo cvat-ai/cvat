@@ -1,9 +1,9 @@
 """
-L2 layer of the audio QE pipeline — transcription quality estimation.
+Transcription quality estimation.
 
 Tokenize, group, align, score. Owns:
 
-  * Tokenization (sentence / word / character)
+  * Tokenization (word / character)
   * Per-chunk cost functions (equality / error-rate / normalized-lev)
     and aggregation across alignments
   * Levenshtein alignment over tokens, with an overlap-constrained
@@ -13,13 +13,12 @@ Tokenize, group, align, score. Owns:
     boundary disagreements naturally as `boundary` edits)
   * Group-level orchestration (join / filter strategies) — entry
     point `run_transcription_qe()`.
-
-The top-level `compare()` orchestrator lives in `pipeline.py`.
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable
 from typing import Callable, Sequence
 
 import jiwer
@@ -28,7 +27,7 @@ import numpy as np
 from .config import TranscriptionRequirement
 from .data import (
     AlignMode,
-    AnnotationSet,
+    DatasetItem,
     EditOp,
     Granularity,
     GroupingStrategy,
@@ -46,19 +45,16 @@ from .reports import (
     TranscriptionReport,
 )
 
-
 # ============================ Tokenization ====================================
 
 
-def tokenize(text: str, granularity: Granularity) -> list[str]:
-    if granularity == Granularity.SENTENCE:
-        return [text] if text else []
+def tokenize(text: str, *, granularity: Granularity) -> list[str]:
     if granularity == Granularity.WORD:
         return text.split()
     if granularity == Granularity.CHARACTER:
-        # Codepoint-level. Swap to grapheme clusters (`regex` lib) for CJK production use.
+        # TODO: Codepoint-level. Swap to grapheme clusters (`regex` lib) for CJK production use.
         return list(text)
-    raise ValueError(granularity)
+    raise AssertionError(granularity)
 
 
 # ============================ Per-chunk cost functions =======================
@@ -77,11 +73,13 @@ def _char_edit_distance(a: str, b: str) -> int:
     for i, ca in enumerate(a, 1):
         cur = [i]
         for j, cb in enumerate(b, 1):
-            cur.append(min(
-                cur[-1] + 1,                            # insert
-                prev[j] + 1,                            # delete
-                prev[j - 1] + (0 if ca == cb else 1),   # substitute
-            ))
+            cur.append(
+                min(
+                    cur[-1] + 1,  # insert
+                    prev[j] + 1,  # delete
+                    prev[j - 1] + (0 if ca == cb else 1),  # substitute
+                )
+            )
         prev = cur
     return prev[-1]
 
@@ -92,15 +90,19 @@ def _cost_equality(a: str, b: str) -> float:
 
 def _cost_error_rate(a: str, b: str) -> float:
     """edits / len(ref). Recall-shaped; can exceed 1 when hyp is much longer."""
+
     if a == b:
         return 0.0
-    denom = len(a) if a else 1
+    denom = len(a) or 1
     return _char_edit_distance(a, b) / denom
 
 
 def _cost_normalized_lev(a: str, b: str) -> float:
-    """edits / max(len). Bounded in [0, 1]; symmetric. Standard name in the
-    literature: normalized Levenshtein distance (NED)."""
+    """
+    edits / max(len). Bounded in [0, 1]; symmetric.
+    Standard name in the literature: normalized Levenshtein distance (NED).
+    """
+
     if a == b:
         return 0.0
     denom = max(len(a), len(b)) or 1
@@ -122,6 +124,7 @@ def _metric_label(
     threshold: float | None = None,
 ) -> str:
     """Display label = base unit (WER/CER) ± prefix per metric/threshold combo."""
+
     unit = "CER" if granularity == Granularity.CHARACTER else "WER"
     if metric == Metric.EQUALITY:
         return unit
@@ -193,23 +196,22 @@ def _chunk_cost(
     raise ValueError(f"unknown op {e.op}")
 
 
-def _aggregate_metric(
+def aggregate_metric(
     alignments: Sequence[AlignmentResult],
     *,
-    metric: Metric,
+    metric: Metric | str,
     threshold: float | None,
     granularity: Granularity,
 ) -> tuple[str, float]:
-    """Aggregate the chosen metric across multiple alignments.
-    Returns (display_label, rate). Accepts `metric` as either a Metric
-    enum member or its string value."""
+    """
+    Aggregate the chosen metric across multiple alignments.
+    Returns (display_label, rate).
+    """
 
     try:
         metric = Metric(metric)
     except ValueError as exc:
-        raise ValueError(
-            f"unknown metric {metric!r}; choices: {list(_METRIC_NAMES)}"
-        ) from exc
+        raise ValueError(f"unknown metric {metric!r}; choices: {list(_METRIC_NAMES)}") from exc
 
     metric_fn = _METRIC_FNS[metric]
     total_err: float = 0.0
@@ -233,7 +235,7 @@ def _aggregate_metric(
 
 
 def _chunks_to_edits(
-    chunks, ref_units: Sequence[str], hyp_units: Sequence[str]
+    chunks: Iterable[jiwer.AlignmentChunk], ref_units: Sequence[str], hyp_units: Sequence[str]
 ) -> list[AlignmentEdit]:
     out: list[AlignmentEdit] = []
     for c in chunks:
@@ -251,7 +253,7 @@ def _chunks_to_edits(
     return out
 
 
-def align_pair(
+def _align_pair(
     ref_text: str,
     hyp_text: str,
     *,
@@ -261,36 +263,49 @@ def align_pair(
     ref_n = normalizer(ref_text)
     hyp_n = normalizer(hyp_text)
 
-    ref_units = tokenize(ref_n, granularity)
-    hyp_units = tokenize(hyp_n, granularity)
+    ref_units = tokenize(ref_n, granularity=granularity)
+    hyp_units = tokenize(hyp_n, granularity=granularity)
 
     # Degenerate cases — keep jiwer out, deterministic answers.
     if not ref_units and not hyp_units:
         return AlignmentResult(granularity, ref_n, hyp_n, [], [], [], 0.0, 0, 0, 0, 0)
     if not ref_units:
         return AlignmentResult(
-            granularity, ref_n, hyp_n, [], hyp_units,
+            granularity,
+            ref_n,
+            hyp_n,
+            [],
+            hyp_units,
             [AlignmentEdit(EditOp.INSERT, 0, 0, 0, len(hyp_units), [], list(hyp_units))],
-            float("inf"), 0, len(hyp_units), 0, 0,
+            float("inf"),
+            0,
+            len(hyp_units),
+            0,
+            0,
         )
     if not hyp_units:
         return AlignmentResult(
-            granularity, ref_n, hyp_n, ref_units, [],
+            granularity,
+            ref_n,
+            hyp_n,
+            ref_units,
+            [],
             [AlignmentEdit(EditOp.DELETE, 0, len(ref_units), 0, 0, list(ref_units), [])],
-            1.0, 0, 0, len(ref_units), 0,
+            1.0,
+            0,
+            0,
+            len(ref_units),
+            0,
         )
 
     if granularity == Granularity.CHARACTER:
         out = jiwer.process_characters(ref_n, hyp_n)
         rate = out.cer
-    else:
-        if granularity == Granularity.SENTENCE:
-            ref_token = ref_n.replace(" ", "␣") or "␣"
-            hyp_token = hyp_n.replace(" ", "␣") or "␣"
-            out = jiwer.process_words(ref_token, hyp_token)
-        else:
-            out = jiwer.process_words(ref_n, hyp_n)
+    elif granularity == Granularity.WORD:
+        out = jiwer.process_words(ref_n, hyp_n)
         rate = out.wer
+    else:
+        assert False, f"Unknown granularity '{granularity}'"
 
     chunks = out.alignments[0]
     refs_actual = out.references[0]
@@ -313,12 +328,13 @@ def align_pair(
     )
 
 
-# ============================ L2 grouping + DP =================================
+# ============================ Transcription grouping + DP ========================
 
 
 def group_key(interval: Interval, *, attribute: str | None) -> GroupKey:
     if attribute is None:
         return (interval.label, None)
+
     val = interval.extra.get(attribute)
     return (interval.label, val if val not in (None, "") else None)
 
@@ -365,7 +381,7 @@ def _normalize_tokenize_per_interval(
             for ch in inter_interval_sep:
                 flat_units.append(ch)
                 origins.append(idx - 1)
-        for tok in tokenize(normed, granularity):
+        for tok in tokenize(normed, granularity=granularity):
             flat_units.append(tok)
             origins.append(idx)
     return flat_units, origins, in_order, norm_texts
@@ -384,8 +400,8 @@ def _normalize_to_chars_per_interval(
     chars: list[str] = []
     origins: list[int] = []
     norm_texts: list[str] = []
-    for idx, iv in enumerate(in_order):
-        raw = iv.extra.get(text_attr, iv.text) or ""
+    for idx, interval in enumerate(in_order):
+        raw = interval.extra.get(text_attr, interval.text) or ""
         normed = normalizer(raw)
         norm_texts.append(normed)
         if chars and inter_interval_sep and normed:
@@ -492,7 +508,8 @@ def _overlap_constrained_align(
             edits
             and edits[-1].op == op_name
             and op_name in (EditOp.EQUAL, EditOp.SUBSTITUTE)
-            and edits[-1].ref_end == r_s and edits[-1].hyp_end == h_s
+            and edits[-1].ref_end == r_s
+            and edits[-1].hyp_end == h_s
         ):
             last = edits[-1]
             last.ref_end = r_e
@@ -500,13 +517,17 @@ def _overlap_constrained_align(
             last.ref_units += list(ref_units[r_s:r_e])
             last.hyp_units += list(hyp_units[h_s:h_e])
         elif (
-            edits and edits[-1].op == EditOp.DELETE and op_name == EditOp.DELETE
+            edits
+            and edits[-1].op == EditOp.DELETE
+            and op_name == EditOp.DELETE
             and edits[-1].ref_end == r_s
         ):
             edits[-1].ref_end = r_e
             edits[-1].ref_units += list(ref_units[r_s:r_e])
         elif (
-            edits and edits[-1].op == EditOp.INSERT and op_name == EditOp.INSERT
+            edits
+            and edits[-1].op == EditOp.INSERT
+            and op_name == EditOp.INSERT
             and edits[-1].hyp_end == h_s
         ):
             edits[-1].hyp_end = h_e
@@ -515,8 +536,10 @@ def _overlap_constrained_align(
             edits.append(
                 AlignmentEdit(
                     op=op_name,
-                    ref_start=r_s, ref_end=r_e,
-                    hyp_start=h_s, hyp_end=h_e,
+                    ref_start=r_s,
+                    ref_end=r_e,
+                    hyp_start=h_s,
+                    hyp_end=h_e,
                     ref_units=list(ref_units[r_s:r_e]),
                     hyp_units=list(hyp_units[h_s:h_e]),
                 )
@@ -607,18 +630,20 @@ def _reconstruct_word_edits_from_chars(
     def emit_pending_inserts(up_to_hyp_idx: int) -> None:
         nonlocal next_hyp_emit
         while next_hyp_emit < up_to_hyp_idx:
-            if (
-                not hyp_consumed[next_hyp_emit]
-                and not hyp_will_be_used[next_hyp_emit]
-            ):
+            if not hyp_consumed[next_hyp_emit] and not hyp_will_be_used[next_hyp_emit]:
                 h_word = hyp_words[next_hyp_emit][2]
                 ref_pos = word_edits[-1].ref_end if word_edits else 0
-                word_edits.append(AlignmentEdit(
-                    op=EditOp.INSERT,
-                    ref_start=ref_pos, ref_end=ref_pos,
-                    hyp_start=next_hyp_emit, hyp_end=next_hyp_emit + 1,
-                    ref_units=[], hyp_units=[h_word],
-                ))
+                word_edits.append(
+                    AlignmentEdit(
+                        op=EditOp.INSERT,
+                        ref_start=ref_pos,
+                        ref_end=ref_pos,
+                        hyp_start=next_hyp_emit,
+                        hyp_end=next_hyp_emit + 1,
+                        ref_units=[],
+                        hyp_units=[h_word],
+                    )
+                )
                 hyp_consumed[next_hyp_emit] = True
             next_hyp_emit += 1
 
@@ -630,12 +655,17 @@ def _reconstruct_word_edits_from_chars(
 
         if primary is None:
             hyp_pos = word_edits[-1].hyp_end if word_edits else next_hyp_emit
-            word_edits.append(AlignmentEdit(
-                op=EditOp.DELETE,
-                ref_start=r, ref_end=r + 1,
-                hyp_start=hyp_pos, hyp_end=hyp_pos,
-                ref_units=[r_word], hyp_units=[],
-            ))
+            word_edits.append(
+                AlignmentEdit(
+                    op=EditOp.DELETE,
+                    ref_start=r,
+                    ref_end=r + 1,
+                    hyp_start=hyp_pos,
+                    hyp_end=hyp_pos,
+                    ref_units=[r_word],
+                    hyp_units=[],
+                )
+            )
             r += 1
             continue
 
@@ -654,12 +684,17 @@ def _reconstruct_word_edits_from_chars(
             group_ref_words = [ref_words[k][2] for k in range(r, group_end + 1)]
             h_word = hyp_words[primary][2]
             hyp_consumed[primary] = True
-            word_edits.append(AlignmentEdit(
-                op=EditOp.BOUNDARY,
-                ref_start=r, ref_end=group_end + 1,
-                hyp_start=primary, hyp_end=primary + 1,
-                ref_units=group_ref_words, hyp_units=[h_word],
-            ))
+            word_edits.append(
+                AlignmentEdit(
+                    op=EditOp.BOUNDARY,
+                    ref_start=r,
+                    ref_end=group_end + 1,
+                    hyp_start=primary,
+                    hyp_end=primary + 1,
+                    ref_units=group_ref_words,
+                    hyp_units=[h_word],
+                )
+            )
             r = group_end + 1
             next_hyp_emit = max(next_hyp_emit, primary + 1)
             continue
@@ -669,23 +704,33 @@ def _reconstruct_word_edits_from_chars(
             first_hw, last_hw = dests[0], dests[-1]
             for hw in dests:
                 hyp_consumed[hw] = True
-            word_edits.append(AlignmentEdit(
-                op=EditOp.BOUNDARY,
-                ref_start=r, ref_end=r + 1,
-                hyp_start=first_hw, hyp_end=last_hw + 1,
-                ref_units=[r_word], hyp_units=hyp_word_strs,
-            ))
+            word_edits.append(
+                AlignmentEdit(
+                    op=EditOp.BOUNDARY,
+                    ref_start=r,
+                    ref_end=r + 1,
+                    hyp_start=first_hw,
+                    hyp_end=last_hw + 1,
+                    ref_units=[r_word],
+                    hyp_units=hyp_word_strs,
+                )
+            )
             next_hyp_emit = max(next_hyp_emit, last_hw + 1)
         else:
             h_word = hyp_words[primary][2]
             hyp_consumed[primary] = True
             op = EditOp.EQUAL if r_word == h_word else EditOp.SUBSTITUTE
-            word_edits.append(AlignmentEdit(
-                op=op,
-                ref_start=r, ref_end=r + 1,
-                hyp_start=primary, hyp_end=primary + 1,
-                ref_units=[r_word], hyp_units=[h_word],
-            ))
+            word_edits.append(
+                AlignmentEdit(
+                    op=op,
+                    ref_start=r,
+                    ref_end=r + 1,
+                    hyp_start=primary,
+                    hyp_end=primary + 1,
+                    ref_units=[r_word],
+                    hyp_units=[h_word],
+                )
+            )
             next_hyp_emit = max(next_hyp_emit, primary + 1)
 
         r += 1
@@ -718,7 +763,7 @@ def _reconstruct_word_edits_from_chars(
     return ref_word_strs, hyp_word_strs, merged
 
 
-def align_group_via_chars(
+def _align_group_via_chars(
     gt_intervals: Sequence[Interval],
     ds_intervals: Sequence[Interval],
     *,
@@ -736,10 +781,16 @@ def align_group_via_chars(
     """
 
     ref_chars, ref_origins, gt_sorted, ref_norm_parts = _normalize_to_chars_per_interval(
-        gt_intervals, text_attr=text_attr, normalizer=normalizer, inter_interval_sep=separator,
+        gt_intervals,
+        text_attr=text_attr,
+        normalizer=normalizer,
+        inter_interval_sep=separator,
     )
     hyp_chars, hyp_origins, ds_sorted, hyp_norm_parts = _normalize_to_chars_per_interval(
-        ds_intervals, text_attr=text_attr, normalizer=normalizer, inter_interval_sep=separator,
+        ds_intervals,
+        text_attr=text_attr,
+        normalizer=normalizer,
+        inter_interval_sep=separator,
     )
 
     ref_norm_joined = separator.join(p for p in ref_norm_parts if p)
@@ -749,16 +800,31 @@ def align_group_via_chars(
 
     if not ref_chars and not hyp_chars:
         return AlignmentResult(
-            Granularity.WORD, ref_norm_joined, hyp_norm_joined,
-            [], [], [], 0.0, 0, 0, 0, 0,
+            Granularity.WORD,
+            ref_norm_joined,
+            hyp_norm_joined,
+            [],
+            [],
+            [],
+            0.0,
+            0,
+            0,
+            0,
+            0,
         )
 
     char_edits, _ch_hits, _ch_subs, _ch_ins, _ch_dels, _ = _overlap_constrained_align(
-        ref_chars, ref_origins, hyp_chars, hyp_origins, overlap,
+        ref_chars,
+        ref_origins,
+        hyp_chars,
+        hyp_origins,
+        overlap,
     )
 
     ref_word_strs, hyp_word_strs, word_edits = _reconstruct_word_edits_from_chars(
-        ref_chars, hyp_chars, char_edits,
+        ref_chars,
+        hyp_chars,
+        char_edits,
     )
 
     n_ref_words = len(ref_word_strs)
@@ -793,7 +859,7 @@ def align_group_via_chars(
     )
 
 
-def align_group_with_overlap(
+def _align_group_with_overlap(
     gt_intervals: Sequence[Interval],
     ds_intervals: Sequence[Interval],
     *,
@@ -802,41 +868,68 @@ def align_group_with_overlap(
     normalizer: Normalizer,
     separator: str,
 ) -> AlignmentResult:
-    """G2-join alignment that forbids token-level matches between intervals
+    """Join mode alignment that forbids token-level matches between intervals
     whose time spans don't overlap. Catches the most obvious spurious matches
     (e.g. "police" at t=24s ↔ "police" at t=180s)."""
 
     ref_units, ref_origins, gt_sorted, ref_norm_parts = _normalize_tokenize_per_interval(
-        gt_intervals, text_attr=text_attr, normalizer=normalizer,
-        granularity=granularity, inter_interval_sep=separator,
+        gt_intervals,
+        text_attr=text_attr,
+        normalizer=normalizer,
+        granularity=granularity,
+        inter_interval_sep=separator,
     )
     hyp_units, hyp_origins, ds_sorted, hyp_norm_parts = _normalize_tokenize_per_interval(
-        ds_intervals, text_attr=text_attr, normalizer=normalizer,
-        granularity=granularity, inter_interval_sep=separator,
+        ds_intervals,
+        text_attr=text_attr,
+        normalizer=normalizer,
+        granularity=granularity,
+        inter_interval_sep=separator,
     )
 
     ref_norm_joined = separator.join(p for p in ref_norm_parts if p)
     hyp_norm_joined = separator.join(p for p in hyp_norm_parts if p)
 
     if not ref_units and not hyp_units:
-        return AlignmentResult(granularity, ref_norm_joined, hyp_norm_joined,
-                               [], [], [], 0.0, 0, 0, 0, 0)
+        return AlignmentResult(
+            granularity, ref_norm_joined, hyp_norm_joined, [], [], [], 0.0, 0, 0, 0, 0
+        )
     if not ref_units:
         return AlignmentResult(
-            granularity, ref_norm_joined, hyp_norm_joined, [], list(hyp_units),
+            granularity,
+            ref_norm_joined,
+            hyp_norm_joined,
+            [],
+            list(hyp_units),
             [AlignmentEdit(EditOp.INSERT, 0, 0, 0, len(hyp_units), [], list(hyp_units))],
-            float("inf"), 0, len(hyp_units), 0, 0,
+            float("inf"),
+            0,
+            len(hyp_units),
+            0,
+            0,
         )
     if not hyp_units:
         return AlignmentResult(
-            granularity, ref_norm_joined, hyp_norm_joined, list(ref_units), [],
+            granularity,
+            ref_norm_joined,
+            hyp_norm_joined,
+            list(ref_units),
+            [],
             [AlignmentEdit(EditOp.DELETE, 0, len(ref_units), 0, 0, list(ref_units), [])],
-            1.0, 0, 0, len(ref_units), 0,
+            1.0,
+            0,
+            0,
+            len(ref_units),
+            0,
         )
 
     overlap = _overlap_matrix(gt_sorted, ds_sorted)
     edits, hits, subs, ins, dels, boundaries = _overlap_constrained_align(
-        ref_units, ref_origins, hyp_units, hyp_origins, overlap,
+        ref_units,
+        ref_origins,
+        hyp_units,
+        hyp_origins,
+        overlap,
     )
     wer = (subs + ins + dels + boundaries) / len(ref_units)
     return AlignmentResult(
@@ -856,11 +949,11 @@ def align_group_with_overlap(
     )
 
 
-# ============================ L2 entry point ==================================
+# ============================ Entry point ========================================
 
 
-def run_transcription_qe(
-    gt: AnnotationSet, ds: AnnotationSet, req: TranscriptionRequirement
+def match_transcriptions(
+    gt: DatasetItem, ds: DatasetItem, *, req: TranscriptionRequirement
 ) -> TranscriptionReport:
     normalizer = Normalizer(req.normalizer)
 
@@ -871,80 +964,90 @@ def run_transcription_qe(
     missing: list[tuple[GroupKey, list[Interval]]] = []
     extra: list[tuple[GroupKey, list[Interval]]] = []
     pairs: list[FilterPairAlignment] = []
-    pair_gt_u: list[Interval] = []
-    pair_ds_u: list[Interval] = []
+    pair_gt_unmatched: list[Interval] = []
+    pair_ds_unmatched: list[Interval] = []
 
     all_keys = set(gt_groups) | set(ds_groups)
 
-    if req.grouping.strategy == GroupingStrategy.JOIN:
-        for key in sorted(all_keys, key=lambda k: (k[0], k[1] or "")):
-            gt_g = gt_groups.get(key, [])
-            ds_g = ds_groups.get(key, [])
-            if not gt_g:
-                extra.append((key, ds_g))
-                continue
-            if not ds_g:
-                missing.append((key, gt_g))
-                continue
-            if req.enforce_overlap:
-                if req.align == AlignMode.CHAR and req.granularity == Granularity.WORD:
-                    alignment = align_group_via_chars(
-                        gt_g, ds_g,
-                        text_attr=req.text_attribute,
-                        normalizer=normalizer,
-                        separator=req.grouping.join_separator,
-                    )
-                elif req.align == AlignMode.WORD and req.granularity == Granularity.WORD:
-                    alignment = align_group_with_overlap(
-                        gt_g, ds_g,
-                        text_attr=req.text_attribute,
-                        granularity=Granularity.WORD,
-                        normalizer=normalizer,
-                        separator=req.grouping.join_separator,
-                    )
-                else:
-                    alignment = align_group_with_overlap(
-                        gt_g, ds_g,
-                        text_attr=req.text_attribute,
-                        granularity=req.granularity,
-                        normalizer=normalizer,
-                        separator=req.grouping.join_separator,
-                    )
-            else:
-                ref_text = _join_group_text(
-                    gt_g, text_attr=req.text_attribute, separator=req.grouping.join_separator
-                )
-                hyp_text = _join_group_text(
-                    ds_g, text_attr=req.text_attribute, separator=req.grouping.join_separator
-                )
-                alignment = align_pair(
-                    ref_text, hyp_text, granularity=req.granularity, normalizer=normalizer
-                )
-            groups.append(GroupAlignment(key, gt_g, ds_g, alignment))
+    match req.grouping.strategy:
+        case GroupingStrategy.JOIN:
+            for key in sorted(all_keys, key=lambda k: (k[0], k[1] or "")):
+                gt_group = gt_groups.get(key, [])
+                ds_group = ds_groups.get(key, [])
+                if not gt_group:
+                    extra.append((key, ds_group))
+                    continue
+                if not ds_group:
+                    missing.append((key, gt_group))
+                    continue
 
-    else:  # filter
-        for key in sorted(all_keys, key=lambda k: (k[0], k[1] or "")):
-            gt_g = gt_groups.get(key, [])
-            ds_g = ds_groups.get(key, [])
-            matches, _, gt_u, ds_u = _two_stage_match(
-                gt_g, ds_g, iou_thresh=req.iou_threshold
-            )
-            for a, b in matches:
-                ref_t = a.extra.get(req.text_attribute, a.text)
-                hyp_t = b.extra.get(req.text_attribute, b.text)
-                pairs.append(
-                    FilterPairAlignment(
-                        gt=a, ds=b, iou=iou(a, b),
-                        onset_delta=b.start - a.start,
-                        offset_delta=b.stop - a.stop,
-                        alignment=align_pair(
-                            ref_t, hyp_t,
-                            granularity=req.granularity, normalizer=normalizer,
-                        ),
+                if req.enforce_overlap:
+                    aligner_params = {
+                        "text_attr": req.text_attribute,
+                        "normalizer": normalizer,
+                        "separator": req.grouping.join_separator,
+                    }
+
+                    match (req.align, req.granularity):
+                        case (AlignMode.CHAR, Granularity.WORD):
+                            aligner = _align_group_via_chars
+                        case (AlignMode.CHAR, Granularity.CHARACTER | Granularity.WORD) | (
+                            AlignMode.WORD,
+                            Granularity.WORD,
+                        ):
+                            aligner = _align_group_with_overlap
+                            aligner_params["granularity"] = req.granularity
+                        case (align, granularity):
+                            assert (
+                                False
+                            ), f"Unknown alignment, granularity combination ({align, granularity})"
+
+                    alignment = aligner(gt_group, ds_group, **aligner_params)
+                else:
+                    ref_text = _join_group_text(
+                        gt_group,
+                        text_attr=req.text_attribute,
+                        separator=req.grouping.join_separator,
                     )
+                    hyp_text = _join_group_text(
+                        ds_group,
+                        text_attr=req.text_attribute,
+                        separator=req.grouping.join_separator,
+                    )
+                    alignment = _align_pair(
+                        ref_text, hyp_text, granularity=req.granularity, normalizer=normalizer
+                    )
+                groups.append(GroupAlignment(key, gt_group, ds_group, alignment))
+
+        case GroupingStrategy.FILTER:
+            for key in sorted(all_keys, key=lambda k: (k[0], k[1] or "")):
+                gt_group = gt_groups.get(key, [])
+                ds_group = ds_groups.get(key, [])
+                matches, _, gt_unmatched, ds_unmatched = _two_stage_match(
+                    gt_group, ds_group, iou_thresh=req.iou_threshold
                 )
-            pair_gt_u.extend(gt_u)
-            pair_ds_u.extend(ds_u)
+                for gt_ann, ds_ann in matches:
+                    ref_text = gt_ann.extra.get(req.text_attribute, gt_ann.text)
+                    hyp_text = ds_ann.extra.get(req.text_attribute, ds_ann.text)
+                    pairs.append(
+                        FilterPairAlignment(
+                            gt=gt_ann,
+                            ds=ds_ann,
+                            iou=iou(gt_ann, ds_ann),
+                            onset_delta=ds_ann.start - gt_ann.start,
+                            offset_delta=ds_ann.stop - gt_ann.stop,
+                            alignment=_align_pair(
+                                ref_text,
+                                hyp_text,
+                                granularity=req.granularity,
+                                normalizer=normalizer,
+                            ),
+                        )
+                    )
+                pair_gt_unmatched.extend(gt_unmatched)
+                pair_ds_unmatched.extend(ds_unmatched)
+        case grouping:
+            assert False, f"Unknown grouping '{grouping}'"
 
     return TranscriptionReport(
         requirement=req,
@@ -952,6 +1055,6 @@ def run_transcription_qe(
         missing_groups=missing,
         extra_groups=extra,
         pairs=pairs,
-        pair_gt_unmatched=pair_gt_u,
-        pair_ds_unmatched=pair_ds_u,
+        pair_gt_unmatched=pair_gt_unmatched,
+        pair_ds_unmatched=pair_ds_unmatched,
     )

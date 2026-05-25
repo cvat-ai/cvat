@@ -1,25 +1,9 @@
-"""
-L1 layer of the audio QE pipeline — interval-level matching.
-
-Pairs GT and DS intervals by IoU + label using a two-stage Hungarian
-assignment, then derives per-pair spatial metrics (IoU, onset / offset
-deltas, label match). Boundary-F1 also lives here because it is a
-purely temporal metric — it cares where intervals start / stop, not
-what they contain.
-
-This module does not touch the transcription content of intervals.
-That's `transcription_matching.py`.
-"""
-
 from __future__ import annotations
 
 from typing import Callable, Sequence
 
-import numpy as np
-from scipy.optimize import linear_sum_assignment
-
 from .config import IntervalMatchingConfig
-from .data import AnnotationSet, Interval
+from .data import DatasetItem, Interval
 from .reports import BoundaryAgreement, IntervalPairMetrics, IntervalReport
 
 
@@ -50,39 +34,14 @@ def _hungarian_match(
     list[Interval],
     list[Interval],
 ]:
-    n = max(len(gt), len(ds), 1)
-    cost = np.ones((n, n), dtype=float)
-    for i, a in enumerate(gt):
-        for j, b in enumerate(ds):
-            cost[i, j] = 1 - distance(a, b)
-    cost[cost > 1 - iou_thresh] = 1
+    from cvat.apps.quality_control.quality_reports import match_segments
 
-    if gt and ds:
-        rows, cols = linear_sum_assignment(cost)
-    else:
-        rows, cols = [], []
-
-    matches: list[tuple[Interval, Interval]] = []
-    mispred: list[tuple[Interval, Interval]] = []
-    matched_gt_ids: set[int] = set()
-    matched_ds_ids: set[int] = set()
-
-    for r, c in zip(rows, cols):
-        if cost[r, c] >= 1 or r >= len(gt) or c >= len(ds):
-            continue
-        a, b = gt[r], ds[c]
-        matched_gt_ids.add(a.id)
-        matched_ds_ids.add(b.id)
-        (matches if label_matcher(a, b) else mispred).append((a, b))
-
-    gt_u = [iv for iv in gt if iv.id not in matched_gt_ids]
-    ds_u = [iv for iv in ds if iv.id not in matched_ds_ids]
-    return matches, mispred, gt_u, ds_u
+    return match_segments(
+        gt, ds, distance=distance, dist_thresh=iou_thresh, label_matcher=label_matcher
+    )
 
 
-def _two_stage_match(
-    gt: Sequence[Interval], ds: Sequence[Interval], *, iou_thresh: float
-) -> tuple[
+def _two_stage_match(gt: Sequence[Interval], ds: Sequence[Interval], *, iou_thresh: float) -> tuple[
     list[tuple[Interval, Interval]],
     list[tuple[Interval, Interval]],
     list[Interval],
@@ -98,9 +57,7 @@ def _two_stage_match(
     matches, _, gt_u, ds_u = _hungarian_match(
         gt, ds, distance=iou_with_label, iou_thresh=iou_thresh
     )
-    _, mispred, gt_u, ds_u = _hungarian_match(
-        gt_u, ds_u, distance=iou, iou_thresh=iou_thresh
-    )
+    _, mispred, gt_u, ds_u = _hungarian_match(gt_u, ds_u, distance=iou, iou_thresh=iou_thresh)
     return matches, mispred, gt_u, ds_u
 
 
@@ -144,16 +101,28 @@ def boundary_f1(
     return BoundaryAgreement(tp=tp, fp=fp, fn=fn, precision=precision, recall=recall, f1=f1)
 
 
-def run_interval_matching(
-    gt: AnnotationSet, ds: AnnotationSet, cfg: IntervalMatchingConfig
+def match_intervals(
+    gt: DatasetItem, ds: DatasetItem, *, config: IntervalMatchingConfig
 ) -> IntervalReport:
-    matches, mispred, gt_u, ds_u = _two_stage_match(
-        gt.intervals, ds.intervals, iou_thresh=cfg.iou_threshold
+    """
+    Compare intervals at the boundary level. This function does not touch transcriptions.
+
+    Pairs GT and DS intervals by IoU + label using a two-stage Hungarian
+    assignment, then derives per-pair spatial metrics (IoU, onset / offset
+    deltas, label match). Boundary-F1 also lives here because it is a
+    purely temporal metric — it cares where intervals start / stop, not
+    what they contain.
+    """
+
+    matches, mispred, gt_unmatched, ds_unmatched = _two_stage_match(
+        gt.intervals, ds.intervals, iou_thresh=config.iou_threshold
     )
 
     def to_metric(a: Interval, b: Interval) -> IntervalPairMetrics:
         return IntervalPairMetrics(
-            gt=a, ds=b, iou=iou(a, b),
+            gt=a,
+            ds=b,
+            iou=iou(a, b),
             onset_delta=b.start - a.start,
             offset_delta=b.stop - a.stop,
             label_match=_label_eq(a, b),
@@ -162,16 +131,16 @@ def run_interval_matching(
     boundary = boundary_f1(
         _collect_boundaries(gt.intervals),
         _collect_boundaries(ds.intervals),
-        tolerance_s=cfg.boundary_tolerance_s,
+        tolerance_s=config.boundary_tolerance_s,
     )
 
     return IntervalReport(
         matches=[to_metric(a, b) for a, b in matches],
         label_mismatches=[to_metric(a, b) for a, b in mispred],
-        gt_unmatched=gt_u,
-        ds_unmatched=ds_u,
-        iou_threshold=cfg.iou_threshold,
-        low_overlap_threshold=cfg.low_overlap_threshold,
-        boundary_tolerance_s=cfg.boundary_tolerance_s,
+        gt_unmatched=gt_unmatched,
+        ds_unmatched=ds_unmatched,
+        iou_threshold=config.iou_threshold,
+        low_overlap_threshold=config.low_overlap_threshold,
+        boundary_tolerance_s=config.boundary_tolerance_s,
         boundary=boundary,
     )
