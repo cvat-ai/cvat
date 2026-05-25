@@ -18,11 +18,24 @@ Tokenize, group, align, score. Owns:
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from typing import Callable, Sequence
 
 import jiwer
 import numpy as np
+import regex
+
+# `\X` matches one extended grapheme cluster — keeps combining marks
+# (Indic, Arabic diacritics) and emoji ZWJ sequences as a single unit.
+_GRAPHEMES_RE = regex.compile(r"\X")
+
+
+def _iter_graphemes(text: str) -> Iterator[str]:
+    """Yield each extended grapheme cluster in `text`. Single source of
+    truth for character-level iteration across char-granularity
+    tokenization and the char-stream alignment paths."""
+    for m in _GRAPHEMES_RE.finditer(text):
+        yield m.group()
 
 from .config import TranscriptionRequirement
 from .data import (
@@ -52,8 +65,7 @@ def tokenize(text: str, *, granularity: Granularity) -> list[str]:
     if granularity == Granularity.WORD:
         return text.split()
     if granularity == Granularity.CHARACTER:
-        # TODO: Codepoint-level. Swap to grapheme clusters (`regex` lib) for CJK production use.
-        return list(text)
+        return list(_iter_graphemes(text))
     raise AssertionError(granularity)
 
 
@@ -378,7 +390,7 @@ def _normalize_tokenize_per_interval(
         normed = normalizer(raw)
         norm_texts.append(normed)
         if is_char and flat_units and normed and inter_interval_sep:
-            for ch in inter_interval_sep:
+            for ch in _iter_graphemes(inter_interval_sep):
                 flat_units.append(ch)
                 origins.append(idx - 1)
         for tok in tokenize(normed, granularity=granularity):
@@ -405,10 +417,10 @@ def _normalize_to_chars_per_interval(
         normed = normalizer(raw)
         norm_texts.append(normed)
         if chars and inter_interval_sep and normed:
-            for ch in inter_interval_sep:
+            for ch in _iter_graphemes(inter_interval_sep):
                 chars.append(ch)
                 origins.append(idx - 1)
-        for ch in normed:
+        for ch in _iter_graphemes(normed):
             chars.append(ch)
             origins.append(idx)
     return chars, origins, in_order, norm_texts
