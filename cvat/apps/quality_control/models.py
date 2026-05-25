@@ -446,9 +446,7 @@ def ensure_default_quality_requirements(quality_settings: QualitySettings) -> bo
         for annotation_type in _DEFAULT_REQUIREMENT_ANNOTATION_TYPES
     }
     existing_default_names = set(
-        quality_settings.requirements.filter(name__in=default_names).values_list(
-            "name", flat=True
-        )
+        quality_settings.requirements.filter(name__in=default_names).values_list("name", flat=True)
     )
 
     changed = False

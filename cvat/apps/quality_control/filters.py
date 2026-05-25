@@ -236,11 +236,7 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
 
     _ATTRIBUTE_ITERATOR_FIELDS = tuple(
         sorted(
-            {
-                term.rsplit(".", 1)[0]
-                for term in _LOOKUP_FIELDS
-                if ".attribute." in term
-            },
+            {term.rsplit(".", 1)[0] for term in _LOOKUP_FIELDS if ".attribute." in term},
             key=len,
             reverse=True,
         )
@@ -603,9 +599,7 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
                 obj,
                 bindings,
                 lambda var_value: (
-                    bool(var_value)
-                    if self._is_multi_value(var_value)
-                    else var_value is not None
+                    bool(var_value) if self._is_multi_value(var_value) else var_value is not None
                 ),
             )
         elif op == "<=" and len(args) == 3:

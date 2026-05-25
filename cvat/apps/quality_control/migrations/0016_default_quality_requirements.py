@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 
-
 _DEFAULT_REQUIREMENT_ANNOTATION_TYPES = (
     "tag",
     "rectangle",

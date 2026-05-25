@@ -28,9 +28,9 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
-    ComparisonReportRequirementSummaryItem,
     ComparisonReportRequirementsSummary,
     ComparisonReportRequirementSummary,
+    ComparisonReportRequirementSummaryItem,
     ComparisonReportSummary,
     ConfusionMatrix,
     deduplicate_annotation_conflicts,
@@ -192,9 +192,7 @@ def _make_effective_requirement(
             continue
 
         if field_name == "attribute_comparison":
-            values[field_name] = _merge_attribute_comparison(
-                values.get(field_name), local_value
-            )
+            values[field_name] = _merge_attribute_comparison(values.get(field_name), local_value)
         else:
             values[field_name] = local_value
 
@@ -250,7 +248,9 @@ def resolve_effective_requirements(requirements: list[Any]) -> list[EffectiveQua
     }
     children_by_parent_id: dict[int | None, list[Any]] = {}
     for requirement in requirements:
-        children_by_parent_id.setdefault(_requirement_parent_id(requirement), []).append(requirement)
+        children_by_parent_id.setdefault(_requirement_parent_id(requirement), []).append(
+            requirement
+        )
 
     effective_leaves: list[EffectiveQualityRequirement] = []
 
@@ -622,9 +622,7 @@ class RequirementHandler(ABC):
 
         attrs_a = ann_a.attributes
         attrs_b = ann_b.attributes
-        keys_to_match = (attrs_a.keys() | attrs_b.keys()).difference(
-            self._comparator.ignored_attrs
-        )
+        keys_to_match = (attrs_a.keys() | attrs_b.keys()).difference(self._comparator.ignored_attrs)
 
         matches = []
         mismatches = []
@@ -1174,8 +1172,8 @@ class ShapeRequirementHandler(RequirementHandler):
 
         if self.settings.compare_attributes:
             for gt_ann, ds_ann in matches:
-                _, mismatching_attributes, missing_attributes, extra_attributes = (
-                    self._match_attrs(gt_ann, ds_ann)
+                _, mismatching_attributes, missing_attributes, extra_attributes = self._match_attrs(
+                    gt_ann, ds_ann
                 )
                 conflicting_attribute_names = [
                     *mismatching_attributes,
@@ -1294,6 +1292,7 @@ class ShapeRequirementHandler(RequirementHandler):
             ),
             matched_pairs=list(itertools.chain(shape_matches, shape_mismatches)),
         )
+
 
 class DatasetQualityEstimator:
     DEFAULT_SETTINGS = ComparisonParameters()

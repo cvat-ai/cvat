@@ -875,7 +875,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         required_score=1.0,
                         annotation_type="rectangle",
                         filter_expression=json.dumps({"==": [{"var": "shape.label"}, "car"]}),
-                    )
+                    ),
                 ],
             },
         )
@@ -933,9 +933,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert total_annotations["total_count"] == 1
         assert report_data["comparison_summary"]["conflict_count"] == 0
 
-    def test_task_report_filter_matches_attribute_name_value_on_same_attribute(
-        self, admin_user
-    ):
+    def test_task_report_filter_matches_attribute_name_value_on_same_attribute(self, admin_user):
         (
             task_id,
             settings,
@@ -1035,7 +1033,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                                 }
                             ],
                         },
-                    )
+                    ),
                 ],
             },
         )
@@ -1096,7 +1094,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         enabled=True,
                         required_score=1.0,
                         annotation_type="rectangle",
-                    )
+                    ),
                 ],
             },
         )
@@ -1198,12 +1196,18 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        assert report_data["groups"][first_leaf_name]["comparison_summary"]["annotations"][
-            "total_count"
-        ] == 1
-        assert report_data["groups"][second_leaf_name]["comparison_summary"]["annotations"][
-            "total_count"
-        ] == 1
+        assert (
+            report_data["groups"][first_leaf_name]["comparison_summary"]["annotations"][
+                "total_count"
+            ]
+            == 1
+        )
+        assert (
+            report_data["groups"][second_leaf_name]["comparison_summary"]["annotations"][
+                "total_count"
+            ]
+            == 1
+        )
         assert report_data["comparison_summary"]["annotations"]["total_count"] == 2
 
     def test_task_report_data_contains_groups_and_requirements(self, admin_user):
@@ -1350,7 +1354,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         requirement_name,
                         enabled=True,
                         required_score=1.0,
-                    )
+                    ),
                 ],
             },
         )

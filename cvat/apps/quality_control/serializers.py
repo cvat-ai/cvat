@@ -642,7 +642,9 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             )
 
         if parent_requirement is not None:
-            parent_effective_annotation_type = self._get_effective_annotation_type(parent_requirement)
+            parent_effective_annotation_type = self._get_effective_annotation_type(
+                parent_requirement
+            )
             if annotation_type is not None:
                 if annotation_type != parent_effective_annotation_type:
                     raise serializers.ValidationError(
@@ -682,7 +684,11 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
                 if field_name in attrs and attrs[field_name] is None:
                     raise serializers.ValidationError(
-                        {self._field_to_public_name(field_name): "Root requirements cannot inherit."}
+                        {
+                            self._field_to_public_name(
+                                field_name
+                            ): "Root requirements cannot inherit."
+                        }
                     )
 
         self._validate_requirement_limit_for_settings(quality_settings)
