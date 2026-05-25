@@ -618,7 +618,8 @@ class TestAudioQuality:
                 transcription_requirements=[
                     models.PatchedTranscriptionRequirementRequest(
                         attribute_id=transcription_attr.id,
-                        metric="wer",
+                        granularity="word",
+                        grouping_strategy="filter",
                         acceptance_threshold=0.2,
                     )
                 ]
@@ -749,7 +750,8 @@ class TestAudioQuality:
                 transcription_requirements=[
                     models.PatchedTranscriptionRequirementRequest(
                         attribute_id=transcription_attr.id,
-                        metric="wer",
+                        granularity="word",
+                        grouping_strategy="filter",
                         acceptance_threshold=0.2,
                     )
                 ]
@@ -814,3 +816,316 @@ class TestAudioQuality:
         for attr_stats in report["comparison_summary"]["annotation_components"]["attribute"]:
             assert attr_stats["valid_count"] == int(attr_stats["attribute"][0] != other_attr.name)
             assert attr_stats["total_count"] == 1
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_can_round_trip_all_transcription_config_fields(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": fxt_test_name,
+                "labels": [
+                    {
+                        "name": "speaker1",
+                        "attributes": [
+                            {
+                                "name": "transcription",
+                                "input_type": "text",
+                                "values": [],
+                                "mutable": True,
+                            },
+                            {
+                                "name": "speaker_tag",
+                                "input_type": "text",
+                                "values": [],
+                                "mutable": True,
+                            },
+                        ],
+                    },
+                ],
+            },
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
+
+        labels = task.get_labels()
+        label = labels[0]
+        transcription_attr = next(a for a in label.attributes if a.name == "transcription")
+        grouping_attr = next(a for a in label.attributes if a.name == "speaker_tag")
+
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+        updated, _ = self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                interval_boundary_tolerance_s=0.5,
+                transcription_requirements=[
+                    models.PatchedTranscriptionRequirementRequest(
+                        attribute_id=transcription_attr.id,
+                        granularity="character",
+                        metric="error-rate",
+                        align="word",
+                        threshold=0.3,
+                        normalizer_preset="ru",
+                        substitutions={"OK": "okay", "yep": "yes"},
+                        grouping_strategy="join",
+                        grouping_separator=" | ",
+                        grouping_attribute_id=grouping_attr.id,
+                        acceptance_threshold=0.4,
+                    )
+                ],
+            ),
+        )
+
+        assert updated.interval_boundary_tolerance_s == 0.5
+        assert len(updated.transcription_requirements) == 1
+        req = updated.transcription_requirements[0]
+        assert req.attribute_id == transcription_attr.id
+        assert req.granularity == "character"
+        assert req.metric == "error-rate"
+        assert req.align == "word"
+        assert req.threshold == 0.3
+        assert req.normalizer_preset == "ru"
+        assert req.substitutions == {"OK": "okay", "yep": "yes"}
+        assert req.grouping_strategy == "join"
+        assert req.grouping_separator == " | "
+        assert req.grouping_attribute_id == grouping_attr.id
+        assert req.acceptance_threshold == 0.4
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_rejects_chunk_threshold_outside_range(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        transcription_attr = self._make_task_with_transcription_attr(
+            fxt_test_name, source_filename
+        )
+        settings = self.client.api_client.quality_api.list_settings(
+            task_id=transcription_attr["task_id"]
+        )[0].results[0]
+
+        _, response = self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                transcription_requirements=[
+                    models.PatchedTranscriptionRequirementRequest(
+                        attribute_id=transcription_attr["id"],
+                        threshold=1.5,
+                        acceptance_threshold=0.2,
+                    )
+                ]
+            ),
+            _check_status=False,
+            _parse_response=False,
+        )
+        assert response.status == 400
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_rejects_invalid_substitutions_value(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        transcription_attr = self._make_task_with_transcription_attr(
+            fxt_test_name, source_filename
+        )
+        settings = self.client.api_client.quality_api.list_settings(
+            task_id=transcription_attr["task_id"]
+        )[0].results[0]
+
+        _, response = self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                transcription_requirements=[
+                    models.PatchedTranscriptionRequirementRequest(
+                        attribute_id=transcription_attr["id"],
+                        substitutions={"OK": 123},
+                        acceptance_threshold=0.2,
+                    )
+                ]
+            ),
+            _check_status=False,
+            _parse_response=False,
+        )
+        assert response.status == 400
+        assert b"Values must be strings" in response.data
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_rejects_cross_label_grouping_attribute(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": fxt_test_name,
+                "labels": [
+                    {
+                        "name": "speaker1",
+                        "attributes": [
+                            {
+                                "name": "transcription",
+                                "input_type": "text",
+                                "values": [],
+                                "mutable": True,
+                            },
+                        ],
+                    },
+                    {
+                        "name": "speaker2",
+                        "attributes": [
+                            {
+                                "name": "other_attr",
+                                "input_type": "text",
+                                "values": [],
+                                "mutable": True,
+                            },
+                        ],
+                    },
+                ],
+            },
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
+
+        labels = task.get_labels()
+        transcription_attr = next(
+            a for label in labels for a in label.attributes if a.name == "transcription"
+        )
+        other_label_attr = next(
+            a for label in labels for a in label.attributes if a.name == "other_attr"
+        )
+
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+        _, response = self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                transcription_requirements=[
+                    models.PatchedTranscriptionRequirementRequest(
+                        attribute_id=transcription_attr.id,
+                        grouping_attribute_id=other_label_attr.id,
+                        acceptance_threshold=0.2,
+                    )
+                ]
+            ),
+            _check_status=False,
+            _parse_response=False,
+        )
+        assert response.status == 400
+        assert b"same label" in response.data
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_substitutions_make_transcriptions_equal(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        transcription_attr_name = "transcription"
+
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": fxt_test_name,
+                "labels": [
+                    {
+                        "name": "speaker1",
+                        "attributes": [
+                            {
+                                "name": transcription_attr_name,
+                                "input_type": "text",
+                                "values": [],
+                                "mutable": True,
+                            },
+                        ],
+                    },
+                ],
+            },
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
+        gt_job = next(j for j in task.get_jobs() if j.type == "ground_truth")
+        labels = task.get_labels()
+        label = labels[0]
+        transcription_attr = next(
+            a for a in label.attributes if a.name == transcription_attr_name
+        )
+
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+        self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                transcription_requirements=[
+                    models.PatchedTranscriptionRequirementRequest(
+                        attribute_id=transcription_attr.id,
+                        granularity="word",
+                        grouping_strategy="filter",
+                        substitutions={"different": "test"},
+                        acceptance_threshold=0.2,
+                    )
+                ]
+            ),
+        )
+
+        gt_annotations = models.LabeledDataRequest(
+            intervals=[
+                models.LabeledIntervalRequest(
+                    label_id=label.id,
+                    start=0,
+                    stop=1000,
+                    attributes=[
+                        models.AttributeValRequest(
+                            spec_id=transcription_attr.id, value="test text"
+                        ),
+                    ],
+                ),
+            ]
+        )
+        ds_annotations = models.LabeledDataRequest(
+            intervals=[
+                models.LabeledIntervalRequest(
+                    label_id=label.id,
+                    start=0,
+                    stop=1000,
+                    attributes=[
+                        models.AttributeValRequest(
+                            spec_id=transcription_attr.id, value="different text"
+                        ),
+                    ],
+                ),
+            ]
+        )
+        task.set_annotations(ds_annotations)
+        gt_job.set_annotations(gt_annotations)
+        gt_job.update(dict(stage="acceptance", state="completed"))
+
+        report = self.compute_report(task.id)
+
+        # Without substitutions the transcriptions mismatch (see
+        # test_transcription_matching_affects_overall_matches); the
+        # substitution {"different": "test"} rewrites the DS string to match
+        # the GT one, so the requirement is satisfied.
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        assert report["comparison_summary"]["annotations"]["valid_count"] == 1
+        assert report["comparison_summary"]["annotations"]["total_count"] == 1
+
+    def _make_task_with_transcription_attr(
+        self, fxt_test_name: str, source_filename: Path
+    ) -> dict:
+        """Spin up a minimal audio task with a single text attribute named
+        ``transcription``. Returns the attribute spec dict plus its parent
+        task id; used by the validation-error tests below."""
+
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": fxt_test_name,
+                "labels": [
+                    {
+                        "name": "speaker1",
+                        "attributes": [
+                            {
+                                "name": "transcription",
+                                "input_type": "text",
+                                "values": [],
+                                "mutable": True,
+                            },
+                        ],
+                    },
+                ],
+            },
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
+        label = task.get_labels()[0]
+        attr = next(a for a in label.attributes if a.name == "transcription")
+        return {"id": attr.id, "task_id": task.id}
