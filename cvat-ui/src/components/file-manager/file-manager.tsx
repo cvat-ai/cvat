@@ -32,6 +32,7 @@ interface State {
 
 interface Props {
     many: boolean;
+    audio?: boolean;
     onChangeActiveKey(key: string): void;
     onUploadLocalFiles(files: File[]): void;
     onUploadRemoteFiles(urls: string[]): void;
@@ -121,7 +122,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderLocalSelector(): NonNullable<TabsProps['items']>[0] {
-        const { many, onUploadLocalFiles } = this.props;
+        const { many, audio, onUploadLocalFiles } = this.props;
         const { files } = this.state;
 
         return {
@@ -132,6 +133,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 <LocalFiles
                     files={files.local}
                     many={many}
+                    audio={audio}
                     onUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
                         this.setState({
                             files: {

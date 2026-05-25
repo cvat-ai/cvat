@@ -697,6 +697,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                     <Text className='cvat-text-color'>Select files</Text>
                     <FileManagerComponent
                         many={many}
+                        audio
                         onChangeActiveKey={this.changeFileManagerTab}
                         onUploadLocalFiles={this.handleUploadLocalFiles}
                         onUploadRemoteFiles={this.handleUploadRemoteFiles}
