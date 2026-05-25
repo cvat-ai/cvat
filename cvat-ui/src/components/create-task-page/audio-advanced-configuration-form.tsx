@@ -5,7 +5,7 @@
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
-import Form, { FormInstance, RuleObject, RuleRender } from 'antd/lib/form';
+import Form, { FormInstance, RuleObject } from 'antd/lib/form';
 import { Store } from 'antd/lib/form/interface';
 import patterns from 'utils/validation-patterns';
 import { isInteger } from 'utils/validation';
@@ -55,20 +55,6 @@ function validateURL(_: RuleObject, value: string): Promise<void> {
     }
     return Promise.resolve();
 }
-
-const validateStopFrame: RuleRender = ({ getFieldValue }): RuleObject => ({
-    validator(_: RuleObject, value?: string | number): Promise<void> {
-        if (typeof value !== 'undefined' && value !== '') {
-            const startFrame = getFieldValue('startFrame');
-            if (typeof startFrame !== 'undefined' && startFrame !== '') {
-                if (+startFrame > +value) {
-                    return Promise.reject(new Error('Start frame must not be more than stop frame'));
-                }
-            }
-        }
-        return Promise.resolve();
-    },
-});
 
 class AudioAdvancedConfigurationForm extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
@@ -131,27 +117,6 @@ class AudioAdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
-                <Row justify='start'>
-                    <Col span={7}>
-                        <Form.Item
-                            label='Start frame'
-                            name='startFrame'
-                            rules={[{ validator: isInteger({ min: 0 }) }]}
-                        >
-                            <Input size='large' type='number' min={0} step={1} />
-                        </Form.Item>
-                    </Col>
-                    <Col span={7} offset={1}>
-                        <Form.Item
-                            label='Stop frame'
-                            name='stopFrame'
-                            dependencies={['startFrame']}
-                            rules={[{ validator: isInteger({ min: 0 }) }, validateStopFrame]}
-                        >
-                            <Input size='large' type='number' min={0} step={1} />
-                        </Form.Item>
-                    </Col>
-                </Row>
                 <Row justify='start'>
                     <Col span={7}>
                         <Form.Item
