@@ -396,6 +396,9 @@ function ObjectListComponent(props: Props): JSX.Element {
                                 )}
                             </div>
                             <DragOverlay
+                                // dnd-kit's default drop animation scrolls the source node back into view.
+                                // Disable it so wheel scrolling the sidebar during drag is preserved after drop.
+                                dropAnimation={null}
                                 // Let wheel/pointer events reach the sidebar under the drag preview.
                                 style={{ pointerEvents: 'none' }}
                             >
