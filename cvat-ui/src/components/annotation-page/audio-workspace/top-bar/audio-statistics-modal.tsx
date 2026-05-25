@@ -23,7 +23,6 @@ interface StateToProps {
     regions: AudioRegion[];
     labels: Label[];
     hasUnsavedChanges: boolean;
-    audioUrl: string | null;
 }
 
 interface DispatchToProps {
@@ -45,7 +44,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 duration,
                 regions,
                 hasUnsavedChanges,
-                audioUrl,
             },
         },
     } = state;
@@ -59,7 +57,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         regions,
         labels,
         hasUnsavedChanges,
-        audioUrl,
     };
 }
 
@@ -94,7 +91,6 @@ function AudioStatisticsModalComponent(props: StateToProps & DispatchToProps): J
         regions,
         labels,
         hasUnsavedChanges,
-        audioUrl,
         closeStatistics,
     } = props;
 
@@ -221,16 +217,6 @@ function AudioStatisticsModalComponent(props: StateToProps & DispatchToProps): J
                         <Text className='cvat-text'>{hasUnsavedChanges ? 'Yes' : 'No'}</Text>
                     </Col>
                 </Row>
-                {!!audioUrl && (
-                    <Row justify='start'>
-                        <Col span={24}>
-                            <Text strong className='cvat-text'>Source</Text>
-                            <Text className='cvat-text' ellipsis={{ tooltip: audioUrl }}>
-                                {audioUrl}
-                            </Text>
-                        </Col>
-                    </Row>
-                )}
                 {!!bugTracker && (
                     <Row justify='start' className='cvat-job-info-bug-tracker'>
                         <Col>
