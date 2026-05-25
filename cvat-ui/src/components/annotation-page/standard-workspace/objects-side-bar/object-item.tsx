@@ -32,6 +32,7 @@ interface Props {
     jobInstance: any;
     zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
     zLayerDragging?: boolean;
+    zOrder: number;
     activate(activeElementID?: number): void;
     focusAndExpand(): void;
     copy(): void;
@@ -42,6 +43,7 @@ interface Props {
     toForeground(): void;
     toOneLayerBackward(): void;
     toOneLayerForward(): void;
+    toSpecificLayer(zOrder: number): void;
     remove(): void;
     changeLabel(label: any): void;
     changeColor(color: string): void;
@@ -67,6 +69,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         labels,
         zLayerDragProps,
         zLayerDragging,
+        zOrder,
         normalizedKeyMap,
         isGroundTruth,
         activate,
@@ -79,6 +82,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         toForeground,
         toOneLayerForward,
         toOneLayerBackward,
+        toSpecificLayer,
         remove,
         changeLabel,
         changeColor,
@@ -135,6 +139,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
                     toOneLayerBackwardShortcut={normalizedKeyMap.TO_ONE_LAYER_BACKWARD}
                     toOneLayerForwardShortcut={normalizedKeyMap.TO_ONE_LAYER_FORWARD}
+                    zOrder={zOrder}
                     removeShortcut={normalizedKeyMap.DELETE_OBJECT_STANDARD_WORKSPACE}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}
@@ -150,6 +155,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toForeground={toForeground}
                     toOneLayerBackward={toOneLayerBackward}
                     toOneLayerForward={toOneLayerForward}
+                    toSpecificLayer={toSpecificLayer}
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
                     slice={slice}

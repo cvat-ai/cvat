@@ -453,6 +453,13 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         this.commit();
     };
 
+    private readonly toSpecificLayer = (zOrder: number): void => {
+        const { objectState } = this.props;
+
+        objectState.zOrder = zOrder;
+        this.commit();
+    };
+
     private activate = (activeElementID?: number): void => {
         const {
             objectState, ready, activeControl, activateObject,
@@ -608,6 +615,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     toForeground={this.toForeground}
                     toOneLayerBackward={this.toOneLayerBackward}
                     toOneLayerForward={this.toOneLayerForward}
+                    toSpecificLayer={this.toSpecificLayer}
+                    zOrder={objectState.zOrder}
                     changeColor={this.changeColor}
                     changeLabel={this.changeLabel}
                     edit={this.edit}

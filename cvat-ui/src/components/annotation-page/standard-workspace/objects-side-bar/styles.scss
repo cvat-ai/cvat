@@ -494,6 +494,21 @@
     }
 }
 
+.cvat-object-item-menu-to-layer-popover {
+    align-items: center;
+    display: flex;
+    gap: $grid-unit-size;
+    padding: 0 $grid-unit-size;
+
+    .ant-input-number {
+        width: $grid-unit-size * 14;
+    }
+}
+
+.cvat-object-item-menu-to-layer-close-button {
+    padding: 0;
+}
+
 .cvat-objects-sidebar-state-item-dragging {
     box-shadow: $box-shadow-base;
 }
