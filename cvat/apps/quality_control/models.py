@@ -426,7 +426,7 @@ class TranscriptionQualityRequirement(models.Model):
         constraints = [
             models.CheckConstraint(
                 name="transcription_quality_requirement_threshold_is_valid",
-                check=(
+                condition=(
                     models.Q(acceptance_threshold__gte=0) & models.Q(acceptance_threshold__lte=1)
                 ),
             ),
