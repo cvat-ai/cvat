@@ -10,6 +10,7 @@ import pytest
 from cvat_sdk import Client
 from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+
 from shared.utils.config import make_sdk_client
 
 from .util import create_org_resource_hierarchy
