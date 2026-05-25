@@ -20,7 +20,5 @@ def compare(
         gt=list(gt),
         ds=list(ds),
         intervals=match_intervals(gt, ds, config=settings.interval_matching),
-        transcriptions=[
-            match_transcriptions(gt, ds, req=req) for req in settings.transcriptions
-        ],
+        transcriptions=[match_transcriptions(gt, ds, req=req) for req in settings.transcriptions],
     )

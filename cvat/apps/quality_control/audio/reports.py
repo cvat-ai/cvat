@@ -83,11 +83,13 @@ class AlignmentResult:
     ref_units: list[str]
     hyp_units: list[str]
     edits: list[AlignmentEdit]
-    wer: float  # word error rate (== CER when granularity=character)
+    error_rate: float  # word error rate (WER) / CER (when granularity=character)
+
     substitutions: int
     insertions: int
     deletions: int
     hits: int
+
     # Per-token source-interval index (within the group). None for paths that
     # don't track origins (jiwer-based per-pair alignment).
     ref_origins: list[int] | None = None
