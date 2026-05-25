@@ -1,4 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, {
+    useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
 import Empty from 'antd/lib/empty';
 import Dropdown from 'antd/lib/dropdown';
 import {
@@ -116,6 +118,7 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
         <div
             role='button'
             tabIndex={0}
+            data-region-id={region.id}
             className={
                 'cvat-audio-region-item' +
                 `${isActive ? ' cvat-audio-region-item-active' : ''}` +
@@ -250,6 +253,17 @@ export default function AudioRegionsList(props: Props): JSX.Element {
     } = props;
 
     const [ordering, setOrdering] = useState<AudioRegionsOrdering>(AudioRegionsOrdering.INSERTION);
+    const listRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!activeRegionId) return;
+        const container = listRef.current;
+        if (!container) return;
+        const item = container.querySelector(`[data-region-id="${CSS.escape(activeRegionId)}"]`);
+        if (item) {
+            (item as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }, [activeRegionId]);
 
     const visibleRegions = useMemo(
         () => regions.filter((r) => visibleRegionIds.has(r.id)),
@@ -325,7 +339,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
     return (
         <div className='cvat-audio-regions-list-wrapper'>
             {header}
-            <div className='cvat-audio-regions-list'>
+            <div className='cvat-audio-regions-list' ref={listRef}>
                 {sortedRegions.map((region) => (
                     <MemoAudioRegionItem
                         key={region.id}
