@@ -3,8 +3,6 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
-import cvat.apps.quality_control.models
-
 
 class Migration(migrations.Migration):
 
@@ -50,7 +48,7 @@ class Migration(migrations.Migration):
                     "metric",
                     models.CharField(
                         choices=[("wer", "WER"), ("cer", "CER")],
-                        default=cvat.apps.quality_control.models.TranscriptionQualityMetric["WER"],
+                        default="wer",
                         max_length=32,
                     ),
                 ),

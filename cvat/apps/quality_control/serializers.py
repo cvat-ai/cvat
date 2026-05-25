@@ -215,6 +215,11 @@ class QualitySettingsParentType(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+MAX_SUBSTITUTION_ENTRIES = 1024
+MAX_SUBSTITUTION_KEY_LEN = 256
+MAX_SUBSTITUTION_VALUE_LEN = 256
+
+
 class TranscriptionRequirementSerializer(serializers.ModelSerializer):
     attribute_id = serializers.IntegerField(
         read_only=False,
@@ -223,12 +228,30 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
             The transcription (type '{AttributeType.TEXT}') attribute to apply the requirement to
             """),
     )
+    grouping_attribute_id = serializers.IntegerField(
+        read_only=False,
+        allow_null=True,
+        required=False,
+        help_text=textwrap.dedent("""\
+            Optional attribute used to group intervals into transcription
+            chunks (e.g. a speaker tag). Must belong to the same label as
+            the transcription attribute. None = group by label only.
+            """),
+    )
 
     class Meta:
         model = models.TranscriptionQualityRequirement
         fields = (
             "attribute_id",
+            "granularity",
             "metric",
+            "align",
+            "threshold",
+            "normalizer_preset",
+            "substitutions",
+            "grouping_strategy",
+            "grouping_separator",
+            "grouping_attribute_id",
             "acceptance_threshold",
         )
 
@@ -237,8 +260,111 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
                 "required": False,
                 "min_value": 0,
                 "max_value": 1,
+                "help_text": textwrap.dedent("""\
+                    Per-match error-rate threshold in [0, 1]. A transcription
+                    match whose error rate is at or above this value is
+                    reported as a mismatching-attributes conflict.
+                    """),
+            },
+            "threshold": {
+                "required": False,
+                "allow_null": True,
+                "min_value": 0,
+                "max_value": 1,
+                "help_text": textwrap.dedent("""\
+                    Optional per-chunk cost binarization threshold in [0, 1].
+                    When set, the chunk cost is rounded to 0 / 1 by comparing
+                    against this value, turning a soft metric into a binary
+                    one. Has no effect when `metric` is `equality`.
+                    """),
+            },
+            "granularity": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    Output unit of the reported rate. `word` reports WER-family
+                    rates, `character` reports CER-family rates.
+                    """),
+            },
+            "metric": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    Per-chunk cost function used during alignment.
+                    `equality` is hard 0 / 1, `error-rate` is fractional
+                    Levenshtein distance, `normalized-lev` is a smoother
+                    normalized variant. For `granularity=character` all three
+                    degenerate to `equality`.
+                    """),
+            },
+            "align": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    Alignment regime. `char` runs char-level Levenshtein and
+                    reconstructs word boundaries afterwards (default; handles
+                    arbitrary N-to-M token splits). `word` runs plain
+                    token-level Levenshtein (faster, no boundary recovery).
+                    """),
+            },
+            "normalizer_preset": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    Pre-built text normalization stack applied before
+                    alignment. `none` is passthrough, `basic` is a
+                    language-agnostic Unicode / whitespace / case layer, and
+                    each two-letter code (e.g. `ru`, `zh`) selects a
+                    self-contained language preset. The project-specific
+                    `substitutions` dict is layered on top of the chosen
+                    preset.
+                    """),
+            },
+            "substitutions": {
+                "required": False,
+                "help_text": textwrap.dedent(f"""\
+                    Project-specific literal text replacement map (object of
+                    string → string). Applied after the chosen
+                    `normalizer_preset`. Empty object disables. Capped at
+                    {MAX_SUBSTITUTION_ENTRIES} entries; keys and values
+                    capped at {MAX_SUBSTITUTION_KEY_LEN} characters each.
+                    """),
+            },
+            "grouping_strategy": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    How intervals are grouped before transcription
+                    comparison. `filter` scores each matched GT / DS interval
+                    pair independently. `join` concatenates all GT and all DS
+                    intervals that share the same grouping key (label, plus
+                    optional `grouping_attribute_id` value) and scores the
+                    resulting pair of strings.
+                    """),
+            },
+            "grouping_separator": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    Separator inserted between concatenated transcriptions
+                    when `grouping_strategy=join`. Defaults to a single space.
+                    """),
             },
         }
+
+    def validate_substitutions(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Must be an object (dict).")
+        if len(value) > MAX_SUBSTITUTION_ENTRIES:
+            raise serializers.ValidationError(f"Too many entries (max {MAX_SUBSTITUTION_ENTRIES}).")
+        for k, v in value.items():
+            if not isinstance(k, str) or not k:
+                raise serializers.ValidationError("Keys must be non-empty strings.")
+            if not isinstance(v, str):
+                raise serializers.ValidationError("Values must be strings.")
+            if len(k) > MAX_SUBSTITUTION_KEY_LEN:
+                raise serializers.ValidationError(
+                    f"Key length exceeds {MAX_SUBSTITUTION_KEY_LEN} characters."
+                )
+            if len(v) > MAX_SUBSTITUTION_VALUE_LEN:
+                raise serializers.ValidationError(
+                    f"Value length exceeds {MAX_SUBSTITUTION_VALUE_LEN} characters."
+                )
+        return value
 
     def update(self, instance, validated_data):
         assert False
@@ -260,6 +386,20 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
             )
 
         validated_data["settings"] = settings
+
+        grouping_attribute_id = validated_data.get("grouping_attribute_id")
+        if grouping_attribute_id is not None:
+            try:
+                grouping_attribute = models.AttributeSpec.objects.get(pk=grouping_attribute_id)
+            except models.AttributeSpec.DoesNotExist:
+                raise serializers.ValidationError(
+                    f"Grouping attribute {grouping_attribute_id} does not exist"
+                )
+            if grouping_attribute.label_id != attribute.label_id:
+                raise serializers.ValidationError(
+                    f"Grouping attribute {grouping_attribute_id} must belong to "
+                    f"the same label as the transcription attribute"
+                )
 
         return validated_data
 
@@ -290,6 +430,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "point_size_base",
             "line_thickness",
             "low_overlap_threshold",
+            "interval_boundary_tolerance_s",
             "compare_line_orientation",
             "line_orientation_threshold",
             "compare_groups",
@@ -383,6 +524,10 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
                 This will also add virtual annotations to empty frames in the comparison results.
             """,
+            "interval_boundary_tolerance_s": """
+                Timestamp tolerance (seconds) for the audio interval boundary F1 metric.
+                Onset / offset differences within this tolerance count as a boundary hit.
+            """,
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))
@@ -392,6 +537,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if field_name.endswith("_threshold") or field_name in ["oks_sigma", "line_thickness"]:
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
+
+        extra_kwargs.setdefault("interval_boundary_tolerance_s", {}).setdefault("min_value", 0)
 
     job_filter = serializers.CharField(
         allow_blank=True,
