@@ -219,6 +219,9 @@ export default function audioReducer(state: AudioState = defaultState, action: A
         }
         case AnnotationActionTypes.SET_AUDIO_REGIONS: {
             const diffs = diffRegions(state.player.regions, action.payload.regions);
+            if (diffs.length === 0) {
+                return state;
+            }
             return {
                 ...state,
                 history: pushAudioUndo(
