@@ -6,6 +6,8 @@
 -r ../../utils/dataset_manifest/requirements.txt
 asgiref==3.8.1
     # via django
+async-timeout==5.0.1
+    # via redis
 attrs==25.3.0
     # via
     #   -r cvat/requirements/base.in
@@ -139,6 +141,8 @@ idna==3.10
     # via requests
 imagesize==1.4.1
     # via datumaro
+importlib-resources==7.1.0
+    # via nibabel
 inflection==0.5.1
     # via drf-spectacular
 isodate==0.7.2
@@ -183,7 +187,7 @@ networkx==3.4.2
     # via datumaro
 nibabel==5.3.2
     # via datumaro
-nltk==3.9.3
+nltk==3.9.4
     # via datumaro
 oauthlib==3.3.1
     # via requests-oauthlib
@@ -219,7 +223,7 @@ psutil==5.9.4
     # via -r cvat/requirements/base.in
 psycopg2-binary==2.9.12
     # via -r cvat/requirements/base.in
-pyarrow==20.0.0
+pyarrow==24.0.0
     # via datumaro
 pyasn1==0.6.3
     # via
@@ -335,16 +339,19 @@ threadpoolctl==3.6.0
     # via scikit-learn
 typing-extensions==4.14.0
     # via
+    #   asgiref
     #   azure-core
+    #   cryptography
     #   datumaro
     #   limits
     #   nibabel
     #   pottery
+    #   pyjwt
 tzdata==2025.2
     # via pandas
 uritemplate==4.2.0
     # via drf-spectacular
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   botocore
     #   clickhouse-connect
