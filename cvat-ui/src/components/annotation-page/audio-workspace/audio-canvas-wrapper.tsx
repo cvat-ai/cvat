@@ -238,8 +238,6 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
                         barWidth={2}
                         barRadius={3}
                         cursorWidth={2}
-                        onPlay={() => onSwitchPlay(true)}
-                        onPause={() => onSwitchPlay(false)}
                         onTimeupdate={handleTimeupdate}
                         onFinish={handleFinish}
                         plugins={plugins}

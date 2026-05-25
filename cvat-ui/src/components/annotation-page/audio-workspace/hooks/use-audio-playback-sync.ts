@@ -18,9 +18,12 @@ export function useAudioPlaybackSync({
 
     useEffect(() => {
         if (!wavesurfer) return;
-        if (isPlaying && !wavesurfer.isPlaying()) {
-            wavesurfer.play();
-        } else if (!isPlaying && wavesurfer.isPlaying()) {
+        if (isPlaying) {
+            const result = wavesurfer.play();
+            if (result && typeof (result as Promise<void>).catch === 'function') {
+                (result as Promise<void>).catch(() => {});
+            }
+        } else {
             wavesurfer.pause();
         }
     }, [isPlaying, wavesurfer]);
