@@ -18,6 +18,7 @@ from .data import AlignMode, Granularity, GroupingStrategy, Metric, NormalizerMo
 @dataclass
 class StepConfig:
     """One layer in the normalization pipeline."""
+
     name: str  # registered step name
     options: dict[str, Any] = field(default_factory=dict)
 
@@ -46,24 +47,26 @@ class GroupingConfig:
 class TranscriptionRequirement:
     name: str = "transcription"  # human-readable, used in report headings
     text_attribute: str = "transcription"  # which column / attr holds text
+
     # Output unit of the reported rate (CER vs WER vs SER scope).
     #   WORD       → WER-family
     #   CHARACTER  → CER-family
-    #   SENTENCE   → SER-family (deferred — plumbing in place but
-    #                 boundary detection / projection not wired)
     granularity: Granularity = Granularity.WORD
+
     # Alignment regime.
     #   CHAR — char-level Levenshtein DP (default; handles arbitrary
     #          N-to-M boundary cases via natural char alignment)
     #   WORD — word-level (token) Levenshtein DP (faster, no boundary
     #          detection; equivalent to plain WER when granularity=word)
     align: AlignMode = AlignMode.CHAR
+
     # Per-chunk cost function. Softness is a property of the metric
     # itself rather than a side-channel knob.
     # For granularity=CHARACTER (atomic units): all three metrics
     # degenerate to EQUALITY. Only granularity=WORD makes the choice
     # meaningful.
     metric: Metric = Metric.EQUALITY
+
     # If set, per-chunk cost is rounded: cost > threshold → 1, else 0.
     # Turns any soft metric into a binary one. With metric=EQUALITY the
     # threshold is a no-op.

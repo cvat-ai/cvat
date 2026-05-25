@@ -13,43 +13,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .config import TranscriptionRequirement
-from .data import AnnotationSet, EditOp, Granularity, GroupKey, Interval
+from .data import DatasetItem, EditOp, Granularity, GroupKey, Interval
 
-
-# ============================ L2 alignment ====================================
-
-
-@dataclass
-class AlignmentEdit:
-    op: EditOp
-    ref_start: int
-    ref_end: int  # exclusive
-    hyp_start: int
-    hyp_end: int  # exclusive
-    ref_units: list[str]
-    hyp_units: list[str]
-
-
-@dataclass
-class AlignmentResult:
-    granularity: Granularity
-    ref_normalized: str
-    hyp_normalized: str
-    ref_units: list[str]
-    hyp_units: list[str]
-    edits: list[AlignmentEdit]
-    wer: float  # word error rate (== CER when granularity=character)
-    substitutions: int
-    insertions: int
-    deletions: int
-    hits: int
-    # Per-token source-interval index (within the group). None for paths that
-    # don't track origins (jiwer-based per-pair alignment).
-    ref_origins: list[int] | None = None
-    hyp_origins: list[int] | None = None
-
-
-# ============================ L1 interval matching ============================
+# ============================ Interval matching layer ============================
 
 
 @dataclass
@@ -88,7 +54,43 @@ class IntervalReport:
         return [m for m in self.matches if m.iou < self.low_overlap_threshold]
 
 
-# ============================ L2 transcription ================================
+# ============================ Transcription layer ================================
+
+
+# ============================ Transcription alignment ============================
+
+
+@dataclass
+class AlignmentEdit:
+    op: EditOp
+    ref_start: int
+    ref_end: int  # exclusive
+    hyp_start: int
+    hyp_end: int  # exclusive
+    ref_units: list[str]
+    hyp_units: list[str]
+
+
+@dataclass
+class AlignmentResult:
+    granularity: Granularity
+    ref_normalized: str
+    hyp_normalized: str
+    ref_units: list[str]
+    hyp_units: list[str]
+    edits: list[AlignmentEdit]
+    wer: float  # word error rate (== CER when granularity=character)
+    substitutions: int
+    insertions: int
+    deletions: int
+    hits: int
+    # Per-token source-interval index (within the group). None for paths that
+    # don't track origins (jiwer-based per-pair alignment).
+    ref_origins: list[int] | None = None
+    hyp_origins: list[int] | None = None
+
+
+# ============================ Transcription report ===============================
 
 
 @dataclass
@@ -112,14 +114,16 @@ class FilterPairAlignment:
 @dataclass
 class TranscriptionReport:
     requirement: TranscriptionRequirement
-    # G2 (join) outputs
-    groups: list[GroupAlignment]
-    missing_groups: list[tuple[GroupKey, list[Interval]]]  # only in GT
-    extra_groups: list[tuple[GroupKey, list[Interval]]]  # only in DS
-    # G1 (filter) outputs
+
+    # Filter mode outputs
     pairs: list[FilterPairAlignment]
     pair_gt_unmatched: list[Interval]
     pair_ds_unmatched: list[Interval]
+
+    # Join mode outputs
+    groups: list[GroupAlignment]
+    missing_groups: list[tuple[GroupKey, list[Interval]]]  # only in GT
+    extra_groups: list[tuple[GroupKey, list[Interval]]]  # only in DS
 
     @property
     def alignments(self) -> list[AlignmentResult]:
@@ -132,9 +136,9 @@ class TranscriptionReport:
         """Headline rate per `requirement.metric` aggregated across all
         group / pair alignments. Lazy-imports the aggregator to avoid an
         import cycle with `transcription_matching`."""
-        from .transcription_matching import _aggregate_metric
+        from .transcription_matching import aggregate_metric
 
-        _, rate = _aggregate_metric(
+        _, rate = aggregate_metric(
             self.alignments,
             metric=self.requirement.metric,
             threshold=self.requirement.threshold,
@@ -143,12 +147,12 @@ class TranscriptionReport:
         return rate
 
 
-# ============================ Top-level =======================================
+# ============================ Top-level ==========================================
 
 
 @dataclass
 class ComparisonReport:
-    gt: AnnotationSet
-    ds: AnnotationSet
+    gt: DatasetItem
+    ds: DatasetItem
     intervals: IntervalReport
     transcriptions: list[TranscriptionReport]

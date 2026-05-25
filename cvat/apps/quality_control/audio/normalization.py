@@ -22,7 +22,6 @@ from typing import Callable
 from .config import NormalizerConfig, StepConfig
 from .data import NormalizerMode
 
-
 # English contractions — used by `expand_contractions_en` step.
 # Specific patterns first; broad `\w+n't` last so it can't eat exceptions.
 _EN_CONTRACTIONS = [
@@ -115,10 +114,7 @@ def _step_unify_apostrophes() -> NormalizationStep:
 
 @register_step("unify_quotes")
 def _step_unify_quotes() -> NormalizationStep:
-    return lambda t: (
-        t.replace("“", '"').replace("”", '"')
-         .replace("«", '"').replace("»", '"')
-    )
+    return lambda t: (t.replace("“", '"').replace("”", '"').replace("«", '"').replace("»", '"'))
 
 
 @register_step("substitutions")
@@ -180,11 +176,7 @@ def _step_arabic_alef_unify() -> NormalizationStep:
     """أ إ آ → ا (hamza-bearing alef variants → bare alef)."""
 
     def fn(t: str) -> str:
-        return (
-            t.replace("أ", "ا")
-             .replace("إ", "ا")
-             .replace("آ", "ا")
-        )
+        return t.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا")
 
     return fn
 
@@ -275,10 +267,9 @@ def _step_turkish_dotted_i() -> NormalizationStep:
     """Locale-correct İ/I → i/ı. Apply before casefold for Turkish/Azeri."""
 
     def fn(t: str) -> str:
-        return (
-            t.replace("İ", "i")  # İ → i
-             .replace("I", "ı")  # I → ı  (intentional; pair with casefold)
-        )
+        return t.replace("İ", "i").replace(  # İ → i
+            "I", "ı"
+        )  # I → ı  (intentional; pair with casefold)
 
     return fn
 
@@ -473,9 +464,22 @@ def _lang_body(code: str, *, use_zhconv: bool) -> list[StepConfig]:
     raise ValueError(f"no preset for language {code!r}")
 
 
-TIER1_LANGS: tuple[str, ...] = (
-    "en", "es", "fr", "de", "it", "pt", "nl", "pl",
-    "ru", "tr", "zh", "ja", "ko", "hi", "ar",
+SUPPORTED_LANGS: tuple[str, ...] = (
+    "en",
+    "es",
+    "fr",
+    "de",
+    "it",
+    "pt",
+    "nl",
+    "pl",
+    "ru",
+    "tr",
+    "zh",
+    "ja",
+    "ko",
+    "hi",
+    "ar",
 )
 
 
@@ -493,26 +497,22 @@ def lang_preset(
     output regardless of installed packages.
     """
 
-    if code not in TIER1_LANGS:
-        raise ValueError(
-            f"no preset for language {code!r}; available: {sorted(TIER1_LANGS)}"
-        )
+    if code not in SUPPORTED_LANGS:
+        raise ValueError(f"no preset for language {code!r}; available: {sorted(SUPPORTED_LANGS)}")
     steps: list[StepConfig] = [
         *_prefix_steps(use_ftfy),
         *_lang_body(code, use_zhconv=use_zhconv),
         *_SUFFIX_STEPS,
     ]
     if with_numerals and code == "en" and step_available("expand_numerals_en"):
-        idx = next(
-            (i for i, s in enumerate(steps) if s.name == "strip_punct"), len(steps)
-        )
+        idx = next((i for i, s in enumerate(steps) if s.name == "strip_punct"), len(steps))
         steps.insert(idx, StepConfig("expand_numerals_en"))
     return NormalizerConfig(mode=NormalizerMode.CUSTOM, steps=steps)
 
 
 # Backward-compatible attribute for code that read LANG_PRESETS as a dict.
 LANG_PRESETS: dict[str, list[StepConfig]] = {
-    code: lang_preset(code).steps for code in TIER1_LANGS
+    code: lang_preset(code).steps for code in SUPPORTED_LANGS
 }
 
 
