@@ -1,3 +1,7 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 """
 Output / intermediate result shapes for the audio QE pipeline.
 

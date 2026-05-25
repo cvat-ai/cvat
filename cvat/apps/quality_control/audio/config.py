@@ -1,11 +1,6 @@
-"""
-Configuration / settings dataclasses for the audio QE pipeline.
-
-These are the inputs to `compare()` — knobs for L1 interval matching
-and L2 transcription quality estimation. Persistence (Django models /
-serializers) lives in `cvat.apps.quality_control.models` /
-`.serializers`; this module just holds the in-memory request shape.
-"""
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
