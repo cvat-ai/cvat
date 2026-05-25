@@ -85,7 +85,10 @@ class TestSharedBotocoreLoader(unittest.TestCase):
             S3CloudStorage(bucket="test-bucket")
 
         self.assertTrue(spy.called, "shared Loader.load_service_model was not exercised")
-        s3_calls = [c for c in spy.call_args_list if "s3" in c.args or c.kwargs.get("service_name") == "s3"]
+
+        s3_calls = [
+            c for c in spy.call_args_list if "s3" in c.args or c.kwargs.get("service_name") == "s3"
+        ]
         self.assertTrue(
             s3_calls,
             f"shared Loader was used but not for the s3 service: {spy.call_args_list}",
@@ -93,21 +96,13 @@ class TestSharedBotocoreLoader(unittest.TestCase):
 
 
 class TestCredentialResolverHardened(unittest.TestCase):
-    """Anonymous CS uses `Config(signature_version=UNSIGNED)`, which makes
-    `botocore.session.create_client` skip credential resolution entirely
-    (see the `signature_version is UNSIGNED` branch in
-    botocore/session.py). Signed CS pass explicit credentials via the
-    `boto3.Session(...)` kwargs, which boto3 stores directly on the session
-    via `set_credentials(...)` — `get_credentials()` returns them without
-    invoking the resolver chain. Either way the env/file/IMDS chain never
-    runs in practice."""
-
     def test_anonymous_session_ignores_ambient_aws_env_vars(self):
         # End-to-end behavioral guarantee: even with sentinel AWS_* env vars
         # set (which the default credential chain would happily pick up), an
         # anonymous S3CloudStorage's client must end up with UNSIGNED signing
         # and no credentials attached. If anything ever routed an anonymous
         # client through the credential chain, this test catches it.
+        # It ensures there is no env/file/IMDS chain fallback.
         sentinel_env = {
             "AWS_ACCESS_KEY_ID": "SENTINEL-SHOULD-NOT-LEAK",
             "AWS_SECRET_ACCESS_KEY": "SENTINEL-SHOULD-NOT-LEAK",
@@ -135,9 +130,7 @@ class TestCredentialResolverHardened(unittest.TestCase):
         self.assertEqual(signer._credentials.access_key, access_key)
         self.assertEqual(signer._credentials.secret_key, secret_key)
 
-        # Production contract: signed CS must not pick up UNSIGNED. The exact
-        # signature_version (currently s3v4) is a boto3 default and not part
-        # of our contract.
+        # Signed CS must not pick up UNSIGNED.
         self.assertIsNot(signer.signature_version, UNSIGNED)
 
     def test_anonymous_clients_use_unsigned(self):
@@ -190,8 +183,8 @@ class TestCloudStorageFieldsCoverage(unittest.TestCase):
     grows a new input, force a reviewer to confirm the cache key still
     covers everything that affects S3/Azure/GCS client construction."""
 
-    # Fields that, if changed on the model, must invalidate a cached client
-    # (they participate in the cache key of `_build_storage_instance`).
+    # Model fields that must invalidate a cached client.
+    # They are used as the cache key in db_storage_to_storage_instance().
     SESSION_AFFECTING_FIELDS = frozenset(
         {
             "provider_type",
@@ -202,8 +195,7 @@ class TestCloudStorageFieldsCoverage(unittest.TestCase):
         }
     )
 
-    # Fields that exist on the model but are irrelevant to session
-    # construction (display labels, owner, timestamps, FK back-refs, etc.).
+    # Model fields that exist, but are not relevant to session construction.
     NON_SESSION_AFFECTING_FIELDS = frozenset(
         {
             "id",
@@ -226,12 +218,12 @@ class TestCloudStorageFieldsCoverage(unittest.TestCase):
             expected,
             (
                 f"CloudStorage model fields changed: added={actual - expected}, "
-                f"removed={expected - actual}. Review whether the new field "
+                f"removed={expected - actual}. Review whether new fields "
                 f"affects S3/Azure/GCS client construction in "
-                f"cvat.apps.engine.cloud_provider._build_storage_instance; "
+                f"cvat.apps.engine.cloud_provider._build_storage_instance(); "
                 f"then update SESSION_AFFECTING_FIELDS / "
-                f"NON_SESSION_AFFECTING_FIELDS and, if it does, the cache key "
-                f"in db_storage_to_storage_instance accordingly."
+                f"NON_SESSION_AFFECTING_FIELDS and, if they do, the cache key "
+                f"in db_storage_to_storage_instance() accordingly."
             ),
         )
 
@@ -248,9 +240,9 @@ class TestCloudStorageFieldsCoverage(unittest.TestCase):
             params,
             expected,
             (
-                "_build_storage_instance signature changed. The parameter set IS "
+                "_build_storage_instance() signature changed. The parameter set IS "
                 "the cache key; review whether every parameter affects client "
-                "construction, and update db_storage_to_storage_instance to "
+                "construction, and update db_storage_to_storage_instance() to "
                 "thread the new value through."
             ),
         )
