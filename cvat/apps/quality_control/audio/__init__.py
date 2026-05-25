@@ -1,3 +1,7 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 """Public surface of the audio QE pipeline.
 
 Domain types, settings, reports, and algorithms are defined in the

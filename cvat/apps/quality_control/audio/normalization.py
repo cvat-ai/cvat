@@ -1,3 +1,7 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 """
 Text normalization for the audio QE pipeline.
 
@@ -6,10 +10,6 @@ custom pipelines (e.g. `[unicode, casefold, russian_yo,
 collapse_whitespace]`). Layered design lets language-specific and
 project-specific rules live next to universal Unicode / whitespace
 cleanup without forking the normalizer code.
-
-Optional third-party steps (`ftfy_fix`, `expand_numerals_en`,
-`zhconv_simplify`, `zhconv_traditional`) register themselves only
-when the matching package is importable; callers should check
 `step_available(name)` and fall back to DIY equivalents.
 """
 
@@ -368,7 +368,7 @@ BASIC_STACK: list[StepConfig] = [
 ]
 
 
-# Tier-1 language presets. Each preset is built as:
+# Language presets. Each preset is built as:
 #   <prefix>  →  <unicode + script-specific>  →  <suffix>
 # The prefix prefers `ftfy_fix` if available (handles mojibake / HTML /
 # curly punct / zero-width / ligatures in one robust step). Otherwise it
@@ -490,7 +490,7 @@ def lang_preset(
     use_ftfy: bool = True,
     use_zhconv: bool = True,
 ) -> NormalizerConfig:
-    """Build a NormalizerConfig for a Tier-1 language code.
+    """Build a NormalizerConfig for a language code.
 
     `use_ftfy` / `use_zhconv` are opt-out flags — when the optional libs are
     installed they replace DIY steps; flip to False for fully-deterministic DIY
