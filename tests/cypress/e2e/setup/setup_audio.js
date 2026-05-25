@@ -33,7 +33,7 @@ it('Prepare for testing audio workspace', () => {
             method: 'GET',
             url: `/api/jobs/${jobId}/data?quality=compressed&type=chunk&index=0`,
             auth: { username: Cypress.env('user'), password: Cypress.env('password') },
-            timeout: 120000,
+            timeout: 60000,
             failOnStatusCode: false,
         });
     });

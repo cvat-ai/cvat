@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-const WAVEFORM_TIMEOUT = 90000;
+const WAVEFORM_TIMEOUT = 30000;
 
 Cypress.Commands.add('assertWaveformReady', () => {
     cy.get('.cvat-audio-canvas-wrapper', { timeout: WAVEFORM_TIMEOUT }).should('exist');
@@ -101,7 +101,7 @@ Cypress.Commands.add('audioSliderSetValue', (controlClass, arrowDirection, steps
 Cypress.Commands.add('audioSaveAnnotations', () => {
     cy.intercept('PATCH', '/api/jobs/**/annotations**').as('audioSaveRequest');
     cy.get('.cvat-annotation-header-save-button').click();
-    cy.get('.cvat-annotation-header-save-button', { timeout: 30000 }).should('contain.text', 'Save');
+    cy.get('.cvat-annotation-header-save-button').should('contain.text', 'Save');
 });
 
 Cypress.Commands.add('audioUndo', () => {
