@@ -346,9 +346,7 @@ def _align_pair(
 def group_key(interval: Interval, *, attribute: str | None) -> GroupKey:
     if attribute is None:
         return (interval.label, None)
-
-    val = interval.extra.get(attribute)
-    return (interval.label, val if val not in (None, "") else None)
+    return (interval.label, interval.extra.get(attribute) or None)
 
 
 def group_intervals(
