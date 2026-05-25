@@ -274,9 +274,76 @@ class PointSizeBase(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class TranscriptionGranularity(str, Enum):
+    WORD = "word"
+    CHARACTER = "character"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
 class TranscriptionQualityMetric(str, Enum):
-    WER = "wer"
-    CER = "cer"
+    EQUALITY = "equality"
+    ERROR_RATE = "error-rate"
+    NORMALIZED_LEV = "normalized-lev"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class TranscriptionAlignMode(str, Enum):
+    CHAR = "char"
+    WORD = "word"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class TranscriptionNormalizerPreset(str, Enum):
+    NONE = "none"
+    BASIC = "basic"
+
+    # Language presets mirror SUPPORTED_LANGS in
+    # cvat/apps/quality_control/audio/normalization.py
+    EN = "en"
+    ES = "es"
+    FR = "fr"
+    DE = "de"
+    IT = "it"
+    PT = "pt"
+    NL = "nl"
+    PL = "pl"
+    RU = "ru"
+    TR = "tr"
+    ZH = "zh"
+    JA = "ja"
+    KO = "ko"
+    HI = "hi"
+    AR = "ar"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class TranscriptionGroupingStrategy(str, Enum):
+    FILTER = "filter"
+    JOIN = "join"
 
     def __str__(self) -> str:
         return self.value
@@ -310,6 +377,8 @@ class QualitySettings(TimestampedModel):
     line_thickness = models.FloatField()
 
     low_overlap_threshold = models.FloatField()
+
+    interval_boundary_tolerance_s = models.FloatField(default=0.2)
 
     point_size_base = models.CharField(
         max_length=32, choices=PointSizeBase.choices(), default=PointSizeBase.GROUP_BBOX_SIZE
@@ -414,10 +483,45 @@ class TranscriptionQualityRequirement(models.Model):
         blank=True,
     )
 
+    granularity = models.CharField(
+        max_length=32,
+        choices=TranscriptionGranularity.choices(),
+        default=TranscriptionGranularity.WORD,
+    )
+
     metric = models.CharField(
         max_length=32,
         choices=TranscriptionQualityMetric.choices(),
-        default=TranscriptionQualityMetric.WER,
+        default=TranscriptionQualityMetric.EQUALITY,
+    )
+
+    align = models.CharField(
+        max_length=32,
+        choices=TranscriptionAlignMode.choices(),
+        default=TranscriptionAlignMode.CHAR,
+    )
+
+    threshold = models.FloatField(null=True, default=None)
+
+    normalizer_preset = models.CharField(
+        max_length=32,
+        choices=TranscriptionNormalizerPreset.choices(),
+        default=TranscriptionNormalizerPreset.BASIC,
+    )
+    substitutions = models.JSONField(default=dict, blank=True)
+
+    grouping_strategy = models.CharField(
+        max_length=32,
+        choices=TranscriptionGroupingStrategy.choices(),
+        default=TranscriptionGroupingStrategy.JOIN,
+    )
+    grouping_separator = models.CharField(max_length=16, default=" ")
+    grouping_attribute = models.ForeignKey(
+        AttributeSpec,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
     )
 
     acceptance_threshold = models.FloatField()
@@ -430,6 +534,13 @@ class TranscriptionQualityRequirement(models.Model):
                     models.Q(acceptance_threshold__gte=0) & models.Q(acceptance_threshold__lte=1)
                 ),
             ),
+            models.CheckConstraint(
+                name="transcription_quality_requirement_chunk_threshold_is_valid",
+                condition=(
+                    models.Q(threshold__isnull=True)
+                    | (models.Q(threshold__gte=0) & models.Q(threshold__lte=1))
+                ),
+            ),
             models.UniqueConstraint(
                 name="transcription_quality_requirement_attr_unique_per_settings",
                 fields=["settings_id", "attribute_id"],
@@ -439,4 +550,5 @@ class TranscriptionQualityRequirement(models.Model):
     def to_dict(self):
         d = model_to_dict(self, exclude=("settings"))
         d["attribute_id"] = d.pop("attribute")
+        d["grouping_attribute_id"] = d.pop("grouping_attribute")
         return d

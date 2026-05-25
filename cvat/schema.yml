@@ -10081,6 +10081,14 @@ components:
           default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
+        interval_boundary_tolerance_s:
+          type: number
+          format: double
+          minimum: 0
+          default: 0.2
+          description: |
+            Timestamp tolerance (seconds) for the audio interval boundary F1 metric.
+            Onset / offset differences within this tolerance count as a boundary hit.
         compare_line_orientation:
           type: boolean
           default: true
@@ -10214,13 +10222,128 @@ components:
           type: integer
           description: |
             The transcription (type 'text') attribute to apply the requirement to
+        granularity:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionGranularity'
+          description: |-
+            Output unit of the reported rate. `word` reports WER-family
+            rates, `character` reports CER-family rates.
+
+
+            * `word` - WORD
+            * `character` - CHARACTER
         metric:
-          $ref: '#/components/schemas/TranscriptionQualityMetric'
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionQualityMetric'
+          description: |-
+            Per-chunk cost function used during alignment.
+            `equality` is hard 0 / 1, `error-rate` is fractional
+            Levenshtein distance, `normalized-lev` is a smoother
+            normalized variant. For `granularity=character` all three
+            degenerate to `equality`.
+
+
+            * `equality` - EQUALITY
+            * `error-rate` - ERROR_RATE
+            * `normalized-lev` - NORMALIZED_LEV
+        align:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionAlignMode'
+          description: |-
+            Alignment regime. `char` runs char-level Levenshtein and
+            reconstructs word boundaries afterwards (default; handles
+            arbitrary N-to-M token splits). `word` runs plain
+            token-level Levenshtein (faster, no boundary recovery).
+
+
+            * `char` - CHAR
+            * `word` - WORD
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Optional per-chunk cost binarization threshold in [0, 1].
+            When set, the chunk cost is rounded to 0 / 1 by comparing
+            against this value, turning a soft metric into a binary
+            one. Has no effect when `metric` is `equality`.
+        normalizer_preset:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionNormalizerPreset'
+          description: |-
+            Pre-built text normalization stack applied before
+            alignment. `none` is passthrough, `basic` is a
+            language-agnostic Unicode / whitespace / case layer, and
+            each two-letter code (e.g. `ru`, `zh`) selects a
+            self-contained language preset. The project-specific
+            `substitutions` dict is layered on top of the chosen
+            preset.
+
+
+            * `none` - NONE
+            * `basic` - BASIC
+            * `en` - EN
+            * `es` - ES
+            * `fr` - FR
+            * `de` - DE
+            * `it` - IT
+            * `pt` - PT
+            * `nl` - NL
+            * `pl` - PL
+            * `ru` - RU
+            * `tr` - TR
+            * `zh` - ZH
+            * `ja` - JA
+            * `ko` - KO
+            * `hi` - HI
+            * `ar` - AR
+        substitutions:
+          type: object
+          description: |
+            Project-specific literal text replacement map (object of
+            string → string). Applied after the chosen
+            `normalizer_preset`. Empty object disables. Capped at
+            1024 entries; keys and values
+            capped at 256 characters each.
+        grouping_strategy:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionGroupingStrategy'
+          description: |-
+            How intervals are grouped before transcription
+            comparison. `filter` scores each matched GT / DS interval
+            pair independently. `join` concatenates all GT and all DS
+            intervals that share the same grouping key (label, plus
+            optional `grouping_attribute_id` value) and scores the
+            resulting pair of strings.
+
+
+            * `filter` - FILTER
+            * `join` - JOIN
+        grouping_separator:
+          type: string
+          minLength: 1
+          description: |
+            Separator inserted between concatenated transcriptions
+            when `grouping_strategy=join`. Defaults to a single space.
+          maxLength: 16
+        grouping_attribute_id:
+          type: integer
+          nullable: true
+          description: |
+            Optional attribute used to group intervals into transcription
+            chunks (e.g. a speaker tag). Must belong to the same label as
+            the transcription attribute. None = group by label only.
         acceptance_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          description: |
+            Per-match error-rate threshold in [0, 1]. A transcription
+            match whose error rate is at or above this value is
+            reported as a mismatching-attributes conflict.
     PatchedUserRequest:
       type: object
       properties:
@@ -10717,6 +10840,14 @@ components:
           default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
+        interval_boundary_tolerance_s:
+          type: number
+          format: double
+          minimum: 0
+          default: 0.2
+          description: |
+            Timestamp tolerance (seconds) for the audio interval boundary F1 metric.
+            Onset / offset differences within this tolerance count as a boundary hit.
         compare_line_orientation:
           type: boolean
           default: true
@@ -11685,14 +11816,78 @@ components:
       required:
       - frame
       - type
-    TranscriptionQualityMetric:
+    TranscriptionAlignMode:
       enum:
-      - wer
-      - cer
+      - char
+      - word
       type: string
       description: |-
-        * `wer` - WER
-        * `cer` - CER
+        * `char` - CHAR
+        * `word` - WORD
+    TranscriptionGranularity:
+      enum:
+      - word
+      - character
+      type: string
+      description: |-
+        * `word` - WORD
+        * `character` - CHARACTER
+    TranscriptionGroupingStrategy:
+      enum:
+      - filter
+      - join
+      type: string
+      description: |-
+        * `filter` - FILTER
+        * `join` - JOIN
+    TranscriptionNormalizerPreset:
+      enum:
+      - none
+      - basic
+      - en
+      - es
+      - fr
+      - de
+      - it
+      - pt
+      - nl
+      - pl
+      - ru
+      - tr
+      - zh
+      - ja
+      - ko
+      - hi
+      - ar
+      type: string
+      description: |-
+        * `none` - NONE
+        * `basic` - BASIC
+        * `en` - EN
+        * `es` - ES
+        * `fr` - FR
+        * `de` - DE
+        * `it` - IT
+        * `pt` - PT
+        * `nl` - NL
+        * `pl` - PL
+        * `ru` - RU
+        * `tr` - TR
+        * `zh` - ZH
+        * `ja` - JA
+        * `ko` - KO
+        * `hi` - HI
+        * `ar` - AR
+    TranscriptionQualityMetric:
+      enum:
+      - equality
+      - error-rate
+      - normalized-lev
+      type: string
+      description: |-
+        * `equality` - EQUALITY
+        * `error-rate` - ERROR_RATE
+        * `normalized-lev` - NORMALIZED_LEV
     TranscriptionRequirement:
       type: object
       properties:
@@ -11700,13 +11895,127 @@ components:
           type: integer
           description: |
             The transcription (type 'text') attribute to apply the requirement to
+        granularity:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionGranularity'
+          description: |-
+            Output unit of the reported rate. `word` reports WER-family
+            rates, `character` reports CER-family rates.
+
+
+            * `word` - WORD
+            * `character` - CHARACTER
         metric:
-          $ref: '#/components/schemas/TranscriptionQualityMetric'
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionQualityMetric'
+          description: |-
+            Per-chunk cost function used during alignment.
+            `equality` is hard 0 / 1, `error-rate` is fractional
+            Levenshtein distance, `normalized-lev` is a smoother
+            normalized variant. For `granularity=character` all three
+            degenerate to `equality`.
+
+
+            * `equality` - EQUALITY
+            * `error-rate` - ERROR_RATE
+            * `normalized-lev` - NORMALIZED_LEV
+        align:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionAlignMode'
+          description: |-
+            Alignment regime. `char` runs char-level Levenshtein and
+            reconstructs word boundaries afterwards (default; handles
+            arbitrary N-to-M token splits). `word` runs plain
+            token-level Levenshtein (faster, no boundary recovery).
+
+
+            * `char` - CHAR
+            * `word` - WORD
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Optional per-chunk cost binarization threshold in [0, 1].
+            When set, the chunk cost is rounded to 0 / 1 by comparing
+            against this value, turning a soft metric into a binary
+            one. Has no effect when `metric` is `equality`.
+        normalizer_preset:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionNormalizerPreset'
+          description: |-
+            Pre-built text normalization stack applied before
+            alignment. `none` is passthrough, `basic` is a
+            language-agnostic Unicode / whitespace / case layer, and
+            each two-letter code (e.g. `ru`, `zh`) selects a
+            self-contained language preset. The project-specific
+            `substitutions` dict is layered on top of the chosen
+            preset.
+
+
+            * `none` - NONE
+            * `basic` - BASIC
+            * `en` - EN
+            * `es` - ES
+            * `fr` - FR
+            * `de` - DE
+            * `it` - IT
+            * `pt` - PT
+            * `nl` - NL
+            * `pl` - PL
+            * `ru` - RU
+            * `tr` - TR
+            * `zh` - ZH
+            * `ja` - JA
+            * `ko` - KO
+            * `hi` - HI
+            * `ar` - AR
+        substitutions:
+          type: object
+          description: |
+            Project-specific literal text replacement map (object of
+            string → string). Applied after the chosen
+            `normalizer_preset`. Empty object disables. Capped at
+            1024 entries; keys and values
+            capped at 256 characters each.
+        grouping_strategy:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionGroupingStrategy'
+          description: |-
+            How intervals are grouped before transcription
+            comparison. `filter` scores each matched GT / DS interval
+            pair independently. `join` concatenates all GT and all DS
+            intervals that share the same grouping key (label, plus
+            optional `grouping_attribute_id` value) and scores the
+            resulting pair of strings.
+
+
+            * `filter` - FILTER
+            * `join` - JOIN
+        grouping_separator:
+          type: string
+          description: |
+            Separator inserted between concatenated transcriptions
+            when `grouping_strategy=join`. Defaults to a single space.
+          maxLength: 16
+        grouping_attribute_id:
+          type: integer
+          nullable: true
+          description: |
+            Optional attribute used to group intervals into transcription
+            chunks (e.g. a speaker tag). Must belong to the same label as
+            the transcription attribute. None = group by label only.
         acceptance_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          description: |
+            Per-match error-rate threshold in [0, 1]. A transcription
+            match whose error rate is at or above this value is
+            reported as a mismatching-attributes conflict.
       required:
       - attribute_id
     User:

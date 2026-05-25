@@ -65,6 +65,10 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictSeverity,
     AnnotationConflictType,
     AnnotationType,
+    TranscriptionAlignMode,
+    TranscriptionGranularity,
+    TranscriptionGroupingStrategy,
+    TranscriptionNormalizerPreset,
     TranscriptionQualityMetric,
 )
 from cvat.apps.quality_control.rq import QualityRequestId
@@ -278,22 +282,51 @@ class AnnotationConflict(ReportNode):
 @define(kw_only=True, init=False, slots=False)
 class TranscriptionRequirement(ReportNode):
     attribute: AttributePath
+    granularity: TranscriptionGranularity
     metric: TranscriptionQualityMetric
+    align: TranscriptionAlignMode
+    threshold: float | None
+    normalizer_preset: TranscriptionNormalizerPreset
+    substitutions: dict[str, str]
+    grouping_strategy: TranscriptionGroupingStrategy
+    grouping_separator: str
+    grouping_attribute: AttributePath | None
     acceptance_threshold: float
+
+    _ENUM_TYPES = (
+        TranscriptionGranularity,
+        TranscriptionQualityMetric,
+        TranscriptionAlignMode,
+        TranscriptionNormalizerPreset,
+        TranscriptionGroupingStrategy,
+    )
 
     def _value_serializer(self, v):
         if isinstance(v, AttributePath):
             return v.to_list()
-        elif isinstance(v, TranscriptionQualityMetric):
+        elif isinstance(v, self._ENUM_TYPES):
             return str(v)
         else:
             return super()._value_serializer(v)
 
     @classmethod
     def from_dict(cls, d):
+        grouping_attribute = d.get("grouping_attribute")
         return cls(
             attribute=AttributePath.from_list(d["attribute"]),
+            granularity=TranscriptionGranularity(d["granularity"]),
             metric=TranscriptionQualityMetric(d["metric"]),
+            align=TranscriptionAlignMode(d["align"]),
+            threshold=d.get("threshold"),
+            normalizer_preset=TranscriptionNormalizerPreset(d["normalizer_preset"]),
+            substitutions=dict(d.get("substitutions") or {}),
+            grouping_strategy=TranscriptionGroupingStrategy(d["grouping_strategy"]),
+            grouping_separator=d["grouping_separator"],
+            grouping_attribute=(
+                AttributePath.from_list(grouping_attribute)
+                if grouping_attribute is not None
+                else None
+            ),
             acceptance_threshold=d["acceptance_threshold"],
         )
 
@@ -324,6 +357,9 @@ class ComparisonParameters(ReportNode):
 
     low_overlap_threshold: float = 0.8
     "Used for distinction between strong / weak (low_overlap) matches"
+
+    interval_boundary_tolerance_s: float = 0.2
+    "Timestamp tolerance (s) for the audio interval boundary F1 metric"
 
     oks_sigma: float = 0.09
     "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
@@ -406,19 +442,29 @@ class ComparisonParameters(ReportNode):
     ) -> ComparisonParameters:
         settings_dict = settings.to_dict()
 
+        def _spec_path(spec) -> AttributePath:
+            label_spec = spec.label
+            parent_label = label_spec.parent
+            return AttributePath(spec.name, label_spec.name, getattr(parent_label, "name", None))
+
         transcription_requirements = []
         for requirement in settings.transcription_requirements.all():
-            attribute_spec = requirement.attribute
-            label_spec = attribute_spec.label
-            parent_label = label_spec.parent
-            attribute_path = AttributePath(
-                attribute_spec.name, label_spec.name, getattr(parent_label, "name", None)
-            )
-
+            attribute_path = _spec_path(requirement.attribute)
+            grouping_attr = requirement.grouping_attribute
             transcription_requirements.append(
                 {
                     "attribute": attribute_path.to_list(),
+                    "granularity": requirement.granularity,
                     "metric": requirement.metric,
+                    "align": requirement.align,
+                    "threshold": requirement.threshold,
+                    "normalizer_preset": requirement.normalizer_preset,
+                    "substitutions": dict(requirement.substitutions or {}),
+                    "grouping_strategy": requirement.grouping_strategy,
+                    "grouping_separator": requirement.grouping_separator,
+                    "grouping_attribute": (
+                        _spec_path(grouping_attr).to_list() if grouping_attr is not None else None
+                    ),
                     "acceptance_threshold": requirement.acceptance_threshold,
                 }
             )
@@ -2420,7 +2466,7 @@ class DatasetComparator:
         list[audio_qa.Interval],
         list[audio_qa.Interval],
         audio_qa.QualitySettings,
-        list[tuple[models.TranscriptionQualityRequirement, AttributeSpec]],
+        list[tuple[TranscriptionRequirement, AttributeSpec]],
     ]:
         def to_audio_intervals(intervals: list[dict]) -> list[audio_qa.Interval]:
             return [
@@ -2440,26 +2486,36 @@ class DatasetComparator:
         # Per-requirement audio config. Skip requirements whose attribute spec
         # is missing or not TEXT silently.
         audio_reqs: list[audio_qa.TranscriptionRequirement] = []
-        active_requirements: list[tuple[models.TranscriptionQualityRequirement, AttributeSpec]] = []
+        active_requirements: list[tuple[TranscriptionRequirement, AttributeSpec]] = []
         for requirement in self.settings.transcription_requirements:
             attribute_spec = attr_index.by_path.get(requirement.attribute)
             if attribute_spec is None or attribute_spec.input_type != AttributeType.TEXT:
                 continue
 
+            grouping_attr_spec = (
+                attr_index.by_path.get(requirement.grouping_attribute)
+                if requirement.grouping_attribute is not None
+                else None
+            )
+
             audio_reqs.append(
                 audio_qa.TranscriptionRequirement(
                     name=f"attr_{attribute_spec.id}",
                     text_attribute=str(attribute_spec.id),
-                    granularity=(
-                        audio_qa.Granularity.CHARACTER
-                        if requirement.metric == TranscriptionQualityMetric.CER
-                        else audio_qa.Granularity.WORD
+                    granularity=audio_qa.Granularity(requirement.granularity),
+                    align=audio_qa.AlignMode(requirement.align),
+                    metric=audio_qa.Metric(requirement.metric),
+                    threshold=requirement.threshold,
+                    normalizer=self._build_normalizer_config(requirement),
+                    grouping=audio_qa.GroupingConfig(
+                        strategy=audio_qa.GroupingStrategy(requirement.grouping_strategy),
+                        attribute=(
+                            str(grouping_attr_spec.id) if grouping_attr_spec is not None else None
+                        ),
+                        join_separator=requirement.grouping_separator,
                     ),
-                    align=audio_qa.AlignMode.CHAR,
-                    metric=audio_qa.Metric.EQUALITY,
-                    normalizer=audio_qa.NormalizerConfig(mode=audio_qa.NormalizerMode.BASIC),
-                    grouping=audio_qa.GroupingConfig(strategy=audio_qa.GroupingStrategy.FILTER),
                     iou_threshold=self.settings.iou_threshold,
+                    # enforce_overlap left at library default (True) for v1
                 )
             )
             active_requirements.append((requirement, attribute_spec))
@@ -2468,10 +2524,48 @@ class DatasetComparator:
             interval_matching=audio_qa.IntervalMatchingConfig(
                 iou_threshold=self.settings.iou_threshold,
                 low_overlap_threshold=self.settings.low_overlap_threshold,
+                boundary_tolerance_s=self.settings.interval_boundary_tolerance_s,
             ),
             transcriptions=audio_reqs,
         )
         return gt_audio, ds_audio, audio_settings, active_requirements
+
+    @staticmethod
+    def _build_normalizer_config(
+        requirement: TranscriptionRequirement,
+    ) -> audio_qa.NormalizerConfig:
+        """Resolve the chosen preset into a concrete step list, then append
+        the project-specific substitutions dict (if any). Library treats
+        `mode` and `steps` as mutually exclusive, so layering = switch to
+        `CUSTOM` with the assembled steps."""
+
+        from cvat.apps.quality_control.audio.normalization import (
+            BASIC_STACK,
+            SUPPORTED_LANGS,
+            lang_preset,
+        )
+
+        preset = requirement.normalizer_preset
+        if preset == TranscriptionNormalizerPreset.NONE:
+            steps: list[audio_qa.StepConfig] = []
+        elif preset == TranscriptionNormalizerPreset.BASIC:
+            steps = list(BASIC_STACK)
+        elif preset in SUPPORTED_LANGS:
+            steps = list(lang_preset(preset).steps)
+        else:
+            raise AssertionError(f"unknown normalizer preset {preset!r}")
+
+        if requirement.substitutions:
+            steps.append(
+                audio_qa.StepConfig(
+                    name="substitutions",
+                    options={"map": dict(requirement.substitutions)},
+                )
+            )
+
+        if steps:
+            return audio_qa.NormalizerConfig(mode=audio_qa.NormalizerMode.CUSTOM, steps=steps)
+        return audio_qa.NormalizerConfig(mode=audio_qa.NormalizerMode.NONE)
 
     def _recover_interval_matches(
         self,
@@ -2571,7 +2665,7 @@ class DatasetComparator:
         self,
         *,
         matching_results: _IntervalMatches,
-        active_requirements: list[tuple[models.TranscriptionQualityRequirement, AttributeSpec]],
+        active_requirements: list[tuple[TranscriptionRequirement, AttributeSpec]],
         attr_index: _AttributeIndex,
         cvat_dm_label_id_map: dict[int, int],
         conflicts: list[AnnotationConflict],
