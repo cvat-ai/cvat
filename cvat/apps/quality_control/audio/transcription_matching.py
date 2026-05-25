@@ -362,7 +362,7 @@ def group_intervals(
 
 def _join_group_text(intervals: Sequence[Interval], *, text_attr: str, separator: str) -> str:
     in_order = sorted(intervals, key=lambda iv: (iv.start, iv.id))
-    parts = [iv.extra.get(text_attr, iv.text) or "" for iv in in_order]
+    parts = [iv.extra.get(text_attr, "") for iv in in_order]
     return separator.join(p for p in parts if p)
 
 
@@ -386,7 +386,7 @@ def _normalize_tokenize_per_interval(
     norm_texts: list[str] = []
     is_char = granularity == Granularity.CHARACTER
     for idx, iv in enumerate(in_order):
-        raw = iv.extra.get(text_attr, iv.text) or ""
+        raw = iv.extra.get(text_attr, "")
         normed = normalizer(raw)
         norm_texts.append(normed)
         if is_char and flat_units and normed and inter_interval_sep:
@@ -413,7 +413,7 @@ def _normalize_to_chars_per_interval(
     origins: list[int] = []
     norm_texts: list[str] = []
     for idx, interval in enumerate(in_order):
-        raw = interval.extra.get(text_attr, interval.text) or ""
+        raw = interval.extra.get(text_attr, "")
         normed = normalizer(raw)
         norm_texts.append(normed)
         if chars and inter_interval_sep and normed:
@@ -1039,8 +1039,8 @@ def match_transcriptions(
                     gt_group, ds_group, iou_thresh=req.iou_threshold
                 )
                 for gt_ann, ds_ann in matches:
-                    ref_text = gt_ann.extra.get(req.text_attribute, gt_ann.text)
-                    hyp_text = ds_ann.extra.get(req.text_attribute, ds_ann.text)
+                    ref_text = gt_ann.extra.get(req.text_attribute, "")
+                    hyp_text = ds_ann.extra.get(req.text_attribute, "")
                     pairs.append(
                         FilterPairAlignment(
                             gt=gt_ann,
