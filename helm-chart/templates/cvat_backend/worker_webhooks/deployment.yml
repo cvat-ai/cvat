@@ -45,7 +45,7 @@ spec:
       serviceAccountName: {{ include "cvat.backend.serviceAccountName" . }}
       containers:
         - name: cvat-backend
-          image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
+          image: {{ $localValues.image | default .Values.cvat.backend.image }}:{{ $localValues.tag | default .Values.cvat.backend.tag }}
           imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
           {{- with merge $localValues.resources .Values.cvat.backend.resources }}
           resources:
@@ -56,6 +56,7 @@ spec:
           - "worker"
           - "webhooks"
           - "--with-scheduler"
+          - "--worker-class=cvat.apps.redis_handler.worker.ThreadPoolWorker"
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
