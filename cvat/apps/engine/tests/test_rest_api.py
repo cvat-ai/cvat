@@ -8213,7 +8213,7 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
             )
 
 
-class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
+class TaskBackingCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase):
     _IMAGE_PATHS = ["test_1.jpg", "test_2.jpg", "related_images/test_1_jpg/context_1.jpg"]
 
     @classmethod
@@ -8327,6 +8327,36 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
 
         for p in self._IMAGE_PATHS:
             self.assertFalse(self.mock_aws.file_exists(cloud_key(p)))
+
+    def test_backup_task_without_manifest(self):
+        task = self._create_local_task()
+        task_id = task["id"]
+
+        data = Data.objects.get(task__id=task_id)
+        manifest_path = data.get_manifest_path()
+
+        # Simulate a task that was created before we started generating manifests in every task.
+        self.assertTrue(manifest_path.exists())
+        manifest_path.unlink()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
+
+        response = self._export_task_backup(self.owner, task_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        backup_file = io.BytesIO(response.getvalue())
+        with zipfile.ZipFile(backup_file) as backup_zip:
+            backup_members = frozenset(backup_zip.namelist())
+            self.assertNotIn("data/manifest.jsonl", backup_members)
+            for image_path in self._IMAGE_PATHS:
+                self.assertIn(f"data/{image_path}", backup_members)
+
+            task_info = json.loads(backup_zip.read("task.json"))
+
+        self.assertNotIn("start_frame", task_info["data"])
+        self.assertNotIn("stop_frame", task_info["data"])
+        self.assertNotIn("frame_filter", task_info["data"])
 
     def test_move_to_backing_cs_with_cli(self):
         task = self._create_local_task()
