@@ -116,7 +116,7 @@ class Annotation {
     public lock: boolean;
     protected readOnlyFields: string[];
     protected color: string;
-    protected source: Source;
+    public source: Source;
     public score: number;
     public votes: number;
     public updated: number;

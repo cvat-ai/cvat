@@ -17,6 +17,7 @@ cvat:
     affinity: {}
     tolerations: []
     additionalEnv: []
+    numProxies: 1
 
     # This should only be used by supercharts;
     # to set custom environment for a Helm release, use additionalEnv.
@@ -147,7 +148,7 @@ cvat:
         extraArgs: []
     replicas: 1
     image: cvat/server
-    tag: v2.65.0
+    tag: v2.66.0
     imagePullPolicy: Always
     permissionFix:
       enabled: true
@@ -175,7 +176,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.65.0
+    tag: v2.66.0
     imagePullPolicy: Always
     labels: {}
     #  test: test

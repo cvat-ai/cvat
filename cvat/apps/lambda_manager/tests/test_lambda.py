@@ -18,6 +18,7 @@ from rest_framework import status
 from cvat.apps.engine.tests.utils import (
     ApiTestBase,
     ForceLogin,
+    check_annotation_response,
     filter_dict,
     generate_image_file,
     get_paginated_collection,
@@ -1502,8 +1503,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        annotations = response.json()
-        self.assertEqual(annotations, {"version": 0, "tags": [], "shapes": [], "tracks": []})
+        check_annotation_response(self, response, {})
 
     def test_can_run_offline_reid_function_on_whole_gt_job(self):
         requested_frame_range = self.task_rel_frame_range[::3]
@@ -1577,8 +1577,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        annotations = response.json()
-        self.assertEqual(annotations, {"version": 0, "tags": [], "shapes": [], "tracks": []})
+        check_annotation_response(self, response, {})
 
     def test_offline_function_run_on_task_does_not_affect_gt_job(self):
         response = self._post_request(
@@ -1612,8 +1611,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        annotations = response.json()
-        self.assertEqual(annotations, {"version": 0, "tags": [], "shapes": [], "tracks": []})
+        check_annotation_response(self, response, {})
 
     def test_can_run_online_function_on_valid_task_frame(self):
         data = self.common_request_data.copy()

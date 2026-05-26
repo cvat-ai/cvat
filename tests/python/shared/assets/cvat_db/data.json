@@ -852,6 +852,40 @@
     }
   },
   {
+    "model": "engine.attributespec",
+    "pk": 19,
+    "fields": {
+      "default_value": "Alice",
+      "input_type": "select",
+      "label": 93,
+      "mutable": false,
+      "name": "speaker",
+      "values": "Alice\nBob"
+    }
+  },
+  {
+    "model": "engine.attributespec",
+    "pk": 20,
+    "fields": {
+      "default_value": "",
+      "input_type": "text",
+      "label": 93,
+      "mutable": true,
+      "name": "tr-en",
+      "values": ""
+    }
+  },
+  {
+    "model": "engine.audio",
+    "pk": 1,
+    "fields": {
+      "data": 35,
+      "has_cover_image": true,
+      "path": "sample2_with_cover.mp3",
+      "sampling_rate": 24000
+    }
+  },
+  {
     "model": "engine.clientfile",
     "pk": 131,
     "fields": {
@@ -2608,6 +2642,26 @@
       "sorting_method": "lexicographical",
       "start_frame": 0,
       "stop_frame": 1,
+      "storage": "local",
+      "storage_method": "cache"
+    }
+  },
+  {
+    "model": "engine.data",
+    "pk": 35,
+    "fields": {
+      "chunk_size": 6914,
+      "cloud_storage": null,
+      "compressed_chunk_type": "audio_mp3",
+      "content_size": 56401,
+      "deleted_frames": "[]",
+      "frame_filter": "",
+      "image_quality": 70,
+      "original_chunk_type": "audio_mp3",
+      "size": 6914,
+      "sorting_method": "lexicographical",
+      "start_frame": 0,
+      "stop_frame": 6913,
       "storage": "local",
       "storage_method": "cache"
     }
@@ -6193,6 +6247,38 @@
     }
   },
   {
+    "model": "engine.job",
+    "pk": 64,
+    "fields": {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "created_date": "2026-05-11T17:25:43.509Z",
+      "parent_job": null,
+      "segment": 56,
+      "stage": "annotation",
+      "state": "new",
+      "status": "annotation",
+      "type": "annotation",
+      "updated_date": "2026-05-11T17:25:43.621Z"
+    }
+  },
+  {
+    "model": "engine.job",
+    "pk": 65,
+    "fields": {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "created_date": "2026-05-11T17:25:43.568Z",
+      "parent_job": null,
+      "segment": 57,
+      "stage": "annotation",
+      "state": "new",
+      "status": "annotation",
+      "type": "ground_truth",
+      "updated_date": "2026-05-11T17:25:43.641Z"
+    }
+  },
+  {
     "model": "engine.label",
     "pk": 3,
     "fields": {
@@ -7213,6 +7299,18 @@
     }
   },
   {
+    "model": "engine.label",
+    "pk": 93,
+    "fields": {
+      "color": "#d76534",
+      "name": "event",
+      "parent": null,
+      "project": null,
+      "task": 36,
+      "type": "interval"
+    }
+  },
+  {
     "model": "engine.labeledimage",
     "pk": 1,
     "fields": {
@@ -7473,6 +7571,138 @@
       "image": 22,
       "job": 51,
       "spec": 18,
+      "value": ""
+    }
+  },
+  {
+    "model": "engine.labeledinterval",
+    "pk": 1,
+    "fields": {
+      "group": 0,
+      "job": 64,
+      "label": 93,
+      "score": 1.0,
+      "source": "manual",
+      "start": 0,
+      "stop": 6913
+    }
+  },
+  {
+    "model": "engine.labeledinterval",
+    "pk": 2,
+    "fields": {
+      "group": 0,
+      "job": 64,
+      "label": 93,
+      "score": 1.0,
+      "source": "manual",
+      "start": 0,
+      "stop": 6913
+    }
+  },
+  {
+    "model": "engine.labeledinterval",
+    "pk": 3,
+    "fields": {
+      "group": 0,
+      "job": 65,
+      "label": 93,
+      "score": 1.0,
+      "source": "manual",
+      "start": 0,
+      "stop": 6913
+    }
+  },
+  {
+    "model": "engine.labeledinterval",
+    "pk": 4,
+    "fields": {
+      "group": 0,
+      "job": 65,
+      "label": 93,
+      "score": 1.0,
+      "source": "manual",
+      "start": 0,
+      "stop": 6913
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 1,
+    "fields": {
+      "interval": 1,
+      "job": 64,
+      "spec": 19,
+      "value": "Bob"
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 2,
+    "fields": {
+      "interval": 1,
+      "job": 64,
+      "spec": 20,
+      "value": ""
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 3,
+    "fields": {
+      "interval": 2,
+      "job": 64,
+      "spec": 19,
+      "value": "Bob"
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 4,
+    "fields": {
+      "interval": 2,
+      "job": 64,
+      "spec": 20,
+      "value": ""
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 5,
+    "fields": {
+      "interval": 3,
+      "job": 65,
+      "spec": 19,
+      "value": "Bob"
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 6,
+    "fields": {
+      "interval": 3,
+      "job": 65,
+      "spec": 20,
+      "value": ""
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 7,
+    "fields": {
+      "interval": 4,
+      "job": 65,
+      "spec": 19,
+      "value": "Bob"
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 8,
+    "fields": {
+      "interval": 4,
+      "job": 65,
+      "spec": 20,
       "value": ""
     }
   },
@@ -15238,6 +15468,30 @@
     }
   },
   {
+    "model": "engine.segment",
+    "pk": 56,
+    "fields": {
+      "chunks_updated_date": "2026-05-11T17:25:43.503Z",
+      "frames": "[]",
+      "start_frame": 0,
+      "stop_frame": 6913,
+      "task": 36,
+      "type": "range"
+    }
+  },
+  {
+    "model": "engine.segment",
+    "pk": 57,
+    "fields": {
+      "chunks_updated_date": "2026-05-11T17:25:43.566Z",
+      "frames": "[]",
+      "start_frame": 0,
+      "stop_frame": 6913,
+      "task": 36,
+      "type": "range"
+    }
+  },
+  {
     "model": "engine.serverfile",
     "pk": 1,
     "fields": {
@@ -16650,6 +16904,34 @@
     }
   },
   {
+    "model": "engine.task",
+    "pk": 36,
+    "fields": {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_replicas": 0,
+      "created_date": "2026-05-11T17:25:43.375Z",
+      "data": 35,
+      "dimension": "1d",
+      "media_type": "audio",
+      "mode": "interpolation",
+      "name": "task with audio and gt",
+      "organization": 2,
+      "overlap": 0,
+      "owner": [
+        "user2"
+      ],
+      "project": null,
+      "segment_size": 6914,
+      "source_storage": null,
+      "status": "annotation",
+      "subset": "",
+      "target_storage": null,
+      "updated_date": "2026-05-11T17:25:43.643Z"
+    }
+  },
+  {
     "model": "engine.trackedshape",
     "pk": 1,
     "fields": {
@@ -17088,6 +17370,17 @@
       "frames_per_job_count": null,
       "mode": "gt",
       "task_data": 33
+    }
+  },
+  {
+    "model": "engine.validationlayout",
+    "pk": 8,
+    "fields": {
+      "disabled_frames": "[]",
+      "frames": "[]",
+      "frames_per_job_count": null,
+      "mode": "gt",
+      "task_data": 35
     }
   },
   {
@@ -23634,6 +23927,35 @@
       "target_metric_threshold": 0.7,
       "task": 35,
       "updated_date": "2025-11-13T11:32:48.140Z"
+    }
+  },
+  {
+    "model": "quality_control.qualitysettings",
+    "pk": 48,
+    "fields": {
+      "check_covered_annotations": true,
+      "compare_attributes": true,
+      "compare_groups": true,
+      "compare_line_orientation": true,
+      "created_date": "2026-05-11T17:25:43.435Z",
+      "empty_is_annotated": false,
+      "group_match_threshold": 0.5,
+      "inherit": true,
+      "iou_threshold": 0.4,
+      "job_filter": "",
+      "line_orientation_threshold": 0.1,
+      "line_thickness": 0.01,
+      "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
+      "object_visibility_threshold": 0.05,
+      "oks_sigma": 0.09,
+      "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
+      "project": null,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
+      "task": 36,
+      "updated_date": "2026-05-11T17:25:43.435Z"
     }
   },
   {
