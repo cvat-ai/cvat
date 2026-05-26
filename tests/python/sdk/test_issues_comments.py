@@ -97,20 +97,6 @@ class TestIssuesUsecases:
         assert comment.id in comment_ids
         assert self.stdout.getvalue() == ""
 
-    @pytest.mark.usefixtures("restore_db_per_function")
-    def test_org_maintainer_can_get_issue_comments_without_explicit_org_context(
-        self, fxt_image_file: Path
-    ):
-        resources = create_org_resource_hierarchy(fxt_image_file, include_comment=True)
-
-        with make_sdk_client(resources.maintainer_username) as maintainer_client:
-            issue = maintainer_client.issues.retrieve(resources.issue_id)
-            comments = issue.get_comments()
-
-            assert maintainer_client.organization_slug is None
-            assert len(comments) == 2
-            assert resources.comment_id in {comment.id for comment in comments}
-
     def test_can_modify_issue(self, fxt_new_task: Task):
         issue = self.client.issues.create(
             models.IssueWriteRequest(
@@ -246,3 +232,18 @@ class TestCommentsUsecases:
         with pytest.raises(exceptions.NotFoundException):
             comment.fetch()
         assert self.stdout.getvalue() == ""
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_org_maintainer_can_get_issue_comments_without_explicit_org_context(
+    fxt_image_file: Path,
+):
+    resources = create_org_resource_hierarchy(fxt_image_file, include_comment=True)
+
+    with make_sdk_client(resources.maintainer_username) as maintainer_client:
+        issue = maintainer_client.issues.retrieve(resources.issue_id)
+        comments = issue.get_comments()
+
+        assert maintainer_client.organization_slug is None
+        assert len(comments) == 2
+        assert resources.comment_id in {comment.id for comment in comments}

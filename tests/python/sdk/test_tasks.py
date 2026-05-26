@@ -473,22 +473,6 @@ class TestTaskUsecases(TestDatasetExport):
         assert len(jobs) != 0
         assert self.stdout.getvalue() == ""
 
-    @pytest.mark.usefixtures("restore_db_per_function")
-    def test_org_maintainer_can_get_task_resources_without_explicit_org_context(
-        self, fxt_image_file: Path
-    ):
-        resources = create_org_resource_hierarchy(fxt_image_file)
-
-        with make_sdk_client(resources.maintainer_username) as maintainer_client:
-            task = maintainer_client.tasks.retrieve(resources.task_id)
-            jobs = task.get_jobs()
-            labels = task.get_labels()
-
-            assert maintainer_client.organization_slug is None
-            assert len(jobs) == 1
-            assert jobs[0].id == resources.job_id
-            assert {label.name for label in labels} == {"car"}
-
     def test_can_get_meta(self, fxt_new_task: Task):
         meta = fxt_new_task.get_meta()
 
@@ -605,3 +589,20 @@ class TestTaskUsecases(TestDatasetExport):
         assert len(anns.tracks) == 1
         assert len(anns.tags) == 1
         assert self.stdout.getvalue() == ""
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_org_maintainer_can_get_task_resources_without_explicit_org_context(
+    fxt_image_file: Path,
+):
+    resources = create_org_resource_hierarchy(fxt_image_file)
+
+    with make_sdk_client(resources.maintainer_username) as maintainer_client:
+        task = maintainer_client.tasks.retrieve(resources.task_id)
+        jobs = task.get_jobs()
+        labels = task.get_labels()
+
+        assert maintainer_client.organization_slug is None
+        assert len(jobs) == 1
+        assert jobs[0].id == resources.job_id
+        assert {label.name for label in labels} == {"car"}
