@@ -1716,6 +1716,24 @@ class TestAudioQuality:
         assert summary["error_rate"] == 0.0
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_report_exposes_requirement_id(self, fxt_test_name: str, source_filename: Path):
+        # The transcription attribute summary carries the server id of its
+        # requirement, matching the requirement config in the report blob.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="hello world",
+            ds_text="hello world",
+            granularity="word",
+            grouping_strategy="filter",
+            acceptance_threshold=0.2,
+        )
+        summary = self._transcription_summary(report)
+        param_ids = {r["id"] for r in report["parameters"]["transcription_requirements"]}
+        assert summary["requirement_id"] in param_ids
+        assert summary["requirement_id"] > 0
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
     def test_custom_substitutions_layer_on_basic_preset(
         self, fxt_test_name: str, source_filename: Path
     ):

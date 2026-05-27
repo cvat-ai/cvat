@@ -11918,6 +11918,9 @@ components:
     TranscriptionRequirement:
       type: object
       properties:
+        id:
+          type: integer
+          readOnly: true
         attribute_id:
           type: integer
           description: |
