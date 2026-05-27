@@ -152,6 +152,18 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             }))
     ));
 
+    // Grouping may key on any attribute of the transcription attribute's label,
+    // not only text ones.
+    const allAttributes: TextAttributeOption[] = (instance.labels ?? []).flatMap((label) => (
+        label.attributes
+            .filter((attr) => attr.id !== undefined)
+            .map((attr) => ({
+                id: attr.id as number,
+                title: `${label.name} / ${attr.name}`,
+                labelId: label.id as number,
+            }))
+    ));
+
     // Transcription requirements are scored as attribute comparisons, so they
     // only take effect when attribute comparison is enabled.
     const compareAttributesEnabled = Form.useWatch('compareAttributes', form) ?? settings.compareAttributes;
@@ -427,7 +439,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                                             .includes(row.metric);
                                         const isJoin = row.groupingStrategy ===
                                             TranscriptionGroupingStrategy.JOIN;
-                                        const groupingOptions = textAttributes.filter((a) => (
+                                        const groupingOptions = allAttributes.filter((a) => (
                                             row.attributeId === undefined ||
                                             a.labelId === selected?.labelId
                                         ));
@@ -484,7 +496,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                                                             <Form.Item
                                                                 name={[field.name, 'metric']}
                                                                 label='Metric'
-                                                                tooltip='How a pair of transcriptions is scored.'
+                                                                tooltip='How a word pair is scored. Equality → standard WER/CER (any difference is a full error; recommended default). Error rate / Normalized Levenshtein give partial credit for near-misses (non-standard, more lenient). At character granularity all three coincide.'
                                                             >
                                                                 <Select virtual={false}>
                                                                     <Select.Option
@@ -510,7 +522,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                                                                 <Form.Item
                                                                     name={[field.name, 'metricThreshold']}
                                                                     label='Metric threshold'
-                                                                    tooltip='Binarizes the soft metric cost; applies only to the error-rate / normalized Levenshtein metrics.'
+                                                                    tooltip='Binarizes the soft metric cost (cost above the threshold counts as a full error). Applies only to the error-rate / normalized Levenshtein metrics; leave empty for standard WER/CER.'
                                                                 >
                                                                     <InputNumber min={0} style={{ width: '100%' }} />
                                                                 </Form.Item>
@@ -522,7 +534,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                                                             <Form.Item
                                                                 name={[field.name, 'granularity']}
                                                                 label='Granularity'
-                                                                tooltip='Unit the error rate is computed over — words or characters.'
+                                                                tooltip='Unit the error rate is computed over. Word → WER (space-separated languages, e.g. English). Character → CER (recommended for scripts without spaces: Chinese, Japanese, Korean, Thai).'
                                                             >
                                                                 <Select virtual={false}>
                                                                     <Select.Option
@@ -542,7 +554,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                                                             <Form.Item
                                                                 name={[field.name, 'align']}
                                                                 label='Alignment'
-                                                                tooltip='Token alignment unit used by the matcher.'
+                                                                tooltip='How tokens are aligned before scoring. Character (recommended) absorbs word-boundary disagreements and suits rich morphology / scripts without spaces; Word is standard when word boundaries are clean (e.g. English).'
                                                             >
                                                                 <Select virtual={false}>
                                                                     <Select.Option value={TranscriptionAlignMode.CHAR}>
@@ -560,7 +572,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                                                             <Form.Item
                                                                 name={[field.name, 'acceptanceThreshold']}
                                                                 label='Acceptance threshold (%)'
-                                                                tooltip='Per-match error rate at or above which a transcription is reported as a conflict.'
+                                                                tooltip='Per-match error rate at or above which a transcription is flagged as a conflict. Lower = stricter; 0% requires an exact match. A few percent tolerates minor wording differences.'
                                                             >
                                                                 <InputNumber min={0} max={100} precision={0} />
                                                             </Form.Item>
@@ -635,7 +647,10 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                                                                     label='Group by attribute'
                                                                     tooltip='Attribute that defines join groups, together with the label (join only).'
                                                                 >
-                                                                    <Select allowClear virtual={false}>
+                                                                    <Select virtual={false}>
+                                                                        <Select.Option value={null}>
+                                                                            &lt;label only&gt;
+                                                                        </Select.Option>
                                                                         {groupingOptions.map((a) => (
                                                                             <Select.Option key={a.id} value={a.id}>
                                                                                 {a.title}
