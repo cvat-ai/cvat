@@ -289,6 +289,7 @@ class TranscriptionRequirement(ReportNode):
     metric_threshold: float | None
     normalizer_preset: TranscriptionNormalizerPreset
     substitutions: list[dict]
+    substitutions_hash: str
     grouping_strategy: TranscriptionGroupingStrategy
     grouping_separator: str
     grouping_attribute: AttributePath | None
@@ -321,6 +322,7 @@ class TranscriptionRequirement(ReportNode):
             metric_threshold=d.get("metric_threshold"),
             normalizer_preset=TranscriptionNormalizerPreset(d["normalizer_preset"]),
             substitutions=list(d.get("substitutions") or []),
+            substitutions_hash=d.get("substitutions_hash", ""),
             grouping_strategy=TranscriptionGroupingStrategy(d["grouping_strategy"]),
             grouping_separator=d["grouping_separator"],
             grouping_attribute=(
@@ -461,6 +463,7 @@ class ComparisonParameters(ReportNode):
                     "metric_threshold": requirement.metric_threshold,
                     "normalizer_preset": requirement.normalizer_preset,
                     "substitutions": list(requirement.substitutions or []),
+                    "substitutions_hash": requirement.substitutions_hash,
                     "grouping_strategy": requirement.grouping_strategy,
                     "grouping_separator": requirement.grouping_separator,
                     "grouping_attribute": (

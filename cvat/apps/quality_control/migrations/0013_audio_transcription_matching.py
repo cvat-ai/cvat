@@ -148,4 +148,9 @@ class Migration(migrations.Migration):
                 name="transcription_quality_requirement_chunk_threshold_is_valid",
             ),
         ),
+        migrations.AddField(
+            model_name="transcriptionqualityrequirement",
+            name="substitutions_hash",
+            field=models.CharField(blank=True, default="", max_length=32),
+        ),
     ]
