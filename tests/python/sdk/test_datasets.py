@@ -356,4 +356,6 @@ class TestTaskDataset:
         sample_chunks = list(dataset.iter_sample_chunks())
 
         assert len(sample_chunks) == 1
-        assert [sample.frame_index for sample in sample_chunks[0]] == list(range(len(self.image_paths)))
+        assert [sample.frame_index for sample in sample_chunks[0]] == list(
+            range(len(self.image_paths))
+        )
