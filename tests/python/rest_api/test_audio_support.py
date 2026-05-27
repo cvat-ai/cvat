@@ -4,7 +4,7 @@
 
 import io
 import math
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from itertools import product
 from pathlib import Path, PurePosixPath
 
@@ -453,6 +453,95 @@ class TestAudioQuality:
 
         report_id = response.json()["result_id"]
         return self.client.api_client.quality_api.retrieve_report_data(report_id)[1].json()
+
+    # ------------------------------------------------------------------ helpers
+
+    def _make_transcription_task(
+        self, name: str, source_filename: Path, *, attr_names: Sequence[str] = ("transcription",)
+    ):
+        """Audio task with one label carrying the given text attributes.
+
+        Returns (task, gt_job, label, attrs) where `attrs` maps attribute name
+        → spec object."""
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": name,
+                "labels": [
+                    {
+                        "name": "speaker1",
+                        "attributes": [
+                            {"name": n, "input_type": "text", "values": [], "mutable": True}
+                            for n in attr_names
+                        ],
+                    },
+                ],
+            },
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
+        gt_job = next(j for j in task.get_jobs() if j.type == "ground_truth")
+        label = task.get_labels()[0]
+        attrs = {a.name: a for a in label.attributes}
+        return task, gt_job, label, attrs
+
+    def _set_transcription_requirement(self, task: Task, **requirement_kwargs):
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+        return self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                transcription_requirements=[
+                    models.PatchedTranscriptionRequirementRequest(**requirement_kwargs)
+                ]
+            ),
+        )
+
+    @staticmethod
+    def _interval(label, start: int, stop: int, attr_text: dict | None = None):
+        """`attr_text` maps attribute spec id → text value."""
+        return models.LabeledIntervalRequest(
+            label_id=label.id,
+            start=start,
+            stop=stop,
+            attributes=[
+                models.AttributeValRequest(spec_id=spec_id, value=value)
+                for spec_id, value in (attr_text or {}).items()
+            ],
+        )
+
+    def _set_gt_ds(self, task: Task, gt_job: Job, gt_intervals, ds_intervals):
+        task.set_annotations(models.LabeledDataRequest(intervals=ds_intervals))
+        gt_job.set_annotations(models.LabeledDataRequest(intervals=gt_intervals))
+        gt_job.update(dict(stage="acceptance", state="completed"))
+
+    @staticmethod
+    def _transcription_summary(report: dict) -> dict:
+        return next(
+            a
+            for a in report["comparison_summary"]["annotation_components"]["attribute"]
+            if a["comparator"] == "transcription"
+        )
+
+    def _score_single_pair(
+        self,
+        fxt_test_name: str,
+        source_filename: Path,
+        *,
+        gt_text: str,
+        ds_text: str,
+        **requirement_kwargs,
+    ) -> dict:
+        """End-to-end: one interval per side over the same span, scored under a
+        single transcription requirement. Returns the report dict."""
+        task, gt_job, label, attrs = self._make_transcription_task(fxt_test_name, source_filename)
+        attr = attrs["transcription"]
+        self._set_transcription_requirement(task, attribute_id=attr.id, **requirement_kwargs)
+        self._set_gt_ds(
+            task,
+            gt_job,
+            [self._interval(label, 0, 1000, {attr.id: gt_text})],
+            [self._interval(label, 0, 1000, {attr.id: ds_text})],
+        )
+        return self.compute_report(task.id)
 
     @parametrize("task, gt_job", [fixture_ref(fxt_audio_task_with_gt_job)])
     def test_simple_matching(self, task: Task, gt_job: Job):
@@ -1010,87 +1099,20 @@ class TestAudioQuality:
     def test_substitutions_make_transcriptions_equal(
         self, fxt_test_name: str, source_filename: Path
     ):
-        transcription_attr_name = "transcription"
-
-        task = self.client.tasks.create_from_data(
-            spec={
-                "name": fxt_test_name,
-                "labels": [
-                    {
-                        "name": "speaker1",
-                        "attributes": [
-                            {
-                                "name": transcription_attr_name,
-                                "input_type": "text",
-                                "values": [],
-                                "mutable": True,
-                            },
-                        ],
-                    },
-                ],
-            },
-            resources=[source_filename],
-            data_params={"validation_params": {"mode": "gt"}},
-        )
-        gt_job = next(j for j in task.get_jobs() if j.type == "ground_truth")
-        labels = task.get_labels()
-        label = labels[0]
-        transcription_attr = next(a for a in label.attributes if a.name == transcription_attr_name)
-
-        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
-        self.client.api_client.quality_api.partial_update_settings(
-            settings.id,
-            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
-                transcription_requirements=[
-                    models.PatchedTranscriptionRequirementRequest(
-                        attribute_id=transcription_attr.id,
-                        granularity="word",
-                        grouping_strategy="filter",
-                        substitutions={"different": "test"},
-                        acceptance_threshold=0.2,
-                    )
-                ]
-            ),
+        # The substitution {"different": "test"} rewrites the DS string to
+        # match GT, so the otherwise-mismatching pair (see
+        # test_transcription_matching_affects_overall_matches) is satisfied.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="test text",
+            ds_text="different text",
+            granularity="word",
+            grouping_strategy="filter",
+            substitutions={"different": "test"},
+            acceptance_threshold=0.2,
         )
 
-        gt_annotations = models.LabeledDataRequest(
-            intervals=[
-                models.LabeledIntervalRequest(
-                    label_id=label.id,
-                    start=0,
-                    stop=1000,
-                    attributes=[
-                        models.AttributeValRequest(
-                            spec_id=transcription_attr.id, value="test text"
-                        ),
-                    ],
-                ),
-            ]
-        )
-        ds_annotations = models.LabeledDataRequest(
-            intervals=[
-                models.LabeledIntervalRequest(
-                    label_id=label.id,
-                    start=0,
-                    stop=1000,
-                    attributes=[
-                        models.AttributeValRequest(
-                            spec_id=transcription_attr.id, value="different text"
-                        ),
-                    ],
-                ),
-            ]
-        )
-        task.set_annotations(ds_annotations)
-        gt_job.set_annotations(gt_annotations)
-        gt_job.update(dict(stage="acceptance", state="completed"))
-
-        report = self.compute_report(task.id)
-
-        # Without substitutions the transcriptions mismatch (see
-        # test_transcription_matching_affects_overall_matches); the
-        # substitution {"different": "test"} rewrites the DS string to match
-        # the GT one, so the requirement is satisfied.
         assert report["comparison_summary"]["conflicts_by_type"] == {}
         assert report["comparison_summary"]["annotations"]["valid_count"] == 1
         assert report["comparison_summary"]["annotations"]["total_count"] == 1
@@ -1308,3 +1330,198 @@ class TestAudioQuality:
         assert summary["ref_length"] == 0
         assert summary["error_mass"] == 0.0
         assert summary["error_rate"] == 0.0
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_soft_metric_scores_near_match_below_one(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # "color" vs "colour": one word, 1 char edit / max-len 6 = 0.167 under
+        # normalized-lev. Equality would score this a full 1.0 substitution.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="color",
+            ds_text="colour",
+            granularity="word",
+            grouping_strategy="filter",
+            metric="normalized-lev",
+            acceptance_threshold=0.5,
+        )
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        summary = self._transcription_summary(report)
+        assert summary["valid_count"] == 1
+        assert summary["invalid_count"] == 0
+        assert summary["ref_length"] == 1
+        assert summary["error_rate"] == pytest.approx(1 / 6, abs=1e-4)
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_metric_threshold_binarizes_soft_cost(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # Same near-match, but metric_threshold rounds the per-chunk cost:
+        # 0.167 <= 0.5 → 0, so the soft cost collapses to zero error.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="color",
+            ds_text="colour",
+            granularity="word",
+            grouping_strategy="filter",
+            metric="normalized-lev",
+            metric_threshold=0.5,
+            acceptance_threshold=0.5,
+        )
+
+        summary = self._transcription_summary(report)
+        assert summary["error_mass"] == 0.0
+        assert summary["error_rate"] == 0.0
+        assert summary["valid_count"] == 1
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_character_granularity_reports_cer(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # "cat" vs "cot": 1 char substitution / 3 ref chars = 0.333 CER.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="cat",
+            ds_text="cot",
+            granularity="character",
+            grouping_strategy="filter",
+            acceptance_threshold=0.5,
+        )
+
+        summary = self._transcription_summary(report)
+        assert summary["ref_length"] == 3  # characters, not words
+        assert summary["error_rate"] == pytest.approx(1 / 3, abs=1e-4)
+        assert summary["valid_count"] == 1  # 0.333 < 0.5 acceptance
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_basic_normalizer_folds_case_and_whitespace(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # The basic preset casefolds and collapses whitespace, so these match.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="Hello   World",
+            ds_text="hello world",
+            granularity="word",
+            grouping_strategy="filter",
+            normalizer_preset="basic",
+            acceptance_threshold=0.2,
+        )
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        summary = self._transcription_summary(report)
+        assert summary["error_rate"] == 0.0
+        assert summary["valid_count"] == 1
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_corpus_error_rate_aggregates_over_pairs(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # Two matched interval pairs; one clean, one with a single word error.
+        # Corpus rate is the micro-average: 1 error / 4 ref words = 0.25.
+        task, gt_job, label, attrs = self._make_transcription_task(fxt_test_name, source_filename)
+        attr = attrs["transcription"]
+        self._set_transcription_requirement(
+            task,
+            attribute_id=attr.id,
+            granularity="word",
+            grouping_strategy="filter",
+            acceptance_threshold=0.6,  # 0.5 per-pair error stays satisfied
+        )
+        self._set_gt_ds(
+            task,
+            gt_job,
+            [
+                self._interval(label, 0, 1000, {attr.id: "alpha beta"}),
+                self._interval(label, 1000, 2000, {attr.id: "gamma delta"}),
+            ],
+            [
+                self._interval(label, 0, 1000, {attr.id: "alpha beta"}),
+                self._interval(label, 1000, 2000, {attr.id: "gamma omega"}),
+            ],
+        )
+
+        report = self.compute_report(task.id)
+
+        summary = self._transcription_summary(report)
+        assert summary["total_count"] == 2  # two scored pairs
+        assert summary["substitutions"] == 1  # delta → omega
+        assert summary["hits"] == 3  # alpha, beta, gamma
+        assert summary["ref_length"] == 4
+        assert summary["error_mass"] == pytest.approx(1.0, abs=1e-4)
+        assert summary["error_rate"] == pytest.approx(0.25, abs=1e-4)
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_join_strategy_groups_by_attribute(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # Two speakers; each speaker's intervals join into one group keyed by
+        # (label, speaker_tag). GT and DS agree per speaker → two valid groups,
+        # no conflicts.
+        task, gt_job, label, attrs = self._make_transcription_task(
+            fxt_test_name, source_filename, attr_names=("transcription", "speaker_tag")
+        )
+        text_attr, tag_attr = attrs["transcription"], attrs["speaker_tag"]
+        self._set_transcription_requirement(
+            task,
+            attribute_id=text_attr.id,
+            granularity="word",
+            grouping_strategy="join",
+            grouping_attribute_id=tag_attr.id,
+            compare_attributes=False,  # don't score speaker_tag as a plain attr
+            acceptance_threshold=0.2,
+        )
+
+        def intervals():
+            return [
+                self._interval(label, 0, 1000, {text_attr.id: "hello", tag_attr.id: "A"}),
+                self._interval(label, 1000, 2000, {text_attr.id: "world", tag_attr.id: "A"}),
+                self._interval(label, 2000, 3000, {text_attr.id: "good", tag_attr.id: "B"}),
+                self._interval(label, 3000, 4000, {text_attr.id: "morning", tag_attr.id: "B"}),
+            ]
+
+        self._set_gt_ds(task, gt_job, intervals(), intervals())
+
+        report = self.compute_report(task.id)
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        summary = self._transcription_summary(report)
+        assert summary["total_count"] == 2  # one group per speaker
+        assert summary["valid_count"] == 2
+        assert summary["invalid_count"] == 0
+        assert summary["missing_count"] == 0
+        assert summary["extra_count"] == 0
+        assert summary["error_rate"] == 0.0
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_custom_substitutions_layer_on_basic_preset(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # The project-specific substitutions dict is applied AFTER the chosen
+        # preset, to BOTH sides. `basic` casefolds "YEAH Boss" → "yeah boss"
+        # first, so the substitution keys must be lower-case to match. Keys are
+        # chosen to be absent from the GT wording (substitution rewrites both
+        # ref and hyp), so only the DS text is remapped onto GT.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="yes sir",
+            ds_text="YEAH Boss",
+            granularity="word",
+            grouping_strategy="filter",
+            normalizer_preset="basic",
+            substitutions={"yeah": "yes", "boss": "sir"},
+            acceptance_threshold=0.2,
+        )
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        summary = self._transcription_summary(report)
+        assert summary["error_rate"] == 0.0
+        assert summary["valid_count"] == 1
+        assert summary["hits"] == 2  # yes, sir
