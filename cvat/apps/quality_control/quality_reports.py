@@ -2735,6 +2735,7 @@ class DatasetComparator:
                     ),
                     iou_threshold=self.settings.iou_threshold,
                     # enforce_overlap left at library default (True) for v1
+                    overlap_tolerance_s=self.settings.interval_boundary_tolerance_s,
                 )
             )
             active_requirements.append((requirement, attribute_spec))

@@ -1583,6 +1583,52 @@ class TestAudioQuality:
         assert "transcription_error_rate" not in summary
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_boundary_tolerance_relaxes_join_overlap(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # Same word in one join group but on intervals that don't overlap
+        # (gap of 50). The boundary tolerance should relax the alignment overlap
+        # gate so the word still matches.
+        task, gt_job, label, attrs = self._make_transcription_task(fxt_test_name, source_filename)
+        attr = attrs["transcription"]
+        self._set_transcription_requirement(
+            task,
+            attribute_id=attr.id,
+            granularity="word",
+            align="word",
+            grouping_strategy="join",
+            acceptance_threshold=0.2,
+        )
+        self._set_gt_ds(
+            task,
+            gt_job,
+            [self._interval(label, 0, 100, {attr.id: "alpha"})],
+            [self._interval(label, 150, 250, {attr.id: "alpha"})],  # 50-unit gap
+        )
+
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+
+        # No tolerance → intervals don't overlap → the word can't match.
+        self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                interval_boundary_tolerance_s=0,
+            ),
+        )
+        strict = self._transcription_summary(self.compute_report(task.id))
+        assert strict["error_rate"] > 0
+
+        # Tolerance wider than the gap → intervals overlap → the word matches.
+        self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                interval_boundary_tolerance_s=60,
+            ),
+        )
+        relaxed = self._transcription_summary(self.compute_report(task.id))
+        assert relaxed["error_rate"] == 0.0
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
     def test_target_metric_transcription_error_rate(
         self, fxt_test_name: str, source_filename: Path
     ):

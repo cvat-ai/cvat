@@ -66,10 +66,15 @@ class TranscriptionRequirement:
     # Turns any soft metric into a binary one. With metric=EQUALITY the
     # threshold is a no-op.
     threshold: float | None = None
+
     normalizer: NormalizerConfig = field(default_factory=NormalizerConfig)
     grouping: GroupingConfig = field(default_factory=GroupingConfig)
     iou_threshold: float = 0.3  # used by FILTER strategy
     enforce_overlap: bool = True  # join: forbid token match between non-overlapping intervals
+
+    # Gap (seconds) by which the join overlap gate is relaxed: intervals
+    # separated by up to this much still count as overlapping.
+    overlap_tolerance_s: float = 0.0
 
 
 @dataclass
