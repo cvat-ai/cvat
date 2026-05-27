@@ -10258,17 +10258,18 @@ components:
 
             * `char` - CHAR
             * `word` - WORD
-        threshold:
+        metric_threshold:
           type: number
           format: double
-          maximum: 1
           minimum: 0
           nullable: true
           description: |
-            Optional per-chunk cost binarization threshold in [0, 1].
+            Optional per-chunk cost binarization threshold (>= 0).
             When set, the chunk cost is rounded to 0 / 1 by comparing
             against this value, turning a soft metric into a binary
-            one. Has no effect when `metric` is `equality`.
+            one. No upper bound: the `error-rate` metric is unbounded
+            (it can exceed 1 when the hypothesis is much longer than
+            the reference). Has no effect when `metric` is `equality`.
         normalizer_preset:
           allOf:
           - $ref: '#/components/schemas/TranscriptionNormalizerPreset'
@@ -11931,17 +11932,18 @@ components:
 
             * `char` - CHAR
             * `word` - WORD
-        threshold:
+        metric_threshold:
           type: number
           format: double
-          maximum: 1
           minimum: 0
           nullable: true
           description: |
-            Optional per-chunk cost binarization threshold in [0, 1].
+            Optional per-chunk cost binarization threshold (>= 0).
             When set, the chunk cost is rounded to 0 / 1 by comparing
             against this value, turning a soft metric into a binary
-            one. Has no effect when `metric` is `equality`.
+            one. No upper bound: the `error-rate` metric is unbounded
+            (it can exceed 1 when the hypothesis is much longer than
+            the reference). Has no effect when `metric` is `equality`.
         normalizer_preset:
           allOf:
           - $ref: '#/components/schemas/TranscriptionNormalizerPreset'

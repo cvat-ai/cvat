@@ -246,7 +246,7 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
             "granularity",
             "metric",
             "align",
-            "threshold",
+            "metric_threshold",
             "normalizer_preset",
             "substitutions",
             "grouping_strategy",
@@ -266,16 +266,17 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
                     reported as a mismatching-attributes conflict.
                     """),
             },
-            "threshold": {
+            "metric_threshold": {
                 "required": False,
                 "allow_null": True,
                 "min_value": 0,
-                "max_value": 1,
                 "help_text": textwrap.dedent("""\
-                    Optional per-chunk cost binarization threshold in [0, 1].
+                    Optional per-chunk cost binarization threshold (>= 0).
                     When set, the chunk cost is rounded to 0 / 1 by comparing
                     against this value, turning a soft metric into a binary
-                    one. Has no effect when `metric` is `equality`.
+                    one. No upper bound: the `error-rate` metric is unbounded
+                    (it can exceed 1 when the hypothesis is much longer than
+                    the reference). Has no effect when `metric` is `equality`.
                     """),
             },
             "granularity": {
@@ -339,6 +340,9 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
             },
             "grouping_separator": {
                 "required": False,
+                # Preserve leading / trailing spaces (e.g. " | ") — DRF
+                # CharField trims by default, which would corrupt the separator.
+                "trim_whitespace": False,
                 "help_text": textwrap.dedent("""\
                     Separator inserted between concatenated transcriptions
                     when `grouping_strategy=join`. Defaults to a single space.
