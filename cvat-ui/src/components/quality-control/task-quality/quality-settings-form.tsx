@@ -38,6 +38,11 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
     const [visibility, setVisibility] = useState(defaultVisibility);
 
+    // transcription_error_rate is lower-is-better and unbounded above, so its
+    // threshold (shown as a percentage) is not capped at 100.
+    const targetMetric = Form.useWatch('targetMetric', form) ?? settings.targetMetric;
+    const isErrorRateMetric = targetMetric === TargetMetric.TRANSCRIPTION_ERROR_RATE;
+
     const initialValues = {
         targetMetric: settings.targetMetric,
         targetMetricThreshold: settings.targetMetricThreshold * 100,
@@ -181,6 +186,9 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                             <Select.Option value={TargetMetric.RECALL}>
                                 Recall
                             </Select.Option>
+                            <Select.Option value={TargetMetric.TRANSCRIPTION_ERROR_RATE}>
+                                Transcription error rate
+                            </Select.Option>
                         </Select>
                     </Form.Item>
                 </Col>
@@ -190,7 +198,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                         label='Target metric threshold'
                         rules={[{ required: true, message: 'This field is required' }]}
                     >
-                        <InputNumber min={0} max={100} precision={0} />
+                        <InputNumber min={0} max={isErrorRateMetric ? undefined : 100} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>

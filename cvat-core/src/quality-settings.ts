@@ -14,6 +14,7 @@ export enum TargetMetric {
     ACCURACY = 'accuracy',
     PRECISION = 'precision',
     RECALL = 'recall',
+    TRANSCRIPTION_ERROR_RATE = 'transcription_error_rate',
 }
 
 export enum PointSizeBase {
