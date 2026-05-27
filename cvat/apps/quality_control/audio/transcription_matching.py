@@ -22,10 +22,9 @@ Tokenize, group, align, score. Owns:
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from typing import Callable, Sequence
 
-import jiwer
 import numpy as np
 import regex
 
@@ -132,6 +131,32 @@ _METRIC_FNS: dict[Metric, Callable[[str, str], float]] = {
 }
 _METRIC_NAMES = tuple(m.value for m in _METRIC_FNS)
 
+# A token-pair cost: substitution cost between a ref and a hyp token
+TokenCost = Callable[[str, str], float]
+
+
+def _unit_sub_cost(a: str, b: str) -> float:
+    """Default substitution cost: 1 for any non-identical pair (plain
+    Levenshtein). Identical pairs are handled as matches (cost 0) by the
+    caller, so this is only ever invoked for a != b."""
+    return 1.0
+
+
+def make_token_cost(metric: Metric | str, threshold: float | None) -> TokenCost:
+    try:
+        metric = Metric(metric)
+    except ValueError as exc:
+        raise ValueError(f"unknown metric {metric!r}; choices: {list(_METRIC_NAMES)}") from exc
+
+    metric_fn = _METRIC_FNS[metric]
+    if threshold is None:
+        return metric_fn
+
+    def thresholded(a: str, b: str) -> float:
+        return 1.0 if metric_fn(a, b) > threshold else 0.0
+
+    return thresholded
+
 
 def _metric_label(
     metric: Metric,
@@ -153,25 +178,18 @@ def _chunk_cost(
     e: AlignmentEdit,
     *,
     granularity: Granularity,
-    metric_fn: Callable[[str, str], float],
-    threshold: float | None,
+    token_cost: TokenCost,
 ) -> tuple[float, int]:
     """Returns (errors_in_granularity_units, ref_units_consumed) for one chunk.
 
     Per-chunk semantics:
       * granularity=char  →  errors = char-edit count, ref = char count
-      * granularity=word  →  errors = metric_fn(ref, hyp), ref = word count
+      * granularity=word  →  errors = token_cost(ref, hyp), ref = word count
                               (boundary chunks: applied to concatenated forms)
     Delete/insert chunks: 1 error per granularity unit, ref unchanged for inserts.
-    Threshold (if set) rounds each per-pair cost: cost > threshold → 1.
     """
 
     is_char = granularity == Granularity.CHARACTER
-
-    def round_(c: float) -> float:
-        if threshold is None:
-            return c
-        return 1.0 if c > threshold else 0.0
 
     if e.op == EditOp.EQUAL:
         if is_char:
@@ -186,7 +204,7 @@ def _chunk_cost(
                 errs += _char_edit_distance(a, b)
                 refs += len(a)
             else:
-                errs += round_(metric_fn(a, b))
+                errs += token_cost(a, b)
                 refs += 1
         return errs, refs
 
@@ -195,7 +213,7 @@ def _chunk_cost(
         hyp_concat = " ".join(e.hyp_units)
         if is_char:
             return float(_char_edit_distance(ref_concat, hyp_concat)), len(ref_concat)
-        return round_(metric_fn(ref_concat, hyp_concat)), len(e.ref_units)
+        return token_cost(ref_concat, hyp_concat), len(e.ref_units)
 
     if e.op == EditOp.DELETE:
         if is_char:
@@ -224,22 +242,13 @@ def aggregate_metric(
     Returns (display_label, rate).
     """
 
-    try:
-        metric = Metric(metric)
-    except ValueError as exc:
-        raise ValueError(f"unknown metric {metric!r}; choices: {list(_METRIC_NAMES)}") from exc
-
-    metric_fn = _METRIC_FNS[metric]
+    token_cost = make_token_cost(metric, threshold)  # validates metric
+    metric = Metric(metric)
     total_err: float = 0.0
     total_ref: int = 0
     for a in alignments:
         for e in a.edits:
-            err, ref = _chunk_cost(
-                e,
-                granularity=granularity,
-                metric_fn=metric_fn,
-                threshold=threshold,
-            )
+            err, ref = _chunk_cost(e, granularity=granularity, token_cost=token_cost)
             total_err += err
             total_ref += ref
 
@@ -250,31 +259,13 @@ def aggregate_metric(
 # ============================ Alignment =======================================
 
 
-def _chunks_to_edits(
-    chunks: Iterable[jiwer.AlignmentChunk], ref_units: Sequence[str], hyp_units: Sequence[str]
-) -> list[AlignmentEdit]:
-    out: list[AlignmentEdit] = []
-    for c in chunks:
-        out.append(
-            AlignmentEdit(
-                op=EditOp(c.type),
-                ref_start=c.ref_start_idx,
-                ref_end=c.ref_end_idx,
-                hyp_start=c.hyp_start_idx,
-                hyp_end=c.hyp_end_idx,
-                ref_units=list(ref_units[c.ref_start_idx : c.ref_end_idx]),
-                hyp_units=list(hyp_units[c.hyp_start_idx : c.hyp_end_idx]),
-            )
-        )
-    return out
-
-
 def _align_pair(
     ref_text: str,
     hyp_text: str,
     *,
     granularity: Granularity,
     normalizer: Normalizer,
+    sub_cost: TokenCost = _unit_sub_cost,
 ) -> AlignmentResult:
     ref_n = normalizer(ref_text)
     hyp_n = normalizer(hyp_text)
@@ -282,7 +273,7 @@ def _align_pair(
     ref_units = tokenize(ref_n, granularity=granularity)
     hyp_units = tokenize(hyp_n, granularity=granularity)
 
-    # Degenerate cases — keep jiwer out, deterministic answers.
+    # Degenerate cases — deterministic answers, skip the DP.
     if not ref_units and not hyp_units:
         return AlignmentResult(granularity, ref_n, hyp_n, [], [], [], 0.0, 0, 0, 0, 0)
     if not ref_units:
@@ -291,7 +282,7 @@ def _align_pair(
             ref_n,
             hyp_n,
             [],
-            hyp_units,
+            list(hyp_units),
             [AlignmentEdit(EditOp.INSERT, 0, 0, 0, len(hyp_units), [], list(hyp_units))],
             float("inf"),
             0,
@@ -304,7 +295,7 @@ def _align_pair(
             granularity,
             ref_n,
             hyp_n,
-            ref_units,
+            list(ref_units),
             [],
             [AlignmentEdit(EditOp.DELETE, 0, len(ref_units), 0, 0, list(ref_units), [])],
             1.0,
@@ -314,33 +305,30 @@ def _align_pair(
             0,
         )
 
-    if granularity == Granularity.CHARACTER:
-        out = jiwer.process_characters(ref_n, hyp_n)
-        rate = out.cer
-    elif granularity == Granularity.WORD:
-        out = jiwer.process_words(ref_n, hyp_n)
-        rate = out.wer
-    else:
-        assert False, f"Unknown granularity '{granularity}'"
-
-    chunks = out.alignments[0]
-    refs_actual = out.references[0]
-    hyps_actual = out.hypotheses[0]
-
-    edits = _chunks_to_edits(chunks, refs_actual, hyps_actual)
+    # Single pair → one notional interval per side → all-pass overlap.
+    overlap = np.ones((1, 1), dtype=bool)
+    edits, hits, subs, ins, dels, total_cost = _overlap_constrained_align(
+        ref_units,
+        [0] * len(ref_units),
+        hyp_units,
+        [0] * len(hyp_units),
+        overlap,
+        sub_cost=sub_cost,
+    )
+    error_rate = total_cost / len(ref_units)
 
     return AlignmentResult(
         granularity=granularity,
         ref_normalized=ref_n,
         hyp_normalized=hyp_n,
-        ref_units=list(refs_actual),
-        hyp_units=list(hyps_actual),
+        ref_units=list(ref_units),
+        hyp_units=list(hyp_units),
         edits=edits,
-        error_rate=float(rate),
-        substitutions=out.substitutions,
-        insertions=out.insertions,
-        deletions=out.deletions,
-        hits=out.hits,
+        error_rate=error_rate,
+        substitutions=subs,
+        insertions=ins,
+        deletions=dels,
+        hits=hits,
     )
 
 
@@ -448,13 +436,24 @@ def _overlap_constrained_align(
     hyp_units: Sequence[str],
     hyp_origins: Sequence[int],
     overlap: np.ndarray,
-) -> tuple[list[AlignmentEdit], int, int, int, int, int]:
+    *,
+    sub_cost: TokenCost = _unit_sub_cost,
+) -> tuple[list[AlignmentEdit], int, int, int, int, int, float]:
     """Levenshtein DP that forbids match/substitute between tokens whose source
     intervals do not temporally overlap.
 
-    Returns (edits, hits, substitutions, insertions, deletions, boundaries).
-    Boundary count is always 0 here; boundary edits are emitted only by
-    `_reconstruct_word_edits_from_chars` on top of a char-level alignment.
+    `sub_cost(ref_token, hyp_token)` is the substitution cost folded into the
+    DP objective, so the alignment minimizes the *metric* cost rather than the
+    hard edit count. With the default unit cost this is plain Levenshtein.
+    Insert / delete stay at cost 1. Identical tokens always cost 0 (a match),
+    independent of `sub_cost`.
+
+    Returns (edits, hits, substitutions, insertions, deletions, total_cost).
+    `total_cost` is the optimal DP cost — the metric-weighted error mass, used
+    to form the rate. The hits / subs / ins / dels are plain edit-op counts
+    (integers). This DP emits only EQUAL / SUBSTITUTE / INSERT / DELETE; it does
+    not produce BOUNDARY edits (N-to-M word merges are reconstructed separately
+    by `_reconstruct_word_edits_from_chars` on a char-level alignment).
     """
 
     n, m = len(ref_units), len(hyp_units)
@@ -483,13 +482,13 @@ def _overlap_constrained_align(
             hj = hyp_origins[j - 1]
             if overlap[ri, hj]:
                 if ru == hyp_units[j - 1]:
-                    mc = cost[i - 1, j - 1]
-                    if mc < best:
-                        best, op = mc, MATCH
+                    diag = cost[i - 1, j - 1]  # exact match, cost 0
+                    cand_op = MATCH
                 else:
-                    sc = cost[i - 1, j - 1] + 1
-                    if sc < best:
-                        best, op = sc, SUB
+                    diag = cost[i - 1, j - 1] + sub_cost(ru, hyp_units[j - 1])
+                    cand_op = SUB
+                if diag < best:
+                    best, op = diag, cand_op
 
             cost[i, j] = best
             back[i, j] = op
@@ -563,8 +562,8 @@ def _overlap_constrained_align(
     subs = sum(e.ref_end - e.ref_start for e in edits if e.op == EditOp.SUBSTITUTE)
     dels = sum(e.ref_end - e.ref_start for e in edits if e.op == EditOp.DELETE)
     ins = sum(e.hyp_end - e.hyp_start for e in edits if e.op == EditOp.INSERT)
-    boundaries = sum(1 for e in edits if e.op == EditOp.BOUNDARY)
-    return edits, hits, subs, ins, dels, boundaries
+    total_cost = float(cost[n, m])
+    return edits, hits, subs, ins, dels, total_cost
 
 
 def _tokenize_with_ranges(chars: Sequence[str]) -> tuple[list[tuple[int, int, str]], list[int]]:
@@ -784,14 +783,20 @@ def _align_group_via_chars(
     text_attr: str,
     normalizer: Normalizer,
     separator: str = " ",
+    sub_cost: TokenCost = _unit_sub_cost,
 ) -> AlignmentResult:
     """Char-level overlap-constrained alignment with word-level edit
     reconstruction. Resulting AlignmentResult looks like a word-mode
     alignment from the caller's perspective.
 
-    Spaces are just characters in the char-level DP, so any N-to-M
-    boundary disagreement is captured naturally and reclassified as a
-    `boundary` edit when reconstructing the word view.
+    The key feature of this alignment mode is that it can allow flexibility
+    on word boundaries. Spaces are just characters in the char-level DP, so
+    any N-to-M boundary disagreement is captured naturally and reclassified
+    as a `boundary` edit when reconstructing the word view.
+
+    The char DP itself stays unit-cost (graphemes are atomic). `sub_cost`
+    is the word-level cost applied when scoring the reconstructed word edits,
+    so the reported `error_rate` is consistent with the chosen metric.
     """
 
     ref_chars, ref_origins, gt_sorted, ref_norm_parts = _normalize_to_chars_per_interval(
@@ -810,8 +815,6 @@ def _align_group_via_chars(
     ref_norm_joined = separator.join(p for p in ref_norm_parts if p)
     hyp_norm_joined = separator.join(p for p in hyp_norm_parts if p)
 
-    overlap = _overlap_matrix(gt_sorted, ds_sorted)
-
     if not ref_chars and not hyp_chars:
         return AlignmentResult(
             Granularity.WORD,
@@ -827,12 +830,17 @@ def _align_group_via_chars(
             0,
         )
 
+    overlaps = _overlap_matrix(gt_sorted, ds_sorted)
+
+    # Char-level DP stays unit-cost: graphemes are atomic, so a word-level
+    # metric has no meaning here. Word-level cost weighting happens in the
+    # word-token path (`_align_group_with_overlap`).
     char_edits, _ch_hits, _ch_subs, _ch_ins, _ch_dels, _ = _overlap_constrained_align(
         ref_chars,
         ref_origins,
         hyp_chars,
         hyp_origins,
-        overlap,
+        overlaps,
     )
 
     ref_word_strs, hyp_word_strs, word_edits = _reconstruct_word_edits_from_chars(
@@ -841,13 +849,20 @@ def _align_group_via_chars(
         char_edits,
     )
 
-    n_ref_words = len(ref_word_strs)
     hits = sum(e.ref_end - e.ref_start for e in word_edits if e.op == EditOp.EQUAL)
     subs = sum(e.ref_end - e.ref_start for e in word_edits if e.op == EditOp.SUBSTITUTE)
     dels = sum(e.ref_end - e.ref_start for e in word_edits if e.op == EditOp.DELETE)
     ins = sum(e.hyp_end - e.hyp_start for e in word_edits if e.op == EditOp.INSERT)
-    boundaries = sum(1 for e in word_edits if e.op == EditOp.BOUNDARY)
-    wer = (subs + ins + dels + boundaries) / n_ref_words if n_ref_words else float("nan")
+
+    # Score the reconstructed word edits with the chosen cost so error_rate
+    # matches the cost function (BOUNDARY edits handled by _chunk_cost).
+    total_err = 0.0
+    total_ref = 0
+    for e in word_edits:
+        err, ref = _chunk_cost(e, granularity=Granularity.WORD, token_cost=sub_cost)
+        total_err += err
+        total_ref += ref
+    error_rate = total_err / total_ref if total_ref else float("nan")
 
     ref_word_origins: list[int] = []
     for r_s, r_e, _ in _tokenize_with_ranges(ref_chars)[0]:
@@ -863,7 +878,7 @@ def _align_group_via_chars(
         ref_units=ref_word_strs,
         hyp_units=hyp_word_strs,
         edits=word_edits,
-        error_rate=wer,
+        error_rate=error_rate,
         substitutions=subs,
         insertions=ins,
         deletions=dels,
@@ -881,10 +896,17 @@ def _align_group_with_overlap(
     granularity: Granularity,
     normalizer: Normalizer,
     separator: str,
+    sub_cost: TokenCost = _unit_sub_cost,
 ) -> AlignmentResult:
     """Join mode alignment that forbids token-level matches between intervals
     whose time spans don't overlap. Catches the most obvious spurious matches
-    (e.g. "police" at t=24s ↔ "police" at t=180s)."""
+    (e.g. "police" at t=24s ↔ "police" at t=180s).
+
+    `sub_cost` weights the substitution cost inside the DP, so the alignment
+    minimizes the chosen cost rather than the hard edit count. With the default
+    unit cost the result matches plain Levenshtein. At char granularity the
+    tokens are single graphemes, where every metric degenerates to equality, so
+    the weighting is a no-op there."""
 
     ref_units, ref_origins, gt_sorted, ref_norm_parts = _normalize_tokenize_per_interval(
         gt_intervals,
@@ -938,14 +960,17 @@ def _align_group_with_overlap(
         )
 
     overlap = _overlap_matrix(gt_sorted, ds_sorted)
-    edits, hits, subs, ins, dels, boundaries = _overlap_constrained_align(
+    edits, hits, subs, ins, dels, total_cost = _overlap_constrained_align(
         ref_units,
         ref_origins,
         hyp_units,
         hyp_origins,
         overlap,
+        sub_cost=sub_cost,
     )
-    error_rate = (subs + ins + dels + boundaries) / len(ref_units)
+    # Rate uses the metric-weighted DP cost (total_cost), not the raw edit
+    # count, so it is consistent with the objective the alignment minimized.
+    error_rate = total_cost / len(ref_units)
     return AlignmentResult(
         granularity=granularity,
         ref_normalized=ref_norm_joined,
@@ -970,6 +995,7 @@ def match_transcriptions(
     gt: Sequence[Interval], ds: Sequence[Interval], *, req: TranscriptionRequirement
 ) -> TranscriptionReport:
     normalizer = Normalizer(req.normalizer)
+    token_cost = make_token_cost(req.metric, req.threshold)
 
     gt_groups = group_intervals(gt, attribute=req.grouping.attribute)
     ds_groups = group_intervals(ds, attribute=req.grouping.attribute)
@@ -1000,6 +1026,7 @@ def match_transcriptions(
                         "text_attr": req.text_attribute,
                         "normalizer": normalizer,
                         "separator": req.grouping.join_separator,
+                        "sub_cost": token_cost,
                     }
 
                     match (req.align, req.granularity):
@@ -1029,7 +1056,11 @@ def match_transcriptions(
                         separator=req.grouping.join_separator,
                     )
                     alignment = _align_pair(
-                        ref_text, hyp_text, granularity=req.granularity, normalizer=normalizer
+                        ref_text,
+                        hyp_text,
+                        granularity=req.granularity,
+                        normalizer=normalizer,
+                        sub_cost=token_cost,
                     )
                 groups.append(GroupAlignment(key, gt_group, ds_group, alignment))
 
@@ -1055,6 +1086,7 @@ def match_transcriptions(
                                 hyp_text,
                                 granularity=req.granularity,
                                 normalizer=normalizer,
+                                sub_cost=token_cost,
                             ),
                         )
                     )

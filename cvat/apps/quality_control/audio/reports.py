@@ -90,8 +90,9 @@ class AlignmentResult:
     deletions: int
     hits: int
 
-    # Per-token source-interval index (within the group). None for paths that
-    # don't track origins (jiwer-based per-pair alignment).
+    # Per-token source-interval index (within the group). None for the
+    # per-pair (filter) path, which aligns a single text pair and has no
+    # multi-interval origins to track.
     ref_origins: list[int] | None = None
     hyp_origins: list[int] | None = None
 

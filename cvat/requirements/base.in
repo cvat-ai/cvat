@@ -32,8 +32,6 @@ natsort==8.0.0
 numpy~=2.0
 opencv-python-headless~=4.8
 
-jiwer==4.0.0
-
 # Extra transcription normalization options
 ftfy~=6.3
 inflect~=7.5
