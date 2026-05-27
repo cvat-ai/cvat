@@ -38,7 +38,6 @@ charset-normalizer==3.4.2
     # via requests
 click==8.2.1
     # via
-    #   jiwer
     #   nltk
     #   rq
 clickhouse-connect==0.15.1
@@ -150,8 +149,6 @@ isodate==0.7.2
     # via
     #   msrest
     #   python3-saml
-jiwer==4.0.0
-    # via -r cvat/requirements/base.in
 jmespath==1.0.1
     # via
     #   boto3
@@ -280,8 +277,6 @@ pyyaml==6.0.2
     # via
     #   datumaro
     #   drf-spectacular
-rapidfuzz==3.14.5
-    # via jiwer
 redis==4.6.0
     # via
     #   -r cvat/requirements/base.in
