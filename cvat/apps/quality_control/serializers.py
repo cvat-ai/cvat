@@ -105,6 +105,11 @@ class QualityReportSummarySerializer(serializers.Serializer):
     precision = serializers.FloatField(source="annotations.precision")
     recall = serializers.FloatField(source="annotations.recall")
 
+    # Optional metrics
+    transcription_error_rate = serializers.FloatField(
+        source="annotation_components.transcription.error_rate", required=False
+    )
+
     tasks = QualityReportTasksSummarySerializer(
         required=False, help_text="Included only in project reports"
     )
@@ -115,8 +120,15 @@ class QualityReportSummarySerializer(serializers.Serializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        # Old reports may miss "tasks" and "jobs", new reports may miss "frame_*" fields
-        for optional_field in ("tasks", "jobs", "frame_count", "frame_share"):
+        # Old reports may miss "tasks" and "jobs", new reports may miss "frame_*"
+        # fields. "transcription_error_rate" presence depends on the task.
+        for optional_field in (
+            "tasks",
+            "jobs",
+            "frame_count",
+            "frame_share",
+            "transcription_error_rate",
+        ):
             if representation.get(optional_field) is None:
                 representation.pop(optional_field, None)
 
@@ -489,9 +501,17 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 Allow using project settings when computing task quality.
                 Only applicable to task quality settings inside projects
             """,
-            "target_metric": "The primary metric used for quality estimation",
+            "target_metric": """
+                The primary metric used for quality estimation. accuracy / precision /
+                recall are higher-is-better and bounded in [0, 1];
+                'transcription_error_rate' is the lower-is-better transcription corpus
+                rate and is unbounded above.
+            """,
             "target_metric_threshold": """
                 Defines the minimal quality requirements in terms of the selected target metric.
+                For the lower-is-better 'transcription_error_rate' metric the quality
+                is satisfied when the metric is at or below the threshold; for the other metrics
+                it must be at or above it.
             """,
             "max_validations_per_job": """
                 The maximum number of job validation attempts for the job assignee.
@@ -570,7 +590,10 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         for field_name in fields:
             if field_name.endswith("_threshold") or field_name in ["oks_sigma", "line_thickness"]:
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
-                extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
+
+                if field_name != "target_metric_threshold":
+                    # transcription_error_rate is unbounded
+                    extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
 
         extra_kwargs.setdefault("interval_boundary_tolerance_s", {}).setdefault("min_value", 0)
 
@@ -615,6 +638,29 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             )
 
         return value
+
+    def validate(self, attrs):
+        # Resolve the effective values, accounting for partial updates where only
+        # one of the two fields may be present in the request.
+        target_metric = attrs.get("target_metric")
+        threshold = attrs.get("target_metric_threshold")
+        if self.instance is not None:
+            target_metric = target_metric or self.instance.target_metric
+            if threshold is None:
+                threshold = self.instance.target_metric_threshold
+        target_metric = target_metric or models.QualityTargetMetricType.ACCURACY
+
+        # transcription_error_rate is lower-is-better and unbounded above (only
+        # the field-level min_value=0 applies). The higher-is-better metrics are
+        # ratios in [0, 1].
+        is_unbounded = target_metric == models.QualityTargetMetricType.TRANSCRIPTION_ERROR_RATE
+        if not is_unbounded and threshold is not None and threshold > 1:
+            raise serializers.ValidationError(
+                "target_metric_threshold must be in [0, 1] for the "
+                "accuracy / precision / recall metrics."
+            )
+
+        return attrs
 
     def get_extra_kwargs(self):
         defaults = models.QualitySettings.get_defaults()

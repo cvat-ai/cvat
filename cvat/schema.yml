@@ -10028,18 +10028,25 @@ components:
           allOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           description: |-
-            The primary metric used for quality estimation
+            The primary metric used for quality estimation. accuracy / precision /
+            recall are higher-is-better and bounded in [0, 1];
+            'transcription_error_rate' is the lower-is-better transcription corpus
+            rate and is unbounded above.
+
 
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `transcription_error_rate` - TRANSCRIPTION_ERROR_RATE
         target_metric_threshold:
           type: number
           format: double
-          maximum: 1
           minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
+            For the lower-is-better 'transcription_error_rate' metric the quality
+            is satisfied when the metric is at or below the threshold; for the other metrics
+            it must be at or above it.
         max_validations_per_job:
           type: integer
           maximum: 2147483647
@@ -10709,6 +10716,9 @@ components:
         recall:
           type: number
           format: double
+        transcription_error_rate:
+          type: number
+          format: double
         tasks:
           allOf:
           - $ref: '#/components/schemas/QualityReportTasksSummary'
@@ -10793,18 +10803,25 @@ components:
           allOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           description: |-
-            The primary metric used for quality estimation
+            The primary metric used for quality estimation. accuracy / precision /
+            recall are higher-is-better and bounded in [0, 1];
+            'transcription_error_rate' is the lower-is-better transcription corpus
+            rate and is unbounded above.
+
 
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `transcription_error_rate` - TRANSCRIPTION_ERROR_RATE
         target_metric_threshold:
           type: number
           format: double
-          maximum: 1
           minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
+            For the lower-is-better 'transcription_error_rate' metric the quality
+            is satisfied when the metric is at or below the threshold; for the other metrics
+            it must be at or above it.
         max_validations_per_job:
           type: integer
           maximum: 2147483647
@@ -10953,11 +10970,13 @@ components:
       - accuracy
       - precision
       - recall
+      - transcription_error_rate
       type: string
       description: |-
         * `accuracy` - ACCURACY
         * `precision` - PRECISION
         * `recall` - RECALL
+        * `transcription_error_rate` - TRANSCRIPTION_ERROR_RATE
     RegisterSerializerEx:
       type: object
       properties:
@@ -12015,6 +12034,9 @@ components:
             pattern in word boundaries (\b...\b) — useful for space-delimited
             languages, leave off for CJK. A plain literal is an escaped pattern.
             Empty list disables.
+        substitutions_hash:
+          type: string
+          readOnly: true
         grouping_strategy:
           allOf:
           - $ref: '#/components/schemas/TranscriptionGroupingStrategy'
