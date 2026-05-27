@@ -7,6 +7,7 @@ from __future__ import annotations
 import zipfile
 from collections.abc import Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
+from typing import Iterator
 
 import PIL.Image
 
@@ -32,8 +33,8 @@ class TaskDataset:
     Each sample corresponds to one frame in the task, and provides access to
     the corresponding annotations and media data. Deleted frames are omitted.
 
-    This class caches all data and annotations for the task on the local file system
-    during construction.
+    This class caches task metadata for the task on the local file system
+    during construction. Media data caching depends on `media_download_policy`.
 
     Limitations:
 
@@ -70,14 +71,15 @@ class TaskDataset:
 
         `media_download_policy` determines when media data is downloaded.
 
-        `MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND` may not be used with with `UpdatePolicy.NEVER`,
+        `MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND` may not be used with `UpdatePolicy.NEVER`,
         as it requires network access.
         """
 
         self._logger = client.logger
+        self._media_download_policy = media_download_policy
 
-        cache_manager = make_cache_manager(client, update_policy)
-        self._task = cache_manager.retrieve_task(task_id)
+        self._cache_manager = make_cache_manager(client, update_policy)
+        self._task = self._cache_manager.retrieve_task(task_id)
 
         if not self._task.size or not self._task.data_chunk_size:
             raise UnsupportedDatasetError("The task has no data")
@@ -85,7 +87,7 @@ class TaskDataset:
         self._logger.info("Fetching labels...")
         self._labels = tuple(self._task.get_labels())
 
-        data_meta = cache_manager.ensure_task_model(
+        data_meta = self._cache_manager.ensure_task_model(
             self._task.id,
             "data_meta.json",
             models.DataMetaRead,
@@ -96,9 +98,13 @@ class TaskDataset:
         active_frame_indexes = set(range(self._task.size)) - set(data_meta.deleted_frames)
 
         if media_download_policy == MediaDownloadPolicy.PRELOAD_ALL:
+            self._init_chunk_dir()
             needed_chunks = {index // self._task.data_chunk_size for index in active_frame_indexes}
-            self._ensure_chunks(task_id, cache_manager, needed_chunks)
+            self._ensure_chunks(needed_chunks)
             self._load_frame_image = self._load_frame_image_from_cache
+        elif media_download_policy == MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND:
+            self._init_chunk_dir()
+            self._load_frame_image = self._load_frame_image_from_chunk_cache
         elif media_download_policy == MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND:
             assert update_policy != UpdatePolicy.NEVER
             self._load_frame_image = self._load_frame_image_from_server
@@ -106,7 +112,7 @@ class TaskDataset:
             assert False, "Unknown media download policy"
 
         if load_annotations:
-            self._load_annotations(cache_manager, sorted(active_frame_indexes))
+            self._load_annotations(self._cache_manager, sorted(active_frame_indexes))
         else:
             self._frame_annotations = {
                 frame_index: None for frame_index in sorted(active_frame_indexes)
@@ -126,22 +132,23 @@ class TaskDataset:
             for k, v in self._frame_annotations.items()
         ]
 
-    def _ensure_chunks(self, task_id, cache_manager, chunk_indexes):
+    def _init_chunk_dir(self) -> None:
         if self._task.data_original_chunk_type != "imageset":
             raise UnsupportedDatasetError(
-                f"Preloading media data is only supported for tasks with image chunks;"
+                f"Chunk-based media access is only supported for tasks with image chunks;"
                 f" current chunk type is {self._task.data_original_chunk_type!r}"
             )
 
-        self._logger.info("Downloading chunks...")
-
-        self._chunk_dir = cache_manager.chunk_dir(task_id)
+        self._chunk_dir = self._cache_manager.chunk_dir(self._task.id)
         self._chunk_dir.mkdir(exist_ok=True, parents=True)
+
+    def _ensure_chunks(self, chunk_indexes: Iterable[int]) -> None:
+        self._logger.info("Downloading chunks...")
 
         with ThreadPoolExecutor(_NUM_DOWNLOAD_THREADS) as pool:
 
             def ensure_chunk(chunk_index):
-                cache_manager.ensure_chunk(self._task, chunk_index)
+                self._cache_manager.ensure_chunk(self._task, chunk_index)
 
             for _ in pool.map(ensure_chunk, sorted(chunk_indexes)):
                 # just need to loop through all results so that any exceptions are propagated
@@ -189,6 +196,77 @@ class TaskDataset:
         """
         return self._samples
 
+    def iter_sample_chunks(
+        self, *, delete_finished_chunks: bool = False
+    ) -> Iterator[Sequence[Sample]]:
+        """
+        Iterates over the task samples chunk by chunk.
+
+        The current chunk is ensured before it is yielded, and the next chunk is downloaded
+        in the background while the caller processes the current one.
+
+        If `delete_finished_chunks` is true, each chunk file is deleted after iteration
+        advances past that chunk. Callers should therefore consume the yielded samples
+        sequentially and not keep references for later media access.
+        """
+
+        if self._media_download_policy == MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND:
+            raise UnsupportedDatasetError(
+                "iter_sample_chunks is not supported with FETCH_FRAMES_ON_DEMAND"
+            )
+
+        if self._task.data_original_chunk_type != "imageset":
+            raise UnsupportedDatasetError(
+                f"Chunk iteration is only supported for tasks with image chunks;"
+                f" current chunk type is {self._task.data_original_chunk_type!r}"
+            )
+
+        sample_chunks: list[tuple[int, list[Sample]]] = []
+        current_chunk_index: int | None = None
+        current_chunk_samples: list[Sample] = []
+
+        for sample in self._samples:
+            sample_chunk_index = sample.frame_index // self._task.data_chunk_size
+
+            if sample_chunk_index != current_chunk_index:
+                if current_chunk_samples:
+                    assert current_chunk_index is not None
+                    sample_chunks.append((current_chunk_index, current_chunk_samples))
+
+                current_chunk_index = sample_chunk_index
+                current_chunk_samples = [sample]
+            else:
+                current_chunk_samples.append(sample)
+
+        if current_chunk_samples:
+            assert current_chunk_index is not None
+            sample_chunks.append((current_chunk_index, current_chunk_samples))
+
+        if not sample_chunks:
+            return
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            next_chunk_future = pool.submit(
+                self._cache_manager.ensure_chunk,
+                self._task,
+                sample_chunks[0][0],
+            )
+
+            for chunk_offset, (chunk_index, chunk_samples) in enumerate(sample_chunks):
+                next_chunk_future.result()
+
+                if chunk_offset + 1 < len(sample_chunks):
+                    next_chunk_future = pool.submit(
+                        self._cache_manager.ensure_chunk,
+                        self._task,
+                        sample_chunks[chunk_offset + 1][0],
+                    )
+
+                yield chunk_samples
+
+                if delete_finished_chunks:
+                    (self._chunk_dir / f"{chunk_index}.zip").unlink(missing_ok=True)
+
     def _load_frame_image_from_cache(self, frame_index: int) -> PIL.Image:
         assert frame_index in self._frame_annotations
 
@@ -201,6 +279,11 @@ class TaskDataset:
                 image.load()
 
         return image
+
+    def _load_frame_image_from_chunk_cache(self, frame_index: int) -> PIL.Image:
+        chunk_index = frame_index // self._task.data_chunk_size
+        self._cache_manager.ensure_chunk(self._task, chunk_index)
+        return self._load_frame_image_from_cache(frame_index)
 
     def _load_frame_image_from_server(self, frame_index: int) -> PIL.Image:
         assert frame_index in self._frame_annotations

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import threading
 from logging import Logger
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from cvat_sdk import Client, models
 from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-from shared.utils.helpers import generate_image_files
+from shared.utils.helpers import generate_image_files, generate_video_file
 
 from .util import restrict_api_requests
 
@@ -44,6 +45,7 @@ class TestTaskDataset:
         fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
+        self.tmp_path = tmp_path
         self.images = generate_image_files(10)
 
         image_dir = tmp_path / "images"
@@ -55,6 +57,7 @@ class TestTaskDataset:
             image_path.write_bytes(image.getbuffer())
             image_paths.append(image_path)
 
+        self.image_paths = image_paths
         self.task = self.client.tasks.create_from_data(
             models.TaskWriteRequest(
                 "Dataset layer test task",
@@ -229,3 +232,128 @@ class TestTaskDataset:
             assert actual_image == expected_image
 
             assert sample.annotations is None
+
+    def test_iter_sample_chunks_prefetches_and_deletes_finished_chunks(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        dataset = cvatds.TaskDataset(
+            self.client,
+            self.task.id,
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        )
+
+        second_chunk_download_started = threading.Event()
+        allow_second_chunk_download = threading.Event()
+        original_ensure_chunk = dataset._cache_manager.ensure_chunk
+
+        def wrapped_ensure_chunk(task, chunk_index):
+            if chunk_index == 1:
+                second_chunk_download_started.set()
+                assert allow_second_chunk_download.wait(timeout=5)
+
+            return original_ensure_chunk(task, chunk_index)
+
+        monkeypatch.setattr(dataset._cache_manager, "ensure_chunk", wrapped_ensure_chunk)
+
+        chunk_dir = dataset._cache_manager.chunk_dir(self.task.id)
+        chunk_iterator = iter(dataset.iter_sample_chunks(delete_finished_chunks=True))
+
+        first_chunk_samples = next(chunk_iterator)
+
+        assert [sample.frame_index for sample in first_chunk_samples] == [0, 1, 2]
+        assert second_chunk_download_started.wait(timeout=5)
+        assert (chunk_dir / "0.zip").exists()
+        assert not (chunk_dir / "1.zip").exists()
+
+        for sample in first_chunk_samples:
+            assert sample.media.load_image() == PIL.Image.open(self.images[sample.frame_index])
+
+        allow_second_chunk_download.set()
+
+        second_chunk_samples = next(chunk_iterator)
+
+        assert [sample.frame_index for sample in second_chunk_samples] == [3, 4, 5]
+        assert not (chunk_dir / "0.zip").exists()
+
+        for _ in chunk_iterator:
+            pass
+
+    def test_iter_sample_chunks_rejects_fetch_frames_on_demand(self):
+        dataset = cvatds.TaskDataset(
+            self.client,
+            self.task.id,
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND,
+        )
+
+        with pytest.raises(
+            cvatds.UnsupportedDatasetError,
+            match="iter_sample_chunks is not supported with FETCH_FRAMES_ON_DEMAND",
+        ):
+            list(dataset.iter_sample_chunks())
+
+    def test_video_task_is_unsupported_for_chunked_media_access(self):
+        video_file = generate_video_file(4)
+        video_path = self.tmp_path / video_file.name
+        video_path.write_bytes(video_file.getbuffer())
+
+        video_task = self.client.tasks.create_from_data(
+            models.TaskWriteRequest(
+                "Dataset layer video task",
+                labels=[models.PatchedLabelRequest(name="video-object")],
+            ),
+            resource_type=ResourceType.LOCAL,
+            resources=[video_path],
+        )
+
+        with pytest.raises(
+            cvatds.UnsupportedDatasetError,
+            match="Chunk-based media access is only supported for tasks with image chunks",
+        ):
+            cvatds.TaskDataset(
+                self.client,
+                video_task.id,
+                load_annotations=False,
+                media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+            )
+
+    def test_iter_sample_chunks_keeps_files_when_delete_is_disabled(self):
+        dataset = cvatds.TaskDataset(
+            self.client,
+            self.task.id,
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        )
+
+        chunk_dir = dataset._cache_manager.chunk_dir(self.task.id)
+
+        sample_chunks = list(dataset.iter_sample_chunks(delete_finished_chunks=False))
+
+        assert [len(chunk_samples) for chunk_samples in sample_chunks] == [3, 3, 3, 1]
+        assert all((chunk_dir / f"{chunk_index}.zip").exists() for chunk_index in range(4))
+
+    def test_iter_sample_chunks_yields_single_chunk(self):
+        single_chunk_task = self.client.tasks.create_from_data(
+            models.TaskWriteRequest(
+                "Dataset layer single chunk task",
+                labels=[
+                    models.PatchedLabelRequest(name="person"),
+                ],
+            ),
+            resource_type=ResourceType.LOCAL,
+            resources=self.image_paths,
+            data_params={"chunk_size": len(self.image_paths)},
+        )
+
+        dataset = cvatds.TaskDataset(
+            self.client,
+            single_chunk_task.id,
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        )
+
+        sample_chunks = list(dataset.iter_sample_chunks())
+
+        assert len(sample_chunks) == 1
+        assert [sample.frame_index for sample in sample_chunks[0]] == list(range(len(self.image_paths)))

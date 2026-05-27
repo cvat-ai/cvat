@@ -69,5 +69,12 @@ class MediaDownloadPolicy(Enum):
     PRELOAD_ALL = auto()
     """Download and cache all media data when the dataset object is created."""
 
+    FETCH_CHUNKS_ON_DEMAND = auto()
+    """
+    Download image chunks lazily as frames are accessed and cache them locally.
+
+    This policy is only supported for image-set tasks.
+    """
+
     FETCH_FRAMES_ON_DEMAND = auto()
     """Download the media element for each frame whenever MediaElement.load_* is invoked."""
