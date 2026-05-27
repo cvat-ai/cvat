@@ -361,8 +361,8 @@ class ComparisonParameters(ReportNode):
     low_overlap_threshold: float = 0.8
     "Used for distinction between strong / weak (low_overlap) matches"
 
-    interval_boundary_tolerance_s: float = 0.2
-    "Timestamp tolerance (s) for the audio interval boundary F1 metric"
+    interval_boundary_tolerance: float = 100
+    "Timestamp tolerance (ms) for the audio interval boundary F1 metric and transcription alignment"
 
     oks_sigma: float = 0.09
     "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
@@ -2735,7 +2735,11 @@ class DatasetComparator:
                     ),
                     iou_threshold=self.settings.iou_threshold,
                     # enforce_overlap left at library default (True) for v1
-                    overlap_tolerance_s=self.settings.interval_boundary_tolerance_s,
+                    # Intervals carry ms timestamps and the library compares the
+                    # tolerance directly against them, so the ms value is passed
+                    # through unchanged (the lib's `_s` suffix is a misnomer — it
+                    # operates in the intervals' own unit).
+                    overlap_tolerance_s=self.settings.interval_boundary_tolerance,
                 )
             )
             active_requirements.append((requirement, attribute_spec))
@@ -2744,7 +2748,7 @@ class DatasetComparator:
             interval_matching=audio_qa.IntervalMatchingConfig(
                 iou_threshold=self.settings.iou_threshold,
                 low_overlap_threshold=self.settings.low_overlap_threshold,
-                boundary_tolerance_s=self.settings.interval_boundary_tolerance_s,
+                boundary_tolerance_s=self.settings.interval_boundary_tolerance,
             ),
             transcriptions=audio_reqs,
         )

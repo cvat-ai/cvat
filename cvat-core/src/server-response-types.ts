@@ -315,7 +315,7 @@ export interface SerializedQualitySettingsData {
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
     empty_is_annotated?: boolean;
-    interval_boundary_tolerance_s?: number;
+    interval_boundary_tolerance?: number;
     transcription_requirements?: SerializedTranscriptionRequirement[];
     descriptions?: Record<string, string>;
     inherit?: boolean;

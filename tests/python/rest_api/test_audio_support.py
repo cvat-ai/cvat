@@ -999,7 +999,7 @@ class TestAudioQuality:
         updated, _ = self.client.api_client.quality_api.partial_update_settings(
             settings.id,
             patched_quality_settings_request=models.PatchedQualitySettingsRequest(
-                interval_boundary_tolerance_s=0.5,
+                interval_boundary_tolerance=500,
                 transcription_requirements=[
                     models.PatchedTranscriptionRequirementRequest(
                         attribute_id=transcription_attr.id,
@@ -1021,7 +1021,7 @@ class TestAudioQuality:
             ),
         )
 
-        assert updated.interval_boundary_tolerance_s == 0.5
+        assert updated.interval_boundary_tolerance == 500
         assert len(updated.transcription_requirements) == 1
         req = updated.transcription_requirements[0]
         assert req.attribute_id == transcription_attr.id
@@ -1612,17 +1612,17 @@ class TestAudioQuality:
         self.client.api_client.quality_api.partial_update_settings(
             settings.id,
             patched_quality_settings_request=models.PatchedQualitySettingsRequest(
-                interval_boundary_tolerance_s=0,
+                interval_boundary_tolerance=0,
             ),
         )
         strict = self._transcription_summary(self.compute_report(task.id))
         assert strict["error_rate"] > 0
 
-        # Tolerance wider than the gap → intervals overlap → the word matches.
+        # Tolerance (ms) wider than the 50ms gap → intervals overlap → match.
         self.client.api_client.quality_api.partial_update_settings(
             settings.id,
             patched_quality_settings_request=models.PatchedQualitySettingsRequest(
-                interval_boundary_tolerance_s=60,
+                interval_boundary_tolerance=60,
             ),
         )
         relaxed = self._transcription_summary(self.compute_report(task.id))
