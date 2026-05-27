@@ -15,7 +15,7 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
@@ -50,6 +50,7 @@ from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
     QualityReportCreateSerializer,
     QualityReportSerializer,
+    QualityRequirementListSerializer,
     QualityRequirementSerializer,
     QualitySettingsParentType,
     QualitySettingsSerializer,
@@ -653,7 +654,7 @@ class QualitySettingsViewSet(
                 "settings_id", type=OpenApiTypes.INT, description="Settings id filter"
             ),
         ],
-        responses={"200": QualityRequirementSerializer(many=True)},
+        responses={"200": QualityRequirementListSerializer(many=True)},
     ),
     create=extend_schema(
         summary="Create a quality requirement",
@@ -716,6 +717,12 @@ class QualityRequirementViewSet(
     ordering = "id"
 
     serializer_class = QualityRequirementSerializer
+
+    def get_serializer_class(self) -> type[serializers.BaseSerializer]:
+        if self.action == "list":
+            return QualityRequirementListSerializer
+
+        return super().get_serializer_class()
 
     def get_queryset(self):
         queryset = super().get_queryset()

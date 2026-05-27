@@ -755,10 +755,17 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         return instance
 
 
+class QualityRequirementListSerializer(QualityRequirementSerializer):
+    def get_fields(self) -> dict[str, serializers.Field]:
+        fields = super().get_fields()
+        fields.pop("effective", None)
+        return fields
+
+
 class QualitySettingsRequirementsField(serializers.Field):
     def to_representation(self, value):
         requirements = value.all() if hasattr(value, "all") else value
-        return QualityRequirementSerializer(
+        return QualityRequirementListSerializer(
             requirements,
             many=True,
             context=getattr(self.parent, "context", {}),

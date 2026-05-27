@@ -640,6 +640,29 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             {"==": [{"var": "shape.skeleton.label"}, "person"]}
         )
 
+        listed_requirements, response = self._list_requirements(
+            admin_user, settings_id=settings["id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+        listed_child = next(
+            requirement
+            for requirement in listed_requirements
+            if requirement["id"] == created_requirement["id"]
+        )
+        assert "effective" not in listed_child
+        assert listed_child["annotation_type"] is None
+        assert listed_child["parent_requirement"] == parent_requirement["id"]
+
+        retrieved_requirement, response = self._retrieve_requirement(
+            admin_user, created_requirement["id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert retrieved_requirement["annotation_type"] is None
+        assert retrieved_requirement["effective"]["annotation_type"] == "skeleton_keypoint"
+        assert retrieved_requirement["effective"]["filter"] == json.dumps(
+            {"==": [{"var": "shape.skeleton.label"}, "person"]}
+        )
+
     def test_create_requirement_rejects_attribute_root_terms_for_shape_requirements(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -772,6 +795,7 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
         assert all(requirement["is_default"] is True for requirement in requirements)
+        assert all("effective" not in requirement for requirement in requirements)
 
     def test_new_project_gets_disabled_default_requirements_for_all_supported_types(
         self, admin_user
