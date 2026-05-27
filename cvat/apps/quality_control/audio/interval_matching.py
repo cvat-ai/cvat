@@ -77,7 +77,7 @@ def boundary_f1(
     ref_boundaries: Sequence[float],
     hyp_boundaries: Sequence[float],
     *,
-    tolerance_s: float,
+    tolerance_ms: float,
 ) -> BoundaryAgreement:
     """Greedy nearest-neighbor matching of boundary timestamps within a
     fixed temporal tolerance. Returns precision / recall / F1 plus
@@ -87,14 +87,14 @@ def boundary_f1(
     tp = 0
     for r in ref_boundaries:
         best_idx = -1
-        best_d = tolerance_s + 1e-9
+        best_d = tolerance_ms + 1e-9
         for i, h in enumerate(hyp_boundaries):
             if i in matched:
                 continue
             d = abs(r - h)
             if d <= best_d:
                 best_idx, best_d = i, d
-        if best_idx >= 0 and best_d <= tolerance_s:
+        if best_idx >= 0 and best_d <= tolerance_ms:
             matched.add(best_idx)
             tp += 1
     fp = len(hyp_boundaries) - len(matched)
@@ -135,7 +135,7 @@ def match_intervals(
     boundary = boundary_f1(
         _collect_boundaries(gt),
         _collect_boundaries(ds),
-        tolerance_s=config.boundary_tolerance_s,
+        tolerance_ms=config.boundary_tolerance_ms,
     )
 
     return IntervalReport(
@@ -145,6 +145,6 @@ def match_intervals(
         ds_unmatched=ds_unmatched,
         iou_threshold=config.iou_threshold,
         low_overlap_threshold=config.low_overlap_threshold,
-        boundary_tolerance_s=config.boundary_tolerance_s,
+        boundary_tolerance_ms=config.boundary_tolerance_ms,
         boundary=boundary,
     )

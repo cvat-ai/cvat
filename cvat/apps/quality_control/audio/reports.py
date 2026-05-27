@@ -50,7 +50,7 @@ class IntervalReport:
     ds_unmatched: list[Interval]
     iou_threshold: float
     low_overlap_threshold: float
-    boundary_tolerance_s: float
+    boundary_tolerance_ms: float
     boundary: BoundaryAgreement | None = None
 
     @property

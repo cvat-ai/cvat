@@ -72,16 +72,16 @@ class TranscriptionRequirement:
     iou_threshold: float = 0.3  # used by FILTER strategy
     enforce_overlap: bool = True  # join: forbid token match between non-overlapping intervals
 
-    # Gap (seconds) by which the join overlap gate is relaxed: intervals
-    # separated by up to this much still count as overlapping.
-    overlap_tolerance_s: float = 0.0
+    # Gap (ms) by which the join overlap gate is relaxed: intervals separated by
+    # up to this much still count as overlapping.
+    overlap_tolerance_ms: float = 0.0
 
 
 @dataclass
 class IntervalMatchingConfig:
     iou_threshold: float = 0.3
     low_overlap_threshold: float = 0.5
-    boundary_tolerance_s: float = 0.2  # boundary-F1 timestamp tolerance
+    boundary_tolerance_ms: float = 200.0  # boundary-F1 timestamp tolerance
 
 
 @dataclass

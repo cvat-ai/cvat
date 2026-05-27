@@ -2734,12 +2734,9 @@ class DatasetComparator:
                         join_separator=requirement.grouping_separator,
                     ),
                     iou_threshold=self.settings.iou_threshold,
-                    # enforce_overlap left at library default (True) for v1
-                    # Intervals carry ms timestamps and the library compares the
-                    # tolerance directly against them, so the ms value is passed
-                    # through unchanged (the lib's `_s` suffix is a misnomer — it
-                    # operates in the intervals' own unit).
-                    overlap_tolerance_s=self.settings.interval_boundary_tolerance,
+                    # enforce_overlap left at library default (True) for v1.
+                    # Both CVAT settings and the library work in milliseconds.
+                    overlap_tolerance_ms=self.settings.interval_boundary_tolerance,
                 )
             )
             active_requirements.append((requirement, attribute_spec))
@@ -2748,7 +2745,7 @@ class DatasetComparator:
             interval_matching=audio_qa.IntervalMatchingConfig(
                 iou_threshold=self.settings.iou_threshold,
                 low_overlap_threshold=self.settings.low_overlap_threshold,
-                boundary_tolerance_s=self.settings.interval_boundary_tolerance,
+                boundary_tolerance_ms=self.settings.interval_boundary_tolerance,
             ),
             transcriptions=audio_reqs,
         )

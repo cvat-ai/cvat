@@ -420,12 +420,12 @@ def _overlap_matrix(
     gt_intervals: Sequence[Interval],
     ds_intervals: Sequence[Interval],
     *,
-    tolerance_s: float = 0.0,
+    tolerance_ms: float = 0.0,
 ) -> np.ndarray:
     """Boolean GTxDS matrix of temporally-overlapping interval pairs. With a
-    positive `tolerance_s`, intervals separated by a gap of up to that many
-    seconds still count as overlapping, so the boundary tolerance relaxes the
-    alignment overlap gate the same way it relaxes interval matching."""
+    positive `tolerance_ms`, intervals separated by a gap of up to that many
+    milliseconds still count as overlapping, so the boundary tolerance relaxes
+    the alignment overlap gate the same way it relaxes interval matching."""
     if not gt_intervals or not ds_intervals:
         return np.zeros((len(gt_intervals), len(ds_intervals)), dtype=bool)
     g_start = np.array([iv.start for iv in gt_intervals])
@@ -434,7 +434,7 @@ def _overlap_matrix(
     d_stop = np.array([iv.stop for iv in ds_intervals])
     lo = np.maximum(g_start[:, None], d_start[None, :])
     hi = np.minimum(g_stop[:, None], d_stop[None, :])
-    return hi > lo - tolerance_s
+    return hi > lo - tolerance_ms
 
 
 def _overlap_constrained_align(
@@ -791,7 +791,7 @@ def _align_group_via_chars(
     normalizer: Normalizer,
     separator: str = " ",
     sub_cost: TokenCost = _unit_sub_cost,
-    overlap_tolerance_s: float = 0.0,
+    overlap_tolerance_ms: float = 0.0,
 ) -> AlignmentResult:
     """Char-level overlap-constrained alignment with word-level edit
     reconstruction. Resulting AlignmentResult looks like a word-mode
@@ -838,7 +838,7 @@ def _align_group_via_chars(
             0,
         )
 
-    overlaps = _overlap_matrix(gt_sorted, ds_sorted, tolerance_s=overlap_tolerance_s)
+    overlaps = _overlap_matrix(gt_sorted, ds_sorted, tolerance_ms=overlap_tolerance_ms)
 
     # Char-level DP stays unit-cost: graphemes are atomic, so a word-level
     # metric has no meaning here. Word-level cost weighting happens in the
@@ -905,7 +905,7 @@ def _align_group_with_overlap(
     normalizer: Normalizer,
     separator: str,
     sub_cost: TokenCost = _unit_sub_cost,
-    overlap_tolerance_s: float = 0.0,
+    overlap_tolerance_ms: float = 0.0,
 ) -> AlignmentResult:
     """Join mode alignment that forbids token-level matches between intervals
     whose time spans don't overlap. Catches the most obvious spurious matches
@@ -968,7 +968,7 @@ def _align_group_with_overlap(
             0,
         )
 
-    overlap = _overlap_matrix(gt_sorted, ds_sorted, tolerance_s=overlap_tolerance_s)
+    overlap = _overlap_matrix(gt_sorted, ds_sorted, tolerance_ms=overlap_tolerance_ms)
     edits, hits, subs, ins, dels, total_cost = _overlap_constrained_align(
         ref_units,
         ref_origins,
@@ -1036,7 +1036,7 @@ def match_transcriptions(
                         "normalizer": normalizer,
                         "separator": req.grouping.join_separator,
                         "sub_cost": token_cost,
-                        "overlap_tolerance_s": req.overlap_tolerance_s,
+                        "overlap_tolerance_ms": req.overlap_tolerance_ms,
                     }
 
                     match (req.align, req.granularity):
