@@ -71,7 +71,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="transcriptionqualityrequirement",
-            name="threshold",
+            name="metric_threshold",
             field=models.FloatField(default=None, null=True),
         ),
         migrations.AddField(
@@ -142,8 +142,8 @@ class Migration(migrations.Migration):
             model_name="transcriptionqualityrequirement",
             constraint=models.CheckConstraint(
                 condition=(
-                    models.Q(("threshold__isnull", True))
-                    | (models.Q(("threshold__gte", 0)) & models.Q(("threshold__lte", 1)))
+                    models.Q(("metric_threshold__isnull", True))
+                    | models.Q(("metric_threshold__gte", 0))
                 ),
                 name="transcription_quality_requirement_chunk_threshold_is_valid",
             ),

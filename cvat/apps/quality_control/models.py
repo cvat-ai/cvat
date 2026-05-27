@@ -501,7 +501,7 @@ class TranscriptionQualityRequirement(models.Model):
         default=TranscriptionAlignMode.CHAR,
     )
 
-    threshold = models.FloatField(null=True, default=None)
+    metric_threshold = models.FloatField(null=True, default=None)
 
     normalizer_preset = models.CharField(
         max_length=32,
@@ -524,6 +524,9 @@ class TranscriptionQualityRequirement(models.Model):
         related_name="+",
     )
 
+    # TODO: replace with requirement acceptance threshold in gs/generalized_quality
+    # Currently, it would conflict with target_metric_threshold, which is used for
+    # intervals.
     acceptance_threshold = models.FloatField()
 
     class Meta:
@@ -536,9 +539,9 @@ class TranscriptionQualityRequirement(models.Model):
             ),
             models.CheckConstraint(
                 name="transcription_quality_requirement_chunk_threshold_is_valid",
+                # No upper bound: error-rate cost is unbounded (can exceed 1).
                 condition=(
-                    models.Q(threshold__isnull=True)
-                    | (models.Q(threshold__gte=0) & models.Q(threshold__lte=1))
+                    models.Q(metric_threshold__isnull=True) | models.Q(metric_threshold__gte=0)
                 ),
             ),
             models.UniqueConstraint(
