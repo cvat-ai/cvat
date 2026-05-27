@@ -267,11 +267,14 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
             "metric_threshold",
             "normalizer_preset",
             "substitutions",
+            "substitutions_hash",
             "grouping_strategy",
             "grouping_separator",
             "grouping_attribute_id",
             "acceptance_threshold",
         )
+
+        read_only_fields = ("substitutions_hash",)
 
         extra_kwargs = {
             "acceptance_threshold": {
@@ -411,6 +414,12 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
             )
 
         validated_data["settings"] = settings
+
+        # bulk_create (used on settings update) bypasses Model.save(), so set
+        # the hash here too; both paths delegate to the same helper.
+        validated_data["substitutions_hash"] = models.compute_substitutions_hash(
+            validated_data.get("substitutions") or []
+        )
 
         grouping_attribute_id = validated_data.get("grouping_attribute_id")
         if grouping_attribute_id is not None:

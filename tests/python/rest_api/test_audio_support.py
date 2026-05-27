@@ -26,6 +26,26 @@ from shared.utils.helpers import read_audio_pcm
 from ._test_base import TestTasksBase
 
 
+def _expected_substitutions_hash(substitutions: list[dict]) -> str:
+    """Mirror of models.compute_substitutions_hash for test assertions."""
+    import hashlib
+    import json
+
+    if not substitutions:
+        return ""
+
+    canonical = [
+        {
+            "pattern": e.get("pattern", ""),
+            "replacement": e.get("replacement", ""),
+            "anchored": bool(e.get("anchored", False)),
+        }
+        for e in substitutions
+    ]
+    payload = json.dumps(canonical, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.md5(payload.encode("utf-8"), usedforsecurity=False).hexdigest()
+
+
 @fixture(scope="session")
 def fxt_local_audio_with_cover() -> Generator[tuple[Path, Path], None, None]:
     # Generate with:
@@ -1004,6 +1024,40 @@ class TestAudioQuality:
         assert req.grouping_separator == " | "
         assert req.grouping_attribute_id == grouping_attr.id
         assert req.acceptance_threshold == 0.4
+        # Read-only derived field: non-empty (substitutions present) and stable.
+        assert req.substitutions_hash == _expected_substitutions_hash(req.substitutions)
+        assert req.substitutions_hash
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_substitutions_hash_tracks_substitutions(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        task, _, _, attrs = self._make_transcription_task(fxt_test_name, source_filename)
+        attr = attrs["transcription"]
+
+        # No substitutions → empty-string sentinel.
+        empty, _ = self._set_transcription_requirement(
+            task, attribute_id=attr.id, acceptance_threshold=0.2
+        )
+        assert empty.transcription_requirements[0].substitutions_hash == ""
+
+        # Adding substitutions populates the hash, matching the canonical form.
+        subs = [{"pattern": "ok", "replacement": "okay", "anchored": True}]
+        updated, _ = self._set_transcription_requirement(
+            task, attribute_id=attr.id, substitutions=subs, acceptance_threshold=0.2
+        )
+        first_hash = updated.transcription_requirements[0].substitutions_hash
+        assert first_hash == _expected_substitutions_hash(subs)
+        assert first_hash != ""
+
+        # A different substitution set yields a different hash.
+        changed, _ = self._set_transcription_requirement(
+            task,
+            attribute_id=attr.id,
+            substitutions=[{"pattern": "ok", "replacement": "fine"}],
+            acceptance_threshold=0.2,
+        )
+        assert changed.transcription_requirements[0].substitutions_hash != first_hash
 
     def test_rejects_negative_chunk_threshold(self):
         # metric_threshold has no upper bound (error-rate cost is unbounded),
