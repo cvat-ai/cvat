@@ -11,8 +11,8 @@ from enum import Enum
 @dataclass(frozen=True)
 class Interval:
     id: int
-    start: float  # seconds
-    stop: float  # seconds
+    start: float  # milliseconds
+    stop: float  # milliseconds
     label: str
     source: str = ""
     score: float = 1.0
