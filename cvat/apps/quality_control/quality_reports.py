@@ -282,6 +282,7 @@ class AnnotationConflict(ReportNode):
 
 @define(kw_only=True, init=False, slots=False)
 class TranscriptionRequirement(ReportNode):
+    id: int
     attribute: AttributePath
     granularity: TranscriptionGranularity
     metric: TranscriptionQualityMetric
@@ -315,6 +316,7 @@ class TranscriptionRequirement(ReportNode):
     def from_dict(cls, d):
         grouping_attribute = d.get("grouping_attribute")
         return cls(
+            id=d.get("id", 0),
             attribute=AttributePath.from_list(d["attribute"]),
             granularity=TranscriptionGranularity(d["granularity"]),
             metric=TranscriptionQualityMetric(d["metric"]),
@@ -456,6 +458,7 @@ class ComparisonParameters(ReportNode):
             grouping_attr = requirement.grouping_attribute
             transcription_requirements.append(
                 {
+                    "id": requirement.id,
                     "attribute": attribute_path.to_list(),
                     "granularity": requirement.granularity,
                     "metric": requirement.metric,
@@ -871,6 +874,9 @@ class ComparisonReportTranscriptionSummary(ComparisonReportAnnotationAttributeSu
 
     comparator: AttributeSummaryType = AttributeSummaryType.TRANSCRIPTION
 
+    # Server id of the TranscriptionQualityRequirement this summary came from.
+    requirement_id: int
+
     # Edit-op counts, additive across pairs / groups and across jobs. These
     # are plain integer edit counts (for display / diagnostics) — they do NOT
     # define the rate, since the library's per-chunk cost can be fractional.
@@ -896,6 +902,9 @@ class ComparisonReportTranscriptionSummary(ComparisonReportAnnotationAttributeSu
 
     def accumulate(self, other: ComparisonReportTranscriptionSummary, *, weight: float = 1):
         super().accumulate(other, weight=weight)
+        # All summaries merged for one attribute come from the same requirement;
+        # adopt its id (create_empty starts at 0 during rollup).
+        self.requirement_id = other.requirement_id
         for field in [
             "substitutions",
             "insertions",
@@ -912,6 +921,7 @@ class ComparisonReportTranscriptionSummary(ComparisonReportAnnotationAttributeSu
     def from_dict(cls, d: dict):
         return cls(
             attribute=AttributePath.from_list(d["attribute"]),
+            requirement_id=d.get("requirement_id", 0),
             substitutions=d["substitutions"],
             insertions=d["insertions"],
             deletions=d["deletions"],
@@ -926,9 +936,12 @@ class ComparisonReportTranscriptionSummary(ComparisonReportAnnotationAttributeSu
         )
 
     @classmethod
-    def create_empty(cls, attribute: AttributePath) -> ComparisonReportTranscriptionSummary:
+    def create_empty(
+        cls, attribute: AttributePath, *, requirement_id: int = 0
+    ) -> ComparisonReportTranscriptionSummary:
         return cls(
             attribute=attribute,
+            requirement_id=requirement_id,
             substitutions=0,
             insertions=0,
             deletions=0,
@@ -3063,6 +3076,30 @@ class DatasetComparator:
 
         return demoted_matches
 
+    @staticmethod
+    def _accumulate_alignment(
+        summary: ComparisonReportTranscriptionSummary,
+        alignment: audio_qa.AlignmentResult,
+        acceptance_threshold: float,
+    ) -> None:
+        summary.substitutions += alignment.substitutions
+        summary.insertions += alignment.insertions
+        summary.deletions += alignment.deletions
+        summary.hits += alignment.hits
+
+        # Carry the library's cost-weighted rate as additive mass over reference
+        # length, so the summary's error_rate matches the metric-weighted
+        # alignment (not a hard count reconstruction).
+        n_ref = len(alignment.ref_units)
+        if n_ref:
+            summary.error_mass += alignment.error_rate * n_ref
+            summary.ref_length += n_ref
+
+        satisfied = alignment.error_rate < acceptance_threshold
+        summary.valid_count += int(satisfied)
+        summary.invalid_count += int(not satisfied)
+        summary.total_count += 1
+
     def _build_interval_transcription_summaries(
         self,
         *,
@@ -3084,27 +3121,13 @@ class DatasetComparator:
                 missing_count = 0
                 extra_count = 0
 
-            summary = ComparisonReportTranscriptionSummary.create_empty(requirement.attribute)
+            summary = ComparisonReportTranscriptionSummary.create_empty(
+                requirement.attribute, requirement_id=requirement.id
+            )
             summary.missing_count = missing_count
             summary.extra_count = extra_count
             for alignment in alignments:
-                summary.substitutions += alignment.substitutions
-                summary.insertions += alignment.insertions
-                summary.deletions += alignment.deletions
-                summary.hits += alignment.hits
-
-                # Carry the library's cost-weighted rate as additive mass over
-                # reference length, so the summary's error_rate matches the
-                # metric-weighted alignment (not a hard count reconstruction).
-                n_ref = len(alignment.ref_units)
-                if n_ref:
-                    summary.error_mass += alignment.error_rate * n_ref
-                    summary.ref_length += n_ref
-
-                satisfied = alignment.error_rate < requirement.acceptance_threshold
-                summary.valid_count += int(satisfied)
-                summary.invalid_count += int(not satisfied)
-                summary.total_count += 1
+                self._accumulate_alignment(summary, alignment, requirement.acceptance_threshold)
 
             summaries.append(summary)
 

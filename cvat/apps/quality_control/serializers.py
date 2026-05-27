@@ -272,6 +272,7 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.TranscriptionQualityRequirement
         fields = (
+            "id",
             "attribute_id",
             "granularity",
             "metric",
@@ -286,7 +287,7 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
             "acceptance_threshold",
         )
 
-        read_only_fields = ("substitutions_hash",)
+        read_only_fields = ("id", "substitutions_hash")
 
         extra_kwargs = {
             "acceptance_threshold": {
