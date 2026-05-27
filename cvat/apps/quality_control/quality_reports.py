@@ -288,7 +288,7 @@ class TranscriptionRequirement(ReportNode):
     align: TranscriptionAlignMode
     metric_threshold: float | None
     normalizer_preset: TranscriptionNormalizerPreset
-    substitutions: dict[str, str]
+    substitutions: list[dict]
     grouping_strategy: TranscriptionGroupingStrategy
     grouping_separator: str
     grouping_attribute: AttributePath | None
@@ -320,7 +320,7 @@ class TranscriptionRequirement(ReportNode):
             align=TranscriptionAlignMode(d["align"]),
             metric_threshold=d.get("metric_threshold"),
             normalizer_preset=TranscriptionNormalizerPreset(d["normalizer_preset"]),
-            substitutions=dict(d.get("substitutions") or {}),
+            substitutions=list(d.get("substitutions") or []),
             grouping_strategy=TranscriptionGroupingStrategy(d["grouping_strategy"]),
             grouping_separator=d["grouping_separator"],
             grouping_attribute=(
@@ -460,7 +460,7 @@ class ComparisonParameters(ReportNode):
                     "align": requirement.align,
                     "metric_threshold": requirement.metric_threshold,
                     "normalizer_preset": requirement.normalizer_preset,
-                    "substitutions": dict(requirement.substitutions or {}),
+                    "substitutions": list(requirement.substitutions or []),
                     "grouping_strategy": requirement.grouping_strategy,
                     "grouping_separator": requirement.grouping_separator,
                     "grouping_attribute": (
@@ -2492,11 +2492,24 @@ class DatasetComparator:
         )
 
     def _process_intervals(self):
-        attr_index = self._build_attribute_index()
-        cvat_dm_label_id_map = self._build_cvat_dm_label_id_map()
+        results = self._intermediate_results
+        conflicts = results.setdefault("conflicts", [])
+        attribute_summaries: dict = {}
+
+        annotations_summary: ComparisonReportAnnotationsSummary = results.setdefault(
+            "annotations", ComparisonReportAnnotationsSummary.create_empty()
+        )
+        component_summaries: ComparisonReportAnnotationComponentsSummary = results.setdefault(
+            "annotation_components", ComparisonReportAnnotationComponentsSummary.create_empty()
+        )
 
         gt_intervals = self._gt_data_provider.job_annotation.ir_data.intervals
         ds_intervals = self._ds_data_provider.job_annotation.ir_data.intervals
+        if not gt_intervals and not ds_intervals:
+            return
+
+        attr_index = self._build_attribute_index()
+        cvat_dm_label_id_map = self._build_cvat_dm_label_id_map()
 
         audio_gt, audio_ds, audio_settings, active_requirements = self._build_interval_audio_inputs(
             gt_intervals, ds_intervals, attr_index=attr_index
@@ -2504,10 +2517,6 @@ class DatasetComparator:
         audio_report = audio_qa.compare(audio_gt, audio_ds, settings=audio_settings)
 
         matching_results = self._recover_interval_matches(audio_report, gt_intervals, ds_intervals)
-
-        results = self._intermediate_results
-        conflicts = results.setdefault("conflicts", [])
-        attribute_summaries: dict = {}
 
         self._emit_interval_conflicts(conflicts, matching_results)
 
@@ -2532,10 +2541,11 @@ class DatasetComparator:
         confusion_matrix_labels, confusion_matrix = self._build_interval_confusion_matrix(
             matching_results, cvat_dm_label_id_map=cvat_dm_label_id_map
         )
-        annotations_summary = self._compute_annotations_summary(
+
+        annotations_summary_update = self._compute_annotations_summary(
             confusion_matrix, confusion_matrix_labels
         )
-        component_summaries = self._build_interval_component_summaries(
+        component_summaries_update = self._build_interval_component_summaries(
             matching_results=matching_results,
             gt_intervals=gt_intervals,
             ds_intervals=ds_intervals,
@@ -2544,12 +2554,8 @@ class DatasetComparator:
             demoted_matches=demoted_matches,
         )
 
-        results.setdefault(
-            "annotations", ComparisonReportAnnotationsSummary.create_empty()
-        ).accumulate(annotations_summary)
-        results.setdefault(
-            "annotation_components", ComparisonReportAnnotationComponentsSummary.create_empty()
-        ).accumulate(component_summaries)
+        annotations_summary.accumulate(annotations_summary_update)
+        component_summaries.accumulate(component_summaries_update)
 
     def _build_attribute_index(self) -> _AttributeIndex:
         by_id = {
@@ -2667,10 +2673,10 @@ class DatasetComparator:
     def _build_normalizer_config(
         requirement: TranscriptionRequirement,
     ) -> audio_qa.NormalizerConfig:
-        """Resolve the chosen preset into a concrete step list, then append
-        the project-specific substitutions dict (if any). Library treats
-        `mode` and `steps` as mutually exclusive, so layering = switch to
-        `CUSTOM` with the assembled steps."""
+        """Resolve the chosen preset into a concrete step list, then append a
+        `regex_substitute` step for the project-specific substitutions (if
+        any). Library treats `mode` and `steps` as mutually exclusive, so
+        layering = switch to `CUSTOM` with the assembled steps."""
 
         from cvat.apps.quality_control.audio.normalization import (
             BASIC_STACK,
@@ -2689,11 +2695,17 @@ class DatasetComparator:
             raise AssertionError(f"unknown normalizer preset {preset!r}")
 
         if requirement.substitutions:
+            # All entries are regexes; a literal is its escaped form. `anchored`
+            # wraps the pattern in word boundaries (opt-in, off by default —
+            # useless / harmful for space-less scripts like CJK).
+            patterns: list[tuple[str, str]] = []
+            for entry in requirement.substitutions:
+                pattern = entry["pattern"]
+                if entry.get("anchored", False):
+                    pattern = rf"\b(?:{pattern})\b"
+                patterns.append((pattern, entry["replacement"]))
             steps.append(
-                audio_qa.StepConfig(
-                    name="substitutions",
-                    options={"map": dict(requirement.substitutions)},
-                )
+                audio_qa.StepConfig(name="regex_substitute", options={"patterns": patterns})
             )
 
         if steps:
@@ -3414,23 +3426,23 @@ class DatasetComparator:
                     )
                 )
 
-        for k in attribute_results[0]:
-            key = _make_attribute_path(gt_ann.label, k)
-            attribute_summaries.setdefault(
-                key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
-            ).valid_count += 1
+            for k in attribute_results[0]:
+                key = _make_attribute_path(gt_ann.label, k)
+                attribute_summaries.setdefault(
+                    key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
+                ).valid_count += 1
 
-        for k in attribute_results[1]:
-            key = _make_attribute_path(gt_ann.label, k)
-            attribute_summaries.setdefault(
-                key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
-            ).invalid_count += 1
+            for k in attribute_results[1]:
+                key = _make_attribute_path(gt_ann.label, k)
+                attribute_summaries.setdefault(
+                    key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
+                ).invalid_count += 1
 
-        for k in itertools.chain.from_iterable(attribute_results):
-            key = _make_attribute_path(gt_ann.label, k)
-            attribute_summaries.setdefault(
-                key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
-            ).total_count += 1
+            for k in itertools.chain.from_iterable(attribute_results):
+                key = _make_attribute_path(gt_ann.label, k)
+                attribute_summaries.setdefault(
+                    key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
+                ).total_count += 1
 
     # row/column index in the confusion matrix corresponding to unmatched annotations
     _UNMATCHED_IDX = -1

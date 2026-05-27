@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import re
 import textwrap
 from collections import Counter
 from enum import Enum
@@ -216,8 +217,8 @@ class QualitySettingsParentType(str, Enum):
 
 
 MAX_SUBSTITUTION_ENTRIES = 1024
-MAX_SUBSTITUTION_KEY_LEN = 256
-MAX_SUBSTITUTION_VALUE_LEN = 256
+MAX_SUBSTITUTION_PATTERN_LEN = 256
+MAX_SUBSTITUTION_REPLACEMENT_LEN = 256
 
 
 class TranscriptionRequirementSerializer(serializers.ModelSerializer):
@@ -236,6 +237,23 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
             Optional attribute used to group intervals into transcription
             chunks (e.g. a speaker tag). Must belong to the same label as
             the transcription attribute. None = group by label only.
+            """),
+    )
+    # Declared explicitly (not auto from the JSONField) so the schema is an
+    # array, not a free-form object. Element shape is checked in
+    # validate_substitutions.
+    substitutions = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        help_text=textwrap.dedent("""\
+            Ordered list of project-specific regex substitutions applied (to
+            both reference and hypothesis) after the chosen normalizer_preset.
+            Each entry is an object {"pattern", "replacement", "anchored"}:
+            `pattern` is a Python regex, `replacement` its substitution
+            (backreferences allowed), and `anchored` (default false) wraps the
+            pattern in word boundaries (\\b...\\b) — useful for space-delimited
+            languages, leave off for CJK. A plain literal is an escaped pattern.
+            Empty list disables.
             """),
     )
 
@@ -317,16 +335,6 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
                     preset.
                     """),
             },
-            "substitutions": {
-                "required": False,
-                "help_text": textwrap.dedent(f"""\
-                    Project-specific literal text replacement map (object of
-                    string → string). Applied after the chosen
-                    `normalizer_preset`. Empty object disables. Capped at
-                    {MAX_SUBSTITUTION_ENTRIES} entries; keys and values
-                    capped at {MAX_SUBSTITUTION_KEY_LEN} characters each.
-                    """),
-            },
             "grouping_strategy": {
                 "required": False,
                 "help_text": textwrap.dedent("""\
@@ -351,23 +359,36 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
         }
 
     def validate_substitutions(self, value):
-        if not isinstance(value, dict):
-            raise serializers.ValidationError("Must be an object (dict).")
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Must be a list of substitution entries.")
         if len(value) > MAX_SUBSTITUTION_ENTRIES:
             raise serializers.ValidationError(f"Too many entries (max {MAX_SUBSTITUTION_ENTRIES}).")
-        for k, v in value.items():
-            if not isinstance(k, str) or not k:
-                raise serializers.ValidationError("Keys must be non-empty strings.")
-            if not isinstance(v, str):
-                raise serializers.ValidationError("Values must be strings.")
-            if len(k) > MAX_SUBSTITUTION_KEY_LEN:
+        for entry in value:
+            if not isinstance(entry, dict):
                 raise serializers.ValidationError(
-                    f"Key length exceeds {MAX_SUBSTITUTION_KEY_LEN} characters."
+                    "Each entry must be an object with 'pattern' and 'replacement'."
                 )
-            if len(v) > MAX_SUBSTITUTION_VALUE_LEN:
+            pattern = entry.get("pattern")
+            replacement = entry.get("replacement")
+            anchored = entry.get("anchored", False)
+            if not isinstance(pattern, str) or not pattern:
+                raise serializers.ValidationError("'pattern' must be a non-empty string.")
+            if not isinstance(replacement, str):
+                raise serializers.ValidationError("'replacement' must be a string.")
+            if not isinstance(anchored, bool):
+                raise serializers.ValidationError("'anchored' must be a boolean.")
+            if len(pattern) > MAX_SUBSTITUTION_PATTERN_LEN:
                 raise serializers.ValidationError(
-                    f"Value length exceeds {MAX_SUBSTITUTION_VALUE_LEN} characters."
+                    f"'pattern' length exceeds {MAX_SUBSTITUTION_PATTERN_LEN} characters."
                 )
+            if len(replacement) > MAX_SUBSTITUTION_REPLACEMENT_LEN:
+                raise serializers.ValidationError(
+                    f"'replacement' length exceeds {MAX_SUBSTITUTION_REPLACEMENT_LEN} characters."
+                )
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise serializers.ValidationError(f"Invalid regex 'pattern': {exc}")
         return value
 
     def update(self, instance, validated_data):

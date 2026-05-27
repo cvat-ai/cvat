@@ -113,11 +113,6 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
                         f"&serverID={ann_id['obj_id']}"
                     )
 
-        # String keys are needed for json dumping
-        serialized_data["frame_results"] = {
-            str(k): v for k, v in serialized_data["frame_results"].items()
-        }
-
         for conflict in serialized_data["conflicts"]:
             if conflict.get("attributes") is None:
                 conflict.pop("attributes", None)
@@ -129,6 +124,11 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
                     f"&type={ann_id['type']}"
                     f"&serverID={ann_id['obj_id']}"
                 )
+
+    # String keys are needed for json dumping
+    serialized_data["frame_results"] = {
+        str(k): v for k, v in serialized_data.get("frame_results", []).items()
+    }
 
     if task_stats := serialized_data["comparison_summary"].get("tasks", {}):
         for k in ("all", "custom", "not_configured", "excluded"):

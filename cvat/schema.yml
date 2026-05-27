@@ -10301,13 +10301,18 @@ components:
             * `hi` - HI
             * `ar` - AR
         substitutions:
-          type: object
+          type: array
+          items:
+            type: object
           description: |
-            Project-specific literal text replacement map (object of
-            string → string). Applied after the chosen
-            `normalizer_preset`. Empty object disables. Capped at
-            1024 entries; keys and values
-            capped at 256 characters each.
+            Ordered list of project-specific regex substitutions applied (to
+            both reference and hypothesis) after the chosen normalizer_preset.
+            Each entry is an object {"pattern", "replacement", "anchored"}:
+            `pattern` is a Python regex, `replacement` its substitution
+            (backreferences allowed), and `anchored` (default false) wraps the
+            pattern in word boundaries (\b...\b) — useful for space-delimited
+            languages, leave off for CJK. A plain literal is an escaped pattern.
+            Empty list disables.
         grouping_strategy:
           allOf:
           - $ref: '#/components/schemas/TranscriptionGroupingStrategy'
@@ -11975,13 +11980,18 @@ components:
             * `hi` - HI
             * `ar` - AR
         substitutions:
-          type: object
+          type: array
+          items:
+            type: object
           description: |
-            Project-specific literal text replacement map (object of
-            string → string). Applied after the chosen
-            `normalizer_preset`. Empty object disables. Capped at
-            1024 entries; keys and values
-            capped at 256 characters each.
+            Ordered list of project-specific regex substitutions applied (to
+            both reference and hypothesis) after the chosen normalizer_preset.
+            Each entry is an object {"pattern", "replacement", "anchored"}:
+            `pattern` is a Python regex, `replacement` its substitution
+            (backreferences allowed), and `anchored` (default false) wraps the
+            pattern in word boundaries (\b...\b) — useful for space-delimited
+            languages, leave off for CJK. A plain literal is an escaped pattern.
+            Empty list disables.
         grouping_strategy:
           allOf:
           - $ref: '#/components/schemas/TranscriptionGroupingStrategy'

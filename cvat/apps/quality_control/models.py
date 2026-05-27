@@ -508,7 +508,10 @@ class TranscriptionQualityRequirement(models.Model):
         choices=TranscriptionNormalizerPreset.choices(),
         default=TranscriptionNormalizerPreset.BASIC,
     )
-    substitutions = models.JSONField(default=dict, blank=True)
+
+    # Ordered list of regex substitution entries:
+    # [{"pattern": str, "replacement": str, "anchored": bool}, ...]
+    substitutions = models.JSONField(default=list, blank=True)
 
     grouping_strategy = models.CharField(
         max_length=32,
