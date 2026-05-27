@@ -62,7 +62,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 objectVisibilityThreshold: values.objectVisibilityThreshold / 100,
                 panopticComparison: values.panopticComparison,
                 jobFilter: values.jobFilter ?? '',
-                intervalBoundaryToleranceS: values.intervalBoundaryToleranceS / 1000,
+                intervalBoundaryTolerance: values.intervalBoundaryTolerance,
                 transcriptionRequirements: (values.transcriptionRequirements ?? []).map(
                     (requirement: any) => ({
                         attribute_id: requirement.attributeId,

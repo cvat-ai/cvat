@@ -385,7 +385,7 @@ class QualitySettings(TimestampedModel):
 
     low_overlap_threshold = models.FloatField()
 
-    interval_boundary_tolerance_s = models.FloatField(default=0.2)
+    interval_boundary_tolerance = models.FloatField()
 
     point_size_base = models.CharField(
         max_length=32, choices=PointSizeBase.choices(), default=PointSizeBase.GROUP_BBOX_SIZE

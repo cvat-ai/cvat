@@ -184,7 +184,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
         jobFilter: settings.jobFilter,
 
-        intervalBoundaryToleranceS: settings.intervalBoundaryToleranceS * 1000,
+        intervalBoundaryTolerance: settings.intervalBoundaryTolerance,
         transcriptionRequirements: settings.transcriptionRequirements.map((requirement) => ({
             attributeId: requirement.attributeId,
             granularity: requirement.granularity,
@@ -278,7 +278,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         </>,
     );
 
-    const boundaryToleranceTooltip = settings.descriptions.intervalBoundaryToleranceS ??
+    const boundaryToleranceTooltip = settings.descriptions.intervalBoundaryTolerance ??
         'Maximum start/stop difference (ms) allowed when matching interval annotations.';
 
     return (
@@ -393,7 +393,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             <Row>
                 <Col span={12}>
                     <Form.Item
-                        name='intervalBoundaryToleranceS'
+                        name='intervalBoundaryTolerance'
                         label='Boundary tolerance (ms)'
                         tooltip={boundaryToleranceTooltip}
                         rules={[{ required: true, message: 'This field is required' }]}

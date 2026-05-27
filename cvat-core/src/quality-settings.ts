@@ -163,7 +163,7 @@ export default class QualitySettings {
     #panopticComparison: boolean;
     #compareAttributes: boolean;
     #emptyIsAnnotated: boolean;
-    #intervalBoundaryToleranceS: number;
+    #intervalBoundaryTolerance: number;
     #transcriptionRequirements: TranscriptionRequirement[];
     #jobFilter: string;
     #inherit: boolean;
@@ -189,7 +189,7 @@ export default class QualitySettings {
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
         this.#emptyIsAnnotated = initialData.empty_is_annotated;
-        this.#intervalBoundaryToleranceS = initialData.interval_boundary_tolerance_s;
+        this.#intervalBoundaryTolerance = initialData.interval_boundary_tolerance;
         this.#transcriptionRequirements = (initialData.transcription_requirements ?? [])
             .map((requirement) => new TranscriptionRequirement(requirement));
         this.#jobFilter = initialData.job_filter || '';
@@ -273,8 +273,8 @@ export default class QualitySettings {
         return this.#emptyIsAnnotated;
     }
 
-    get intervalBoundaryToleranceS(): number {
-        return this.#intervalBoundaryToleranceS;
+    get intervalBoundaryTolerance(): number {
+        return this.#intervalBoundaryTolerance;
     }
 
     get transcriptionRequirements(): TranscriptionRequirement[] {

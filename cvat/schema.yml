@@ -10088,14 +10088,15 @@ components:
           default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
-        interval_boundary_tolerance_s:
+        interval_boundary_tolerance:
           type: number
           format: double
           minimum: 0
-          default: 0.2
+          default: 100.0
           description: |
-            Timestamp tolerance (seconds) for the audio interval boundary F1 metric.
-            Onset / offset differences within this tolerance count as a boundary hit.
+            Timestamp tolerance (milliseconds) for the audio interval boundary F1 metric
+            and for alignment. Onset / offset differences within this tolerance count
+            as a boundary hit.
         compare_line_orientation:
           type: boolean
           default: true
@@ -10863,14 +10864,15 @@ components:
           default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
-        interval_boundary_tolerance_s:
+        interval_boundary_tolerance:
           type: number
           format: double
           minimum: 0
-          default: 0.2
+          default: 100.0
           description: |
-            Timestamp tolerance (seconds) for the audio interval boundary F1 metric.
-            Onset / offset differences within this tolerance count as a boundary hit.
+            Timestamp tolerance (milliseconds) for the audio interval boundary F1 metric
+            and for alignment. Onset / offset differences within this tolerance count
+            as a boundary hit.
         compare_line_orientation:
           type: boolean
           default: true
