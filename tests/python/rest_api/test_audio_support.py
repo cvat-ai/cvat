@@ -474,7 +474,21 @@ class TestAudioQuality:
         report_id = response.json()["result_id"]
         return self.client.api_client.quality_api.retrieve_report_data(report_id)[1].json()
 
-    # ------------------------------------------------------------------ helpers
+    def compute_report_and_summary(self, task_id: int) -> tuple[dict, dict]:
+        """Compute a report and return (full blob, curated API summary)."""
+
+        response = self.client.api_client.quality_api.create_report(
+            quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+            _parse_response=False,
+        )[1]
+        rq_id = response.json()["rq_id"]
+        response = self.client.wait_for_completion(rq_id, status_check_period=0.1)[1]
+        report_id = response.json()["result_id"]
+        blob = self.client.api_client.quality_api.retrieve_report_data(report_id)[1].json()
+        summary = self.client.api_client.quality_api.retrieve_report(
+            report_id, _parse_response=False
+        )[1].json()["summary"]
+        return blob, summary
 
     def _make_transcription_task(
         self, name: str, source_filename: Path, *, attr_names: Sequence[str] = ("transcription",)
@@ -1512,6 +1526,108 @@ class TestAudioQuality:
         assert summary["ref_length"] == 4
         assert summary["error_mass"] == pytest.approx(1.0, abs=1e-4)
         assert summary["error_rate"] == pytest.approx(0.25, abs=1e-4)
+
+        # Headline rate on the component summary: single requirement, so it
+        # equals the attribute micro-average — no per-attribute summing needed.
+        component = report["comparison_summary"]["annotation_components"]["transcription"]
+        assert component["error_rate"] == pytest.approx(0.25, abs=1e-4)
+        assert component["ref_length"] == 4
+        assert component["substitutions"] == 1
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_summary_exposes_transcription_corpus_rate(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # The headline rate must be reachable from the curated API summary
+        # (no full-blob download), and pre-aggregated (no manual summing).
+        task, gt_job, label, attrs = self._make_transcription_task(fxt_test_name, source_filename)
+        attr = attrs["transcription"]
+        self._set_transcription_requirement(
+            task,
+            attribute_id=attr.id,
+            granularity="word",
+            grouping_strategy="filter",
+            acceptance_threshold=0.6,
+        )
+        self._set_gt_ds(
+            task,
+            gt_job,
+            [self._interval(label, 0, 1000, {attr.id: "hello world"})],
+            [self._interval(label, 0, 1000, {attr.id: "hello planet"})],  # 1 sub / 2 words
+        )
+
+        blob, summary = self.compute_report_and_summary(task.id)
+
+        assert blob["comparison_summary"]["annotation_components"]["transcription"][
+            "error_rate"
+        ] == pytest.approx(0.5, abs=1e-4)
+        assert summary["transcription_error_rate"] == pytest.approx(0.5, abs=1e-4)
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_summary_omits_transcription_rate_without_requirements(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # No transcription requirement → headline is null in the blob and
+        # absent from the curated summary.
+        task, gt_job, label, attrs = self._make_transcription_task(fxt_test_name, source_filename)
+        self._set_gt_ds(
+            task,
+            gt_job,
+            [self._interval(label, 0, 1000)],
+            [self._interval(label, 0, 1000)],
+        )
+
+        blob, summary = self.compute_report_and_summary(task.id)
+
+        assert blob["comparison_summary"]["annotation_components"].get("transcription") is None
+        assert "transcription_error_rate" not in summary
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_target_metric_transcription_error_rate(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # target_metric=transcription_error_rate is a lower-is-better metric whose
+        # threshold may exceed 1, and round-trips on the settings.
+        task, _, _, attrs = self._make_transcription_task(fxt_test_name, source_filename)
+        attr = attrs["transcription"]
+        self._set_transcription_requirement(
+            task,
+            attribute_id=attr.id,
+            granularity="word",
+            grouping_strategy="filter",
+            acceptance_threshold=0.6,
+        )
+
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+        updated, _ = self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                target_metric="transcription_error_rate",
+                target_metric_threshold=1.5,  # unbounded above for this metric
+            ),
+        )
+        assert str(updated.target_metric) == "transcription_error_rate"
+        assert updated.target_metric_threshold == pytest.approx(1.5)
+        # The requirement set earlier must survive the unrelated settings patch.
+        assert len(updated.transcription_requirements) == 1
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_rejects_target_metric_threshold_above_one_for_shape_metrics(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # A threshold > 1 is only allowed for the unbounded transcription_error_rate.
+        task, _, _, _ = self._make_transcription_task(fxt_test_name, source_filename)
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+        _, response = self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                target_metric="accuracy",
+                target_metric_threshold=1.5,
+            ),
+            _parse_response=False,
+            _check_status=False,
+        )
+        assert response.status == 400
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
     def test_join_strategy_groups_by_attribute(self, fxt_test_name: str, source_filename: Path):

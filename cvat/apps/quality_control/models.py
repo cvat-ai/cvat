@@ -87,9 +87,14 @@ class QualityReportTarget(str, Enum):
 
 
 class QualityTargetMetricType(str, Enum):
+    # Higher-is-better options
     ACCURACY = "accuracy"
     PRECISION = "precision"
     RECALL = "recall"
+
+    # Lower-is-better options
+    # TODO: rename to error_rate when migrating to generalized quality
+    TRANSCRIPTION_ERROR_RATE = "transcription_error_rate"
 
     def __str__(self) -> str:
         return self.value

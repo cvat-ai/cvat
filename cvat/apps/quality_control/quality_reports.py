@@ -795,6 +795,24 @@ class ComparisonReportAnnotationComponentsSummary(ReportNode):
     label: ComparisonReportAnnotationLabelSummary
     attribute: list[ComparisonReportAnnotationAttributeSummary]
 
+    @cached_property
+    def transcription(self) -> ComparisonReportTranscriptionComponentSummary | None:
+        """Aggregate transcription stats over all transcription requirements —
+        a dedicated structure alongside `shape` / `label`. Built from the
+        per-attribute transcription summaries (which accumulate additively, so
+        this rolls up to task / project). `None` when there are no transcription
+        requirements, so it is omitted from non-transcription reports. Lets a
+        caller read the headline corpus rate (`transcription.error_rate`) from
+        the summary without downloading full report blobs or hand-summing the
+        per-attribute breakdown."""
+        summaries = [
+            a for a in self.attribute if isinstance(a, ComparisonReportTranscriptionSummary)
+        ]
+        if not summaries:
+            return None
+
+        return ComparisonReportTranscriptionComponentSummary.from_attribute_summaries(summaries)
+
     def accumulate(self, other: ComparisonReportAnnotationComponentsSummary, *, weight: float = 1):
         self.shape.accumulate(other.shape, weight=weight)
         self.label.accumulate(other.label, weight=weight)
@@ -810,6 +828,10 @@ class ComparisonReportAnnotationComponentsSummary(ReportNode):
 
         self.attribute = list(self_attributes.values())
 
+        # `transcription` is a cached_property derived from `attribute`; drop the
+        # cache so it recomputes from the updated list on next access.
+        self.reset_cached_fields()
+
     def attributes_dict(self) -> dict[tuple, ComparisonReportAnnotationAttributeSummary]:
         # TODO: align with attribute comparator from the gs/generalized-quality branch
         return {(a.attribute, a.comparator): a for a in self.attribute}
@@ -820,6 +842,15 @@ class ComparisonReportAnnotationComponentsSummary(ReportNode):
             shape=ComparisonReportAnnotationShapeSummary.from_dict(d["shape"]),
             label=ComparisonReportAnnotationLabelSummary.from_dict(d["label"]),
             attribute=[_attribute_summary_from_dict(a) for a in d.get("attribute", [])],
+            **(
+                dict(
+                    transcription=ComparisonReportTranscriptionComponentSummary.from_dict(
+                        d["transcription"]
+                    )
+                )
+                if d.get("transcription")
+                else {}
+            ),
         )
 
     @classmethod
@@ -912,12 +943,58 @@ class ComparisonReportTranscriptionSummary(ComparisonReportAnnotationAttributeSu
         )
 
 
-def _attribute_summary_from_dict(d: dict) -> ComparisonReportAnnotationAttributeSummary:
-    """Reconstruct a plain or transcription attribute summary from a blob,
-    dispatching on the `comparator` discriminator."""
+@define(kw_only=True, init=False, slots=False)
+class ComparisonReportTranscriptionComponentSummary(ReportNode):
+    # This class is not supposed for accumulation.
+    # If needed, recompute from the accumulated transcriptions instead.
 
+    error_mass: float
+    ref_length: int
+
+    substitutions: int
+    insertions: int
+    deletions: int
+    hits: int
+
+    valid_count: int
+    invalid_count: int
+    total_count: int
+    missing_count: int
+    extra_count: int
+
+    _SUMMED_FIELDS = (
+        "error_mass",
+        "ref_length",
+        "substitutions",
+        "insertions",
+        "deletions",
+        "hits",
+        "valid_count",
+        "invalid_count",
+        "total_count",
+        "missing_count",
+        "extra_count",
+    )
+
+    @property
+    def error_rate(self) -> float:
+        return self.error_mass / (self.ref_length or 1)
+
+    @classmethod
+    def from_attribute_summaries(
+        cls, summaries: list[ComparisonReportTranscriptionSummary]
+    ) -> ComparisonReportTranscriptionComponentSummary:
+        return cls(**{f: sum(getattr(a, f) for a in summaries) for f in cls._SUMMED_FIELDS})
+
+    @classmethod
+    def from_dict(cls, d: dict) -> ComparisonReportTranscriptionComponentSummary:
+        return cls(**{f: d[f] for f in cls._SUMMED_FIELDS})
+
+
+def _attribute_summary_from_dict(d: dict) -> ComparisonReportAnnotationAttributeSummary:
     if d.get("comparator") == AttributeSummaryType.TRANSCRIPTION:
         return ComparisonReportTranscriptionSummary.from_dict(d)
+
     return ComparisonReportAnnotationAttributeSummary.from_dict(d)
 
 
