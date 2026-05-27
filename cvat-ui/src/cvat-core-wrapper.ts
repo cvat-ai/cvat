@@ -17,7 +17,7 @@ import {
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
     OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken,
-    ApiTokensFilter,
+    ApiTokensFilter, SerializedTranscriptionRequirement, SerializedTranscriptionSubstitution,
 } from 'cvat-core/src/server-response-types';
 import { ApiTokenModifiableFields } from 'cvat-core/src/server-request-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
@@ -25,7 +25,17 @@ import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
-import QualitySettings, { TargetMetric, QualitySettingsSaveFields } from 'cvat-core/src/quality-settings';
+import QualitySettings, {
+    TargetMetric,
+    QualitySettingsSaveFields,
+    TranscriptionRequirement,
+    TranscriptionGranularity,
+    TranscriptionMetric,
+    TranscriptionAlignMode,
+    TranscriptionGroupingStrategy,
+    TranscriptionNormalizerPreset,
+    METRICS_SUPPORTING_THRESHOLD,
+} from 'cvat-core/src/quality-settings';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import ApiToken from 'cvat-core/src/api-token';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
@@ -111,6 +121,13 @@ export {
     ConsensusSettings,
     ApiToken,
     TargetMetric,
+    TranscriptionRequirement,
+    TranscriptionGranularity,
+    TranscriptionMetric,
+    TranscriptionAlignMode,
+    TranscriptionGroupingStrategy,
+    TranscriptionNormalizerPreset,
+    METRICS_SUPPORTING_THRESHOLD,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,
@@ -142,6 +159,8 @@ export type {
     UpdateStatusData,
     OrganizationMembersFilter,
     QualitySettingsSaveFields,
+    SerializedTranscriptionRequirement,
+    SerializedTranscriptionSubstitution,
     AnalyticsEventsFilter,
     MinimalShape,
     InteractorResults,

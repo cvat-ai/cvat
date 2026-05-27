@@ -3,7 +3,11 @@
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
-import { SerializedQualitySettingsData } from './server-response-types';
+import {
+    SerializedQualitySettingsData,
+    SerializedTranscriptionRequirement,
+    SerializedTranscriptionSubstitution,
+} from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
@@ -22,9 +26,122 @@ export enum PointSizeBase {
     GROUP_BBOX_SIZE = 'group_bbox_size',
 }
 
+export enum TranscriptionGranularity {
+    WORD = 'word',
+    CHARACTER = 'character',
+}
+
+export enum TranscriptionMetric {
+    EQUALITY = 'equality',
+    ERROR_RATE = 'error-rate',
+    NORMALIZED_LEV = 'normalized-lev',
+}
+
+export enum TranscriptionAlignMode {
+    CHAR = 'char',
+    WORD = 'word',
+}
+
+export enum TranscriptionGroupingStrategy {
+    FILTER = 'filter',
+    JOIN = 'join',
+}
+
+// Mirrors cvat/apps/quality_control/models.py::TranscriptionNormalizerPreset
+export enum TranscriptionNormalizerPreset {
+    NONE = 'none',
+    BASIC = 'basic',
+    EN = 'en',
+    ES = 'es',
+    FR = 'fr',
+    DE = 'de',
+    IT = 'it',
+    PT = 'pt',
+    NL = 'nl',
+    PL = 'pl',
+    RU = 'ru',
+    TR = 'tr',
+    ZH = 'zh',
+    JA = 'ja',
+    KO = 'ko',
+    HI = 'hi',
+    AR = 'ar',
+}
+
+// Metrics whose soft cost can be binarized by `metricThreshold`; `equality` is a
+// hard bit metric and ignores it.
+export const METRICS_SUPPORTING_THRESHOLD: readonly TranscriptionMetric[] = [
+    TranscriptionMetric.ERROR_RATE,
+    TranscriptionMetric.NORMALIZED_LEV,
+];
+
 export type QualitySettingsSaveFields = Partial<Camelized<
-    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions'>
->>;
+    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions' | 'transcription_requirements'>
+>> & {
+    // Sent as already-snake-cased entries; fieldsToSnakeCase only converts the
+    // top-level key, not the array contents.
+    transcriptionRequirements?: SerializedTranscriptionRequirement[];
+};
+
+export class TranscriptionRequirement {
+    #attributeId: number;
+    #granularity: TranscriptionGranularity;
+    #metric: TranscriptionMetric;
+    #align: TranscriptionAlignMode;
+    #metricThreshold: number | null;
+    #normalizerPreset: TranscriptionNormalizerPreset;
+    #substitutions: SerializedTranscriptionSubstitution[];
+    #substitutionsHash: string;
+    #groupingStrategy: TranscriptionGroupingStrategy;
+    #groupingSeparator: string;
+    #groupingAttributeId: number | null;
+    #acceptanceThreshold: number;
+
+    constructor(initialData: SerializedTranscriptionRequirement) {
+        this.#attributeId = initialData.attribute_id;
+        this.#granularity = initialData.granularity as TranscriptionGranularity;
+        this.#metric = initialData.metric as TranscriptionMetric;
+        this.#align = initialData.align as TranscriptionAlignMode;
+        this.#metricThreshold = initialData.metric_threshold ?? null;
+        this.#normalizerPreset = initialData.normalizer_preset as TranscriptionNormalizerPreset;
+        this.#substitutions = initialData.substitutions ?? [];
+        this.#substitutionsHash = initialData.substitutions_hash ?? '';
+        this.#groupingStrategy = initialData.grouping_strategy as TranscriptionGroupingStrategy;
+        this.#groupingSeparator = initialData.grouping_separator;
+        this.#groupingAttributeId = initialData.grouping_attribute_id ?? null;
+        this.#acceptanceThreshold = initialData.acceptance_threshold;
+    }
+
+    get attributeId(): number { return this.#attributeId; }
+    get granularity(): TranscriptionGranularity { return this.#granularity; }
+    get metric(): TranscriptionMetric { return this.#metric; }
+    get align(): TranscriptionAlignMode { return this.#align; }
+    get metricThreshold(): number | null { return this.#metricThreshold; }
+    get normalizerPreset(): TranscriptionNormalizerPreset { return this.#normalizerPreset; }
+    get substitutions(): SerializedTranscriptionSubstitution[] { return this.#substitutions; }
+    get substitutionsHash(): string { return this.#substitutionsHash; }
+    get groupingStrategy(): TranscriptionGroupingStrategy { return this.#groupingStrategy; }
+    get groupingSeparator(): string { return this.#groupingSeparator; }
+    get groupingAttributeId(): number | null { return this.#groupingAttributeId; }
+    get acceptanceThreshold(): number { return this.#acceptanceThreshold; }
+
+    public toJSON(): SerializedTranscriptionRequirement {
+        // `substitutions_hash` is read-only / server-derived; do not send it.
+        return {
+            attribute_id: this.#attributeId,
+            granularity: this.#granularity,
+            metric: this.#metric,
+            align: this.#align,
+            metric_threshold: this.#metricThreshold,
+            normalizer_preset: this.#normalizerPreset,
+            substitutions: this.#substitutions,
+            grouping_strategy: this.#groupingStrategy,
+            grouping_separator: this.#groupingSeparator,
+            grouping_attribute_id: this.#groupingAttributeId,
+            acceptance_threshold: this.#acceptanceThreshold,
+        };
+    }
+}
 
 export default class QualitySettings {
     #id: number;
@@ -46,6 +163,8 @@ export default class QualitySettings {
     #panopticComparison: boolean;
     #compareAttributes: boolean;
     #emptyIsAnnotated: boolean;
+    #intervalBoundaryToleranceS: number;
+    #transcriptionRequirements: TranscriptionRequirement[];
     #jobFilter: string;
     #inherit: boolean;
     #descriptions: Record<string, string>;
@@ -70,6 +189,9 @@ export default class QualitySettings {
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
         this.#emptyIsAnnotated = initialData.empty_is_annotated;
+        this.#intervalBoundaryToleranceS = initialData.interval_boundary_tolerance_s;
+        this.#transcriptionRequirements = (initialData.transcription_requirements ?? [])
+            .map((requirement) => new TranscriptionRequirement(requirement));
         this.#jobFilter = initialData.job_filter || '';
         this.#inherit = initialData.inherit;
         this.#descriptions = initialData.descriptions;
@@ -149,6 +271,14 @@ export default class QualitySettings {
 
     get emptyIsAnnotated(): boolean {
         return this.#emptyIsAnnotated;
+    }
+
+    get intervalBoundaryToleranceS(): number {
+        return this.#intervalBoundaryToleranceS;
+    }
+
+    get transcriptionRequirements(): TranscriptionRequirement[] {
+        return this.#transcriptionRequirements;
     }
 
     get jobFilter(): string {
