@@ -974,7 +974,10 @@ class TestAudioQuality:
                         align="word",
                         metric_threshold=0.3,
                         normalizer_preset="ru",
-                        substitutions={"OK": "okay", "yep": "yes"},
+                        substitutions=[
+                            {"pattern": "ok", "replacement": "okay", "anchored": True},
+                            {"pattern": r"\d+", "replacement": "NUM", "anchored": False},
+                        ],
                         grouping_strategy="join",
                         grouping_separator=" | ",
                         grouping_attribute_id=grouping_attr.id,
@@ -993,7 +996,10 @@ class TestAudioQuality:
         assert req.align == "word"
         assert req.metric_threshold == 0.3
         assert req.normalizer_preset == "ru"
-        assert req.substitutions == {"OK": "okay", "yep": "yes"}
+        assert req.substitutions == [
+            {"pattern": "ok", "replacement": "okay", "anchored": True},
+            {"pattern": r"\d+", "replacement": "NUM", "anchored": False},
+        ]
         assert req.grouping_strategy == "join"
         assert req.grouping_separator == " | "
         assert req.grouping_attribute_id == grouping_attr.id
@@ -1010,7 +1016,7 @@ class TestAudioQuality:
             )
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
-    def test_rejects_invalid_substitutions_value(self, fxt_test_name: str, source_filename: Path):
+    def test_rejects_invalid_substitution_regex(self, fxt_test_name: str, source_filename: Path):
         transcription_attr = self._make_task_with_transcription_attr(fxt_test_name, source_filename)
         settings = self.client.api_client.quality_api.list_settings(
             task_id=transcription_attr["task_id"]
@@ -1022,7 +1028,7 @@ class TestAudioQuality:
                 transcription_requirements=[
                     models.PatchedTranscriptionRequirementRequest(
                         attribute_id=transcription_attr["id"],
-                        substitutions={"OK": 123},
+                        substitutions=[{"pattern": "[", "replacement": "x"}],  # unbalanced
                         acceptance_threshold=0.2,
                     )
                 ]
@@ -1031,7 +1037,7 @@ class TestAudioQuality:
             _parse_response=False,
         )
         assert response.status == 400
-        assert b"Values must be strings" in response.data
+        assert b"Invalid regex" in response.data
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
     def test_rejects_cross_label_grouping_attribute(
@@ -1109,7 +1115,7 @@ class TestAudioQuality:
             ds_text="different text",
             granularity="word",
             grouping_strategy="filter",
-            substitutions={"different": "test"},
+            substitutions=[{"pattern": "different", "replacement": "test"}],
             acceptance_threshold=0.2,
         )
 
@@ -1356,9 +1362,7 @@ class TestAudioQuality:
         assert summary["error_rate"] == pytest.approx(1 / 6, abs=1e-4)
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
-    def test_metric_threshold_binarizes_soft_cost(
-        self, fxt_test_name: str, source_filename: Path
-    ):
+    def test_metric_threshold_binarizes_soft_cost(self, fxt_test_name: str, source_filename: Path):
         # Same near-match, but metric_threshold rounds the per-chunk cost:
         # 0.167 <= 0.5 → 0, so the soft cost collapses to zero error.
         report = self._score_single_pair(
@@ -1379,9 +1383,7 @@ class TestAudioQuality:
         assert summary["valid_count"] == 1
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
-    def test_character_granularity_reports_cer(
-        self, fxt_test_name: str, source_filename: Path
-    ):
+    def test_character_granularity_reports_cer(self, fxt_test_name: str, source_filename: Path):
         # "cat" vs "cot": 1 char substitution / 3 ref chars = 0.333 CER.
         report = self._score_single_pair(
             fxt_test_name,
@@ -1458,9 +1460,7 @@ class TestAudioQuality:
         assert summary["error_rate"] == pytest.approx(0.25, abs=1e-4)
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
-    def test_join_strategy_groups_by_attribute(
-        self, fxt_test_name: str, source_filename: Path
-    ):
+    def test_join_strategy_groups_by_attribute(self, fxt_test_name: str, source_filename: Path):
         # Two speakers; each speaker's intervals join into one group keyed by
         # (label, speaker_tag). GT and DS agree per speaker → two valid groups,
         # no conflicts.
@@ -1503,11 +1503,10 @@ class TestAudioQuality:
     def test_custom_substitutions_layer_on_basic_preset(
         self, fxt_test_name: str, source_filename: Path
     ):
-        # The project-specific substitutions dict is applied AFTER the chosen
-        # preset, to BOTH sides. `basic` casefolds "YEAH Boss" → "yeah boss"
-        # first, so the substitution keys must be lower-case to match. Keys are
-        # chosen to be absent from the GT wording (substitution rewrites both
-        # ref and hyp), so only the DS text is remapped onto GT.
+        # Substitutions apply AFTER the chosen preset, to BOTH sides. `basic`
+        # casefolds "YEAH Boss" → "yeah boss" first, so the regex patterns must
+        # be lower-case to match. Patterns are chosen absent from the GT wording
+        # (they rewrite both ref and hyp), so only the DS text is remapped.
         report = self._score_single_pair(
             fxt_test_name,
             source_filename,
@@ -1516,7 +1515,10 @@ class TestAudioQuality:
             granularity="word",
             grouping_strategy="filter",
             normalizer_preset="basic",
-            substitutions={"yeah": "yes", "boss": "sir"},
+            substitutions=[
+                {"pattern": "yeah", "replacement": "yes"},
+                {"pattern": "boss", "replacement": "sir"},
+            ],
             acceptance_threshold=0.2,
         )
 
@@ -1525,3 +1527,46 @@ class TestAudioQuality:
         assert summary["error_rate"] == 0.0
         assert summary["valid_count"] == 1
         assert summary["hits"] == 2  # yes, sir
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_anchored_substitution_respects_word_boundaries(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # `anchored` wraps the pattern in \b...\b. "ok" → "okay" then matches
+        # only the standalone DS word, NOT the "ok" inside GT's "okay" — so the
+        # substitution can't corrupt the reference (the plain-replace footgun).
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="okay deal",
+            ds_text="ok deal",
+            granularity="word",
+            grouping_strategy="filter",
+            substitutions=[{"pattern": "ok", "replacement": "okay", "anchored": True}],
+            acceptance_threshold=0.2,
+        )
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        summary = self._transcription_summary(report)
+        assert summary["error_rate"] == 0.0  # GT "okay" untouched; DS "ok"→"okay"
+        assert summary["hits"] == 2  # okay, deal
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_regex_substitution_normalizes_pattern(self, fxt_test_name: str, source_filename: Path):
+        # A regex pattern collapses any digit run to a placeholder, so the two
+        # different numbers normalize to the same token and the pair matches.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="call 911",
+            ds_text="call 112",
+            granularity="word",
+            grouping_strategy="filter",
+            substitutions=[{"pattern": r"\d+", "replacement": "NUM"}],
+            acceptance_threshold=0.2,
+        )
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        summary = self._transcription_summary(report)
+        assert summary["error_rate"] == 0.0  # both → "call NUM"
+        assert summary["hits"] == 2

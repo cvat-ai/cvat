@@ -104,7 +104,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="transcriptionqualityrequirement",
             name="substitutions",
-            field=models.JSONField(blank=True, default=dict),
+            field=models.JSONField(blank=True, default=list),
         ),
         migrations.AddField(
             model_name="transcriptionqualityrequirement",
