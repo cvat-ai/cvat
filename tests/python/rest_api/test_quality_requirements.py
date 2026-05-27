@@ -1234,6 +1234,109 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         )
         assert report_data["comparison_summary"]["annotations"]["total_count"] == 2
 
+    def test_task_report_counts_enabled_intermediate_requirements(self, admin_user):
+        (
+            task_id,
+            settings,
+            gt_job,
+            car_label,
+            attribute_ids,
+        ) = self._create_attribute_quality_task(
+            admin_user,
+            name="intermediate-requirement-report",
+        )
+
+        rectangle_root = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["name"] == "default:rectangle"
+        )
+
+        parent_requirement_name = f"cars-parent-{task_id}"
+        parent_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                parent_requirement_name,
+                settings_id=settings["id"],
+                enabled=True,
+                required_score=1.0,
+                annotation_type=None,
+                parent_requirement=rectangle_root["id"],
+                sort_order=1,
+                filter_expression=json.dumps({"==": [{"var": "shape.label"}, "car"]}),
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        leaf_requirement_name = f"red-cars-leaf-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                leaf_requirement_name,
+                settings_id=settings["id"],
+                enabled=True,
+                required_score=1.0,
+                annotation_type=None,
+                parent_requirement=parent_requirement["id"],
+                sort_order=1,
+                filter_expression=json.dumps({"==": [{"var": "shape.attribute.value"}, "red"]}),
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        annotation_attributes = [
+            {"spec_id": attribute_ids["color"], "value": "red"},
+            {"spec_id": attribute_ids["size"], "value": "large"},
+        ]
+        self._set_attribute_quality_annotations(
+            admin_user,
+            task_id=task_id,
+            gt_job_id=gt_job.id,
+            label_id=car_label.id,
+            gt_attributes=annotation_attributes,
+            ds_attributes=annotation_attributes,
+        )
+
+        self._complete_job(admin_user, gt_job.id)
+
+        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+
+        expected_requirements_summary = {
+            "total": len(settings["requirements"]) + 2,
+            "enabled": 2,
+            "completed": 2,
+            "items": [
+                {
+                    "name": parent_requirement_name,
+                    "metric": "accuracy",
+                    "score": 1.0,
+                    "threshold": 1.0,
+                },
+                {
+                    "name": leaf_requirement_name,
+                    "metric": "accuracy",
+                    "score": 1.0,
+                    "threshold": 1.0,
+                },
+            ],
+        }
+        assert report["summary"]["requirements"] == expected_requirements_summary
+        assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        assert (
+            report_data["groups"][parent_requirement_name]["comparison_summary"]["annotations"][
+                "total_count"
+            ]
+            == 1
+        )
+        assert (
+            report_data["groups"][leaf_requirement_name]["comparison_summary"]["annotations"][
+                "total_count"
+            ]
+            == 1
+        )
+        assert report_data["comparison_summary"]["annotations"]["total_count"] == 2
+
     def test_task_report_data_contains_groups_and_requirements(self, admin_user):
         task_id, _ = create_task(
             admin_user,

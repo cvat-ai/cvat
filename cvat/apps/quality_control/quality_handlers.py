@@ -252,7 +252,7 @@ def resolve_effective_requirements(requirements: list[Any]) -> list[EffectiveQua
             requirement
         )
 
-    effective_leaves: list[EffectiveQualityRequirement] = []
+    effective_requirements: list[EffectiveQualityRequirement] = []
 
     def dfs(
         requirement: Any, inherited: EffectiveQualityRequirement | None, path: set[int]
@@ -264,10 +264,9 @@ def resolve_effective_requirements(requirements: list[Any]) -> list[EffectiveQua
             path = {*path, requirement_id}
 
         effective = _make_effective_requirement(requirement, inherited)
+        effective_requirements.append(effective)
+
         children = sorted(children_by_parent_id.get(requirement_id, []), key=_requirement_sort_key)
-        if not children:
-            effective_leaves.append(effective)
-            return
 
         for child in children:
             dfs(child, effective, path)
@@ -280,7 +279,7 @@ def resolve_effective_requirements(requirements: list[Any]) -> list[EffectiveQua
     for root in sorted(roots, key=_requirement_sort_key):
         dfs(root, None, set())
 
-    return effective_leaves
+    return effective_requirements
 
 
 def _get_requirement_field(requirement: Any, *names: str, default=None):
