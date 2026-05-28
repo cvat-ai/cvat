@@ -226,40 +226,45 @@ class TestProjectUsecases(TestDatasetExport):
     def test_can_get_personal_project_resources_while_client_is_scoped_to_org(
         self, fxt_image_file: Path
     ):
-        org = self.client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
-
-        self.client.organization_slug = ""
-        project = self.client.projects.create(
-            spec=models.ProjectWriteRequest(
-                name="personal project",
-                labels=[models.PatchedLabelRequest(name="car")],
-            )
-        )
-        self.client.tasks.create_from_data(
-            spec=models.TaskWriteRequest(name="personal task", project_id=project.id),
-            resources=[fxt_image_file],
-            data_params={"image_quality": 80},
-        )
-
-        self.client.organization_slug = org.slug
-        project = self.client.projects.retrieve(project.id)
-        original_context = self.client.organization_context
-
-        def fail_on_context(*_args, **_kwargs):
-            pytest.fail("organization_context should not be used for project resource listing")
-
-        self.client.organization_context = fail_on_context
+        original_slug = self.client.organization_slug
 
         try:
-            tasks = project.get_tasks()
-            labels = project.get_labels()
-        finally:
-            self.client.organization_context = original_context
+            org = self.client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
 
-        assert self.client.organization_slug == org.slug
-        assert len(tasks) == 1
-        assert tasks[0].project_id == project.id
-        assert {label.name for label in labels} == {"car"}
+            self.client.organization_slug = ""
+            project = self.client.projects.create(
+                spec=models.ProjectWriteRequest(
+                    name="personal project",
+                    labels=[models.PatchedLabelRequest(name="car")],
+                )
+            )
+            self.client.tasks.create_from_data(
+                spec=models.TaskWriteRequest(name="personal task", project_id=project.id),
+                resources=[fxt_image_file],
+                data_params={"image_quality": 80},
+            )
+
+            self.client.organization_slug = org.slug
+            project = self.client.projects.retrieve(project.id)
+            original_context = self.client.organization_context
+
+            def fail_on_context(*_args, **_kwargs):
+                pytest.fail("organization_context should not be used for project resource listing")
+
+            self.client.organization_context = fail_on_context
+
+            try:
+                tasks = project.get_tasks()
+                labels = project.get_labels()
+            finally:
+                self.client.organization_context = original_context
+
+            assert self.client.organization_slug == org.slug
+            assert len(tasks) == 1
+            assert tasks[0].project_id == project.id
+            assert {label.name for label in labels} == {"car"}
+        finally:
+            self.client.organization_slug = original_slug
 
     def test_can_get_labels(self, fxt_project_with_shapes: Project):
         expected_labels = {"car", "person"}

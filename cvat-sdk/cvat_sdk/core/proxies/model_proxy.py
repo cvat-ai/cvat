@@ -7,14 +7,13 @@ from __future__ import annotations
 import json
 from abc import ABC
 from collections.abc import Callable, Sequence
-from copy import copy, deepcopy
-from http.cookies import SimpleCookie
+from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
 from typing_extensions import Self
 
-from cvat_sdk.api_client import ApiClient, exceptions
+from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
@@ -96,25 +95,21 @@ def get_paginated_collection_with_organization(
     return_json: bool = False,
     **kwargs,
 ):
-    params = {"org": ""} if organization_id is None else {"org_id": organization_id}
+    if organization_id is None:
+        # Empty org slug is the SDK/server convention for the personal workspace.
+        params = {"org": ""}
+        temporary_org_slug = ""
+    else:
+        # org_id cannot be combined with X-Organization, so clear any active slug.
+        params = {"org_id": organization_id}
+        temporary_org_slug = None
 
-    if client.organization_slug is None:
+    previous_org_slug = client.organization_slug
+    client.organization_slug = temporary_org_slug
+    try:
         return get_paginated_collection(endpoint, return_json=return_json, **kwargs, **params)
-
-    default_headers = client.api_client.default_headers.copy()
-    default_headers.pop(client._ORG_SLUG_HEADER, None)
-
-    temp_api_client = ApiClient(
-        configuration=client.api_client.configuration,
-        headers=default_headers,
-        pool_threads=client.api_client.pool_threads,
-    )
-    temp_api_client.cookies = SimpleCookie()
-    temp_api_client.cookies.load(client.api_client.cookies.output(attrs=[], header="", sep=";"))
-    temp_endpoint = copy(endpoint)
-    temp_endpoint.api_client = temp_api_client
-
-    return get_paginated_collection(temp_endpoint, return_json=return_json, **kwargs, **params)
+    finally:
+        client.organization_slug = previous_org_slug
 
 
 ### Utilities
