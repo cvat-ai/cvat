@@ -269,8 +269,7 @@ export default class Collection {
                 }, [])
                 .filter((tag) => !tag.removed)
                 .map((tag) => tag.toJSON()),
-            intervals: this.intervals.filter((interval) => !interval.removed)
-                .map((interval) => interval.toJSON()),
+            intervals: this.getAllIntervals(),
         };
 
         return data;
