@@ -365,6 +365,7 @@ export interface SerializedQualityReportData {
         accuracy: number;
         precision: number;
         recall: number;
+        transcription_error_rate?: number;
         total_frames: number;
         validation_frames: number;
         validation_frame_share: number;
