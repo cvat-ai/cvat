@@ -77,18 +77,22 @@ class Project(
         return annotations
 
     def get_tasks(self) -> list[Task]:
-        with organization_context_for(self._client, self.organization):
+        with organization_context_for(self._client, self.organization) as org_params:
             return [
                 Task(self._client, m)
                 for m in get_paginated_collection(
-                    self._client.api_client.tasks_api.list_endpoint, project_id=self.id
+                    self._client.api_client.tasks_api.list_endpoint,
+                    project_id=self.id,
+                    **org_params,
                 )
             ]
 
     def get_labels(self) -> list[models.ILabel]:
-        with organization_context_for(self._client, self.organization):
+        with organization_context_for(self._client, self.organization) as org_params:
             return get_paginated_collection(
-                self._client.api_client.labels_api.list_endpoint, project_id=self.id
+                self._client.api_client.labels_api.list_endpoint,
+                project_id=self.id,
+                **org_params,
             )
 
     def get_preview(

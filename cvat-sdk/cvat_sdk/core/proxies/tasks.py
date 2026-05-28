@@ -247,11 +247,13 @@ class Task(
             im.save(outdir / outfile)
 
     def get_jobs(self) -> list[Job]:
-        with organization_context_for(self._client, self.organization):
+        with organization_context_for(self._client, self.organization) as org_params:
             return [
                 Job(self._client, model=m)
                 for m in get_paginated_collection(
-                    self._client.api_client.jobs_api.list_endpoint, task_id=self.id
+                    self._client.api_client.jobs_api.list_endpoint,
+                    task_id=self.id,
+                    **org_params,
                 )
             ]
 
@@ -260,9 +262,11 @@ class Task(
         return meta
 
     def get_labels(self) -> list[models.ILabel]:
-        with organization_context_for(self._client, self.organization):
+        with organization_context_for(self._client, self.organization) as org_params:
             return get_paginated_collection(
-                self._client.api_client.labels_api.list_endpoint, task_id=self.id
+                self._client.api_client.labels_api.list_endpoint,
+                task_id=self.id,
+                **org_params,
             )
 
     def get_frames_info(self) -> list[models.IFrameMeta]:

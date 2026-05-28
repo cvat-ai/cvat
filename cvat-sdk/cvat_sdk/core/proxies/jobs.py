@@ -131,9 +131,11 @@ class Job(
         return meta
 
     def get_labels(self) -> list[models.ILabel]:
-        with organization_context_for(self._client, self.organization):
+        with organization_context_for(self._client, self.organization) as org_params:
             return get_paginated_collection(
-                self._client.api_client.labels_api.list_endpoint, job_id=self.id
+                self._client.api_client.labels_api.list_endpoint,
+                job_id=self.id,
+                **org_params,
             )
 
     def get_frames_info(self) -> list[models.IFrameMeta]:
@@ -148,11 +150,13 @@ class Job(
         )
 
     def get_issues(self) -> list[Issue]:
-        with organization_context_for(self._client, self.organization):
+        with organization_context_for(self._client, self.organization) as org_params:
             return [
                 Issue(self._client, m)
                 for m in get_paginated_collection(
-                    self._client.api_client.issues_api.list_endpoint, job_id=self.id
+                    self._client.api_client.issues_api.list_endpoint,
+                    job_id=self.id,
+                    **org_params,
                 )
             ]
 

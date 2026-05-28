@@ -222,6 +222,36 @@ class TestProjectUsecases(TestDatasetExport):
         assert len(tasks) == 1
         assert tasks[0].project_id == fxt_project_with_shapes.id
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_get_personal_project_resources_while_client_is_scoped_to_org(
+        self, fxt_image_file: Path
+    ):
+        org = self.client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
+
+        self.client.organization_slug = ""
+        project = self.client.projects.create(
+            spec=models.ProjectWriteRequest(
+                name="personal project",
+                labels=[models.PatchedLabelRequest(name="car")],
+            )
+        )
+        self.client.tasks.create_from_data(
+            spec=models.TaskWriteRequest(name="personal task", project_id=project.id),
+            resources=[fxt_image_file],
+            data_params={"image_quality": 80},
+        )
+
+        self.client.organization_slug = org.slug
+        project = self.client.projects.retrieve(project.id)
+
+        tasks = project.get_tasks()
+        labels = project.get_labels()
+
+        assert self.client.organization_slug == org.slug
+        assert len(tasks) == 1
+        assert tasks[0].project_id == project.id
+        assert {label.name for label in labels} == {"car"}
+
     def test_can_get_labels(self, fxt_project_with_shapes: Project):
         expected_labels = {"car", "person"}
 
@@ -313,10 +343,16 @@ class TestProjectUsecases(TestDatasetExport):
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_org_maintainer_can_get_project_resources_without_explicit_org_context(
     fxt_image_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     resources = create_org_resource_hierarchy(fxt_image_file)
 
     with make_sdk_client(resources.maintainer_username) as maintainer_client:
+        monkeypatch.setattr(
+            maintainer_client.organizations,
+            "retrieve",
+            lambda *_args, **_kwargs: pytest.fail("organization lookup is not expected here"),
+        )
         project = maintainer_client.projects.retrieve(resources.project_id)
         tasks = project.get_tasks()
         labels = project.get_labels()

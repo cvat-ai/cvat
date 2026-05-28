@@ -89,16 +89,13 @@ class Repo(ModelProxy[ModelType, ApiType]):
 
 @contextmanager
 def organization_context_for(client: Client, organization_id: int | None):
-    if not organization_id:
-        yield
-        return
+    params = {"org": ""} if organization_id is None else {"org_id": organization_id}
 
-    org = client.organizations.retrieve(organization_id)
-    if client.organization_slug == org.slug:
-        yield
+    if client.organization_slug is None:
+        yield params
     else:
-        with client.organization_context(org.slug):
-            yield
+        with client.organization_context(None):
+            yield params
 
 
 ### Utilities
