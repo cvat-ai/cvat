@@ -1056,7 +1056,6 @@ export default class Collection {
                 continue;
             }
 
-            // intervals are not part of the per-label shape/track/tag statistics body
             if (object instanceof Interval) {
                 continue;
             }

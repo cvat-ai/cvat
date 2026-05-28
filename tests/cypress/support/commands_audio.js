@@ -34,7 +34,6 @@ Cypress.Commands.add('ensureAudioTask', () => {
         cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ jobIds }) => {
             cy.wait('@createAudioTaskRequest');
             const jobId = jobIds[0];
-            // pre-warm the first audio chunk so the waveform can decode once the job opens
             cy.request({
                 method: 'GET',
                 url: `/api/jobs/${jobId}/data?quality=compressed&type=chunk&index=0`,
