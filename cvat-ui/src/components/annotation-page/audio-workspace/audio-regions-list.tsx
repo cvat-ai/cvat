@@ -291,6 +291,10 @@ export default function AudioRegionsList(props: Props): JSX.Element {
     }, [patchVisible, onSetRegions]);
 
     const onDeleteRegion = useCallback((regionId: string) => {
+        const region = regions.find((r) => r.id === regionId);
+        if (region?.locked) {
+            return;
+        }
         onSetRegions(regions.filter((r) => r.id !== regionId));
         if (regionId === activeRegionId) {
             onSetActiveRegion(null);

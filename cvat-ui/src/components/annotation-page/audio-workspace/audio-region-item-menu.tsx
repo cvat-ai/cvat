@@ -45,11 +45,12 @@ function MakeCopyItem({ onCopy }: Pick<Props, 'onCopy'>): JSX.Element {
     );
 }
 
-function RemoveItem({ onRemove }: Pick<Props, 'onRemove'>): JSX.Element {
+function RemoveItem({ onRemove, locked }: Pick<Props, 'onRemove' | 'locked'>): JSX.Element {
     return (
         <Button
             type='link'
             icon={<DeleteOutlined />}
+            disabled={locked}
             onClick={onRemove}
             className='cvat-audio-region-menu-remove'
         >
@@ -108,7 +109,7 @@ export default function AudioRegionItemMenu(props: Props): MenuProps {
 
     items.push({
         key: MenuKeys.REMOVE,
-        label: <RemoveItem onRemove={props.onRemove} />,
+        label: <RemoveItem onRemove={props.onRemove} locked={locked} />,
     });
 
     return {
