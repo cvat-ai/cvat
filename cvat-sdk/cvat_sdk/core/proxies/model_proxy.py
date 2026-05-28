@@ -8,6 +8,7 @@ import json
 from abc import ABC
 from collections.abc import Callable, Sequence
 from copy import copy, deepcopy
+from http.cookies import SimpleCookie
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
@@ -106,9 +107,10 @@ def get_paginated_collection_with_organization(
     temp_api_client = ApiClient(
         configuration=client.api_client.configuration,
         headers=default_headers,
-        cookies={key: morsel.value for key, morsel in client.api_client.cookies.items()},
         pool_threads=client.api_client.pool_threads,
     )
+    temp_api_client.cookies = SimpleCookie()
+    temp_api_client.cookies.load(client.api_client.cookies.output(attrs=[], header="", sep=";"))
     temp_endpoint = copy(endpoint)
     temp_endpoint.api_client = temp_api_client
 
