@@ -17,6 +17,8 @@ import Icon, {
     SelectOutlined,
     StarOutlined,
     EyeOutlined,
+    ExpandAltOutlined,
+    NodeIndexOutlined,
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -34,6 +36,7 @@ interface Props {
     locked: boolean;
     pinned: boolean;
     hidden: boolean;
+    bboxEditMode: boolean;
     keyframe: boolean | undefined;
     outsideDisabled: boolean;
     hiddenDisabled: boolean;
@@ -46,6 +49,7 @@ interface Props {
     switchKeyFrameShortcut: string;
     nextKeyFrameShortcut: string;
     prevKeyFrameShortcut: string;
+    switchBboxEditModeShortcut: string;
 
     navigateFirstKeyframe: null | (() => void);
     navigatePrevKeyframe: null | (() => void);
@@ -64,6 +68,8 @@ interface Props {
     unpin(): void;
     hide(): void;
     show(): void;
+    setBboxEditMode(): void;
+    unsetBboxEditMode(): void;
 }
 
 const classes = {
@@ -90,6 +96,10 @@ const classes = {
     hidden: {
         enabled: { className: 'cvat-object-item-button-hidden cvat-object-item-button-hidden-enabled' },
         disabled: { className: 'cvat-object-item-button-hidden' },
+    },
+    bboxEditMode: {
+        enabled: { className: 'cvat-object-item-button-bbox-mode cvat-object-item-button-bbox-mode-enabled' },
+        disabled: { className: 'cvat-object-item-button-bbox-mode' },
     },
     keyframe: {
         enabled: { className: 'cvat-object-item-button-keyframe cvat-object-item-button-keyframe-enabled' },
@@ -229,6 +239,31 @@ function SwitchHidden(props: Props): JSX.Element {
     );
 }
 
+function SwitchBboxEditMode(props: Props): JSX.Element {
+    const {
+        locked, bboxEditMode, setBboxEditMode, unsetBboxEditMode, switchBboxEditModeShortcut
+    } = props;
+
+    const style = locked ? disabledStyle : {};
+    return (
+        <CVATTooltip title={`Toggle bounding box edit mode ${switchBboxEditModeShortcut}`}>
+            {bboxEditMode ? (
+                <ExpandAltOutlined
+                    {...classes.bboxEditMode.enabled}
+                    onClick={locked ? undefined : unsetBboxEditMode}
+                    style={style}
+                />
+            ) : (
+                <NodeIndexOutlined
+                    {...classes.bboxEditMode.disabled}
+                    onClick={locked ? undefined : setBboxEditMode}
+                    style={style}
+                />
+            )}
+        </CVATTooltip>
+    );
+}
+
 function SwitchOutside(props: Props): JSX.Element {
     const {
         outside, locked, switchOutsideShortcut, outsideDisabled, unsetOutside, setOutside,
@@ -324,6 +359,11 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                                 <SwitchPinned {...props} />
                             </Col>
                         )}
+                        {[ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType) && (
+                            <Col>
+                                <SwitchBboxEditMode {...props} />
+                            </Col>
+                        )}
                     </Row>
                 </Col>
             </Row>
@@ -352,6 +392,11 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                         {shapeType !== ShapeType.POINTS && (
                             <Col>
                                 <SwitchPinned {...props} />
+                            </Col>
+                        )}
+                        {[ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType) && (
+                            <Col>
+                                <SwitchBboxEditMode {...props} />
                             </Col>
                         )}
                     </Row>

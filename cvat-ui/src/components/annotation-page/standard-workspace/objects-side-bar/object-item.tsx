@@ -48,6 +48,8 @@ interface Props {
     edit(): void;
     slice(): void;
     simplify(): void;
+    mirrorHorizontal(): void;
+    mirrorVertical(): void;
 }
 
 function ObjectItemComponent(props: Props): JSX.Element {
@@ -84,6 +86,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         slice,
         simplify,
         jobInstance,
+        mirrorHorizontal,
+        mirrorVertical,
     } = props;
 
     const type =
@@ -148,6 +152,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     slice={slice}
                     simplify={simplify}
                     runAnnotationAction={runAnnotationAction}
+                    mirrorHorizontal={mirrorHorizontal}
+                    mirrorVertical={mirrorVertical}
                 />
                 <ObjectButtonsContainer clientID={clientID} />
                 <ItemDetailsContainer

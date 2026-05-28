@@ -20,3 +20,27 @@ export function rotatePoint(x: number, y: number, angle: number, cx = 0, cy = 0)
     const rotY = (y - cy) * cos + (x - cx) * sin + cy;
     return [rotX, rotY];
 }
+
+export function mirror2DPoints(points: number[], horizontal: boolean, vertical: boolean): number[] {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (let i = 0; i < points.length; i += 2) {
+        if (points[i] < minX) minX = points[i];
+        if (points[i] > maxX) maxX = points[i];
+        if (points[i + 1] < minY) minY = points[i + 1];
+        if (points[i + 1] > maxY) maxY = points[i + 1];
+    }
+
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    return points.map((val, index) => {
+        if (index % 2 === 0) {
+            return horizontal ? 2 * cx - val : val;
+        }
+        return vertical ? 2 * cy - val : val;
+    });
+}

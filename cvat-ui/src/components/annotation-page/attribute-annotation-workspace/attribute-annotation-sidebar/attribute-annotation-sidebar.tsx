@@ -10,7 +10,7 @@ import Layout, { SiderProps } from 'antd/lib/layout';
 import Text from 'antd/lib/typography/Text';
 
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
-import { Label, ObjectType } from 'cvat-core-wrapper';
+import { Label, ObjectType, ShapeType } from 'cvat-core-wrapper';
 import {
     activateObject as activateObjectAction,
     changeFrameAsync,
@@ -29,6 +29,7 @@ import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-editor';
 import ObjectSwitcher from './object-switcher';
+import { mirror2DPoints } from 'cvat-ui/src/utils/math';
 
 interface StateToProps {
     activatedStateID: number | null;
@@ -82,6 +83,12 @@ const componentShortcuts = {
         sequences: ['p'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    SWITCH_BBOX_EDIT_MODE: {
+        name: 'Toggle edit mode',
+        description: 'Change bounding box edit mode for an active object',
+        sequences: ['s'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
     NEXT_KEY_FRAME: {
         name: 'Next keyframe',
         description: 'Go to the next keyframe of an active track',
@@ -93,6 +100,18 @@ const componentShortcuts = {
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    MIRROR_HORIZONTAL: {
+        name: 'Mirror horizontal',
+        description: 'Mirror the selected polygon or polyline horizontally',
+        sequences: ['shift+h'],
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+    },
+    MIRROR_VERTICAL: {
+        name: 'Mirror vertical',
+        description: 'Mirror the selected polygon or polyline vertically',
+        sequences: ['shift+v'],
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
 };
 
@@ -291,6 +310,13 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                 updateAnnotations([activeObjectState]);
             }
         },
+        SWITCH_BBOX_EDIT_MODE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(activeObjectState.shapeType)) {
+                activeObjectState.bboxEditMode = !activeObjectState.bboxEditMode;
+                updateAnnotations([activeObjectState]);
+            }
+        },
         NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
@@ -309,6 +335,20 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                 if (frame !== null && isAbleToChangeFrame(frame)) {
                     changeFrame(frame);
                 }
+            }
+        },
+        MIRROR_HORIZONTAL: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState && activeObjectState.points && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(activeObjectState.shapeType)) {
+                activeObjectState.points = mirror2DPoints(activeObjectState.points, true, false);
+                updateAnnotations([activeObjectState]);
+            }
+        },
+        MIRROR_VERTICAL: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (activeObjectState && activeObjectState.points && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(activeObjectState.shapeType)) {
+                activeObjectState.points = mirror2DPoints(activeObjectState.points, false, true);
+                updateAnnotations([activeObjectState]);
             }
         },
     };

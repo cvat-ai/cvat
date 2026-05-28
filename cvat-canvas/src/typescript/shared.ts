@@ -52,6 +52,7 @@ export interface DrawnState {
     descriptions: string[];
     zOrder?: number;
     pinned?: boolean;
+    bboxEditMode?: boolean;
     updated: number;
     frame: number;
     label: any;
@@ -796,4 +797,19 @@ export function applySnapToShapePoint(
         pointsArray[pointIndex] = [snapTarget.x, snapTarget.y];
         shape.plot(pointsArray);
     }
+}
+
+export function mirror2DPoints(points: number[], horizontal: boolean, vertical: boolean): number[] {
+    const bbox = computeWrappingBox(points);
+    const cx = bbox.x + bbox.width / 2;
+    const cy = bbox.y + bbox.height / 2;
+
+    return points.map((val, idx) => {
+        if (idx % 2 === 0) {
+            // x coordinate
+            return horizontal ? 2 * cx - val : val;
+        }
+        // y coordinate
+        return vertical ? 2 * cy - val : val;
+    });
 }

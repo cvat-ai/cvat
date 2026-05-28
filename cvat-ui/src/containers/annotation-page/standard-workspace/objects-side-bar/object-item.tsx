@@ -35,6 +35,7 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
+import { mirror2DPoints } from 'cvat-ui/src/utils/math';
 
 interface OwnProps {
     clientID: number;
@@ -424,6 +425,30 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private mirrorHorizontal = (): void => {
+        const { objectState, updateState } = this.props;
+
+        if ([ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
+            const points = objectState.points as number[];
+            if (points && points.length > 0) {
+                objectState.points = mirror2DPoints(points, true, false);
+                updateState(objectState);
+            }
+        }
+    };
+
+    private mirrorVertical = (): void => {
+        const { objectState, updateState } = this.props;
+
+        if ([ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
+            const points = objectState.points as number[];
+            if (points && points.length > 0) {
+                objectState.points = mirror2DPoints(points, false, true);
+                updateState(objectState);
+            }
+        }
+    };
+
     private toBackground = (): void => {
         const { objectState, minZLayer } = this.props;
 
@@ -605,6 +630,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     edit={this.edit}
                     slice={this.slice}
                     simplify={this.requestSimplification}
+                    mirrorHorizontal={this.mirrorHorizontal}
+                    mirrorVertical={this.mirrorVertical}
                     resetCuboidPerspective={this.resetCuboidPerspective}
                     runAnnotationAction={this.runAnnotationAction}
                 />

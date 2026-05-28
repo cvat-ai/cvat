@@ -8,7 +8,7 @@ import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
-    FunctionOutlined,
+    FunctionOutlined, SwapOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -56,6 +56,8 @@ interface Props {
     slice(): void;
     simplify(): void;
     runAnnotationAction(): void;
+    mirrorHorizontal(): void;
+    mirrorVertical(): void;
     jobInstance: Job;
 }
 
@@ -310,6 +312,40 @@ function RunAnnotationActionItem(props: ItemProps): JSX.Element {
     );
 }
 
+function MirrorHorizontalItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { mirrorHorizontal } = toolProps;
+    return (
+        <CVATTooltip title='Mirror horizontally'>
+            <Button
+                type='link'
+                icon={<SwapOutlined />}
+                onClick={mirrorHorizontal}
+                className='cvat-object-item-menu-mirror-horizontal'
+            >
+                Mirror horizontally
+            </Button>
+        </CVATTooltip>
+    );
+}
+
+function MirrorVerticalItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { mirrorVertical } = toolProps;
+    return (
+        <CVATTooltip title='Mirror vertically'>
+            <Button
+                type='link'
+                icon={<SwapOutlined rotate={90} />}
+                onClick={mirrorVertical}
+                className='cvat-object-item-menu-mirror-vertical'
+            >
+                Mirror vertically
+            </Button>
+        </CVATTooltip>
+    );
+}
+
 export default function ItemMenu(props: Props): MenuProps {
     const {
         locked, shapeType, objectType, colorBy, jobInstance,
@@ -330,6 +366,8 @@ export default function ItemMenu(props: Props): MenuProps {
         EDIT_MASK = 'edit_mask',
         SLICE_ITEM = 'slice_item',
         SIMPLIFY_ITEM = 'simplify_item',
+        MIRROR_HORIZONTAL = 'mirror_horizontal',
+        MIRROR_VERTICAL = 'mirror_vertical',
         RUN_ANNOTATION_ACTION = 'run_annotation_action',
     }
 
@@ -419,6 +457,21 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.SWITCH_COLOR,
             label: <SwitchColorItem toolProps={props} />,
+        });
+    }
+
+    if (
+        !locked && objectType === ObjectType.SHAPE &&
+        [ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType)
+    ) {
+        items.push({
+            key: MenuKeys.MIRROR_HORIZONTAL,
+            label: <MirrorHorizontalItem key={MenuKeys.MIRROR_HORIZONTAL} toolProps={props} />,
+        });
+
+        items.push({
+            key: MenuKeys.MIRROR_VERTICAL,
+            label: <MirrorVerticalItem key={MenuKeys.MIRROR_VERTICAL} toolProps={props} />,
         });
     }
 

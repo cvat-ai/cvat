@@ -25,6 +25,7 @@ interface UpdateFlags {
     color: boolean;
     hidden: boolean;
     descriptions: boolean;
+    bboxEditMode: boolean;
     reset: () => void;
 }
 
@@ -40,6 +41,7 @@ export interface SerializedData {
     lock?: boolean;
     hidden?: boolean;
     pinned?: boolean;
+    bboxEditMode?: boolean;
     attributes?: Record<number, string>;
     group?: { color: string; id: number; };
     color?: string;
@@ -68,6 +70,8 @@ export interface SerializedData {
 }
 
 export default class ObjectState {
+
+    private static bboxEditModeMap: Record<number, boolean> = {};
     private readonly __internal: {
         save: (objectState: ObjectState) => ObjectState;
         delete: (frame: number, force: boolean) => boolean;
@@ -96,6 +100,7 @@ export default class ObjectState {
     public color: string;
     public hidden: boolean;
     public pinned: boolean;
+    public bboxEditMode: boolean;
     public points: number[] | null;
     public rotation: number | null;
     public zOrder: number;
@@ -146,6 +151,7 @@ export default class ObjectState {
                 this.color = false;
                 this.hidden = false;
                 this.descriptions = false;
+                this.bboxEditMode = false;
 
                 return reset;
             },
@@ -171,6 +177,7 @@ export default class ObjectState {
             color: '#000000',
             hidden: false,
             pinned: false,
+            bboxEditMode: serialized.bboxEditMode !== undefined ? serialized.bboxEditMode : false,
             source: serialized.source || Source.MANUAL,
             keyframes: serialized.keyframes || null,
             group: serialized.group || null,
@@ -413,6 +420,15 @@ export default class ObjectState {
                         data.pinned = pinned;
                     },
                 },
+                bboxEditMode: {
+                    get: () => {
+                        return ObjectState.bboxEditModeMap[data.clientID] || false;
+                    },
+                    set: (bboxEditMode) => {
+                        data.updateFlags.bboxEditMode = true;
+                        ObjectState.bboxEditModeMap[data.clientID] = bboxEditMode;
+                    },
+                },
                 updated: {
                     get: () => data.updated,
                 },
@@ -483,6 +499,9 @@ export default class ObjectState {
         }
         if (typeof serialized.hidden === 'boolean') {
             data.hidden = serialized.hidden;
+        }
+        if (typeof serialized.bboxEditMode === 'boolean') {
+            ObjectState.bboxEditModeMap[data.clientID] = serialized.bboxEditMode;
         }
         if (typeof serialized.color === 'string') {
             data.color = serialized.color;

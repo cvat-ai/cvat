@@ -35,6 +35,7 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
+import { mirror2DPoints } from 'cvat-ui/src/utils/math';
 
 interface StateToProps {
     jobInstance: any;
@@ -108,6 +109,12 @@ const componentShortcuts = {
         name: 'Switch pinned property',
         description: 'Change pinned property for an active object',
         sequences: ['p'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_BBOX_EDIT_MODE: {
+        name: 'Toggle edit mode',
+        description: 'Change bounding box edit mode for an active object',
+        sequences: ['s'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_KEYFRAME: {
@@ -192,6 +199,18 @@ const componentShortcuts = {
         name: 'Simplify polygon',
         description: 'Activate simplification mode for the selected polygon or polyline',
         sequences: [],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    MIRROR_HORIZONTAL: {
+        name: 'Mirror horizontal',
+        description: 'Mirror the selected polygon or polyline horizontally',
+        sequences: ['shift+h'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    MIRROR_VERTICAL: {
+        name: 'Mirror vertical',
+        description: 'Mirror the selected polygon or polyline vertically',
+        sequences: ['shift+v'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
 };
@@ -552,6 +571,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
+            SWITCH_BBOX_EDIT_MODE: (event?: KeyboardEvent) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
+                    state.bboxEditMode = !state.bboxEditMode;
+                    updateAnnotations([state]);
+                }
+            },
             SWITCH_KEYFRAME: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
@@ -673,6 +700,22 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState(true);
                 if (state && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
                     switchSimplifyVisibility(state.clientID);
+                }
+            },
+            MIRROR_HORIZONTAL: (event?: KeyboardEvent) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && state.points && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
+                    state.points = mirror2DPoints(state.points, true, false);
+                    updateAnnotations([state]);
+                }
+            },
+            MIRROR_VERTICAL: (event?: KeyboardEvent) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && state.points && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
+                    state.points = mirror2DPoints(state.points, false, true);
+                    updateAnnotations([state]);
                 }
             },
         };

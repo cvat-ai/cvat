@@ -343,6 +343,10 @@ class Annotation {
             checkObjectType('pinned', data.pinned, 'boolean');
         }
 
+        if (updated.bboxEditMode) {
+            checkObjectType('bboxEditMode', data.bboxEditMode, 'boolean');
+        }
+
         if (updated.color) {
             checkObjectType('color', data.color, 'string');
             if (!/^#[0-9A-F]{6}$/i.test(data.color)) {
@@ -433,6 +437,7 @@ class Drawn extends Annotation {
     protected descriptions: string[];
     public hidden: boolean;
     protected pinned: boolean;
+    public bboxEditMode: boolean;
     public shapeType: ShapeType;
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
@@ -441,6 +446,7 @@ class Drawn extends Annotation {
         this.descriptions = data.descriptions || [];
         this.hidden = false;
         this.pinned = true;
+        this.bboxEditMode = data.bboxEditMode || false;
         this.shapeType = null;
     }
 
@@ -467,6 +473,27 @@ class Drawn extends Annotation {
         );
 
         this.pinned = pinned;
+    }
+
+    protected saveBboxEditMode(bboxEditMode: boolean, frame: number): void {
+        const undoBboxEditMode = this.bboxEditMode;
+        const redoBboxEditMode = bboxEditMode;
+
+        this.history.do(
+            HistoryActions.CHANGED_BBOX_EDIT_MODE,
+            () => {
+                this.bboxEditMode = undoBboxEditMode;
+                this.updated = Date.now();
+            },
+            () => {
+                this.bboxEditMode = redoBboxEditMode;
+                this.updated = Date.now();
+            },
+            [this.clientID],
+            frame,
+        );
+
+        this.bboxEditMode = bboxEditMode;
     }
 
     protected saveHidden(hidden: boolean, frame: number): void {
@@ -626,6 +653,7 @@ export class Shape extends Drawn {
             hidden: this.hidden,
             updated: this.updated,
             pinned: this.pinned,
+            bboxEditMode: this.bboxEditMode,
             frame,
             source: this.source,
             score: this.score,
@@ -771,6 +799,7 @@ export class Shape extends Drawn {
     }
 
     public save(frame: number, data: ObjectState): ObjectState {
+        console.log("2. CVAT Core is saving the object. bboxEditMode flag:", data.updateFlags.bboxEditMode);
         if (frame !== this.frame) {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
         }
@@ -826,6 +855,10 @@ export class Shape extends Drawn {
 
         if (updated.pinned) {
             this.savePinned(data.pinned, frame);
+        }
+
+        if (updated.bboxEditMode) {
+            this.saveBboxEditMode(data.bboxEditMode, frame);
         }
 
         if (updated.color) {
@@ -972,6 +1005,7 @@ export class Track extends Drawn {
             updated: this.updated,
             label: this.label,
             pinned: this.pinned,
+            bboxEditMode: this.bboxEditMode,
             keyframes: {
                 prev,
                 next,
@@ -1377,6 +1411,10 @@ export class Track extends Drawn {
             this.savePinned(data.pinned, frame);
         }
 
+        if (updated.bboxEditMode) {
+            this.saveBboxEditMode(data.bboxEditMode, frame);
+        }
+
         if (updated.color) {
             this.saveColor(data.color, frame);
         }
@@ -1496,7 +1534,7 @@ export class Tag extends Annotation {
 
     public get(frame: number): Omit<Required<SerializedData>,
     'elements' | 'occluded' | 'outside' | 'rotation' | 'zOrder' |
-    'points' | 'hidden' | 'pinned' | 'keyframe' | 'shapeType' |
+    'points' | 'hidden' | 'pinned' | 'bboxEditMode' | 'keyframe' | 'shapeType' |
     'parentID' | 'descriptions' | 'keyframes'
     > {
         if (frame !== this.frame) {
@@ -2084,6 +2122,7 @@ export class SkeletonShape extends Shape {
             color: this.color,
             updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
             pinned: this.pinned,
+            bboxEditMode: this.bboxEditMode,
             outside: elements.every((el) => el.outside),
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),

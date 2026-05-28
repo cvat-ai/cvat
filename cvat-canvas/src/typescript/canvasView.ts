@@ -36,6 +36,7 @@ import {
     composeShapeDimensions, getRoundedRotation,
     clamp, validateUnionResult, processPolygonUnionResult,
     applySnapToShapePoint, isPolygonSelfIntersecting,
+    computeWrappingBox,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -89,8 +90,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private highlightedElements: HighlightedElements;
     private configuration: Configuration;
     private snapToAngleResize: number;
+    private activeUIBbox: SVG.Rect | null;
     private draggableShape: SVG.Shape | null;
     private resizableShape: SVG.Shape | null;
+    private polygonResizeSnapshot: number[] | null = null;
     private ctrlPressed: boolean;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
@@ -1177,7 +1180,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).selectize(value, {
                 deepSelect: true,
                 pointSize: (2 * this.configuration.controlPointsSize) / this.geometry.scale,
-                rotationPoint: shape.type === 'rect' || shape.type === 'ellipse',
+                rotationPoint: shape.type === 'rect' || shape.type === 'ellipse' || shape.hasClass('cvat_canvas_active_bbox'),
                 pointsExclude: shape.type === 'image' ? ['lt', 'rt', 'rb', 'lb', 't', 'r', 'b', 'l'] : [],
                 pointType(cx: number, cy: number): SVG.Circle {
                     const circle: SVG.Circle = this.nested
@@ -1409,6 +1412,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         let resizableInstance = shape;
         let skeletonSVGTemplate: SVG.G = null;
 
+        const currentDrawnState = state || (this.activeElement.clientID ? this.drawnStates[this.activeElement.clientID] : null);
+
         if (shape.classes().includes('cvat_canvas_shape_skeleton')) {
             // for skeletons we use wrapping rectangle to resize the skeleton itself
             resizableInstance = (shape as any).children().find((child: SVG.Element) => child.type === 'rect');
@@ -1453,6 +1458,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
         }
 
+        if (state?.bboxEditMode
+            && currentDrawnState
+            && (currentDrawnState.shapeType === 'polygon' || currentDrawnState.shapeType === 'polyline')
+            && this.activeUIBbox) {
+
+            resizableInstance = this.activeUIBbox;
+        }
+
         if (state) {
             let resized = false;
             let aborted = false;
@@ -1471,6 +1484,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.resizableShape = shape;
                     const detail = (e.detail.event.detail as any);
                     draggedPointIndex = detail?.i ?? null;
+
+                    if (state.bboxEditMode && (state.shapeType === 'polygon' || state.shapeType === 'polyline')) {
+                        this.polygonResizeSnapshot = pointsToNumberArray(shape.attr('points'));
+
+                        resizableInstance.attr('data-xtl', resizableInstance.x());
+                        resizableInstance.attr('data-ytl', resizableInstance.y());
+                        resizableInstance.attr('data-xbr', resizableInstance.x() + resizableInstance.width());
+                        resizableInstance.attr('data-ybr', resizableInstance.y() + resizableInstance.height());
+                    }
                 })
                 .on('resizing', (e: CustomEvent): void => {
                     resized = true;
@@ -1530,6 +1552,35 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
                         setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
                     }
+
+                    if (state.bboxEditMode && (state.shapeType === 'polygon' || state.shapeType === 'polyline') && this.polygonResizeSnapshot) {
+                        const { rotation } = resizableInstance.transform();
+
+                        const [x, y] = [resizableInstance.x(), resizableInstance.y()];
+                        const prevXtl = +resizableInstance.attr('data-xtl');
+                        const prevYtl = +resizableInstance.attr('data-ytl');
+                        const prevXbr = +resizableInstance.attr('data-xbr');
+                        const prevYbr = +resizableInstance.attr('data-ybr');
+
+                        if (prevXbr - prevXtl > 0.1 && prevYbr - prevYtl > 0.1) {
+                            const projectedPoints = [];
+
+                            // Map vertices linearly to the scaling box dimensions
+                            for (let i = 0; i < this.polygonResizeSnapshot.length; i += 2) {
+                                const offsetX = (this.polygonResizeSnapshot[i] - prevXtl) / (prevXbr - prevXtl);
+                                const offsetY = (this.polygonResizeSnapshot[i + 1] - prevYtl) / (prevYbr - prevYtl);
+                                projectedPoints.push(offsetX * resizableInstance.width() + x, offsetY * resizableInstance.height() + y);
+                            }
+
+                            // Update geometry and apply native SVG rotation matching the bounding box
+                            shape.untransform();
+                            (shape as any).plot(stringifyPoints(projectedPoints));
+
+                            if (rotation) {
+                                shape.rotate(rotation, resizableInstance.cx(), resizableInstance.cy());
+                            }
+                        }
+                    }
                 })
                 .on('resizedone', (): void => {
                     if (aborted) {
@@ -1565,6 +1616,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 });
                                 this.onEditDone(state, points, 0);
                             }
+                        } else if (state.bboxEditMode && (state.shapeType === 'polygon' || state.shapeType === 'polyline')) {
+                            let finalPoints = readPointsFromShape(shape);
+
+                            if (rotation && this.activeUIBbox) {
+                                const cx = this.activeUIBbox.cx();
+                                const cy = this.activeUIBbox.cy();
+                                finalPoints = rotate2DPoints(cx, cy, rotation, finalPoints);
+                            }
+                            shape.untransform();
+                            this.polygonResizeSnapshot = null;
+                            this.onEditDone(state, this.translateFromCanvas(finalPoints), 0);
                         } else {
                             // these points does not take into account possible transformations, applied on the element
                             // so, if any (like rotation) we need to map them to canvas coordinate space
@@ -1692,6 +1754,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             sliceHidden: {},
         };
 
+        this.activeUIBbox = null;
         this.isImageLoading = true;
         this.draggableShape = null;
         this.resizableShape = null;
@@ -2528,6 +2591,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             descriptions: [...state.descriptions],
             zOrder: state.zOrder,
             pinned: state.pinned,
+            bboxEditMode: state.bboxEditMode,
             updated: state.updated,
             frame: state.frame,
             label: state.label,
@@ -2631,7 +2695,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            if (drawnState.pinned !== state.pinned && this.activeElement.clientID !== null) {
+            const toggledPin = drawnState.pinned !== state.pinned;
+            const toggledBboxEdit = drawnState.bboxEditMode !== state.bboxEditMode;
+
+            if ((toggledPin || toggledBboxEdit) && this.activeElement.clientID !== null) {
                 const activeElement = { ...this.activeElement };
                 this.deactivate();
                 this.activate(activeElement);
@@ -2680,6 +2747,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     if (state.shapeType === 'points' && !isInvisible) {
                         this.selectize(false, shape);
                         this.setupPoints(shape as SVG.PolyLine, state);
+                    }
+
+                    if (this.activeElement.clientID === clientID && (state.shapeType === 'polygon' || state.shapeType === 'polyline') && this.activeUIBbox) {
+                        this.selectize(false, this.activeUIBbox);
+                        this.activeUIBbox.untransform();
+
+                        const originalPoints = readPointsFromShape(shape);
+                        const bbox = computeWrappingBox(originalPoints);
+
+                        this.activeUIBbox.move(bbox.x, bbox.y).size(bbox.width, bbox.height);
+                        this.selectize(true, this.activeUIBbox);
                     }
                 }
             }
@@ -2881,6 +2959,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[clientID];
 
+            if (this.activeUIBbox) {
+                this.selectize(false, this.activeUIBbox);
+                this.activeUIBbox.remove();
+                this.activeUIBbox = null;
+            }
+
             if (drawnState.shapeType === 'points') {
                 this.svgShapes[clientID]
                     .remember('_selectHandler').nested
@@ -2996,7 +3080,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).attr('projections', true);
         }
 
-        if (state.shapeType !== 'points') {
+        const isBboxEditMode = state.bboxEditMode && (state.shapeType === 'polygon' || state.shapeType === 'polyline');
+
+        if (state.shapeType !== 'points' && !isBboxEditMode) {
             this.selectize(true, shape);
         }
 
@@ -3031,6 +3117,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.hideDirection(shape as SVG.Polygon | SVG.PolyLine);
                 }
             };
+
+            if (state.bboxEditMode && (state.shapeType === 'polygon' || state.shapeType === 'polyline')) {
+                const originalPoints = readPointsFromShape(shape);
+                const bbox = computeWrappingBox(originalPoints);
+
+                this.activeUIBbox = this.adoptedContent.rect(bbox.width, bbox.height)
+                    .move(bbox.x, bbox.y)
+                    .attr({
+                        fill: shape.attr('fill'),
+                        'fill-opacity': 0,
+                        'stroke': shape.attr('fill'),
+                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                        'stroke-dasharray': '5,5',
+                        'pointer-events': 'none',
+                    })
+                    .addClass('cvat_canvas_active_bbox');
+
+                this.content.append(this.activeUIBbox.node);
+                this.selectize(true, this.activeUIBbox);
+            }
 
             let shapeSizeElement: ShapeSizeElement | null = null;
             this.resizable(state, shape, () => {

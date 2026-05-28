@@ -22,6 +22,16 @@ To edit a polygon you have to click on it while holding `Shift`, it will open th
   In this case after closing the polygon, you can select the part of the polygon you want to leave.
 
   ![Setting for Intelligent polygon cropping](/images/image209.jpg)
+- To scale or rotate a shape as a whole, rather than editing individual points, you can either press `S` or
+  click the BBox edit mode button on obeject side bar. After that, a bounding box will appear around the shape,
+  in which you can:
+  - Scale by dragging any of the bouding box corners or edge handles to resize the shape.
+  - Rotate by clicking and draging the rotation handle to rotate the shape around its center.
+- You can mathematically mirror a shape across its center axis:
+  - You can mirror horizontally by pressing `Shift+H` or selecting ****Mirror horizontally** from the object's
+  action menu in the sidebar.
+  - Tou can mirror vertically by pressing `Shift+V` or selecting **Mirror vertically** from the object's action
+  menu in the sidebar.
 
 - You can press `Esc` to cancel editing.
 

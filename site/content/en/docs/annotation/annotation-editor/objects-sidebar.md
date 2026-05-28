@@ -62,6 +62,8 @@ The action menu contains:
     copy of the object on `N` _subsequent_ frames at the same position.
   - **Propagate backward** (![Back propagate](/images/propagate_back.png)) creates
     a copy of the object on `N` _previous_ frames at the same position.
+- **Mirror horizontal** - mirrors the shape horizontally. Keyboard shortcut **Shift+H**.
+- **Mirror vertical** - mirrors the shape vertically. Keyboard shortcut **Shift+V**.
 
   ![Window with options and parameters for object propagation](/images/image053.jpg)
 
@@ -92,6 +94,8 @@ You can change the way an object is displayed on a frame (show or hide).
 **Switch pinned property** - when enabled, a shape cannot be moved by dragging or dropping.
 
 ![Objects sidebar with highlighted button for pinning object](/images/image052.jpg)
+
+**BBox edit mode** - toggles a bounding box for resizing and rotating complex shapes (like polygons and polylines). Shortcut: **S**.
 
 **Tracker switcher** - enable/disable {{< ilink "/docs/annotation/auto-annotation/ai-tools#trackers" "tracking" >}} for
 the object.

@@ -56,6 +56,8 @@ interface Props {
     edit(): void;
     slice(): void;
     simplify(): void;
+    mirrorHorizontal(): void;
+    mirrorVertical(): void;
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
@@ -99,6 +101,8 @@ function ItemTopComponent(props: Props): JSX.Element {
         slice,
         simplify,
         jobInstance,
+        mirrorHorizontal,
+        mirrorVertical,
     } = props;
 
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
@@ -185,6 +189,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                             slice,
                             simplify,
                             runAnnotationAction,
+                            mirrorHorizontal,
+                            mirrorVertical,
                         })}
                     >
                         <Col span={2}>

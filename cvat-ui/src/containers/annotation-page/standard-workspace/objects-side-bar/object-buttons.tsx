@@ -146,6 +146,18 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
         this.commit();
     };
 
+    private setBboxEditMode = (): void => {
+        const { objectState } = this.props;
+        objectState.bboxEditMode = true;
+        this.commit();
+    };
+
+    private unsetBboxEditMode = (): void => {
+        const { objectState } = this.props;
+        objectState.bboxEditMode = false;
+        this.commit();
+    };
+
     private show = (): void => {
         const { objectState, editedState, changeHideEditedState } = this.props;
         if (objectState.clientID === editedState?.clientID) {
@@ -235,7 +247,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
         const {
             parentID, objectType, shapeType,
-            occluded, outside, lock, pinned, hidden, keyframe,
+            occluded, outside, lock, pinned, hidden, keyframe, bboxEditMode,
         } = objectState;
 
         return (
@@ -249,6 +261,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
                 pinned={pinned}
                 hidden={hidden}
                 keyframe={keyframe}
+                bboxEditMode={bboxEditMode}
                 switchOccludedShortcut={normalizedKeyMap.SWITCH_OCCLUDED}
                 switchPinnedShortcut={normalizedKeyMap.SWITCH_PINNED}
                 switchOutsideShortcut={normalizedKeyMap.SWITCH_OUTSIDE}
@@ -257,6 +270,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
                 switchKeyFrameShortcut={normalizedKeyMap.SWITCH_KEYFRAME}
                 nextKeyFrameShortcut={normalizedKeyMap.NEXT_KEY_FRAME}
                 prevKeyFrameShortcut={normalizedKeyMap.PREV_KEY_FRAME}
+                switchBboxEditModeShortcut={normalizedKeyMap.SWITCH_BBOX_EDIT_MODE}
                 outsideDisabled={outsideDisabled}
                 hiddenDisabled={hiddenDisabled}
                 keyframeDisabled={keyframeDisabled || (first === last && keyframe)}
@@ -276,6 +290,8 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
                 unpin={this.unpin}
                 hide={this.hide}
                 show={this.show}
+                setBboxEditMode={this.setBboxEditMode}
+                unsetBboxEditMode={this.unsetBboxEditMode}
             />
         );
     }

@@ -139,6 +139,7 @@ export enum HistoryActions {
     CHANGED_KEYFRAME = 'Changed keyframe',
     CHANGED_LOCK = 'Changed lock',
     CHANGED_PINNED = 'Changed pinned',
+    CHANGED_BBOX_EDIT_MODE = 'Changed bbox edit mode',
     CHANGED_COLOR = 'Changed color',
     CHANGED_HIDDEN = 'Changed hidden',
     CHANGED_SOURCE = 'Changed source',
