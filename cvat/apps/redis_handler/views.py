@@ -62,7 +62,6 @@ CVAT_CAN_STOP_STARTED_JOBS_KEY = "cvat_can_stop_started_jobs"
                 "id",
                 OpenApiTypes.STR,
                 OpenApiParameter.PATH,
-                description="Request ID",
             )
         ],
         responses={
@@ -291,7 +290,6 @@ class RequestViewSet(viewsets.GenericViewSet):
                 "id",
                 OpenApiTypes.STR,
                 OpenApiParameter.PATH,
-                description="Request ID",
             )
         ],
         request=None,

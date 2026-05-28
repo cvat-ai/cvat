@@ -7,7 +7,7 @@ import re
 import textwrap
 
 from drf_spectacular.authentication import BasicScheme, SessionScheme, TokenScheme
-from drf_spectacular.extensions import OpenApiAuthenticationExtension
+from drf_spectacular.extensions import OpenApiAuthenticationExtension, OpenApiFilterExtension
 from drf_spectacular.openapi import AutoSchema
 from rest_framework import serializers
 
@@ -122,3 +122,18 @@ class CustomAutoSchema(AutoSchema):
                 required = False
 
         return schema, required
+
+    def _get_filter_parameters(self):
+        from cvat.apps.engine.filters import SimpleFilter
+
+        parameters = []
+        for filter_backend in self.get_filter_backends():
+            if issubclass(filter_backend, SimpleFilter):
+                parameters += filter_backend().get_schema_operation_parameters(self.view)
+            else:
+                filter_extension = OpenApiFilterExtension.get_match(filter_backend())
+                if filter_extension:
+                    parameters += filter_extension.get_schema_operation_parameters(self)
+                else:
+                    parameters += filter_backend().get_schema_operation_parameters(self.view)
+        return parameters
