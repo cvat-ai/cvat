@@ -16,6 +16,7 @@ export interface QualitySummary {
     accuracy: number;
     precision: number;
     recall: number;
+    transcriptionErrorRate?: number;
     errorCount: number;
     warningCount: number;
     conflictsByType: {
@@ -127,6 +128,7 @@ export default class QualityReport {
             accuracy: this.#summary.accuracy,
             precision: this.#summary.precision,
             recall: this.#summary.recall,
+            transcriptionErrorRate: this.#summary.transcription_error_rate,
             conflictsByType: {
                 extraAnnotations: this.#summary.conflicts_by_type?.extra_annotation,
                 missingAnnotations: this.#summary.conflicts_by_type?.missing_annotation,

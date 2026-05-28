@@ -320,13 +320,6 @@ export interface SerializedQualitySettingsData {
     descriptions?: Record<string, string>;
     inherit?: boolean;
     job_filter?: string;
-    transcription_requirements?: SerializedTranscriptionRequirement[];
-}
-
-export interface SerializedTranscriptionRequirement {
-    attribute_id: number;
-    metric: 'wer' | 'cer';
-    acceptance_threshold: number;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {
@@ -378,6 +371,7 @@ export interface SerializedQualityReportData {
         accuracy: number;
         precision: number;
         recall: number;
+        transcription_error_rate?: number;
         total_frames: number;
         validation_frames: number;
         validation_frame_share: number;
