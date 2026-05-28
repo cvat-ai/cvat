@@ -74,7 +74,6 @@ export async function run(
             shapes: exportedCollection.shapes,
             tags: [],
             tracks: [],
-            intervals: [],
         }, instance.labels, filters).shapes;
 
         const filteredShapesByFrame = exportedCollection.shapes.reduce((acc, shape) => {

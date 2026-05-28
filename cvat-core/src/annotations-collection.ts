@@ -159,7 +159,7 @@ export default class Collection {
             }
         }
 
-        for (const interval of data.intervals ?? []) {
+        for (const interval of data.intervals) {
             const clientID = this.injection.nextClientID();
             const color = colors[clientID % colors.length];
             const intervalModel = new Interval(interval, clientID, color, this.injection);
