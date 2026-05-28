@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { ChunkQuality } from 'cvat-data';
 import serverProxy from '../server-proxy';
 
