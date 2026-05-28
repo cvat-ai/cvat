@@ -106,9 +106,8 @@ paths:
            Available filter_fields: ['created_date', 'expiry_date', 'id', 'last_used_date', 'name', 'read_only', 'updated_date'].
         schema:
           type: string
-      - name: name
-        in: query
-        description: A simple equality filter for the name field
+      - in: query
+        name: name
         schema:
           type: string
       - name: page
@@ -123,9 +122,8 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: read_only
-        in: query
-        description: A simple equality filter for the read_only field
+      - in: query
+        name: read_only
         schema:
           type: boolean
       - name: search
@@ -481,17 +479,22 @@ paths:
         description: Organization unique slug
         schema:
           type: string
-      - name: credentials_type
-        in: query
-        description: A simple equality filter for the credentials_type field
+      - in: query
+        name: credentials_type
         schema:
           type: string
           enum:
-          - KEY_SECRET_KEY_PAIR
           - ACCOUNT_NAME_TOKEN_PAIR
-          - KEY_FILE_PATH
           - ANONYMOUS_ACCESS
           - CONNECTION_STRING
+          - KEY_FILE_PATH
+          - KEY_SECRET_KEY_PAIR
+        description: |-
+          * `KEY_SECRET_KEY_PAIR` - KEY_SECRET_KEY_PAIR
+          * `ACCOUNT_NAME_TOKEN_PAIR` - ACCOUNT_NAME_TOKEN_PAIR
+          * `KEY_FILE_PATH` - KEY_FILE_PATH
+          * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
+          * `CONNECTION_STRING` - CONNECTION_STRING
       - name: filter
         required: false
         in: query
@@ -508,9 +511,8 @@ paths:
            Available filter_fields: ['credentials_type', 'description', 'id', 'name', 'owner', 'provider_type', 'resource'].
         schema:
           type: string
-      - name: name
-        in: query
-        description: A simple equality filter for the name field
+      - in: query
+        name: name
         schema:
           type: string
       - name: org
@@ -523,9 +525,8 @@ paths:
         description: Organization identifier
         schema:
           type: integer
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
+      - in: query
+        name: owner
         schema:
           type: string
       - name: page
@@ -540,18 +541,20 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: provider_type
-        in: query
-        description: A simple equality filter for the provider_type field
+      - in: query
+        name: provider_type
         schema:
           type: string
           enum:
           - AWS_S3_BUCKET
           - AZURE_CONTAINER
           - GOOGLE_CLOUD_STORAGE
-      - name: resource
-        in: query
-        description: A simple equality filter for the resource field
+        description: |-
+          * `AWS_S3_BUCKET` - Amazon S3
+          * `AZURE_CONTAINER` - Azure Blob Storage
+          * `GOOGLE_CLOUD_STORAGE` - Google Cloud Storage
+      - in: query
+        name: resource
         schema:
           type: string
       - name: search
@@ -959,19 +962,16 @@ paths:
            Available filter_fields: ['frame_id', 'id', 'issue_id', 'job_id', 'owner'].
         schema:
           type: string
-      - name: frame_id
-        in: query
-        description: A simple equality filter for the frame_id field
+      - in: query
+        name: frame_id
         schema:
           type: integer
-      - name: issue_id
-        in: query
-        description: A simple equality filter for the issue_id field
+      - in: query
+        name: issue_id
         schema:
           type: integer
-      - name: job_id
-        in: query
-        description: A simple equality filter for the job_id field
+      - in: query
+        name: job_id
         schema:
           type: integer
       - name: org
@@ -984,9 +984,8 @@ paths:
         description: Organization identifier
         schema:
           type: integer
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
+      - in: query
+        name: owner
         schema:
           type: string
       - name: page
@@ -1235,11 +1234,10 @@ paths:
           [''id'']'
         schema:
           type: string
-      - name: task_id
-        in: query
-        description: A simple equality filter for the task_id field
+      - in: query
+        name: task_id
         schema:
-          type: integer
+          type: number
       tags:
       - consensus
       security:
@@ -1630,9 +1628,8 @@ paths:
         description: Organization unique slug
         schema:
           type: string
-      - name: accepted
-        in: query
-        description: A simple equality filter for the accepted field
+      - in: query
+        name: accepted
         schema:
           type: boolean
       - name: filter
@@ -1661,9 +1658,8 @@ paths:
         description: Organization identifier
         schema:
           type: integer
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
+      - in: query
+        name: owner
         schema:
           type: string
       - name: page
@@ -1691,9 +1687,8 @@ paths:
           [''accepted'', ''created_date'', ''owner'', ''user_id'']'
         schema:
           type: string
-      - name: user_id
-        in: query
-        description: A simple equality filter for the user_id field
+      - in: query
+        name: user_id
         schema:
           type: integer
       tags:
@@ -1920,9 +1915,8 @@ paths:
         description: Organization unique slug
         schema:
           type: string
-      - name: assignee
-        in: query
-        description: A simple equality filter for the assignee field
+      - in: query
+        name: assignee
         schema:
           type: string
       - name: filter
@@ -1941,14 +1935,12 @@ paths:
            Available filter_fields: ['assignee', 'frame_id', 'id', 'job_id', 'owner', 'resolved', 'task_id'].
         schema:
           type: string
-      - name: frame_id
-        in: query
-        description: A simple equality filter for the frame_id field
+      - in: query
+        name: frame_id
         schema:
           type: integer
-      - name: job_id
-        in: query
-        description: A simple equality filter for the job_id field
+      - in: query
+        name: job_id
         schema:
           type: integer
       - name: org
@@ -1961,9 +1953,8 @@ paths:
         description: Organization identifier
         schema:
           type: integer
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
+      - in: query
+        name: owner
         schema:
           type: string
       - name: page
@@ -1978,9 +1969,8 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: resolved
-        in: query
-        description: A simple equality filter for the resolved field
+      - in: query
+        name: resolved
         schema:
           type: boolean
       - name: search
@@ -1997,9 +1987,8 @@ paths:
           ''task_id'']'
         schema:
           type: string
-      - name: task_id
-        in: query
-        description: A simple equality filter for the task_id field
+      - in: query
+        name: task_id
         schema:
           type: integer
       tags:
@@ -2149,20 +2138,22 @@ paths:
         description: Organization unique slug
         schema:
           type: string
-      - name: assignee
-        in: query
-        description: A simple equality filter for the assignee field
+      - in: query
+        name: assignee
         schema:
           type: string
-      - name: dimension
-        in: query
-        description: A simple equality filter for the dimension field
+      - in: query
+        name: dimension
         schema:
           type: string
           enum:
           - 1d
           - 2d
           - 3d
+        description: |-
+          * `1d` - DIM_1D
+          * `2d` - DIM_2D
+          * `3d` - DIM_3D
       - name: filter
         required: false
         in: query
@@ -2179,23 +2170,28 @@ paths:
            Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'parent_job_id', 'project_id', 'project_name', 'stage', 'state', 'task_id', 'task_name', 'type', 'updated_date'].
         schema:
           type: string
-      - name: media_type
-        in: query
-        description: A simple equality filter for the media_type field
+      - in: query
+        name: media_type
         schema:
           type: string
           enum:
+          - audio
           - image
           - point_cloud
-          - audio
-      - name: mode
-        in: query
-        description: A simple equality filter for the mode field
+        description: |-
+          * `image` - Image
+          * `point_cloud` - Point Cloud
+          * `audio` - Audio
+      - in: query
+        name: mode
         schema:
           type: string
           enum:
           - annotation
           - interpolation
+        description: |-
+          * `annotation` - Annotation
+          * `interpolation` - Interpolation
       - name: org
         in: query
         description: Organization unique slug
@@ -2218,19 +2214,16 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: parent_job_id
-        in: query
-        description: A simple equality filter for the parent_job_id field
+      - in: query
+        name: parent_job_id
         schema:
-          type: integer
-      - name: project_id
-        in: query
-        description: A simple equality filter for the project_id field
+          type: number
+      - in: query
+        name: project_id
         schema:
-          type: integer
-      - name: project_name
-        in: query
-        description: A simple equality filter for the project_name field
+          type: number
+      - in: query
+        name: project_name
         schema:
           type: string
       - name: search
@@ -2249,44 +2242,52 @@ paths:
           ''type'', ''updated_date'']'
         schema:
           type: string
-      - name: stage
-        in: query
-        description: A simple equality filter for the stage field
+      - in: query
+        name: stage
         schema:
           type: string
           enum:
+          - acceptance
           - annotation
           - validation
-          - acceptance
-      - name: state
-        in: query
-        description: A simple equality filter for the state field
+        description: |-
+          * `annotation` - ANNOTATION
+          * `validation` - VALIDATION
+          * `acceptance` - ACCEPTANCE
+      - in: query
+        name: state
         schema:
           type: string
           enum:
-          - new
-          - in progress
           - completed
+          - in progress
+          - new
           - rejected
-      - name: task_id
-        in: query
-        description: A simple equality filter for the task_id field
+        description: |-
+          * `new` - NEW
+          * `in progress` - IN_PROGRESS
+          * `completed` - COMPLETED
+          * `rejected` - REJECTED
+      - in: query
+        name: task_id
         schema:
-          type: integer
-      - name: task_name
-        in: query
-        description: A simple equality filter for the task_name field
+          type: number
+      - in: query
+        name: task_name
         schema:
           type: string
-      - name: type
-        in: query
-        description: A simple equality filter for the type field
+      - in: query
+        name: type
         schema:
           type: string
           enum:
           - annotation
-          - ground_truth
           - consensus_replica
+          - ground_truth
+        description: |-
+          * `annotation` - ANNOTATION
+          * `ground_truth` - GROUND_TRUTH
+          * `consensus_replica` - CONSENSUS_REPLICA
       tags:
       - jobs
       security:
@@ -3013,9 +3014,8 @@ paths:
         schema:
           type: string
         description: Organization unique slug
-      - name: color
-        in: query
-        description: A simple equality filter for the color field
+      - in: query
+        name: color
         schema:
           type: string
       - name: filter
@@ -3039,9 +3039,8 @@ paths:
         schema:
           type: integer
         description: A simple equality filter for job id
-      - name: name
-        in: query
-        description: A simple equality filter for the name field
+      - in: query
+        name: name
         schema:
           type: string
       - in: query
@@ -3066,16 +3065,14 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: parent
-        in: query
-        description: A simple equality filter for the parent field
+      - in: query
+        name: parent
         schema:
           type: string
-      - name: parent_id
-        in: query
-        description: A simple equality filter for the parent_id field
+      - in: query
+        name: parent_id
         schema:
-          type: integer
+          type: number
       - in: query
         name: project_id
         schema:
@@ -3099,23 +3096,34 @@ paths:
         schema:
           type: integer
         description: A simple equality filter for task id
-      - name: type
-        in: query
-        description: A simple equality filter for the type field
+      - in: query
+        name: type
         schema:
           type: string
           enum:
           - any
           - cuboid
           - ellipse
+          - interval
           - mask
           - points
           - polygon
           - polyline
           - rectangle
           - skeleton
-          - interval
           - tag
+        description: |-
+          * `any` - ANY
+          * `cuboid` - CUBOID
+          * `ellipse` - ELLIPSE
+          * `mask` - MASK
+          * `points` - POINTS
+          * `polygon` - POLYGON
+          * `polyline` - POLYLINE
+          * `rectangle` - RECTANGLE
+          * `skeleton` - SKELETON
+          * `interval` - INTERVAL
+          * `tag` - TAG
       tags:
       - labels
       security:
@@ -3453,16 +3461,20 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: role
-        in: query
-        description: A simple equality filter for the role field
+      - in: query
+        name: role
         schema:
           type: string
           enum:
-          - worker
-          - supervisor
           - maintainer
           - owner
+          - supervisor
+          - worker
+        description: |-
+          * `worker` - Worker
+          * `supervisor` - Supervisor
+          * `maintainer` - Maintainer
+          * `owner` - Owner
       - name: search
         required: false
         in: query
@@ -3476,9 +3488,8 @@ paths:
           [''id'', ''role'', ''user'']'
         schema:
           type: string
-      - name: user
-        in: query
-        description: A simple equality filter for the user field
+      - in: query
+        name: user
         schema:
           type: string
       tags:
@@ -3598,14 +3609,12 @@ paths:
            Available filter_fields: ['id', 'name', 'owner', 'slug'].
         schema:
           type: string
-      - name: name
-        in: query
-        description: A simple equality filter for the name field
+      - in: query
+        name: name
         schema:
           type: string
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
+      - in: query
+        name: owner
         schema:
           type: string
       - name: page
@@ -3627,9 +3636,8 @@ paths:
           ''slug'']'
         schema:
           type: string
-      - name: slug
-        in: query
-        description: A simple equality filter for the slug field
+      - in: query
+        name: slug
         schema:
           type: string
       - name: sort
@@ -3770,9 +3778,8 @@ paths:
         description: Organization unique slug
         schema:
           type: string
-      - name: assignee
-        in: query
-        description: A simple equality filter for the assignee field
+      - in: query
+        name: assignee
         schema:
           type: string
       - name: filter
@@ -3791,9 +3798,8 @@ paths:
            Available filter_fields: ['assignee', 'id', 'name', 'owner', 'status', 'updated_date'].
         schema:
           type: string
-      - name: name
-        in: query
-        description: A simple equality filter for the name field
+      - in: query
+        name: name
         schema:
           type: string
       - name: org
@@ -3806,9 +3812,8 @@ paths:
         description: Organization identifier
         schema:
           type: integer
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
+      - in: query
+        name: owner
         schema:
           type: string
       - name: page
@@ -3837,15 +3842,18 @@ paths:
           [''assignee'', ''id'', ''name'', ''owner'', ''status'', ''updated_date'']'
         schema:
           type: string
-      - name: status
-        in: query
-        description: A simple equality filter for the status field
+      - in: query
+        name: status
         schema:
           type: string
           enum:
           - annotation
-          - validation
           - completed
+          - validation
+        description: |-
+          * `annotation` - ANNOTATION
+          * `validation` - VALIDATION
+          * `completed` - COMPLETED
       tags:
       - projects
       security:
@@ -4316,14 +4324,12 @@ paths:
            Available filter_fields: ['frame', 'id', 'job_id', 'project_id', 'severity', 'task_id', 'type'].
         schema:
           type: string
-      - name: frame
-        in: query
-        description: A simple equality filter for the frame field
+      - in: query
+        name: frame
         schema:
           type: integer
-      - name: job_id
-        in: query
-        description: A simple equality filter for the job_id field
+      - in: query
+        name: job_id
         schema:
           type: integer
       - name: org
@@ -4348,9 +4354,8 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: project_id
-        in: query
-        description: A simple equality filter for the project_id field
+      - in: query
+        name: project_id
         schema:
           type: integer
       - in: query
@@ -4358,14 +4363,16 @@ paths:
         schema:
           type: integer
         description: A simple equality filter for report id
-      - name: severity
-        in: query
-        description: A simple equality filter for the severity field
+      - in: query
+        name: severity
         schema:
           type: string
           enum:
-          - warning
           - error
+          - warning
+        description: |-
+          * `warning` - WARNING
+          * `error` - ERROR
       - name: sort
         required: false
         in: query
@@ -4374,25 +4381,32 @@ paths:
           ''type'']'
         schema:
           type: string
-      - name: task_id
-        in: query
-        description: A simple equality filter for the task_id field
+      - in: query
+        name: task_id
         schema:
           type: integer
-      - name: type
-        in: query
-        description: A simple equality filter for the type field
+      - in: query
+        name: type
         schema:
           type: string
           enum:
-          - missing_annotation
-          - extra_annotation
-          - mismatching_label
-          - low_overlap
-          - mismatching_direction
-          - mismatching_attributes
-          - mismatching_groups
           - covered_annotation
+          - extra_annotation
+          - low_overlap
+          - mismatching_attributes
+          - mismatching_direction
+          - mismatching_groups
+          - mismatching_label
+          - missing_annotation
+        description: |-
+          * `missing_annotation` - MISSING_ANNOTATION
+          * `extra_annotation` - EXTRA_ANNOTATION
+          * `mismatching_label` - MISMATCHING_LABEL
+          * `low_overlap` - LOW_OVERLAP
+          * `mismatching_direction` - MISMATCHING_DIRECTION
+          * `mismatching_attributes` - MISMATCHING_ATTRIBUTES
+          * `mismatching_groups` - MISMATCHING_GROUPS
+          * `covered_annotation` - COVERED_ANNOTATION
       tags:
       - quality
       security:
@@ -4449,11 +4463,10 @@ paths:
            Available filter_fields: ['created_date', 'gt_last_updated', 'id', 'job_id', 'project_id', 'target_last_updated', 'task_id'].
         schema:
           type: string
-      - name: job_id
-        in: query
-        description: A simple equality filter for the job_id field
+      - in: query
+        name: job_id
         schema:
-          type: integer
+          type: number
       - name: org
         in: query
         description: Organization unique slug
@@ -4665,9 +4678,8 @@ paths:
            Available filter_fields: ['created_date', 'id', 'inherit', 'project_id', 'task_id', 'updated_date'].
         schema:
           type: string
-      - name: inherit
-        in: query
-        description: A simple equality filter for the inherit field
+      - in: query
+        name: inherit
         schema:
           type: boolean
       - name: org
@@ -4712,9 +4724,8 @@ paths:
           [''created_date'', ''id'', ''inherit'', ''project_id'', ''task_id'', ''updated_date'']'
         schema:
           type: string
-      - name: task_id
-        in: query
-        description: A simple equality filter for the task_id field
+      - in: query
+        name: task_id
         schema:
           type: integer
       tags:
@@ -4796,11 +4807,6 @@ paths:
       operationId: requests_list
       summary: List requests
       parameters:
-      - name: action
-        in: query
-        description: A simple equality filter for the action field
-        schema:
-          type: string
       - name: filter
         required: false
         in: query
@@ -4813,26 +4819,6 @@ paths:
            Available filter_fields: ['action', 'format', 'job_id', 'org', 'org_id', 'project_id', 'status', 'subresource', 'target', 'task_id'].
         schema:
           type: string
-      - name: format
-        in: query
-        description: A simple equality filter for the format field
-        schema:
-          type: string
-      - name: job_id
-        in: query
-        description: A simple equality filter for the job_id field
-        schema:
-          type: integer
-      - name: org
-        in: query
-        description: A simple equality filter for the org field
-        schema:
-          type: string
-      - name: org_id
-        in: query
-        description: A simple equality filter for the org_id field
-        schema:
-          type: integer
       - name: page
         required: false
         in: query
@@ -4845,11 +4831,6 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: project_id
-        in: query
-        description: A simple equality filter for the project_id field
-        schema:
-          type: integer
       - name: sort
         required: false
         in: query
@@ -4857,31 +4838,6 @@ paths:
           [''action'', ''created_date'', ''status'']'
         schema:
           type: string
-      - name: status
-        in: query
-        description: A simple equality filter for the status field
-        schema:
-          type: string
-          enum:
-          - queued
-          - started
-          - failed
-          - finished
-      - name: subresource
-        in: query
-        description: A simple equality filter for the subresource field
-        schema:
-          type: string
-      - name: target
-        in: query
-        description: A simple equality filter for the target field
-        schema:
-          type: string
-      - name: task_id
-        in: query
-        description: A simple equality filter for the task_id field
-        schema:
-          type: integer
       tags:
       - requests
       security:
@@ -4907,6 +4863,7 @@ paths:
         name: id
         schema:
           type: string
+        description: Request ID
         required: true
       tags:
       - requests
@@ -4933,6 +4890,7 @@ paths:
         name: id
         schema:
           type: string
+        description: Request ID
         required: true
       tags:
       - requests
@@ -5194,20 +5152,22 @@ paths:
         description: Organization unique slug
         schema:
           type: string
-      - name: assignee
-        in: query
-        description: A simple equality filter for the assignee field
+      - in: query
+        name: assignee
         schema:
           type: string
-      - name: dimension
-        in: query
-        description: A simple equality filter for the dimension field
+      - in: query
+        name: dimension
         schema:
           type: string
           enum:
           - 1d
           - 2d
           - 3d
+        description: |-
+          * `1d` - DIM_1D
+          * `2d` - DIM_2D
+          * `3d` - DIM_3D
       - name: filter
         required: false
         in: query
@@ -5231,26 +5191,30 @@ paths:
 
         schema:
           type: string
-      - name: media_type
-        in: query
-        description: A simple equality filter for the media_type field
+      - in: query
+        name: media_type
         schema:
           type: string
           enum:
+          - audio
           - image
           - point_cloud
-          - audio
-      - name: mode
-        in: query
-        description: A simple equality filter for the mode field
+        description: |-
+          * `image` - Image
+          * `point_cloud` - Point Cloud
+          * `audio` - Audio
+      - in: query
+        name: mode
         schema:
           type: string
           enum:
           - annotation
           - interpolation
-      - name: name
-        in: query
-        description: A simple equality filter for the name field
+        description: |-
+          * `annotation` - Annotation
+          * `interpolation` - Interpolation
+      - in: query
+        name: name
         schema:
           type: string
       - name: org
@@ -5263,9 +5227,8 @@ paths:
         description: Organization identifier
         schema:
           type: integer
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
+      - in: query
+        name: owner
         schema:
           type: string
       - name: page
@@ -5280,14 +5243,12 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: project_id
-        in: query
-        description: A simple equality filter for the project_id field
+      - in: query
+        name: project_id
         schema:
-          type: integer
-      - name: project_name
-        in: query
-        description: A simple equality filter for the project_name field
+          type: number
+      - in: query
+        name: project_name
         schema:
           type: string
       - name: search
@@ -5306,33 +5267,36 @@ paths:
           ''updated_date'', ''validation_mode'']'
         schema:
           type: string
-      - name: status
-        in: query
-        description: A simple equality filter for the status field
+      - in: query
+        name: status
         schema:
           type: string
           enum:
           - annotation
-          - validation
           - completed
-      - name: subset
-        in: query
-        description: A simple equality filter for the subset field
+          - validation
+        description: |-
+          * `annotation` - ANNOTATION
+          * `validation` - VALIDATION
+          * `completed` - COMPLETED
+      - in: query
+        name: subset
         schema:
           type: string
-      - name: tracker_link
-        in: query
-        description: A simple equality filter for the tracker_link field
+      - in: query
+        name: tracker_link
         schema:
           type: string
-      - name: validation_mode
-        in: query
-        description: A simple equality filter for the validation_mode field
+      - in: query
+        name: validation_mode
         schema:
           type: string
           enum:
           - gt
           - gt_pool
+        description: |-
+          * `gt` - GT
+          * `gt_pool` - GT_POOL
       tags:
       - tasks
       security:
@@ -6352,19 +6316,16 @@ paths:
            Available filter_fields: ['first_name', 'id', 'is_active', 'last_name', 'username'].
         schema:
           type: string
-      - name: first_name
-        in: query
-        description: A simple equality filter for the first_name field
+      - in: query
+        name: first_name
         schema:
           type: string
-      - name: is_active
-        in: query
-        description: A simple equality filter for the is_active field
+      - in: query
+        name: is_active
         schema:
           type: boolean
-      - name: last_name
-        in: query
-        description: A simple equality filter for the last_name field
+      - in: query
+        name: last_name
         schema:
           type: string
       - name: org
@@ -6403,9 +6364,8 @@ paths:
           [''first_name'', ''id'', ''is_active'', ''last_name'', ''username'']'
         schema:
           type: string
-      - name: username
-        in: query
-        description: A simple equality filter for the username field
+      - in: query
+        name: username
         schema:
           type: string
       tags:
@@ -6561,9 +6521,8 @@ paths:
         description: Organization identifier
         schema:
           type: integer
-      - name: owner
-        in: query
-        description: A simple equality filter for the owner field
+      - in: query
+        name: owner
         schema:
           type: string
       - name: page
@@ -6578,11 +6537,10 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: project_id
-        in: query
-        description: A simple equality filter for the project_id field
+      - in: query
+        name: project_id
         schema:
-          type: integer
+          type: number
       - name: search
         required: false
         in: query
@@ -6598,19 +6556,20 @@ paths:
           ''updated_date'']'
         schema:
           type: string
-      - name: target_url
-        in: query
-        description: A simple equality filter for the target_url field
+      - in: query
+        name: target_url
         schema:
           type: string
-      - name: type
-        in: query
-        description: A simple equality filter for the type field
+      - in: query
+        name: type
         schema:
           type: string
           enum:
           - organization
           - project
+        description: |-
+          * `organization` - ORGANIZATION
+          * `project` - PROJECT
       tags:
       - webhooks
       security:
@@ -9192,7 +9151,6 @@ components:
           format: date-time
           readOnly: true
         contact:
-          type: object
           readOnly: true
         owner:
           allOf:
@@ -9213,8 +9171,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
       required:
       - slug
     PaginatedAccessTokenReadList:
@@ -9965,8 +9922,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -11849,10 +11805,8 @@ components:
           type: string
           readOnly: true
         request:
-          type: object
           readOnly: true
         response:
-          type: object
           readOnly: true
     WebhookRead:
       type: object
