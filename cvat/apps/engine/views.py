@@ -789,8 +789,12 @@ class _DataGetter(metaclass=ABCMeta):
                 else "\n".join([str(d) for d in ex.detail])
             )
             return Response(data=msg, status=ex.status_code)
-        except FileNotFoundError as ex:
-            return Response(data=str(ex), status=status.HTTP_404_NOT_FOUND)
+        except FileNotFoundError:
+            slogger.glob.exception("Requested media file was not found")
+            return Response(
+                data="Requested resource was not found.",
+                status=status.HTTP_404_NOT_FOUND,
+            )
         except (TimeoutError, CvatChunkTimestampMismatchError, LockError):
             return Response(
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
