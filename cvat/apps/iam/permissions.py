@@ -182,6 +182,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                 "scope": self.scope,
                 "auth": self.get_opa_auth_payload(),
                 "resource": self.get_resource(),
+                "settings": self.get_opa_settings_payload(),
             }
         }
 
@@ -206,6 +207,9 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
             ),
             "organization_specified": self.org_specified,
         }
+
+    def get_opa_settings_payload(self):
+        return {}
 
     @abstractmethod
     def get_resource(self):
