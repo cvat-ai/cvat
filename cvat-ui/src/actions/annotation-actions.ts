@@ -85,18 +85,6 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
     };
 }
 
-export function computeZRange(states: any[]): number[] {
-    const filteredStates = states.filter((state: any): any => state.objectType !== ObjectType.TAG);
-    let minZ = filteredStates.length ? filteredStates[0].zOrder : 0;
-    let maxZ = filteredStates.length ? filteredStates[0].zOrder : 0;
-    filteredStates.forEach((state: any): void => {
-        minZ = Math.min(minZ, state.zOrder);
-        maxZ = Math.max(maxZ, state.zOrder);
-    });
-
-    return [minZ, maxZ];
-}
-
 export enum AnnotationActionTypes {
     GET_JOB = 'GET_JOB',
     GET_JOB_SUCCESS = 'GET_JOB_SUCCESS',
@@ -162,7 +150,6 @@ export enum AnnotationActionTypes {
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
     ROTATE_FRAME = 'ROTATE_FRAME',
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
-    ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
     SEARCH_CHAPTERS_FAILED = 'SEARCH_CHAPTERS_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
@@ -626,13 +613,6 @@ export function canvasErrorOccurred(error: Error): AnyAction {
     };
 }
 
-export function addZLayer(): AnyAction {
-    return {
-        type: AnnotationActionTypes.ADD_Z_LAYER,
-        payload: {},
-    };
-}
-
 export function switchZLayer(cur: number): AnyAction {
     return {
         type: AnnotationActionTypes.SWITCH_Z_LAYER,
@@ -703,8 +683,6 @@ function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
     history: CombinedState['annotation']['annotations']['history'];
-    minZ: number;
-    maxZ: number;
 }> {
     const {
         filters, frame, showAllInterpolationTracks, jobInstance,
@@ -714,7 +692,6 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
 
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
     let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
-    const [minZ, maxZ] = computeZRange(states);
 
     if (jobInstance.type === JobType.GROUND_TRUTH) {
         states = wrapAnnotationsInGTJob(states);
@@ -740,17 +717,13 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     return {
         states,
         history,
-        minZ,
-        maxZ,
     };
 }
 
 export function fetchAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
-            const {
-                states, history, minZ, maxZ,
-            } = await fetchAnnotations();
+            const { states, history } = await fetchAnnotations();
 
             const { workspace } = getState().annotation;
             const finalStates = workspace === Workspace.REVIEW ?
@@ -761,8 +734,6 @@ export function fetchAnnotationsAsync(): ThunkAction {
                 payload: {
                     states: finalStates,
                     history,
-                    minZ,
-                    maxZ,
                 },
             });
         } catch (error) {
@@ -1196,9 +1167,7 @@ export function changeFrameAsync(
                 Math.round(1000 / frameSpeed) - currentTime + (state.annotation.player.frame.changeTime as number),
             );
 
-            const {
-                states, maxZ, minZ, history,
-            } = await fetchAnnotations(toFrame);
+            const { states, history } = await fetchAnnotations(toFrame);
 
             if (state.annotation.workspace === Workspace.REVIEW) {
                 userUnlockedInReviewMode.clear();
@@ -1213,9 +1182,6 @@ export function changeFrameAsync(
                     relatedFiles: data.relatedFiles,
                     states,
                     history,
-                    minZ,
-                    maxZ,
-                    curZ: maxZ,
                     changeTime: currentTime + delay,
                     delay,
                     changeFrameEvent,
@@ -1603,16 +1569,56 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
     };
 }
 
-export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
+function dispatchAnnotationsUpdate(dispatch: ThunkDispatch, states: any[], history: any): void {
+    dispatch({
+        type: AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS,
+        payload: {
+            states,
+            history,
+        },
+    });
+}
+
+async function updateObjectsLayers(
+    dispatch: ThunkDispatch,
+    update: (jobInstance: Job) => Promise<ObjectState[]>,
+): Promise<void> {
+    const { jobInstance, workspace } = receiveAnnotationsParameters();
+    try {
+        let updatedStates = await update(jobInstance);
+        if (!updatedStates.length) {
+            return;
+        }
+
+        if (jobInstance.type === JobType.GROUND_TRUTH) {
+            updatedStates = wrapAnnotationsInGTJob(updatedStates);
+        }
+
+        if (workspace === Workspace.REVIEW) {
+            updatedStates = wrapStatesForReviewMode(updatedStates);
+        }
+
+        dispatch(activateObject(null, null, null));
+        dispatchAnnotationsUpdate(dispatch, updatedStates, await jobInstance.actions.get());
+    } catch (error) {
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
+            payload: { error },
+        });
+        dispatch(fetchAnnotationsAsync());
+    }
+}
+
+export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
-            if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
+            if (statesToUpdate.some((state): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
                 dispatch(activateObject(null, null, null));
             }
 
-            const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
+            const promises = statesToUpdate.map((objectState) => objectState.save());
             let states = await Promise.all(promises);
 
             if (jobInstance.type === JobType.GROUND_TRUTH) {
@@ -1624,24 +1630,13 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             }
 
             const needToUpdateAll = states
-                .some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null);
+                .some((state) => state.shapeType === ShapeType.MASK || state.parentID !== null);
             if (needToUpdateAll) {
                 dispatch(fetchAnnotationsAsync());
                 return;
             }
 
-            const history = await jobInstance.actions.get();
-            const [minZ, maxZ] = computeZRange(states);
-
-            dispatch({
-                type: AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS,
-                payload: {
-                    states,
-                    history,
-                    minZ,
-                    maxZ,
-                },
-            });
+            dispatchAnnotationsUpdate(dispatch, states, await jobInstance.actions.get());
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
@@ -1649,6 +1644,28 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             });
             dispatch(fetchAnnotationsAsync());
         }
+    };
+}
+
+export function updateLayerAsync(
+    frame: number,
+    placement: { exact: number } | { before: number } | { after: number },
+    statesToMove: ObjectState[],
+): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        await updateObjectsLayers(
+            dispatch,
+            (jobInstance) => jobInstance.annotations.updateLayer(frame, placement, statesToMove),
+        );
+    };
+}
+
+export function compactLayersAsync(frame: number): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        await updateObjectsLayers(
+            dispatch,
+            (jobInstance) => jobInstance.annotations.compactLayers(frame),
+        );
     };
 }
 
