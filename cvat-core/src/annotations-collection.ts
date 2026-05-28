@@ -283,11 +283,8 @@ export default class Collection {
         const { tracks } = this;
         const shapes = this.shapes[frame] ?? [];
         const tags = this.tags[frame] ?? [];
-        const intervals = this.intervals.filter(
-            (interval) => frame >= interval.start && (interval.stop === null || frame <= interval.stop),
-        );
 
-        const objects = [].concat(tracks, shapes, tags, intervals);
+        const objects = [].concat(tracks, shapes, tags);
         const visible = [];
 
         for (const object of objects) {

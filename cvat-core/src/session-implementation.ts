@@ -1147,6 +1147,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.annotations.intervals, 'implementation', {
+        value: async function intervalsImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.annotations.intervals> {
+            return getAllIntervals(this);
+        },
+    });
+
     Object.defineProperty(Task.prototype.annotations.search, 'implementation', {
         value: function searchAnnotationsImplementation(
             this: TaskClass,
