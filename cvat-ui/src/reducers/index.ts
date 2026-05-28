@@ -65,6 +65,7 @@ export interface AudioState {
         waveformReady: boolean;
         activeLabelId: number | null;
         hasUnsavedChanges: boolean;
+        savedRegions: AudioRegion[];
         version: number;
     };
     history: {

@@ -39,6 +39,15 @@ function regionsEqual(a: AudioRegion, b: AudioRegion): boolean {
     return aKeys.every((k) => a.attributes[Number(k)] === b.attributes[Number(k)]);
 }
 
+function regionListsEqual(a: AudioRegion[], b: AudioRegion[]): boolean {
+    if (a.length !== b.length) return false;
+    const bById = new Map(b.map((r) => [r.id, r]));
+    return a.every((r) => {
+        const other = bById.get(r.id);
+        return other !== undefined && regionsEqual(r, other);
+    });
+}
+
 function diffRegions(oldRegions: AudioRegion[], newRegions: AudioRegion[]): AudioRegionDiff[] {
     const diffs: AudioRegionDiff[] = [];
     const oldById = new Map(oldRegions.map((r) => [r.id, r]));
@@ -133,6 +142,7 @@ const defaultState: AudioState = {
         waveformReady: false,
         activeLabelId: null,
         hasUnsavedChanges: false,
+        savedRegions: [],
         version: 0,
     },
     history: {
@@ -363,6 +373,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 player: {
                     ...state.player,
                     regions: action.payload.regions,
+                    savedRegions: action.payload.regions,
                     version: action.payload.version ?? 0,
                     hasUnsavedChanges: false,
                 },
@@ -374,6 +385,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 ...state,
                 player: {
                     ...state.player,
+                    savedRegions: state.player.regions,
                     hasUnsavedChanges: false,
                     version: action.payload.version ?? state.player.version,
                 },
@@ -384,6 +396,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
             const entry = undoStack.pop();
             if (!entry) return state;
 
+            const regions = applyReverseDiffs(state.player.regions, entry.diffs);
             return {
                 ...state,
                 history: {
@@ -392,9 +405,9 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
                 player: {
                     ...state.player,
-                    regions: applyReverseDiffs(state.player.regions, entry.diffs),
+                    regions,
                     activeRegionId: entry.activeRegionIdBefore,
-                    hasUnsavedChanges: true,
+                    hasUnsavedChanges: !regionListsEqual(regions, state.player.savedRegions),
                 },
             };
         }
@@ -403,6 +416,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
             const entry = redoStack.pop();
             if (!entry) return state;
 
+            const regions = applyForwardDiffs(state.player.regions, entry.diffs);
             return {
                 ...state,
                 history: {
@@ -411,9 +425,9 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
                 player: {
                     ...state.player,
-                    regions: applyForwardDiffs(state.player.regions, entry.diffs),
+                    regions,
                     activeRegionId: entry.activeRegionIdAfter,
-                    hasUnsavedChanges: true,
+                    hasUnsavedChanges: !regionListsEqual(regions, state.player.savedRegions),
                 },
             };
         }
