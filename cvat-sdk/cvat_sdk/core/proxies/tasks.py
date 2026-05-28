@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Any
 from PIL import Image
 
 from cvat_sdk.api_client import apis, exceptions, models
-from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.jobs import Job
@@ -31,7 +30,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
-    organization_context_for,
+    get_paginated_collection_with_organization,
 )
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
 from cvat_sdk.core.utils import filter_dict
@@ -247,27 +246,27 @@ class Task(
             im.save(outdir / outfile)
 
     def get_jobs(self) -> list[Job]:
-        with organization_context_for(self._client, self.organization) as org_params:
-            return [
-                Job(self._client, model=m)
-                for m in get_paginated_collection(
-                    self._client.api_client.jobs_api.list_endpoint,
-                    task_id=self.id,
-                    **org_params,
-                )
-            ]
+        return [
+            Job(self._client, model=m)
+            for m in get_paginated_collection_with_organization(
+                self._client,
+                self._client.api_client.jobs_api.list_endpoint,
+                organization_id=self.organization,
+                task_id=self.id,
+            )
+        ]
 
     def get_meta(self) -> models.IDataMetaRead:
         meta, _ = self.api.retrieve_data_meta(self.id)
         return meta
 
     def get_labels(self) -> list[models.ILabel]:
-        with organization_context_for(self._client, self.organization) as org_params:
-            return get_paginated_collection(
-                self._client.api_client.labels_api.list_endpoint,
-                task_id=self.id,
-                **org_params,
-            )
+        return get_paginated_collection_with_organization(
+            self._client,
+            self._client.api_client.labels_api.list_endpoint,
+            organization_id=self.organization,
+            task_id=self.id,
+        )
 
     def get_frames_info(self) -> list[models.IFrameMeta]:
         return self.get_meta().frames

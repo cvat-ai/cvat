@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.model_proxy import (
     ModelCreateMixin,
     ModelDeleteMixin,
@@ -13,7 +12,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
-    organization_context_for,
+    get_paginated_collection_with_organization,
 )
 
 _CommentEntityBase, _CommentRepoBase = build_model_bases(
@@ -53,17 +52,15 @@ class Issue(
     _model_partial_update_arg = "patched_issue_write_request"
 
     def get_comments(self) -> list[Comment]:
-        with organization_context_for(
-            self._client, self._client.jobs.retrieve(self.job).organization
-        ) as org_params:
-            return [
-                Comment(self._client, m)
-                for m in get_paginated_collection(
-                    self._client.api_client.comments_api.list_endpoint,
-                    issue_id=self.id,
-                    **org_params,
-                )
-            ]
+        return [
+            Comment(self._client, m)
+            for m in get_paginated_collection_with_organization(
+                self._client,
+                self._client.api_client.comments_api.list_endpoint,
+                organization_id=self._client.jobs.retrieve(self.job).organization,
+                issue_id=self.id,
+            )
+        ]
 
 
 class IssuesRepo(

@@ -7,14 +7,14 @@ from __future__ import annotations
 import json
 from abc import ABC
 from collections.abc import Callable, Sequence
-from contextlib import contextmanager
-from copy import deepcopy
+from copy import copy, deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
 from typing_extensions import Self
 
-from cvat_sdk.api_client import exceptions
+from cvat_sdk.api_client import ApiClient, exceptions
+from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -87,15 +87,32 @@ class Repo(ModelProxy[ModelType, ApiType]):
     _entity_type: type[Entity[ModelType, ApiType]]
 
 
-@contextmanager
-def organization_context_for(client: Client, organization_id: int | None):
+def get_paginated_collection_with_organization(
+    client: Client,
+    endpoint: Endpoint,
+    *,
+    organization_id: int | None,
+    return_json: bool = False,
+    **kwargs,
+):
     params = {"org": ""} if organization_id is None else {"org_id": organization_id}
 
     if client.organization_slug is None:
-        yield params
-    else:
-        with client.organization_context(None):
-            yield params
+        return get_paginated_collection(endpoint, return_json=return_json, **kwargs, **params)
+
+    default_headers = client.api_client.default_headers.copy()
+    default_headers.pop(client._ORG_SLUG_HEADER, None)
+
+    temp_api_client = ApiClient(
+        configuration=client.api_client.configuration,
+        headers=default_headers,
+        cookies={key: morsel.value for key, morsel in client.api_client.cookies.items()},
+        pool_threads=client.api_client.pool_threads,
+    )
+    temp_endpoint = copy(endpoint)
+    temp_endpoint.api_client = temp_api_client
+
+    return get_paginated_collection(temp_endpoint, return_json=return_json, **kwargs, **params)
 
 
 ### Utilities

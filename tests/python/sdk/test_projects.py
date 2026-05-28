@@ -243,9 +243,18 @@ class TestProjectUsecases(TestDatasetExport):
 
         self.client.organization_slug = org.slug
         project = self.client.projects.retrieve(project.id)
+        original_context = self.client.organization_context
 
-        tasks = project.get_tasks()
-        labels = project.get_labels()
+        def fail_on_context(*_args, **_kwargs):
+            pytest.fail("organization_context should not be used for project resource listing")
+
+        self.client.organization_context = fail_on_context
+
+        try:
+            tasks = project.get_tasks()
+            labels = project.get_labels()
+        finally:
+            self.client.organization_context = original_context
 
         assert self.client.organization_slug == org.slug
         assert len(tasks) == 1
@@ -352,6 +361,13 @@ def test_org_maintainer_can_get_project_resources_without_explicit_org_context(
             maintainer_client.organizations,
             "retrieve",
             lambda *_args, **_kwargs: pytest.fail("organization lookup is not expected here"),
+        )
+        monkeypatch.setattr(
+            maintainer_client,
+            "organization_context",
+            lambda *_args, **_kwargs: pytest.fail(
+                "organization_context is not expected for project resource listing"
+            ),
         )
         project = maintainer_client.projects.retrieve(resources.project_id)
         tasks = project.get_tasks()

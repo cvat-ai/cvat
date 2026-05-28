@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.model_proxy import (
     DownloadBackupMixin,
@@ -22,7 +21,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
-    organization_context_for,
+    get_paginated_collection_with_organization,
 )
 from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.core.uploading import DatasetUploader, Uploader
@@ -77,23 +76,23 @@ class Project(
         return annotations
 
     def get_tasks(self) -> list[Task]:
-        with organization_context_for(self._client, self.organization) as org_params:
-            return [
-                Task(self._client, m)
-                for m in get_paginated_collection(
-                    self._client.api_client.tasks_api.list_endpoint,
-                    project_id=self.id,
-                    **org_params,
-                )
-            ]
+        return [
+            Task(self._client, m)
+            for m in get_paginated_collection_with_organization(
+                self._client,
+                self._client.api_client.tasks_api.list_endpoint,
+                organization_id=self.organization,
+                project_id=self.id,
+            )
+        ]
 
     def get_labels(self) -> list[models.ILabel]:
-        with organization_context_for(self._client, self.organization) as org_params:
-            return get_paginated_collection(
-                self._client.api_client.labels_api.list_endpoint,
-                project_id=self.id,
-                **org_params,
-            )
+        return get_paginated_collection_with_organization(
+            self._client,
+            self._client.api_client.labels_api.list_endpoint,
+            organization_id=self.organization,
+            project_id=self.id,
+        )
 
     def get_preview(
         self,
