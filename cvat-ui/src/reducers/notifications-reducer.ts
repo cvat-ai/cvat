@@ -1105,7 +1105,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED: {
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED:
+        case AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 errors: {
