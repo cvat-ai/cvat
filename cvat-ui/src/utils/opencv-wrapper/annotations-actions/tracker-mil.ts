@@ -55,12 +55,8 @@ export default class OpenCVTrackerMIL extends BaseCollectionAction {
         }: Parameters<BaseCollectionAction['run']>[0],
     ): ReturnType<BaseCollectionAction['run']> {
         const noChanges = {
-            created: {
-                shapes: [], tags: [], tracks: [], intervals: [],
-            },
-            deleted: {
-                shapes: [], tags: [], tracks: [], intervals: [],
-            },
+            created: { shapes: [], tags: [], tracks: [] },
+            deleted: { shapes: [], tags: [], tracks: [] },
         };
 
         if (this.#instance === null || number === this.#targetFrame) {
@@ -236,9 +232,7 @@ export default class OpenCVTrackerMIL extends BaseCollectionAction {
         }
 
         return {
-            created: {
-                shapes: trackedShapes, tags: [], tracks,
-            },
+            created: { shapes: trackedShapes, tags: [], tracks },
             deleted: {
                 // remove shapes converted to tracks
                 shapes: this.#convertRectangleShapesToTracks ?
