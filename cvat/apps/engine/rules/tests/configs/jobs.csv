@@ -26,11 +26,13 @@ view:annotations,Job,Organization,"Project:owner, Project:assignee, Task:owner, 
 view:annotations,Job,Organization,"Assignee",,GET,/jobs/{id}/annotations,Worker,N/A,True
 export:annotations,Job,Sandbox,None,,GET,/jobs/{id}/annotations?format={format},Admin,N/A,False
 export:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/annotations?format={format},None,N/A,False
-export:annotations,Job,Organization,"None, Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/annotations?format={format},User,Maintainer,False
+export:annotations,Job,Organization,None,,GET,/jobs/{id}/annotations?format={format},User,Maintainer,False
+export:annotations,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/annotations?format={format},None,Supervisor,False
 export:annotations,Job,Organization,"Project:owner, Task:owner",,GET,/jobs/{id}/annotations?format={format},None,Worker,False
 export:dataset,Job,Sandbox,None,,GET,/jobs/{id}/dataset,Admin,N/A,False
 export:dataset,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/dataset,None,N/A,False
-export:dataset,Job,Organization,"None, Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/dataset,User,Maintainer,False
+export:dataset,Job,Organization,None,,GET,/jobs/{id}/dataset,User,Maintainer,False
+export:dataset,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/dataset,None,Supervisor,False
 export:dataset,Job,Organization,"Project:owner, Task:owner",,GET,/jobs/{id}/dataset,None,Worker,False
 update:annotations,Job,Sandbox,None,,PATCH,/jobs/{id}/annotations,Admin,N/A,False
 update:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id}/annotations,Worker,N/A,False
