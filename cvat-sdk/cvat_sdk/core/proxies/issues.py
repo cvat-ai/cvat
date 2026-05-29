@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.model_proxy import (
     ModelCreateMixin,
     ModelDeleteMixin,
@@ -13,6 +12,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
+    get_paginated_collection_with_organization,
 )
 
 _CommentEntityBase, _CommentRepoBase = build_model_bases(
@@ -52,19 +52,19 @@ class Issue(
     _model_partial_update_arg = "patched_issue_write_request"
 
     def get_comments(self) -> list[Comment]:
-        # IssueRead does not expose `organization`, so we cannot resolve an
-        # `org_id` without an extra HTTP round-trip. Instead, suppress
-        # X-Organization for this single request (thread-safely) and let the
-        # server authorize from `issue_id` — the same path that
-        # `client.issues.retrieve(...)` already relies on.
-        with self._client._scoped_organization_slug(None):
-            return [
-                Comment(self._client, m)
-                for m in get_paginated_collection(
-                    self._client.api_client.comments_api.list_endpoint,
-                    issue_id=self.id,
-                )
-            ]
+        # IssueRead does not expose `organization`, so we have to look it up
+        # via the parent job. Without an explicit org context the comments
+        # endpoint returns an empty list rather than raising — see
+        # test_org_maintainer_can_get_issue_comments_without_explicit_org_context.
+        return [
+            Comment(self._client, m)
+            for m in get_paginated_collection_with_organization(
+                self._client,
+                self._client.api_client.comments_api.list_endpoint,
+                organization_id=self._client.jobs.retrieve(self.job).organization,
+                issue_id=self.id,
+            )
+        ]
 
 
 class IssuesRepo(
