@@ -222,50 +222,6 @@ class TestProjectUsecases(TestDatasetExport):
         assert len(tasks) == 1
         assert tasks[0].project_id == fxt_project_with_shapes.id
 
-    @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_get_personal_project_resources_while_client_is_scoped_to_org(
-        self, fxt_image_file: Path
-    ):
-        original_slug = self.client.organization_slug
-
-        try:
-            org = self.client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
-
-            self.client.organization_slug = ""
-            project = self.client.projects.create(
-                spec=models.ProjectWriteRequest(
-                    name="personal project",
-                    labels=[models.PatchedLabelRequest(name="car")],
-                )
-            )
-            self.client.tasks.create_from_data(
-                spec=models.TaskWriteRequest(name="personal task", project_id=project.id),
-                resources=[fxt_image_file],
-                data_params={"image_quality": 80},
-            )
-
-            self.client.organization_slug = org.slug
-            project = self.client.projects.retrieve(project.id)
-            original_context = self.client.organization_context
-
-            def fail_on_context(*_args, **_kwargs):
-                pytest.fail("organization_context should not be used for project resource listing")
-
-            self.client.organization_context = fail_on_context
-
-            try:
-                tasks = project.get_tasks()
-                labels = project.get_labels()
-            finally:
-                self.client.organization_context = original_context
-
-            assert self.client.organization_slug == org.slug
-            assert len(tasks) == 1
-            assert tasks[0].project_id == project.id
-            assert {label.name for label in labels} == {"car"}
-        finally:
-            self.client.organization_slug = original_slug
-
     def test_can_get_labels(self, fxt_project_with_shapes: Project):
         expected_labels = {"car", "person"}
 
@@ -352,6 +308,48 @@ class TestProjectUsecases(TestDatasetExport):
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_can_get_personal_project_resources_while_client_is_scoped_to_org(
+    admin_user: str,
+    fxt_image_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    with make_sdk_client(admin_user) as client:
+        org = client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
+
+        client.organization_slug = ""
+        project = client.projects.create(
+            spec=models.ProjectWriteRequest(
+                name="personal project",
+                labels=[models.PatchedLabelRequest(name="car")],
+            )
+        )
+        client.tasks.create_from_data(
+            spec=models.TaskWriteRequest(name="personal task", project_id=project.id),
+            resources=[fxt_image_file],
+            data_params={"image_quality": 80},
+        )
+
+        client.organization_slug = org.slug
+        project = client.projects.retrieve(project.id)
+
+        monkeypatch.setattr(
+            client,
+            "organization_context",
+            lambda *_args, **_kwargs: pytest.fail(
+                "organization_context should not be used for project resource listing"
+            ),
+        )
+
+        tasks = project.get_tasks()
+        labels = project.get_labels()
+
+        assert client.organization_slug == org.slug
+        assert len(tasks) == 1
+        assert tasks[0].project_id == project.id
+        assert {label.name for label in labels} == {"car"}
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
