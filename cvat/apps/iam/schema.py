@@ -88,6 +88,23 @@ class SessionAuthenticationScheme(SessionScheme):
         return [sessionid_schema, csrftoken_cookie_schema, csrftoken_header_schema]
 
 
+class SimpleFilterExtension(OpenApiFilterExtension):
+    """
+    Preserve CVAT's existing OpenAPI schema for SimpleFilter backends.
+
+    drf-spectacular's DjangoFilterExtension matches DjangoFilterBackend subclasses since
+    tfranzel/drf-spectacular@d4d16ac.
+    Increase the priority to select this extension over DjangoFilterExtension.
+    """
+
+    target_class = "cvat.apps.engine.filters.SimpleFilter"
+    match_subclasses = True
+    priority = 1
+
+    def get_schema_operation_parameters(self, auto_schema, *args, **kwargs):
+        return self.target.get_schema_operation_parameters(auto_schema.view)
+
+
 class CustomAutoSchema(AutoSchema):
     def get_operation_id(self):
         # Change style of operation ids to [viewset _ action _ object]
@@ -122,18 +139,3 @@ class CustomAutoSchema(AutoSchema):
                 required = False
 
         return schema, required
-
-    def _get_filter_parameters(self):
-        from cvat.apps.engine.filters import SimpleFilter
-
-        parameters = []
-        for filter_backend in self.get_filter_backends():
-            if issubclass(filter_backend, SimpleFilter):
-                parameters += filter_backend().get_schema_operation_parameters(self.view)
-            else:
-                filter_extension = OpenApiFilterExtension.get_match(filter_backend())
-                if filter_extension:
-                    parameters += filter_extension.get_schema_operation_parameters(self)
-                else:
-                    parameters += filter_backend().get_schema_operation_parameters(self.view)
-        return parameters
