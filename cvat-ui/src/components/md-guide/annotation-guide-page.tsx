@@ -5,13 +5,14 @@
 import './styles.scss';
 
 import React, {
-    useState, useEffect, useRef, useCallback,
+    useState, useEffect, useRef, useCallback, useMemo,
 } from 'react';
 import { useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
+import { PaperClipOutlined } from '@ant-design/icons';
 import MDEditor, { commands } from '@uiw/react-md-editor';
 import rehypeSanitize from 'rehype-sanitize';
 
@@ -24,6 +25,8 @@ const core = getCore();
 
 function AnnotationGuidePage(): JSX.Element {
     const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const handleInsertFilesRef = useRef<((files: FileList) => Promise<void>) | null>(null);
     const location = useLocation();
     const [value, setValue] = useState('');
     const instanceType = location.pathname.includes('projects') ? 'project' : 'task';
@@ -33,7 +36,8 @@ function AnnotationGuidePage(): JSX.Element {
 
     useEffect(() => {
         const promise = instanceType === 'project' ? core.projects.get({ id }) : core.tasks.get({ id });
-        promise.then((result) => result[0].guide())
+        promise
+            .then((result) => result[0].guide())
             .then((existingGuide: AnnotationGuide | null) => {
                 if (!existingGuide) {
                     const newGuide = new AnnotationGuide({
@@ -44,102 +48,142 @@ function AnnotationGuidePage(): JSX.Element {
                 }
 
                 return existingGuide;
-            }).then((guideInstance: AnnotationGuide) => {
+            })
+            .then((guideInstance: AnnotationGuide) => {
                 setValue(guideInstance.markdown);
                 setGuide(guideInstance);
-            }).catch((error: unknown) => {
+            })
+            .catch((error: unknown) => {
                 notification.error({
                     message: `Could not receive guide for the ${instanceType} ${id}`,
                     description: error instanceof Error ? error.message : '',
                 });
-            }).finally(() => {
+            })
+            .finally(() => {
                 setFetching(false);
             });
     }, []);
 
-    const submit = useCallback((updatedValue: string) => {
-        if (guide) {
-            guide.markdown = updatedValue;
-            setFetching(true);
-            guide.save().then((result: AnnotationGuide) => {
-                setValue(result.markdown);
-                setGuide(result);
-                notification.info({ message: 'Annotation guide was saved successfully' });
-            }).catch((error: unknown) => {
-                notification.error({
-                    message: 'Could not save guide on the server',
-                    description: error instanceof Error ? error.message : '',
-                });
-            }).finally(() => {
-                setFetching(false);
-            });
-        }
-    }, [guide]);
-
-    const handleInsertFiles = useCallback(async (files: FileList): Promise<void> => {
-        if (mdEditorRef.current && guide?.id) {
-            const assetsToAdd = Array.from(files);
-            const addedAssets: [File, string][] = [];
-            const { textArea } = mdEditorRef.current.commandOrchestrator;
-            const { selectionStart, selectionEnd, value: textAreaValue } = textArea;
-            const computeNewValue = (): string => {
-                const addedStrings = addedAssets.map(([file, uuid]) => {
-                    if (file.type.startsWith('image/')) {
-                        return (`![image](/api/assets/${uuid})`);
-                    }
-                    return (`[${file.name}](/api/assets/${uuid})`);
-                });
-
-                const stringsToAdd = assetsToAdd.map((file: File) => {
-                    if (file.type.startsWith('image/')) {
-                        return '![image](Loading...)';
-                    }
-                    return `![${file.name}](Loading...)`;
-                });
-
-                const beforeSelection = textAreaValue.slice(0, selectionStart);
-                const selection = addedStrings.concat(stringsToAdd).join('\n');
-                const afterSelection = textAreaValue.slice(selectionEnd);
-                return `${beforeSelection}${selection}${afterSelection}`;
-            };
-
-            setValue(computeNewValue());
-            setFetching(true);
-            try {
-                let file = assetsToAdd.shift();
-                while (file) {
-                    try {
-                        const { uuid } = await core.assets.create(file, guide.id);
-                        addedAssets.push([file, uuid]);
-                        setValue(computeNewValue());
-                    } catch (error: any) {
+    const submit = useCallback(
+        (updatedValue: string) => {
+            if (guide) {
+                guide.markdown = updatedValue;
+                setFetching(true);
+                guide
+                    .save()
+                    .then((result: AnnotationGuide) => {
+                        setValue(result.markdown);
+                        setGuide(result);
+                        notification.info({ message: 'Annotation guide was saved successfully' });
+                    })
+                    .catch((error: unknown) => {
                         notification.error({
-                            message: 'Could not create a server asset',
-                            description: error.toString(),
+                            message: 'Could not save guide on the server',
+                            description: error instanceof Error ? error.message : '',
                         });
-                    } finally {
-                        file = assetsToAdd.shift();
-                    }
-                }
-            } finally {
-                setFetching(false);
+                    })
+                    .finally(() => {
+                        setFetching(false);
+                    });
             }
+        },
+        [guide],
+    );
 
-            await submit(computeNewValue());
-        }
-    }, [guide, value]);
+    const handleInsertFiles = useCallback(
+        async (files: FileList): Promise<void> => {
+            if (mdEditorRef.current && guide?.id) {
+                const assetsToAdd = Array.from(files);
+                const addedAssets: [File, string][] = [];
+                const { textArea } = mdEditorRef.current.commandOrchestrator;
+                const { selectionStart, selectionEnd, value: textAreaValue } = textArea;
+                const computeNewValue = (): string => {
+                    const addedStrings = addedAssets.map(([file, uuid]) => {
+                        if (file.type.startsWith('image/')) {
+                            return `![image](/api/assets/${uuid})`;
+                        }
+                        return `[${file.name}](/api/assets/${uuid})`;
+                    });
+
+                    const stringsToAdd = assetsToAdd.map((file: File) => {
+                        if (file.type.startsWith('image/')) {
+                            return '![image](Loading...)';
+                        }
+                        return `![${file.name}](Loading...)`;
+                    });
+
+                    const beforeSelection = textAreaValue.slice(0, selectionStart);
+                    const selection = addedStrings.concat(stringsToAdd).join('\n');
+                    const afterSelection = textAreaValue.slice(selectionEnd);
+                    return `${beforeSelection}${selection}${afterSelection}`;
+                };
+
+                setValue(computeNewValue());
+                setFetching(true);
+                try {
+                    let file = assetsToAdd.shift();
+                    while (file) {
+                        try {
+                            const { uuid } = await core.assets.create(file, guide.id);
+                            addedAssets.push([file, uuid]);
+                            setValue(computeNewValue());
+                        } catch (error: any) {
+                            notification.error({
+                                message: 'Could not create a server asset',
+                                description: error.toString(),
+                            });
+                        } finally {
+                            file = assetsToAdd.shift();
+                        }
+                    }
+                } finally {
+                    setFetching(false);
+                }
+
+                await submit(computeNewValue());
+            }
+        },
+        [guide, value, submit],
+    );
+
+    handleInsertFilesRef.current = handleInsertFiles;
+
+    const uploadFileCommand = useMemo<commands.ICommand>(
+        () => ({
+            name: 'upload-image',
+            keyCommand: 'upload-image',
+            buttonProps: { 'aria-label': 'Upload local file', title: 'Upload local file' },
+            icon: <PaperClipOutlined />,
+            execute: () => {
+                fileInputRef.current?.click();
+            },
+        }),
+        [],
+    );
 
     return (
-        <Row
-            justify='center'
-            align='top'
-            className='cvat-guide-page'
-        >
-            { fetching && <CVATLoadingSpinner /> }
+        <Row justify='center' align='top' className='cvat-guide-page'>
+            {fetching && <CVATLoadingSpinner />}
             <Col {...dimensions}>
                 <div className='cvat-guide-page-top'>
                     <GoBackButton />
                 </div>
+                <input
+                    ref={fileInputRef}
+                    type='file'
+                    accept='image/*,video/*,audio/*,.pdf,.txt,.csv,.json,.xml'
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        const { files } = event.target;
+                        if (files?.length && handleInsertFilesRef.current) {
+                            handleInsertFilesRef.current(files);
+                        }
+                        // reset so the same file can be selected again
+                        // eslint-disable-next-line no-param-reassign
+                        event.target.value = '';
+                    }}
+                />
                 <div className='cvat-guide-page-editor-wrapper'>
                     <MDEditor
                         visibleDragbar={false}
@@ -167,15 +211,12 @@ function AnnotationGuidePage(): JSX.Element {
                             }
                         }}
                         style={{ whiteSpace: 'pre-wrap' }}
+                        extraCommands={[uploadFileCommand]}
                         previewOptions={{ rehypePlugins: [[rehypeSanitize]] }}
                     />
                 </div>
                 <Space align='end' className='cvat-guide-page-bottom'>
-                    <Button
-                        type='primary'
-                        disabled={fetching || !guide?.id}
-                        onClick={() => submit(value)}
-                    >
+                    <Button type='primary' disabled={fetching || !guide?.id} onClick={() => submit(value)}>
                         Submit
                     </Button>
                 </Space>
