@@ -89,7 +89,7 @@ class ProjectAnnotation:
 
         data_serializer = DataSerializer(
             data={
-                "server_files": files["media"],
+                "server_files": list(map(split_name, files["media"])),
                 # TODO: following fields should be replaced with proper input values from request in future
                 "use_cache": False,
                 "use_zip_chunks": True,
@@ -107,7 +107,6 @@ class ProjectAnnotation:
         data["copy_data"] = data_serializer.validated_data["copy_data"]
         data["server_files_path"] = files["data_root"]
         data["stop_frame"] = None
-        data["server_files"] = list(map(split_name, data["server_files"]))
 
         create_task(db_task, data)
         self.db_tasks = (

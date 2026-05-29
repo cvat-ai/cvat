@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import FormData from 'form-data';
-import Axios, { AxiosError, AxiosResponse } from 'axios';
+import Axios, { AxiosError, AxiosHeaders, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
@@ -38,7 +38,10 @@ type Params = {
     filename?: string,
     action?: string,
     save_images?: boolean,
+    import_mode?: 'replace' | 'append',
 };
+
+type HealthCheckResponse = Record<string, string>;
 
 tus.defaultOptions.storeFingerprintForResuming = false;
 
@@ -166,30 +169,54 @@ function filterPythonTraceback(data: string): string {
     return data;
 }
 
+function generateHealthCheckError(errorData: AxiosError<unknown>): ServerError | null {
+    const { response } = errorData;
+    if (!response || response.data === null || Array.isArray(response.data) || typeof response.data !== 'object') {
+        return null;
+    }
+
+    const checks = Object.entries(response.data);
+    if (!checks.every(([, checkStatus]) => typeof checkStatus === 'string')) {
+        return null;
+    }
+
+    const failedChecks = checks.filter(([, checkStatus]) => checkStatus !== 'working');
+    if (!failedChecks.length) {
+        return null;
+    }
+
+    const message = [
+        'Server health check failed. CVAT cannot start while required services report errors:',
+        ...failedChecks.map(([checkName, checkStatus]) => `${checkName} - ${checkStatus}`),
+    ].join('\n');
+
+    return new ServerError(message, response.status, response.statusText || errorData.code);
+}
+
 function generateError(errorData: AxiosError): ServerError {
     if (errorData.response) {
+        const serverError = (message: string): ServerError => new ServerError(
+            message,
+            errorData.response.status,
+            // Axios may provide either HTTP status text or only its own text code.
+            errorData.response.statusText || errorData.code,
+        );
+
         if (errorData.response.status >= 500 && typeof errorData.response.data === 'string') {
-            return new ServerError(
-                filterPythonTraceback(errorData.response.data),
-                errorData.response.status,
-            );
+            return serverError(filterPythonTraceback(errorData.response.data));
         }
 
         if (errorData.response.status >= 400 && errorData.response.data) {
             // serializer.ValidationError
 
             if (Array.isArray(errorData.response.data)) {
-                return new ServerError(
-                    errorData.response.data.join('\n\n'),
-                    errorData.response.status,
-                );
+                return serverError(errorData.response.data.join('\n\n'));
             }
 
             if (typeof errorData.response.data === 'object') {
                 if ('rq_id' in errorData.response.data) {
-                    return new ServerError(
+                    return serverError(
                         `A request with this identifier is already being processed (${errorData.response.data.rq_id})`,
-                        errorData.response.status,
                     );
                 }
 
@@ -201,10 +228,7 @@ function generateError(errorData: AxiosError): ServerError {
                 for (const field of generalFields) {
                     if (field in errorData.response.data) {
                         const message = errorData.response.data[field].toString();
-                        return new ServerError(
-                            generalFieldsHelpers[message] || message,
-                            errorData.response.status,
-                        );
+                        return serverError(generalFieldsHelpers[message] || message);
                     }
                 }
 
@@ -212,25 +236,27 @@ function generateError(errorData: AxiosError): ServerError {
                 const message = Object.keys(errorData.response.data).map((key) => (
                     `**${key}**: ${errorData.response.data[key].toString()}`
                 )).join('\n\n');
-                return new ServerError(message, errorData.response.status);
+                return serverError(message);
             }
 
             // errors with string data
             if (typeof errorData.response.data === 'string') {
-                return new ServerError(errorData.response.data, errorData.response.status);
+                return serverError(errorData.response.data);
             }
         }
 
         // default handling
-        return new ServerError(
-            errorData.response.statusText || errorData.message,
-            errorData.response.status,
-        );
+        return serverError(errorData.response.statusText || errorData.message);
+    }
+
+    if (errorData.code === 'ECONNABORTED' || errorData.message.toLowerCase().includes('timeout')) {
+        return new ServerError('The request timed out. The CVAT server did not respond in time.', 0, errorData.code);
     }
 
     // Server is unavailable (no any response)
-    const message = `${errorData.message}.`; // usually is "Error Network"
-    return new ServerError(message, 0);
+    const message = errorData.message === 'Network Error' ?
+        'Network error. The CVAT server is not reachable.' : `${errorData.message}.`;
+    return new ServerError(message, 0, errorData.code);
 }
 
 function prepareData(details) {
@@ -253,13 +279,45 @@ class WorkerWrappedAxios {
         const requests = {};
         let requestId = 0;
 
+        function getAxiosErrorCode(status: number): string {
+            if (status >= 400 && status < 500) {
+                return AxiosError.ERR_BAD_REQUEST;
+            }
+
+            if (status >= 500 && status < 600) {
+                return AxiosError.ERR_BAD_RESPONSE;
+            }
+
+            return AxiosError.ERR_NETWORK;
+        }
+
         worker.onmessage = (e) => {
             if (e.data.id in requests) {
                 try {
                     if (e.data.isSuccess) {
                         requests[e.data.id].resolve({ data: e.data.responseData, headers: e.data.headers });
                     } else {
-                        requests[e.data.id].reject(new AxiosError(e.data.message, e.data.code));
+                        let response: AxiosResponse | undefined;
+                        let code: AxiosError['code'];
+                        if (typeof e.data.code === 'number') {
+                            code = getAxiosErrorCode(e.data.code);
+
+                            if (e.data.code > 0) {
+                                response = {
+                                    data: e.data.message,
+                                    status: e.data.code,
+                                    statusText: code,
+                                    headers: new AxiosHeaders(),
+                                    config: {
+                                        headers: new AxiosHeaders(),
+                                    },
+                                };
+                            }
+                        }
+
+                        requests[e.data.id].reject(
+                            new AxiosError(e.data.message, code, undefined, undefined, response),
+                        );
                     }
                 } finally {
                     delete requests[e.data.id];
@@ -330,6 +388,7 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    // eslint-disable-next-line no-param-reassign
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
 });
@@ -614,7 +673,7 @@ async function healthCheck(
     checkPeriod: number,
     requestTimeout: number,
     progressCallback?: (status: string) => void,
-): Promise<void> {
+): Promise<HealthCheckResponse> {
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health/?format=json`;
 
@@ -622,14 +681,14 @@ async function healthCheck(
     const adjustedCheckPeriod = Math.max(100, checkPeriod);
     const adjustedRequestTimeout = Math.max(500, requestTimeout);
 
-    let lastError: AxiosError = null;
+    let lastError: AxiosError<unknown> = null;
     for (let attempt = 1; attempt <= adjustedMaxRetries; attempt++) {
         if (progressCallback) {
             progressCallback(`${attempt}/${adjustedMaxRetries}`);
         }
 
         try {
-            const response = await Axios.get(url, { timeout: adjustedRequestTimeout });
+            const response = await Axios.get<HealthCheckResponse>(url, { timeout: adjustedRequestTimeout });
             return response.data;
         } catch (error) {
             lastError = error;
@@ -639,7 +698,7 @@ async function healthCheck(
         }
     }
 
-    throw generateError(lastError);
+    throw generateHealthCheckError(lastError) || generateError(lastError);
 }
 
 export interface ServerRequestConfig {
@@ -884,6 +943,7 @@ async function mergeConsensusJobs(id: number, instanceType: string): Promise<str
                     reject(new ServerError(
                         response.statusText || 'Unexpected response while merging consensus jobs',
                         response.status,
+                        AxiosError.ERR_BAD_RESPONSE,
                     ));
                 }
             } catch (errorData) {
@@ -1215,6 +1275,7 @@ async function createTask(
         }
         totalSize += file.size;
     }
+    // eslint-disable-next-line no-param-reassign
     delete taskDataSpec.client_files;
 
     const taskData = new FormData();
@@ -1573,7 +1634,12 @@ function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 
             if (code === 404) {
                 return null;
             }
-            throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
+
+            throw new ServerError(
+                `Could not get preview for "${instance}/${id}"`,
+                code,
+                errorData.response?.statusText || errorData.code,
+            );
         }
     };
 }
@@ -1597,7 +1663,7 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
     }
 }
 
-async function getData(jid: number, chunk: number, quality: ChunkQuality, retry = 0): Promise<ArrayBuffer> {
+async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
     try {
@@ -1610,28 +1676,6 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
             },
             responseType: 'arraybuffer',
         });
-
-        const contentLength = +(response.headers || {})['content-length'];
-        if (Number.isInteger(contentLength) && response.data.byteLength < +contentLength) {
-            if (retry < 10) {
-                // corrupted zip tmp workaround
-                // if content length more than received byteLength, request the chunk again
-                // and log this error
-                setTimeout(() => {
-                    throw new Error(
-                        `Truncated chunk, try: ${retry}. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
-                        `Body size: ${response.data.byteLength}`,
-                    );
-                });
-                return await getData(jid, chunk, quality, retry + 1);
-            }
-
-            // not to try anymore, throw explicit error
-            throw new Error(
-                `Truncated chunk. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
-                `Body size: ${response.data.byteLength}`,
-            );
-        }
 
         return response.data;
     } catch (errorData) {
@@ -1719,7 +1763,7 @@ async function uploadAnnotations(
     useDefaultLocation: boolean,
     sourceStorage: Storage,
     file: File | string,
-    options: { convMaskToPoly: boolean },
+    options: { convMaskToPoly: boolean, importMode: 'replace' | 'append' },
 ): Promise<string> {
     const { backendAPI, origin } = config;
     const params: Params & { conv_mask_to_poly: boolean } = {
@@ -1728,6 +1772,7 @@ async function uploadAnnotations(
         format,
         filename: typeof file === 'string' ? file : file.name,
         conv_mask_to_poly: options.convMaskToPoly,
+        import_mode: options.importMode,
     };
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;

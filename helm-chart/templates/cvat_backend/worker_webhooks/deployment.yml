@@ -55,6 +55,7 @@ spec:
           - "run"
           - "worker"
           - "webhooks"
+          - "--with-scheduler"
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}

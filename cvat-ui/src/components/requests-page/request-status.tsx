@@ -39,7 +39,7 @@ function StatusMessage(props: Props): JSX.Element {
     status = status || RQStatus.FINISHED;
 
     const [textType, classHelper] = ((_status: RQStatus) => {
-        if (cancelled) {
+        if (cancelled || _status === RQStatus.CANCELED) {
             return [undefined, 'cancelled'];
         }
 
@@ -65,7 +65,7 @@ function StatusMessage(props: Props): JSX.Element {
             strong
         >
             {((): JSX.Element => {
-                if (cancelled) {
+                if (cancelled || status === RQStatus.CANCELED) {
                     return statusMessage(message, 'Cancelled');
                 }
 

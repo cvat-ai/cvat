@@ -30,7 +30,7 @@ import Issue from './issue';
 import {
     SerializedTask, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
-import { Label } from './labels';
+import { getUpdatedLabels } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -460,6 +460,26 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.updateLayer, 'implementation', {
+        value: function updateLayerImplementation(
+            this: JobClass,
+            frame: Parameters<typeof JobClass.prototype.annotations.updateLayer>[0],
+            placement: Parameters<typeof JobClass.prototype.annotations.updateLayer>[1],
+            objectStates: Parameters<typeof JobClass.prototype.annotations.updateLayer>[2],
+        ): ReturnType<typeof JobClass.prototype.annotations.updateLayer> {
+            return Promise.resolve(getCollection(this).updateLayer(frame, placement, objectStates));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.compactLayers, 'implementation', {
+        value: function compactLayersImplementation(
+            this: JobClass,
+            frame: Parameters<typeof JobClass.prototype.annotations.compactLayers>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.compactLayers> {
+            return Promise.resolve(getCollection(this).compactLayers(frame));
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.hasUnsavedChanges, 'implementation', {
         value: function hasUnsavedChangesImplementation(
             this: JobClass,
@@ -696,8 +716,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                     }),
                 } as Record<string, unknown> & {
                     assignee_id?: { id: number } | null;
-                    labels?: Label[];
                 };
+
+                const updatedLabels = fields?.labels ? getUpdatedLabels(this.labels, fields.labels) : [];
 
                 // TODO: update assignee via "fields" instead
                 // It would be better implementation
@@ -707,7 +728,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                     delete taskData.assignee_id;
                 }
 
-                for await (const label of taskData.labels ?? []) {
+                for await (const label of updatedLabels) {
                     if (label.deleted) {
                         await serverProxy.labels.delete(label.id);
                     } else if (label.patched) {
@@ -716,10 +737,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 }
 
                 // leave only new labels to create them via task PATCH request
-                const labelsToCreate = (taskData.labels ?? [])
+                const labelsToCreate = updatedLabels
                     .filter((label) => !Number.isInteger(label.id))
                     .map((el) => el.toJSON());
-                delete taskData.labels;
                 this._updateTrigger.reset();
 
                 let serializedTask: SerializedTask = null;
@@ -1220,6 +1240,26 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             results: Parameters<typeof TaskClass.prototype.annotations.slice>[1],
         ): ReturnType<typeof TaskClass.prototype.annotations.slice> {
             return Promise.resolve(getCollection(this).slice(objectState, results));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.updateLayer, 'implementation', {
+        value: function updateLayerImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[0],
+            placement: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[1],
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[2],
+        ): ReturnType<typeof TaskClass.prototype.annotations.updateLayer> {
+            return Promise.resolve(getCollection(this).updateLayer(frame, placement, objectStates));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.compactLayers, 'implementation', {
+        value: function compactLayersImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.annotations.compactLayers>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.compactLayers> {
+            return Promise.resolve(getCollection(this).compactLayers(frame));
         },
     });
 

@@ -19,6 +19,7 @@ import {
 import { Workspace } from 'reducers';
 
 import MDEditor from '@uiw/react-md-editor';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface Props {
     showStatistics(): void;
@@ -59,6 +60,7 @@ function RightGroup(props: Props): JSX.Element {
                             preview='preview'
                             hideToolbar
                             value={guide.markdown}
+                            previewOptions={{ rehypePlugins: [[rehypeSanitize]] }}
                         />
                     ),
                 });
@@ -85,7 +87,7 @@ function RightGroup(props: Props): JSX.Element {
                     if (!Array.isArray(seenGuides) || seenGuides.some((el) => !Number.isInteger(el))) {
                         throw new Error('Wrong structure stored in local storage');
                     }
-                } catch (error: unknown) {
+                } catch (_error: unknown) {
                     seenGuides = [];
                 }
 

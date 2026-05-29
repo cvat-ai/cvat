@@ -512,6 +512,56 @@ export default class ObjectState {
         }
     }
 
+    public serialize(): SerializedData {
+        const serialized: SerializedData = {
+            objectType: this.objectType,
+            label: this.label,
+            frame: this.frame,
+            lock: this.lock,
+            hidden: this.hidden,
+            pinned: this.pinned,
+            attributes: this.attributes,
+            color: this.color,
+            updated: this.updated,
+            source: this.source,
+            score: this.score,
+            votes: this.votes,
+            zOrder: this.zOrder,
+            occluded: this.occluded,
+            outside: this.outside,
+            keyframe: this.keyframe,
+            descriptions: this.descriptions,
+            elements: this.elements.map((element: ObjectState): SerializedData => element.serialize()),
+        };
+
+        if (this.shapeType) {
+            serialized.shapeType = this.shapeType;
+        }
+        if (typeof this.clientID === 'number') {
+            serialized.clientID = this.clientID;
+        }
+        if (typeof this.serverID === 'number') {
+            serialized.serverID = this.serverID;
+        }
+        if (typeof this.parentID === 'number') {
+            serialized.parentID = this.parentID;
+        }
+        if (this.group) {
+            serialized.group = this.group;
+        }
+        if (this.points) {
+            serialized.points = this.points;
+        }
+        if (typeof this.rotation === 'number') {
+            serialized.rotation = this.rotation;
+        }
+        if (this.keyframes) {
+            serialized.keyframes = this.keyframes;
+        }
+
+        return serialized;
+    }
+
     async save(): Promise<ObjectState> {
         const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.save);
         return result;

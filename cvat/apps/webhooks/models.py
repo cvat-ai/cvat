@@ -68,7 +68,7 @@ class Webhook(TimestampedModel):
         constraints = [
             models.CheckConstraint(
                 name="webhooks_project_or_organization",
-                check=(
+                condition=(
                     models.Q(type=WebhookTypeChoice.PROJECT.value, project_id__isnull=False)
                     | models.Q(
                         type=WebhookTypeChoice.ORGANIZATION.value,

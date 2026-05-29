@@ -1,6 +1,0 @@
-# Copyright (C) CVAT.ai Corporation
-#
-# SPDX-License-Identifier: MIT
-
-cvat_sdk>=2.44
-ultralytics

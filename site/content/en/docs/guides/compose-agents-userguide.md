@@ -117,9 +117,9 @@ So in this example I will do the following:
 - Draw a new polygon
 - Run annotation function
 
-![Drawing a new polygon](/images/sam2-agent-polygon.jpeg)
+![Drawing a new polygon](/images/sam2-agent-polygon.webp)
 
-![Running the AI tracker](/images/sam2-agent-ai-tracker.jpeg)
+![Running the AI tracker](/images/sam2-agent-ai-tracker.webp)
 
 In console you will be able to see logs from the agent, that will indicate that the task is being processed:
 
@@ -128,8 +128,6 @@ In console you will be able to see logs from the agent, that will indicate that 
 After that you can move forward through frames and see that the polygon is being tracked:
 
 ![Tracking result on frames](/images/sam2-agent-result.webp)
-
-![Tracking confirmation](/images/img.webp)
 
 ## How to clean up after running CVAT agent with Docker Compose
 

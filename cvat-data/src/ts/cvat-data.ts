@@ -407,7 +407,7 @@ export class FrameDecoder {
                     dimension2D: DimensionType.DIMENSION_2D,
                 });
             }
-        } catch (error) {
+        } catch (_error) {
             this.chunkIsBeingDecoded = null;
             release();
         }

@@ -7,6 +7,7 @@ import { Attribute } from './labels';
 import { ShapeType, AttributeType, ObjectType } from './enums';
 import { SerializedShape } from './server-response-types';
 import ObjectState, { SerializedData } from './object-state';
+import AnnotationsFilter from './annotations-filter';
 
 export function checkNumberOfPoints(shapeType: ShapeType, points: ArrayLike<number>): void {
     if (shapeType === ShapeType.RECTANGLE) {
@@ -342,7 +343,7 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
                 rotation: shape.rotation,
                 frame: from,
                 elements: shape.shapeType === 'skeleton' ? shape.elements
-                    .map((element: ObjectState): any => getCopy(element as T)) : [],
+                    .map((element: ObjectState): SerializedData => getCopy(element as T) as SerializedData) : [],
                 source: shape.source,
             };
         }
@@ -392,4 +393,12 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
     }
 
     return states;
+}
+
+export function getVisibleSkeletonElements(
+    objectStates: ObjectState[],
+    filters: object[],
+): Record<number, number[]> {
+    const serializedStates = objectStates.map((objectState: ObjectState): SerializedData => objectState.serialize());
+    return new AnnotationsFilter().filterSerializedSkeletonElements(serializedStates, filters);
 }

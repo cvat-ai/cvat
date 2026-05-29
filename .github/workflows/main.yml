@@ -113,6 +113,11 @@ jobs:
           docker run --rm "cvat/server:${CVAT_VERSION}" bash \
             -c 'python manage.py makemigrations --check'
 
+      - name: Verify redis migration filenames
+        run: |
+          docker run --rm "cvat/server:${CVAT_VERSION}" bash \
+            -c 'python manage.py checkredismigrations'
+
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v4
         with:

@@ -13,12 +13,12 @@ context('Filters functionality.', () => {
     const additionalAttrsLabelShape = [
         { name: 'type', values: 'shape', type: 'Text' },
         { name: 'count points', values: '3', type: 'Text' },
-        { name: 'polygon', values: 'True', type: 'Checkbox' },
+        { name: 'polygon', values: 'true', type: 'Checkbox' },
     ];
     const labelTrack = 'track 4 points';
     const additionalAttrsLabelTrack = [
         { name: 'type', values: 'track', type: 'Text' },
-        { name: 'polygon', values: 'True', type: 'Checkbox' },
+        { name: 'polygon', values: 'true', type: 'Checkbox' },
         { name: 'count points', values: '4', type: 'Text' },
     ];
 

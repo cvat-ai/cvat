@@ -6,6 +6,7 @@
 /// <reference types="cypress" />
 
 import { taskName, labelName } from '../../support/const_canvas3d';
+import { fullMatch } from '../../support/utils';
 
 context('Canvas 3D functionality. Cancel drawing.', () => {
     const caseId = '85';
@@ -28,7 +29,7 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {
-                    cy.contains(new RegExp(`^${labelName}$`)).click();
+                    cy.contains(fullMatch(labelName)).click();
                 });
             cy.get('.cvat-draw-cuboid-popover').contains('Shape').click();
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');

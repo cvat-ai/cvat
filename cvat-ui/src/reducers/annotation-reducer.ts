@@ -9,10 +9,10 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
-import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
+import { Canvas, CanvasMode, RenderData } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    DimensionType, JobStage, Label, LabelType, ObjectType, ShapeType,
+    DimensionType, getCore, JobStage, Label, LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
@@ -24,10 +24,32 @@ import {
     Workspace,
 } from '.';
 
-function updateActivatedStateID(newStates: any[], prevActivatedStateID: number | null): number | null {
-    return prevActivatedStateID === null || newStates.some((_state: any) => _state.clientID === prevActivatedStateID) ?
+const cvat = getCore();
+
+function getAnnotationsRenderData(states: ObjectState[], filters: object[]): RenderData {
+    return {
+        visibleSkeletonElements: cvat.utils.getVisibleSkeletonElements(states, filters),
+    };
+}
+
+function updateActivatedStateID(newStates: ObjectState[], prevActivatedStateID: number | null): number | null {
+    return prevActivatedStateID === null ||
+        newStates.some((_state: ObjectState) => _state.clientID === prevActivatedStateID) ?
         prevActivatedStateID :
         null;
+}
+
+function computeZRange(states: ObjectState[]): [number, number] {
+    const layerStates = states.filter((state: ObjectState): boolean => state.objectType !== ObjectType.TAG);
+    let minZ = layerStates.length ? layerStates[0].zOrder : 0;
+    let maxZ = layerStates.length ? layerStates[0].zOrder : 0;
+
+    layerStates.forEach((state: ObjectState): void => {
+        minZ = Math.min(minZ, state.zOrder);
+        maxZ = Math.max(maxZ, state.zOrder);
+    });
+
+    return [minZ, maxZ];
 }
 
 export function labelShapeType(labelData?: Label | Partial<LabelType>): ShapeType | null {
@@ -130,6 +152,9 @@ const defaultState: AnnotationState = {
         collapsedAll: true,
         states: [],
         filters: [],
+        renderData: {
+            visibleSkeletonElements: {},
+        },
         resetGroupFlag: false,
         initialized: false,
         history: {
@@ -241,7 +266,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     meta: jobMeta,
                     labels: job.labels,
                     attributes: job.labels
-                        .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {
+                        .reduce((acc: Record<number, Label['attributes']>, label: Label) => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
@@ -355,13 +380,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 relatedFiles,
                 states,
                 history,
-                minZ,
-                maxZ,
-                curZ,
                 delay,
                 changeTime,
                 changeFrameEvent,
             } = action.payload;
+            const [minZ, maxZ] = computeZRange(states);
 
             return {
                 ...state,
@@ -383,11 +406,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     highlightedConflict: null,
                     states,
+                    renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
-                        cur: curZ,
+                        cur: maxZ,
                     },
                 },
             };
@@ -611,32 +635,31 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS: {
             const {
-                history, states: updatedStates, minZ, maxZ,
+                history, states: updatedStates,
             } = action.payload;
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
 
-            const clientIDs = prevStates.map((prevState: any): number => prevState.clientID);
+            const clientIDs = prevStates.map((prevState: ObjectState): number => prevState.clientID);
             for (const updatedState of updatedStates) {
                 const index = clientIDs.indexOf(updatedState.clientID);
                 if (index !== -1) {
                     nextStates[index] = updatedState;
                 }
             }
-
-            const maxZLayer = Math.max(state.annotations.zLayer.max, maxZ);
-            const minZLayer = Math.min(state.annotations.zLayer.min, minZ);
+            const [minZ, maxZ] = computeZRange(nextStates);
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     zLayer: {
-                        min: minZLayer,
-                        max: maxZLayer,
-                        cur: clamp(state.annotations.zLayer.cur, minZLayer, maxZLayer),
+                        min: minZ,
+                        max: maxZ,
+                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
                     states: nextStates,
+                    renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                     history,
                 },
             };
@@ -720,6 +743,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { objectState, history } = action.payload;
             const contextMenuClientID = state.canvas.contextMenu.clientID;
             const contextMenuVisible = state.canvas.contextMenu.visible;
+            const nextStates = state.annotations.states.filter(
+                (_objectState: ObjectState) => _objectState.clientID !== objectState.clientID,
+            );
 
             return {
                 ...state,
@@ -727,9 +753,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                     activatedStateID: null,
-                    states: state.annotations.states.filter(
-                        (_objectState: any) => _objectState.clientID !== objectState.clientID,
-                    ),
+                    states: nextStates,
+                    renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                 },
                 canvas: {
                     ...state.canvas,
@@ -899,6 +924,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history: { undo: [], redo: [] },
                     states: [],
+                    renderData: getAnnotationsRenderData([], state.annotations.filters),
                     activatedStateID: null,
                     activatedElementID: null,
                     activatedAttributeID: null,
@@ -955,9 +981,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
             const { activatedStateID } = state.annotations;
-            const {
-                states, history, minZ, maxZ,
-            } = action.payload;
+            const { states, history } = action.payload;
+            const [minZ, maxZ] = computeZRange(states);
 
             return {
                 ...state,
@@ -965,6 +990,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
+                    renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,
                     initialized: true,
                     zLayer: {
@@ -991,6 +1017,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     filters,
+                    renderData: getAnnotationsRenderData(state.annotations.states, filters),
                 },
             };
         }
@@ -1000,7 +1027,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             let { activatedStateID } = state.annotations;
             if (activatedStateID !== null) {
-                const idx = state.annotations.states.map((_state: any) => _state.clientID).indexOf(activatedStateID);
+                const idx = state.annotations.states
+                    .map((_state: ObjectState) => _state.clientID)
+                    .indexOf(activatedStateID);
                 if (idx !== -1) {
                     if (state.annotations.states[idx].zOrder > cur) {
                         activatedStateID = null;
@@ -1018,20 +1047,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         ...state.annotations.zLayer,
                         cur: clamp(cur, min, max),
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.ADD_Z_LAYER: {
-            const { max } = state.annotations.zLayer;
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    zLayer: {
-                        ...state.annotations.zLayer,
-                        max: max + 1,
-                        cur: max + 1,
                     },
                 },
             };
@@ -1076,13 +1091,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             if (state.canvas.activeControl !== ActiveControl.CURSOR && state.workspace !== Workspace.SINGLE_SHAPE) {
                 return state;
             }
+            const nextStates = state.annotations.states.filter((_state) => !_state.isGroundTruth);
 
             return {
                 ...state,
                 workspace,
                 annotations: {
                     ...state.annotations,
-                    states: state.annotations.states.filter((_state) => !_state.isGroundTruth),
+                    states: nextStates,
+                    renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                     activatedStateID: null,
                     activatedAttributeID: null,
 

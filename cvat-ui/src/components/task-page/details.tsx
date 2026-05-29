@@ -28,7 +28,7 @@ import ProjectSubsetField from '../create-task-page/project-subset-field';
 
 interface OwnProps {
     task: Task;
-    onUpdateTask: (task: Task) => Promise<Task>;
+    onUpdateTask: (task: Task, fields?: Parameters<Task['save']>[0]) => Promise<Task>;
     taskMeta: FramesMetaData;
     cloudStorageInstance: CloudStorage | null;
     onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
@@ -180,8 +180,9 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     <LabelsEditorComponent
                         labels={taskInstance.labels.map((label) => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
-                            taskInstance.labels = labels.map((labelData): any => new core.classes.Label(labelData));
-                            onUpdateTask(taskInstance);
+                            onUpdateTask(taskInstance, {
+                                labels: labels.map((labelData): any => new core.classes.Label(labelData)),
+                            });
                         }}
                     />
                 </Col>

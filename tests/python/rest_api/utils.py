@@ -36,7 +36,7 @@ def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **k
         ), f"Request should be forbidden, status: {response.status}"
         raise ForbiddenException()
 
-    assert response.status == HTTPStatus.ACCEPTED, f"Status: {response.status}"
+    assert response.status == HTTPStatus.ACCEPTED, (f"Status: {response.status}", response.data)
 
     # define background request ID returned in the server response
     rq_id = json.loads(response.data).get("rq_id")

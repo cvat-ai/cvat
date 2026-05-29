@@ -62,7 +62,6 @@ function ReviewSummaryComponent({ jobInstance }: Readonly<{ jobInstance: Job }>)
             })
             .catch((_error: any) => {
                 if (isMounted()) {
-                    // eslint-disable-next-line
                     console.log(_error);
                     setError(_error);
                 }
