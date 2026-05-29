@@ -136,6 +136,7 @@ interface BaseConvertedData {
     occluded: boolean | null;
     score: number | null;
     votes: number | null;
+    zOrder: number | null;
 }
 
 interface ConvertedElementData extends BaseConvertedData {
@@ -213,6 +214,7 @@ export default class AnnotationsFilter {
                         occluded: element.occluded ?? false,
                         score: null,
                         votes: null,
+                        zOrder: null,
                     };
                 }) :
                 [];
@@ -232,6 +234,7 @@ export default class AnnotationsFilter {
                 occluded: state.occluded ?? null,
                 score: state.score ?? null,
                 votes: state.votes ?? null,
+                zOrder: state.zOrder ?? null,
                 elements,
             };
         });
@@ -277,6 +280,7 @@ export default class AnnotationsFilter {
                             occluded: element.occluded ?? false,
                             score: null,
                             votes: null,
+                            zOrder: null,
                         }];
                     }) :
                     [];
@@ -296,6 +300,7 @@ export default class AnnotationsFilter {
                     occluded: shape.occluded,
                     score: shape.score ?? null,
                     votes: null,
+                    zOrder: shape.z_order,
                     elements,
                 };
             }),
@@ -318,6 +323,7 @@ export default class AnnotationsFilter {
                     occluded: false,
                     score: null,
                     votes: null,
+                    zOrder: 0,
                     elements: [],
                 };
             }),
@@ -350,6 +356,7 @@ export default class AnnotationsFilter {
                             occluded: null,
                             score: null,
                             votes: null,
+                            zOrder: null,
                         }];
                     });
                 }
@@ -369,6 +376,7 @@ export default class AnnotationsFilter {
                     occluded: null,
                     score: null,
                     votes: null,
+                    zOrder: track.shapes[0]?.z_order ?? null,
                     elements,
                 };
             }),

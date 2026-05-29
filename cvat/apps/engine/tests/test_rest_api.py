@@ -99,20 +99,16 @@ def create_db_users(
     extra: bool = True,
 ):
     if admin:
-        group_admin, _ = Group.objects.get_or_create(name="admin")
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
-        user_admin.groups.add(group_admin)
         cls.admin = user_admin
 
     if primary:
-        group_user, _ = Group.objects.get_or_create(name="user")
-        group_annotator, _ = Group.objects.get_or_create(name="worker")
+        group_worker, _ = Group.objects.get_or_create(name="worker")
         user_owner = User.objects.create_user(username="user1", password="user1")
-        user_owner.groups.add(group_user)
         user_assignee = User.objects.create_user(username="user2", password="user2")
-        user_assignee.groups.add(group_annotator)
+        user_assignee.groups.set([group_worker])
         user_annotator = User.objects.create_user(username="user3", password="user3")
-        user_annotator.groups.add(group_annotator)
+        user_annotator.groups.set([group_worker])
         cls.owner = cls.user1 = user_owner
         cls.assignee = cls.user2 = user_assignee
         cls.annotator = cls.user3 = user_annotator
@@ -122,7 +118,6 @@ def create_db_users(
         user_somebody = User.objects.create_user(username="user4", password="user4")
         user_somebody.groups.add(group_somebody)
         user_dummy = User.objects.create_user(username="user5", password="user5")
-        user_dummy.groups.add(group_user)
         cls.somebody = cls.user4 = user_somebody
         cls.user = cls.user5 = user_dummy
 
@@ -7918,13 +7913,15 @@ class ServerShareAPITestCase(ApiTestBase):
         self._test_api_v2_server_share(self.owner)
 
     def test_api_v2_server_share_assignee(self):
-        self._test_api_v2_server_share(self.assignee)
+        response = self._run_api_v2_server_share(self.assignee, "/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v2_server_share_user(self):
         self._test_api_v2_server_share(self.user)
 
     def test_api_v2_server_share_annotator(self):
-        self._test_api_v2_server_share(self.annotator)
+        response = self._run_api_v2_server_share(self.annotator, "/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v2_server_share_somebody(self):
         self._test_api_v2_server_share(self.somebody)
@@ -8217,7 +8214,7 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
             )
 
 
-class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
+class TaskBackingCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase):
     _IMAGE_PATHS = ["test_1.jpg", "test_2.jpg", "related_images/test_1_jpg/context_1.jpg"]
 
     @classmethod
@@ -8331,6 +8328,36 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
 
         for p in self._IMAGE_PATHS:
             self.assertFalse(self.mock_aws.file_exists(cloud_key(p)))
+
+    def test_backup_task_without_manifest(self):
+        task = self._create_local_task()
+        task_id = task["id"]
+
+        data = Data.objects.get(task__id=task_id)
+        manifest_path = data.get_manifest_path()
+
+        # Simulate a task that was created before we started generating manifests in every task.
+        self.assertTrue(manifest_path.exists())
+        manifest_path.unlink()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
+
+        response = self._export_task_backup(self.owner, task_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        backup_file = io.BytesIO(response.getvalue())
+        with zipfile.ZipFile(backup_file) as backup_zip:
+            backup_members = frozenset(backup_zip.namelist())
+            self.assertNotIn("data/manifest.jsonl", backup_members)
+            for image_path in self._IMAGE_PATHS:
+                self.assertIn(f"data/{image_path}", backup_members)
+
+            task_info = json.loads(backup_zip.read("task.json"))
+
+        self.assertNotIn("start_frame", task_info["data"])
+        self.assertNotIn("stop_frame", task_info["data"])
+        self.assertNotIn("frame_filter", task_info["data"])
 
     def test_move_to_backing_cs_with_cli(self):
         task = self._create_local_task()

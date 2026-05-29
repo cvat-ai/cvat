@@ -28,7 +28,6 @@ export interface CanvasController {
     readonly objects: any[];
     readonly renderData: RenderData;
     readonly issueRegions: Record<number, { hidden: boolean; points: number[] }>;
-    readonly zLayer: number | null;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
     readonly highlightedElements: HighlightedElements;
@@ -114,10 +113,6 @@ export class CanvasControllerImpl implements CanvasController {
 
     public set geometry(geometry: Geometry) {
         this.model.geometry = geometry;
-    }
-
-    public get zLayer(): number | null {
-        return this.model.zLayer;
     }
 
     public get issueRegions(): Record<number, { hidden: boolean; points: number[] }> {

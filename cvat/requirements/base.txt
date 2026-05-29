@@ -106,7 +106,7 @@ djangorestframework==3.16.0
     #   drf-spectacular
 djangorestframework-api-key==3.1.0
     # via -r cvat/requirements/base.in
-drf-spectacular==0.26.2
+drf-spectacular==0.29.0
     # via -r cvat/requirements/base.in
 easyprocess==1.1
     # via pyunpack
