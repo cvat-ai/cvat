@@ -105,6 +105,14 @@ context('Ground truth jobs', () => {
             .should('be.visible');
     }
 
+    function checkCanvasObjectSource(rectangle, source, absentSource = null) {
+        cy.get(`#cvat_canvas_shape_${rectangle.id}`).trigger('mousemove');
+        cy.get('#cvat_canvas_text_content').should('contain.text', `(${source})`);
+        if (absentSource) {
+            cy.get('#cvat_canvas_text_content').should('not.contain.text', `(${absentSource})`);
+        }
+    }
+
     function openManagementTab() {
         cy.clickInTaskMenu('Quality control', true);
         cy.get('.cvat-quality-control-page-tabs')
@@ -472,6 +480,47 @@ context('Ground truth jobs', () => {
                         cy.get('.cvat_canvas_shape').should('not.exist');
                         cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
                     });
+                });
+            });
+
+            it('Check GT annotation source in GT job and regular job review overlay', () => {
+                const [frame] = groundTruthFrames;
+                const [rectangle] = groundTruthRectangles;
+
+                cy.headlessCreateJob({
+                    task_id: taskId,
+                    frame_count: 4,
+                    type: 'ground_truth',
+                    frame_selection_method: 'random_uniform',
+                    random_seed: 1,
+                }).then((jobResponse) => {
+                    groundTruthJobId = jobResponse.jobId;
+                    return cy.headlessCreateObjects([{
+                        objectType: 'shape',
+                        labelName,
+                        type: 'rectangle',
+                        occluded: false,
+                        frame,
+                        points: [rectangle.firstX, rectangle.firstY, rectangle.secondX, rectangle.secondY],
+                        source: 'auto',
+                    }], groundTruthJobId);
+                }).then(() => {
+                    cy.visit(`/tasks/${taskId}/jobs/${groundTruthJobId}`);
+                    cy.get('.cvat-canvas-container').should('exist');
+                    cy.goCheckFrameNumber(frame);
+                    checkRectangleAndObjectMenu(rectangle, true);
+                    checkCanvasObjectSource(rectangle, 'auto', 'Ground truth');
+
+                    cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
+                    cy.get('.cvat-canvas-container').should('exist');
+                    cy.changeWorkspace('Review');
+                    cy.get('.cvat-objects-sidebar-show-ground-truth').click();
+                    cy.get('.cvat-objects-sidebar-show-ground-truth').should(
+                        'have.class', 'cvat-objects-sidebar-show-ground-truth-active',
+                    );
+                    cy.goCheckFrameNumber(frame);
+                    checkRectangleAndObjectMenu(rectangle);
+                    checkCanvasObjectSource(rectangle, 'Ground truth', 'auto');
                 });
             });
         });
