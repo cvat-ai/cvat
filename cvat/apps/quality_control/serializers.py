@@ -276,7 +276,7 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
             "attribute_id",
             "granularity",
             "metric",
-            "align",
+            "alignment",
             "metric_threshold",
             "normalizer_preset",
             "substitutions",
@@ -330,7 +330,7 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
                     degenerate to `equality`.
                     """),
             },
-            "align": {
+            "alignment": {
                 "required": False,
                 "help_text": textwrap.dedent("""\
                     Alignment regime. `char` runs char-level Levenshtein and

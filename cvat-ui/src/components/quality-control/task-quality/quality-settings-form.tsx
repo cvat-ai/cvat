@@ -201,7 +201,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             attributeId: requirement.attributeId,
             granularity: requirement.granularity,
             metric: requirement.metric,
-            align: requirement.align,
+            alignment: requirement.alignment,
             metricThreshold: requirement.metricThreshold,
             normalizerPreset: requirement.normalizerPreset,
             // Round-tripped untouched until a substitutions editor exists.
@@ -552,7 +552,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                                                         </Col>
                                                         <Col span={12}>
                                                             <Form.Item
-                                                                name={[field.name, 'align']}
+                                                                name={[field.name, 'alignment']}
                                                                 label='Alignment'
                                                                 tooltip='How tokens are aligned before scoring. Character (recommended) absorbs word-boundary disagreements and suits rich morphology / scripts without spaces; Word is standard when word boundaries are clean (e.g. English).'
                                                             >
@@ -674,7 +674,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                                     onClick={() => add({
                                         granularity: TranscriptionGranularity.WORD,
                                         metric: TranscriptionMetric.EQUALITY,
-                                        align: TranscriptionAlignMode.CHAR,
+                                        alignment: TranscriptionAlignMode.CHAR,
                                         metricThreshold: null,
                                         normalizerPreset: TranscriptionNormalizerPreset.BASIC,
                                         substitutions: [],

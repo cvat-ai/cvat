@@ -286,7 +286,7 @@ class TranscriptionRequirement(ReportNode):
     attribute: AttributePath
     granularity: TranscriptionGranularity
     metric: TranscriptionQualityMetric
-    align: TranscriptionAlignMode
+    alignment: TranscriptionAlignMode
     metric_threshold: float | None
     normalizer_preset: TranscriptionNormalizerPreset
     substitutions: list[dict]
@@ -320,7 +320,7 @@ class TranscriptionRequirement(ReportNode):
             attribute=AttributePath.from_list(d["attribute"]),
             granularity=TranscriptionGranularity(d["granularity"]),
             metric=TranscriptionQualityMetric(d["metric"]),
-            align=TranscriptionAlignMode(d["align"]),
+            alignment=TranscriptionAlignMode(d["alignment"]),
             metric_threshold=d.get("metric_threshold"),
             normalizer_preset=TranscriptionNormalizerPreset(d["normalizer_preset"]),
             substitutions=list(d.get("substitutions") or []),
@@ -462,7 +462,7 @@ class ComparisonParameters(ReportNode):
                     "attribute": attribute_path.to_list(),
                     "granularity": requirement.granularity,
                     "metric": requirement.metric,
-                    "align": requirement.align,
+                    "alignment": requirement.alignment,
                     "metric_threshold": requirement.metric_threshold,
                     "normalizer_preset": requirement.normalizer_preset,
                     "substitutions": list(requirement.substitutions or []),
@@ -2735,7 +2735,7 @@ class DatasetComparator:
                     name=f"attr_{attribute_spec.id}",
                     text_attribute=str(attribute_spec.id),
                     granularity=audio_qa.Granularity(requirement.granularity),
-                    align=audio_qa.AlignMode(requirement.align),
+                    align=audio_qa.AlignMode(requirement.alignment),
                     metric=audio_qa.Metric(requirement.metric),
                     threshold=requirement.metric_threshold,
                     normalizer=self._build_normalizer_config(requirement),

@@ -281,7 +281,7 @@ export interface SerializedTranscriptionRequirement {
     attribute_id: number;
     granularity: string;
     metric: string;
-    align: string;
+    alignment: string;
     metric_threshold: number | null;
     normalizer_preset: string;
     substitutions: SerializedTranscriptionSubstitution[];

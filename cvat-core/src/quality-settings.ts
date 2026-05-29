@@ -87,7 +87,7 @@ export class TranscriptionRequirement {
     #attributeId: number;
     #granularity: TranscriptionGranularity;
     #metric: TranscriptionMetric;
-    #align: TranscriptionAlignMode;
+    #alignment: TranscriptionAlignMode;
     #metricThreshold: number | null;
     #normalizerPreset: TranscriptionNormalizerPreset;
     #substitutions: SerializedTranscriptionSubstitution[];
@@ -101,7 +101,7 @@ export class TranscriptionRequirement {
         this.#attributeId = initialData.attribute_id;
         this.#granularity = initialData.granularity as TranscriptionGranularity;
         this.#metric = initialData.metric as TranscriptionMetric;
-        this.#align = initialData.align as TranscriptionAlignMode;
+        this.#alignment = initialData.alignment as TranscriptionAlignMode;
         this.#metricThreshold = initialData.metric_threshold ?? null;
         this.#normalizerPreset = initialData.normalizer_preset as TranscriptionNormalizerPreset;
         this.#substitutions = initialData.substitutions ?? [];
@@ -115,7 +115,7 @@ export class TranscriptionRequirement {
     get attributeId(): number { return this.#attributeId; }
     get granularity(): TranscriptionGranularity { return this.#granularity; }
     get metric(): TranscriptionMetric { return this.#metric; }
-    get align(): TranscriptionAlignMode { return this.#align; }
+    get alignment(): TranscriptionAlignMode { return this.#alignment; }
     get metricThreshold(): number | null { return this.#metricThreshold; }
     get normalizerPreset(): TranscriptionNormalizerPreset { return this.#normalizerPreset; }
     get substitutions(): SerializedTranscriptionSubstitution[] { return this.#substitutions; }
@@ -131,7 +131,7 @@ export class TranscriptionRequirement {
             attribute_id: this.#attributeId,
             granularity: this.#granularity,
             metric: this.#metric,
-            align: this.#align,
+            alignment: this.#alignment,
             metric_threshold: this.#metricThreshold,
             normalizer_preset: this.#normalizerPreset,
             substitutions: this.#substitutions,

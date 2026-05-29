@@ -525,7 +525,7 @@ class TranscriptionQualityRequirement(models.Model):
         default=TranscriptionQualityMetric.EQUALITY,
     )
 
-    align = models.CharField(
+    alignment = models.CharField(
         max_length=32,
         choices=TranscriptionAlignMode.choices(),
         default=TranscriptionAlignMode.CHAR,

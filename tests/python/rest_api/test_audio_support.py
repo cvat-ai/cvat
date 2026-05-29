@@ -1005,7 +1005,7 @@ class TestAudioQuality:
                         attribute_id=transcription_attr.id,
                         granularity="character",
                         metric="error-rate",
-                        align="word",
+                        alignment="word",
                         metric_threshold=0.3,
                         normalizer_preset="ru",
                         substitutions=[
@@ -1027,7 +1027,7 @@ class TestAudioQuality:
         assert req.attribute_id == transcription_attr.id
         assert req.granularity == "character"
         assert req.metric == "error-rate"
-        assert req.align == "word"
+        assert req.alignment == "word"
         assert req.metric_threshold == 0.3
         assert req.normalizer_preset == "ru"
         assert req.substitutions == [
@@ -1595,7 +1595,7 @@ class TestAudioQuality:
             task,
             attribute_id=attr.id,
             granularity="word",
-            align="word",
+            alignment="word",
             grouping_strategy="join",
             acceptance_threshold=0.2,
         )

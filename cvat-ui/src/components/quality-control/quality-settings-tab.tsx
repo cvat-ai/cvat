@@ -68,7 +68,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                         attribute_id: requirement.attributeId,
                         granularity: requirement.granularity,
                         metric: requirement.metric,
-                        align: requirement.align,
+                        alignment: requirement.alignment,
                         metric_threshold: requirement.metricThreshold ?? null,
                         normalizer_preset: requirement.normalizerPreset,
                         // Substitutions are round-tripped untouched (no editor yet).

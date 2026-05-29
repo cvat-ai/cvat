@@ -10254,7 +10254,7 @@ components:
             * `equality` - EQUALITY
             * `error-rate` - ERROR_RATE
             * `normalized-lev` - NORMALIZED_LEV
-        align:
+        alignment:
           allOf:
           - $ref: '#/components/schemas/TranscriptionAlignMode'
           description: |-
@@ -11949,7 +11949,7 @@ components:
             * `equality` - EQUALITY
             * `error-rate` - ERROR_RATE
             * `normalized-lev` - NORMALIZED_LEV
-        align:
+        alignment:
           allOf:
           - $ref: '#/components/schemas/TranscriptionAlignMode'
           description: |-
