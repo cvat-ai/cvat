@@ -141,7 +141,7 @@ class Annotation {
         this.lock = false;
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
-        this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
+        this.source = data.source;
         this.score = data.score;
         this.votes = injection.replicasCount !== undefined ?
             Math.round(this.score * injection.replicasCount) : 0;
