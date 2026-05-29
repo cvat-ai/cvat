@@ -216,7 +216,7 @@ allow if {
     input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
     input.auth.organization.id == input.resource.organization.id
     organizations.is_member
-    is_project_staff
+    utils.is_resource_owner
 }
 
 allow if {

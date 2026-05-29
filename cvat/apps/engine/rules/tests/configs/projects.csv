@@ -26,11 +26,11 @@ update:owner,"Project, User",Organization,"None, Assignee",,PATCH,/projects/{id}
 update:owner,"Project, User",Organization,Owner,,PATCH,/projects/{id},Worker,Maintainer
 export:annotations,Project,Sandbox,None,,GET,/projects/{id}/annotations,Admin,N/A
 export:annotations,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/annotations,None,N/A
-export:annotations,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/annotations,None,Worker
+export:annotations,Project,Organization,Owner,,GET,/projects/{id}/annotations,None,Worker
 export:annotations,Project,Organization,None,,GET,/projects/{id}/annotations,User,Maintainer
 export:dataset,Project,Sandbox,None,,GET,/projects/{id}/dataset,Admin,N/A
 export:dataset,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/dataset,None,N/A
-export:dataset,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/dataset,None,Worker
+export:dataset,Project,Organization,Owner,,GET,/projects/{id}/dataset,None,Worker
 export:dataset,Project,Organization,None,,GET,/projects/{id}/dataset,User,Maintainer
 import:dataset,Project,Sandbox,None,,POST,/projects/{id}/dataset,Admin,N/A
 import:dataset,Project,Sandbox,"Owner, Assignee",,POST,/projects/{id}/dataset,Worker,N/A
@@ -38,7 +38,7 @@ import:dataset,Project,Organization,"Owner, Assignee",,POST,/projects/{id}/datas
 import:dataset,Project,Organization,None,,POST,/projects/{id}/dataset,User,Maintainer
 export:backup,Project,Sandbox,None,,GET,/projects/{id}/backup,Admin,N/A
 export:backup,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/backup,None,N/A
-export:backup,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/backup,None,Worker
+export:backup,Project,Organization,Owner,,GET,/projects/{id}/backup,None,Worker
 export:backup,Project,Organization,None,,GET,/projects/{id}/backup,User,Maintainer
 update:associated_storage,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A
 update:associated_storage,Project,Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A

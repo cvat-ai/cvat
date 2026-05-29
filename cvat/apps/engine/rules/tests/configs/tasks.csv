@@ -53,7 +53,7 @@ delete:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:as
 export:dataset,Task,Sandbox,None,,GET,/tasks/{id}/dataset?format=,Admin,N/A
 export:dataset,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset?format=,None,N/A
 export:dataset,Task,Organization,None,,GET,/tasks/{id}/dataset?format=,User,Maintainer
-export:dataset,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset?format=,None,Worker
+export:dataset,Task,Organization,"Owner, Project:owner",,GET,/tasks/{id}/dataset?format=,None,Worker
 view:data,Task,Sandbox,None,,GET,/tasks/{id}/data,Admin,N/A
 view:data,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/data,None,N/A
 view:data,Task,Organization,None,,GET,/tasks/{id}/data,User,Maintainer
@@ -77,8 +77,8 @@ import:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:as
 export:annotations,Task,Sandbox,None,,GET,/tasks/{id}/annotations?format=,Admin,N/A
 export:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/annotations?format=,None,N/A
 export:annotations,Task,Organization,None,,GET,/tasks/{id}/annotations?format=,User,Maintainer
-export:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/annotations?format=,None,Worker
+export:annotations,Task,Organization,"Owner, Project:owner",,GET,/tasks/{id}/annotations?format=,None,Worker
 export:backup,Task,Sandbox,None,,GET,/tasks/{id}/backup,Admin,N/A
 export:backup,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/backup,None,N/A
 export:backup,Task,Organization,None,,GET,/tasks/{id}/backup,User,Maintainer
-export:backup,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/backup,None,Worker
+export:backup,Task,Organization,"Owner, Project:owner",,GET,/tasks/{id}/backup,None,Worker

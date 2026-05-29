@@ -193,13 +193,25 @@ allow if {
 
 allow if {
     input.scope in {
-        utils.VIEW,
-        utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
-        utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA
+        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA
     }
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     is_job_staff
+}
+
+allow if {
+    input.scope in {utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    is_task_owner
+}
+
+allow if {
+    input.scope in {utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    is_project_owner
 }
 
 allow if {
