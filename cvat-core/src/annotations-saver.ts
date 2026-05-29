@@ -293,10 +293,10 @@ export default class AnnotationsSaver {
                 } : {}),
             });
 
-            const getFrameKey = (obj: CollectionObject): number | undefined => {
+            const getFrameKey = (obj: CollectionObject): number => {
                 if ('frame' in obj) return obj.frame;
                 if ('start' in obj) return obj.start;
-                return undefined;
+                throw new DataError('Collection object must have either a "frame" or a "start" property');
             };
 
             const findPair = (
