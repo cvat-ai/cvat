@@ -10544,13 +10544,54 @@ components:
           nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        match_attributes:
-          type: boolean
-          nullable: true
-          description: Enables or disables annotation attribute comparison
         attribute_comparison:
           type: object
           nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
+          properties:
+            default:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  nullable: true
+                  description: Default comparison state for attributes without
+                    explicit rules. Null means inherit from parent requirement.
+                comparator:
+                  type: string
+                  enum:
+                    - exact
+                    - levenshtein
+                threshold:
+                  type: number
+                  format: double
+                  maximum: 1
+                  minimum: 0
+            rules:
+              type: array
+              items:
+                type: object
+                required:
+                  - spec_id
+                  - enabled
+                properties:
+                  spec_id:
+                    type: integer
+                    description: AttributeSpec id to override.
+                  enabled:
+                    type: boolean
+                  comparator:
+                    type: string
+                    enum:
+                      - exact
+                      - levenshtein
+                  threshold:
+                    type: number
+                    format: double
+                    maximum: 1
+                    minimum: 0
         empty_is_annotated:
           type: boolean
           nullable: true
@@ -11255,13 +11296,54 @@ components:
           nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        match_attributes:
-          type: boolean
-          nullable: true
-          description: Enables or disables annotation attribute comparison
         attribute_comparison:
           type: object
           nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
+          properties:
+            default:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  nullable: true
+                  description: Default comparison state for attributes without
+                    explicit rules. Null means inherit from parent requirement.
+                comparator:
+                  type: string
+                  enum:
+                    - exact
+                    - levenshtein
+                threshold:
+                  type: number
+                  format: double
+                  maximum: 1
+                  minimum: 0
+            rules:
+              type: array
+              items:
+                type: object
+                required:
+                  - spec_id
+                  - enabled
+                properties:
+                  spec_id:
+                    type: integer
+                    description: AttributeSpec id to override.
+                  enabled:
+                    type: boolean
+                  comparator:
+                    type: string
+                    enum:
+                      - exact
+                      - levenshtein
+                  threshold:
+                    type: number
+                    format: double
+                    maximum: 1
+                    minimum: 0
         empty_is_annotated:
           type: boolean
           nullable: true
@@ -11444,13 +11526,54 @@ components:
           nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        match_attributes:
-          type: boolean
-          nullable: true
-          description: Enables or disables annotation attribute comparison
         attribute_comparison:
           type: object
           nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
+          properties:
+            default:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  nullable: true
+                  description: Default comparison state for attributes without
+                    explicit rules. Null means inherit from parent requirement.
+                comparator:
+                  type: string
+                  enum:
+                    - exact
+                    - levenshtein
+                threshold:
+                  type: number
+                  format: double
+                  maximum: 1
+                  minimum: 0
+            rules:
+              type: array
+              items:
+                type: object
+                required:
+                  - spec_id
+                  - enabled
+                properties:
+                  spec_id:
+                    type: integer
+                    description: AttributeSpec id to override.
+                  enabled:
+                    type: boolean
+                  comparator:
+                    type: string
+                    enum:
+                      - exact
+                      - levenshtein
+                  threshold:
+                    type: number
+                    format: double
+                    maximum: 1
+                    minimum: 0
         empty_is_annotated:
           type: boolean
           nullable: true
@@ -11620,13 +11743,54 @@ components:
           nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        match_attributes:
-          type: boolean
-          nullable: true
-          description: Enables or disables annotation attribute comparison
         attribute_comparison:
           type: object
           nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
+          properties:
+            default:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  nullable: true
+                  description: Default comparison state for attributes without
+                    explicit rules. Null means inherit from parent requirement.
+                comparator:
+                  type: string
+                  enum:
+                    - exact
+                    - levenshtein
+                threshold:
+                  type: number
+                  format: double
+                  maximum: 1
+                  minimum: 0
+            rules:
+              type: array
+              items:
+                type: object
+                required:
+                  - spec_id
+                  - enabled
+                properties:
+                  spec_id:
+                    type: integer
+                    description: AttributeSpec id to override.
+                  enabled:
+                    type: boolean
+                  comparator:
+                    type: string
+                    enum:
+                      - exact
+                      - levenshtein
+                  threshold:
+                    type: number
+                    format: double
+                    maximum: 1
+                    minimum: 0
         empty_is_annotated:
           type: boolean
           nullable: true

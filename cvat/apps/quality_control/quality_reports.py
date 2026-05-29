@@ -8,6 +8,7 @@ import csv
 from collections.abc import Hashable
 from functools import cached_property
 from io import BytesIO, StringIO
+from typing import Any
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import datumaro as dm
@@ -32,6 +33,7 @@ from cvat.apps.engine.models import (
     User,
 )
 from cvat.apps.quality_control import models
+from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.comparison_report import (
     AnnotationId,
     ComparisonReport,
@@ -68,6 +70,18 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
     def __init__(self, *args, factory: _MemoizingAnnotationConverterFactory, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._factory = factory
+
+    def _convert_attrs(self, label: str, cvat_attrs: list[Any]) -> dict[str, Any]:
+        dm_attrs = super()._convert_attrs(label, cvat_attrs)
+        attribute_spec_ids = {
+            a_desc["name"]: a_desc["id"]
+            for _, a_desc in self.label_attrs[label]
+            if a_desc.get("id") is not None
+        }
+        if attribute_spec_ids:
+            dm_attrs[CVAT_ATTRIBUTE_SPEC_IDS_ATTR] = attribute_spec_ids
+
+        return dm_attrs
 
     def _convert_tag(self, tag):
         converted = list(super()._convert_tag(tag))

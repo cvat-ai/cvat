@@ -415,6 +415,7 @@ class QualityRequirement(TimestampedModel):
         from cvat.apps.quality_control.comparison_report import ComparisonParameters
 
         default_settings = ComparisonParameters().to_dict()
+        default_settings["compare_attributes"] = False
 
         existing_fields = {f.name for f in cls._meta.fields}
         return {k: v for k, v in default_settings.items() if k in existing_fields}

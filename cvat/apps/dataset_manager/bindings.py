@@ -439,6 +439,7 @@ class CommonData(InstanceLabelData):
                     (
                         "attribute",
                         {
+                            "id": db_attr.id,
                             "name": db_attr.name,
                             "mutable": str(db_attr.mutable),
                             "input_type": db_attr.input_type,
@@ -1353,6 +1354,7 @@ class ProjectData(InstanceLabelData):
                         (
                             "attribute",
                             {
+                                "id": db_attr.id,
                                 "name": db_attr.name,
                                 "mutable": str(db_attr.mutable),
                                 "input_type": db_attr.input_type,
