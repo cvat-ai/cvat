@@ -173,6 +173,20 @@ _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
 
 
+class AnnotationGetThrottleMixin:
+    annotations_get_throttle_scope: str
+
+    def get_throttles(self):
+        throttle_scope = self.annotations_get_throttle_scope
+        if (
+            self.action == "annotations"
+            and self.request.method == "GET"
+            and throttle_scope in api_settings.DEFAULT_THROTTLE_RATES
+        ):
+            self.throttle_scope = throttle_scope
+        return super().get_throttles()
+
+
 @extend_schema(tags=["server"])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -1048,6 +1062,7 @@ class _JobDataGetter(_DataGetter):
     ),
 )
 class TaskViewSet(
+    AnnotationGetThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -1059,6 +1074,7 @@ class TaskViewSet(
     BackupMixin,
 ):
     queryset = Task.objects
+    annotations_get_throttle_scope = "task_annotations_get"
 
     lookup_fields = {
         "project_name": "project__name",
@@ -2122,6 +2138,7 @@ class TaskViewSet(
     ),
 )
 class JobViewSet(
+    AnnotationGetThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -2136,6 +2153,7 @@ class JobViewSet(
         "segment__task",
         "segment__task__project",
     )
+    annotations_get_throttle_scope = "job_annotations_get"
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
