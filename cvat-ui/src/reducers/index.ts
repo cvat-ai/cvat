@@ -66,7 +66,6 @@ export interface AudioState {
         activeLabelId: number | null;
         hasUnsavedChanges: boolean;
         savedRegions: AudioRegion[];
-        version: number;
     };
     history: {
         undo: AudioHistoryEntry[];

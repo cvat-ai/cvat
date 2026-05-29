@@ -388,7 +388,6 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
 
         try {
             const intervals: SerializedInterval[] = await jobInstance.annotations.intervals();
-            const version: number = await jobInstance.annotations.version();
 
             const regions: AudioRegion[] = intervals.reduce<AudioRegion[]>((acc, interval, index) => {
                 const startSec = interval.start / 1000;
@@ -419,7 +418,7 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
 
             dispatch({
                 type: AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS,
-                payload: { regions, version },
+                payload: { regions },
             });
         } catch (error) {
             dispatch({
@@ -434,7 +433,7 @@ export function saveAudioAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const state = getState();
         const { job: { instance: jobInstance } } = state.annotation;
-        const { regions, version } = state.audio.player;
+        const { regions } = state.audio.player;
         if (!jobInstance) return;
 
         const hasNoneLabels = regions.some((r: AudioRegion) => r.labelId === null);
@@ -466,11 +465,11 @@ export function saveAudioAnnotationsAsync(): ThunkAction {
                 return acc;
             }, []);
 
-            const response = await serverProxy.annotations.updateAnnotations(
+            await serverProxy.annotations.updateAnnotations(
                 'job',
                 jobInstance.id,
                 {
-                    shapes: [], tracks: [], tags: [], intervals, version,
+                    shapes: [], tracks: [], tags: [], intervals, version: 0,
                 },
                 'put',
             );
@@ -481,7 +480,7 @@ export function saveAudioAnnotationsAsync(): ThunkAction {
 
             dispatch({
                 type: AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_SUCCESS,
-                payload: { version: response.version ?? version },
+                payload: {},
             });
         } catch (error) {
             dispatch({

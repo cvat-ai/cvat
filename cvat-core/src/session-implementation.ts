@@ -34,7 +34,7 @@ import { getUpdatedLabels } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
-    getAllIntervals, getAnnotationsVersion,
+    getAllIntervals,
     importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
 import AnnotationGuide from './guide';
@@ -371,14 +371,6 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.annotations.intervals> {
             return getAllIntervals(this);
-        },
-    });
-
-    Object.defineProperty(Job.prototype.annotations.version, 'implementation', {
-        value: async function versionImplementation(
-            this: JobClass,
-        ): ReturnType<typeof JobClass.prototype.annotations.version> {
-            return getAnnotationsVersion(this);
         },
     });
 

@@ -143,7 +143,6 @@ const defaultState: AudioState = {
         activeLabelId: null,
         hasUnsavedChanges: false,
         savedRegions: [],
-        version: 0,
     },
     history: {
         undo: [],
@@ -374,7 +373,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     ...state.player,
                     regions: action.payload.regions,
                     savedRegions: action.payload.regions,
-                    version: action.payload.version ?? 0,
                     hasUnsavedChanges: false,
                 },
                 history: { undo: [], redo: [] },
@@ -387,7 +385,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     ...state.player,
                     savedRegions: state.player.regions,
                     hasUnsavedChanges: false,
-                    version: action.payload.version ?? state.player.version,
                 },
             };
         }

@@ -164,18 +164,6 @@ export async function getAllIntervals(session: Job | Task): Promise<SerializedIn
     }
 }
 
-export async function getAnnotationsVersion(session: Job | Task): Promise<number> {
-    try {
-        return getSaver(session).version;
-    } catch (error) {
-        if (error instanceof InstanceNotInitializedError) {
-            await getAnnotationsFromServer(session);
-            return getSaver(session).version;
-        }
-        throw error;
-    }
-}
-
 export async function clearAnnotations(
     session: Task | Job,
     options: Parameters<typeof Job.prototype.annotations.clear>[0],
