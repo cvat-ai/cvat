@@ -171,9 +171,7 @@ class Client:
     _ORG_SLUG_HEADER = _ORG_SLUG_HEADER
 
     @contextmanager
-    def _scoped_organization_slug(
-        self, org_slug: str | None
-    ) -> Generator[None, None, None]:
+    def _scoped_organization_slug(self, org_slug: str | None) -> Generator[None, None, None]:
         """Temporarily override the X-Organization header for the calling
         thread only. Safe to use concurrently across threads, unlike
         :py:attr:`organization_slug` which mutates shared client state.
