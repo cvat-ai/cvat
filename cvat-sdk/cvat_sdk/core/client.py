@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 import urllib.parse
 from abc import ABCMeta
 from collections.abc import Generator, Sequence
@@ -37,6 +38,8 @@ from cvat_sdk.core.proxies.users import UsersRepo
 from cvat_sdk.version import VERSION
 
 _DEFAULT_CACHE_DIR = platformdirs.user_cache_path("cvat-sdk", "CVAT.ai")
+_ORG_SLUG_HEADER = "X-Organization"
+_THREAD_LOCAL_UNSET = object()
 
 _RepoType = TypeVar("_RepoType", bound=Repo)
 
@@ -90,6 +93,40 @@ class AccessTokenCredentials(Credentials):
 _VERSION_OBJ = pv.Version(VERSION)
 
 
+class _ThreadOrgAwareApiClient(ApiClient):
+    """ApiClient that allows the X-Organization header to be overridden
+    per-thread, layered on top of ``default_headers``.
+
+    Mutating ``default_headers["X-Organization"]`` to scope a single request
+    is not thread-safe because ``default_headers`` is shared across all
+    requests issued by every thread that uses this client. This subclass
+    adds a ``threading.local()`` override that ``get_common_headers``
+    consults, so a thread can temporarily change its own effective
+    X-Organization for a single request without affecting concurrent
+    requests from other threads.
+
+    Override values:
+        - ``UNSET``  → use the header from ``default_headers``.
+        - ``None``   → suppress the header for this thread's requests.
+        - ``str``    → use this exact value for this thread's requests.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._org_slug_local = threading.local()
+
+    def get_common_headers(self) -> dict[str, str]:
+        headers = super().get_common_headers()
+        override = getattr(self._org_slug_local, "value", _THREAD_LOCAL_UNSET)
+        if override is _THREAD_LOCAL_UNSET:
+            return headers
+        if override is None:
+            headers.pop(_ORG_SLUG_HEADER, None)
+        else:
+            headers[_ORG_SLUG_HEADER] = override
+        return headers
+
+
 class Client:
     """
     Provides session management, implements authentication operations
@@ -120,7 +157,7 @@ class Client:
         self.api_map = CVAT_API_V2(url)
         """Handles server API URL interaction logic"""
 
-        self.api_client = ApiClient(
+        self.api_client = _ThreadOrgAwareApiClient(
             Configuration(host=self.api_map.host, verify_ssl=self.config.verify_ssl)
         )
         """Provides low-level access to the CVAT server"""
@@ -131,7 +168,34 @@ class Client:
         self._repos: dict[str, Repo] = {}
         """A cache for created Repository instances"""
 
-    _ORG_SLUG_HEADER = "X-Organization"
+    _ORG_SLUG_HEADER = _ORG_SLUG_HEADER
+
+    @contextmanager
+    def _scoped_organization_slug(
+        self, org_slug: str | None
+    ) -> Generator[None, None, None]:
+        """Temporarily override the X-Organization header for the calling
+        thread only. Safe to use concurrently across threads, unlike
+        :py:attr:`organization_slug` which mutates shared client state.
+
+        Pass ``""`` for the personal workspace, a slug for a specific
+        organization, or ``None`` to suppress the header (useful when the
+        org is being specified via the ``org_id`` query parameter, which
+        cannot be combined with ``X-Organization``).
+        """
+        local = self.api_client._org_slug_local
+        previous = getattr(local, "value", _THREAD_LOCAL_UNSET)
+        local.value = org_slug
+        try:
+            yield
+        finally:
+            if previous is _THREAD_LOCAL_UNSET:
+                try:
+                    del local.value
+                except AttributeError:
+                    pass
+            else:
+                local.value = previous
 
     @property
     def organization_slug(self) -> str | None:

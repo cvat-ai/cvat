@@ -104,12 +104,8 @@ def get_paginated_collection_with_organization(
         params = {"org_id": organization_id}
         temporary_org_slug = None
 
-    previous_org_slug = client.organization_slug
-    client.organization_slug = temporary_org_slug
-    try:
+    with client._scoped_organization_slug(temporary_org_slug):
         return get_paginated_collection(endpoint, return_json=return_json, **kwargs, **params)
-    finally:
-        client.organization_slug = previous_org_slug
 
 
 ### Utilities
