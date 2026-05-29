@@ -143,3 +143,54 @@ class TestCliProjects(TestCliBase):
         restored_tasks = restored_project.get_tasks()
         assert len(restored_tasks) == 1
         assert restored_tasks[0].size == fxt_project_with_task.get_tasks()[0].size
+
+    def test_can_download_project_annotations(self, fxt_project_with_task: Project):
+        filename = self.tmp_path / f"project_{fxt_project_with_task.id}-cvat.zip"
+        self.run_cli(
+            "project",
+            "export-dataset",
+            str(fxt_project_with_task.id),
+            str(filename),
+            "--format",
+            "CVAT for images 1.1",
+            "--with-images",
+            "no",
+            "--completion_verification_period",
+            "0.01",
+        )
+
+        assert 0 < filename.stat().st_size
+
+    def test_can_download_project_annotations_with_server_filename(
+        self, fxt_project_with_task: Project
+    ):
+        output_dir = str(self.tmp_path / "save_dir") + os.path.sep
+        self.run_cli(
+            "project",
+            "export-dataset",
+            str(fxt_project_with_task.id),
+            output_dir,
+            "--format",
+            "CVAT for images 1.1",
+            "--with-images",
+            "yes",
+            "--completion_verification_period",
+            "0.01",
+        )
+
+        output_dir_files = os.listdir(output_dir)
+        assert len(output_dir_files) == 1
+        assert os.stat(output_dir + output_dir_files[0]).st_size > 0
+
+    def test_can_upload_project_annotations(self, fxt_new_project: Project, fxt_coco_dataset):
+        self.run_cli(
+            "project",
+            "import-dataset",
+            str(fxt_new_project.id),
+            os.fspath(fxt_coco_dataset),
+            "--format",
+            "COCO 1.0",
+        )
+
+        fxt_new_project.fetch()
+        assert fxt_new_project.tasks.count == 1

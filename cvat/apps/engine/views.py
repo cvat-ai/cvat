@@ -6,6 +6,7 @@
 import itertools
 import os
 import os.path as osp
+import re
 import shutil
 import textwrap
 import traceback
@@ -170,6 +171,20 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 _DATA_CHECKSUM_HEADER_NAME = "X-Checksum"
 _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
+
+
+class AnnotationGetThrottleMixin:
+    annotations_get_throttle_scope: str
+
+    def get_throttles(self):
+        throttle_scope = self.annotations_get_throttle_scope
+        if (
+            self.action == "annotations"
+            and self.request.method == "GET"
+            and throttle_scope in api_settings.DEFAULT_THROTTLE_RATES
+        ):
+            self.throttle_scope = throttle_scope
+        return super().get_throttles()
 
 
 @extend_schema(tags=["server"])
@@ -657,6 +672,37 @@ def _wants_empty_preview(request: ExtendedRequest) -> bool:
         if key.strip().lower() == "handling" and value.lower() == "empty":
             return True
     return False
+  
+  
+class _RangeHeaderSyntaxError(Exception): ...
+
+
+class _RangeNotSatisfiableError(Exception): ...
+
+
+def _parse_range_header(range_header: str | None) -> tuple[int | None, int | None] | None:
+    if not range_header:
+        return None
+
+    range_spec = re.fullmatch(r"([^=\s]+)\s*=\s*(.+)", range_header.strip())
+    if not range_spec:
+        raise _RangeHeaderSyntaxError
+
+    if range_spec.group(1).lower() != "bytes":
+        return None
+
+    matched = re.fullmatch(r"(\d*)-(\d*)", range_spec.group(2).strip())
+    if not matched:
+        raise _RangeHeaderSyntaxError
+
+    start_text, end_text = matched.groups()
+    if not start_text and not end_text:
+        raise _RangeHeaderSyntaxError
+
+    return (
+        int(start_text) if start_text else None,
+        int(end_text) if end_text else None,
+    )
 
 
 class _DataGetter(metaclass=ABCMeta):
@@ -667,6 +713,7 @@ class _DataGetter(metaclass=ABCMeta):
         data_quality: str,
         *,
         allow_empty_preview: bool = False,
+        data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         possible_data_type_values = ("chunk", "frame", "preview", "context_image")
         possible_quality_values = ("compressed", "original")
@@ -685,20 +732,74 @@ class _DataGetter(metaclass=ABCMeta):
             FrameQuality.COMPRESSED if data_quality == "compressed" else FrameQuality.ORIGINAL
         )
         self.allow_empty_preview = allow_empty_preview
+        self._range = data_range
 
     @abstractmethod
     def _get_media_provider(self) -> IFrameProvider | IAudioProvider: ...
+
+    @staticmethod
+    def _resolve_range(
+        data_range: tuple[int | None, int | None], content_size: int
+    ) -> tuple[int, int]:
+        start_value, end_value = data_range
+
+        if start_value is not None:
+            start = start_value
+            end = end_value if end_value is not None else content_size - 1
+        else:
+            suffix_length = end_value
+            assert suffix_length is not None
+            if suffix_length <= 0:
+                raise _RangeNotSatisfiableError
+            start = max(content_size - suffix_length, 0)
+            end = content_size - 1
+
+        if end < start or start >= content_size:
+            raise _RangeNotSatisfiableError
+
+        return start, min(end, content_size - 1)
+
+    def _make_ranged_chunk_response(self, chunk_data: DataWithMeta) -> HttpResponse:
+        data = chunk_data.data.getvalue()
+        content_size = len(data)
+        chunk_headers = {
+            **self._get_chunk_response_headers(chunk_data),
+            "Accept-Ranges": "bytes",
+        }
+
+        if self._range is None:
+            return HttpResponse(data, content_type=chunk_data.mime, headers=chunk_headers)
+
+        try:
+            start, end = self._resolve_range(self._range, content_size)
+        except _RangeNotSatisfiableError:
+            return HttpResponse(
+                status=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                headers={
+                    **chunk_headers,
+                    "Content-Range": f"bytes */{content_size}",
+                },
+            )
+
+        partial_data = data[start : end + 1]
+        return HttpResponse(
+            partial_data,
+            content_type=chunk_data.mime,
+            status=status.HTTP_206_PARTIAL_CONTENT,
+            headers={
+                **chunk_headers,
+                "Content-Range": f"bytes {start}-{end}/{content_size}",
+                "Content-Length": str(len(partial_data)),
+            },
+        )
 
     def _get_data_response(self) -> HttpResponse:
         media_provider = self._get_media_provider()
 
         if self.type == "chunk":
             data = media_provider.get_chunk(self.number, quality=self.quality)
-            return HttpResponse(
-                data.data.getvalue(),
-                content_type=data.mime,
-                headers=self._get_chunk_response_headers(data),
-            )
+            return self._make_ranged_chunk_response(data)
+
         elif self.type == "frame":
             if isinstance(media_provider, IAudioProvider):
                 raise ValidationError(
@@ -801,12 +902,14 @@ class _TaskDataGetter(_DataGetter):
         data_quality: str,
         data_num: str | int | None = None,
         allow_empty_preview: bool = False,
+        data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         super().__init__(
             data_type=data_type,
             data_num=data_num,
             data_quality=data_quality,
             allow_empty_preview=allow_empty_preview,
+            data_range=data_range,
         )
         self._db_task = db_task
 
@@ -836,6 +939,7 @@ class _JobDataGetter(_DataGetter):
         data_num: str | int | None = None,
         data_index: str | int | None = None,
         allow_empty_preview: bool = False,
+        data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         possible_data_type_values = ("chunk", "frame", "preview", "context_image")
         possible_quality_values = ("compressed", "original")
@@ -863,6 +967,7 @@ class _JobDataGetter(_DataGetter):
         )
 
         self.allow_empty_preview = allow_empty_preview
+        self._range = data_range
         self._db_job = db_job
 
     def _get_media_provider(self) -> JobFrameProvider | JobAudioProvider:
@@ -888,11 +993,7 @@ class _JobDataGetter(_DataGetter):
                     self.number, quality=self.quality, is_task_chunk=True
                 )
 
-            return HttpResponse(
-                data.data.getvalue(),
-                content_type=data.mime,
-                headers=self._get_chunk_response_headers(data),
-            )
+            return self._make_ranged_chunk_response(data)
         else:
             return super()._get_data_response()
 
@@ -1015,6 +1116,7 @@ class _JobDataGetter(_DataGetter):
     ),
 )
 class TaskViewSet(
+    AnnotationGetThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -1026,6 +1128,7 @@ class TaskViewSet(
     BackupMixin,
 ):
     queryset = Task.objects
+    annotations_get_throttle_scope = "task_annotations_get"
 
     lookup_fields = {
         "project_name": "project__name",
@@ -1493,7 +1596,7 @@ class TaskViewSet(
                 location=OpenApiParameter.HEADER,
                 type=OpenApiTypes.STR,
                 required=False,
-                response=[200],
+                response=[200, 206],
                 description="Data checksum, applicable for chunks only",
             ),
             OpenApiParameter(
@@ -1501,12 +1604,14 @@ class TaskViewSet(
                 location=OpenApiParameter.HEADER,
                 type=OpenApiTypes.DATETIME,
                 required=False,
-                response=[200],
+                response=[200, 206],
                 description="Data update date, applicable for chunks only",
             ),
         ],
         responses={
             "200": OpenApiResponse(description="Data of a specific type"),
+            "206": OpenApiResponse(description="Partial chunk data"),
+            "416": OpenApiResponse(description="Requested range is not satisfiable"),
         },
     )
     @action(
@@ -1542,9 +1647,17 @@ class TaskViewSet(
             data_type = request.query_params.get("type", None)
             data_num = request.query_params.get("number", None)
             data_quality = request.query_params.get("quality", "compressed")
+            try:
+                data_range = _parse_range_header(request.headers.get("Range"))
+            except _RangeHeaderSyntaxError:
+                return HttpResponse("Invalid Range header", status=status.HTTP_400_BAD_REQUEST)
 
             data_getter = _TaskDataGetter(
-                self._object, data_type=data_type, data_num=data_num, data_quality=data_quality
+                db_task=self._object,
+                data_type=data_type,
+                data_num=data_num,
+                data_quality=data_quality,
+                data_range=data_range,
             )
             return data_getter()
 
@@ -2097,6 +2210,7 @@ class TaskViewSet(
     ),
 )
 class JobViewSet(
+    AnnotationGetThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -2111,6 +2225,7 @@ class JobViewSet(
         "segment__task",
         "segment__task__project",
     )
+    annotations_get_throttle_scope = "job_annotations_get"
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
@@ -2477,6 +2592,8 @@ class JobViewSet(
         ],
         responses={
             "200": OpenApiResponse(OpenApiTypes.BINARY, description="Data of a specific type"),
+            "206": OpenApiResponse(OpenApiTypes.BINARY, description="Partial chunk data"),
+            "416": OpenApiResponse(description="Requested range is not satisfiable"),
         },
     )
     @action(
@@ -2490,13 +2607,18 @@ class JobViewSet(
         data_num = request.query_params.get("number", None)
         data_index = request.query_params.get("index", None)
         data_quality = request.query_params.get("quality", "compressed")
+        try:
+            data_range = _parse_range_header(request.headers.get("Range"))
+        except _RangeHeaderSyntaxError:
+            return HttpResponse("Invalid Range header", status=status.HTTP_400_BAD_REQUEST)
 
         data_getter = _JobDataGetter(
-            db_job,
+            db_job=db_job,
             data_type=data_type,
             data_quality=data_quality,
             data_index=data_index,
             data_num=data_num,
+            data_range=data_range,
         )
         return data_getter()
 

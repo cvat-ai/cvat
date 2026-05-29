@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.65.1
+  version: 2.66.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2765,6 +2765,15 @@ paths:
                 type: string
                 format: binary
           description: Data of a specific type
+        '206':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: string
+                format: binary
+          description: Partial chunk data
+        '416':
+          description: Requested range is not satisfiable
   /api/jobs/{id}/data/meta:
     get:
       operationId: jobs_retrieve_data_meta
@@ -5873,6 +5882,20 @@ paths:
                 format: date-time
               description: Data update date, applicable for chunks only
           description: Data of a specific type
+        '206':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
+          description: Partial chunk data
+        '416':
+          description: Requested range is not satisfiable
     post:
       operationId: tasks_create_data
       description: |
@@ -9202,7 +9225,6 @@ components:
           format: date-time
           readOnly: true
         contact:
-          type: object
           readOnly: true
         owner:
           allOf:
@@ -9223,8 +9245,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
       required:
       - slug
     PaginatedAccessTokenReadList:
@@ -9975,8 +9996,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -11859,10 +11879,8 @@ components:
           type: string
           readOnly: true
         request:
-          type: object
           readOnly: true
         response:
-          type: object
           readOnly: true
     WebhookRead:
       type: object
