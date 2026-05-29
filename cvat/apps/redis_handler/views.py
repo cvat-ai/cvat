@@ -131,6 +131,9 @@ class RequestViewSet(viewsets.GenericViewSet):
     }
 
     class _SchemaQuerySet:
+        # drf-spectacular expects schema views to expose a queryset-like object
+        # with a model attribute. Requests are backed by RQ jobs, not Django models.
+        # See https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-get-queryset-depends-on-some-attributes-not-available-at-schema-generation-time
         model = None
 
     def get_queryset(self):

@@ -18,7 +18,6 @@ def _default_cache_value():
 
 class DeleteCache:
     def __init__(self, cache_id):
-        self._cache_id = cache_id
         self._cache = _caches.setdefault(cache_id, _default_cache_value())
 
     def set(self, instance_class, instance_id, value):
@@ -33,14 +32,6 @@ class DeleteCache:
             return True
         return False
 
-    def clear(self):
-        self._cache.clear()
-        self._cache.update(_default_cache_value())
-
-    def discard(self):
-        _caches.pop(self._cache_id, None)
-
-
 def get_cache():
     from .handlers import request_info
 
@@ -48,4 +39,6 @@ def get_cache():
 
 
 def clear_cache():
-    get_cache().discard()
+    from .handlers import request_info
+
+    _caches.pop(request_info()["id"], None)
