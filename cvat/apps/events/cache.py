@@ -32,6 +32,7 @@ class DeleteCache:
             return True
         return False
 
+
 def get_cache():
     from .handlers import request_info
 
