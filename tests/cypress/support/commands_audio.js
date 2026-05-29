@@ -39,7 +39,7 @@ Cypress.Commands.add('ensureAudioTask', () => {
                 url: `/api/jobs/${jobId}/data?quality=compressed&type=chunk&index=0`,
                 auth: { username: Cypress.env('user'), password: Cypress.env('password') },
                 timeout: 60000,
-            }).its('status').should('be.within', 200, 299);
+            }).its('status').should('eq', 200);
         });
     });
 });
