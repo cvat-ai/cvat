@@ -42,6 +42,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
+from rest_framework.throttling import ScopedRateThrottle
 from rq.job import Job as RQJob
 
 import cvat.apps.dataset_manager as dm
@@ -171,6 +172,22 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 _DATA_CHECKSUM_HEADER_NAME = "X-Checksum"
 _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
+
+
+class AnnotationGetThrottleMixin:
+    annotations_get_throttle_scope: str
+
+    def get_throttles(self):
+        throttles = super().get_throttles()
+        throttle_scope = self.annotations_get_throttle_scope
+        if (
+            self.action == "annotations"
+            and self.request.method == "GET"
+            and throttle_scope in api_settings.DEFAULT_THROTTLE_RATES
+        ):
+            self.throttle_scope = throttle_scope
+            throttles.append(ScopedRateThrottle())
+        return throttles
 
 
 @extend_schema(tags=["server"])
@@ -1048,6 +1065,7 @@ class _JobDataGetter(_DataGetter):
     ),
 )
 class TaskViewSet(
+    AnnotationGetThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -1059,6 +1077,7 @@ class TaskViewSet(
     BackupMixin,
 ):
     queryset = Task.objects
+    annotations_get_throttle_scope = "task_annotations_get"
 
     lookup_fields = {
         "project_name": "project__name",
@@ -2122,6 +2141,7 @@ class TaskViewSet(
     ),
 )
 class JobViewSet(
+    AnnotationGetThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -2136,6 +2156,7 @@ class JobViewSet(
         "segment__task",
         "segment__task__project",
     )
+    annotations_get_throttle_scope = "job_annotations_get"
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
