@@ -672,8 +672,8 @@ def _wants_empty_preview(request: ExtendedRequest) -> bool:
         if key.strip().lower() == "handling" and value.lower() == "empty":
             return True
     return False
-  
-  
+
+
 class _RangeHeaderSyntaxError(Exception): ...
 
 
