@@ -42,7 +42,6 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
-from rest_framework.throttling import ScopedRateThrottle
 from rq.job import Job as RQJob
 
 import cvat.apps.dataset_manager as dm
@@ -178,7 +177,6 @@ class AnnotationGetThrottleMixin:
     annotations_get_throttle_scope: str
 
     def get_throttles(self):
-        throttles = super().get_throttles()
         throttle_scope = self.annotations_get_throttle_scope
         if (
             self.action == "annotations"
@@ -186,8 +184,7 @@ class AnnotationGetThrottleMixin:
             and throttle_scope in api_settings.DEFAULT_THROTTLE_RATES
         ):
             self.throttle_scope = throttle_scope
-            throttles.append(ScopedRateThrottle())
-        return throttles
+        return super().get_throttles()
 
 
 @extend_schema(tags=["server"])

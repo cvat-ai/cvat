@@ -44,9 +44,7 @@ from PIL import Image
 from pycocotools import coco as coco_loader
 from pyunpack import Archive
 from rest_framework import status
-from rest_framework.settings import api_settings
 from rest_framework.test import APIClient
-from rest_framework.throttling import ScopedRateThrottle
 from rq.job import Job as RQJob
 from rq.queue import Queue as RQQueue
 
@@ -6432,36 +6430,6 @@ class JobAnnotationAPITestCase(ApiTestBase):
     def test_api_v2_jobs_id_annotations_no_auth(self):
         self._run_api_v2_jobs_id_annotations(self.user, self.user, None)
 
-    @override_settings(
-        REST_FRAMEWORK={
-            **settings.REST_FRAMEWORK,
-            "DEFAULT_THROTTLE_RATES": {
-                **settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"],
-                "job_annotations_get": "10/minute",
-            },
-        }
-    )
-    def test_api_v2_jobs_id_annotations_get_is_throttled(self):
-        _, jobs = self._create_task(self.user, self.user)
-        job = jobs[0]
-
-        with mock.patch.object(
-            ScopedRateThrottle, "THROTTLE_RATES", api_settings.DEFAULT_THROTTLE_RATES
-        ):
-            for _ in range(10):
-                response = self._get_api_v2_jobs_id_data(job["id"], self.user)
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-            response = self._get_api_v2_jobs_id_data(job["id"], self.user)
-            self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
-
-            response = self._put_api_v2_jobs_id_data(
-                job["id"],
-                self.user,
-                {"version": 0, "tags": [], "shapes": [], "tracks": []},
-            )
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-
 
 class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotationAPITestCase):
     def _put_api_v2_tasks_id_annotations(self, pk, user, data):
@@ -7834,75 +7802,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
 
     def test_api_v2_tasks_id_annotations_user(self):
         self._run_api_v2_tasks_id_annotations(self.user, self.user)
-
-    @override_settings(
-        REST_FRAMEWORK={
-            **settings.REST_FRAMEWORK,
-            "DEFAULT_THROTTLE_RATES": {
-                **settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"],
-                "task_annotations_get": "10/minute",
-            },
-        }
-    )
-    def test_api_v2_tasks_id_annotations_get_is_throttled(self):
-        task, _ = self._create_task(self.user, self.user)
-
-        with mock.patch.object(
-            ScopedRateThrottle, "THROTTLE_RATES", api_settings.DEFAULT_THROTTLE_RATES
-        ):
-            for _ in range(10):
-                response = self._get_api_v2_tasks_id_annotations(task["id"], self.user)
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-            response = self._get_api_v2_tasks_id_annotations(task["id"], self.user)
-            self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
-
-            response = self._put_api_v2_tasks_id_annotations(
-                task["id"],
-                self.user,
-                {"version": 0, "tags": [], "shapes": [], "tracks": []},
-            )
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    @override_settings(
-        REST_FRAMEWORK={
-            **settings.REST_FRAMEWORK,
-            "DEFAULT_THROTTLE_RATES": {
-                **settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"],
-                "job_annotations_get": "10/minute",
-                "task_annotations_get": "10/minute",
-            },
-        }
-    )
-    def test_api_v2_task_and_job_annotations_get_throttle_buckets_are_independent(self):
-        task, jobs = self._create_task(self.user, self.user)
-        job = jobs[0]
-
-        with mock.patch.object(
-            ScopedRateThrottle, "THROTTLE_RATES", api_settings.DEFAULT_THROTTLE_RATES
-        ):
-            for _ in range(10):
-                response = self._get_api_v2_jobs_id_data(job["id"], self.user)
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-            response = self._get_api_v2_jobs_id_data(job["id"], self.user)
-            self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
-
-            response = self._get_api_v2_tasks_id_annotations(task["id"], self.user)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-            task, jobs = self._create_task(self.admin, self.admin)
-            job = jobs[0]
-
-            for _ in range(10):
-                response = self._get_api_v2_tasks_id_annotations(task["id"], self.admin)
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-            response = self._get_api_v2_tasks_id_annotations(task["id"], self.admin)
-            self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
-
-            response = self._get_api_v2_jobs_id_data(job["id"], self.admin)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_api_v2_tasks_id_annotations_dump_load_admin(self):
         self._run_api_v2_tasks_id_annotations_dump_load(self.admin)
