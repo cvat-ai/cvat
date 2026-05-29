@@ -10,6 +10,7 @@ from typing import Any
 from django.conf import settings as django_settings
 from django.db import models as django_models
 from django.db import transaction
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from cvat.apps.engine import field_validation
@@ -18,6 +19,10 @@ from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.models import AttributeSpec
 from cvat.apps.engine.serializers import WriteOnceMixin
 from cvat.apps.quality_control import models
+from cvat.apps.quality_control.attribute_comparators import (
+    format_attribute_comparator_names,
+    get_attribute_comparator_names,
+)
 from cvat.apps.quality_control.attribute_comparison import (
     attribute_comparison_may_compare,
     normalize_attribute_comparison,
@@ -265,6 +270,38 @@ _INHERITED_REQUIREMENT_FIELDS = (
 )
 
 
+class AttributeComparisonDefaultSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField(required=False, allow_null=True)
+    comparator = serializers.ChoiceField(
+        choices=get_attribute_comparator_names(),
+        required=False,
+    )
+    threshold = serializers.FloatField(required=False, min_value=0, max_value=1)
+
+
+class AttributeComparisonRuleSerializer(serializers.Serializer):
+    spec_id = serializers.IntegerField(
+        required=True,
+        help_text="AttributeSpec id to override.",
+    )
+    enabled = serializers.BooleanField(required=True)
+    comparator = serializers.ChoiceField(
+        choices=get_attribute_comparator_names(),
+        required=False,
+    )
+    threshold = serializers.FloatField(required=False, min_value=0, max_value=1)
+
+
+class AttributeComparisonSerializer(serializers.Serializer):
+    default = AttributeComparisonDefaultSerializer(required=False)
+    rules = AttributeComparisonRuleSerializer(many=True, required=False)
+
+
+@extend_schema_field(AttributeComparisonSerializer)
+class AttributeComparisonField(serializers.JSONField):
+    pass
+
+
 # TODO: try to split into different types per annotation type?
 class QualityRequirementSerializer(serializers.ModelSerializer):
     settings_id = serializers.PrimaryKeyRelatedField(
@@ -327,6 +364,15 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
         help_text="Enables or disables annotation group checks",
+    )
+    attribute_comparison = AttributeComparisonField(
+        required=False,
+        allow_null=True,
+        help_text=(
+            "Incremental attribute comparison settings. The default rule applies to "
+            "attributes without an override; rules override behavior for individual "
+            "AttributeSpec ids."
+        ),
     )
     effective = serializers.SerializerMethodField(read_only=True)
 
@@ -478,11 +524,14 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                     )
 
             comparator = default_rule.get("comparator")
-            if comparator is not None and comparator not in {"exact", "levenshtein"}:
+            if comparator is not None and comparator not in get_attribute_comparator_names():
                 raise serializers.ValidationError(
                     {
                         "default": {
-                            "comparator": "Unsupported comparator. Use 'exact' or 'levenshtein'."
+                            "comparator": (
+                                "Unsupported comparator. Use "
+                                f"{format_attribute_comparator_names()}."
+                            )
                         }
                     }
                 )
@@ -554,13 +603,14 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 )
 
             comparator = rule.get("comparator")
-            if comparator is not None and comparator not in {"exact", "levenshtein"}:
+            if comparator is not None and comparator not in get_attribute_comparator_names():
                 raise serializers.ValidationError(
                     {
                         "rules": {
                             index: {
                                 "comparator": (
-                                    "Unsupported comparator. Use 'exact' or 'levenshtein'."
+                                    "Unsupported comparator. Use "
+                                    f"{format_attribute_comparator_names()}."
                                 )
                             }
                         }

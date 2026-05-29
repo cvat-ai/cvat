@@ -7576,6 +7576,86 @@ components:
       - mutable
       - name
       - values
+    AttributeComparison:
+      type: object
+      properties:
+        default:
+          $ref: '#/components/schemas/AttributeComparisonDefault'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeComparisonRule'
+    AttributeComparisonDefault:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          nullable: true
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+    AttributeComparisonDefaultRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          nullable: true
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+    AttributeComparisonRequest:
+      type: object
+      properties:
+        default:
+          $ref: '#/components/schemas/AttributeComparisonDefaultRequest'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeComparisonRuleRequest'
+    AttributeComparisonRule:
+      type: object
+      properties:
+        spec_id:
+          type: integer
+          description: AttributeSpec id to override.
+        enabled:
+          type: boolean
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - enabled
+      - spec_id
+    AttributeComparisonRuleRequest:
+      type: object
+      properties:
+        spec_id:
+          type: integer
+          description: AttributeSpec id to override.
+        enabled:
+          type: boolean
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - enabled
+      - spec_id
     AttributeRequest:
       type: object
       properties:
@@ -7902,6 +7982,14 @@ components:
           type: string
           format: uri
           readOnly: true
+    ComparatorEnum:
+      enum:
+      - exact
+      - levenshtein
+      type: string
+      description: |-
+        * `exact` - exact
+        * `levenshtein` - levenshtein
     ConsensusMergeCreateRequest:
       type: object
       properties:
@@ -10545,53 +10633,12 @@ components:
           description: |
             Use only the visible part of the masks and polygons in comparisons
         attribute_comparison:
-          type: object
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonRequest'
           nullable: true
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-          properties:
-            default:
-              type: object
-              properties:
-                enabled:
-                  type: boolean
-                  nullable: true
-                  description: Default comparison state for attributes without
-                    explicit rules. Null means inherit from parent requirement.
-                comparator:
-                  type: string
-                  enum:
-                    - exact
-                    - levenshtein
-                threshold:
-                  type: number
-                  format: double
-                  maximum: 1
-                  minimum: 0
-            rules:
-              type: array
-              items:
-                type: object
-                required:
-                  - spec_id
-                  - enabled
-                properties:
-                  spec_id:
-                    type: integer
-                    description: AttributeSpec id to override.
-                  enabled:
-                    type: boolean
-                  comparator:
-                    type: string
-                    enum:
-                      - exact
-                      - levenshtein
-                  threshold:
-                    type: number
-                    format: double
-                    maximum: 1
-                    minimum: 0
         empty_is_annotated:
           type: boolean
           nullable: true
@@ -11297,53 +11344,12 @@ components:
           description: |
             Use only the visible part of the masks and polygons in comparisons
         attribute_comparison:
-          type: object
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparison'
           nullable: true
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-          properties:
-            default:
-              type: object
-              properties:
-                enabled:
-                  type: boolean
-                  nullable: true
-                  description: Default comparison state for attributes without
-                    explicit rules. Null means inherit from parent requirement.
-                comparator:
-                  type: string
-                  enum:
-                    - exact
-                    - levenshtein
-                threshold:
-                  type: number
-                  format: double
-                  maximum: 1
-                  minimum: 0
-            rules:
-              type: array
-              items:
-                type: object
-                required:
-                  - spec_id
-                  - enabled
-                properties:
-                  spec_id:
-                    type: integer
-                    description: AttributeSpec id to override.
-                  enabled:
-                    type: boolean
-                  comparator:
-                    type: string
-                    enum:
-                      - exact
-                      - levenshtein
-                  threshold:
-                    type: number
-                    format: double
-                    maximum: 1
-                    minimum: 0
         empty_is_annotated:
           type: boolean
           nullable: true
@@ -11527,53 +11533,12 @@ components:
           description: |
             Use only the visible part of the masks and polygons in comparisons
         attribute_comparison:
-          type: object
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparison'
           nullable: true
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-          properties:
-            default:
-              type: object
-              properties:
-                enabled:
-                  type: boolean
-                  nullable: true
-                  description: Default comparison state for attributes without
-                    explicit rules. Null means inherit from parent requirement.
-                comparator:
-                  type: string
-                  enum:
-                    - exact
-                    - levenshtein
-                threshold:
-                  type: number
-                  format: double
-                  maximum: 1
-                  minimum: 0
-            rules:
-              type: array
-              items:
-                type: object
-                required:
-                  - spec_id
-                  - enabled
-                properties:
-                  spec_id:
-                    type: integer
-                    description: AttributeSpec id to override.
-                  enabled:
-                    type: boolean
-                  comparator:
-                    type: string
-                    enum:
-                      - exact
-                      - levenshtein
-                  threshold:
-                    type: number
-                    format: double
-                    maximum: 1
-                    minimum: 0
         empty_is_annotated:
           type: boolean
           nullable: true
@@ -11744,53 +11709,12 @@ components:
           description: |
             Use only the visible part of the masks and polygons in comparisons
         attribute_comparison:
-          type: object
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonRequest'
           nullable: true
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-          properties:
-            default:
-              type: object
-              properties:
-                enabled:
-                  type: boolean
-                  nullable: true
-                  description: Default comparison state for attributes without
-                    explicit rules. Null means inherit from parent requirement.
-                comparator:
-                  type: string
-                  enum:
-                    - exact
-                    - levenshtein
-                threshold:
-                  type: number
-                  format: double
-                  maximum: 1
-                  minimum: 0
-            rules:
-              type: array
-              items:
-                type: object
-                required:
-                  - spec_id
-                  - enabled
-                properties:
-                  spec_id:
-                    type: integer
-                    description: AttributeSpec id to override.
-                  enabled:
-                    type: boolean
-                  comparator:
-                    type: string
-                    enum:
-                      - exact
-                      - levenshtein
-                  threshold:
-                    type: number
-                    format: double
-                    maximum: 1
-                    minimum: 0
         empty_is_annotated:
           type: boolean
           nullable: true

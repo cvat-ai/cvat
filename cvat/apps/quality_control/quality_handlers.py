@@ -8,7 +8,6 @@ import itertools
 import json
 from abc import ABC, abstractmethod
 from collections import Counter
-from collections.abc import Mapping
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +17,7 @@ import numpy as np
 
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.annotation_matching import Comparator, LineMatcher, MatchingResults
+from cvat.apps.quality_control.attribute_comparators import match_attribute_values
 from cvat.apps.quality_control.attribute_comparison import (
     CVAT_ATTRIBUTE_SPEC_IDS_ATTR,
     attribute_comparison_may_compare,
@@ -566,30 +566,6 @@ class RequirementHandler(ABC):
     def _empty_result(self) -> RequirementFrameResult:
         return RequirementFrameResult(summary=self._make_empty_frame_summary())
 
-    @staticmethod
-    def _levenshtein_similarity(left: Any, right: Any) -> float:
-        left = str(left)
-        right = str(right)
-
-        if left == right:
-            return 1.0
-
-        if not left or not right:
-            return 0.0
-
-        previous_row = list(range(len(right) + 1))
-        for left_index, left_char in enumerate(left, start=1):
-            current_row = [left_index]
-            for right_index, right_char in enumerate(right, start=1):
-                insert_cost = current_row[right_index - 1] + 1
-                delete_cost = previous_row[right_index] + 1
-                replace_cost = previous_row[right_index - 1] + (left_char != right_char)
-                current_row.append(min(insert_cost, delete_cost, replace_cost))
-            previous_row = current_row
-
-        distance = previous_row[-1]
-        return 1 - distance / max(len(left), len(right))
-
     def _match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
         attribute_comparison = normalize_attribute_comparison(
             getattr(self.requirement, "attribute_comparison", None),
@@ -629,19 +605,12 @@ class RequirementHandler(ABC):
                 b_extra.append(attr_name)
             elif attr_b is notfound:
                 a_extra.append(attr_name)
-            elif self._attribute_values_match(attr_a, attr_b, rule):
+            elif match_attribute_values(attr_a, attr_b, rule=rule):
                 matches.append(attr_name)
             else:
                 mismatches.append(attr_name)
 
         return matches, mismatches, a_extra, b_extra
-
-    def _attribute_values_match(self, left: Any, right: Any, rule: Mapping[str, Any]) -> bool:
-        comparator = rule.get("comparator", "exact")
-        if comparator == "levenshtein":
-            return self._levenshtein_similarity(left, right) >= rule.get("threshold", 1.0)
-
-        return left == right
 
     def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset) -> AnnotationId:
         """Convert Datumaro annotation to AnnotationId"""
