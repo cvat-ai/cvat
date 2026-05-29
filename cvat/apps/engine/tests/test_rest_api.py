@@ -99,20 +99,16 @@ def create_db_users(
     extra: bool = True,
 ):
     if admin:
-        group_admin, _ = Group.objects.get_or_create(name="admin")
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
-        user_admin.groups.add(group_admin)
         cls.admin = user_admin
 
     if primary:
-        group_user, _ = Group.objects.get_or_create(name="user")
-        group_annotator, _ = Group.objects.get_or_create(name="worker")
+        group_worker, _ = Group.objects.get_or_create(name="worker")
         user_owner = User.objects.create_user(username="user1", password="user1")
-        user_owner.groups.add(group_user)
         user_assignee = User.objects.create_user(username="user2", password="user2")
-        user_assignee.groups.add(group_annotator)
+        user_assignee.groups.set([group_worker])
         user_annotator = User.objects.create_user(username="user3", password="user3")
-        user_annotator.groups.add(group_annotator)
+        user_annotator.groups.set([group_worker])
         cls.owner = cls.user1 = user_owner
         cls.assignee = cls.user2 = user_assignee
         cls.annotator = cls.user3 = user_annotator
@@ -122,7 +118,6 @@ def create_db_users(
         user_somebody = User.objects.create_user(username="user4", password="user4")
         user_somebody.groups.add(group_somebody)
         user_dummy = User.objects.create_user(username="user5", password="user5")
-        user_dummy.groups.add(group_user)
         cls.somebody = cls.user4 = user_somebody
         cls.user = cls.user5 = user_dummy
 
@@ -7914,13 +7909,15 @@ class ServerShareAPITestCase(ApiTestBase):
         self._test_api_v2_server_share(self.owner)
 
     def test_api_v2_server_share_assignee(self):
-        self._test_api_v2_server_share(self.assignee)
+        response = self._run_api_v2_server_share(self.assignee, "/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v2_server_share_user(self):
         self._test_api_v2_server_share(self.user)
 
     def test_api_v2_server_share_annotator(self):
-        self._test_api_v2_server_share(self.annotator)
+        response = self._run_api_v2_server_share(self.annotator, "/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v2_server_share_somebody(self):
         self._test_api_v2_server_share(self.somebody)
