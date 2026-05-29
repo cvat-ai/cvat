@@ -21,7 +21,7 @@ import '../scss/canvas.scss';
 
 interface Canvas {
     html(): HTMLDivElement;
-    setup(frameData: any, objectStates: any[], zLayer?: number, renderData?: RenderData): void;
+    setup(frameData: any, objectStates: any[], renderData?: RenderData): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     translateFromSVG(points: number[]): number[];
     setupConflictRegions(clientID: number): number[];
@@ -72,8 +72,8 @@ class CanvasImpl implements Canvas {
         return this.view.html();
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer = 0, renderData?: RenderData): void {
-        this.model.setup(frameData, objectStates, zLayer, renderData);
+    public setup(frameData: any, objectStates: any[], renderData?: RenderData): void {
+        this.model.setup(frameData, objectStates, renderData);
     }
 
     public setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void {
