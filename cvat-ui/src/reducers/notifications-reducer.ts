@@ -37,16 +37,16 @@ import { NotificationsState } from '.';
 const shouldLog = (error: Error): boolean => {
     if (error instanceof ServerError) {
         const ignoredCodes = [
-            // 0, // Network Error: may not to be logged on server. Log it here.
+            // 0, Network Error: may not to be logged on server. Log it here.
             400, // client error: not interested
             401, // client error: not interested
             403, // client error: not interested
             404, // client error: not interested
             429, // client error: not interested
             500, // usually logged by server
-            // 502, // Bad Gateway: may not to be logged on server. Log it here.
-            // 503, // Service Unavailable: may not to be logged on server. Log it here.
-            // 504, // Gateway Timeout: may not to be logged on server. Log it here.
+            // 502, Bad Gateway: may not to be logged on server. Log it here.
+            // 503, Service Unavailable: may not to be logged on server. Log it here.
+            // 504, Gateway Timeout: may not to be logged on server. Log it here.
         ];
         return !ignoredCodes.includes(error.code);
     }
