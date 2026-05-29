@@ -9192,7 +9192,6 @@ components:
           format: date-time
           readOnly: true
         contact:
-          type: object
           readOnly: true
         owner:
           allOf:
@@ -9213,8 +9212,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
       required:
       - slug
     PaginatedAccessTokenReadList:
@@ -9965,8 +9963,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -11849,10 +11846,8 @@ components:
           type: string
           readOnly: true
         request:
-          type: object
           readOnly: true
         response:
-          type: object
           readOnly: true
     WebhookRead:
       type: object
