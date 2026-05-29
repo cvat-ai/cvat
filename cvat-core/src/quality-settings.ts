@@ -9,6 +9,7 @@ import serverProxy from './server-proxy';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
 import { fieldsToSnakeCase } from './common';
 import { Camelized } from './type-utils';
+import QualityRequirement from './quality-requirement';
 
 export enum TargetMetric {
     ACCURACY = 'accuracy',
@@ -22,7 +23,7 @@ export enum PointSizeBase {
 }
 
 export type QualitySettingsSaveFields = Partial<Camelized<
-    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions'>
+    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'project_id' | 'descriptions'>
 >>;
 
 export default class QualitySettings {
@@ -31,6 +32,7 @@ export default class QualitySettings {
     #targetMetricThreshold: number;
     #maxValidationsPerJob: number;
     #taskId: number;
+    #projectId: number;
     #iouThreshold: number;
     #oksSigma: number;
     #pointSizeBase: PointSizeBase;
@@ -47,11 +49,13 @@ export default class QualitySettings {
     #emptyIsAnnotated: boolean;
     #jobFilter: string;
     #inherit: boolean;
+    #requirements: QualityRequirement[];
     #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
         this.#taskId = initialData.task_id;
+        this.#projectId = initialData.project_id;
         this.#targetMetric = initialData.target_metric as TargetMetric;
         this.#targetMetricThreshold = initialData.target_metric_threshold;
         this.#maxValidationsPerJob = initialData.max_validations_per_job;
@@ -71,6 +75,9 @@ export default class QualitySettings {
         this.#emptyIsAnnotated = initialData.empty_is_annotated;
         this.#jobFilter = initialData.job_filter || '';
         this.#inherit = initialData.inherit;
+        this.#requirements = (initialData.requirements || []).map((requirement) => (
+            new QualityRequirement(requirement)
+        ));
         this.#descriptions = initialData.descriptions;
     }
 
@@ -80,6 +87,10 @@ export default class QualitySettings {
 
     get taskId(): number {
         return this.#taskId;
+    }
+
+    get projectId(): number {
+        return this.#projectId;
     }
 
     get iouThreshold(): number {
@@ -156,6 +167,10 @@ export default class QualitySettings {
 
     get inherit(): boolean {
         return this.#inherit;
+    }
+
+    get requirements(): QualityRequirement[] {
+        return this.#requirements;
     }
 
     get descriptions(): Record<string, string> {

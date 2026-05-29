@@ -388,6 +388,11 @@ export interface PluginsState {
         };
     },
     components: {
+        qualityControlPage: {
+            tabs: {
+                items: PluginComponent[];
+            };
+        };
         header: {
             userMenu: {
                 items: PluginComponent[];

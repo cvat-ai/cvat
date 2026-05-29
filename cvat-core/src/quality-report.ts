@@ -41,11 +41,23 @@ export interface QualitySummary {
         excluded: number;
         included: number;
     } | null;
+    requirements: {
+        total: number;
+        enabled: number;
+        completed: number;
+        items: {
+            name: string;
+            metric: string;
+            score: number | null;
+            threshold: number;
+        }[];
+    } | null;
 }
 
 export default class QualityReport {
     #id: number;
     #parentID: number;
+    #projectId: number;
     #taskID: number;
     #jobID: number;
     #target: string;
@@ -57,6 +69,7 @@ export default class QualityReport {
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
         this.#parentID = initialData.parent_id;
+        this.#projectId = initialData.project_id;
         this.#taskID = initialData.task_id;
         this.#jobID = initialData.job_id;
         this.#target = initialData.target;
@@ -77,6 +90,10 @@ export default class QualityReport {
 
     get parentID(): number {
         return this.#parentID;
+    }
+
+    get projectId(): number {
+        return this.#projectId;
     }
 
     get taskID(): number {
@@ -139,6 +156,12 @@ export default class QualityReport {
                 notCheckable: this.#summary.jobs.not_checkable,
                 excluded: this.#summary.jobs.excluded,
                 included: this.#summary.jobs.included,
+            } : null,
+            requirements: this.#summary.requirements ? {
+                total: this.#summary.requirements.total,
+                enabled: this.#summary.requirements.enabled,
+                completed: this.#summary.requirements.completed,
+                items: this.#summary.requirements.items,
             } : null,
         };
     }

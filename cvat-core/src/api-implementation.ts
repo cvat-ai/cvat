@@ -32,13 +32,14 @@ import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
-    AnalyticsEventsFilter, QualityConflictsFilter,
+    AnalyticsEventsFilter, QualityConflictsFilter, QualityRequirementsFilter,
     SerializedAsset, ConsensusSettingsFilter, SerializedOrganization,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import AboutData from './about';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
+import QualityRequirement from './quality-requirement';
 import { getFramesMeta } from './frames';
 import ConsensusSettings from './consensus-settings';
 import {
@@ -556,6 +557,41 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
             const settings = settingsList.map((setting) => new QualitySettings({ ...setting, descriptions }));
             return settings;
+        });
+    implementationMixin(
+        cvat.analytics.quality.requirements.get, async (
+            filter: Parameters<CVATCore['analytics']['quality']['requirements']['get']>[0],
+            aggregate?: Parameters<CVATCore['analytics']['quality']['requirements']['get']>[1],
+        ) => {
+            checkFilter(filter, {
+                id: isInteger,
+                settingsId: isInteger,
+                taskId: isInteger,
+                projectId: isInteger,
+                annotationType: isString,
+                enabled: isBoolean,
+                page: isInteger,
+                pageSize: isPageSize,
+                filter: isString,
+                search: isString,
+                sort: isString,
+            });
+
+            const params = fieldsToSnakeCase(filter as QualityRequirementsFilter);
+            const requirementsData = await serverProxy.analytics.quality.requirements.get(params, aggregate);
+            const requirements = Object.assign(
+                requirementsData.map((requirement) => new QualityRequirement({ ...requirement })),
+                { count: requirementsData.count },
+            );
+            return requirements;
+        });
+    implementationMixin(
+        cvat.analytics.quality.requirements.create, async (
+            fields: Parameters<CVATCore['analytics']['quality']['requirements']['create']>[0],
+        ) => {
+            const data = fieldsToSnakeCase(fields);
+            const requirementData = await serverProxy.analytics.quality.requirements.create(data);
+            return new QualityRequirement({ ...requirementData });
         });
     implementationMixin(cvat.analytics.events.export, async (
         filter: AnalyticsEventsFilter,

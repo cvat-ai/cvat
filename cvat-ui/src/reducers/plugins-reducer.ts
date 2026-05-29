@@ -46,6 +46,11 @@ const defaultState: PluginsState = {
         },
     },
     components: {
+        qualityControlPage: {
+            tabs: {
+                items: [],
+            },
+        },
         header: {
             userMenu: {
                 items: [],
