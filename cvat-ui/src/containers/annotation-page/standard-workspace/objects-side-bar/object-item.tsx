@@ -41,6 +41,8 @@ interface OwnProps {
     objectStates: ObjectState[];
     visibleSkeletonElements?: Record<number, number[]>;
     allowSimplifyLifecycle?: boolean;
+    zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
+    zLayerDragging?: boolean;
 }
 
 interface StateToProps {
@@ -451,6 +453,13 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         this.commit();
     };
 
+    private readonly toSpecificLayer = (zOrder: number): void => {
+        const { objectState } = this.props;
+
+        objectState.zOrder = zOrder;
+        this.commit();
+    };
+
     private activate = (activeElementID?: number): void => {
         const {
             objectState, ready, activeControl, activateObject,
@@ -568,6 +577,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             normalizedKeyMap,
             keyMap,
             jobInstance,
+            zLayerDragProps,
+            zLayerDragging,
             visibleSkeletonElements = {},
         } = this.props;
         const elements = visibleSkeletonElements[objectState.clientID as number] ??
@@ -577,6 +588,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             <>
                 <ObjectStateItemComponent
                     jobInstance={jobInstance}
+                    zLayerDragProps={zLayerDragProps}
+                    zLayerDragging={zLayerDragging}
                     activated={activated}
                     objectType={objectState.objectType}
                     shapeType={objectState.shapeType}
@@ -602,6 +615,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     toForeground={this.toForeground}
                     toOneLayerBackward={this.toOneLayerBackward}
                     toOneLayerForward={this.toOneLayerForward}
+                    toSpecificLayer={this.toSpecificLayer}
+                    zOrder={objectState.zOrder}
                     changeColor={this.changeColor}
                     changeLabel={this.changeLabel}
                     edit={this.edit}

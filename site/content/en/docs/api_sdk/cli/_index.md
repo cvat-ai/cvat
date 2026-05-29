@@ -18,6 +18,8 @@ The following subcommands are supported:
   - `create` - create a new project
   - `create-from-backup` - create a project from a backup file
   - `delete` - delete projects
+  - `export-dataset` - export a project as a dataset
+  - `import-dataset` - create project tasks from a dataset
   - `ls` - list all projects
 
 - Tasks:
@@ -360,6 +362,11 @@ see that command's examples for more information.
   ```bash
   cvat-cli project create "new project" --dataset_path coco.zip --dataset_format "COCO 1.0"
   ```
+- Create a project from a dataset and check the import status every second:
+  ```bash
+  cvat-cli project create "new project" --dataset_path coco.zip --dataset_format "COCO 1.0" \
+      --completion_verification_period 1
+  ```
 
 ### Delete
 
@@ -392,6 +399,31 @@ see that command's examples for more information.
   ```bash
   cvat-cli project create-from-backup project_backup.zip
   ```
+
+### Export as a dataset
+
+- Export project with id 103 in the format `CVAT for images 1.1` and save to the file "project.zip":
+  ```bash
+  cvat-cli project export-dataset --format "CVAT for images 1.1" 103 project.zip
+  ```
+- Export project with id 104 in the format `COCO 1.0`, including images, and save to the file "project.zip":
+  ```bash
+  cvat-cli project export-dataset --format "COCO 1.0" --with-images yes 104 project.zip
+  ```
+- Export project with id 105 to the current directory, using the server-generated filename:
+  ```bash
+  cvat-cli project export-dataset --format "CVAT for images 1.1" 105
+  ```
+
+### Create tasks from a dataset
+
+- Create tasks in project with id 106 from the file "coco.zip" in the format `COCO 1.0`:
+  ```bash
+  cvat-cli project import-dataset --format "COCO 1.0" 106 coco.zip
+  ```
+
+  The project must have labels compatible with the dataset being imported. The uploaded dataset
+  must include image data, because the command creates new tasks with images and annotations.
 
 ## Examples - functions
 
