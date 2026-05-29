@@ -254,11 +254,10 @@ class TestGetPostProjectBackup:
 
         self._test_cannot_get_project_backup(user["username"], project["id"])
 
-    # Org worker that in [project:owner, project:assignee] can get project backup.
+    # Org worker that is project owner can get project backup.
     def test_org_worker_can_get_project_backup(
         self,
         find_users,
-        is_project_staff,
         is_org_member,
     ):
         users = find_users(role="worker", exclude_privilege="admin")
@@ -266,7 +265,7 @@ class TestGetPostProjectBackup:
         user, project = next(
             (user, project)
             for user, project in product(users, self.projects)
-            if is_project_staff(user["id"], project["id"])
+            if project["owner"]["id"] == user["id"]
             and project["organization"]
             and is_org_member(user["id"], project["organization"])
         )
