@@ -497,29 +497,35 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
                 models.TaskMode.ANNOTATION,
             ):
-                with tempfile.TemporaryDirectory() as tmp_dir:
+                imm_original = ImageManifestManager(
+                    self._db_data.get_manifest_path(), create_index=False
+                )
+
+                # The task may have been created before we started generating manifests in every task.
+                # If there is no manifest, don't add one to the backup but still set the filtered flag,
+                # so that start_frame and other fields are adjusted properly later.
+                if imm_original.exists:
                     present_frame_nums = {im.frame for im in self._db_data.images.all()}
 
-                    filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
+                    with tempfile.TemporaryDirectory() as tmp_dir:
+                        filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
+                        imm_filtered = ImageManifestManager(
+                            filtered_manifest_path, create_index=False
+                        )
+                        imm_filtered.create(
+                            entry
+                            for frame_num, entry in imm_original
+                            if frame_num in present_frame_nums
+                        )
 
-                    imm_original = ImageManifestManager(
-                        self._db_data.get_manifest_path(), create_index=False
-                    )
-                    imm_filtered = ImageManifestManager(filtered_manifest_path, create_index=False)
-                    imm_filtered.create(
-                        entry
-                        for frame_num, entry in imm_original
-                        if frame_num in present_frame_nums
-                    )
+                        self._write_files(
+                            source_dir=tmp_dir,
+                            zip_object=zip_object,
+                            files=[filtered_manifest_path],
+                            target_dir=target_data_dir,
+                        )
 
-                    self._write_files(
-                        source_dir=tmp_dir,
-                        zip_object=zip_object,
-                        files=[filtered_manifest_path],
-                        target_dir=target_data_dir,
-                    )
-
-                    self._manifest_was_filtered = True
+                self._manifest_was_filtered = True
             case (media_type, mode):
                 assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
