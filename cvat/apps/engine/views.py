@@ -186,7 +186,11 @@ class AnnotationGetThrottleMixin:
             and throttle_scope in api_settings.DEFAULT_THROTTLE_RATES
         ):
             self.throttle_scope = throttle_scope
-            throttles.append(ScopedRateThrottle())
+            throttle = ScopedRateThrottle()
+            # SimpleRateThrottle caches rates on the class at import time.
+            # Keep this instance in sync with override_settings in tests.
+            throttle.THROTTLE_RATES = api_settings.DEFAULT_THROTTLE_RATES
+            throttles.append(throttle)
         return throttles
 
 
