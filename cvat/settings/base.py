@@ -174,6 +174,7 @@ REST_FRAMEWORK = {
     "URL_FORMAT_OVERRIDE": "scheme",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/minute",
