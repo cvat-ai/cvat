@@ -41,10 +41,7 @@ const defaultState: OrganizationState = {
     },
 };
 
-export default function (
-    state: OrganizationState = defaultState,
-    action: AnyAction,
-): OrganizationState {
+export default function (state: OrganizationState = defaultState, action: AnyAction): OrganizationState {
     switch (action.type) {
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION: {
             return {
@@ -87,6 +84,14 @@ export default function (
                 updating: false,
             };
         }
+        case OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS: {
+            const { organization } = action.payload;
+            return {
+                ...state,
+                currentArray: [...state.currentArray, organization],
+                count: state.count + 1,
+            };
+        }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION: {
             return {
                 ...state,
@@ -94,10 +99,13 @@ export default function (
             };
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION_SUCCESS: {
+            const { slug } = action.payload;
             return {
                 ...state,
                 fetching: false,
-                current: null,
+                current: state.current && state.current.slug === slug ? null : state.current,
+                currentArray: state.currentArray.filter((org) => org.slug !== slug),
+                count: state.count ? state.count - 1 : 0,
             };
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION_FAILED: {
@@ -125,7 +133,16 @@ export default function (
                 leaving: true,
             };
         }
-        case OrganizationActionsTypes.LEAVE_ORGANIZATION_SUCCESS:
+        case OrganizationActionsTypes.LEAVE_ORGANIZATION_SUCCESS: {
+            const { slug } = action.payload;
+            return {
+                ...state,
+                leaving: false,
+                current: state.current && state.current.slug === slug ? null : state.current,
+                currentArray: state.currentArray.filter((org) => org.slug !== slug),
+                count: state.count ? state.count - 1 : 0,
+            };
+        }
         case OrganizationActionsTypes.LEAVE_ORGANIZATION_FAILED: {
             return {
                 ...state,
