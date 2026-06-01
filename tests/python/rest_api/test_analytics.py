@@ -293,20 +293,30 @@ class TestGetAuditEvents:
         response = delete_method("admin1", f"projects/{self.project_id}")
         assert response.status_code == HTTPStatus.NO_CONTENT
 
+        request_id = response.headers.get("X-Request-Id")
+        # Items: (filters, expected_count). The cascade delete emits one event per
+        # affected object under the same request id, so wait for all of them.
         event_filters = (
             (
                 (
-                    lambda e: json.loads(e["payload"])["request"]["id"],
-                    [response.headers.get("X-Request-Id")],
+                    (lambda e: json.loads(e["payload"])["request"]["id"], [request_id]),
+                    ("scope", ["delete:project"]),
                 ),
-                ("scope", ["delete:project"]),
+                1,
             ),
             (
                 (
-                    lambda e: json.loads(e["payload"])["request"]["id"],
-                    [response.headers.get("X-Request-Id")],
+                    (lambda e: json.loads(e["payload"])["request"]["id"], [request_id]),
+                    ("scope", ["delete:task"]),
                 ),
-                ("scope", ["delete:task"]),
+                2,
+            ),
+            (
+                (
+                    (lambda e: json.loads(e["payload"])["request"]["id"], [request_id]),
+                    ("scope", ["delete:job"]),
+                ),
+                4,
             ),
         )
 
