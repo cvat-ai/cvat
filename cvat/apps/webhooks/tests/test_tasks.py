@@ -5,10 +5,15 @@
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
+from django.conf import settings
 from django.test import TestCase
 
 from cvat.apps.webhooks.exceptions import WebhookDeliveryError
-from cvat.apps.webhooks.models import Webhook, WebhookDelivery
+from cvat.apps.webhooks.models import (
+    Webhook,
+    WebhookDelivery,
+    WebhookDeliveryOutcomeChoice,
+)
 from cvat.apps.webhooks.tasks import send_webhook
 
 from .utils import make_webhook, payload
@@ -18,6 +23,14 @@ class TestSendWebhook(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         cls.webhook = make_webhook()
+
+    def setUp(self) -> None:
+        job = MagicMock()
+        job.retry_intervals = list(settings.SEND_WEBHOOK_TASK_RETRIES)
+        job.retries_left = len(settings.SEND_WEBHOOK_TASK_RETRIES)
+        patcher = patch("cvat.apps.redis_handler.utils.rq.get_current_job", return_value=job)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     @patch("cvat.apps.webhooks.utils.perform_webhook_request")
     def test_raises_on_5xx(self, perform: MagicMock) -> None:
@@ -55,6 +68,9 @@ class TestSendWebhook(TestCase):
 
         assert delivery is not None
         assert delivery.status_code == HTTPStatus.OK
+        assert delivery.outcome == WebhookDeliveryOutcomeChoice.SUCCESS.value
+        assert delivery.attempt == 1
+        assert delivery.request_duration >= 0
 
     @patch("cvat.apps.webhooks.utils.perform_webhook_request")
     def test_does_not_raise_on_4xx_other_than_408_429(self, perform: MagicMock) -> None:
@@ -64,9 +80,10 @@ class TestSendWebhook(TestCase):
 
         assert delivery is not None
         assert delivery.status_code == HTTPStatus.BAD_REQUEST
+        assert delivery.outcome == WebhookDeliveryOutcomeChoice.FAILURE.value
 
     @patch("cvat.apps.webhooks.utils.perform_webhook_request")
-    def test_5xx_records_delivery_before_raising(self, perform: MagicMock) -> None:
+    def test_5xx_records_failed_delivery_before_raising(self, perform: MagicMock) -> None:
         perform.return_value = (HTTPStatus.INTERNAL_SERVER_ERROR, "boom")
 
         with self.assertRaises(WebhookDeliveryError):
@@ -76,6 +93,9 @@ class TestSendWebhook(TestCase):
         assert delivery.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
         assert delivery.redelivery is False
         assert delivery.event == "update:project"
+        assert delivery.attempt == 1
+        assert delivery.outcome == WebhookDeliveryOutcomeChoice.FAILURE.value
+        assert delivery.request_duration >= 0
 
     @patch("cvat.apps.webhooks.utils.perform_webhook_request")
     def test_inactive_webhook_returns_none_without_request_or_delivery(

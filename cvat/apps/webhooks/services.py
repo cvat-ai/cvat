@@ -2,9 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
+import time
+
 from . import utils
 from .dispatch import add_to_queue
-from .models import Webhook, WebhookDelivery, WebhookTypeChoice
+from .models import (
+    Webhook,
+    WebhookDelivery,
+    WebhookDeliveryOutcomeChoice,
+    WebhookTypeChoice,
+)
 
 
 def select_webhooks(
@@ -42,8 +49,19 @@ def redeliver(webhook: Webhook, data: dict) -> None:
     add_to_queue(webhook=webhook, payload=data, redelivery=True)
 
 
-def send_webhook(webhook: Webhook, payload: dict, redelivery: bool = False) -> WebhookDelivery:
+def send_webhook(
+    webhook: Webhook, payload: dict, attempt: int, redelivery: bool = False
+) -> WebhookDelivery:
+    start = time.perf_counter()
     status_code, response = utils.perform_webhook_request(webhook=webhook, payload=payload)
+    request_duration = int((time.perf_counter() - start) * 1000)
+
+    outcome = (
+        WebhookDeliveryOutcomeChoice.SUCCESS.value
+        if 200 <= status_code < 300
+        else WebhookDeliveryOutcomeChoice.FAILURE.value
+    )
+
     return WebhookDelivery.objects.create(
         webhook_id=webhook.id,
         event=payload["event"],
@@ -52,14 +70,18 @@ def send_webhook(webhook: Webhook, payload: dict, redelivery: bool = False) -> W
         redelivery=redelivery,
         request=payload,
         response=response,
+        attempt=attempt,
+        outcome=outcome,
+        request_duration=request_duration,
     )
 
 
 def ping(serializer) -> WebhookDelivery:
-    data = {
+    webhook = serializer.instance
+    payload = {
         "event": "ping",
         "webhook": serializer.data,
-        "sender": utils.get_sender(instance=serializer.instance),
+        "sender": utils.get_sender(instance=webhook),
     }
-    delivery = send_webhook(webhook=serializer.instance, payload=data, redelivery=False)
+    delivery = send_webhook(webhook=webhook, payload=payload, attempt=1)
     return delivery

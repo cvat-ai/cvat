@@ -4,6 +4,8 @@
 
 from http import HTTPStatus
 
+from cvat.apps.redis_handler.utils import get_current_job_current_attempt
+
 from . import services
 from .exceptions import WebhookDeliveryError
 from .models import Webhook, WebhookDelivery
@@ -18,7 +20,12 @@ def send_webhook(
     if webhook is None:
         return None
 
-    delivery = services.send_webhook(webhook=webhook, payload=payload, redelivery=redelivery)
+    delivery = services.send_webhook(
+        webhook=webhook,
+        payload=payload,
+        attempt=get_current_job_current_attempt(),
+        redelivery=redelivery,
+    )
 
     if delivery.status_code >= 500 or delivery.status_code in (
         HTTPStatus.REQUEST_TIMEOUT,
