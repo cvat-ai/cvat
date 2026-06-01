@@ -14,7 +14,7 @@ def get_class_from_module(module_path: str | Path, class_name: str) -> type | No
     return klass
 
 
-def get_current_job_current_attempt() -> int:
+def get_current_job_attempt() -> int:
     job = rq.get_current_job()
 
     if job is None:

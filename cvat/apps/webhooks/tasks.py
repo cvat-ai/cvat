@@ -4,7 +4,7 @@
 
 from http import HTTPStatus
 
-from cvat.apps.redis_handler.utils import get_current_job_current_attempt
+from cvat.apps.redis_handler.utils import get_current_job_attempt
 
 from . import services
 from .exceptions import WebhookDeliveryError
@@ -23,7 +23,7 @@ def send_webhook(
     delivery = services.send_webhook(
         webhook=webhook,
         payload=payload,
-        attempt=get_current_job_current_attempt(),
+        attempt=get_current_job_attempt(),
         redelivery=redelivery,
     )
 
