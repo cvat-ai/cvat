@@ -72,6 +72,12 @@ class RedisHandlerConfig(AppConfig):
     name = "cvat.apps.redis_handler"
 
     def ready(self) -> None:
+        from . import default_settings
+
+        for key in dir(default_settings):
+            if key.isupper() and not hasattr(settings, key):
+                setattr(settings, key, getattr(default_settings, key))
+
         from cvat.apps.iam.permissions import load_app_iam_rules
 
         load_app_iam_rules(self)
