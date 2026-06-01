@@ -11,7 +11,7 @@ import zipfile
 from collections.abc import Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Iterator, Any, Generator
+from typing import Any, Generator, Iterator
 
 import PIL.Image
 
@@ -257,7 +257,9 @@ class TaskDataset:
 
         if delete_finished_chunks:
             with (
-                tempfile.TemporaryDirectory(prefix=f"cvat-task-{self._task.id}-chunks-") as temp_dir,
+                tempfile.TemporaryDirectory(
+                    prefix=f"cvat-task-{self._task.id}-chunks-"
+                ) as temp_dir,
                 ThreadPoolExecutor(max_workers=1) as pool,
             ):
                 yield self._iter_samples_from_chunks(
