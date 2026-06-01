@@ -2772,6 +2772,22 @@ class TestGetTaskPreview:
 
         self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+    def test_can_get_readable_error_in_task_without_data(self, admin_user, fxt_test_name):
+        with make_api_client(admin_user) as api_client:
+            task_id = api_client.tasks_api.create(
+                task_write_request=models.TaskWriteRequest(name=fxt_test_name)
+            )[0].id
+
+            api_client.tasks_api.create_data(task_id, upload_start=True)
+
+            preview_response = api_client.tasks_api.retrieve_preview(
+                task_id, _parse_response=False, _check_status=False
+            )[1]
+            assert preview_response.status == HTTPStatus.NOT_FOUND
+            assert preview_response.data == b'"Task has no media"'
+
 
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
