@@ -9248,6 +9248,14 @@ components:
         contact: {}
       required:
       - slug
+    OutcomeEnum:
+      enum:
+      - success
+      - failure
+      type: string
+      description: |-
+        * `success` - SUCCESS
+        * `failure` - FAILURE
     PaginatedAccessTokenReadList:
       type: object
       required:
@@ -11867,6 +11875,20 @@ components:
         redelivery:
           type: boolean
           readOnly: true
+        attempt:
+          type: integer
+          readOnly: true
+          nullable: true
+        outcome:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/OutcomeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        request_duration:
+          type: integer
+          readOnly: true
+          nullable: true
         created_date:
           type: string
           format: date-time
