@@ -717,6 +717,7 @@ SPECTACULAR_SETTINGS = {
         "TranscriptionGranularity": "cvat.apps.quality_control.models.TranscriptionGranularity",
         "TranscriptionQualityMetric": "cvat.apps.quality_control.models.TranscriptionQualityMetric",
         "TranscriptionAlignMode": "cvat.apps.quality_control.models.TranscriptionAlignMode",
+        "TranscriptionNormalizerPreset": "cvat.apps.quality_control.models.TranscriptionNormalizerPreset",
         "TranscriptionGroupingStrategy": "cvat.apps.quality_control.models.TranscriptionGroupingStrategy",
     },
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,

@@ -17,7 +17,7 @@ import {
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
     OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken,
-    ApiTokensFilter, SerializedTranscriptionRequirement,
+    ApiTokensFilter, SerializedTranscriptionRequirement, SerializedTranscriptionSubstitution,
 } from 'cvat-core/src/server-response-types';
 import { ApiTokenModifiableFields } from 'cvat-core/src/server-request-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
@@ -33,6 +33,7 @@ import QualitySettings, {
     TranscriptionMetric,
     TranscriptionAlignMode,
     TranscriptionGroupingStrategy,
+    TranscriptionNormalizerPreset,
     METRICS_SUPPORTING_THRESHOLD,
 } from 'cvat-core/src/quality-settings';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
@@ -125,6 +126,7 @@ export {
     TranscriptionMetric,
     TranscriptionAlignMode,
     TranscriptionGroupingStrategy,
+    TranscriptionNormalizerPreset,
     METRICS_SUPPORTING_THRESHOLD,
     AnnotationConflict,
     ConflictSeverity,
@@ -158,6 +160,7 @@ export type {
     OrganizationMembersFilter,
     QualitySettingsSaveFields,
     SerializedTranscriptionRequirement,
+    SerializedTranscriptionSubstitution,
     AnalyticsEventsFilter,
     MinimalShape,
     InteractorResults,

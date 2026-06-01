@@ -69,6 +69,7 @@ from cvat.apps.quality_control.models import (
     TranscriptionAlignMode,
     TranscriptionGranularity,
     TranscriptionGroupingStrategy,
+    TranscriptionNormalizerPreset,
     TranscriptionQualityMetric,
 )
 from cvat.apps.quality_control.rq import QualityRequestId
@@ -287,6 +288,9 @@ class TranscriptionRequirement(ReportNode):
     metric: TranscriptionQualityMetric
     alignment: TranscriptionAlignMode
     metric_threshold: float | None
+    normalizer_preset: TranscriptionNormalizerPreset
+    substitutions: list[dict]
+    substitutions_hash: str
     grouping_strategy: TranscriptionGroupingStrategy
     grouping_separator: str
     grouping_attribute: AttributePath | None
@@ -296,6 +300,7 @@ class TranscriptionRequirement(ReportNode):
         TranscriptionGranularity,
         TranscriptionQualityMetric,
         TranscriptionAlignMode,
+        TranscriptionNormalizerPreset,
         TranscriptionGroupingStrategy,
     )
 
@@ -317,6 +322,9 @@ class TranscriptionRequirement(ReportNode):
             metric=TranscriptionQualityMetric(d["metric"]),
             alignment=TranscriptionAlignMode(d["alignment"]),
             metric_threshold=d.get("metric_threshold"),
+            normalizer_preset=TranscriptionNormalizerPreset(d["normalizer_preset"]),
+            substitutions=list(d.get("substitutions") or []),
+            substitutions_hash=d.get("substitutions_hash", ""),
             grouping_strategy=TranscriptionGroupingStrategy(d["grouping_strategy"]),
             grouping_separator=d["grouping_separator"],
             grouping_attribute=(
@@ -456,6 +464,9 @@ class ComparisonParameters(ReportNode):
                     "metric": requirement.metric,
                     "alignment": requirement.alignment,
                     "metric_threshold": requirement.metric_threshold,
+                    "normalizer_preset": requirement.normalizer_preset,
+                    "substitutions": list(requirement.substitutions or []),
+                    "substitutions_hash": requirement.substitutions_hash,
                     "grouping_strategy": requirement.grouping_strategy,
                     "grouping_separator": requirement.grouping_separator,
                     "grouping_attribute": (
@@ -2727,7 +2738,7 @@ class DatasetComparator:
                     align=audio_qa.AlignMode(requirement.alignment),
                     metric=audio_qa.Metric(requirement.metric),
                     threshold=requirement.metric_threshold,
-                    normalizer=audio_qa.NormalizerConfig(mode=audio_qa.NormalizerMode.BASIC),
+                    normalizer=self._build_normalizer_config(requirement),
                     grouping=audio_qa.GroupingConfig(
                         strategy=audio_qa.GroupingStrategy(requirement.grouping_strategy),
                         attribute=(
@@ -2752,6 +2763,49 @@ class DatasetComparator:
             transcriptions=audio_reqs,
         )
         return gt_audio, ds_audio, audio_settings, active_requirements
+
+    @staticmethod
+    def _build_normalizer_config(
+        requirement: TranscriptionRequirement,
+    ) -> audio_qa.NormalizerConfig:
+        """Resolve the chosen preset into a concrete step list, then append a
+        `regex_substitute` step for the project-specific substitutions (if
+        any). Library treats `mode` and `steps` as mutually exclusive, so
+        layering = switch to `CUSTOM` with the assembled steps."""
+
+        from cvat.apps.quality_control.audio.normalization import (
+            BASIC_STACK,
+            SUPPORTED_LANGS,
+            lang_preset,
+        )
+
+        preset = requirement.normalizer_preset
+        if preset == TranscriptionNormalizerPreset.NONE:
+            steps: list[audio_qa.StepConfig] = []
+        elif preset == TranscriptionNormalizerPreset.BASIC:
+            steps = list(BASIC_STACK)
+        elif preset in SUPPORTED_LANGS:
+            steps = list(lang_preset(preset).steps)
+        else:
+            raise AssertionError(f"unknown normalizer preset {preset!r}")
+
+        if requirement.substitutions:
+            # All entries are regexes; a literal is its escaped form. `anchored`
+            # wraps the pattern in word boundaries (opt-in, off by default —
+            # useless / harmful for space-less scripts like CJK).
+            patterns: list[tuple[str, str]] = []
+            for entry in requirement.substitutions:
+                pattern = entry["pattern"]
+                if entry.get("anchored", False):
+                    pattern = rf"\b(?:{pattern})\b"
+                patterns.append((pattern, entry["replacement"]))
+            steps.append(
+                audio_qa.StepConfig(name="regex_substitute", options={"patterns": patterns})
+            )
+
+        if steps:
+            return audio_qa.NormalizerConfig(mode=audio_qa.NormalizerMode.CUSTOM, steps=steps)
+        return audio_qa.NormalizerConfig(mode=audio_qa.NormalizerMode.NONE)
 
     def _recover_interval_matches(
         self,

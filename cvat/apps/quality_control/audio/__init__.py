@@ -31,7 +31,10 @@ from .data import (
 from .interval_matching import match_intervals
 from .normalization import (
     BASIC_STACK,
+    LANG_PRESETS,
+    SUPPORTED_LANGS,
     Normalizer,
+    lang_preset,
     register_step,
     step_available,
 )
@@ -82,6 +85,9 @@ __all__ = [
     # normalization
     "Normalizer",
     "BASIC_STACK",
+    "LANG_PRESETS",
+    "SUPPORTED_LANGS",
+    "lang_preset",
     "register_step",
     "step_available",
     #

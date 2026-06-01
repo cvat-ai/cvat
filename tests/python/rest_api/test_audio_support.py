@@ -959,6 +959,120 @@ class TestAudioQuality:
             assert attr_stats["valid_count"] == int(attr_stats["attribute"][0] != other_attr.name)
             assert attr_stats["total_count"] == 1
 
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_can_round_trip_all_transcription_config_fields(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": fxt_test_name,
+                "labels": [
+                    {
+                        "name": "speaker1",
+                        "attributes": [
+                            {
+                                "name": "transcription",
+                                "input_type": "text",
+                                "values": [],
+                                "mutable": True,
+                            },
+                            {
+                                "name": "speaker_tag",
+                                "input_type": "text",
+                                "values": [],
+                                "mutable": True,
+                            },
+                        ],
+                    },
+                ],
+            },
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
+
+        labels = task.get_labels()
+        label = labels[0]
+        transcription_attr = next(a for a in label.attributes if a.name == "transcription")
+        grouping_attr = next(a for a in label.attributes if a.name == "speaker_tag")
+
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+        updated, _ = self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                interval_boundary_tolerance=500,
+                transcription_requirements=[
+                    models.PatchedTranscriptionRequirementRequest(
+                        attribute_id=transcription_attr.id,
+                        granularity="character",
+                        metric="error-rate",
+                        alignment="word",
+                        metric_threshold=0.3,
+                        normalizer_preset="ru",
+                        substitutions=[
+                            {"pattern": "ok", "replacement": "okay", "anchored": True},
+                            {"pattern": r"\d+", "replacement": "NUM", "anchored": False},
+                        ],
+                        grouping_strategy="join",
+                        grouping_separator=" | ",
+                        grouping_attribute_id=grouping_attr.id,
+                        acceptance_threshold=0.4,
+                    )
+                ],
+            ),
+        )
+
+        assert updated.interval_boundary_tolerance == 500
+        assert len(updated.transcription_requirements) == 1
+        req = updated.transcription_requirements[0]
+        assert req.attribute_id == transcription_attr.id
+        assert req.granularity == "character"
+        assert req.metric == "error-rate"
+        assert req.alignment == "word"
+        assert req.metric_threshold == 0.3
+        assert req.normalizer_preset == "ru"
+        assert req.substitutions == [
+            {"pattern": "ok", "replacement": "okay", "anchored": True},
+            {"pattern": r"\d+", "replacement": "NUM", "anchored": False},
+        ]
+        assert req.grouping_strategy == "join"
+        assert req.grouping_separator == " | "
+        assert req.grouping_attribute_id == grouping_attr.id
+        assert req.acceptance_threshold == 0.4
+        # Read-only derived field: non-empty (substitutions present) and stable.
+        assert req.substitutions_hash == _expected_substitutions_hash(req.substitutions)
+        assert req.substitutions_hash
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_substitutions_hash_tracks_substitutions(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        task, _, _, attrs = self._make_transcription_task(fxt_test_name, source_filename)
+        attr = attrs["transcription"]
+
+        # No substitutions → empty-string sentinel.
+        empty, _ = self._set_transcription_requirement(
+            task, attribute_id=attr.id, acceptance_threshold=0.2
+        )
+        assert empty.transcription_requirements[0].substitutions_hash == ""
+
+        # Adding substitutions populates the hash, matching the canonical form.
+        subs = [{"pattern": "ok", "replacement": "okay", "anchored": True}]
+        updated, _ = self._set_transcription_requirement(
+            task, attribute_id=attr.id, substitutions=subs, acceptance_threshold=0.2
+        )
+        first_hash = updated.transcription_requirements[0].substitutions_hash
+        assert first_hash == _expected_substitutions_hash(subs)
+        assert first_hash != ""
+
+        # A different substitution set yields a different hash.
+        changed, _ = self._set_transcription_requirement(
+            task,
+            attribute_id=attr.id,
+            substitutions=[{"pattern": "ok", "replacement": "fine"}],
+            acceptance_threshold=0.2,
+        )
+        assert changed.transcription_requirements[0].substitutions_hash != first_hash
+
     def test_rejects_negative_chunk_threshold(self):
         # metric_threshold has no upper bound (error-rate cost is unbounded),
         # but must be >= 0. The schema bound is enforced client-side.
@@ -968,6 +1082,30 @@ class TestAudioQuality:
                 metric_threshold=-0.5,
                 acceptance_threshold=0.2,
             )
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_rejects_invalid_substitution_regex(self, fxt_test_name: str, source_filename: Path):
+        transcription_attr = self._make_task_with_transcription_attr(fxt_test_name, source_filename)
+        settings = self.client.api_client.quality_api.list_settings(
+            task_id=transcription_attr["task_id"]
+        )[0].results[0]
+
+        _, response = self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                transcription_requirements=[
+                    models.PatchedTranscriptionRequirementRequest(
+                        attribute_id=transcription_attr["id"],
+                        substitutions=[{"pattern": "[", "replacement": "x"}],  # unbalanced
+                        acceptance_threshold=0.2,
+                    )
+                ]
+            ),
+            _check_status=False,
+            _parse_response=False,
+        )
+        assert response.status == 400
+        assert b"Invalid regex" in response.data
 
     @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
     def test_rejects_cross_label_grouping_attribute(
@@ -1030,6 +1168,28 @@ class TestAudioQuality:
         )
         assert response.status == 400
         assert b"same label" in response.data
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_substitutions_make_transcriptions_equal(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # The substitution {"different": "test"} rewrites the DS string to
+        # match GT, so the otherwise-mismatching pair (see
+        # test_transcription_matching_affects_overall_matches) is satisfied.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="test text",
+            ds_text="different text",
+            granularity="word",
+            grouping_strategy="filter",
+            substitutions=[{"pattern": "different", "replacement": "test"}],
+            acceptance_threshold=0.2,
+        )
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        assert report["comparison_summary"]["annotations"]["valid_count"] == 1
+        assert report["comparison_summary"]["annotations"]["total_count"] == 1
 
     def _make_task_with_transcription_attr(self, fxt_test_name: str, source_filename: Path) -> dict:
         """Spin up a minimal audio task with a single text attribute named
@@ -1572,3 +1732,75 @@ class TestAudioQuality:
         param_ids = {r["id"] for r in report["parameters"]["transcription_requirements"]}
         assert summary["requirement_id"] in param_ids
         assert summary["requirement_id"] > 0
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_custom_substitutions_layer_on_basic_preset(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # Substitutions apply AFTER the chosen preset, to BOTH sides. `basic`
+        # casefolds "YEAH Boss" → "yeah boss" first, so the regex patterns must
+        # be lower-case to match. Patterns are chosen absent from the GT wording
+        # (they rewrite both ref and hyp), so only the DS text is remapped.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="yes sir",
+            ds_text="YEAH Boss",
+            granularity="word",
+            grouping_strategy="filter",
+            normalizer_preset="basic",
+            substitutions=[
+                {"pattern": "yeah", "replacement": "yes"},
+                {"pattern": "boss", "replacement": "sir"},
+            ],
+            acceptance_threshold=0.2,
+        )
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        summary = self._transcription_summary(report)
+        assert summary["error_rate"] == 0.0
+        assert summary["valid_count"] == 1
+        assert summary["hits"] == 2  # yes, sir
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_anchored_substitution_respects_word_boundaries(
+        self, fxt_test_name: str, source_filename: Path
+    ):
+        # `anchored` wraps the pattern in \b...\b. "ok" → "okay" then matches
+        # only the standalone DS word, NOT the "ok" inside GT's "okay" — so the
+        # substitution can't corrupt the reference (the plain-replace footgun).
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="okay deal",
+            ds_text="ok deal",
+            granularity="word",
+            grouping_strategy="filter",
+            substitutions=[{"pattern": "ok", "replacement": "okay", "anchored": True}],
+            acceptance_threshold=0.2,
+        )
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        summary = self._transcription_summary(report)
+        assert summary["error_rate"] == 0.0  # GT "okay" untouched; DS "ok"→"okay"
+        assert summary["hits"] == 2  # okay, deal
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_regex_substitution_normalizes_pattern(self, fxt_test_name: str, source_filename: Path):
+        # A regex pattern collapses any digit run to a placeholder, so the two
+        # different numbers normalize to the same token and the pair matches.
+        report = self._score_single_pair(
+            fxt_test_name,
+            source_filename,
+            gt_text="call 911",
+            ds_text="call 112",
+            granularity="word",
+            grouping_strategy="filter",
+            substitutions=[{"pattern": r"\d+", "replacement": "NUM"}],
+            acceptance_threshold=0.2,
+        )
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {}
+        summary = self._transcription_summary(report)
+        assert summary["error_rate"] == 0.0  # both → "call NUM"
+        assert summary["hits"] == 2
