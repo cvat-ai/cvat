@@ -14,7 +14,16 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
+from cvat.apps.engine.models import (
+    AttributeSpec,
+    Job,
+    JobType,
+    Project,
+    ShapeType,
+    Task,
+    TimestampedModel,
+    User,
+)
 
 if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
@@ -76,9 +85,14 @@ class QualityReportTarget(str, Enum):
 
 
 class QualityTargetMetricType(str, Enum):
+    # Higher-is-better options
     ACCURACY = "accuracy"
     PRECISION = "precision"
     RECALL = "recall"
+
+    # Lower-is-better options
+    # TODO: rename to error_rate when migrating to generalized quality
+    TRANSCRIPTION_ERROR_RATE = "transcription_error_rate"
 
     def __str__(self) -> str:
         return self.value
@@ -203,10 +217,17 @@ class AnnotationConflict(models.Model):
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
 
     annotation_ids: Sequence[AnnotationId]
+    attributes = models.JSONField(default=None, null=True)
 
     @property
     def organization_id(self):
         return self.report.organization_id
+
+    def save(self, *args, **kwargs):
+        if self.attributes:
+            assert isinstance(self.attributes, list)
+
+        return super().save(*args, **kwargs)
 
 
 class AnnotationType(str, Enum):
@@ -249,6 +270,55 @@ class AnnotationId(models.Model):
 class PointSizeBase(str, Enum):
     IMAGE_SIZE = "image_size"
     GROUP_BBOX_SIZE = "group_bbox_size"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class TranscriptionGranularity(str, Enum):
+    WORD = "word"
+    CHARACTER = "character"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class TranscriptionQualityMetric(str, Enum):
+    EQUALITY = "equality"
+    ERROR_RATE = "error-rate"
+    NORMALIZED_LEV = "normalized-lev"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class TranscriptionAlignMode(str, Enum):
+    CHAR = "char"
+    WORD = "word"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class TranscriptionGroupingStrategy(str, Enum):
+    FILTER = "filter"
+    JOIN = "join"
 
     def __str__(self) -> str:
         return self.value
@@ -314,6 +384,8 @@ class QualitySettings(TimestampedModel):
 
     max_validations_per_job = models.PositiveIntegerField(default=0)
 
+    transcription_requirements: models.manager.RelatedManager[TranscriptionQualityRequirement]
+
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -343,7 +415,11 @@ class QualitySettings(TimestampedModel):
         return {k: v for k, v in default_settings.items() if k in existing_fields}
 
     def to_dict(self):
-        return model_to_dict(self)
+        d = model_to_dict(self)
+        d["transcription_requirements"] = [
+            r.to_dict() for r in self.transcription_requirements.all()
+        ]
+        return d
 
     @property
     def organization_id(self):
@@ -359,3 +435,91 @@ class QualitySettings(TimestampedModel):
         from .quality_reports import TaskQualityCalculator
 
         return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())
+
+
+class TranscriptionQualityRequirement(models.Model):
+    settings = models.ForeignKey(
+        QualitySettings,
+        on_delete=models.CASCADE,
+        related_name="transcription_requirements",
+        related_query_name="transcription_requirement",
+        null=False,
+        blank=False,
+    )
+
+    attribute = models.ForeignKey(
+        AttributeSpec,
+        on_delete=(
+            # Users should not lose their settings if an attribute is deleted.
+            # Conflicting requirements just become disabled.
+            models.SET_NULL
+        ),
+        null=True,
+        blank=True,
+    )
+
+    granularity = models.CharField(
+        max_length=32,
+        choices=TranscriptionGranularity.choices(),
+        default=TranscriptionGranularity.WORD,
+    )
+
+    metric = models.CharField(
+        max_length=32,
+        choices=TranscriptionQualityMetric.choices(),
+        default=TranscriptionQualityMetric.EQUALITY,
+    )
+
+    alignment = models.CharField(
+        max_length=32,
+        choices=TranscriptionAlignMode.choices(),
+        default=TranscriptionAlignMode.CHAR,
+    )
+
+    metric_threshold = models.FloatField(null=True, default=None)
+
+    grouping_strategy = models.CharField(
+        max_length=32,
+        choices=TranscriptionGroupingStrategy.choices(),
+        default=TranscriptionGroupingStrategy.JOIN,
+    )
+    grouping_separator = models.CharField(max_length=16, default=" ")
+    grouping_attribute = models.ForeignKey(
+        AttributeSpec,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    # TODO: replace with requirement acceptance threshold in gs/generalized_quality
+    # Currently, it would conflict with target_metric_threshold, which is used for
+    # intervals.
+    acceptance_threshold = models.FloatField()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="transcription_quality_requirement_threshold_is_valid",
+                condition=(
+                    models.Q(acceptance_threshold__gte=0) & models.Q(acceptance_threshold__lte=1)
+                ),
+            ),
+            models.CheckConstraint(
+                name="transcription_quality_requirement_chunk_threshold_is_valid",
+                # No upper bound: error-rate cost is unbounded (can exceed 1).
+                condition=(
+                    models.Q(metric_threshold__isnull=True) | models.Q(metric_threshold__gte=0)
+                ),
+            ),
+            models.UniqueConstraint(
+                name="transcription_quality_requirement_attr_unique_per_settings",
+                fields=["settings_id", "attribute_id"],
+            ),
+        ]
+
+    def to_dict(self):
+        d = model_to_dict(self, exclude=("settings"))
+        d["attribute_id"] = d.pop("attribute")
+        d["grouping_attribute_id"] = d.pop("grouping_attribute")
+        return d

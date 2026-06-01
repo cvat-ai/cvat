@@ -714,6 +714,10 @@ SPECTACULAR_SETTINGS = {
         "QualityTargetMetric": "cvat.apps.quality_control.models.QualityTargetMetricType",
         "QualityPointSizeBase": "cvat.apps.quality_control.models.PointSizeBase",
         "QualityReportTarget": "cvat.apps.quality_control.models.QualityReportTarget",
+        "TranscriptionGranularity": "cvat.apps.quality_control.models.TranscriptionGranularity",
+        "TranscriptionQualityMetric": "cvat.apps.quality_control.models.TranscriptionQualityMetric",
+        "TranscriptionAlignMode": "cvat.apps.quality_control.models.TranscriptionAlignMode",
+        "TranscriptionGroupingStrategy": "cvat.apps.quality_control.models.TranscriptionGroupingStrategy",
     },
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
     # some libraries (e.g. drf-nested-routers) use "_pk" suffixed path variables.

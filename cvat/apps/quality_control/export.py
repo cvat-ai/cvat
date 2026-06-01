@@ -101,6 +101,9 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
     elif db_report.job:
         for frame_result in serialized_data["frame_results"].values():
             for conflict in frame_result["conflicts"]:
+                if conflict.get("attributes") is None:
+                    conflict.pop("attributes", None)
+
                 for ann_id in conflict["annotation_ids"]:
                     task_id = jobs_to_tasks[ann_id["job_id"]]
                     ann_id["url"] = (
@@ -111,6 +114,9 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
                     )
 
         for conflict in serialized_data["conflicts"]:
+            if conflict.get("attributes") is None:
+                conflict.pop("attributes", None)
+
             for ann_id in conflict["annotation_ids"]:
                 task_id = jobs_to_tasks[ann_id["job_id"]]
                 ann_id["url"] = (

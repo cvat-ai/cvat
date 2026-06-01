@@ -7046,6 +7046,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AnnotationId'
+        attributes:
+          type: array
+          items:
+            type: string
         report_id:
           type: integer
           readOnly: true
@@ -10024,18 +10028,25 @@ components:
           allOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           description: |-
-            The primary metric used for quality estimation
+            The primary metric used for quality estimation. accuracy / precision /
+            recall are higher-is-better and bounded in [0, 1];
+            'transcription_error_rate' is the lower-is-better transcription corpus
+            rate and is unbounded above.
+
 
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `transcription_error_rate` - TRANSCRIPTION_ERROR_RATE
         target_metric_threshold:
           type: number
           format: double
-          maximum: 1
           minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
+            For the lower-is-better 'transcription_error_rate' metric the quality
+            is satisfied when the metric is at or below the threshold; for the other metrics
+            it must be at or above it.
         max_validations_per_job:
           type: integer
           maximum: 2147483647
@@ -10168,6 +10179,10 @@ components:
             accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
+        transcription_requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatchedTranscriptionRequirementRequest'
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
@@ -10231,6 +10246,98 @@ components:
           type: integer
           writeOnly: true
           nullable: true
+    PatchedTranscriptionRequirementRequest:
+      type: object
+      properties:
+        attribute_id:
+          type: integer
+          description: |
+            The transcription (type 'text') attribute to apply the requirement to
+        granularity:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionGranularity'
+          description: |-
+            Output unit of the reported rate. `word` reports WER-family
+            rates, `character` reports CER-family rates.
+
+
+            * `word` - WORD
+            * `character` - CHARACTER
+        metric:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionQualityMetric'
+          description: |-
+            Per-chunk cost function used during alignment.
+            `equality` is hard 0 / 1, `error-rate` is fractional
+            Levenshtein distance, `normalized-lev` is a smoother
+            normalized variant. For `granularity=character` all three
+            degenerate to `equality`.
+
+
+            * `equality` - EQUALITY
+            * `error-rate` - ERROR_RATE
+            * `normalized-lev` - NORMALIZED_LEV
+        alignment:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionAlignMode'
+          description: |-
+            Alignment regime. `char` runs char-level Levenshtein and
+            reconstructs word boundaries afterwards (default; handles
+            arbitrary N-to-M token splits). `word` runs plain
+            token-level Levenshtein (faster, no boundary recovery).
+
+
+            * `char` - CHAR
+            * `word` - WORD
+        metric_threshold:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          description: |
+            Optional per-chunk cost binarization threshold (>= 0).
+            When set, the chunk cost is rounded to 0 / 1 by comparing
+            against this value, turning a soft metric into a binary
+            one. No upper bound: the `error-rate` metric is unbounded
+            (it can exceed 1 when the hypothesis is much longer than
+            the reference). Has no effect when `metric` is `equality`.
+        grouping_strategy:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionGroupingStrategy'
+          description: |-
+            How intervals are grouped before transcription
+            comparison. `filter` scores each matched GT / DS interval
+            pair independently. `join` concatenates all GT and all DS
+            intervals that share the same grouping key (label, plus
+            optional `grouping_attribute_id` value) and scores the
+            resulting pair of strings.
+
+
+            * `filter` - FILTER
+            * `join` - JOIN
+        grouping_separator:
+          type: string
+          minLength: 1
+          description: |
+            Separator inserted between concatenated transcriptions
+            when `grouping_strategy=join`. Defaults to a single space.
+          maxLength: 16
+        grouping_attribute_id:
+          type: integer
+          nullable: true
+          description: |
+            Optional attribute used to group intervals into transcription
+            chunks (e.g. a speaker tag). Must belong to the same label as
+            the transcription attribute. None = group by label only.
+        acceptance_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Per-match error-rate threshold in [0, 1]. A transcription
+            match whose error rate is at or above this value is
+            reported as a mismatching-attributes conflict.
     PatchedUserRequest:
       type: object
       properties:
@@ -10567,6 +10674,9 @@ components:
         recall:
           type: number
           format: double
+        transcription_error_rate:
+          type: number
+          format: double
         tasks:
           allOf:
           - $ref: '#/components/schemas/QualityReportTasksSummary'
@@ -10651,18 +10761,25 @@ components:
           allOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           description: |-
-            The primary metric used for quality estimation
+            The primary metric used for quality estimation. accuracy / precision /
+            recall are higher-is-better and bounded in [0, 1];
+            'transcription_error_rate' is the lower-is-better transcription corpus
+            rate and is unbounded above.
+
 
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `transcription_error_rate` - TRANSCRIPTION_ERROR_RATE
         target_metric_threshold:
           type: number
           format: double
-          maximum: 1
           minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
+            For the lower-is-better 'transcription_error_rate' metric the quality
+            is satisfied when the metric is at or below the threshold; for the other metrics
+            it must be at or above it.
         max_validations_per_job:
           type: integer
           maximum: 2147483647
@@ -10795,6 +10912,10 @@ components:
             accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
+        transcription_requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptionRequirement'
         created_date:
           type: string
           format: date-time
@@ -10808,11 +10929,13 @@ components:
       - accuracy
       - precision
       - recall
+      - transcription_error_rate
       type: string
       description: |-
         * `accuracy` - ACCURACY
         * `precision` - PRECISION
         * `recall` - RECALL
+        * `transcription_error_rate` - TRANSCRIPTION_ERROR_RATE
     RegisterSerializerEx:
       type: object
       properties:
@@ -11700,6 +11823,136 @@ components:
       required:
       - frame
       - type
+    TranscriptionAlignMode:
+      enum:
+      - char
+      - word
+      type: string
+      description: |-
+        * `char` - CHAR
+        * `word` - WORD
+    TranscriptionGranularity:
+      enum:
+      - word
+      - character
+      type: string
+      description: |-
+        * `word` - WORD
+        * `character` - CHARACTER
+    TranscriptionGroupingStrategy:
+      enum:
+      - filter
+      - join
+      type: string
+      description: |-
+        * `filter` - FILTER
+        * `join` - JOIN
+    TranscriptionQualityMetric:
+      enum:
+      - equality
+      - error-rate
+      - normalized-lev
+      type: string
+      description: |-
+        * `equality` - EQUALITY
+        * `error-rate` - ERROR_RATE
+        * `normalized-lev` - NORMALIZED_LEV
+    TranscriptionRequirement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        attribute_id:
+          type: integer
+          description: |
+            The transcription (type 'text') attribute to apply the requirement to
+        granularity:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionGranularity'
+          description: |-
+            Output unit of the reported rate. `word` reports WER-family
+            rates, `character` reports CER-family rates.
+
+
+            * `word` - WORD
+            * `character` - CHARACTER
+        metric:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionQualityMetric'
+          description: |-
+            Per-chunk cost function used during alignment.
+            `equality` is hard 0 / 1, `error-rate` is fractional
+            Levenshtein distance, `normalized-lev` is a smoother
+            normalized variant. For `granularity=character` all three
+            degenerate to `equality`.
+
+
+            * `equality` - EQUALITY
+            * `error-rate` - ERROR_RATE
+            * `normalized-lev` - NORMALIZED_LEV
+        alignment:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionAlignMode'
+          description: |-
+            Alignment regime. `char` runs char-level Levenshtein and
+            reconstructs word boundaries afterwards (default; handles
+            arbitrary N-to-M token splits). `word` runs plain
+            token-level Levenshtein (faster, no boundary recovery).
+
+
+            * `char` - CHAR
+            * `word` - WORD
+        metric_threshold:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          description: |
+            Optional per-chunk cost binarization threshold (>= 0).
+            When set, the chunk cost is rounded to 0 / 1 by comparing
+            against this value, turning a soft metric into a binary
+            one. No upper bound: the `error-rate` metric is unbounded
+            (it can exceed 1 when the hypothesis is much longer than
+            the reference). Has no effect when `metric` is `equality`.
+        grouping_strategy:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionGroupingStrategy'
+          description: |-
+            How intervals are grouped before transcription
+            comparison. `filter` scores each matched GT / DS interval
+            pair independently. `join` concatenates all GT and all DS
+            intervals that share the same grouping key (label, plus
+            optional `grouping_attribute_id` value) and scores the
+            resulting pair of strings.
+
+
+            * `filter` - FILTER
+            * `join` - JOIN
+        grouping_separator:
+          type: string
+          description: |
+            Separator inserted between concatenated transcriptions
+            when `grouping_strategy=join`. Defaults to a single space.
+          maxLength: 16
+        grouping_attribute_id:
+          type: integer
+          nullable: true
+          description: |
+            Optional attribute used to group intervals into transcription
+            chunks (e.g. a speaker tag). Must belong to the same label as
+            the transcription attribute. None = group by label only.
+        acceptance_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Per-match error-rate threshold in [0, 1]. A transcription
+            match whose error rate is at or above this value is
+            reported as a mismatching-attributes conflict.
+      required:
+      - attribute_id
     User:
       type: object
       properties:
