@@ -116,7 +116,9 @@ class Migration(migrations.Migration):
                     ),
                     models.CheckConstraint(
                         condition=models.Q(
-                            ("metric_threshold__isnull", True), ("metric_threshold__gte", 0), _connector="OR"
+                            ("metric_threshold__isnull", True),
+                            ("metric_threshold__gte", 0),
+                            _connector="OR",
                         ),
                         name="transcription_quality_requirement_chunk_threshold_is_valid",
                     ),

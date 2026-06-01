@@ -17832,6 +17832,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 1,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -17842,6 +17843,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 2,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -17852,6 +17854,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 3,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -17862,6 +17865,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 4,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -17872,6 +17876,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 5,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -17882,6 +17887,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 6,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -17892,6 +17898,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 7,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17902,6 +17909,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 8,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17912,6 +17920,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 9,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17922,6 +17931,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 10,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17932,6 +17942,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 11,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17942,6 +17953,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 12,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17952,6 +17964,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 13,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17962,6 +17975,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 14,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17972,6 +17986,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 15,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17982,6 +17997,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 16,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -17992,6 +18008,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 17,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -18002,6 +18019,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 18,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -18012,6 +18030,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 19,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -18022,6 +18041,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 20,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -18032,6 +18052,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 21,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -18042,6 +18063,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 22,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "error",
@@ -18052,6 +18074,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 23,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -18062,6 +18085,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 24,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -18072,6 +18096,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 25,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -18082,6 +18107,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 26,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -18092,6 +18118,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 27,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -18102,6 +18129,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 28,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -18112,6 +18140,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 29,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -18122,6 +18151,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 30,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -18132,6 +18162,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 31,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 2,
       "severity": "warning",
@@ -18142,6 +18173,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 32,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 2,
       "severity": "error",
@@ -18152,6 +18184,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 33,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 2,
       "severity": "error",
@@ -18162,6 +18195,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 34,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 2,
       "severity": "error",
@@ -18172,6 +18206,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 35,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 2,
       "severity": "error",
@@ -18182,6 +18217,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 36,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 2,
       "severity": "error",
@@ -18192,6 +18228,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 37,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 2,
       "severity": "error",
@@ -18202,6 +18239,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 38,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18212,6 +18250,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 39,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18222,6 +18261,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 40,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18232,6 +18272,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 41,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18242,6 +18283,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 42,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18252,6 +18294,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 43,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18262,6 +18305,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 44,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18272,6 +18316,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 45,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18282,6 +18327,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 46,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18292,6 +18338,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 47,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18302,6 +18349,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 48,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18312,6 +18360,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 49,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18322,6 +18371,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 50,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18332,6 +18382,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 51,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18342,6 +18393,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 52,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18352,6 +18404,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 53,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18362,6 +18415,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 54,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18372,6 +18426,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 55,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18382,6 +18437,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 56,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18392,6 +18448,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 57,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18402,6 +18459,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 58,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18412,6 +18470,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 59,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18422,6 +18481,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 60,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18432,6 +18492,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 61,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18442,6 +18503,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 62,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "error",
@@ -18452,6 +18514,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 63,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18462,6 +18525,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 64,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18472,6 +18536,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 65,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18482,6 +18547,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 66,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18492,6 +18558,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 67,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18502,6 +18569,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 68,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18512,6 +18580,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 69,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18522,6 +18591,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 70,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18532,6 +18602,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 71,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 4,
       "severity": "warning",
@@ -18542,6 +18613,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 72,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 4,
       "severity": "error",
@@ -18552,6 +18624,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 73,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 4,
       "severity": "error",
@@ -18562,6 +18635,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 74,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 4,
       "severity": "error",
@@ -18572,6 +18646,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 75,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 4,
       "severity": "error",
@@ -18582,6 +18657,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 76,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 4,
       "severity": "error",
@@ -18592,6 +18668,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 77,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 4,
       "severity": "error",
@@ -18602,6 +18679,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 78,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18612,6 +18690,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 79,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18622,6 +18701,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 80,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18632,6 +18712,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 81,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18642,6 +18723,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 82,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18652,6 +18734,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 83,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18662,6 +18745,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 84,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18672,6 +18756,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 85,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18682,6 +18767,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 86,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18692,6 +18778,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 87,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18702,6 +18789,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 88,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18712,6 +18800,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 89,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18722,6 +18811,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 90,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18732,6 +18822,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 91,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18742,6 +18833,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 92,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18752,6 +18844,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 93,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18762,6 +18855,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 94,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18772,6 +18866,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 95,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18782,6 +18877,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 96,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18792,6 +18888,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 97,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18802,6 +18899,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 98,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18812,6 +18910,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 99,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18822,6 +18921,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 100,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18832,6 +18932,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 101,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18842,6 +18943,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 102,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "error",
@@ -18852,6 +18954,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 103,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18862,6 +18965,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 104,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18872,6 +18976,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 105,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18882,6 +18987,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 106,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18892,6 +18998,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 107,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18902,6 +19009,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 108,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18912,6 +19020,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 109,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18922,6 +19031,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 110,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18932,6 +19042,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 111,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 6,
       "severity": "warning",
@@ -18942,6 +19053,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 112,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 6,
       "severity": "error",
@@ -18952,6 +19064,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 113,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 6,
       "severity": "error",
@@ -18962,6 +19075,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 114,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 6,
       "severity": "error",
@@ -18972,6 +19086,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 115,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 6,
       "severity": "error",
@@ -18982,6 +19097,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 116,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 6,
       "severity": "error",
@@ -18992,6 +19108,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 117,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 6,
       "severity": "error",
@@ -19002,6 +19119,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 118,
     "fields": {
+      "attributes": null,
       "frame": 5,
       "report": 9,
       "severity": "warning",
@@ -19012,6 +19130,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 119,
     "fields": {
+      "attributes": null,
       "frame": 4,
       "report": 10,
       "severity": "error",
@@ -19022,6 +19141,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 120,
     "fields": {
+      "attributes": null,
       "frame": 4,
       "report": 10,
       "severity": "error",
@@ -19032,6 +19152,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 121,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19042,6 +19163,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 122,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19052,6 +19174,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 123,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19062,6 +19185,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 124,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19072,6 +19196,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 125,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19082,6 +19207,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 126,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19092,6 +19218,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 127,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19102,6 +19229,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 128,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19112,6 +19240,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 129,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19122,6 +19251,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 130,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19132,6 +19262,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 131,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19142,6 +19273,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 132,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19152,6 +19284,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 133,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19162,6 +19295,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 134,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19172,6 +19306,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 135,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19182,6 +19317,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 136,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19192,6 +19328,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 137,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19202,6 +19339,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 138,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19212,6 +19350,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 139,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19222,6 +19361,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 140,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19232,6 +19372,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 141,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19242,6 +19383,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 142,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19252,6 +19394,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 143,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19262,6 +19405,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 144,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19272,6 +19416,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 145,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19282,6 +19427,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 146,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "error",
@@ -19292,6 +19438,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 147,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19302,6 +19449,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 148,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19312,6 +19460,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 149,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19322,6 +19471,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 150,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19332,6 +19482,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 151,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19342,6 +19493,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 152,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19352,6 +19504,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 153,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19362,6 +19515,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 154,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19372,6 +19526,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 155,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 12,
       "severity": "warning",
@@ -19382,6 +19537,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 156,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 12,
       "severity": "error",
@@ -19392,6 +19548,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 157,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 12,
       "severity": "error",
@@ -19402,6 +19559,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 158,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 12,
       "severity": "error",
@@ -19412,6 +19570,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 159,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 12,
       "severity": "error",
@@ -19422,6 +19581,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 160,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 12,
       "severity": "error",
@@ -19432,6 +19592,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 161,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 12,
       "severity": "error",
@@ -19442,6 +19603,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 162,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 12,
       "severity": "error",
@@ -19452,6 +19614,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 163,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 14,
       "severity": "error",
@@ -19462,6 +19625,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 164,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 14,
       "severity": "error",
@@ -19472,6 +19636,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 165,
     "fields": {
+      "attributes": null,
       "frame": 1,
       "report": 14,
       "severity": "error",
@@ -19482,6 +19647,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 166,
     "fields": {
+      "attributes": null,
       "frame": 3,
       "report": 14,
       "severity": "warning",
@@ -19492,6 +19658,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 167,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 16,
       "severity": "error",
@@ -19502,6 +19669,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 168,
     "fields": {
+      "attributes": null,
       "frame": 0,
       "report": 16,
       "severity": "error",
@@ -19512,6 +19680,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 169,
     "fields": {
+      "attributes": null,
       "frame": 2,
       "report": 16,
       "severity": "warning",
@@ -19522,6 +19691,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 170,
     "fields": {
+      "attributes": null,
       "frame": 6,
       "report": 17,
       "severity": "error",
@@ -19532,6 +19702,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 171,
     "fields": {
+      "attributes": null,
       "frame": 6,
       "report": 17,
       "severity": "error",
@@ -19542,6 +19713,7 @@
     "model": "quality_control.annotationconflict",
     "pk": 172,
     "fields": {
+      "attributes": null,
       "frame": 5,
       "report": 17,
       "severity": "error",
