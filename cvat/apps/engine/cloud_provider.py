@@ -22,6 +22,7 @@ from typing import Any, BinaryIO, Concatenate, ParamSpec, TypeVar
 import boto3
 import botocore.hooks
 import botocore.loaders
+import botocore.session
 import cachetools
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from azure.storage.blob import BlobServiceClient, ContainerClient
@@ -620,7 +621,12 @@ botocore.loaders.JSONFileLoader._load_file = _botocore_load_file_plaindict
 # and removes ~80ms of JSON parsing per build. Loader is injected into each
 # Session via the "data_loader" component override, see:
 #   https://botocore.amazonaws.com/v1/documentation/api/latest/reference/loaders.html
-_SHARED_BOTOCORE_LOADER = botocore.loaders.create_loader()
+#
+# Build it exactly as botocore does, so
+# custom/overriding service and endpoint models keep working.
+_SHARED_BOTOCORE_LOADER = botocore.loaders.create_loader(
+    botocore.session.Session().get_config_variable("data_path")
+)
 
 
 class _FrozenEventEmitter:
