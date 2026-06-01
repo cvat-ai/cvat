@@ -43,10 +43,10 @@ from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
-    DimensionType,
     Image,
     Job,
     JobType,
+    MediaType,
     Project,
     RequestTarget,
     ShapeType,
@@ -57,6 +57,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.utils import take_by
 from cvat.apps.profiler import silk_profile
+from cvat.apps.quality_control import audio as audio_qa
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
     AnnotationConflictSeverity,
@@ -204,7 +205,7 @@ class AnnotationId(ReportNode):
 
 @define(kw_only=True, init=False, slots=False)
 class AnnotationConflict(ReportNode):
-    frame_id: int
+    frame_id: int | None
     type: AnnotationConflictType
     annotation_ids: list[AnnotationId]
 
@@ -238,7 +239,7 @@ class AnnotationConflict(ReportNode):
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
-            frame_id=d["frame_id"],
+            frame_id=d.get("frame_id", None),
             type=AnnotationConflictType(d["type"]),
             annotation_ids=list(AnnotationId.from_dict(v) for v in d["annotation_ids"]),
         )
@@ -270,6 +271,9 @@ class ComparisonParameters(ReportNode):
 
     low_overlap_threshold: float = 0.8
     "Used for distinction between strong / weak (low_overlap) matches"
+
+    interval_boundary_tolerance: float = 100
+    "Timestamp tolerance (ms) for the audio interval boundary F1 metric"
 
     oks_sigma: float = 0.09
     "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
@@ -828,7 +832,7 @@ class ComparisonReport(ReportNode):
     comparison_summary: ComparisonReportSummary
     frame_results: dict[int, ComparisonReportFrameSummary] | None
 
-    @property
+    @cached_property
     def conflicts(self) -> list[AnnotationConflict]:
         if not self.frame_results:
             return []
@@ -848,6 +852,7 @@ class ComparisonReport(ReportNode):
                 if d.get("frame_results") is not None
                 else None
             ),
+            conflicts=[AnnotationConflict.from_dict(c) for c in d.get("conflicts", [])],
         )
 
     def to_json(self) -> str:
@@ -2070,6 +2075,19 @@ class _Comparator:
         return pairwise_distances.get((id(gt_ann), id(ds_ann)))
 
 
+@define(slots=False)
+class _IntervalMatches:
+    """CVAT-side dict pairs recovered from `audio_qa.compare()` output, plus
+    the lookup tables needed to score / aggregate them.
+    """
+
+    matches: list[tuple[dict, dict]]
+    mismatches: list[tuple[dict, dict]]
+    gt_unmatched: list[dict]
+    ds_unmatched: list[dict]
+    iou_by_pair: dict[tuple[int, int], float]
+
+
 class DatasetComparator:
     DEFAULT_SETTINGS = ComparisonParameters()
 
@@ -2089,9 +2107,13 @@ class DatasetComparator:
         self._ds_dataset = self._ds_data_provider.dm_dataset
         self._gt_dataset = self._gt_data_provider.dm_dataset
 
-        self._frame_results: dict[int, ComparisonReportFrameSummary] = {}
+        self._intermediate_results: dict[str, Any] = {}
 
         self.comparator = _Comparator(self._gt_dataset.categories(), settings=settings)
+
+    @property
+    def _frame_results(self) -> dict[int, ComparisonReportFrameSummary]:
+        return self._intermediate_results.setdefault("frame_results", {})
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
         if dataset is self._ds_dataset:
@@ -2116,16 +2138,20 @@ class DatasetComparator:
     def _get_total_frames(self) -> int:
         return len(self._ds_data_provider.job_data)
 
-    def _find_gt_conflicts(self):
+    def _compare_datasets(self):
         ds_job_dataset = self._ds_dataset
         gt_job_dataset = self._gt_dataset
 
+        # process intraframe annotations
         for gt_item in gt_job_dataset:
             ds_item = ds_job_dataset.get(id=gt_item.id, subset=gt_item.subset)
             if not ds_item:
                 continue  # we need to compare only intersecting frames
 
             self._process_frame(ds_item, gt_item)
+
+        # process interframe annotations
+        self._process_intervals()
 
     def _process_frame(
         self, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem
@@ -2137,6 +2163,233 @@ class DatasetComparator:
 
         self._generate_frame_annotation_conflicts(
             frame_id, frame_results, gt_item=gt_item, ds_item=ds_item
+        )
+
+    def _process_intervals(self):
+        results = self._intermediate_results
+        conflicts = results.setdefault("conflicts", [])
+
+        annotations_summary: ComparisonReportAnnotationsSummary = results.setdefault(
+            "annotations", ComparisonReportAnnotationsSummary.create_empty()
+        )
+        component_summaries: ComparisonReportAnnotationComponentsSummary = results.setdefault(
+            "annotation_components", ComparisonReportAnnotationComponentsSummary.create_empty()
+        )
+
+        gt_intervals = self._gt_data_provider.job_annotation.ir_data.intervals
+        ds_intervals = self._ds_data_provider.job_annotation.ir_data.intervals
+        if not gt_intervals and not ds_intervals:
+            return
+
+        cvat_dm_label_id_map = self._build_cvat_dm_label_id_map()
+
+        audio_gt, audio_ds, audio_settings = self._build_interval_audio_inputs(
+            gt_intervals, ds_intervals
+        )
+        audio_report = audio_qa.compare(audio_gt, audio_ds, settings=audio_settings)
+
+        matching_results = self._recover_interval_matches(audio_report, gt_intervals, ds_intervals)
+
+        self._emit_interval_conflicts(conflicts, matching_results)
+
+        confusion_matrix_labels, confusion_matrix = self._build_interval_confusion_matrix(
+            matching_results, cvat_dm_label_id_map=cvat_dm_label_id_map
+        )
+
+        annotations_summary_update = self._compute_annotations_summary(
+            confusion_matrix, confusion_matrix_labels
+        )
+        component_summaries_update = self._build_interval_component_summaries(
+            matching_results=matching_results,
+            gt_intervals=gt_intervals,
+            ds_intervals=ds_intervals,
+        )
+
+        annotations_summary.accumulate(annotations_summary_update)
+        component_summaries.accumulate(component_summaries_update)
+
+    def _build_cvat_dm_label_id_map(self) -> dict[int, int]:
+        """Returns {cvat_label_id -> dm_label_id} mapping"""
+
+        return {
+            self._gt_data_provider.job_data._get_label_id(
+                dm_label.name,
+                (
+                    self._gt_data_provider.job_data._get_label_id(dm_label.parent)
+                    if dm_label.parent
+                    else None
+                ),
+            ): dm_label_id
+            for dm_label_id, dm_label in enumerate(
+                self._gt_dataset.categories()[dm.AnnotationType.label]
+            )
+        }
+
+    def _build_interval_audio_inputs(
+        self,
+        gt_intervals: list[dict],
+        ds_intervals: list[dict],
+    ) -> tuple[
+        list[audio_qa.Interval],
+        list[audio_qa.Interval],
+        audio_qa.QualitySettings,
+    ]:
+        def to_audio_intervals(intervals: list[dict]) -> list[audio_qa.Interval]:
+            return [
+                audio_qa.Interval(
+                    id=iv["id"],
+                    start=iv["start"],
+                    stop=iv["stop"],
+                    label=str(iv["label_id"]),
+                    extra={str(a["spec_id"]): a["value"] or "" for a in iv["attributes"]},
+                )
+                for iv in intervals
+            ]
+
+        gt_audio = to_audio_intervals(gt_intervals)
+        ds_audio = to_audio_intervals(ds_intervals)
+
+        audio_settings = audio_qa.QualitySettings(
+            interval_matching=audio_qa.IntervalMatchingConfig(
+                iou_threshold=self.settings.iou_threshold,
+                low_overlap_threshold=self.settings.low_overlap_threshold,
+                boundary_tolerance_ms=self.settings.interval_boundary_tolerance,
+            ),
+        )
+        return gt_audio, ds_audio, audio_settings
+
+    def _recover_interval_matches(
+        self,
+        audio_report: audio_qa.ComparisonReport,
+        gt_intervals: list[dict],
+        ds_intervals: list[dict],
+    ) -> _IntervalMatches:
+        """Map audio's id-only references back to CVAT interval dicts and
+        build a per-pair IoU lookup table."""
+
+        gt_by_id = {iv["id"]: iv for iv in gt_intervals}
+        ds_by_id = {iv["id"]: iv for iv in ds_intervals}
+        matches = [(gt_by_id[m.gt.id], ds_by_id[m.ds.id]) for m in audio_report.intervals.matches]
+        mismatches = [
+            (gt_by_id[m.gt.id], ds_by_id[m.ds.id]) for m in audio_report.intervals.label_mismatches
+        ]
+        gt_unmatched = [gt_by_id[iv.id] for iv in audio_report.intervals.gt_unmatched]
+        ds_unmatched = [ds_by_id[iv.id] for iv in audio_report.intervals.ds_unmatched]
+
+        iou_by_pair = {
+            (m.gt.id, m.ds.id): m.iou
+            for m in itertools.chain(
+                audio_report.intervals.matches,
+                audio_report.intervals.label_mismatches,
+            )
+        }
+
+        return _IntervalMatches(
+            matches=matches,
+            mismatches=mismatches,
+            gt_unmatched=gt_unmatched,
+            ds_unmatched=ds_unmatched,
+            iou_by_pair=iou_by_pair,
+        )
+
+    def _emit_interval_conflicts(
+        self, conflicts: list[AnnotationConflict], matches: _IntervalMatches
+    ) -> None:
+        gt_job_id = self._gt_data_provider.job_id
+        ds_job_id = self._ds_data_provider.job_id
+
+        def ann_id(interval: dict, job_id: int) -> AnnotationId:
+            return AnnotationId(
+                obj_id=interval["id"],
+                job_id=job_id,
+                type=AnnotationType.INTERVAL,
+                shape_type=None,
+            )
+
+        for gt_ann, ds_ann in itertools.chain(matches.matches, matches.mismatches):
+            similarity = matches.iou_by_pair.get((gt_ann["id"], ds_ann["id"]))
+            if similarity and similarity < self.settings.low_overlap_threshold:
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=None,
+                        type=AnnotationConflictType.LOW_OVERLAP,
+                        annotation_ids=[ann_id(ds_ann, ds_job_id), ann_id(gt_ann, gt_job_id)],
+                    )
+                )
+
+        for interval in matches.gt_unmatched:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=None,
+                    type=AnnotationConflictType.MISSING_ANNOTATION,
+                    annotation_ids=[ann_id(interval, gt_job_id)],
+                )
+            )
+
+        for interval in matches.ds_unmatched:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=None,
+                    type=AnnotationConflictType.EXTRA_ANNOTATION,
+                    annotation_ids=[ann_id(interval, ds_job_id)],
+                )
+            )
+
+        for gt_ann, ds_ann in matches.mismatches:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=None,
+                    type=AnnotationConflictType.MISMATCHING_LABEL,
+                    annotation_ids=[ann_id(ds_ann, ds_job_id), ann_id(gt_ann, gt_job_id)],
+                )
+            )
+
+    def _build_interval_confusion_matrix(
+        self, matching_results: _IntervalMatches, *, cvat_dm_label_id_map: dict[int, int]
+    ) -> tuple[list[str], np.ndarray]:
+        confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
+        cvat_label_to_idx = {
+            cvat_label_id: label_id_map[dm_label_id]
+            for cvat_label_id, dm_label_id in cvat_dm_label_id_map.items()
+        }
+        for gt_ann, ds_ann in itertools.chain(
+            matching_results.matches,
+            matching_results.mismatches,
+            zip(itertools.repeat(None), matching_results.ds_unmatched),
+            zip(matching_results.gt_unmatched, itertools.repeat(None)),
+        ):
+            ds_label_idx = cvat_label_to_idx[ds_ann["label_id"]] if ds_ann else self._UNMATCHED_IDX
+            gt_label_idx = cvat_label_to_idx[gt_ann["label_id"]] if gt_ann else self._UNMATCHED_IDX
+            confusion_matrix[ds_label_idx, gt_label_idx] += 1
+
+        return confusion_matrix_labels, confusion_matrix
+
+    def _build_interval_component_summaries(
+        self,
+        *,
+        matching_results: _IntervalMatches,
+        gt_intervals: list[dict],
+        ds_intervals: list[dict],
+    ) -> ComparisonReportAnnotationComponentsSummary:
+        n_matches = len(matching_results.matches)
+        n_mismatches = len(matching_results.mismatches)
+        n_gt_unmatched = len(matching_results.gt_unmatched)
+        n_ds_unmatched = len(matching_results.ds_unmatched)
+        return ComparisonReportAnnotationComponentsSummary(
+            shape=ComparisonReportAnnotationShapeSummary(
+                valid_count=n_matches + n_mismatches,
+                missing_count=n_gt_unmatched,
+                extra_count=n_ds_unmatched,
+                total_count=n_matches + n_mismatches + n_gt_unmatched + n_ds_unmatched,
+                gt_count=len(gt_intervals),
+                ds_count=len(ds_intervals),
+                mean_iou=0,  # TODO
+            ),
+            label=ComparisonReportAnnotationLabelSummary(
+                valid_count=n_matches,
+                invalid_count=n_mismatches,
+                total_count=n_matches + n_mismatches,
+            ),
         )
 
     def _generate_frame_annotation_conflicts(
@@ -2484,11 +2737,13 @@ class DatasetComparator:
 
         return summary
 
-    def _generate_dataset_annotations_summary(
-        self, frame_summaries: dict[int, ComparisonReportFrameSummary]
+    def _generate_annotation_summaries(
+        self,
     ) -> tuple[ComparisonReportAnnotationsSummary, ComparisonReportAnnotationComponentsSummary]:
-        # accumulate stats
-        annotation_components = ComparisonReportAnnotationComponentsSummary(
+        frame_summaries = self._intermediate_results.pop("frame_results", {})
+
+        # accumulate stats from frame- and non-frame annotations
+        component_summaries = ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
                 valid_count=0,
                 missing_count=0,
@@ -2526,10 +2781,10 @@ class DatasetComparator:
             ):
                 empty_gt_frames.add(frame_id)
 
-            if annotation_components is None:
-                annotation_components = deepcopy(frame_result.annotation_components)
+            if component_summaries is None:
+                component_summaries = deepcopy(frame_result.annotation_components)
             else:
-                annotation_components.accumulate(frame_result.annotation_components)
+                component_summaries.accumulate(frame_result.annotation_components)
 
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
@@ -2545,29 +2800,47 @@ class DatasetComparator:
             annotation_summary.ds_count += len(empty_ds_frames)
             annotation_summary.gt_count += len(empty_gt_frames)
 
-        # Cannot be computed in accumulate()
-        annotation_components.shape.mean_iou = np.mean(mean_ious or [])
+        if "annotations" in self._intermediate_results:
+            mean_ious.append(self._intermediate_results["annotation_components"].shape.mean_iou)
 
-        return annotation_summary, annotation_components
+            self._intermediate_results["annotations"].accumulate(annotation_summary)
+            self._intermediate_results["annotation_components"].accumulate(component_summaries)
+
+            annotation_summary = self._intermediate_results.pop("annotations")
+            component_summaries = self._intermediate_results.pop("annotation_components")
+
+        # Cannot be computed in accumulate()
+        component_summaries.shape.mean_iou = np.mean(mean_ious or [])
+
+        return annotation_summary, component_summaries
 
     def generate_report(self) -> ComparisonReport:
-        self._find_gt_conflicts()
+        self._compare_datasets()
 
+        conflicts = self._intermediate_results.pop("conflicts", [])
         intersection_frames = []
-        conflicts = []
-        for frame_id, frame_result in self._frame_results.items():
+        frame_results = self._frame_results
+        for frame_id, frame_result in frame_results.items():
             intersection_frames.append(frame_id)
             conflicts += frame_result.conflicts
 
-        annotation_summary, annotations_component_summary = (
-            self._generate_dataset_annotations_summary(self._frame_results)
+        # this value can include more than just the separate intersection_frames
+        intersection_frames_count = len(
+            self._gt_data_provider.job_data.get_included_frames()
+            & self._ds_data_provider.job_data.get_included_frames()
         )
+
+        annotation_summary, annotations_component_summary = self._generate_annotation_summaries()
+
+        # Make sure nothing is left unprocessed
+        assert not self._intermediate_results
 
         conflicts_by_severity = Counter(c.severity for c in conflicts)
         return ComparisonReport(
             parameters=self.settings,
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
+                frame_count=intersection_frames_count,
                 total_frames=self._get_total_frames(),
                 conflict_count=len(conflicts),
                 warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
@@ -2578,7 +2851,8 @@ class DatasetComparator:
                 tasks=None,
                 jobs=None,
             ),
-            frame_results=self._frame_results,
+            frame_results=frame_results,
+            conflicts=conflicts,
         )
 
 
@@ -2612,8 +2886,14 @@ class QualityReportRQJobManager(AbstractRequestManager):
         if isinstance(self.db_instance, Project):
             return  # nothing prevents project reports
         elif isinstance(self.db_instance, Task):
-            if self.db_instance.dimension != DimensionType.DIM_2D:
-                raise serializers.ValidationError("Quality reports are only supported in 2d tasks")
+            if self.db_instance.media_type not in (
+                MediaType.AUDIO,
+                MediaType.IMAGE,
+                MediaType.POINT_CLOUD,
+            ):
+                raise serializers.ValidationError(
+                    f"Quality reports are not supported for {self.db_instance.media_type} tasks"
+                )
 
             gt_job = self.db_instance.gt_job
             if gt_job is None or not (

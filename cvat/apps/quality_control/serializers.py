@@ -219,6 +219,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "point_size_base",
             "line_thickness",
             "low_overlap_threshold",
+            "interval_boundary_tolerance",
             "compare_line_orientation",
             "line_orientation_threshold",
             "compare_groups",
@@ -311,6 +312,11 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
                 This will also add virtual annotations to empty frames in the comparison results.
             """,
+            "interval_boundary_tolerance": """
+                Timestamp tolerance (milliseconds) for the audio interval boundary F1 metric
+                and for alignment. Onset / offset differences within this tolerance count
+                as a boundary hit.
+            """,
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))
@@ -320,6 +326,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if field_name.endswith("_threshold") or field_name in ["oks_sigma", "line_thickness"]:
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
+
+        extra_kwargs.setdefault("interval_boundary_tolerance", {}).setdefault("min_value", 0)
 
     job_filter = serializers.CharField(
         allow_blank=True,
