@@ -10,7 +10,13 @@ from cvat_sdk import Client
 from cvat_sdk.core.proxies.types import Location
 from PIL import Image
 
-from shared.utils.config import BASE_URL, IMPORT_EXPORT_BUCKET_ID, USER_PASS
+from shared.utils.config import (
+    BASE_URL,
+    DEFAULT_INTERVAL,
+    IMPORT_EXPORT_BUCKET_ID,
+    USER_PASS,
+    make_sdk_client_config,
+)
 from shared.utils.helpers import generate_image_file
 
 from .util import generate_coco_json
@@ -20,11 +26,12 @@ from .util import generate_coco_json
 def fxt_client(fxt_logger):
     logger, _ = fxt_logger
 
-    client = Client(BASE_URL, logger=logger)
+    client = Client(
+        BASE_URL, logger=logger, config=make_sdk_client_config(status_check_period=DEFAULT_INTERVAL)
+    )
     api_client = client.api_client
     for k in api_client.configuration.logger:
         api_client.configuration.logger[k] = logger
-    client.config.status_check_period = 0.01
 
     with client:
         yield client
@@ -51,8 +58,7 @@ def fxt_coco_file(tmp_path: Path, fxt_image_file: Path):
 
 @pytest.fixture(scope="class")
 def fxt_login(admin_user: str, restore_db_per_class):
-    client = Client(BASE_URL)
-    client.config.status_check_period = 0.01
+    client = Client(BASE_URL, config=make_sdk_client_config(status_check_period=DEFAULT_INTERVAL))
     user = admin_user
 
     with client:

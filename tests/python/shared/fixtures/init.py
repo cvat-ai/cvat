@@ -15,7 +15,7 @@ import pytest
 import requests
 import yaml
 
-from shared.utils.config import ASSETS_DIR, get_server_url
+from shared.utils.config import ASSETS_DIR, TEST_REQUEST_TIMEOUT, get_server_url
 
 logger = logging.getLogger(__name__)
 
@@ -351,7 +351,10 @@ def wait_for_services(num_secs: int = 300) -> None:
         logger.debug(f"waiting for the server to load ... ({i})")
 
         try:
-            response = requests.get(get_server_url("api/server/health/", format="json"))
+            response = requests.get(
+                get_server_url("api/server/health/", format="json"),
+                timeout=TEST_REQUEST_TIMEOUT,
+            )
 
             statuses = response.json()
             logger.debug(f"server status: \n{statuses}")

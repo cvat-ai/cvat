@@ -42,6 +42,10 @@ class RESTClientObject(object):
         if configuration.socket_options is not None:
             addition_pool_args['socket_options'] = configuration.socket_options
 
+        # Default timeout applied to every request when the caller does not
+        # pass an explicit `_request_timeout`.
+        self.default_timeout = getattr(configuration, 'timeout', None)
+
         if maxsize is None:
             if configuration.connection_pool_maxsize is not None:
                 maxsize = configuration.connection_pool_maxsize
@@ -119,7 +123,7 @@ class RESTClientObject(object):
         post_params = post_params or {}
         headers = headers or {}
 
-        timeout = None
+        timeout = self.default_timeout
         if _request_timeout:
             if isinstance(_request_timeout, (int, float)):  # noqa: E501,F821
                 timeout = urllib3.Timeout(total=_request_timeout)
