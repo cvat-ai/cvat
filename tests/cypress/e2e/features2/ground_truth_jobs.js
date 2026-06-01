@@ -521,6 +521,12 @@ context('Ground truth jobs', () => {
                     cy.goCheckFrameNumber(frame);
                     checkRectangleAndObjectMenu(rectangle);
                     checkCanvasObjectSource(rectangle, 'Ground truth', 'auto');
+                    cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
+                        .find('.cvat-object-item-button-lock-enabled')
+                        .click();
+                    cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
+                        .find('.cvat-object-item-button-lock-enabled')
+                        .should('exist');
                 });
             });
         });

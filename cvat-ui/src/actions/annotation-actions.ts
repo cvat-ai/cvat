@@ -1224,7 +1224,12 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
                 dispatch(activateObject(null, null, null));
             }
 
-            const promises = statesToUpdate.map((objectState) => objectState.save());
+            const statesToSave = statesToUpdate.filter((objectState) => !objectState.isGroundTruth);
+            if (!statesToSave.length) {
+                return;
+            }
+
+            const promises = statesToSave.map((objectState) => objectState.save());
             let states = await Promise.all(promises);
 
             if (workspace === Workspace.REVIEW) {
