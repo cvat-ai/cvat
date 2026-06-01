@@ -271,6 +271,18 @@ export interface APIConsensusSettingsFilter extends APICommonFilterParams {
 
 export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 
+export interface SerializedTranscriptionRequirement {
+    attribute_id: number;
+    granularity: string;
+    metric: string;
+    alignment: string;
+    metric_threshold: number | null;
+    grouping_strategy: string;
+    grouping_separator: string;
+    grouping_attribute_id: number | null;
+    acceptance_threshold: number;
+}
+
 export interface SerializedQualitySettingsData {
     id?: number;
     task_id?: number;
@@ -292,6 +304,7 @@ export interface SerializedQualitySettingsData {
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
     empty_is_annotated?: boolean;
+    transcription_requirements?: SerializedTranscriptionRequirement[];
     descriptions?: Record<string, string>;
     inherit?: boolean;
     job_filter?: string;
@@ -343,6 +356,7 @@ export interface SerializedQualityReportData {
         accuracy: number;
         precision: number;
         recall: number;
+        transcription_error_rate?: number;
         total_frames: number;
         validation_frames: number;
         validation_frame_share: number;

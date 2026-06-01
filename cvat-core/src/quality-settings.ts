@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
-import { SerializedQualitySettingsData } from './server-response-types';
+import {
+    SerializedQualitySettingsData,
+    SerializedTranscriptionRequirement,
+} from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
@@ -14,6 +17,7 @@ export enum TargetMetric {
     ACCURACY = 'accuracy',
     PRECISION = 'precision',
     RECALL = 'recall',
+    TRANSCRIPTION_ERROR_RATE = 'transcription_error_rate',
 }
 
 export enum PointSizeBase {
@@ -21,9 +25,89 @@ export enum PointSizeBase {
     GROUP_BBOX_SIZE = 'group_bbox_size',
 }
 
+export enum TranscriptionGranularity {
+    WORD = 'word',
+    CHARACTER = 'character',
+}
+
+export enum TranscriptionMetric {
+    EQUALITY = 'equality',
+    ERROR_RATE = 'error-rate',
+    NORMALIZED_LEV = 'normalized-lev',
+}
+
+export enum TranscriptionAlignMode {
+    CHAR = 'char',
+    WORD = 'word',
+}
+
+export enum TranscriptionGroupingStrategy {
+    FILTER = 'filter',
+    JOIN = 'join',
+}
+
+// Metrics whose soft cost can be binarized by `metricThreshold`; `equality` is a
+// hard bit metric and ignores it.
+export const METRICS_SUPPORTING_THRESHOLD: readonly TranscriptionMetric[] = [
+    TranscriptionMetric.ERROR_RATE,
+    TranscriptionMetric.NORMALIZED_LEV,
+];
+
 export type QualitySettingsSaveFields = Partial<Camelized<
-    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions'>
->>;
+    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions' | 'transcription_requirements'>
+>> & {
+    // Sent as already-snake-cased entries; fieldsToSnakeCase only converts the
+    // top-level key, not the array contents.
+    transcriptionRequirements?: SerializedTranscriptionRequirement[];
+};
+
+export class TranscriptionRequirement {
+    #attributeId: number;
+    #granularity: TranscriptionGranularity;
+    #metric: TranscriptionMetric;
+    #alignment: TranscriptionAlignMode;
+    #metricThreshold: number | null;
+    #groupingStrategy: TranscriptionGroupingStrategy;
+    #groupingSeparator: string;
+    #groupingAttributeId: number | null;
+    #acceptanceThreshold: number;
+
+    constructor(initialData: SerializedTranscriptionRequirement) {
+        this.#attributeId = initialData.attribute_id;
+        this.#granularity = initialData.granularity as TranscriptionGranularity;
+        this.#metric = initialData.metric as TranscriptionMetric;
+        this.#alignment = initialData.alignment as TranscriptionAlignMode;
+        this.#metricThreshold = initialData.metric_threshold ?? null;
+        this.#groupingStrategy = initialData.grouping_strategy as TranscriptionGroupingStrategy;
+        this.#groupingSeparator = initialData.grouping_separator;
+        this.#groupingAttributeId = initialData.grouping_attribute_id ?? null;
+        this.#acceptanceThreshold = initialData.acceptance_threshold;
+    }
+
+    get attributeId(): number { return this.#attributeId; }
+    get granularity(): TranscriptionGranularity { return this.#granularity; }
+    get metric(): TranscriptionMetric { return this.#metric; }
+    get alignment(): TranscriptionAlignMode { return this.#alignment; }
+    get metricThreshold(): number | null { return this.#metricThreshold; }
+    get groupingStrategy(): TranscriptionGroupingStrategy { return this.#groupingStrategy; }
+    get groupingSeparator(): string { return this.#groupingSeparator; }
+    get groupingAttributeId(): number | null { return this.#groupingAttributeId; }
+    get acceptanceThreshold(): number { return this.#acceptanceThreshold; }
+
+    public toJSON(): SerializedTranscriptionRequirement {
+        return {
+            attribute_id: this.#attributeId,
+            granularity: this.#granularity,
+            metric: this.#metric,
+            alignment: this.#alignment,
+            metric_threshold: this.#metricThreshold,
+            grouping_strategy: this.#groupingStrategy,
+            grouping_separator: this.#groupingSeparator,
+            grouping_attribute_id: this.#groupingAttributeId,
+            acceptance_threshold: this.#acceptanceThreshold,
+        };
+    }
+}
 
 export default class QualitySettings {
     #id: number;
@@ -46,6 +130,7 @@ export default class QualitySettings {
     #panopticComparison: boolean;
     #compareAttributes: boolean;
     #emptyIsAnnotated: boolean;
+    #transcriptionRequirements: TranscriptionRequirement[];
     #jobFilter: string;
     #inherit: boolean;
     #descriptions: Record<string, string>;
@@ -71,6 +156,8 @@ export default class QualitySettings {
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
         this.#emptyIsAnnotated = initialData.empty_is_annotated;
+        this.#transcriptionRequirements = (initialData.transcription_requirements ?? [])
+            .map((requirement) => new TranscriptionRequirement(requirement));
         this.#jobFilter = initialData.job_filter || '';
         this.#inherit = initialData.inherit;
         this.#descriptions = initialData.descriptions;
@@ -154,6 +241,10 @@ export default class QualitySettings {
 
     get emptyIsAnnotated(): boolean {
         return this.#emptyIsAnnotated;
+    }
+
+    get transcriptionRequirements(): TranscriptionRequirement[] {
+        return this.#transcriptionRequirements;
     }
 
     get jobFilter(): string {

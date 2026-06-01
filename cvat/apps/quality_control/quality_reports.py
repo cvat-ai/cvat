@@ -11,6 +11,7 @@ from collections import Counter
 from collections.abc import Callable, Hashable, Sequence
 from contextlib import suppress
 from copy import deepcopy
+from enum import Enum
 from functools import cached_property, lru_cache, partial
 from io import StringIO
 from typing import Any, ClassVar, TypeAlias, TypeVar, cast
@@ -43,6 +44,8 @@ from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
+    AttributeSpec,
+    AttributeType,
     Image,
     Job,
     JobType,
@@ -63,9 +66,38 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictSeverity,
     AnnotationConflictType,
     AnnotationType,
+    TranscriptionAlignMode,
+    TranscriptionGranularity,
+    TranscriptionGroupingStrategy,
+    TranscriptionQualityMetric,
 )
 from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.apps.redis_handler.background import AbstractRequestManager
+
+
+class AttributePath:
+    def __init__(self, attribute: str, label: str, parent_label: str | None = None) -> None:
+        path = [attribute, label]
+        if parent_label:
+            path.append(parent_label)
+
+        self.path = tuple(path)
+
+    def __hash__(self):
+        return hash(self.path)
+
+    def __repr__(self) -> str:
+        return str(self.path)
+
+    def __eq__(self, other: AttributePath) -> bool:
+        return isinstance(other, AttributePath) and self.path == other.path
+
+    def to_list(self) -> list[str]:
+        return list(self.path)
+
+    @classmethod
+    def from_list(cls, lst: list[str]) -> AttributePath:
+        return cls(*lst)
 
 
 @define(slots=False)
@@ -208,6 +240,7 @@ class AnnotationConflict(ReportNode):
     frame_id: int | None
     type: AnnotationConflictType
     annotation_ids: list[AnnotationId]
+    attributes: list[str] | None = None
 
     @property
     def severity(self) -> AnnotationConflictSeverity:
@@ -242,6 +275,56 @@ class AnnotationConflict(ReportNode):
             frame_id=d.get("frame_id", None),
             type=AnnotationConflictType(d["type"]),
             annotation_ids=list(AnnotationId.from_dict(v) for v in d["annotation_ids"]),
+            attributes=list(d["attributes"]) if d.get("attributes", None) is not None else None,
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
+class TranscriptionRequirement(ReportNode):
+    id: int
+    attribute: AttributePath
+    granularity: TranscriptionGranularity
+    metric: TranscriptionQualityMetric
+    alignment: TranscriptionAlignMode
+    metric_threshold: float | None
+    grouping_strategy: TranscriptionGroupingStrategy
+    grouping_separator: str
+    grouping_attribute: AttributePath | None
+    acceptance_threshold: float
+
+    _ENUM_TYPES = (
+        TranscriptionGranularity,
+        TranscriptionQualityMetric,
+        TranscriptionAlignMode,
+        TranscriptionGroupingStrategy,
+    )
+
+    def _value_serializer(self, v):
+        if isinstance(v, AttributePath):
+            return v.to_list()
+        elif isinstance(v, self._ENUM_TYPES):
+            return str(v)
+        else:
+            return super()._value_serializer(v)
+
+    @classmethod
+    def from_dict(cls, d):
+        grouping_attribute = d.get("grouping_attribute")
+        return cls(
+            id=d.get("id", 0),
+            attribute=AttributePath.from_list(d["attribute"]),
+            granularity=TranscriptionGranularity(d["granularity"]),
+            metric=TranscriptionQualityMetric(d["metric"]),
+            alignment=TranscriptionAlignMode(d["alignment"]),
+            metric_threshold=d.get("metric_threshold"),
+            grouping_strategy=TranscriptionGroupingStrategy(d["grouping_strategy"]),
+            grouping_separator=d["grouping_separator"],
+            grouping_attribute=(
+                AttributePath.from_list(grouping_attribute)
+                if grouping_attribute is not None
+                else None
+            ),
+            acceptance_threshold=d["acceptance_threshold"],
         )
 
 
@@ -273,7 +356,7 @@ class ComparisonParameters(ReportNode):
     "Used for distinction between strong / weak (low_overlap) matches"
 
     interval_boundary_tolerance: float = 100
-    "Timestamp tolerance (ms) for the audio interval boundary F1 metric"
+    "Timestamp tolerance (ms) for the audio interval boundary F1 metric and transcription alignment"
 
     oks_sigma: float = 0.09
     "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
@@ -325,6 +408,9 @@ class ComparisonParameters(ReportNode):
     job_filter: str = ""
     "JSON filter expression for included jobs"
 
+    transcription_requirements: list[TranscriptionRequirement] = []
+    "Requirements for transcription attributes"
+
     def _value_serializer(self, v):
         if isinstance(v, dm.AnnotationType):
             return str(v.name)
@@ -334,13 +420,53 @@ class ComparisonParameters(ReportNode):
     @classmethod
     def from_dict(cls, d: dict) -> ComparisonParameters:
         fields = fields_dict(cls)
-        return cls(**{field_name: d[field_name] for field_name in fields if field_name in d})
+        return cls(
+            **{
+                field_name: d[field_name]
+                for field_name in fields
+                if field_name in d
+                if field_name not in ("transcription_requirements",)
+            },
+            transcription_requirements=[
+                TranscriptionRequirement.from_dict(r)
+                for r in d.get("transcription_requirements", [])
+            ],
+        )
 
     @classmethod
     def from_settings(
         cls, settings: models.QualitySettings, *, inherited: bool
     ) -> ComparisonParameters:
-        parameters = cls.from_dict(settings.to_dict())
+        settings_dict = settings.to_dict()
+
+        def _spec_path(spec) -> AttributePath:
+            label_spec = spec.label
+            parent_label = label_spec.parent
+            return AttributePath(spec.name, label_spec.name, getattr(parent_label, "name", None))
+
+        transcription_requirements = []
+        for requirement in settings.transcription_requirements.all():
+            attribute_path = _spec_path(requirement.attribute)
+            grouping_attr = requirement.grouping_attribute
+            transcription_requirements.append(
+                {
+                    "id": requirement.id,
+                    "attribute": attribute_path.to_list(),
+                    "granularity": requirement.granularity,
+                    "metric": requirement.metric,
+                    "alignment": requirement.alignment,
+                    "metric_threshold": requirement.metric_threshold,
+                    "grouping_strategy": requirement.grouping_strategy,
+                    "grouping_separator": requirement.grouping_separator,
+                    "grouping_attribute": (
+                        _spec_path(grouping_attr).to_list() if grouping_attr is not None else None
+                    ),
+                    "acceptance_threshold": requirement.acceptance_threshold,
+                }
+            )
+        settings_dict["transcription_requirements"] = transcription_requirements
+
+        parameters = cls.from_dict(settings_dict)
         parameters.inherited = inherited
         return parameters
 
@@ -597,20 +723,126 @@ class ComparisonReportAnnotationLabelSummary(ReportNode):
         )
 
 
+class AttributeSummaryType(str, Enum):
+    ATTRIBUTE = "attribute"
+    TRANSCRIPTION = "transcription"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+@define(kw_only=True, init=False, slots=False)
+class ComparisonReportAnnotationAttributeSummary(ReportNode):
+    comparator: AttributeSummaryType = AttributeSummaryType.ATTRIBUTE
+    "A discriminator field for summary contents"
+
+    attribute: AttributePath
+    valid_count: int
+    invalid_count: int
+    total_count: int
+
+    @property
+    def accuracy(self) -> float:
+        return self.valid_count / (self.total_count or 1)
+
+    def accumulate(self, other: ComparisonReportAnnotationAttributeSummary, *, weight: float = 1):
+        assert self.attribute == other.attribute
+        for field in ["valid_count", "total_count", "invalid_count"]:
+            setattr(self, field, getattr(self, field) + math.ceil(getattr(other, field) * weight))
+
+    def _value_serializer(self, v):
+        if isinstance(v, AttributePath):
+            return v.to_list()
+        elif isinstance(v, AttributeSummaryType):
+            return str(v)
+        else:
+            return super()._value_serializer(v)
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(
+            attribute=AttributePath.from_list(d["attribute"]),
+            valid_count=d["valid_count"],
+            invalid_count=d["invalid_count"],
+            total_count=d["total_count"],
+        )
+
+    @classmethod
+    def create_empty(cls, attribute: AttributePath) -> ComparisonReportAnnotationAttributeSummary:
+        return cls(
+            attribute=attribute,
+            valid_count=0,
+            invalid_count=0,
+            total_count=0,
+        )
+
+
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReportAnnotationComponentsSummary(ReportNode):
     shape: ComparisonReportAnnotationShapeSummary
     label: ComparisonReportAnnotationLabelSummary
+    attribute: list[ComparisonReportAnnotationAttributeSummary]
+
+    @cached_property
+    def transcription(self) -> ComparisonReportTranscriptionComponentSummary | None:
+        """Aggregate transcription stats over all transcription requirements —
+        a dedicated structure alongside `shape` / `label`. Built from the
+        per-attribute transcription summaries (which accumulate additively, so
+        this rolls up to task / project). `None` when there are no transcription
+        requirements, so it is omitted from non-transcription reports. Lets a
+        caller read the headline corpus rate (`transcription.error_rate`) from
+        the summary without downloading full report blobs or hand-summing the
+        per-attribute breakdown."""
+        summaries = [
+            a for a in self.attribute if isinstance(a, ComparisonReportTranscriptionSummary)
+        ]
+        if not summaries:
+            return None
+
+        return ComparisonReportTranscriptionComponentSummary.from_attribute_summaries(summaries)
 
     def accumulate(self, other: ComparisonReportAnnotationComponentsSummary, *, weight: float = 1):
         self.shape.accumulate(other.shape, weight=weight)
         self.label.accumulate(other.label, weight=weight)
+
+        self_attributes = self.attributes_dict()
+        for k, other_v in other.attributes_dict().items():
+            self_v = self_attributes.get(k)
+            if self_v is None:
+                self_v = other_v.create_empty(other_v.attribute)
+                self_attributes[k] = self_v
+
+            self_v.accumulate(other_v, weight=weight)
+
+        self.attribute = list(self_attributes.values())
+
+        # `transcription` is a cached_property derived from `attribute`; drop the
+        # cache so it recomputes from the updated list on next access.
+        self.reset_cached_fields()
+
+    def attributes_dict(self) -> dict[tuple, ComparisonReportAnnotationAttributeSummary]:
+        # TODO: align with attribute comparator from the gs/generalized-quality branch
+        return {(a.attribute, a.comparator): a for a in self.attribute}
 
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
             shape=ComparisonReportAnnotationShapeSummary.from_dict(d["shape"]),
             label=ComparisonReportAnnotationLabelSummary.from_dict(d["label"]),
+            attribute=[_attribute_summary_from_dict(a) for a in d.get("attribute", [])],
+            **(
+                dict(
+                    transcription=ComparisonReportTranscriptionComponentSummary.from_dict(
+                        d["transcription"]
+                    )
+                )
+                if d.get("transcription")
+                else {}
+            ),
         )
 
     @classmethod
@@ -618,7 +850,154 @@ class ComparisonReportAnnotationComponentsSummary(ReportNode):
         return cls(
             shape=ComparisonReportAnnotationShapeSummary.create_empty(),
             label=ComparisonReportAnnotationLabelSummary.create_empty(),
+            attribute=[],
         )
+
+
+@define(kw_only=True, init=False, slots=False)
+class ComparisonReportTranscriptionSummary(ComparisonReportAnnotationAttributeSummary):
+    # Parent fields:
+    # valid_count = pairs/groups with error_rate below the acceptance threshold
+    # total_count = scored pairs (filter) or groups (join)
+    # invalid_count = total - valid
+
+    comparator: AttributeSummaryType = AttributeSummaryType.TRANSCRIPTION
+
+    # Server id of the TranscriptionQualityRequirement this summary came from.
+    requirement_id: int
+
+    # Edit-op counts, additive across pairs / groups and across jobs. These
+    # are plain integer edit counts (for display / diagnostics) — they do NOT
+    # define the rate, since the library's per-chunk cost can be fractional.
+    substitutions: int
+    insertions: int
+    deletions: int
+    hits: int
+
+    # Cost-weighted error mass and reference length, summed across alignments.
+    # `error_mass` is `sum(alignment.error_rate * len(ref_units))` and
+    # `ref_length` is `sum(len(ref_units))`, so `error_rate` is the micro-
+    # averaged cost rate — matching the library's metric-weighted alignment
+    # objective — and both terms stay additive under task / project rollup.
+    error_mass: float
+    ref_length: int
+
+    missing_count: int  # groups present only in GT (join); 0 for filter
+    extra_count: int  # groups present only in DS (join); 0 for filter
+
+    @property
+    def error_rate(self) -> float:
+        return self.error_mass / (self.ref_length or 1)
+
+    def accumulate(self, other: ComparisonReportTranscriptionSummary, *, weight: float = 1):
+        super().accumulate(other, weight=weight)
+        # All summaries merged for one attribute come from the same requirement;
+        # adopt its id (create_empty starts at 0 during rollup).
+        self.requirement_id = other.requirement_id
+        for field in [
+            "substitutions",
+            "insertions",
+            "deletions",
+            "hits",
+            "ref_length",
+            "missing_count",
+            "extra_count",
+        ]:
+            setattr(self, field, getattr(self, field) + math.ceil(getattr(other, field) * weight))
+        self.error_mass += other.error_mass * weight
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(
+            attribute=AttributePath.from_list(d["attribute"]),
+            requirement_id=d.get("requirement_id", 0),
+            substitutions=d["substitutions"],
+            insertions=d["insertions"],
+            deletions=d["deletions"],
+            hits=d["hits"],
+            error_mass=d["error_mass"],
+            ref_length=d["ref_length"],
+            valid_count=d["valid_count"],
+            invalid_count=d["invalid_count"],
+            total_count=d["total_count"],
+            missing_count=d["missing_count"],
+            extra_count=d["extra_count"],
+        )
+
+    @classmethod
+    def create_empty(
+        cls, attribute: AttributePath, *, requirement_id: int = 0
+    ) -> ComparisonReportTranscriptionSummary:
+        return cls(
+            attribute=attribute,
+            requirement_id=requirement_id,
+            substitutions=0,
+            insertions=0,
+            deletions=0,
+            hits=0,
+            error_mass=0.0,
+            ref_length=0,
+            valid_count=0,
+            invalid_count=0,
+            total_count=0,
+            missing_count=0,
+            extra_count=0,
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
+class ComparisonReportTranscriptionComponentSummary(ReportNode):
+    # This class is not supposed for accumulation.
+    # If needed, recompute from the accumulated transcriptions instead.
+
+    error_mass: float
+    ref_length: int
+
+    substitutions: int
+    insertions: int
+    deletions: int
+    hits: int
+
+    valid_count: int
+    invalid_count: int
+    total_count: int
+    missing_count: int
+    extra_count: int
+
+    _SUMMED_FIELDS = (
+        "error_mass",
+        "ref_length",
+        "substitutions",
+        "insertions",
+        "deletions",
+        "hits",
+        "valid_count",
+        "invalid_count",
+        "total_count",
+        "missing_count",
+        "extra_count",
+    )
+
+    @property
+    def error_rate(self) -> float:
+        return self.error_mass / (self.ref_length or 1)
+
+    @classmethod
+    def from_attribute_summaries(
+        cls, summaries: list[ComparisonReportTranscriptionSummary]
+    ) -> ComparisonReportTranscriptionComponentSummary:
+        return cls(**{f: sum(getattr(a, f) for a in summaries) for f in cls._SUMMED_FIELDS})
+
+    @classmethod
+    def from_dict(cls, d: dict) -> ComparisonReportTranscriptionComponentSummary:
+        return cls(**{f: d[f] for f in cls._SUMMED_FIELDS})
+
+
+def _attribute_summary_from_dict(d: dict) -> ComparisonReportAnnotationAttributeSummary:
+    if d.get("comparator") == AttributeSummaryType.TRANSCRIPTION:
+        return ComparisonReportTranscriptionSummary.from_dict(d)
+
+    return ComparisonReportAnnotationAttributeSummary.from_dict(d)
 
 
 @define(kw_only=True, init=False, slots=False)
@@ -2076,9 +2455,30 @@ class _Comparator:
 
 
 @define(slots=False)
+class _AttributeIndex:
+    by_id: dict[int, AttributeSpec]
+    by_path: dict[AttributePath, AttributeSpec]
+    transcription_attr_ids: set[int]
+
+
+@define(slots=False)
+class _AlignmentResult:
+    """A join-mode transcription group with its audio interval references
+    resolved back to CVAT interval dicts."""
+
+    gt_intervals: list[dict]
+    ds_intervals: list[dict]
+    alignment: audio_qa.AlignmentResult
+
+
+@define(slots=False)
 class _IntervalMatches:
     """CVAT-side dict pairs recovered from `audio_qa.compare()` output, plus
     the lookup tables needed to score / aggregate them.
+
+    `matches` / `gt_unmatched` / `ds_unmatched` are mutated by the
+    transcription-scoring step, which demotes a failed match into the
+    unmatched buckets.
     """
 
     matches: list[tuple[dict, dict]]
@@ -2086,6 +2486,14 @@ class _IntervalMatches:
     gt_unmatched: list[dict]
     ds_unmatched: list[dict]
     iou_by_pair: dict[tuple[int, int], float]
+
+    # Per-requirement (index aligned with `active_requirements`).
+    # Filter mode populates `pair_alignment_by_req`; join mode populates the
+    # group tables. The other stays empty for a given requirement.
+    pair_alignment_by_req: list[dict[tuple[int, int], audio_qa.AlignmentResult]]
+    group_views_by_req: list[list[_AlignmentResult]]
+    missing_groups_by_req: list[list[list[dict]]]  # GT-only interval groups
+    extra_groups_by_req: list[list[list[dict]]]  # DS-only interval groups
 
 
 class DatasetComparator:
@@ -2168,6 +2576,7 @@ class DatasetComparator:
     def _process_intervals(self):
         results = self._intermediate_results
         conflicts = results.setdefault("conflicts", [])
+        attribute_summaries: dict = {}
 
         annotations_summary: ComparisonReportAnnotationsSummary = results.setdefault(
             "annotations", ComparisonReportAnnotationsSummary.create_empty()
@@ -2181,10 +2590,11 @@ class DatasetComparator:
         if not gt_intervals and not ds_intervals:
             return
 
+        attr_index = self._build_attribute_index()
         cvat_dm_label_id_map = self._build_cvat_dm_label_id_map()
 
-        audio_gt, audio_ds, audio_settings = self._build_interval_audio_inputs(
-            gt_intervals, ds_intervals
+        audio_gt, audio_ds, audio_settings, active_requirements = self._build_interval_audio_inputs(
+            gt_intervals, ds_intervals, attr_index=attr_index
         )
         audio_report = audio_qa.compare(audio_gt, audio_ds, settings=audio_settings)
 
@@ -2192,6 +2602,24 @@ class DatasetComparator:
 
         self._emit_interval_conflicts(conflicts, matching_results)
 
+        transcription_summaries = self._build_interval_transcription_summaries(
+            matching_results=matching_results, active_requirements=active_requirements
+        )
+
+        demoted_matches = self._score_interval_transcriptions(
+            matching_results=matching_results,
+            active_requirements=active_requirements,
+            attr_index=attr_index,
+            cvat_dm_label_id_map=cvat_dm_label_id_map,
+            conflicts=conflicts,
+            attribute_summaries=attribute_summaries,
+        )
+
+        # NOTE: a transcription-failed (demoted) match is invalid at the
+        # annotation level (confusion matrix / annotations) but still credited
+        # as a shape + label match. This split is not principal and may be
+        # dropped soon — demoted matches are only special-cased for the
+        # shape / label component summaries.
         confusion_matrix_labels, confusion_matrix = self._build_interval_confusion_matrix(
             matching_results, cvat_dm_label_id_map=cvat_dm_label_id_map
         )
@@ -2203,10 +2631,34 @@ class DatasetComparator:
             matching_results=matching_results,
             gt_intervals=gt_intervals,
             ds_intervals=ds_intervals,
+            attribute_summaries=attribute_summaries,
+            transcription_summaries=transcription_summaries,
+            demoted_matches=demoted_matches,
         )
 
         annotations_summary.accumulate(annotations_summary_update)
         component_summaries.accumulate(component_summaries_update)
+
+    def _build_attribute_index(self) -> _AttributeIndex:
+        by_id = {
+            spec.id: spec
+            for label_attrs in self._gt_data_provider.job_data._attribute_mapping.values()
+            for spec in label_attrs["spec"].values()
+        }
+        by_path: dict[AttributePath, AttributeSpec] = {
+            AttributePath(
+                spec.name, spec.label.name, getattr(spec.label.parent, "name", None)
+            ): spec
+            for spec in by_id.values()
+        }
+        transcription_attr_ids = {
+            by_path[req.attribute].id for req in self.settings.transcription_requirements
+        }
+        return _AttributeIndex(
+            by_id=by_id,
+            by_path=by_path,
+            transcription_attr_ids=transcription_attr_ids,
+        )
 
     def _build_cvat_dm_label_id_map(self) -> dict[int, int]:
         """Returns {cvat_label_id -> dm_label_id} mapping"""
@@ -2229,10 +2681,13 @@ class DatasetComparator:
         self,
         gt_intervals: list[dict],
         ds_intervals: list[dict],
+        *,
+        attr_index: _AttributeIndex,
     ) -> tuple[
         list[audio_qa.Interval],
         list[audio_qa.Interval],
         audio_qa.QualitySettings,
+        list[tuple[TranscriptionRequirement, AttributeSpec]],
     ]:
         def to_audio_intervals(intervals: list[dict]) -> list[audio_qa.Interval]:
             return [
@@ -2249,14 +2704,54 @@ class DatasetComparator:
         gt_audio = to_audio_intervals(gt_intervals)
         ds_audio = to_audio_intervals(ds_intervals)
 
+        # Per-requirement audio config. Skip requirements whose attribute spec
+        # is missing or not TEXT silently.
+        audio_reqs: list[audio_qa.TranscriptionRequirement] = []
+        active_requirements: list[tuple[TranscriptionRequirement, AttributeSpec]] = []
+        for requirement in self.settings.transcription_requirements:
+            attribute_spec = attr_index.by_path.get(requirement.attribute)
+            if attribute_spec is None or attribute_spec.input_type != AttributeType.TEXT:
+                continue
+
+            grouping_attr_spec = (
+                attr_index.by_path.get(requirement.grouping_attribute)
+                if requirement.grouping_attribute is not None
+                else None
+            )
+
+            audio_reqs.append(
+                audio_qa.TranscriptionRequirement(
+                    name=f"attr_{attribute_spec.id}",
+                    text_attribute=str(attribute_spec.id),
+                    granularity=audio_qa.Granularity(requirement.granularity),
+                    align=audio_qa.AlignMode(requirement.alignment),
+                    metric=audio_qa.Metric(requirement.metric),
+                    threshold=requirement.metric_threshold,
+                    normalizer=audio_qa.NormalizerConfig(mode=audio_qa.NormalizerMode.BASIC),
+                    grouping=audio_qa.GroupingConfig(
+                        strategy=audio_qa.GroupingStrategy(requirement.grouping_strategy),
+                        attribute=(
+                            str(grouping_attr_spec.id) if grouping_attr_spec is not None else None
+                        ),
+                        join_separator=requirement.grouping_separator,
+                    ),
+                    iou_threshold=self.settings.iou_threshold,
+                    # enforce_overlap left at library default (True) for v1.
+                    # Both CVAT settings and the library work in milliseconds.
+                    overlap_tolerance_ms=self.settings.interval_boundary_tolerance,
+                )
+            )
+            active_requirements.append((requirement, attribute_spec))
+
         audio_settings = audio_qa.QualitySettings(
             interval_matching=audio_qa.IntervalMatchingConfig(
                 iou_threshold=self.settings.iou_threshold,
                 low_overlap_threshold=self.settings.low_overlap_threshold,
                 boundary_tolerance_ms=self.settings.interval_boundary_tolerance,
             ),
+            transcriptions=audio_reqs,
         )
-        return gt_audio, ds_audio, audio_settings
+        return gt_audio, ds_audio, audio_settings, active_requirements
 
     def _recover_interval_matches(
         self,
@@ -2265,7 +2760,7 @@ class DatasetComparator:
         ds_intervals: list[dict],
     ) -> _IntervalMatches:
         """Map audio's id-only references back to CVAT interval dicts and
-        build a per-pair IoU lookup table."""
+        build per-pair lookup tables (IoU + per-requirement alignment)."""
 
         gt_by_id = {iv["id"]: iv for iv in gt_intervals}
         ds_by_id = {iv["id"]: iv for iv in ds_intervals}
@@ -2284,12 +2779,46 @@ class DatasetComparator:
             )
         }
 
+        # Each transcription requirement works at the transcription attribute level,
+        # and produces its own interval matching, even though the IoU stays the same.
+        # Specifically, it happens with the "filter" matching strategy.
+        pair_alignment_by_req = [
+            {(p.gt.id, p.ds.id): p.alignment for p in tr.pairs}
+            for tr in audio_report.transcriptions
+        ]
+
+        # Join-mode output: groups bundle several intervals on each side into
+        # one comparison. Resolve audio interval ids back to CVAT dicts.
+        group_views_by_req = [
+            [
+                _AlignmentResult(
+                    gt_intervals=[gt_by_id[iv.id] for iv in g.gt_intervals],
+                    ds_intervals=[ds_by_id[iv.id] for iv in g.ds_intervals],
+                    alignment=g.alignment,
+                )
+                for g in tr.groups
+            ]
+            for tr in audio_report.transcriptions
+        ]
+        missing_groups_by_req = [
+            [[gt_by_id[iv.id] for iv in intervals] for _key, intervals in tr.missing_groups]
+            for tr in audio_report.transcriptions
+        ]
+        extra_groups_by_req = [
+            [[ds_by_id[iv.id] for iv in intervals] for _key, intervals in tr.extra_groups]
+            for tr in audio_report.transcriptions
+        ]
+
         return _IntervalMatches(
             matches=matches,
             mismatches=mismatches,
             gt_unmatched=gt_unmatched,
             ds_unmatched=ds_unmatched,
             iou_by_pair=iou_by_pair,
+            pair_alignment_by_req=pair_alignment_by_req,
+            group_views_by_req=group_views_by_req,
+            missing_groups_by_req=missing_groups_by_req,
+            extra_groups_by_req=extra_groups_by_req,
         )
 
     def _emit_interval_conflicts(
@@ -2344,6 +2873,259 @@ class DatasetComparator:
                 )
             )
 
+    def _score_interval_transcriptions(
+        self,
+        *,
+        matching_results: _IntervalMatches,
+        active_requirements: list[tuple[TranscriptionRequirement, AttributeSpec]],
+        attr_index: _AttributeIndex,
+        cvat_dm_label_id_map: dict[int, int],
+        conflicts: list[AnnotationConflict],
+        attribute_summaries: dict,
+    ) -> list[tuple[dict, dict]]:
+        """Transcription scoring.
+
+        FILTER mode requirements score each matched
+        interval pair and may demote a failed match to unmatched.
+
+        JOIN mode requirements score grouped transcriptions
+        on an independent axis (no demotion).
+
+        Both feed `attribute_summaries`; JOIN additionally
+        reports missing / extra groups as conflicts.
+
+        Returns the demoted (gt, ds) pairs: a transcription-failed match is
+        moved to the unmatched buckets here (so the confusion matrix /
+        annotations summary count it invalid), but is still a valid shape +
+        label match. The caller re-credits them in the shape / label summary.
+        This split is not principal and may be removed soon.
+        """
+
+        gt_job_id = self._gt_data_provider.job_id
+        ds_job_id = self._ds_data_provider.job_id
+        demoted_matches: list[tuple[dict, dict]] = []
+
+        def ann_id(interval: dict, job_id: int) -> AnnotationId:
+            return AnnotationId(
+                obj_id=interval["id"],
+                job_id=job_id,
+                type=AnnotationType.INTERVAL,
+                shape_type=None,
+            )
+
+        filter_requirements = [
+            (req_idx, requirement, attribute_spec)
+            for req_idx, (requirement, attribute_spec) in enumerate(active_requirements)
+            if requirement.grouping_strategy == TranscriptionGroupingStrategy.FILTER
+        ]
+        join_requirements = [
+            (req_idx, requirement, attribute_spec)
+            for req_idx, (requirement, attribute_spec) in enumerate(active_requirements)
+            if requirement.grouping_strategy == TranscriptionGroupingStrategy.JOIN
+        ]
+
+        match_idx = 0
+        while match_idx < len(matching_results.matches):
+            gt_ann, ds_ann = matching_results.matches[match_idx]
+
+            # FILTER requirements may demote a match to unmatched if the
+            # transcription requirement is not satisfied for this pair.
+            match_confirmed = True
+            for req_idx, requirement, attribute_spec in filter_requirements:
+                if (
+                    attribute_spec.id
+                    not in self._gt_data_provider.job_data._attribute_mapping_merged[
+                        gt_ann["label_id"]
+                    ]
+                ):
+                    continue
+
+                pair_alignment = matching_results.pair_alignment_by_req[req_idx][
+                    (gt_ann["id"], ds_ann["id"])
+                ]
+                req_satisfied = pair_alignment.error_rate < requirement.acceptance_threshold
+
+                if not req_satisfied:
+                    match_confirmed = False
+                    conflicts.append(
+                        AnnotationConflict(
+                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                            frame_id=None,
+                            annotation_ids=[
+                                ann_id(ds_ann, ds_job_id),
+                                ann_id(gt_ann, gt_job_id),
+                            ],
+                            attributes=[attribute_spec.name],
+                        )
+                    )
+
+                    # No early return: a match is demoted only after every
+                    # filter requirement has been checked. Pass/fail tallies
+                    # live in the transcription summary, not here.
+
+            if not match_confirmed:
+                matching_results.matches.pop(match_idx)
+                matching_results.gt_unmatched.append(gt_ann)
+                matching_results.ds_unmatched.append(ds_ann)
+                demoted_matches.append((gt_ann, ds_ann))
+            else:
+                match_idx += 1
+
+            if self.settings.compare_attributes:
+                self._match_interval_non_text_attributes(
+                    gt_ann,
+                    ds_ann,
+                    attr_index,
+                    cvat_dm_label_id_map,
+                    conflicts,
+                    attribute_summaries,
+                )
+
+        # JOIN requirements are scored independently of interval matching:
+        # intervals are grouped by key, the joined transcriptions compared,
+        # and conflicts emitted per group without demoting interval matches.
+        for req_idx, requirement, attribute_spec in join_requirements:
+            for group in matching_results.group_views_by_req[req_idx]:
+                req_satisfied = group.alignment.error_rate < requirement.acceptance_threshold
+                if not req_satisfied:
+                    conflicts.append(
+                        AnnotationConflict(
+                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                            frame_id=None,
+                            annotation_ids=[ann_id(iv, ds_job_id) for iv in group.ds_intervals]
+                            + [ann_id(iv, gt_job_id) for iv in group.gt_intervals],
+                            attributes=[attribute_spec.name],
+                        )
+                    )
+
+            for intervals in matching_results.missing_groups_by_req[req_idx]:
+                for interval in intervals:
+                    conflicts.append(
+                        AnnotationConflict(
+                            type=AnnotationConflictType.MISSING_ANNOTATION,
+                            frame_id=None,
+                            annotation_ids=[ann_id(interval, gt_job_id)],
+                            attributes=[attribute_spec.name],
+                        )
+                    )
+
+            for intervals in matching_results.extra_groups_by_req[req_idx]:
+                for interval in intervals:
+                    conflicts.append(
+                        AnnotationConflict(
+                            type=AnnotationConflictType.EXTRA_ANNOTATION,
+                            frame_id=None,
+                            annotation_ids=[ann_id(interval, ds_job_id)],
+                            attributes=[attribute_spec.name],
+                        )
+                    )
+
+        return demoted_matches
+
+    @staticmethod
+    def _accumulate_alignment(
+        summary: ComparisonReportTranscriptionSummary,
+        alignment: audio_qa.AlignmentResult,
+        acceptance_threshold: float,
+    ) -> None:
+        summary.substitutions += alignment.substitutions
+        summary.insertions += alignment.insertions
+        summary.deletions += alignment.deletions
+        summary.hits += alignment.hits
+
+        # Carry the library's cost-weighted rate as additive mass over reference
+        # length, so the summary's error_rate matches the metric-weighted
+        # alignment (not a hard count reconstruction).
+        n_ref = len(alignment.ref_units)
+        if n_ref:
+            summary.error_mass += alignment.error_rate * n_ref
+            summary.ref_length += n_ref
+
+        satisfied = alignment.error_rate < acceptance_threshold
+        summary.valid_count += int(satisfied)
+        summary.invalid_count += int(not satisfied)
+        summary.total_count += 1
+
+    def _build_interval_transcription_summaries(
+        self,
+        *,
+        matching_results: _IntervalMatches,
+        active_requirements: list[tuple[TranscriptionRequirement, AttributeSpec]],
+    ) -> list[ComparisonReportTranscriptionSummary]:
+        """Aggregate per-requirement transcription edit counts and pass/fail
+        tallies from the recovered filter pairs / join groups."""
+
+        summaries: list[ComparisonReportTranscriptionSummary] = []
+        for req_idx, (requirement, _attribute_spec) in enumerate(active_requirements):
+            is_join = requirement.grouping_strategy == TranscriptionGroupingStrategy.JOIN
+            if is_join:
+                alignments = [gv.alignment for gv in matching_results.group_views_by_req[req_idx]]
+                missing_count = len(matching_results.missing_groups_by_req[req_idx])
+                extra_count = len(matching_results.extra_groups_by_req[req_idx])
+            else:
+                alignments = list(matching_results.pair_alignment_by_req[req_idx].values())
+                missing_count = 0
+                extra_count = 0
+
+            summary = ComparisonReportTranscriptionSummary.create_empty(
+                requirement.attribute, requirement_id=requirement.id
+            )
+            summary.missing_count = missing_count
+            summary.extra_count = extra_count
+            for alignment in alignments:
+                self._accumulate_alignment(summary, alignment, requirement.acceptance_threshold)
+
+            summaries.append(summary)
+
+        return summaries
+
+    def _match_interval_non_text_attributes(
+        self,
+        gt_ann: dict,
+        ds_ann: dict,
+        specs: _AttributeIndex,
+        cvat_dm_label_id_map: dict[int, int],
+        conflicts: list[AnnotationConflict],
+        attribute_summaries: dict,
+    ) -> None:
+        """Delegate non-transcription attribute comparison to `_match_attributes`
+        for a single matched pair."""
+
+        gt_ann_dm = dm.Label(
+            id=gt_ann["id"],
+            label=cvat_dm_label_id_map[gt_ann["label_id"]],
+            attributes={
+                specs.by_id[a["spec_id"]].name: a["value"]
+                for a in gt_ann["attributes"]
+                if a["spec_id"] not in specs.transcription_attr_ids
+            },
+        )
+        ds_ann_dm = dm.Label(
+            id=ds_ann["id"],
+            label=cvat_dm_label_id_map[ds_ann["label_id"]],
+            attributes={
+                specs.by_id[a["spec_id"]].name: a["value"]
+                for a in ds_ann["attributes"]
+                if a["spec_id"] not in specs.transcription_attr_ids
+            },
+        )
+        ann_job_id_map = {
+            id(gt_ann_dm): self._gt_data_provider.job_id,
+            id(ds_ann_dm): self._ds_data_provider.job_id,
+        }
+        self._match_attributes(
+            [(gt_ann_dm, ds_ann_dm)],
+            frame_id=None,
+            conflicts=conflicts,
+            attribute_summaries=attribute_summaries,
+            make_annotation_id=lambda a, _: AnnotationId(
+                obj_id=a.id,
+                job_id=ann_job_id_map[id(a)],
+                type=AnnotationType.INTERVAL,
+                shape_type=None,
+            ),
+        )
+
     def _build_interval_confusion_matrix(
         self, matching_results: _IntervalMatches, *, cvat_dm_label_id_map: dict[int, int]
     ) -> tuple[list[str], np.ndarray]:
@@ -2370,11 +3152,19 @@ class DatasetComparator:
         matching_results: _IntervalMatches,
         gt_intervals: list[dict],
         ds_intervals: list[dict],
+        attribute_summaries: dict,
+        transcription_summaries: list[ComparisonReportTranscriptionSummary],
+        demoted_matches: list[tuple[dict, dict]],
     ) -> ComparisonReportAnnotationComponentsSummary:
-        n_matches = len(matching_results.matches)
+        # Transcription-demoted pairs sit in the unmatched buckets (so the
+        # annotation summary counts them invalid), but they ARE valid shape +
+        # label matches — re-credit them here. This special-casing is not
+        # principal and may be removed soon.
+        n_demoted = len(demoted_matches)
+        n_matches = len(matching_results.matches) + n_demoted
         n_mismatches = len(matching_results.mismatches)
-        n_gt_unmatched = len(matching_results.gt_unmatched)
-        n_ds_unmatched = len(matching_results.ds_unmatched)
+        n_gt_unmatched = len(matching_results.gt_unmatched) - n_demoted
+        n_ds_unmatched = len(matching_results.ds_unmatched) - n_demoted
         return ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
                 valid_count=n_matches + n_mismatches,
@@ -2390,6 +3180,7 @@ class DatasetComparator:
                 invalid_count=n_mismatches,
                 total_count=n_matches + n_mismatches,
             ),
+            attribute=list(attribute_summaries.values()) + transcription_summaries,
         )
 
     def _generate_frame_annotation_conflicts(
@@ -2543,20 +3334,14 @@ class DatasetComparator:
                     )
                 )
 
+        attribute_summaries = {}
         if self.settings.compare_attributes:
-            for gt_ann, ds_ann in matches:
-                attribute_results = self.comparator.match_attrs(gt_ann, ds_ann)
-                if any(attribute_results[1:]):
-                    conflicts.append(
-                        AnnotationConflict(
-                            frame_id=frame_id,
-                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
-                            annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                            ],
-                        )
-                    )
+            self._match_attributes(
+                matches,
+                frame_id=frame_id,
+                conflicts=conflicts,
+                attribute_summaries=attribute_summaries,
+            )
 
         if self.settings.compare_groups:
             gt_groups, gt_group_map = self.comparator.find_groups(gt_item)
@@ -2651,11 +3436,64 @@ class DatasetComparator:
                     invalid_count=invalid_labels_count,
                     total_count=total_labels_count,
                 ),
+                attribute=list(attribute_summaries.values()),
             ),
             conflicts=conflicts,
         )
 
         return conflicts
+
+    def _match_attributes(
+        self,
+        annotations: Sequence[tuple[dm.Annotation, dm.Annotation]],
+        *,
+        frame_id: int | None,
+        conflicts: list[AnnotationConflict],
+        attribute_summaries: dict[AttributePath, ComparisonReportAnnotationAttributeSummary],
+        make_annotation_id: Callable[[dm.Annotation, dm.IDataset], AnnotationId] | None = None,
+    ):
+        if make_annotation_id is None:
+            make_annotation_id = self._dm_ann_to_ann_id
+
+        label_id_map = dict(enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]))
+
+        def _make_attribute_path(label_id: int, attribute_name: str) -> tuple:
+            label_info = label_id_map[label_id]
+            return AttributePath(attribute_name, label_info.name, label_info.parent)
+
+        for gt_ann, ds_ann in annotations:
+            attribute_results = self.comparator.match_attrs(gt_ann, ds_ann)
+            mismatching_attrs = sorted(itertools.chain.from_iterable(attribute_results[1:]))
+            if mismatching_attrs:
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=frame_id,
+                        type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                        annotation_ids=[
+                            make_annotation_id(ds_ann, self._ds_dataset),
+                            make_annotation_id(gt_ann, self._gt_dataset),
+                        ],
+                        attributes=mismatching_attrs,
+                    )
+                )
+
+            for k in attribute_results[0]:
+                key = _make_attribute_path(gt_ann.label, k)
+                attribute_summaries.setdefault(
+                    key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
+                ).valid_count += 1
+
+            for k in attribute_results[1]:
+                key = _make_attribute_path(gt_ann.label, k)
+                attribute_summaries.setdefault(
+                    key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
+                ).invalid_count += 1
+
+            for k in itertools.chain.from_iterable(attribute_results):
+                key = _make_attribute_path(gt_ann.label, k)
+                attribute_summaries.setdefault(
+                    key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
+                ).total_count += 1
 
     # row/column index in the confusion matrix corresponding to unmatched annotations
     _UNMATCHED_IDX = -1
@@ -2758,6 +3596,7 @@ class DatasetComparator:
                 invalid_count=0,
                 total_count=0,
             ),
+            attribute=[],
         )
         mean_ious = []
         empty_gt_frames = set()
@@ -3227,6 +4066,7 @@ class TaskQualityCalculator:
                     type=conflict["type"],
                     frame=conflict["frame_id"],
                     severity=conflict["severity"],
+                    attributes=conflict["attributes"],
                 )
                 db_conflicts.append(db_conflict)
 

@@ -3,16 +3,24 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
+from collections import Counter
 from enum import Enum
+from typing import Any
 
 from django.db import models as django_models
+from django.db.models import prefetch_related_objects
 from rest_framework import serializers
 
 from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.filters import JsonLogicFilter
+from cvat.apps.engine.model_utils import bulk_create
+from cvat.apps.engine.models import AttributeType
 from cvat.apps.engine.serializers import WriteOnceMixin
+from cvat.apps.engine.utils import FORMATTED_LIST_DISPLAY_THRESHOLD, format_list
 from cvat.apps.quality_control import models
+
+MAX_ATTRIBUTE_REQUIREMENTS = 100
 
 
 class AnnotationIdSerializer(serializers.ModelSerializer):
@@ -24,11 +32,19 @@ class AnnotationIdSerializer(serializers.ModelSerializer):
 
 class AnnotationConflictSerializer(serializers.ModelSerializer):
     annotation_ids = AnnotationIdSerializer(many=True)
+    attributes = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = models.AnnotationConflict
-        fields = ("id", "frame", "type", "annotation_ids", "report_id", "severity")
+        fields = ("id", "frame", "type", "annotation_ids", "attributes", "report_id", "severity")
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        serialized = super().to_representation(instance)
+        if not instance.attributes:
+            serialized.pop("attributes")
+
+        return serialized
 
 
 class QualityReportTasksSummarySerializer(serializers.Serializer):
@@ -88,6 +104,11 @@ class QualityReportSummarySerializer(serializers.Serializer):
     precision = serializers.FloatField(source="annotations.precision")
     recall = serializers.FloatField(source="annotations.recall")
 
+    # Optional metrics
+    transcription_error_rate = serializers.FloatField(
+        source="annotation_components.transcription.error_rate", required=False
+    )
+
     tasks = QualityReportTasksSummarySerializer(
         required=False, help_text="Included only in project reports"
     )
@@ -98,8 +119,15 @@ class QualityReportSummarySerializer(serializers.Serializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        # Old reports may miss "tasks" and "jobs", new reports may miss "frame_*" fields
-        for optional_field in ("tasks", "jobs", "frame_count", "frame_share"):
+        # Old reports may miss "tasks" and "jobs", new reports may miss "frame_*"
+        # fields. "transcription_error_rate" presence depends on the task.
+        for optional_field in (
+            "tasks",
+            "jobs",
+            "frame_count",
+            "frame_share",
+            "transcription_error_rate",
+        ):
             if representation.get(optional_field) is None:
                 representation.pop(optional_field, None)
 
@@ -199,9 +227,162 @@ class QualitySettingsParentType(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class TranscriptionRequirementSerializer(serializers.ModelSerializer):
+    attribute_id = serializers.IntegerField(
+        read_only=False,
+        allow_null=False,
+        help_text=textwrap.dedent(f"""\
+            The transcription (type '{AttributeType.TEXT}') attribute to apply the requirement to
+            """),
+    )
+    grouping_attribute_id = serializers.IntegerField(
+        read_only=False,
+        allow_null=True,
+        required=False,
+        help_text=textwrap.dedent("""\
+            Optional attribute used to group intervals into transcription
+            chunks (e.g. a speaker tag). Must belong to the same label as
+            the transcription attribute. None = group by label only.
+            """),
+    )
+
+    class Meta:
+        model = models.TranscriptionQualityRequirement
+        fields = (
+            "id",
+            "attribute_id",
+            "granularity",
+            "metric",
+            "alignment",
+            "metric_threshold",
+            "grouping_strategy",
+            "grouping_separator",
+            "grouping_attribute_id",
+            "acceptance_threshold",
+        )
+
+        read_only_fields = ("id",)
+
+        extra_kwargs = {
+            "acceptance_threshold": {
+                "required": False,
+                "min_value": 0,
+                "max_value": 1,
+                "help_text": textwrap.dedent("""\
+                    Per-match error-rate threshold in [0, 1]. A transcription
+                    match whose error rate is at or above this value is
+                    reported as a mismatching-attributes conflict.
+                    """),
+            },
+            "metric_threshold": {
+                "required": False,
+                "allow_null": True,
+                "min_value": 0,
+                "help_text": textwrap.dedent("""\
+                    Optional per-chunk cost binarization threshold (>= 0).
+                    When set, the chunk cost is rounded to 0 / 1 by comparing
+                    against this value, turning a soft metric into a binary
+                    one. No upper bound: the `error-rate` metric is unbounded
+                    (it can exceed 1 when the hypothesis is much longer than
+                    the reference). Has no effect when `metric` is `equality`.
+                    """),
+            },
+            "granularity": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    Output unit of the reported rate. `word` reports WER-family
+                    rates, `character` reports CER-family rates.
+                    """),
+            },
+            "metric": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    Per-chunk cost function used during alignment.
+                    `equality` is hard 0 / 1, `error-rate` is fractional
+                    Levenshtein distance, `normalized-lev` is a smoother
+                    normalized variant. For `granularity=character` all three
+                    degenerate to `equality`.
+                    """),
+            },
+            "alignment": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    Alignment regime. `char` runs char-level Levenshtein and
+                    reconstructs word boundaries afterwards (default; handles
+                    arbitrary N-to-M token splits). `word` runs plain
+                    token-level Levenshtein (faster, no boundary recovery).
+                    """),
+            },
+            "grouping_strategy": {
+                "required": False,
+                "help_text": textwrap.dedent("""\
+                    How intervals are grouped before transcription
+                    comparison. `filter` scores each matched GT / DS interval
+                    pair independently. `join` concatenates all GT and all DS
+                    intervals that share the same grouping key (label, plus
+                    optional `grouping_attribute_id` value) and scores the
+                    resulting pair of strings.
+                    """),
+            },
+            "grouping_separator": {
+                "required": False,
+                # Preserve leading / trailing spaces (e.g. " | ") — DRF
+                # CharField trims by default, which would corrupt the separator.
+                "trim_whitespace": False,
+                "help_text": textwrap.dedent("""\
+                    Separator inserted between concatenated transcriptions
+                    when `grouping_strategy=join`. Defaults to a single space.
+                    """),
+            },
+        }
+
+    def update(self, instance, validated_data):
+        assert False
+
+    def validate_pre_create(self, validated_data) -> dict[str, Any]:
+        attribute = models.AttributeSpec.objects.get(pk=validated_data["attribute_id"])
+
+        if attribute.input_type != AttributeType.TEXT:
+            raise serializers.ValidationError(
+                "The selected attribute must have " f"the '{AttributeType.TEXT.value}' type"
+            )
+
+        settings = self._context["settings"]
+        if (settings.task_id != attribute.label.task_id) or (
+            settings.project_id != attribute.label.project_id
+        ):
+            raise serializers.ValidationError(
+                f"Attribute {attribute.id} must belong to the same task or project as the settings"
+            )
+
+        validated_data["settings"] = settings
+
+        grouping_attribute_id = validated_data.get("grouping_attribute_id")
+        if grouping_attribute_id is not None:
+            try:
+                grouping_attribute = models.AttributeSpec.objects.get(pk=grouping_attribute_id)
+            except models.AttributeSpec.DoesNotExist:
+                raise serializers.ValidationError(
+                    f"Grouping attribute {grouping_attribute_id} does not exist"
+                )
+            if grouping_attribute.label_id != attribute.label_id:
+                raise serializers.ValidationError(
+                    f"Grouping attribute {grouping_attribute_id} must belong to "
+                    f"the same label as the transcription attribute"
+                )
+
+        return validated_data
+
+    def create(self, validated_data):
+        return super().create(self.validate_pre_create(validated_data))
+
+
 class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
     task_id = serializers.IntegerField(required=False, allow_null=True)
     project_id = serializers.IntegerField(required=False, allow_null=True)
+    transcription_requirements = TranscriptionRequirementSerializer(
+        required=False, partial=True, many=True
+    )
 
     class Meta:
         model = models.QualitySettings
@@ -229,6 +410,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "panoptic_comparison",
             "compare_attributes",
             "empty_is_annotated",
+            "transcription_requirements",
             "created_date",
             "updated_date",
         )
@@ -243,9 +425,17 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 Allow using project settings when computing task quality.
                 Only applicable to task quality settings inside projects
             """,
-            "target_metric": "The primary metric used for quality estimation",
+            "target_metric": """
+                The primary metric used for quality estimation. accuracy / precision /
+                recall are higher-is-better and bounded in [0, 1];
+                'transcription_error_rate' is the lower-is-better transcription corpus
+                rate and is unbounded above.
+            """,
             "target_metric_threshold": """
                 Defines the minimal quality requirements in terms of the selected target metric.
+                For the lower-is-better 'transcription_error_rate' metric the quality
+                is satisfied when the metric is at or below the threshold; for the other metrics
+                it must be at or above it.
             """,
             "max_validations_per_job": """
                 The maximum number of job validation attempts for the job assignee.
@@ -325,7 +515,10 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         for field_name in fields:
             if field_name.endswith("_threshold") or field_name in ["oks_sigma", "line_thickness"]:
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
-                extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
+
+                if field_name != "target_metric_threshold":
+                    # transcription_error_rate is unbounded
+                    extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
 
         extra_kwargs.setdefault("interval_boundary_tolerance", {}).setdefault("min_value", 0)
 
@@ -343,6 +536,56 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if value:
             JsonLogicFilter().parse_query(value, raise_on_empty=False)
         return value
+
+    def validate_transcription_requirements(self, value):
+        if MAX_ATTRIBUTE_REQUIREMENTS and len(value) >= MAX_ATTRIBUTE_REQUIREMENTS:
+            # NOTE: This check only works till all the requirements are specified
+            # in a single request
+            raise serializers.ValidationError(
+                f"The number of transcription requirements cannot "
+                f"exceed {MAX_ATTRIBUTE_REQUIREMENTS}. Received {len(value)}"
+            )
+
+        id_counter = Counter(req.get("attribute_id", None) for req in value)
+        id_counter.pop(None, None)
+        if id_counter and id_counter.most_common(1)[0][1] > 1:
+            raise serializers.ValidationError(
+                "Transcription requirements must relate to different attributes. "
+                "Repeated attribute ids: {}".format(
+                    format_list(
+                        [
+                            str(v[0])
+                            for v in id_counter.most_common(FORMATTED_LIST_DISPLAY_THRESHOLD)
+                            if v[1] > 1
+                        ]
+                    )
+                )
+            )
+
+        return value
+
+    def validate(self, attrs):
+        # Resolve the effective values, accounting for partial updates where only
+        # one of the two fields may be present in the request.
+        target_metric = attrs.get("target_metric")
+        threshold = attrs.get("target_metric_threshold")
+        if self.instance is not None:
+            target_metric = target_metric or self.instance.target_metric
+            if threshold is None:
+                threshold = self.instance.target_metric_threshold
+        target_metric = target_metric or models.QualityTargetMetricType.ACCURACY
+
+        # transcription_error_rate is lower-is-better and unbounded above (only
+        # the field-level min_value=0 applies). The higher-is-better metrics are
+        # ratios in [0, 1].
+        is_unbounded = target_metric == models.QualityTargetMetricType.TRANSCRIPTION_ERROR_RATE
+        if not is_unbounded and threshold is not None and threshold > 1:
+            raise serializers.ValidationError(
+                "target_metric_threshold must be in [0, 1] for the "
+                "accuracy / precision / recall metrics."
+            )
+
+        return attrs
 
     def get_extra_kwargs(self):
         defaults = models.QualitySettings.get_defaults()
@@ -363,4 +606,36 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         elif instance.project_id:
             instance.project.touch()
 
-        return super().update(instance, validated_data)
+        transcription_requirements = []
+        if "transcription_requirements" in validated_data:
+            models.TranscriptionQualityRequirement.objects.filter(settings=instance).delete()
+
+            for requirement_params in validated_data["transcription_requirements"]:
+                requirement_serializer = TranscriptionRequirementSerializer(
+                    data=requirement_params,
+                    context={
+                        **self.context,
+                        "settings": instance,
+                    },
+                )
+                requirement_serializer.is_valid(raise_exception=True)
+                requirement_params = requirement_serializer.validate_pre_create(
+                    requirement_serializer.validated_data
+                )
+                transcription_requirements.append(
+                    models.TranscriptionQualityRequirement(**requirement_params)
+                )
+
+            transcription_requirements = bulk_create(
+                models.TranscriptionQualityRequirement, transcription_requirements
+            )
+
+            validated_data.pop("transcription_requirements")
+
+        instance = super().update(instance, validated_data)
+
+        # TODO: populate related transcription_requirements cache in the instance without a request
+        if transcription_requirements:
+            prefetch_related_objects([instance], "transcription_requirements")
+
+        return instance
