@@ -65,11 +65,11 @@ from cvat.apps.engine.media_io.audio_provider import (
     TaskAudioProvider,
 )
 from cvat.apps.engine.media_io.frame_provider import (
-    DataWithMeta,
     IFrameProvider,
     JobFrameProvider,
     TaskFrameProvider,
 )
+from cvat.apps.engine.media_io.media_provider import DataWithMeta, PreviewNotAvailable
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
@@ -600,8 +600,25 @@ class ProjectViewSet(
 
     @extend_schema(
         summary="Get a preview image for a project",
+        parameters=[
+            OpenApiParameter(
+                "Prefer",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                required=False,
+                description="RFC 7240 preference token. Send `handling=empty` to "
+                "receive a 204 No Content response when no media-derived preview "
+                "exists. Without the preference, the server returns a default "
+                "placeholder image with status 200.",
+            ),
+        ],
         responses={
             "200": OpenApiResponse(description="Project image preview"),
+            "204": OpenApiResponse(
+                description="No media-derived preview is available. The client should "
+                "render a placeholder image. Only returned when the request opts in "
+                "via `Prefer: handling=empty`."
+            ),
             "404": OpenApiResponse(description="Project image preview not found"),
         },
     )
@@ -617,6 +634,7 @@ class ProjectViewSet(
             db_task=first_task,
             data_type="preview",
             data_quality="compressed",
+            allow_empty_preview=_wants_empty_preview(request),
         )
 
         return data_getter()
@@ -639,6 +657,21 @@ class ProjectViewSet(
             response["progress"] = rq_job_meta.progress or 0.0
 
         return response
+
+
+_PREFER_HANDLING_EMPTY = "handling=empty"
+
+
+def _wants_empty_preview(request: ExtendedRequest) -> bool:
+    """Return True if the request opts in to 204-on-empty via ``Prefer: handling=empty``."""
+    for token in request.headers.get("Prefer", "").split(","):
+        key, _, value = token.strip().partition("=")
+        value = value.strip()
+        if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        if key.strip().lower() == "handling" and value.lower() == "empty":
+            return True
+    return False
 
 
 class _RangeHeaderSyntaxError(Exception): ...
@@ -678,6 +711,8 @@ class _DataGetter(metaclass=ABCMeta):
         data_type: str,
         data_num: str | int | None,
         data_quality: str,
+        *,
+        allow_empty_preview: bool = False,
         data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         possible_data_type_values = ("chunk", "frame", "preview", "context_image")
@@ -696,6 +731,7 @@ class _DataGetter(metaclass=ABCMeta):
         self.quality = (
             FrameQuality.COMPRESSED if data_quality == "compressed" else FrameQuality.ORIGINAL
         )
+        self.allow_empty_preview = allow_empty_preview
         self._range = data_range
 
     @abstractmethod
@@ -774,8 +810,22 @@ class _DataGetter(metaclass=ABCMeta):
             data = media_provider.get_frame(self.number, quality=self.quality)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == "preview":
-            data = media_provider.get_preview_image()
-            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+            preview_headers = {"Vary": "Prefer"}
+            if self.allow_empty_preview:
+                preview_headers["Preference-Applied"] = _PREFER_HANDLING_EMPTY
+
+            try:
+                data = media_provider.get_preview_image(allow_empty=self.allow_empty_preview)
+            except PreviewNotAvailable:
+                return HttpResponse(
+                    status=status.HTTP_204_NO_CONTENT,
+                    headers=preview_headers,
+                )
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=preview_headers,
+            )
         elif self.type == "context_image":
             if isinstance(media_provider, IAudioProvider):
                 raise ValidationError(
@@ -851,12 +901,14 @@ class _TaskDataGetter(_DataGetter):
         data_type: str,
         data_quality: str,
         data_num: str | int | None = None,
+        allow_empty_preview: bool = False,
         data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         super().__init__(
             data_type=data_type,
             data_num=data_num,
             data_quality=data_quality,
+            allow_empty_preview=allow_empty_preview,
             data_range=data_range,
         )
         self._db_task = db_task
@@ -886,6 +938,7 @@ class _JobDataGetter(_DataGetter):
         data_quality: str,
         data_num: str | int | None = None,
         data_index: str | int | None = None,
+        allow_empty_preview: bool = False,
         data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         possible_data_type_values = ("chunk", "frame", "preview", "context_image")
@@ -913,6 +966,7 @@ class _JobDataGetter(_DataGetter):
             FrameQuality.COMPRESSED if data_quality == "compressed" else FrameQuality.ORIGINAL
         )
 
+        self.allow_empty_preview = allow_empty_preview
         self._range = data_range
         self._db_job = db_job
 
@@ -1965,8 +2019,25 @@ class TaskViewSet(
 
     @extend_schema(
         summary="Get a preview image for a task",
+        parameters=[
+            OpenApiParameter(
+                "Prefer",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                required=False,
+                description="RFC 7240 preference token. Send `handling=empty` to "
+                "receive a 204 No Content response when no media-derived preview "
+                "exists. Without the preference, the server returns a default "
+                "placeholder image with status 200.",
+            ),
+        ],
         responses={
             "200": OpenApiResponse(description="Task image preview"),
+            "204": OpenApiResponse(
+                description="No media-derived preview is available. The client should "
+                "render a placeholder image. Only returned when the request opts in "
+                "via `Prefer: handling=empty`."
+            ),
             "404": OpenApiResponse(description="Task image preview not found"),
         },
     )
@@ -1981,6 +2052,7 @@ class TaskViewSet(
             db_task=self._object,
             data_type="preview",
             data_quality="compressed",
+            allow_empty_preview=_wants_empty_preview(request),
         )
         return data_getter()
 
@@ -2713,8 +2785,25 @@ class JobViewSet(
 
     @extend_schema(
         summary="Get a preview image for a job",
+        parameters=[
+            OpenApiParameter(
+                "Prefer",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                required=False,
+                description="RFC 7240 preference token. Send `handling=empty` to "
+                "receive a 204 No Content response when no media-derived preview "
+                "exists. Without the preference, the server returns a default "
+                "placeholder image with status 200.",
+            ),
+        ],
         responses={
             "200": OpenApiResponse(description="Job image preview"),
+            "204": OpenApiResponse(
+                description="No media-derived preview is available. The client should "
+                "render a placeholder image. Only returned when the request opts in "
+                "via `Prefer: handling=empty`."
+            ),
         },
     )
     @action(detail=True, methods=["GET"], url_path="preview")
@@ -2725,6 +2814,7 @@ class JobViewSet(
             db_job=self._object,
             data_type="preview",
             data_quality="compressed",
+            allow_empty_preview=_wants_empty_preview(request),
         )
         return data_getter()
 
