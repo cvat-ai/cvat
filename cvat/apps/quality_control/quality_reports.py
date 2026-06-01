@@ -37,6 +37,7 @@ from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_I
 from cvat.apps.quality_control.comparison_report import (
     AnnotationId,
     ComparisonReport,
+    ConfusionMatrix,
 )
 from cvat.apps.quality_control.models import AnnotationType
 
@@ -200,7 +201,7 @@ def _serialize_confusion_matrix_csv(confusion_matrix) -> str:
     return output.getvalue()
 
 
-def _has_downloadable_confusion_matrix(confusion_matrix) -> bool:
+def _has_downloadable_confusion_matrix(confusion_matrix: ConfusionMatrix | None) -> bool:
     return (
         confusion_matrix is not None
         and confusion_matrix.labels is not None
@@ -209,9 +210,9 @@ def _has_downloadable_confusion_matrix(confusion_matrix) -> bool:
     )
 
 
-def prepare_requirement_confusion_matrix_for_downloading(
+def _get_requirement_confusion_matrix(
     db_report: models.QualityReport, *, requirement_name: str
-) -> str | None:
+) -> ConfusionMatrix | None:
     comparison_report = ComparisonReport.from_json(db_report.get_report_data())
     group_report = (comparison_report.groups or {}).get(requirement_name)
     if not group_report:
@@ -219,6 +220,32 @@ def prepare_requirement_confusion_matrix_for_downloading(
 
     confusion_matrix = group_report.comparison_summary.annotations.confusion_matrix
     if not _has_downloadable_confusion_matrix(confusion_matrix):
+        return None
+
+    return confusion_matrix
+
+
+def prepare_requirement_confusion_matrix_json(
+    db_report: models.QualityReport, *, requirement_name: str
+) -> dict[str, Any] | None:
+    confusion_matrix = _get_requirement_confusion_matrix(
+        db_report,
+        requirement_name=requirement_name,
+    )
+    if confusion_matrix is None:
+        return None
+
+    return confusion_matrix.to_dict()
+
+
+def prepare_requirement_confusion_matrix_for_downloading(
+    db_report: models.QualityReport, *, requirement_name: str
+) -> str | None:
+    confusion_matrix = _get_requirement_confusion_matrix(
+        db_report,
+        requirement_name=requirement_name,
+    )
+    if confusion_matrix is None:
         return None
 
     return _serialize_confusion_matrix_csv(confusion_matrix)

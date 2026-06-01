@@ -49,6 +49,7 @@ from cvat.apps.quality_control.queue_manager import QualityReportQueueManager
 from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
     QualityReportCreateSerializer,
+    QualityReportConfusionMatrixSerializer,
     QualityReportSerializer,
     QualityRequirementListSerializer,
     QualityRequirementSerializer,
@@ -462,7 +463,7 @@ class QualityReportViewSet(
 
     @extend_schema(
         operation_id="quality_retrieve_report_requirement_confusion",
-        summary="Download a quality report requirement confusion matrix",
+        summary="Get a quality report requirement confusion matrix",
         parameters=[
             OpenApiParameter(
                 "requirement",
@@ -470,8 +471,18 @@ class QualityReportViewSet(
                 required=True,
                 description="Quality requirement name in the report",
             ),
+            OpenApiParameter(
+                "format",
+                type=OpenApiTypes.STR,
+                enum=QualityReportExportFormat.values,
+                default=QualityReportExportFormat.JSON.value,
+            ),
         ],
         responses={
+            (200, "application/json"): OpenApiResponse(
+                response=QualityReportConfusionMatrixSerializer,
+                description="JSON confusion matrix for the requested quality requirement",
+            ),
             (200, "text/csv"): OpenApiResponse(
                 response=OpenApiTypes.BINARY,
                 description="CSV confusion matrix for the requested quality requirement",
@@ -485,6 +496,27 @@ class QualityReportViewSet(
         requirement_name = request.query_params.get("requirement")
         if not requirement_name:
             raise ValidationError({"requirement": "This query parameter is required."})
+
+        try:
+            format_name = QualityReportExportFormat(
+                request.query_params.get("format", default=QualityReportExportFormat.JSON.value)
+            )
+        except ValueError as ex:
+            raise ValidationError(
+                {"format": f"Expected one of: {', '.join(QualityReportExportFormat.values)}."}
+            ) from ex
+
+        if format_name == QualityReportExportFormat.JSON:
+            matrix_json = qc.prepare_requirement_confusion_matrix_json(
+                report,
+                requirement_name=requirement_name,
+            )
+            if matrix_json is None:
+                raise NotFound(
+                    f"Confusion matrix for quality requirement '{requirement_name}' was not found"
+                )
+
+            return Response(matrix_json)
 
         matrix_csv = qc.prepare_requirement_confusion_matrix_for_downloading(
             report,

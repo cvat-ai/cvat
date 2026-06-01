@@ -39,6 +39,7 @@ class AnnotationIdSerializer(serializers.ModelSerializer):
 
 class AnnotationConflictSerializer(serializers.ModelSerializer):
     annotation_ids = AnnotationIdSerializer(many=True)
+    attribute_names = serializers.ListField(child=serializers.CharField(), read_only=True)
 
     class Meta:
         model = models.AnnotationConflict
@@ -104,6 +105,21 @@ class QualityReportRequirementsSummarySerializer(serializers.Serializer):
     enabled = serializers.IntegerField()
     completed = serializers.IntegerField()
     items = QualityReportRequirementSummaryItemSerializer(many=True)
+
+
+class QualityReportConfusionMatrixAxesSerializer(serializers.Serializer):
+    cols = serializers.CharField()
+    rows = serializers.CharField()
+
+
+class QualityReportConfusionMatrixSerializer(serializers.Serializer):
+    labels = serializers.ListField(child=serializers.CharField())
+    rows = serializers.ListField(child=serializers.ListField(child=serializers.IntegerField()))
+    axes = QualityReportConfusionMatrixAxesSerializer()
+    precision = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    recall = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    accuracy = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    jaccard_index = serializers.ListField(child=serializers.FloatField(), allow_null=True)
 
 
 class QualityReportTargetSerializer(serializers.ChoiceField):

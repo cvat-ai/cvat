@@ -4631,8 +4631,16 @@ paths:
   /api/quality/reports/{id}/confusion/matrix:
     get:
       operationId: quality_retrieve_report_requirement_confusion
-      summary: Download a quality report requirement confusion matrix
+      summary: Get a quality report requirement confusion matrix
       parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+          default: json
       - in: path
         name: id
         schema:
@@ -4657,11 +4665,14 @@ paths:
       responses:
         '200':
           content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityReportConfusionMatrix'
             text/csv:
               schema:
                 type: string
                 format: binary
-          description: CSV confusion matrix for the requested quality requirement
+          description: JSON confusion matrix for the requested quality requirement
         '404':
           description: Requirement confusion matrix was not found
   /api/quality/reports/{id}/data:
@@ -7391,7 +7402,9 @@ components:
           - $ref: '#/components/schemas/AnnotationConflictSeverity'
           readOnly: true
         attribute_names:
-          type: object
+          type: array
+          items:
+            type: string
           readOnly: true
       required:
       - annotation_ids
@@ -10998,6 +11011,63 @@ components:
       required:
       - summary
       - target
+    QualityReportConfusionMatrix:
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+        axes:
+          $ref: '#/components/schemas/QualityReportConfusionMatrixAxes'
+        precision:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        recall:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        accuracy:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        jaccard_index:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+      required:
+      - accuracy
+      - axes
+      - jaccard_index
+      - labels
+      - precision
+      - recall
+      - rows
+    QualityReportConfusionMatrixAxes:
+      type: object
+      properties:
+        cols:
+          type: string
+        rows:
+          type: string
+      required:
+      - cols
+      - rows
     QualityReportCreateRequest:
       type: object
       properties:

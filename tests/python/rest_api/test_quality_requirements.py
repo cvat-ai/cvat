@@ -1768,7 +1768,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             assert manifest["report_id"] == report["id"]
 
             group_matrices = {
-                matrix["name"]: matrix["path"]
+                matrix["name"]: matrix
                 for matrix in manifest["matrices"]
                 if matrix["scope"] == "group"
             }
@@ -1776,8 +1776,12 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             assert disabled_requirement_name in group_matrices
 
             overall_csv = archive.read("overall.csv").decode()
-            enabled_group_csv = archive.read(group_matrices[enabled_requirement_name]).decode()
-            disabled_group_csv = archive.read(group_matrices[disabled_requirement_name]).decode()
+            enabled_group_csv = archive.read(
+                group_matrices[enabled_requirement_name]["path"]
+            ).decode()
+            disabled_group_csv = archive.read(
+                group_matrices[disabled_requirement_name]["path"]
+            ).decode()
             assert "ds \\ gt" in overall_csv
             assert "ds \\ gt" in enabled_group_csv
             assert "ds \\ gt" in disabled_group_csv
@@ -1788,6 +1792,31 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             requirement=enabled_requirement_name,
         )
         assert response.status_code == HTTPStatus.OK
+        assert "json" in response.headers["Content-Type"]
+        enabled_group_matrix = response.json()
+        assert (
+            enabled_group_matrix["labels"]
+            == group_matrices[enabled_requirement_name]["labels"]
+        )
+        assert enabled_group_matrix["rows"]
+        assert enabled_group_matrix["axes"] == {"cols": "gt", "rows": "ds"}
+        assert set(enabled_group_matrix) == {
+            "labels",
+            "rows",
+            "axes",
+            "precision",
+            "recall",
+            "accuracy",
+            "jaccard_index",
+        }
+
+        response = get_method(
+            admin_user,
+            f"quality/reports/{report['id']}/confusion/matrix",
+            requirement=enabled_requirement_name,
+            format="csv",
+        )
+        assert response.status_code == HTTPStatus.OK
         assert response.headers["Content-Type"].startswith("text/csv")
         assert response.content.decode() == enabled_group_csv
 
@@ -1795,6 +1824,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             admin_user,
             f"quality/reports/{report['id']}/confusion/matrix",
             requirement=disabled_requirement_name,
+            format="csv",
         )
         assert response.status_code == HTTPStatus.OK
         assert response.headers["Content-Type"].startswith("text/csv")
