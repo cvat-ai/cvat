@@ -44,8 +44,12 @@ from cvat.apps.quality_control.models import AnnotationType
 
 
 class _MemoizingAnnotationConverterFactory:
-    def __init__(self):
+    def __init__(
+        self,
+        attribute_spec_ids_by_label: dict[str, dict[str, int]] | None = None,
+    ) -> None:
         self._annotation_mapping = {}  # dm annotation -> cvat annotation
+        self._attribute_spec_ids_by_label = attribute_spec_ids_by_label or {}
 
     def remember_conversion(self, cvat_ann, dm_anns):
         for dm_ann in dm_anns:
@@ -62,22 +66,30 @@ class _MemoizingAnnotationConverterFactory:
         self._annotation_mapping.clear()
 
     def __call__(self, *args, **kwargs) -> list[dm.Annotation]:
-        converter = _MemoizingAnnotationConverter(*args, factory=self, **kwargs)
+        converter = _MemoizingAnnotationConverter(
+            *args,
+            factory=self,
+            attribute_spec_ids_by_label=self._attribute_spec_ids_by_label,
+            **kwargs,
+        )
         return converter.convert()
 
 
 class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
-    def __init__(self, *args, factory: _MemoizingAnnotationConverterFactory, **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        factory: _MemoizingAnnotationConverterFactory,
+        attribute_spec_ids_by_label: dict[str, dict[str, int]],
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self._factory = factory
+        self._attribute_spec_ids_by_label = attribute_spec_ids_by_label
 
     def _convert_attrs(self, label: str, cvat_attrs: list[Any]) -> dict[str, Any]:
         dm_attrs = super()._convert_attrs(label, cvat_attrs)
-        attribute_spec_ids = {
-            a_desc["name"]: a_desc["id"]
-            for _, a_desc in self.label_attrs[label]
-            if a_desc.get("id") is not None
-        }
+        attribute_spec_ids = self._attribute_spec_ids_by_label.get(label, {})
         if attribute_spec_ids:
             dm_attrs[CVAT_ATTRIBUTE_SPEC_IDS_ATTR] = attribute_spec_ids
 
@@ -117,7 +129,18 @@ class JobDataProvider:
             included_frames=included_frames,
         )
 
-        self._annotation_memo = _MemoizingAnnotationConverterFactory()
+        self._annotation_memo = _MemoizingAnnotationConverterFactory(
+            self._get_attribute_spec_ids_by_label()
+        )
+
+    def _get_attribute_spec_ids_by_label(self) -> dict[str, dict[str, int]]:
+        return {
+            f"{db_label.parent.name if db_label.parent else ''}{db_label.name}": {
+                db_attribute.name: db_attribute.id
+                for db_attribute in db_label.attributespec_set.all()
+            }
+            for db_label in self.job_data._label_mapping.values()
+        }
 
     @cached_property
     def dm_dataset(self):
