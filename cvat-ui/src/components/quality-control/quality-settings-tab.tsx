@@ -62,6 +62,23 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 objectVisibilityThreshold: values.objectVisibilityThreshold / 100,
                 panopticComparison: values.panopticComparison,
                 jobFilter: values.jobFilter ?? '',
+                intervalBoundaryTolerance: values.intervalBoundaryTolerance,
+                transcriptionRequirements: (values.transcriptionRequirements ?? []).map(
+                    (requirement: any) => ({
+                        attribute_id: requirement.attributeId,
+                        granularity: requirement.granularity,
+                        metric: requirement.metric,
+                        alignment: requirement.alignment,
+                        metric_threshold: requirement.metricThreshold ?? null,
+                        normalizer_preset: requirement.normalizerPreset,
+                        // Substitutions are round-tripped untouched (no editor yet).
+                        substitutions: requirement.substitutions ?? [],
+                        grouping_strategy: requirement.groupingStrategy,
+                        grouping_separator: requirement.groupingSeparator ?? ' ',
+                        grouping_attribute_id: requirement.groupingAttributeId ?? null,
+                        acceptance_threshold: requirement.acceptanceThreshold / 100,
+                    }),
+                ),
             };
             setQualitySettings({ [settings.id]: { settings, fields } });
         }
@@ -152,6 +169,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 <QualitySettingsForm
                     form={form}
                     settings={settings}
+                    instance={instance}
                     onSave={onSave}
                     disabled={settings.inherit && instance instanceof Task && instance.projectId !== null}
                 />
