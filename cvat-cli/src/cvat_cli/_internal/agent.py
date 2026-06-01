@@ -866,8 +866,8 @@ class _Agent:
 
         sample_index = 0
 
-        for chunk_samples in ds.iter_sample_chunks(delete_finished_chunks=True):
-            for sample in chunk_samples:
+        with ds.iter_samples(delete_finished_chunks=True) as samples:
+            for sample in samples:
                 context = self._create_detection_function_context(ar_params, sample.frame_name)
                 annotations = self._executor.result(
                     self._executor.submit(_worker_job_detect, context, sample.media.load_image())
