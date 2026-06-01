@@ -14,7 +14,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Iterator, Sequence
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, TypeAlias, TypeVar, overload
+from typing import Any, TypeAlias, overload
 
 import av
 import cv2
@@ -42,11 +42,14 @@ from cvat.apps.engine.media_io.media_chunks import (
     FileChunkLoader,
     ReaderFactory,
 )
-from cvat.apps.engine.media_io.media_provider import DataWithMeta, IMediaProvider
+from cvat.apps.engine.media_io.media_provider import (
+    DataWithMeta,
+    IMediaProvider,
+    PreviewNotAvailable,
+    segment_has_media_derived_preview,
+)
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.utils import take_by
-
-_T = TypeVar("_T")
 
 _ReaderFactory: TypeAlias = Callable[[BytesIO], IMediaReader]
 
@@ -165,9 +168,6 @@ class IFrameProvider(IMediaProvider, metaclass=ABCMeta):
     def get_chunk_number(self, frame_number: int) -> int: ...
 
     @abstractmethod
-    def get_preview_image(self) -> DataWithMeta[BytesIO]: ...
-
-    @abstractmethod
     def get_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
     ) -> DataWithMeta[BytesIO]: ...
@@ -242,8 +242,8 @@ class TaskFrameProvider(IFrameProvider):
         """
         return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
-    def get_preview_image(self) -> DataWithMeta[BytesIO]:
-        return self._get_segment_frame_provider(0).get_preview_image()
+    def get_preview_image(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
+        return self._get_segment_frame_provider(0).get_preview_image(allow_empty=allow_empty)
 
     def get_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
@@ -556,7 +556,10 @@ class SegmentFrameProvider(IFrameProvider):
 
         return chunk_number
 
-    def get_preview_image(self) -> DataWithMeta[BytesIO]:
+    def get_preview_image(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
+        if allow_empty and not segment_has_media_derived_preview(self._db_segment):
+            raise PreviewNotAvailable
+
         cache = MediaCache()
         preview, mime = cache.get_or_set_segment_preview(self._db_segment)
         return DataWithMeta[BytesIO](preview, mime=mime)
