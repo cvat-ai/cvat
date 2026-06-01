@@ -6,6 +6,8 @@
 -r ../../utils/dataset_manifest/requirements.txt
 asgiref==3.8.1
     # via django
+async-timeout==5.0.1
+    # via redis
 attrs==25.3.0
     # via
     #   -r cvat/requirements/base.in
@@ -139,6 +141,8 @@ idna==3.10
     # via requests
 imagesize==1.4.1
     # via datumaro
+importlib-resources==7.1.0
+    # via nibabel
 inflection==0.5.1
     # via drf-spectacular
 isodate==0.7.2
@@ -335,11 +339,14 @@ threadpoolctl==3.6.0
     # via scikit-learn
 typing-extensions==4.14.0
     # via
+    #   asgiref
     #   azure-core
+    #   cryptography
     #   datumaro
     #   limits
     #   nibabel
     #   pottery
+    #   pyjwt
 tzdata==2025.2
     # via pandas
 uritemplate==4.2.0
