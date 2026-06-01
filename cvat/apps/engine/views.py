@@ -867,6 +867,8 @@ class _TaskDataGetter(_DataGetter):
                 return TaskAudioProvider(self._db_task)
             case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
                 return TaskFrameProvider(self._db_task)
+            case "":
+                raise NotFound("Task has no media")
             case _ as media_type:
                 assert False, f"Unknown media type {media_type}"
 
