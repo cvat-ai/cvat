@@ -6,6 +6,7 @@ import _ from 'lodash';
 import {
     SerializedQualitySettingsData,
     SerializedTranscriptionRequirement,
+    SerializedTranscriptionSubstitution,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -46,6 +47,27 @@ export enum TranscriptionGroupingStrategy {
     JOIN = 'join',
 }
 
+// Mirrors cvat/apps/quality_control/models.py::TranscriptionNormalizerPreset
+export enum TranscriptionNormalizerPreset {
+    NONE = 'none',
+    BASIC = 'basic',
+    EN = 'en',
+    ES = 'es',
+    FR = 'fr',
+    DE = 'de',
+    IT = 'it',
+    PT = 'pt',
+    NL = 'nl',
+    PL = 'pl',
+    RU = 'ru',
+    TR = 'tr',
+    ZH = 'zh',
+    JA = 'ja',
+    KO = 'ko',
+    HI = 'hi',
+    AR = 'ar',
+}
+
 // Metrics whose soft cost can be binarized by `metricThreshold`; `equality` is a
 // hard bit metric and ignores it.
 export const METRICS_SUPPORTING_THRESHOLD: readonly TranscriptionMetric[] = [
@@ -67,6 +89,9 @@ export class TranscriptionRequirement {
     #metric: TranscriptionMetric;
     #alignment: TranscriptionAlignMode;
     #metricThreshold: number | null;
+    #normalizerPreset: TranscriptionNormalizerPreset;
+    #substitutions: SerializedTranscriptionSubstitution[];
+    #substitutionsHash: string;
     #groupingStrategy: TranscriptionGroupingStrategy;
     #groupingSeparator: string;
     #groupingAttributeId: number | null;
@@ -78,6 +103,9 @@ export class TranscriptionRequirement {
         this.#metric = initialData.metric as TranscriptionMetric;
         this.#alignment = initialData.alignment as TranscriptionAlignMode;
         this.#metricThreshold = initialData.metric_threshold ?? null;
+        this.#normalizerPreset = initialData.normalizer_preset as TranscriptionNormalizerPreset;
+        this.#substitutions = initialData.substitutions ?? [];
+        this.#substitutionsHash = initialData.substitutions_hash ?? '';
         this.#groupingStrategy = initialData.grouping_strategy as TranscriptionGroupingStrategy;
         this.#groupingSeparator = initialData.grouping_separator;
         this.#groupingAttributeId = initialData.grouping_attribute_id ?? null;
@@ -89,18 +117,24 @@ export class TranscriptionRequirement {
     get metric(): TranscriptionMetric { return this.#metric; }
     get alignment(): TranscriptionAlignMode { return this.#alignment; }
     get metricThreshold(): number | null { return this.#metricThreshold; }
+    get normalizerPreset(): TranscriptionNormalizerPreset { return this.#normalizerPreset; }
+    get substitutions(): SerializedTranscriptionSubstitution[] { return this.#substitutions; }
+    get substitutionsHash(): string { return this.#substitutionsHash; }
     get groupingStrategy(): TranscriptionGroupingStrategy { return this.#groupingStrategy; }
     get groupingSeparator(): string { return this.#groupingSeparator; }
     get groupingAttributeId(): number | null { return this.#groupingAttributeId; }
     get acceptanceThreshold(): number { return this.#acceptanceThreshold; }
 
     public toJSON(): SerializedTranscriptionRequirement {
+        // `substitutions_hash` is read-only / server-derived; do not send it.
         return {
             attribute_id: this.#attributeId,
             granularity: this.#granularity,
             metric: this.#metric,
             alignment: this.#alignment,
             metric_threshold: this.#metricThreshold,
+            normalizer_preset: this.#normalizerPreset,
+            substitutions: this.#substitutions,
             grouping_strategy: this.#groupingStrategy,
             grouping_separator: this.#groupingSeparator,
             grouping_attribute_id: this.#groupingAttributeId,
@@ -120,7 +154,6 @@ export default class QualitySettings {
     #pointSizeBase: PointSizeBase;
     #lineThickness: number;
     #lowOverlapThreshold: number;
-    #intervalBoundaryTolerance: number;
     #compareLineOrientation: boolean;
     #lineOrientationThreshold: number;
     #compareGroups: boolean;
@@ -130,6 +163,7 @@ export default class QualitySettings {
     #panopticComparison: boolean;
     #compareAttributes: boolean;
     #emptyIsAnnotated: boolean;
+    #intervalBoundaryTolerance: number;
     #transcriptionRequirements: TranscriptionRequirement[];
     #jobFilter: string;
     #inherit: boolean;
@@ -146,7 +180,6 @@ export default class QualitySettings {
         this.#pointSizeBase = initialData.point_size_base as PointSizeBase;
         this.#lineThickness = initialData.line_thickness;
         this.#lowOverlapThreshold = initialData.low_overlap_threshold;
-        this.#intervalBoundaryTolerance = initialData.interval_boundary_tolerance;
         this.#compareLineOrientation = initialData.compare_line_orientation;
         this.#lineOrientationThreshold = initialData.line_orientation_threshold;
         this.#compareGroups = initialData.compare_groups;
@@ -156,6 +189,7 @@ export default class QualitySettings {
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
         this.#emptyIsAnnotated = initialData.empty_is_annotated;
+        this.#intervalBoundaryTolerance = initialData.interval_boundary_tolerance;
         this.#transcriptionRequirements = (initialData.transcription_requirements ?? [])
             .map((requirement) => new TranscriptionRequirement(requirement));
         this.#jobFilter = initialData.job_filter || '';
@@ -189,10 +223,6 @@ export default class QualitySettings {
 
     get lowOverlapThreshold(): number {
         return this.#lowOverlapThreshold;
-    }
-
-    get intervalBoundaryTolerance(): number {
-        return this.#intervalBoundaryTolerance;
     }
 
     get compareLineOrientation(): boolean {
@@ -241,6 +271,10 @@ export default class QualitySettings {
 
     get emptyIsAnnotated(): boolean {
         return this.#emptyIsAnnotated;
+    }
+
+    get intervalBoundaryTolerance(): number {
+        return this.#intervalBoundaryTolerance;
     }
 
     get transcriptionRequirements(): TranscriptionRequirement[] {

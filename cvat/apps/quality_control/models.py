@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Sequence
 from copy import deepcopy
 from enum import Enum
@@ -316,6 +318,36 @@ class TranscriptionAlignMode(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class TranscriptionNormalizerPreset(str, Enum):
+    NONE = "none"
+    BASIC = "basic"
+
+    # Language presets mirror SUPPORTED_LANGS in
+    # cvat/apps/quality_control/audio/normalization.py
+    EN = "en"
+    ES = "es"
+    FR = "fr"
+    DE = "de"
+    IT = "it"
+    PT = "pt"
+    NL = "nl"
+    PL = "pl"
+    RU = "ru"
+    TR = "tr"
+    ZH = "zh"
+    JA = "ja"
+    KO = "ko"
+    HI = "hi"
+    AR = "ar"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
 class TranscriptionGroupingStrategy(str, Enum):
     FILTER = "filter"
     JOIN = "join"
@@ -437,6 +469,29 @@ class QualitySettings(TimestampedModel):
         return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())
 
 
+def compute_substitutions_hash(substitutions) -> str:
+    """Deterministic content hash of the ordered substitution list.
+
+    Order-sensitive — regex application order is significant, so two lists
+    that differ only in order hash differently. An empty list maps to the
+    empty string, making "no custom substitutions" a clean sentinel.
+    """
+    if not substitutions:
+        return ""
+
+    canonical = [
+        {
+            "pattern": entry.get("pattern", ""),
+            "replacement": entry.get("replacement", ""),
+            "anchored": bool(entry.get("anchored", False)),
+        }
+        for entry in substitutions
+    ]
+    payload = json.dumps(canonical, ensure_ascii=False, separators=(",", ":"))
+    # Not a security hash — only used to detect config changes.
+    return hashlib.md5(payload.encode("utf-8"), usedforsecurity=False).hexdigest()
+
+
 class TranscriptionQualityRequirement(models.Model):
     settings = models.ForeignKey(
         QualitySettings,
@@ -478,6 +533,22 @@ class TranscriptionQualityRequirement(models.Model):
 
     metric_threshold = models.FloatField(null=True, default=None)
 
+    normalizer_preset = models.CharField(
+        max_length=32,
+        choices=TranscriptionNormalizerPreset.choices(),
+        default=TranscriptionNormalizerPreset.BASIC,
+    )
+
+    # Ordered list of regex substitution entries:
+    # [{"pattern": str, "replacement": str, "anchored": bool}, ...]
+    substitutions = models.JSONField(default=list, blank=True)
+
+    # md5 of the ordered `substitutions` list (recomputed on save and in the
+    # serializer pre-create path, since bulk_create bypasses save). Empty when
+    # there are no substitutions. Copied into the report blob so reports
+    # computed under different substitution sets are distinguishable.
+    substitutions_hash = models.CharField(max_length=32, default="", blank=True)
+
     grouping_strategy = models.CharField(
         max_length=32,
         choices=TranscriptionGroupingStrategy.choices(),
@@ -517,6 +588,10 @@ class TranscriptionQualityRequirement(models.Model):
                 fields=["settings_id", "attribute_id"],
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        self.substitutions_hash = compute_substitutions_hash(self.substitutions)
+        super().save(*args, **kwargs)
 
     def to_dict(self):
         d = model_to_dict(self, exclude=("settings"))
