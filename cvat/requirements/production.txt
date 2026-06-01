@@ -8,6 +8,8 @@ anyio==4.13.0
     # via watchfiles
 coverage==7.14.0
     # via -r cvat/requirements/production.in
+exceptiongroup==1.3.1
+    # via anyio
 h11==0.16.0
     # via uvicorn
 httptools==0.7.1
