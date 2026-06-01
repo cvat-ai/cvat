@@ -10301,6 +10301,49 @@ components:
             one. No upper bound: the `error-rate` metric is unbounded
             (it can exceed 1 when the hypothesis is much longer than
             the reference). Has no effect when `metric` is `equality`.
+        normalizer_preset:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionNormalizerPreset'
+          description: |-
+            Pre-built text normalization stack applied before
+            alignment. `none` is passthrough, `basic` is a
+            language-agnostic Unicode / whitespace / case layer, and
+            each two-letter code (e.g. `ru`, `zh`) selects a
+            self-contained language preset. The project-specific
+            `substitutions` dict is layered on top of the chosen
+            preset.
+
+
+            * `none` - NONE
+            * `basic` - BASIC
+            * `en` - EN
+            * `es` - ES
+            * `fr` - FR
+            * `de` - DE
+            * `it` - IT
+            * `pt` - PT
+            * `nl` - NL
+            * `pl` - PL
+            * `ru` - RU
+            * `tr` - TR
+            * `zh` - ZH
+            * `ja` - JA
+            * `ko` - KO
+            * `hi` - HI
+            * `ar` - AR
+        substitutions:
+          type: array
+          items:
+            type: object
+          description: |
+            Ordered list of project-specific regex substitutions applied (to
+            both reference and hypothesis) after the chosen normalizer_preset.
+            Each entry is an object {"pattern", "replacement", "anchored"}:
+            `pattern` is a Python regex, `replacement` its substitution
+            (backreferences allowed), and `anchored` (default false) wraps the
+            pattern in word boundaries (\b...\b) — useful for space-delimited
+            languages, leave off for CJK. A plain literal is an escaped pattern.
+            Empty list disables.
         grouping_strategy:
           allOf:
           - $ref: '#/components/schemas/TranscriptionGroupingStrategy'
@@ -11847,6 +11890,44 @@ components:
       description: |-
         * `filter` - FILTER
         * `join` - JOIN
+    TranscriptionNormalizerPreset:
+      enum:
+      - none
+      - basic
+      - en
+      - es
+      - fr
+      - de
+      - it
+      - pt
+      - nl
+      - pl
+      - ru
+      - tr
+      - zh
+      - ja
+      - ko
+      - hi
+      - ar
+      type: string
+      description: |-
+        * `none` - NONE
+        * `basic` - BASIC
+        * `en` - EN
+        * `es` - ES
+        * `fr` - FR
+        * `de` - DE
+        * `it` - IT
+        * `pt` - PT
+        * `nl` - NL
+        * `pl` - PL
+        * `ru` - RU
+        * `tr` - TR
+        * `zh` - ZH
+        * `ja` - JA
+        * `ko` - KO
+        * `hi` - HI
+        * `ar` - AR
     TranscriptionQualityMetric:
       enum:
       - equality
@@ -11915,6 +11996,52 @@ components:
             one. No upper bound: the `error-rate` metric is unbounded
             (it can exceed 1 when the hypothesis is much longer than
             the reference). Has no effect when `metric` is `equality`.
+        normalizer_preset:
+          allOf:
+          - $ref: '#/components/schemas/TranscriptionNormalizerPreset'
+          description: |-
+            Pre-built text normalization stack applied before
+            alignment. `none` is passthrough, `basic` is a
+            language-agnostic Unicode / whitespace / case layer, and
+            each two-letter code (e.g. `ru`, `zh`) selects a
+            self-contained language preset. The project-specific
+            `substitutions` dict is layered on top of the chosen
+            preset.
+
+
+            * `none` - NONE
+            * `basic` - BASIC
+            * `en` - EN
+            * `es` - ES
+            * `fr` - FR
+            * `de` - DE
+            * `it` - IT
+            * `pt` - PT
+            * `nl` - NL
+            * `pl` - PL
+            * `ru` - RU
+            * `tr` - TR
+            * `zh` - ZH
+            * `ja` - JA
+            * `ko` - KO
+            * `hi` - HI
+            * `ar` - AR
+        substitutions:
+          type: array
+          items:
+            type: object
+          description: |
+            Ordered list of project-specific regex substitutions applied (to
+            both reference and hypothesis) after the chosen normalizer_preset.
+            Each entry is an object {"pattern", "replacement", "anchored"}:
+            `pattern` is a Python regex, `replacement` its substitution
+            (backreferences allowed), and `anchored` (default false) wraps the
+            pattern in word boundaries (\b...\b) — useful for space-delimited
+            languages, leave off for CJK. A plain literal is an escaped pattern.
+            Empty list disables.
+        substitutions_hash:
+          type: string
+          readOnly: true
         grouping_strategy:
           allOf:
           - $ref: '#/components/schemas/TranscriptionGroupingStrategy'
