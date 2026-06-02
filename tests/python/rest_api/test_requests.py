@@ -35,6 +35,7 @@ from .utils import (
 )
 
 
+@pytest.mark.timeout(60)
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
@@ -59,12 +60,12 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.fixture(scope="class")
     @classmethod
-    def setup_user(cls, find_users):
+    def setup_user(cls, restore_db_per_class, find_users):
         cls.user = find_users(privilege="user")[0]["username"]
 
     @pytest.fixture(scope="class")
     @classmethod
-    def setup_org_users(cls, find_users, organizations, memberships):
+    def setup_org_users(cls, restore_db_per_class, find_users, organizations, memberships):
         cls.org_slug = next(o["slug"] for o in organizations if o["id"] == cls._ORG_ID)
         # Pick an owner/maintainer so they can create projects/tasks in the org.
         cls.org_user = next(
@@ -77,7 +78,9 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.fixture(scope="class")
     @classmethod
-    def fxt_resources_ids(cls, setup_user):
+    def fxt_resources_ids(
+        cls, setup_user, restore_redis_inmem_per_class, restore_redis_ondisk_per_class
+    ):
         with make_api_client(cls.user) as api_client:
             project_ids = [
                 api_client.projects_api.create(
