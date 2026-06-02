@@ -317,7 +317,6 @@ export interface SerializedQualityConflictData {
     frame?: number | null;
     type?: string;
     annotation_ids?: SerializedAnnotationConflictData[];
-    attributes?: string[];
     data?: string;
     severity?: string;
     description?: string;
@@ -335,12 +334,10 @@ export type QualityReportsFilter = Camelized<APIQualityReportsFilter>;
 export interface SerializedQualityReportData {
     id?: number;
     parent_id?: number;
-    project_id?: number;
     task_id?: number;
     job_id?: number;
     target: string;
     created_date?: string;
-    target_last_updated?: string;
     gt_last_updated?: string;
     assignee?: SerializedUser | null;
     summary?: {
