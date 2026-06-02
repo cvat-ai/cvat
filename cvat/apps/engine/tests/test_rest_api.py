@@ -36,6 +36,7 @@ from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from botocore.exceptions import ClientError, EndpointConnectionError
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import CommandError, call_command
 from django.http import FileResponse, HttpResponse
 from django.test import SimpleTestCase, override_settings
@@ -54,6 +55,7 @@ from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cloud_provider import AzureBlobCloudStorage, S3CloudStorage, Status
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
+    AnnotationGuide,
     AttributeSpec,
     AttributeType,
     CloudStorage,
@@ -536,6 +538,29 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
             self.client.patch(f"/api/jobs/{self.job.id}/data/meta", data=data, format="json")
             res2 = self.client.get(f"/api/tasks/{self.task.id}")
             self.assertLess(res.data["updated_date"], res2.data["updated_date"])
+
+
+class AssetCreateAPITestCase(ApiTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.project = create_db_project({"name": "project", "owner": cls.admin})
+        cls.guide = AnnotationGuide.objects.create(project=cls.project)
+
+    def test_filename_content_type_mismatch(self):
+        asset_file = SimpleUploadedFile("evil.html", b"<script></script>", content_type="image/gif")
+
+        with ForceLogin(self.admin, self.client):
+            response = self.client.post(
+                "/api/assets",
+                data={"guide_id": self.guide.id, "file": asset_file},
+                format="multipart",
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(b"Content-Type does not match", response.content)
+
+        self.assertEqual(self.guide.assets.count(), 0)
 
 
 class ServerAboutAPITestCase(ApiTestBase):
