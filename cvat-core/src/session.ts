@@ -430,10 +430,10 @@ export class Session {
             distance: number | null,
         }>;
         import: (data: SerializedCollection) => Promise<void>;
-        export: () => Promise<SerializedCollection>;
+        export: () => Promise<Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>>;
         commit: (
-            added: Partial<SerializedCollection>,
-            removed: Partial<SerializedCollection>,
+            added: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
+            removed: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
             frame: number,
         ) => Promise<void>;
         statistics: () => Promise<Statistics>;

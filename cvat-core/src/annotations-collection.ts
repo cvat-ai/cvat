@@ -91,6 +91,9 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
 
 type AnnotationObject = Shape | Tag | Track | Interval;
 
+// AUDIO TODO:
+// Now collection only used in terms of fetch intervals from the server and give them to UI.
+// Adding/Modifying/Filtration/Saving are implemented in a separated code.
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
@@ -306,12 +309,12 @@ export default class Collection {
     }
 
     public commit(
-        appended: Partial<SerializedCollection>,
-        removed: Partial<SerializedCollection>,
+        appended: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
+        removed: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         frame: number,
-    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; intervals: Interval[]; } {
+    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; } {
         const isCollectionConsistent = [].concat(
-            removed.shapes ?? [], removed.tags ?? [], removed.tracks ?? [], removed.intervals ?? [],
+            removed.shapes ?? [], removed.tags ?? [], removed.tracks ?? [],
         ).every((object) => typeof object.clientID === 'number' &&
             Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
 
@@ -320,17 +323,17 @@ export default class Collection {
         }
 
         const removedCollection: AnnotationObject[] = [].concat(
-            removed.shapes ?? [], removed.tags ?? [], removed.tracks ?? [], removed.intervals ?? [],
+            removed.shapes ?? [], removed.tags ?? [], removed.tracks ?? [],
         ).map((object) => this.objects[object.clientID as number]);
 
         const imported = this.import({
             shapes: appended.shapes ?? [],
             tags: appended.tags ?? [],
             tracks: appended.tracks ?? [],
-            intervals: appended.intervals ?? [],
+            intervals: [],
         });
         const appendedCollection = ([] as AnnotationObject[])
-            .concat(imported.shapes, imported.tags, imported.tracks, imported.intervals);
+            .concat(imported.shapes, imported.tags, imported.tracks);
         if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
             // nothing to commit
             return;
@@ -376,7 +379,7 @@ export default class Collection {
             .map((interval) => interval.toJSON());
     }
 
-    public export(): SerializedCollection {
+    public export(): Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'> {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed)
                 .map((track) => track.toJSON() as SerializedTrack),
@@ -394,7 +397,6 @@ export default class Collection {
                 }, [])
                 .filter((tag) => !tag.removed)
                 .map((tag) => tag.toJSON()),
-            intervals: this.getAllIntervals(),
         };
 
         return data;
@@ -1240,7 +1242,6 @@ export default class Collection {
             shapes: [],
             tracks: [],
             tags: [],
-            intervals: [],
         };
 
         for (const state of objectStates) {
@@ -1267,15 +1268,6 @@ export default class Collection {
                     label_id: state.label.id,
                     group: 0,
                     source: state.source,
-                });
-            } else if (state.objectType === 'interval') {
-                constructed.intervals.push({
-                    attributes,
-                    label_id: state.label.id,
-                    group: 0,
-                    source: state.source,
-                    start: state.frame,
-                    stop: null,
                 });
             } else {
                 checkObjectType('state occluded', state.occluded, 'boolean');
@@ -1376,20 +1368,20 @@ export default class Collection {
                         }) : undefined,
                     });
                 } else {
-                    throw new ArgumentError(
-                        `Object type must be one of: ${JSON.stringify(Object.values(ObjectType))}`,
-                    );
+                    throw new ArgumentError('Object type must be one of SHAPE, TRACK, or TAG');
                 }
             }
         }
 
         // Add constructed objects to a collection
-        const imported = this.import(constructed);
+        const imported = this.import({
+            ...constructed,
+            intervals: [],
+        });
         const importedArray: AnnotationObject[] = [
             ...imported.tags,
             ...imported.tracks,
             ...imported.shapes,
-            ...imported.intervals,
         ];
         const additionalUndo = [];
         const additionalRedo = [];

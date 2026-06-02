@@ -143,8 +143,8 @@ export async function run(
         }
 
         await instance.annotations.commit(
-            { shapes: totalUpdates.created.shapes },
-            { shapes: totalUpdates.deleted.shapes },
+            { shapes: totalUpdates.created.shapes, tags: [], tracks: [] },
+            { shapes: totalUpdates.deleted.shapes, tags: [], tracks: [] },
             frameNumbers[0],
         );
 
@@ -191,8 +191,8 @@ export async function call(
         });
 
         await instance.annotations.commit(
-            { shapes: processedCollection.created.shapes },
-            { shapes: processedCollection.deleted.shapes },
+            { shapes: processedCollection.created.shapes, tags: [], tracks: [] },
+            { shapes: processedCollection.deleted.shapes, tags: [], tracks: [] },
             frame,
         );
 
