@@ -36,6 +36,7 @@ from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from botocore.exceptions import ClientError, EndpointConnectionError
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import CommandError, call_command
 from django.http import FileResponse, HttpResponse
 from django.test import SimpleTestCase, override_settings
@@ -54,6 +55,7 @@ from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cloud_provider import AzureBlobCloudStorage, S3CloudStorage, Status
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
+    AnnotationGuide,
     AttributeSpec,
     AttributeType,
     CloudStorage,
@@ -99,20 +101,16 @@ def create_db_users(
     extra: bool = True,
 ):
     if admin:
-        group_admin, _ = Group.objects.get_or_create(name="admin")
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
-        user_admin.groups.add(group_admin)
         cls.admin = user_admin
 
     if primary:
-        group_user, _ = Group.objects.get_or_create(name="user")
-        group_annotator, _ = Group.objects.get_or_create(name="worker")
+        group_worker, _ = Group.objects.get_or_create(name="worker")
         user_owner = User.objects.create_user(username="user1", password="user1")
-        user_owner.groups.add(group_user)
         user_assignee = User.objects.create_user(username="user2", password="user2")
-        user_assignee.groups.add(group_annotator)
+        user_assignee.groups.set([group_worker])
         user_annotator = User.objects.create_user(username="user3", password="user3")
-        user_annotator.groups.add(group_annotator)
+        user_annotator.groups.set([group_worker])
         cls.owner = cls.user1 = user_owner
         cls.assignee = cls.user2 = user_assignee
         cls.annotator = cls.user3 = user_annotator
@@ -122,7 +120,6 @@ def create_db_users(
         user_somebody = User.objects.create_user(username="user4", password="user4")
         user_somebody.groups.add(group_somebody)
         user_dummy = User.objects.create_user(username="user5", password="user5")
-        user_dummy.groups.add(group_user)
         cls.somebody = cls.user4 = user_somebody
         cls.user = cls.user5 = user_dummy
 
@@ -541,6 +538,29 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
             self.client.patch(f"/api/jobs/{self.job.id}/data/meta", data=data, format="json")
             res2 = self.client.get(f"/api/tasks/{self.task.id}")
             self.assertLess(res.data["updated_date"], res2.data["updated_date"])
+
+
+class AssetCreateAPITestCase(ApiTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.project = create_db_project({"name": "project", "owner": cls.admin})
+        cls.guide = AnnotationGuide.objects.create(project=cls.project)
+
+    def test_filename_content_type_mismatch(self):
+        asset_file = SimpleUploadedFile("evil.html", b"<script></script>", content_type="image/gif")
+
+        with ForceLogin(self.admin, self.client):
+            response = self.client.post(
+                "/api/assets",
+                data={"guide_id": self.guide.id, "file": asset_file},
+                format="multipart",
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(b"Content-Type does not match", response.content)
+
+        self.assertEqual(self.guide.assets.count(), 0)
 
 
 class ServerAboutAPITestCase(ApiTestBase):
@@ -7914,13 +7934,15 @@ class ServerShareAPITestCase(ApiTestBase):
         self._test_api_v2_server_share(self.owner)
 
     def test_api_v2_server_share_assignee(self):
-        self._test_api_v2_server_share(self.assignee)
+        response = self._run_api_v2_server_share(self.assignee, "/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v2_server_share_user(self):
         self._test_api_v2_server_share(self.user)
 
     def test_api_v2_server_share_annotator(self):
-        self._test_api_v2_server_share(self.annotator)
+        response = self._run_api_v2_server_share(self.annotator, "/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v2_server_share_somebody(self):
         self._test_api_v2_server_share(self.somebody)

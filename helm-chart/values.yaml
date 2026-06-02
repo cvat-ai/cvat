@@ -148,7 +148,7 @@ cvat:
         extraArgs: []
     replicas: 1
     image: cvat/server
-    tag: v2.66.0
+    tag: v2.67.0
     imagePullPolicy: Always
     permissionFix:
       enabled: true
@@ -176,7 +176,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.66.0
+    tag: v2.67.0
     imagePullPolicy: Always
     labels: {}
     #  test: test
