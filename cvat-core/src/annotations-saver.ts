@@ -11,23 +11,23 @@ import {
     SerializedTag, SerializedTrack,
 } from './server-response-types';
 
-type SavedCollection = Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>;
-
 interface ExtractedIDs {
     shapes: number[];
     tracks: number[];
     tags: number[];
 }
 
+type CollectionToSave = Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags'>;
+
 interface SplittedCollection {
-    created: SavedCollection;
-    updated: SavedCollection;
-    deleted: SavedCollection;
+    created: CollectionToSave;
+    updated: CollectionToSave;
+    deleted: CollectionToSave;
 }
 
 type CollectionObject = SerializedShape | SerializedTrack | SerializedTag;
 
-const COLLECTION_KEYS: (keyof SavedCollection)[] = ['shapes', 'tracks', 'tags'];
+const COLLECTION_KEYS: ('shapes' | 'tracks' | 'tags')[] = ['shapes', 'tracks', 'tags'];
 const JSON_SERIALIZER_KEYS = [
     'id',
     'label_id',
@@ -81,13 +81,11 @@ export default class AnnotationsSaver {
         this.id = session.id;
         this.collection = collection;
         this.hash = this._getHash();
-        this.initialObjects = {
-            shapes: {}, tracks: {}, tags: {},
-        };
+        this.initialObjects = { shapes: {}, tracks: {}, tags: {} };
 
         // We need use data from export instead of initialData
         // Otherwise we have differ keys order and JSON comparison code works incorrectly
-        const exported = this._exportSavedCollection();
+        const exported = this.collection.export();
         for (const key of COLLECTION_KEYS) {
             for (const object of exported[key]) {
                 this.initialObjects[key][object.id] = object;
@@ -95,47 +93,39 @@ export default class AnnotationsSaver {
         }
     }
 
-    _exportSavedCollection(): SavedCollection {
-        const { shapes, tracks, tags } = this.collection.export();
-        return { shapes, tracks, tags };
-    }
-
     _getHash(): string {
-        const exported = this._exportSavedCollection();
+        const exported = this.collection.export();
         return JSON.stringify(exported);
     }
 
-    async _request(data: SavedCollection, action: 'put' | 'create' | 'update' | 'delete'): Promise<SerializedCollection> {
-        const result = await serverProxy.annotations.updateAnnotations(
-            this.sessionType,
-            this.id,
-            { ...data, intervals: [] },
-            action,
+    async _request(data: CollectionToSave, action: 'put' | 'create' | 'update' | 'delete'): Promise<CollectionToSave> {
+        const { shapes, tracks, tags } = await serverProxy.annotations.updateAnnotations(
+            this.sessionType, this.id, { ...data, intervals: [] }, action,
         );
-        return result;
+        return { shapes, tracks, tags };
     }
 
-    async _put(data: SavedCollection): Promise<SerializedCollection> {
+    async _put(data: CollectionToSave): Promise<CollectionToSave> {
         const result = await this._request(data, 'put');
         return result;
     }
 
-    async _create(created: SavedCollection): Promise<SerializedCollection> {
+    async _create(created: CollectionToSave): Promise<CollectionToSave> {
         const result = await this._request(created, 'create');
         return result;
     }
 
-    async _update(updated: SavedCollection): Promise<SerializedCollection> {
+    async _update(updated: CollectionToSave): Promise<CollectionToSave> {
         const result = await this._request(updated, 'update');
         return result;
     }
 
-    async _delete(deleted: SavedCollection): Promise<SerializedCollection> {
+    async _delete(deleted: CollectionToSave): Promise<CollectionToSave> {
         const result = await this._request(deleted, 'delete');
         return result;
     }
 
-    _split(exported: SavedCollection): SplittedCollection {
+    _split(exported: SerializedCollection): SplittedCollection {
         const splitted: SplittedCollection = {
             created: {
                 shapes: [],
@@ -188,7 +178,7 @@ export default class AnnotationsSaver {
         return splitted;
     }
 
-    _updateCreatedObjects(saved: SavedCollection, indexes: ExtractedIDs): void {
+    _updateCreatedObjects(saved: CollectionToSave, indexes: ExtractedIDs): void {
         const savedLength = saved.tracks.length + saved.shapes.length + saved.tags.length;
         const indexesLength = indexes.tracks.length + indexes.shapes.length + indexes.tags.length;
         if (indexesLength !== savedLength) {
@@ -206,7 +196,7 @@ export default class AnnotationsSaver {
         }
     }
 
-    _extractClientIDs(exported: SavedCollection): ExtractedIDs {
+    _extractClientIDs(exported: CollectionToSave): ExtractedIDs {
         // Receive client IDs before saving
         const indexes = {
             tracks: exported.tracks.map((track) => track.clientID),
@@ -224,7 +214,7 @@ export default class AnnotationsSaver {
         return indexes;
     }
 
-    _updateInitialObjects(responseBody: SavedCollection): void {
+    _updateInitialObjects(responseBody: SerializedCollection): void {
         for (const type of COLLECTION_KEYS) {
             for (const object of responseBody[type]) {
                 this.initialObjects[type][object.id] = object;
@@ -237,7 +227,7 @@ export default class AnnotationsSaver {
             console.log(message);
         };
 
-        const exported = this._exportSavedCollection();
+        const exported = this.collection.export();
         const { flush } = this.collection;
         if (flush) {
             onUpdate('All collection is being saved on the server');
@@ -249,13 +239,11 @@ export default class AnnotationsSaver {
                 }
             }
 
-            const savedData = await this._put(exported);
+            const savedData = await this._put({ ...exported });
             this.collection.flush = false;
 
             this._updateCreatedObjects(savedData, indexes);
-            this.initialObjects = {
-                shapes: {}, tracks: {}, tags: {},
-            };
+            this.initialObjects = { shapes: {}, tracks: {}, tags: {} };
 
             for (const type of COLLECTION_KEYS) {
                 for (const object of savedData[type]) {
@@ -290,14 +278,6 @@ export default class AnnotationsSaver {
                 } : {}),
             });
 
-            const getFrameKey = (obj: CollectionObject): number => {
-                if ('frame' in obj) {
-                    return obj.frame;
-                }
-
-                throw new DataError('Collection object must have a "frame" property');
-            };
-
             const findPair = (
                 key: typeof COLLECTION_KEYS[0],
                 objectToSave: CollectionObject,
@@ -305,17 +285,13 @@ export default class AnnotationsSaver {
             ): CollectionObject | null => {
                 const collection = serverCollection[key];
                 const existingIDs = Object.keys(this.initialObjects[key]).map((id) => +id);
-                const labelID = objectToSave.label_id;
-                const frameKey = getFrameKey(objectToSave);
+                const { frame, label_id: labelID } = objectToSave;
 
                 // optimization to avoid stringifying each object in collection
-                const potentialObjects = (collection as CollectionObject[]).filter(
-                    (object) => {
-                        const objFrame = getFrameKey(object);
-                        return objFrame === frameKey &&
-                            object.label_id === labelID &&
-                            !existingIDs.includes(object.id);
-                    },
+                const potentialObjects = collection.filter(
+                    (object) => object.frame === frame &&
+                    object.label_id === labelID &&
+                    !existingIDs.includes(object.id), // exclude objects that client knows
                 );
 
                 const comparedKeys = JSON_SERIALIZER_KEYS.filter((_key) => !['id', 'attributes'].includes(_key));
@@ -328,9 +304,9 @@ export default class AnnotationsSaver {
 
             const retryIf504Status = async (
                 error: unknown,
-                requestBody: SavedCollection,
+                requestBody: CollectionToSave,
                 action: 'update' | 'delete' | 'create',
-            ): Promise<SerializedCollection> => {
+            ): Promise<CollectionToSave> => {
                 if (error instanceof ServerError && error.code === 504) {
                     setTimeout(() => {
                         // just for logging
@@ -354,11 +330,10 @@ export default class AnnotationsSaver {
                                 case 'create': {
                                     const serverCollection = await serverProxy.annotations
                                         .getAnnotations(this.sessionType, this.id);
-                                    const foundPairs: SerializedCollection = {
+                                    const foundPairs: CollectionToSave = {
                                         shapes: [],
                                         tracks: [],
                                         tags: [],
-                                        intervals: [],
                                     };
                                     for (const type of COLLECTION_KEYS) {
                                         for (const obj of requestBody[type]) {
@@ -389,7 +364,7 @@ export default class AnnotationsSaver {
             if (updated.shapes.length || updated.tags.length || updated.tracks.length) {
                 onUpdate('Updated objects are being saved on the server');
                 const updatedIndexes = this._extractClientIDs(updated);
-                const requestBody = updated;
+                const requestBody = { ...updated };
                 let updatedData = null;
                 try {
                     updatedData = await this._update(requestBody);
@@ -408,7 +383,7 @@ export default class AnnotationsSaver {
             if (deleted.shapes.length || deleted.tags.length || deleted.tracks.length) {
                 onUpdate('Deleted objects are being deleted from the server');
                 this._extractClientIDs(deleted);
-                const requestBody = deleted;
+                const requestBody = { ...deleted };
                 let deletedData = null;
                 try {
                     deletedData = await this._delete(requestBody);
@@ -426,7 +401,7 @@ export default class AnnotationsSaver {
             if (created.shapes.length || created.tags.length || created.tracks.length) {
                 onUpdate('Created objects are being saved on the server');
                 const createdIndexes = this._extractClientIDs(created);
-                const requestBody = created;
+                const requestBody = { ...created };
                 let createdData = null;
                 try {
                     createdData = await this._create(requestBody);
