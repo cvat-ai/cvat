@@ -38,7 +38,9 @@ import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from '
 import { logoutAsync } from 'actions/auth-actions';
 import { shortcutsActions, registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { getOrganizationsAsync, organizationActions } from 'actions/organization-actions';
-import { AboutState, CombinedState } from 'reducers';
+import {
+    AboutState, CombinedState, PluginMenuItemConstructor,
+} from 'reducers';
 import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
@@ -288,7 +290,10 @@ function HeaderComponent(props: Props): JSX.Element {
         }
     };
 
-    const plugins = usePlugins((state: CombinedState) => state.plugins.components.header.userMenu.items, props);
+    const plugins = usePlugins<PluginMenuItemConstructor<Props>>(
+        (state: CombinedState) => state.plugins.components.header.userMenu.items,
+        props,
+    );
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
     if (user.isStaff) {
@@ -386,7 +391,7 @@ function HeaderComponent(props: Props): JSX.Element {
 
     menuItems.push(...plugins
         .map(({ component, weight }): typeof menuItems[0] => [
-            (component as (pluginProps?: any) => NonNullable<MenuProps['items']>[0])({ targetProps: props }),
+            component({ targetProps: props }),
             weight,
         ]),
     );

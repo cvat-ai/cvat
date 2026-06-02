@@ -14,7 +14,7 @@ import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
 import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import Preview from 'components/common/preview';
-import { ActiveInference, PluginComponent } from 'reducers';
+import { ActiveInference, PluginComponent, PluginReactComponent } from 'reducers';
 import StatusMessage from 'components/requests-page/request-status';
 import { useContextMenuClick, useIsMounted } from 'utils/hooks';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
@@ -25,7 +25,7 @@ export interface TaskItemProps {
     deleted: boolean;
     activeInference: ActiveInference | null;
     activeRequest: Request | null;
-    ribbonPlugins: PluginComponent[];
+    ribbonPlugins: PluginComponent<PluginReactComponent>[];
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
     selected: boolean;

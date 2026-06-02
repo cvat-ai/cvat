@@ -12,7 +12,7 @@ import {
     Job, JobStage, JobState, JobType, User,
 } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
-import { CombinedState } from 'reducers';
+import { CombinedState, PluginMenuItemConstructor } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
@@ -43,7 +43,10 @@ function JobActionsComponent(
     } = props;
     const dispatch = useDispatch();
 
-    const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
+    const pluginActions = usePlugins<PluginMenuItemConstructor<Readonly<Props>>>(
+        (state: CombinedState) => state.plugins.components.jobActions.items,
+        props,
+    );
     const {
         mergingConsensus,
         selectedIds,

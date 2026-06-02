@@ -23,7 +23,7 @@ import { usePlugins } from 'utils/hooks';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
-import { CombinedState } from 'reducers';
+import { CombinedState, PluginMenuItemConstructor } from 'reducers';
 import {
     finishCurrentJobAsync,
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
@@ -46,7 +46,7 @@ function AnnotationMenuComponent(): JSX.Element {
     const history = useHistory();
     const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance as Job);
     const [jobState, setJobState] = useState(jobInstance.state);
-    const pluginActions = usePlugins(
+    const pluginActions = usePlugins<PluginMenuItemConstructor<{ jobInstance: Job }>>(
         (state: CombinedState) => state.plugins.components.annotationPage.menuActions.items,
         { jobInstance },
     );
@@ -243,7 +243,10 @@ function AnnotationMenuComponent(): JSX.Element {
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {
-            const menuItem = Component({ key: index, targetProps: { jobInstance } });
+            const menuItem = Component({
+                key: index,
+                targetProps: { jobInstance },
+            });
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );

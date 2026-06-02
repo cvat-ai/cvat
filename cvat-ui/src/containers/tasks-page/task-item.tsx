@@ -6,7 +6,9 @@
 import { connect } from 'react-redux';
 
 import { Task, Request } from 'cvat-core-wrapper';
-import { CombinedState, ActiveInference, PluginComponent } from 'reducers';
+import {
+    CombinedState, ActiveInference, PluginComponent, PluginReactComponent,
+} from 'reducers';
 import TaskItemComponent from 'components/tasks-page/task-item';
 import { updateTaskInState as updateTaskInStateAction, getTaskPreviewAsync } from 'actions/tasks-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
@@ -16,7 +18,7 @@ interface StateToProps {
     taskInstance: any;
     activeInference: ActiveInference | null;
     activeRequest: Request | null;
-    ribbonPlugins: PluginComponent[];
+    ribbonPlugins: PluginComponent<PluginReactComponent>[];
 }
 
 interface DispatchToProps {

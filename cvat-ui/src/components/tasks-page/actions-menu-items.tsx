@@ -5,17 +5,18 @@
 import React from 'react';
 import { LoadingOutlined } from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
-import { usePlugins } from 'utils/hooks';
+import { Plugin } from 'utils/hooks';
 import { LabelWithCountHOF } from 'components/common/label-with-count';
+import { PluginMenuItemConstructor } from 'reducers';
 import { CVATMenuEditLabel } from '../common/cvat-menu-edit-label';
 
-interface MenuItemsData {
+interface MenuItemsData<TTargetProps> {
     taskId: number;
     projectId: number | null;
     isAutomaticAnnotationEnabled: boolean;
     isConsensusEnabled: boolean;
     isMergingConsensusEnabled: boolean;
-    pluginActions: ReturnType<typeof usePlugins>;
+    pluginActions: Plugin<PluginMenuItemConstructor<TTargetProps>>[];
     onMergeConsensusJobs: (() => void) | null;
     onOpenBugTracker: (() => void) | null;
     onUploadAnnotations: () => void;
@@ -30,7 +31,10 @@ interface MenuItemsData {
 
 const bulkAllowedKeys = ['edit_assignee', 'backup_task', 'export_task_dataset', 'delete_task', 'edit_organization'];
 
-export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuProps: unknown): MenuProps['items'] {
+export default function TaskActionsItems<TTargetProps>(
+    menuItemsData: MenuItemsData<TTargetProps>,
+    taskMenuProps: TTargetProps,
+): MenuProps['items'] {
     const {
         startEditField,
         taskId,
@@ -159,7 +163,10 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {
-            const menuItem = Component({ key: index, targetProps: taskMenuProps });
+            const menuItem = Component({
+                key: index,
+                targetProps: taskMenuProps,
+            });
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );

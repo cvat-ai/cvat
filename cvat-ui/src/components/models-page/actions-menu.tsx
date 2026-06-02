@@ -5,10 +5,12 @@
 
 import React from 'react';
 import Dropdown from 'antd/lib/dropdown';
+import { MenuProps } from 'antd/lib/menu';
 import { MLModel } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
-import { CombinedState } from 'reducers';
-import { MenuProps } from 'antd/lib/menu';
+import {
+    CombinedState, PluginMenuItemConstructor,
+} from 'reducers';
 import { useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
 
@@ -16,6 +18,11 @@ interface ModelActionsProps {
     model: MLModel;
     triggerElement: (menuItems: NonNullable<MenuProps['items']>) => JSX.Element | null;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+}
+
+interface ModelActionsTargetState {
+    allModels: MLModel[];
+    selectedIds: (number | string)[];
 }
 
 function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element | null {
@@ -45,18 +52,19 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
         ...reid,
     ];
 
-    const menuPlugins = usePlugins(
+    const menuPlugins = usePlugins<PluginMenuItemConstructor<Readonly<ModelActionsProps>, ModelActionsTargetState>>(
         (state: CombinedState) => state.plugins.components.modelsPage.modelItem.menu.items,
         { model },
         { allModels, selectedIds },
     );
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
     menuItems.push(...menuPlugins
-        .map(({ component, weight }): typeof menuItems[0] => [(
-            component as (pluginProps?: any) => NonNullable<MenuProps['items']>[0]
-        )({
-            targetProps: props, targetState: { allModels, selectedIds },
-        }), weight]),
+        .map(({ component, weight }): typeof menuItems[0] => [
+            component({
+                targetProps: props, targetState: { allModels, selectedIds },
+            }),
+            weight,
+        ]),
     );
 
     // Sort menu items by weight before passing to Dropdown

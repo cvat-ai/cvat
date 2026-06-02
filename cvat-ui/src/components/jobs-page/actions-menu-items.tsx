@@ -5,16 +5,17 @@
 import React from 'react';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
-import { usePlugins } from 'utils/hooks';
+import { Plugin } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { LabelWithCountHOF } from 'components/common/label-with-count';
 import { Job, JobType } from 'cvat-core-wrapper';
+import { PluginMenuItemConstructor } from 'reducers';
 
-interface MenuItemsData {
+interface MenuItemsData<TTargetProps> {
     jobId: number;
     taskId: number;
     projectId: number | null;
-    pluginActions: ReturnType<typeof usePlugins>;
+    pluginActions: Plugin<PluginMenuItemConstructor<TTargetProps>>[];
     isMergingConsensusEnabled: boolean;
     onOpenBugTracker: (() => void) | null;
     onImportAnnotations: () => void;
@@ -43,9 +44,9 @@ enum MenuKeys {
     TASK = 'task',
 }
 
-export default function JobActionsItems(
-    menuItemsData: MenuItemsData,
-    jobMenuProps: unknown,
+export default function JobActionsItems<TTargetProps>(
+    menuItemsData: MenuItemsData<TTargetProps>,
+    jobMenuProps: TTargetProps,
 ): MenuProps['items'] {
     const {
         startEditField,
@@ -192,7 +193,10 @@ export default function JobActionsItems(
 
     menuItems.push(
         ...pluginActions.map(({ component: Component, weight }, index) => {
-            const menuItem = Component({ key: index, targetProps: jobMenuProps });
+            const menuItem = Component({
+                key: index,
+                targetProps: jobMenuProps,
+            });
             return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
         }),
     );

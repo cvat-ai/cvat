@@ -11,7 +11,7 @@ import Modal from 'antd/lib/modal';
 
 import { Organization, Project, User } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
-import { CombinedState } from 'reducers';
+import { CombinedState, PluginMenuItemConstructor } from 'reducers';
 import { deleteProjectAsync, getProjectsAsync, updateProjectAsync } from 'actions/projects-actions';
 import { cloudStoragesActions } from 'actions/cloud-storage-actions';
 import { exportActions } from 'actions/export-actions';
@@ -38,7 +38,10 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
 
     const history = useHistory();
     const dispatch = useDispatch();
-    const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.projectActions.items, props);
+    const pluginActions = usePlugins<PluginMenuItemConstructor<Readonly<Props>>>(
+        (state: CombinedState) => state.plugins.components.projectActions.items,
+        props,
+    );
 
     const {
         selectedIds,
