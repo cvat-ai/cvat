@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 
 from django.db.models import Q
 from django.http import HttpResponse
-from django.utils.text import slugify
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -48,8 +47,8 @@ from cvat.apps.quality_control.permissions import (
 from cvat.apps.quality_control.queue_manager import QualityReportQueueManager
 from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
-    QualityReportCreateSerializer,
     QualityReportConfusionMatrixSerializer,
+    QualityReportCreateSerializer,
     QualityReportSerializer,
     QualityRequirementListSerializer,
     QualityRequirementSerializer,
@@ -467,9 +466,9 @@ class QualityReportViewSet(
         parameters=[
             OpenApiParameter(
                 "requirement",
-                type=OpenApiTypes.STR,
+                type=OpenApiTypes.INT,
                 required=True,
-                description="Quality requirement name in the report",
+                description="Quality requirement id in the report",
             ),
             OpenApiParameter(
                 "format",
@@ -493,9 +492,13 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="confusion/matrix", serializer_class=None)
     def confusion_matrix(self, request, pk):
         report = self.get_object()  # check permissions
-        requirement_name = request.query_params.get("requirement")
-        if not requirement_name:
+        requirement = request.query_params.get("requirement")
+        if not requirement:
             raise ValidationError({"requirement": "This query parameter is required."})
+        try:
+            requirement_id = int(requirement)
+        except ValueError as ex:
+            raise ValidationError({"requirement": "A valid integer is required."}) from ex
 
         try:
             format_name = QualityReportExportFormat(
@@ -509,25 +512,25 @@ class QualityReportViewSet(
         if format_name == QualityReportExportFormat.JSON:
             matrix_json = qc.prepare_requirement_confusion_matrix_json(
                 report,
-                requirement_name=requirement_name,
+                requirement_id=requirement_id,
             )
             if matrix_json is None:
                 raise NotFound(
-                    f"Confusion matrix for quality requirement '{requirement_name}' was not found"
+                    f"Confusion matrix for quality requirement '{requirement_id}' was not found"
                 )
 
             return Response(matrix_json)
 
         matrix_csv = qc.prepare_requirement_confusion_matrix_for_downloading(
             report,
-            requirement_name=requirement_name,
+            requirement_id=requirement_id,
         )
         if matrix_csv is None:
             raise NotFound(
-                f"Confusion matrix for quality requirement '{requirement_name}' was not found"
+                f"Confusion matrix for quality requirement '{requirement_id}' was not found"
             )
 
-        filename_requirement = slugify(requirement_name) or "requirement"
+        filename_requirement = f"requirement-{requirement_id}"
         response = HttpResponse(matrix_csv, content_type="text/csv")
         response["Content-Disposition"] = (
             f'attachment; filename="quality-report-{report.id}-'

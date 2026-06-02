@@ -1425,7 +1425,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.CREATED
 
         leaf_requirement_name = f"red-cars-leaf-{task_id}"
-        _, response = self._create_requirement(
+        leaf_requirement, response = self._create_requirement(
             admin_user,
             self._build_requirement_payload(
                 leaf_requirement_name,
@@ -1464,12 +1464,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "completed": 2,
             "items": [
                 {
+                    "requirement_id": parent_requirement["id"],
                     "name": parent_requirement_name,
                     "metric": "accuracy",
                     "score": 1.0,
                     "threshold": 1.0,
                 },
                 {
+                    "requirement_id": leaf_requirement["id"],
                     "name": leaf_requirement_name,
                     "metric": "accuracy",
                     "score": 1.0,
@@ -1509,7 +1511,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         enabled_requirement_name = f"report-enabled-{task_id}"
         disabled_requirement_name = f"report-disabled-{task_id}"
-        _, response = self._patch_settings(
+        updated_settings, response = self._patch_settings(
             admin_user,
             settings["id"],
             {
@@ -1533,6 +1535,16 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             },
         )
         assert response.status_code == HTTPStatus.OK
+        enabled_requirement_id = next(
+            requirement["id"]
+            for requirement in updated_settings["requirements"]
+            if requirement["name"] == enabled_requirement_name
+        )
+        disabled_requirement_id = next(
+            requirement["id"]
+            for requirement in updated_settings["requirements"]
+            if requirement["name"] == disabled_requirement_name
+        )
 
         gt_job = self.create_gt_job(admin_user, task_id, complete=False)
         labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
@@ -1571,6 +1583,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "completed": 1,
             "items": [
                 {
+                    "requirement_id": enabled_requirement_id,
                     "name": enabled_requirement_name,
                     "metric": "accuracy",
                     "score": 1.0,
@@ -1593,12 +1606,16 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert disabled_requirement_name in report_data["groups"]
         assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
         parameters = report_data["groups"][enabled_requirement_name]["parameters"]
+        assert parameters["requirement_id"] == enabled_requirement_id
+        assert "source_requirement_id" not in parameters
         assert parameters["metric"] == "accuracy"
         assert parameters["required_score"] == 0.75
         assert parameters["point_size"] == 0.25
         assert parameters["match_orientation"] is False
         assert parameters["match_groups"] is False
         disabled_group = report_data["groups"][disabled_requirement_name]
+        assert disabled_group["parameters"]["requirement_id"] == disabled_requirement_id
+        assert "source_requirement_id" not in disabled_group["parameters"]
         assert disabled_group["parameters"]["enabled"] is False
         assert disabled_group["parameters"]["metric"] == "accuracy"
         assert disabled_group["parameters"]["required_score"] == 1.0
@@ -1730,7 +1747,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         enabled_requirement_name = f"confusion-enabled-{task['id']}"
         disabled_requirement_name = f"confusion-disabled-{task['id']}"
-        _, response = self._patch_settings(
+        updated_settings, response = self._patch_settings(
             admin_user,
             settings["id"],
             {
@@ -1751,6 +1768,16 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             },
         )
         assert response.status_code == HTTPStatus.OK
+        enabled_requirement_id = next(
+            requirement["id"]
+            for requirement in updated_settings["requirements"]
+            if requirement["name"] == enabled_requirement_name
+        )
+        disabled_requirement_id = next(
+            requirement["id"]
+            for requirement in updated_settings["requirements"]
+            if requirement["name"] == disabled_requirement_name
+        )
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(user=admin_user, task_id=task["id"])
@@ -1768,19 +1795,21 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             assert manifest["report_id"] == report["id"]
 
             group_matrices = {
-                matrix["name"]: matrix
+                matrix["requirement_id"]: matrix
                 for matrix in manifest["matrices"]
                 if matrix["scope"] == "group"
             }
-            assert enabled_requirement_name in group_matrices
-            assert disabled_requirement_name in group_matrices
+            assert enabled_requirement_id in group_matrices
+            assert disabled_requirement_id in group_matrices
+            assert group_matrices[enabled_requirement_id]["name"] == enabled_requirement_name
+            assert group_matrices[disabled_requirement_id]["name"] == disabled_requirement_name
 
             overall_csv = archive.read("overall.csv").decode()
             enabled_group_csv = archive.read(
-                group_matrices[enabled_requirement_name]["path"]
+                group_matrices[enabled_requirement_id]["path"]
             ).decode()
             disabled_group_csv = archive.read(
-                group_matrices[disabled_requirement_name]["path"]
+                group_matrices[disabled_requirement_id]["path"]
             ).decode()
             assert "ds \\ gt" in overall_csv
             assert "ds \\ gt" in enabled_group_csv
@@ -1789,15 +1818,12 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         response = get_method(
             admin_user,
             f"quality/reports/{report['id']}/confusion/matrix",
-            requirement=enabled_requirement_name,
+            requirement=enabled_requirement_id,
         )
         assert response.status_code == HTTPStatus.OK
         assert "json" in response.headers["Content-Type"]
         enabled_group_matrix = response.json()
-        assert (
-            enabled_group_matrix["labels"]
-            == group_matrices[enabled_requirement_name]["labels"]
-        )
+        assert enabled_group_matrix["labels"] == group_matrices[enabled_requirement_id]["labels"]
         assert enabled_group_matrix["rows"]
         assert enabled_group_matrix["axes"] == {"cols": "gt", "rows": "ds"}
         assert set(enabled_group_matrix) == {
@@ -1814,6 +1840,13 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             admin_user,
             f"quality/reports/{report['id']}/confusion/matrix",
             requirement=enabled_requirement_name,
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        response = get_method(
+            admin_user,
+            f"quality/reports/{report['id']}/confusion/matrix",
+            requirement=enabled_requirement_id,
             format="csv",
         )
         assert response.status_code == HTTPStatus.OK
@@ -1823,7 +1856,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         response = get_method(
             admin_user,
             f"quality/reports/{report['id']}/confusion/matrix",
-            requirement=disabled_requirement_name,
+            requirement=disabled_requirement_id,
             format="csv",
         )
         assert response.status_code == HTTPStatus.OK

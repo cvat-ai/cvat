@@ -751,10 +751,12 @@ class ComparisonReportRequirementSummaryItem(ReportNode):
     metric: str
     score: float | None
     threshold: float
+    requirement_id: int | None = None
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementSummaryItem:
         return cls(
+            requirement_id=d["requirement_id"],
             name=d["name"],
             metric=d["metric"],
             score=d.get("score"),
@@ -971,6 +973,11 @@ class ComparisonReport(ReportNode):
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReport:
+        groups = (
+            {k: ComparisonReportRequirementSummary.from_dict(v) for k, v in d["groups"].items()}
+            if d.get("groups") is not None
+            else None
+        )
         return cls(
             parameters=ComparisonParameters.from_dict(d["parameters"]),
             comparison_summary=ComparisonReportSummary.from_dict(d["comparison_summary"]),
@@ -982,11 +989,7 @@ class ComparisonReport(ReportNode):
                 if d.get("frame_results") is not None
                 else None
             ),
-            groups=(
-                {k: ComparisonReportRequirementSummary.from_dict(v) for k, v in d["groups"].items()}
-                if d.get("groups") is not None
-                else None
-            ),
+            groups=groups,
         )
 
     def to_json(self) -> str:
@@ -1010,6 +1013,5 @@ class ComparisonReport(ReportNode):
     @classmethod
     def summary_from_json(cls, data: str) -> ComparisonReportSummary:
         # parse only what's needed
-        return ComparisonReportSummary.from_dict(
-            json_stream.load(StringIO(data), persistent=True)["comparison_summary"]
-        )
+        report_data = json_stream.load(StringIO(data), persistent=True)
+        return ComparisonReportSummary.from_dict(report_data["comparison_summary"])

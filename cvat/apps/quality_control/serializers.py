@@ -94,6 +94,7 @@ class QualityReportJobsSummarySerializer(serializers.Serializer):
 
 
 class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
+    requirement_id = serializers.IntegerField(allow_null=True)
     name = serializers.CharField()
     metric = serializers.CharField()
     score = serializers.FloatField(allow_null=True)

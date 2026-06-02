@@ -4650,8 +4650,8 @@ paths:
       - in: query
         name: requirement
         schema:
-          type: string
-        description: Quality requirement name in the report
+          type: integer
+        description: Quality requirement id in the report
         required: true
       tags:
       - quality
@@ -11104,6 +11104,9 @@ components:
     QualityReportRequirementSummaryItem:
       type: object
       properties:
+        requirement_id:
+          type: integer
+          nullable: true
         name:
           type: string
         metric:
@@ -11118,6 +11121,7 @@ components:
       required:
       - metric
       - name
+      - requirement_id
       - score
       - threshold
     QualityReportRequirementsSummary:

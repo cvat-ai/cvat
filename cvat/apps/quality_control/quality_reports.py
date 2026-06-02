@@ -210,11 +210,25 @@ def _has_downloadable_confusion_matrix(confusion_matrix: ConfusionMatrix | None)
     )
 
 
+def _get_group_requirement_id(group_report) -> int | None:
+    requirement_id = group_report.parameters.get("requirement_id")
+    return int(requirement_id) if requirement_id is not None else None
+
+
 def _get_requirement_confusion_matrix(
-    db_report: models.QualityReport, *, requirement_name: str
+    db_report: models.QualityReport, *, requirement_id: int
 ) -> ConfusionMatrix | None:
     comparison_report = ComparisonReport.from_json(db_report.get_report_data())
-    group_report = (comparison_report.groups or {}).get(requirement_name)
+    groups = comparison_report.groups or {}
+    group_report = next(
+        (
+            group_report
+            for group_report in groups.values()
+            if _get_group_requirement_id(group_report) == requirement_id
+        ),
+        None,
+    )
+
     if not group_report:
         return None
 
@@ -226,11 +240,11 @@ def _get_requirement_confusion_matrix(
 
 
 def prepare_requirement_confusion_matrix_json(
-    db_report: models.QualityReport, *, requirement_name: str
+    db_report: models.QualityReport, *, requirement_id: int
 ) -> dict[str, Any] | None:
     confusion_matrix = _get_requirement_confusion_matrix(
         db_report,
-        requirement_name=requirement_name,
+        requirement_id=requirement_id,
     )
     if confusion_matrix is None:
         return None
@@ -239,11 +253,11 @@ def prepare_requirement_confusion_matrix_json(
 
 
 def prepare_requirement_confusion_matrix_for_downloading(
-    db_report: models.QualityReport, *, requirement_name: str
+    db_report: models.QualityReport, *, requirement_id: int
 ) -> str | None:
     confusion_matrix = _get_requirement_confusion_matrix(
         db_report,
-        requirement_name=requirement_name,
+        requirement_id=requirement_id,
     )
     if confusion_matrix is None:
         return None
@@ -281,19 +295,21 @@ def prepare_confusion_matrices_archive_for_downloading(db_report: models.Quality
         scope: str,
         name: str,
         confusion_matrix,
+        requirement_id: int | None = None,
     ) -> None:
         if not _has_downloadable_confusion_matrix(confusion_matrix):
             return
 
         archive.writestr(archive_path, _serialize_confusion_matrix_csv(confusion_matrix))
-        manifest["matrices"].append(
-            {
-                "scope": scope,
-                "name": name,
-                "path": archive_path,
-                "labels": confusion_matrix.labels,
-            }
-        )
+        manifest_item = {
+            "scope": scope,
+            "name": name,
+            "path": archive_path,
+            "labels": confusion_matrix.labels,
+        }
+        if requirement_id is not None:
+            manifest_item["requirement_id"] = requirement_id
+        manifest["matrices"].append(manifest_item)
 
     with ZipFile(archive_buffer, mode="w", compression=ZIP_DEFLATED) as archive:
         _add_matrix_to_archive(
@@ -311,6 +327,7 @@ def prepare_confusion_matrices_archive_for_downloading(db_report: models.Quality
                 scope="group",
                 name=group_name,
                 confusion_matrix=group_report.comparison_summary.annotations.confusion_matrix,
+                requirement_id=_get_group_requirement_id(group_report),
             )
 
         archive.writestr(

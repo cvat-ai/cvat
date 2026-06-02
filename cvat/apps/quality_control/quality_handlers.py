@@ -295,6 +295,7 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
         params["parent_requirement"] = getattr(parent, "id", parent)
 
     for internal_name, public_name in {
+        "source_requirement_id": "requirement_id",
         "target_metric": "metric",
         "target_metric_threshold": "required_score",
         "oks_sigma": "point_size",
@@ -432,6 +433,9 @@ def build_requirements_summary(
                 metric=str(metric),
                 score=float(actual_score) if actual_score is not None else None,
                 threshold=float(required_score),
+                requirement_id=_get_requirement_field(
+                    requirement, "source_requirement_id", "requirement_id"
+                ),
             )
         )
         if actual_score is not None and required_score <= actual_score:
