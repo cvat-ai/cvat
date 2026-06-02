@@ -3,14 +3,16 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect } from 'react';
+import React, {
+    useCallback, useEffect, useMemo,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
-import { CombinedState } from 'reducers';
+import { AudioRegion, CombinedState } from 'reducers';
 import { audioActions } from 'actions/audio-actions';
-import AudioLabelItemContainer from 'containers/annotation-page/audio-workspace/objects-side-bar/audio-label-item';
+import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
 import { ShortcutScope } from 'utils/enums';
@@ -35,6 +37,83 @@ for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
 
 registerComponentShortcuts(componentShortcuts);
 
+interface AudioLabelItemProps {
+    labelID: number;
+}
+
+function AudioLabelItem(props: AudioLabelItemProps): JSX.Element | null {
+    const { labelID } = props;
+    const dispatch = useDispatch();
+    const { label, audioRegions } = useSelector((state: CombinedState) => ({
+        label: state.annotation.job.labels.find((_label: any) => _label.id === labelID),
+        audioRegions: state.audio.player.regions,
+    }), shallowEqual);
+
+    const {
+        visible,
+        statesHidden,
+        statesLocked,
+    } = useMemo(() => {
+        const ownRegions = audioRegions.filter(
+            (region: AudioRegion): boolean => region.labelId === labelID,
+        );
+        const unlockedOwnRegions = ownRegions.filter((region: AudioRegion): boolean => !region.locked);
+
+        return {
+            visible: !!ownRegions.length,
+            statesHidden: unlockedOwnRegions.every((region: AudioRegion): boolean => !!region.hidden),
+            statesLocked: unlockedOwnRegions.length === 0,
+        };
+    }, [audioRegions, labelID]);
+
+    const switchHidden = useCallback((value: boolean): void => {
+        dispatch(audioActions.setAudioRegions(
+            audioRegions.map((region: AudioRegion) => (
+                region.labelId === labelID ? { ...region, hidden: value } : region
+            )),
+        ));
+    }, [audioRegions, dispatch, labelID]);
+
+    const switchLock = useCallback((value: boolean): void => {
+        dispatch(audioActions.setAudioRegions(
+            audioRegions.map((region: AudioRegion) => (
+                region.labelId === labelID ? { ...region, locked: value } : region
+            )),
+        ));
+    }, [audioRegions, dispatch, labelID]);
+
+    const hideStates = useCallback((): void => {
+        switchHidden(true);
+    }, [switchHidden]);
+    const showStates = useCallback((): void => {
+        switchHidden(false);
+    }, [switchHidden]);
+    const lockStates = useCallback((): void => {
+        switchLock(true);
+    }, [switchLock]);
+    const unlockStates = useCallback((): void => {
+        switchLock(false);
+    }, [switchLock]);
+
+    if (!label) return null;
+
+    return (
+        <LabelItemComponent
+            labelName={label.name}
+            labelColor={label.color}
+            visible={visible}
+            statesHidden={statesHidden}
+            statesLocked={statesLocked}
+            hideStates={hideStates}
+            showStates={showStates}
+            lockStates={lockStates}
+            unlockStates={unlockStates}
+        />
+    );
+}
+
+const MemoizedAudioLabelItem = React.memo(AudioLabelItem);
+
 function AudioLabelsList(): JSX.Element {
     const dispatch = useDispatch();
 
@@ -43,13 +122,13 @@ function AudioLabelsList(): JSX.Element {
         keyMap: state.shortcuts.keyMap,
     }), shallowEqual);
 
-    const labelIDs = labels.map((label: any): number => label.id);
+    const labelIDs = useMemo(() => labels.map((label: any): number => label.id), [labels]);
 
     useResetShortcutsOnUnmount(componentShortcuts);
 
-    const keyToLabelMapping = Object.fromEntries(
+    const keyToLabelMapping = useMemo(() => Object.fromEntries(
         labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID]),
-    );
+    ), [labelIDs]);
 
     useEffect(() => {
         const updated = JSON.parse(JSON.stringify(componentShortcuts));
@@ -69,7 +148,7 @@ function AudioLabelsList(): JSX.Element {
         registerComponentShortcuts(updated);
     }, [labels]);
 
-    const handleHelper = (event: KeyboardEvent, index: number): void => {
+    const handleHelper = useCallback((event: KeyboardEvent, index: number): void => {
         if (event) event.preventDefault();
         const labelID = keyToLabelMapping[index];
         const label = labels.find((_label: any) => _label.id === labelID);
@@ -92,14 +171,17 @@ function AudioLabelsList(): JSX.Element {
             message.destroy();
             message.success(`Default label has been changed to "${label.name}"`);
         }
-    };
+    }, [dispatch, keyToLabelMapping, labels]);
 
-    const handlers: Record<string, (event: KeyboardEvent) => void> = {};
-    for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
-        handlers[makeKey(index)] = (event: KeyboardEvent) => {
-            handleHelper(event, index);
-        };
-    }
+    const handlers = useMemo(() => {
+        const result: Record<string, (event: KeyboardEvent) => void> = {};
+        for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
+            result[makeKey(index)] = (event: KeyboardEvent) => {
+                handleHelper(event, index);
+            };
+        }
+        return result;
+    }, [handleHelper]);
 
     return (
         <div className='cvat-objects-sidebar-labels-list'>
@@ -108,7 +190,7 @@ function AudioLabelsList(): JSX.Element {
                 <Text>{`Items: ${labels.length}`}</Text>
             </div>
             {labelIDs.map((labelID: number): JSX.Element => (
-                <AudioLabelItemContainer key={labelID} labelID={labelID} />
+                <MemoizedAudioLabelItem key={labelID} labelID={labelID} />
             ))}
         </div>
     );

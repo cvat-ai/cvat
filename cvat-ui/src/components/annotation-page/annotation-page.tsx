@@ -24,7 +24,7 @@ import StatisticsModalComponent from 'components/annotation-page/top-bar/statist
 import AudioStatisticsModalComponent from 'components/annotation-page/audio-workspace/top-bar/audio-statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import AudioTopBarContainer from 'containers/annotation-page/audio-workspace/top-bar/audio-top-bar';
-import AudioWorkspaceContainer from 'containers/annotation-page/audio-workspace/audio-workspace';
+import AudioWorkspaceComponent from 'components/annotation-page/audio-workspace/audio-workspace';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
@@ -161,7 +161,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 {workspace === Workspace.ATTRIBUTES && <AttributeAnnotationWorkspace />}
                 {workspace === Workspace.TAGS && <TagAnnotationWorkspace />}
                 {workspace === Workspace.REVIEW && <ReviewAnnotationsWorkspace />}
-                {isAudio && <AudioWorkspaceContainer />}
+                {isAudio && <AudioWorkspaceComponent />}
             </Layout.Content>
             {isAudio ? <AudioFiltersModalComponent /> : <FiltersModalComponent />}
             {isAudio ? <AudioStatisticsModalComponent /> : <StatisticsModalComponent />}

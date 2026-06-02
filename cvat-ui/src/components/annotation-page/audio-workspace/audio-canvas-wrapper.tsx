@@ -1,11 +1,15 @@
 import React, {
-    useRef, useState, useEffect, useCallback,
+    useRef, useState, useEffect, useCallback, useMemo,
 } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import WaveSurfer from 'wavesurfer.js';
 import WavesurferPlayer from '@wavesurfer/react';
 
-import { ActiveControl, AudioRegion, ColorBy } from 'reducers';
-import { Attribute, Label } from 'cvat-core-wrapper';
+import { ActiveControl, AudioRegion, CombinedState } from 'reducers';
+import { Attribute } from 'cvat-core-wrapper';
+import { shallowEqual } from 'utils/redux';
+import { audioActions } from 'actions/audio-actions';
+import { updateActiveControl } from 'actions/annotation-actions';
 
 import AudioRegionDetails from './audio-region-details';
 import AudioCanvasSkeleton from './skeleton/audio-canvas-skeleton';
@@ -13,54 +17,42 @@ import { useAudioWaveform } from './hooks/use-audio-waveform';
 import { useAudioPlaybackSync } from './hooks/use-audio-playback-sync';
 import { useAudioRegions } from './hooks/use-audio-regions';
 import { useAudioRecording } from './hooks/use-audio-recording';
+import { filterAudioRegions } from './utils/filter-audio-regions';
 import { ZOOM_MIN, computeMaxZoom } from './utils/zoom-bounds';
-
-export interface AudioCanvasWrapperProps {
-    isPlaying: boolean;
-    currentTime: number;
-    duration: number;
-    zoom: number;
-    volume: number;
-    loop: boolean;
-    playbackRate: number;
-    activeControl: ActiveControl;
-    regions: AudioRegion[];
-    visibleRegionIds: Set<string>;
-    activeRegionId: string | null;
-    hoveredRegionId: string | null;
-    audioUrl: string | null;
-    audioLoading: boolean;
-    audioError: string | null;
-    waveformReady: boolean;
-    labels: Label[];
-    activeLabelId: number | null;
-    colorBy: ColorBy;
-    opacity: number;
-    selectedOpacity: number;
-    onSwitchPlay(playing: boolean): void;
-    onSetCurrentTime(time: number): void;
-    onSetDuration(duration: number): void;
-    onSetRegions(regions: AudioRegion[]): void;
-    onSetActiveRegion(regionId: string | null): void;
-    onSetHoveredRegion(regionId: string | null): void;
-    onSetZoom(zoom: number): void;
-    onUpdateRegionAttribute(regionId: string, attrID: number, value: string): void;
-    onWaveformReady(ready: boolean): void;
-    onUpdateActiveControl(activeControl: ActiveControl): void;
-}
 
 const ZOOM_STEP_FACTOR = 1.2;
 
-function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
+function AudioCanvasWrapper(): JSX.Element {
+    const dispatch = useDispatch();
     const {
         isPlaying, currentTime, duration, zoom, volume, loop, playbackRate,
-        activeControl, regions, visibleRegionIds, activeRegionId, hoveredRegionId,
+        activeControl, regions, activeRegionId, hoveredRegionId,
         audioUrl, audioLoading, audioError, waveformReady,
         labels, activeLabelId, colorBy, opacity, selectedOpacity,
-        onSwitchPlay, onSetCurrentTime, onSetDuration,
-        onSetRegions, onSetActiveRegion, onSetHoveredRegion, onSetZoom,
-        onUpdateRegionAttribute, onWaveformReady, onUpdateActiveControl,
-    } = props;
+        filters,
+    } = useSelector((state: CombinedState) => ({
+        isPlaying: state.audio.player.playing,
+        currentTime: state.audio.player.currentTime,
+        duration: state.audio.player.duration,
+        zoom: state.audio.player.zoom,
+        volume: state.audio.player.volume,
+        loop: state.audio.player.loop,
+        playbackRate: state.audio.player.playbackRate,
+        activeControl: state.annotation.canvas.activeControl,
+        regions: state.audio.player.regions,
+        activeRegionId: state.audio.player.activeRegionId,
+        hoveredRegionId: state.audio.player.hoveredRegionId,
+        audioUrl: state.audio.player.audioUrl,
+        audioLoading: state.audio.player.audioLoading,
+        audioError: state.audio.player.audioError,
+        waveformReady: state.audio.player.waveformReady,
+        labels: state.annotation.job.labels,
+        activeLabelId: state.audio.player.activeLabelId,
+        colorBy: state.settings.shapes.colorBy,
+        opacity: state.settings.shapes.opacity,
+        selectedOpacity: state.settings.shapes.selectedOpacity,
+        filters: state.annotation.annotations.filters,
+    }), shallowEqual);
 
     const [wavesurfer, setWavesurfer] = useState<WaveSurfer | null>(null);
     const prevAudioUrlRef = useRef<string | null>(null);
@@ -69,13 +61,46 @@ function AudioCanvasWrapper(props: AudioCanvasWrapperProps): JSX.Element {
     const maxZoom = computeMaxZoom(duration);
     const maxZoomRef = useRef(maxZoom);
     const phantomRegionIdsRef = useRef<Set<string>>(new Set());
+    const visibleRegionIds = useMemo(() => (
+        new Set(filterAudioRegions(regions, labels, filters).map((r) => r.id))
+    ), [regions, labels, filters]);
+    const onSwitchPlay = useCallback((playing: boolean): void => {
+        dispatch(audioActions.switchAudioPlay(playing));
+    }, [dispatch]);
+    const onSetCurrentTime = useCallback((time: number): void => {
+        dispatch(audioActions.setAudioCurrentTime(time));
+    }, [dispatch]);
+    const onSetDuration = useCallback((nextDuration: number): void => {
+        dispatch(audioActions.setAudioDuration(nextDuration));
+    }, [dispatch]);
+    const onSetRegions = useCallback((nextRegions: AudioRegion[]): void => {
+        dispatch(audioActions.setAudioRegions(nextRegions));
+    }, [dispatch]);
+    const onSetActiveRegion = useCallback((regionId: string | null): void => {
+        dispatch(audioActions.setAudioActiveRegion(regionId));
+    }, [dispatch]);
+    const onSetHoveredRegion = useCallback((regionId: string | null): void => {
+        dispatch(audioActions.setAudioHoveredRegion(regionId));
+    }, [dispatch]);
+    const onSetZoom = useCallback((nextZoom: number): void => {
+        dispatch(audioActions.setAudioZoom(nextZoom));
+    }, [dispatch]);
+    const onUpdateRegionAttribute = useCallback((regionId: string, attrID: number, value: string): void => {
+        dispatch(audioActions.updateAudioRegionAttribute(regionId, attrID, value));
+    }, [dispatch]);
+    const onWaveformReady = useCallback((ready: boolean): void => {
+        dispatch(audioActions.setWaveformReady(ready));
+    }, [dispatch]);
+    const onUpdateActiveControl = useCallback((control: ActiveControl): void => {
+        dispatch(updateActiveControl(control));
+    }, [dispatch]);
 
     useEffect(() => { zoomRef.current = zoom; }, [zoom]);
     useEffect(() => { maxZoomRef.current = maxZoom; }, [maxZoom]);
 
     useEffect(() => {
         if (zoom > maxZoom) onSetZoom(maxZoom);
-    }, [maxZoom]);
+    }, [maxZoom, onSetZoom, zoom]);
 
     useEffect(() => {
         const el = wrapperRef.current;

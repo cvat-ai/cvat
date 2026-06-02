@@ -27,7 +27,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
         projectId = +(params.get('projectId') as string);
     }
     const many = params.get('many') === 'true';
-    const audio = params.get('audio') === 'true';
+    const audio = params.get('type') === 'audio';
     const handleCreate: typeof onCreate = (...onCreateParams) => onCreate(...onCreateParams);
 
     return (

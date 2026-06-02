@@ -125,7 +125,7 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                                 <Button
                                     className='cvat-create-audio-task-button'
                                     type='primary'
-                                    onClick={(): void => history.push('/tasks/create?audio=true')}
+                                    onClick={(): void => history.push('/tasks/create?type=audio')}
                                     icon={<SoundOutlined />}
                                 >
                                     Create a new audio task

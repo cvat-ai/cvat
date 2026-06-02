@@ -1,30 +1,31 @@
 import './styles.scss';
 import React from 'react';
+import { useSelector } from 'react-redux';
 import Layout from 'antd/lib/layout';
 
-import AudioCanvasWrapperContainer from 'containers/annotation-page/audio-workspace/audio-canvas-wrapper';
-import ControlsSideBarContainer from 'containers/annotation-page/audio-workspace/controls-side-bar/controls-side-bar';
+import { CombinedState } from 'reducers';
+import { shallowEqual } from 'utils/redux';
 import AudioObjectsSideBar from 'components/annotation-page/audio-workspace/objects-side-bar/audio-objects-side-bar';
 import AudioRegionsListContainer from 'containers/annotation-page/audio-workspace/audio-regions-list';
 import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 
+import AudioCanvasWrapper from './audio-canvas-wrapper';
+import AudioControlsSideBarComponent from './controls-side-bar/controls-side-bar';
 import AudioControlsSidebarSkeleton from './skeleton/audio-controls-sidebar-skeleton';
 import AudioRegionsListSkeleton from './skeleton/audio-regions-list-skeleton';
 
-export interface AudioWorkspaceProps {
-    waveformReady: boolean;
-    audioLoading: boolean;
-    audioError: string | null;
-}
-
-export default function AudioWorkspaceComponent(props: AudioWorkspaceProps): JSX.Element {
-    const { waveformReady, audioLoading, audioError } = props;
+export default function AudioWorkspaceComponent(): JSX.Element {
+    const { waveformReady, audioLoading, audioError } = useSelector((state: CombinedState) => ({
+        waveformReady: state.audio.player.waveformReady,
+        audioLoading: state.audio.player.audioLoading,
+        audioError: state.audio.player.audioError,
+    }), shallowEqual);
     const showSkeleton = !audioError && (audioLoading || !waveformReady);
 
     return (
         <Layout hasSider className='cvat-audio-workspace'>
-            {showSkeleton ? <AudioControlsSidebarSkeleton /> : <ControlsSideBarContainer />}
-            <AudioCanvasWrapperContainer />
+            {showSkeleton ? <AudioControlsSidebarSkeleton /> : <AudioControlsSideBarComponent />}
+            <AudioCanvasWrapper />
             <AudioObjectsSideBar
                 objectsList={showSkeleton ? <AudioRegionsListSkeleton /> : <AudioRegionsListContainer />}
                 appearanceHidden={showSkeleton}

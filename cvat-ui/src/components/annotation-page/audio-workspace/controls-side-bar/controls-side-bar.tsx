@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import Layout from 'antd/lib/layout';
 
-import { ActiveControl } from 'reducers';
-import { Label } from 'cvat-core-wrapper';
+import { ActiveControl, CombinedState } from 'reducers';
+import { shallowEqual, ThunkDispatch } from 'utils/redux';
+import { updateActiveControl } from 'actions/annotation-actions';
+import {
+    audioActions,
+    extendAudioRegionFromLastAsync,
+} from 'actions/audio-actions';
 import ControlVisibilityObserver, { ExtraControlsControl } from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
 
 import AudioCursorControl, { Props as CursorControlProps } from './cursor-control';
@@ -14,6 +20,7 @@ import LoopControl, { Props as LoopControlProps } from './loop-control';
 import ZoomControl, { Props as ZoomControlProps } from './zoom-control';
 import SpeedControl, { Props as SpeedControlProps } from './speed-control';
 import VolumeControl, { Props as VolumeControlProps } from './volume-control';
+import { computeMaxZoom } from '../utils/zoom-bounds';
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(AudioCursorControl, 'audioCursorControl');
 const ObservedCreateRegionControl = ControlVisibilityObserver<CreateRegionControlProps>(CreateRegionControl, 'audioCreateRegionControl');
@@ -25,56 +32,64 @@ const ObservedZoomControl = ControlVisibilityObserver<ZoomControlProps>(ZoomCont
 const ObservedSpeedControl = ControlVisibilityObserver<SpeedControlProps>(SpeedControl, 'audioSpeedControl');
 const ObservedVolumeControl = ControlVisibilityObserver<VolumeControlProps>(VolumeControl, 'audioVolumeControl');
 
-export interface Props {
-    activeControl: ActiveControl;
-    normalizedKeyMap: Record<string, string>;
-    zoom: number;
-    maxZoom: number;
-    volume: number;
-    loop: boolean;
-    playbackRate: number;
-    labels: Label[];
-    activeLabelId: number | null;
-    updateActiveControl(activeControl: ActiveControl): void;
-    onZoomChange(zoom: number): void;
-    onPlaybackRateChange(rate: number): void;
-    onVolumeChange(volume: number): void;
-    onLoopChange(loop: boolean): void;
-    onSetActiveLabel(labelId: number | null): void;
-    onExtendRegion(labelId: number): void;
-}
-
-export default function AudioControlsSideBarComponent(props: Props): JSX.Element {
+export default function AudioControlsSideBarComponent(): JSX.Element {
+    const dispatch = useDispatch<ThunkDispatch>();
     const {
         activeControl,
         normalizedKeyMap,
         zoom,
-        maxZoom,
         volume,
         loop,
         playbackRate,
+        duration,
         labels,
         activeLabelId,
-        updateActiveControl,
-        onZoomChange,
-        onPlaybackRateChange,
-        onVolumeChange,
-        onLoopChange,
-        onSetActiveLabel,
-        onExtendRegion,
-    } = props;
+    } = useSelector((state: CombinedState) => ({
+        activeControl: state.annotation.canvas.activeControl,
+        normalizedKeyMap: state.shortcuts.normalizedKeyMap,
+        zoom: state.audio.player.zoom,
+        volume: state.audio.player.volume,
+        loop: state.audio.player.loop,
+        playbackRate: state.audio.player.playbackRate,
+        duration: state.audio.player.duration,
+        labels: state.annotation.job.labels,
+        activeLabelId: state.audio.player.activeLabelId,
+    }), shallowEqual);
+
+    const maxZoom = useMemo(() => computeMaxZoom(duration), [duration]);
+    const updateAudioActiveControl = useCallback((control: ActiveControl): void => {
+        dispatch(updateActiveControl(control));
+    }, [dispatch]);
+    const onZoomChange = useCallback((nextZoom: number): void => {
+        dispatch(audioActions.setAudioZoom(nextZoom));
+    }, [dispatch]);
+    const onPlaybackRateChange = useCallback((rate: number): void => {
+        dispatch(audioActions.setAudioPlaybackRate(rate));
+    }, [dispatch]);
+    const onVolumeChange = useCallback((nextVolume: number): void => {
+        dispatch(audioActions.setAudioVolume(nextVolume));
+    }, [dispatch]);
+    const onLoopChange = useCallback((nextLoop: boolean): void => {
+        dispatch(audioActions.setAudioLoop(nextLoop));
+    }, [dispatch]);
+    const onSetActiveLabel = useCallback((labelId: number | null): void => {
+        dispatch(audioActions.setAudioActiveLabel(labelId));
+    }, [dispatch]);
+    const onExtendRegion = useCallback((labelId: number): void => {
+        dispatch(extendAudioRegionFromLastAsync(labelId));
+    }, [dispatch]);
 
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
             <ObservedCursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL_AUDIO}
                 activeControl={activeControl}
-                updateActiveControl={updateActiveControl}
+                updateActiveControl={updateAudioActiveControl}
             />
             <ObservedEditRegionControl
                 activeControl={activeControl}
                 editRegionShortkey={normalizedKeyMap.EDIT_AUDIO_REGION}
-                updateActiveControl={updateActiveControl}
+                updateActiveControl={updateAudioActiveControl}
             />
             <div className='cvat-audio-controls-divider' />
             <ObservedCreateRegionControl
@@ -82,7 +97,7 @@ export default function AudioControlsSideBarComponent(props: Props): JSX.Element
                 createRegionShortkey={normalizedKeyMap.CREATE_AUDIO_REGION}
                 labels={labels}
                 activeLabelId={activeLabelId}
-                updateActiveControl={updateActiveControl}
+                updateActiveControl={updateAudioActiveControl}
                 onSetActiveLabel={onSetActiveLabel}
             />
             <ObservedRecordRegionControl
@@ -90,7 +105,7 @@ export default function AudioControlsSideBarComponent(props: Props): JSX.Element
                 recordRegionShortkey={normalizedKeyMap.RECORD_AUDIO_REGION}
                 labels={labels}
                 activeLabelId={activeLabelId}
-                updateActiveControl={updateActiveControl}
+                updateActiveControl={updateAudioActiveControl}
                 onSetActiveLabel={onSetActiveLabel}
             />
             <ObservedExtendRegionControl
@@ -100,7 +115,7 @@ export default function AudioControlsSideBarComponent(props: Props): JSX.Element
                 recording={activeControl === ActiveControl.AUDIO_REGION_RECORD}
                 onExtendRegion={onExtendRegion}
                 onSetActiveLabel={onSetActiveLabel}
-                updateActiveControl={updateActiveControl}
+                updateActiveControl={updateAudioActiveControl}
             />
             <div className='cvat-audio-controls-divider' />
             <ObservedLoopControl
