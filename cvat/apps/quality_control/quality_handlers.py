@@ -8,7 +8,6 @@ import itertools
 import json
 from abc import ABC, abstractmethod
 from collections import Counter
-from collections.abc import Mapping
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +17,14 @@ import numpy as np
 
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.annotation_matching import Comparator, LineMatcher, MatchingResults
+from cvat.apps.quality_control.attribute_comparators import match_attribute_values
+from cvat.apps.quality_control.attribute_comparison import (
+    CVAT_ATTRIBUTE_SPEC_IDS_ATTR,
+    attribute_comparison_may_compare,
+    make_default_attribute_rule,
+    merge_attribute_comparison,
+    normalize_attribute_comparison,
+)
 from cvat.apps.quality_control.comparison_report import (
     AnnotationConflict,
     AnnotationId,
@@ -123,35 +130,6 @@ def _combine_filters(parent_filter: str | None, child_filter: str | None) -> str
     )
 
 
-def _merge_attribute_comparison(
-    parent_value: dict[str, Any] | None, child_value: dict[str, Any] | None
-) -> dict[str, Any] | None:
-    if child_value is None:
-        return deepcopy(parent_value)
-
-    if parent_value is None:
-        return deepcopy(child_value)
-
-    merged = deepcopy(parent_value)
-    for field_name in ("enabled", "default"):
-        if field_name in child_value:
-            merged[field_name] = deepcopy(child_value[field_name])
-
-    parent_rules = {
-        rule.get("name"): deepcopy(rule)
-        for rule in (parent_value.get("rules") or [])
-        if rule.get("name")
-    }
-    for rule in child_value.get("rules") or []:
-        if rule.get("name"):
-            parent_rules[rule["name"]] = deepcopy(rule)
-
-    if parent_rules:
-        merged["rules"] = list(parent_rules.values())
-
-    return merged
-
-
 def _requirement_sort_key(requirement: Any) -> tuple[int, int]:
     return (
         getattr(requirement, "sort_order", 0) or 0,
@@ -178,7 +156,8 @@ def _make_effective_requirement(
             "target_metric": models.QualityTargetMetricType.ACCURACY,
             "target_metric_threshold": 0.7,
             **defaults,
-            "attribute_comparison": None,
+            "compare_attributes": False,
+            "attribute_comparison": normalize_attribute_comparison(None, fill_default=True),
         }
     else:
         values = {
@@ -192,9 +171,15 @@ def _make_effective_requirement(
             continue
 
         if field_name == "attribute_comparison":
-            values[field_name] = _merge_attribute_comparison(values.get(field_name), local_value)
+            values[field_name] = merge_attribute_comparison(values.get(field_name), local_value)
         else:
             values[field_name] = local_value
+
+    values["attribute_comparison"] = normalize_attribute_comparison(
+        values.get("attribute_comparison"),
+        fill_default=True,
+    )
+    values["compare_attributes"] = attribute_comparison_may_compare(values["attribute_comparison"])
 
     effective_filter = _combine_filters(
         getattr(inherited, "filter", "") if inherited else "",
@@ -314,7 +299,6 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
         "target_metric_threshold": "required_score",
         "oks_sigma": "point_size",
         "compare_line_orientation": "match_orientation",
-        "compare_attributes": "match_attributes",
         "compare_groups": "match_groups",
     }.items():
         if public_name not in params and internal_name in params:
@@ -322,7 +306,14 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
 
         params.pop(internal_name, None)
 
-    for field in ("id", "settings", "settings_id", "created_date", "updated_date"):
+    for field in (
+        "id",
+        "settings",
+        "settings_id",
+        "compare_attributes",
+        "created_date",
+        "updated_date",
+    ):
         params.pop(field, None)
 
     return params
@@ -508,9 +499,8 @@ class RequirementHandler(ABC):
                 if value is not None:
                     setattr(params, param_field, value)
 
-        attribute_comparison = getattr(self.requirement, "attribute_comparison", None) or {}
-        if "enabled" in attribute_comparison:
-            params.compare_attributes = bool(attribute_comparison["enabled"])
+        attribute_comparison = getattr(self.requirement, "attribute_comparison", None)
+        params.compare_attributes = attribute_comparison_may_compare(attribute_comparison)
 
         params.included_annotation_types = self._get_included_annotation_types()
         return params
@@ -576,52 +566,22 @@ class RequirementHandler(ABC):
     def _empty_result(self) -> RequirementFrameResult:
         return RequirementFrameResult(summary=self._make_empty_frame_summary())
 
-    @staticmethod
-    def _levenshtein_similarity(left: Any, right: Any) -> float:
-        left = str(left)
-        right = str(right)
-
-        if left == right:
-            return 1.0
-
-        if not left or not right:
-            return 0.0
-
-        previous_row = list(range(len(right) + 1))
-        for left_index, left_char in enumerate(left, start=1):
-            current_row = [left_index]
-            for right_index, right_char in enumerate(right, start=1):
-                insert_cost = current_row[right_index - 1] + 1
-                delete_cost = previous_row[right_index] + 1
-                replace_cost = previous_row[right_index - 1] + (left_char != right_char)
-                current_row.append(min(insert_cost, delete_cost, replace_cost))
-            previous_row = current_row
-
-        distance = previous_row[-1]
-        return 1 - distance / max(len(left), len(right))
-
     def _match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
-        attribute_comparison = getattr(self.requirement, "attribute_comparison", None) or {}
-        if not attribute_comparison:
-            return self._comparator.match_attrs(ann_a, ann_b)
-
-        if attribute_comparison.get("enabled") is False:
-            return [], [], [], []
-
-        default_rule = {
-            "enabled": True,
-            "comparator": "exact",
-            **(attribute_comparison.get("default") or {}),
-        }
-        rules_by_name = {
-            rule["name"]: {**default_rule, **rule}
+        attribute_comparison = normalize_attribute_comparison(
+            getattr(self.requirement, "attribute_comparison", None),
+            fill_default=True,
+        )
+        default_rule = make_default_attribute_rule(attribute_comparison)
+        rules_by_spec_id = {
+            int(rule["spec_id"]): {**default_rule, **rule}
             for rule in attribute_comparison.get("rules", [])
-            if rule.get("name")
+            if rule.get("spec_id") is not None
         }
-
         attrs_a = ann_a.attributes
         attrs_b = ann_b.attributes
         keys_to_match = (attrs_a.keys() | attrs_b.keys()).difference(self._comparator.ignored_attrs)
+        spec_ids_a = attrs_a.get(CVAT_ATTRIBUTE_SPEC_IDS_ATTR, {}) or {}
+        spec_ids_b = attrs_b.get(CVAT_ATTRIBUTE_SPEC_IDS_ATTR, {}) or {}
 
         matches = []
         mismatches = []
@@ -630,7 +590,12 @@ class RequirementHandler(ABC):
         notfound = object()
 
         for attr_name in keys_to_match:
-            rule = rules_by_name.get(attr_name, default_rule)
+            attr_spec_id = spec_ids_a.get(attr_name, spec_ids_b.get(attr_name))
+            if attr_spec_id is not None and int(attr_spec_id) in rules_by_spec_id:
+                rule = rules_by_spec_id[int(attr_spec_id)]
+            else:
+                rule = default_rule
+
             if rule.get("enabled") is False:
                 continue
 
@@ -640,19 +605,12 @@ class RequirementHandler(ABC):
                 b_extra.append(attr_name)
             elif attr_b is notfound:
                 a_extra.append(attr_name)
-            elif self._attribute_values_match(attr_a, attr_b, rule):
+            elif match_attribute_values(attr_a, attr_b, rule=rule):
                 matches.append(attr_name)
             else:
                 mismatches.append(attr_name)
 
         return matches, mismatches, a_extra, b_extra
-
-    def _attribute_values_match(self, left: Any, right: Any, rule: Mapping[str, Any]) -> bool:
-        comparator = rule.get("comparator", "exact")
-        if comparator == "levenshtein":
-            return self._levenshtein_similarity(left, right) >= rule.get("threshold", 1.0)
-
-        return left == right
 
     def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset) -> AnnotationId:
         """Convert Datumaro annotation to AnnotationId"""

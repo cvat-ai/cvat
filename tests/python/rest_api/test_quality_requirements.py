@@ -54,7 +54,6 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         sort_order: int | None = None,
         point_size: float | None = None,
         match_orientation: bool | None = None,
-        match_attributes: bool | None = None,
         match_groups: bool | None = None,
         attribute_comparison: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
@@ -78,8 +77,6 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
             payload["point_size"] = point_size
         if match_orientation is not None:
             payload["match_orientation"] = match_orientation
-        if match_attributes is not None:
-            payload["match_attributes"] = match_attributes
         if match_groups is not None:
             payload["match_groups"] = match_groups
         if attribute_comparison is not None:
@@ -234,6 +231,75 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         attribute_ids = {attribute.name: attribute.id for attribute in car_label.attributes}
         return task_id, settings, gt_job, car_label, attribute_ids
 
+    def _create_attribute_comparison_example_task(
+        self, user: str, *, name: str
+    ) -> tuple[int, dict[str, Any], dict[str, int]]:
+        task_id, _ = create_task(
+            user,
+            spec={
+                "name": name,
+                "labels": [
+                    {
+                        "name": "car",
+                        "type": "rectangle",
+                        "attributes": [
+                            {
+                                "name": "color",
+                                "mutable": False,
+                                "input_type": "select",
+                                "default_value": "red",
+                                "values": ["red", "blue"],
+                            },
+                            {
+                                "name": "size",
+                                "mutable": False,
+                                "input_type": "select",
+                                "default_value": "large",
+                                "values": ["large", "small"],
+                            },
+                        ],
+                    },
+                    {
+                        "name": "person",
+                        "type": "rectangle",
+                        "attributes": [
+                            {
+                                "name": "age",
+                                "mutable": False,
+                                "input_type": "number",
+                                "default_value": "30",
+                                "values": ["0", "120", "1"],
+                            },
+                        ],
+                    },
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(user, task_id=task_id)
+        labels_by_name = self._get_task_labels_by_name(user, task_id=task_id)
+        attribute_ids = {
+            "Car.color": next(
+                attribute.id
+                for attribute in labels_by_name["car"].attributes
+                if attribute.name == "color"
+            ),
+            "Car.size": next(
+                attribute.id
+                for attribute in labels_by_name["car"].attributes
+                if attribute.name == "size"
+            ),
+            "Person.age": next(
+                attribute.id
+                for attribute in labels_by_name["person"].attributes
+                if attribute.name == "age"
+            ),
+        }
+        return task_id, settings, attribute_ids
+
     def _set_attribute_quality_annotations(
         self,
         user: str,
@@ -376,22 +442,13 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                 annotation_type="polyline",
                 point_size=0.25,
                 match_orientation=False,
-                match_attributes=False,
                 match_groups=False,
             ),
         )
         assert response.status_code == HTTPStatus.CREATED
         assert created_requirement["point_size"] == 0.25
         assert created_requirement["match_orientation"] is False
-        assert created_requirement["match_attributes"] is False
         assert created_requirement["match_groups"] is False
-        for legacy_field_name in (
-            "oks_sigma",
-            "compare_line_orientation",
-            "compare_attributes",
-            "compare_groups",
-        ):
-            assert legacy_field_name not in created_requirement
 
         updated_requirement, response = self._patch_requirement(
             admin_user,
@@ -399,50 +456,151 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             {
                 "point_size": 0.5,
                 "match_orientation": True,
-                "match_attributes": True,
+                "attribute_comparison": {"default": {"enabled": True}},
                 "match_groups": True,
             },
         )
         assert response.status_code == HTTPStatus.OK
         assert updated_requirement["point_size"] == 0.5
         assert updated_requirement["match_orientation"] is True
-        assert updated_requirement["match_attributes"] is True
         assert updated_requirement["match_groups"] is True
-        for legacy_field_name in (
-            "oks_sigma",
-            "compare_line_orientation",
-            "compare_attributes",
-            "compare_groups",
-        ):
-            assert legacy_field_name not in updated_requirement
 
-    def test_requirement_rejects_legacy_comparison_field_names(
-        self, admin_user, find_sandbox_task_without_gt
-    ):
-        task, _ = find_sandbox_task_without_gt(True)
-        settings = self._get_task_settings(admin_user, task_id=task["id"])
-
-        _, response = self._create_requirement(
+    def test_attribute_comparison_examples_resolve_effective_state(self, admin_user):
+        task_id, settings, attribute_ids = self._create_attribute_comparison_example_task(
             admin_user,
+            name="attribute-comparison-examples",
+        )
+        rectangle_root_id = next(
+            requirement["id"]
+            for requirement in settings["requirements"]
+            if requirement["name"] == "default:rectangle"
+        )
+
+        def assert_attribute_comparison_state(
+            requirement: dict[str, Any],
+            *,
+            stored: dict[str, Any] | None,
+            effective: dict[str, Any],
+        ) -> None:
+            assert requirement["attribute_comparison"] == stored
+            assert requirement["effective"]["attribute_comparison"] == effective
+            assert "match_attributes" not in requirement
+            assert "match_attributes" not in requirement["effective"]
+
+        root_requirement, response = self._retrieve_requirement(admin_user, rectangle_root_id)
+        assert response.status_code == HTTPStatus.OK
+        assert root_requirement["name"] == "default:rectangle"
+        assert_attribute_comparison_state(
+            root_requirement,
+            stored=None,
+            effective={"default": {"enabled": False}, "rules": []},
+        )
+
+        root_requirement, response = self._patch_requirement(
+            admin_user,
+            rectangle_root_id,
+            {"attribute_comparison": {"default": {"enabled": True}}},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert_attribute_comparison_state(
+            root_requirement,
+            stored={"default": {"enabled": True}},
+            effective={"default": {"enabled": True}, "rules": []},
+        )
+
+        root_requirement, response = self._patch_requirement(
+            admin_user,
+            rectangle_root_id,
             {
-                **self._build_requirement_payload(
-                    f"legacy-fields-{task['id']}",
-                    settings_id=settings["id"],
-                ),
-                "oks_sigma": 0.25,
-                "compare_line_orientation": False,
-                "compare_attributes": False,
-                "compare_groups": False,
+                "attribute_comparison": {
+                    "default": {"enabled": False},
+                    "rules": [{"spec_id": attribute_ids["Car.size"], "enabled": True}],
+                }
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert_attribute_comparison_state(
+            root_requirement,
+            stored={
+                "default": {"enabled": False},
+                "rules": [{"spec_id": attribute_ids["Car.size"], "enabled": True}],
+            },
+            effective={
+                "default": {"enabled": False},
+                "rules": [{"spec_id": attribute_ids["Car.size"], "enabled": True}],
             },
         )
 
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert set(response.json()) >= {
-            "oks_sigma",
-            "compare_line_orientation",
-            "compare_attributes",
-            "compare_groups",
-        }
+        root_requirement, response = self._patch_requirement(
+            admin_user,
+            rectangle_root_id,
+            {
+                "attribute_comparison": {
+                    "default": {"enabled": True},
+                    "rules": [{"spec_id": attribute_ids["Car.size"], "enabled": False}],
+                }
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert_attribute_comparison_state(
+            root_requirement,
+            stored={
+                "default": {"enabled": True},
+                "rules": [{"spec_id": attribute_ids["Car.size"], "enabled": False}],
+            },
+            effective={
+                "default": {"enabled": True},
+                "rules": [{"spec_id": attribute_ids["Car.size"], "enabled": False}],
+            },
+        )
+
+        root_requirement, response = self._patch_requirement(
+            admin_user,
+            rectangle_root_id,
+            {
+                "attribute_comparison": {
+                    "default": {"enabled": False},
+                    "rules": [{"spec_id": attribute_ids["Car.color"], "enabled": True}],
+                }
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert_attribute_comparison_state(
+            root_requirement,
+            stored={
+                "default": {"enabled": False},
+                "rules": [{"spec_id": attribute_ids["Car.color"], "enabled": True}],
+            },
+            effective={
+                "default": {"enabled": False},
+                "rules": [{"spec_id": attribute_ids["Car.color"], "enabled": True}],
+            },
+        )
+
+        child_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"person-age-{task_id}",
+                settings_id=settings["id"],
+                annotation_type=None,
+                parent_requirement=rectangle_root_id,
+                attribute_comparison={
+                    "rules": [{"spec_id": attribute_ids["Person.age"], "enabled": True}],
+                },
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert_attribute_comparison_state(
+            child_requirement,
+            stored={"rules": [{"spec_id": attribute_ids["Person.age"], "enabled": True}]},
+            effective={
+                "default": {"enabled": False},
+                "rules": [
+                    {"spec_id": attribute_ids["Car.color"], "enabled": True},
+                    {"spec_id": attribute_ids["Person.age"], "enabled": True},
+                ],
+            },
+        )
 
     def test_settings_patch_can_replace_requirements(
         self, admin_user, find_sandbox_task_without_gt
@@ -1045,13 +1203,11 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         enabled=True,
                         required_score=1.0,
                         annotation_type="rectangle",
-                        match_attributes=True,
                         attribute_comparison={
-                            "enabled": True,
                             "default": {"enabled": False},
                             "rules": [
                                 {
-                                    "name": "size",
+                                    "spec_id": attribute_ids["size"],
                                     "enabled": True,
                                     "comparator": "exact",
                                 }
@@ -1088,9 +1244,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert conflicts[0]["type"] == "mismatching_attributes"
         assert conflicts[0]["attribute_names"] == ["size"]
         assert report_data["groups"][requirement_name]["parameters"]["attribute_comparison"] == {
-            "enabled": True,
             "default": {"enabled": False},
-            "rules": [{"name": "size", "enabled": True, "comparator": "exact"}],
+            "rules": [{"spec_id": attribute_ids["size"], "enabled": True, "comparator": "exact"}],
         }
 
     def test_task_report_data_reports_attribute_conflict_names_and_error_severity(self, admin_user):
@@ -1118,6 +1273,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         enabled=True,
                         required_score=1.0,
                         annotation_type="rectangle",
+                        attribute_comparison={"default": {"enabled": True}},
                     ),
                 ],
             },
@@ -1366,7 +1522,6 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         required_score=0.75,
                         point_size=0.25,
                         match_orientation=False,
-                        match_attributes=False,
                         match_groups=False,
                     ),
                     self._build_requirement_payload(
@@ -1442,15 +1597,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert parameters["required_score"] == 0.75
         assert parameters["point_size"] == 0.25
         assert parameters["match_orientation"] is False
-        assert parameters["match_attributes"] is False
         assert parameters["match_groups"] is False
-        for legacy_field_name in (
-            "oks_sigma",
-            "compare_line_orientation",
-            "compare_attributes",
-            "compare_groups",
-        ):
-            assert legacy_field_name not in parameters
         disabled_group = report_data["groups"][disabled_requirement_name]
         assert disabled_group["parameters"]["enabled"] is False
         assert disabled_group["parameters"]["metric"] == "accuracy"
@@ -1621,7 +1768,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             assert manifest["report_id"] == report["id"]
 
             group_matrices = {
-                matrix["name"]: matrix["path"]
+                matrix["name"]: matrix
                 for matrix in manifest["matrices"]
                 if matrix["scope"] == "group"
             }
@@ -1629,8 +1776,12 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             assert disabled_requirement_name in group_matrices
 
             overall_csv = archive.read("overall.csv").decode()
-            enabled_group_csv = archive.read(group_matrices[enabled_requirement_name]).decode()
-            disabled_group_csv = archive.read(group_matrices[disabled_requirement_name]).decode()
+            enabled_group_csv = archive.read(
+                group_matrices[enabled_requirement_name]["path"]
+            ).decode()
+            disabled_group_csv = archive.read(
+                group_matrices[disabled_requirement_name]["path"]
+            ).decode()
             assert "ds \\ gt" in overall_csv
             assert "ds \\ gt" in enabled_group_csv
             assert "ds \\ gt" in disabled_group_csv
@@ -1641,6 +1792,31 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             requirement=enabled_requirement_name,
         )
         assert response.status_code == HTTPStatus.OK
+        assert "json" in response.headers["Content-Type"]
+        enabled_group_matrix = response.json()
+        assert (
+            enabled_group_matrix["labels"]
+            == group_matrices[enabled_requirement_name]["labels"]
+        )
+        assert enabled_group_matrix["rows"]
+        assert enabled_group_matrix["axes"] == {"cols": "gt", "rows": "ds"}
+        assert set(enabled_group_matrix) == {
+            "labels",
+            "rows",
+            "axes",
+            "precision",
+            "recall",
+            "accuracy",
+            "jaccard_index",
+        }
+
+        response = get_method(
+            admin_user,
+            f"quality/reports/{report['id']}/confusion/matrix",
+            requirement=enabled_requirement_name,
+            format="csv",
+        )
+        assert response.status_code == HTTPStatus.OK
         assert response.headers["Content-Type"].startswith("text/csv")
         assert response.content.decode() == enabled_group_csv
 
@@ -1648,6 +1824,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             admin_user,
             f"quality/reports/{report['id']}/confusion/matrix",
             requirement=disabled_requirement_name,
+            format="csv",
         )
         assert response.status_code == HTTPStatus.OK
         assert response.headers["Content-Type"].startswith("text/csv")

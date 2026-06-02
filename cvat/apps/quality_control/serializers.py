@@ -5,17 +5,28 @@
 import textwrap
 from collections.abc import Mapping
 from enum import Enum
+from typing import Any
 
 from django.conf import settings as django_settings
 from django.db import models as django_models
 from django.db import transaction
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.filters import JsonLogicFilter
+from cvat.apps.engine.models import AttributeSpec
 from cvat.apps.engine.serializers import WriteOnceMixin
 from cvat.apps.quality_control import models
+from cvat.apps.quality_control.attribute_comparators import (
+    format_attribute_comparator_names,
+    get_attribute_comparator_names,
+)
+from cvat.apps.quality_control.attribute_comparison import (
+    attribute_comparison_may_compare,
+    normalize_attribute_comparison,
+)
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 
 
@@ -28,6 +39,7 @@ class AnnotationIdSerializer(serializers.ModelSerializer):
 
 class AnnotationConflictSerializer(serializers.ModelSerializer):
     annotation_ids = AnnotationIdSerializer(many=True)
+    attribute_names = serializers.ListField(child=serializers.CharField(), read_only=True)
 
     class Meta:
         model = models.AnnotationConflict
@@ -93,6 +105,21 @@ class QualityReportRequirementsSummarySerializer(serializers.Serializer):
     enabled = serializers.IntegerField()
     completed = serializers.IntegerField()
     items = QualityReportRequirementSummaryItemSerializer(many=True)
+
+
+class QualityReportConfusionMatrixAxesSerializer(serializers.Serializer):
+    cols = serializers.CharField()
+    rows = serializers.CharField()
+
+
+class QualityReportConfusionMatrixSerializer(serializers.Serializer):
+    labels = serializers.ListField(child=serializers.CharField())
+    rows = serializers.ListField(child=serializers.ListField(child=serializers.IntegerField()))
+    axes = QualityReportConfusionMatrixAxesSerializer()
+    precision = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    recall = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    accuracy = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    jaccard_index = serializers.ListField(child=serializers.FloatField(), allow_null=True)
 
 
 class QualityReportTargetSerializer(serializers.ChoiceField):
@@ -259,6 +286,38 @@ _INHERITED_REQUIREMENT_FIELDS = (
 )
 
 
+class AttributeComparisonDefaultSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField(required=False, allow_null=True)
+    comparator = serializers.ChoiceField(
+        choices=get_attribute_comparator_names(),
+        required=False,
+    )
+    threshold = serializers.FloatField(required=False, min_value=0, max_value=1)
+
+
+class AttributeComparisonRuleSerializer(serializers.Serializer):
+    spec_id = serializers.IntegerField(
+        required=True,
+        help_text="AttributeSpec id to override.",
+    )
+    enabled = serializers.BooleanField(required=True)
+    comparator = serializers.ChoiceField(
+        choices=get_attribute_comparator_names(),
+        required=False,
+    )
+    threshold = serializers.FloatField(required=False, min_value=0, max_value=1)
+
+
+class AttributeComparisonSerializer(serializers.Serializer):
+    default = AttributeComparisonDefaultSerializer(required=False)
+    rules = AttributeComparisonRuleSerializer(many=True, required=False)
+
+
+@extend_schema_field(AttributeComparisonSerializer)
+class AttributeComparisonField(serializers.JSONField):
+    pass
+
+
 # TODO: try to split into different types per annotation type?
 class QualityRequirementSerializer(serializers.ModelSerializer):
     settings_id = serializers.PrimaryKeyRelatedField(
@@ -322,11 +381,14 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         allow_null=True,
         help_text="Enables or disables annotation group checks",
     )
-    match_attributes = serializers.BooleanField(
-        source="compare_attributes",
+    attribute_comparison = AttributeComparisonField(
         required=False,
         allow_null=True,
-        help_text="Enables or disables annotation attribute comparison",
+        help_text=(
+            "Incremental attribute comparison settings. The default rule applies to "
+            "attributes without an override; rules override behavior for individual "
+            "AttributeSpec ids."
+        ),
     )
     effective = serializers.SerializerMethodField(read_only=True)
 
@@ -351,7 +413,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "target_metric_threshold": "required_score",
             "oks_sigma": "point_size",
             "compare_line_orientation": "match_orientation",
-            "compare_attributes": "match_attributes",
             "compare_groups": "match_groups",
         }.get(field_name, field_name)
 
@@ -450,45 +511,122 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         if not isinstance(value, Mapping):
             raise serializers.ValidationError("Expected an object or null.")
 
-        unexpected_fields = set(value) - {"enabled", "default", "rules"}
+        unexpected_fields = set(value) - {"default", "rules"}
         if unexpected_fields:
             raise serializers.ValidationError(
                 {field_name: ["Unexpected field."] for field_name in sorted(unexpected_fields)}
             )
 
-        if "enabled" in value and not isinstance(value["enabled"], bool):
-            raise serializers.ValidationError({"enabled": "Expected a boolean."})
-
         default_rule = value.get("default")
         if default_rule is not None and not isinstance(default_rule, Mapping):
             raise serializers.ValidationError({"default": "Expected an object."})
+
+        if default_rule:
+            unexpected_default_fields = set(default_rule) - {"enabled", "comparator", "threshold"}
+            if unexpected_default_fields:
+                raise serializers.ValidationError(
+                    {
+                        "default": {
+                            field_name: ["Unexpected field."]
+                            for field_name in sorted(unexpected_default_fields)
+                        }
+                    }
+                )
+
+            if "enabled" in default_rule and default_rule["enabled"] is not None:
+                if not isinstance(default_rule["enabled"], bool):
+                    raise serializers.ValidationError(
+                        {"default": {"enabled": "Expected a boolean or null."}}
+                    )
+
+            comparator = default_rule.get("comparator")
+            if comparator is not None and comparator not in get_attribute_comparator_names():
+                raise serializers.ValidationError(
+                    {
+                        "default": {
+                            "comparator": (
+                                "Unsupported comparator. Use "
+                                f"{format_attribute_comparator_names()}."
+                            )
+                        }
+                    }
+                )
+
+            threshold = default_rule.get("threshold")
+            if threshold is not None and (
+                isinstance(threshold, bool)
+                or not isinstance(threshold, (int, float))
+                or not 0 <= threshold <= 1
+            ):
+                raise serializers.ValidationError(
+                    {"default": {"threshold": "Must be between 0 and 1."}}
+                )
 
         rules = value.get("rules", [])
         if not isinstance(rules, list):
             raise serializers.ValidationError({"rules": "Expected a list."})
 
+        seen_rule_keys: set[tuple[str, int | str]] = set()
         for index, rule in enumerate(rules):
             if not isinstance(rule, Mapping):
                 raise serializers.ValidationError({"rules": {index: "Expected an object."}})
 
-            if not rule.get("name"):
+            unexpected_rule_fields = set(rule) - {
+                "spec_id",
+                "enabled",
+                "comparator",
+                "threshold",
+            }
+            if unexpected_rule_fields:
                 raise serializers.ValidationError(
-                    {"rules": {index: {"name": "This field is required."}}}
+                    {
+                        "rules": {
+                            index: {
+                                field_name: ["Unexpected field."]
+                                for field_name in sorted(unexpected_rule_fields)
+                            }
+                        }
+                    }
                 )
 
-            if "enabled" in rule and not isinstance(rule["enabled"], bool):
+            if rule.get("spec_id") is None:
+                raise serializers.ValidationError(
+                    {"rules": {index: {"spec_id": "This field is required."}}}
+                )
+
+            try:
+                spec_id = int(rule["spec_id"])
+            except (TypeError, ValueError) as exc:
+                raise serializers.ValidationError(
+                    {"rules": {index: {"spec_id": "A valid integer is required."}}}
+                ) from exc
+            rule_key = ("spec_id", spec_id)
+
+            if rule_key in seen_rule_keys:
+                raise serializers.ValidationError(
+                    {"rules": {index: {"spec_id": "Duplicate attribute rule."}}}
+                )
+            seen_rule_keys.add(rule_key)
+
+            if "enabled" not in rule:
+                raise serializers.ValidationError(
+                    {"rules": {index: {"enabled": "This field is required."}}}
+                )
+
+            if not isinstance(rule["enabled"], bool):
                 raise serializers.ValidationError(
                     {"rules": {index: {"enabled": "Expected a boolean."}}}
                 )
 
             comparator = rule.get("comparator")
-            if comparator is not None and comparator not in {"exact", "levenshtein"}:
+            if comparator is not None and comparator not in get_attribute_comparator_names():
                 raise serializers.ValidationError(
                     {
                         "rules": {
                             index: {
                                 "comparator": (
-                                    "Unsupported comparator. Use 'exact' or 'levenshtein'."
+                                    "Unsupported comparator. Use "
+                                    f"{format_attribute_comparator_names()}."
                                 )
                             }
                         }
@@ -496,12 +634,66 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 )
 
             threshold = rule.get("threshold")
-            if threshold is not None and not 0 <= threshold <= 1:
+            if threshold is not None and (
+                isinstance(threshold, bool)
+                or not isinstance(threshold, (int, float))
+                or not 0 <= threshold <= 1
+            ):
                 raise serializers.ValidationError(
                     {"rules": {index: {"threshold": "Must be between 0 and 1."}}}
                 )
 
-        return value
+        return normalize_attribute_comparison(value, fill_default=False)
+
+    @staticmethod
+    def _get_allowed_attribute_spec_ids(
+        quality_settings: models.QualitySettings,
+    ) -> set[int] | None:
+        if getattr(quality_settings, "task_id", None):
+            task = quality_settings.task
+            if task.project_id:
+                label_filter = django_models.Q(label__project_id=task.project_id)
+            else:
+                label_filter = django_models.Q(label__task_id=task.id)
+        elif getattr(quality_settings, "project_id", None):
+            label_filter = django_models.Q(label__project_id=quality_settings.project_id)
+        else:
+            return None
+
+        return set(AttributeSpec.objects.filter(label_filter).values_list("id", flat=True))
+
+    def _validate_attribute_comparison_spec_ids(
+        self,
+        attribute_comparison: Mapping[str, Any] | None,
+        quality_settings: models.QualitySettings,
+    ) -> None:
+        if not attribute_comparison:
+            return
+
+        requested_spec_ids = {
+            int(rule["spec_id"])
+            for rule in attribute_comparison.get("rules", [])
+            if rule.get("spec_id") is not None
+        }
+        if not requested_spec_ids:
+            return
+
+        allowed_spec_ids = self._get_allowed_attribute_spec_ids(quality_settings)
+        if allowed_spec_ids is None:
+            return
+
+        unknown_spec_ids = requested_spec_ids - allowed_spec_ids
+        if unknown_spec_ids:
+            raise serializers.ValidationError(
+                {
+                    "attribute_comparison": {
+                        "rules": (
+                            "Unknown attribute spec id(s): "
+                            f"{', '.join(str(spec_id) for spec_id in sorted(unknown_spec_ids))}."
+                        )
+                    }
+                }
+            )
 
     class Meta:
         model = models.QualityRequirement
@@ -532,7 +724,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "check_covered_annotations",
             "object_visibility_threshold",
             "panoptic_comparison",
-            "match_attributes",
             "attribute_comparison",
             "empty_is_annotated",
             "created_date",
@@ -632,6 +823,15 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         if not name:
             raise serializers.ValidationError({"name": "This field is required."})
 
+        if "attribute_comparison" in attrs:
+            self._validate_attribute_comparison_spec_ids(
+                attrs["attribute_comparison"],
+                quality_settings,
+            )
+            attrs["compare_attributes"] = attribute_comparison_may_compare(
+                attrs["attribute_comparison"]
+            )
+
         if parent_requirement is not None and parent_requirement.settings_id != quality_settings.id:
             raise serializers.ValidationError(
                 {
@@ -727,6 +927,8 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 validated_data[field_name] = models.QualityTargetMetricType.ACCURACY
             elif field_name == "target_metric_threshold":
                 validated_data[field_name] = 0.7
+            elif field_name == "compare_attributes":
+                validated_data[field_name] = False
             elif field_name == "attribute_comparison":
                 validated_data[field_name] = None
             elif field_name in defaults:

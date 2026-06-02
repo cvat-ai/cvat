@@ -19,6 +19,7 @@ import numpy as np
 from attrs import define
 from scipy.optimize import linear_sum_assignment
 
+from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
 from cvat.apps.quality_control.models import PointSizeBase
 
@@ -967,6 +968,7 @@ class Comparator:
             "group",  # changes from job to job, compared by other means
             "rotation",  # handled by other means
             "outside",  # handled by other means
+            CVAT_ATTRIBUTE_SPEC_IDS_ATTR,  # internal mapping used by quality attribute rules
         }
         self.included_ann_types = settings.included_annotation_types
         self.non_groupable_ann_type = settings.non_groupable_ann_type

@@ -4631,8 +4631,16 @@ paths:
   /api/quality/reports/{id}/confusion/matrix:
     get:
       operationId: quality_retrieve_report_requirement_confusion
-      summary: Download a quality report requirement confusion matrix
+      summary: Get a quality report requirement confusion matrix
       parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+          default: json
       - in: path
         name: id
         schema:
@@ -4657,11 +4665,14 @@ paths:
       responses:
         '200':
           content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityReportConfusionMatrix'
             text/csv:
               schema:
                 type: string
                 format: binary
-          description: CSV confusion matrix for the requested quality requirement
+          description: JSON confusion matrix for the requested quality requirement
         '404':
           description: Requirement confusion matrix was not found
   /api/quality/reports/{id}/data:
@@ -7391,7 +7402,9 @@ components:
           - $ref: '#/components/schemas/AnnotationConflictSeverity'
           readOnly: true
         attribute_names:
-          type: object
+          type: array
+          items:
+            type: string
           readOnly: true
       required:
       - annotation_ids
@@ -7576,6 +7589,86 @@ components:
       - mutable
       - name
       - values
+    AttributeComparison:
+      type: object
+      properties:
+        default:
+          $ref: '#/components/schemas/AttributeComparisonDefault'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeComparisonRule'
+    AttributeComparisonDefault:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          nullable: true
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+    AttributeComparisonDefaultRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          nullable: true
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+    AttributeComparisonRequest:
+      type: object
+      properties:
+        default:
+          $ref: '#/components/schemas/AttributeComparisonDefaultRequest'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeComparisonRuleRequest'
+    AttributeComparisonRule:
+      type: object
+      properties:
+        spec_id:
+          type: integer
+          description: AttributeSpec id to override.
+        enabled:
+          type: boolean
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - enabled
+      - spec_id
+    AttributeComparisonRuleRequest:
+      type: object
+      properties:
+        spec_id:
+          type: integer
+          description: AttributeSpec id to override.
+        enabled:
+          type: boolean
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - enabled
+      - spec_id
     AttributeRequest:
       type: object
       properties:
@@ -7902,6 +7995,14 @@ components:
           type: string
           format: uri
           readOnly: true
+    ComparatorEnum:
+      enum:
+      - exact
+      - levenshtein
+      type: string
+      description: |-
+        * `exact` - exact
+        * `levenshtein` - levenshtein
     ConsensusMergeCreateRequest:
       type: object
       properties:
@@ -10544,13 +10645,13 @@ components:
           nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        match_attributes:
-          type: boolean
-          nullable: true
-          description: Enables or disables annotation attribute comparison
         attribute_comparison:
-          type: object
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonRequest'
           nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
         empty_is_annotated:
           type: boolean
           nullable: true
@@ -10910,6 +11011,63 @@ components:
       required:
       - summary
       - target
+    QualityReportConfusionMatrix:
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+        axes:
+          $ref: '#/components/schemas/QualityReportConfusionMatrixAxes'
+        precision:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        recall:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        accuracy:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        jaccard_index:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+      required:
+      - accuracy
+      - axes
+      - jaccard_index
+      - labels
+      - precision
+      - recall
+      - rows
+    QualityReportConfusionMatrixAxes:
+      type: object
+      properties:
+        cols:
+          type: string
+        rows:
+          type: string
+      required:
+      - cols
+      - rows
     QualityReportCreateRequest:
       type: object
       properties:
@@ -11255,13 +11413,13 @@ components:
           nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        match_attributes:
-          type: boolean
-          nullable: true
-          description: Enables or disables annotation attribute comparison
         attribute_comparison:
-          type: object
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparison'
           nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
         empty_is_annotated:
           type: boolean
           nullable: true
@@ -11444,13 +11602,13 @@ components:
           nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        match_attributes:
-          type: boolean
-          nullable: true
-          description: Enables or disables annotation attribute comparison
         attribute_comparison:
-          type: object
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparison'
           nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
         empty_is_annotated:
           type: boolean
           nullable: true
@@ -11620,13 +11778,13 @@ components:
           nullable: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
-        match_attributes:
-          type: boolean
-          nullable: true
-          description: Enables or disables annotation attribute comparison
         attribute_comparison:
-          type: object
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonRequest'
           nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
         empty_is_annotated:
           type: boolean
           nullable: true

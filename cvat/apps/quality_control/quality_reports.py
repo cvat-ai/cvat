@@ -8,6 +8,7 @@ import csv
 from collections.abc import Hashable
 from functools import cached_property
 from io import BytesIO, StringIO
+from typing import Any
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import datumaro as dm
@@ -32,9 +33,11 @@ from cvat.apps.engine.models import (
     User,
 )
 from cvat.apps.quality_control import models
+from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.comparison_report import (
     AnnotationId,
     ComparisonReport,
+    ConfusionMatrix,
 )
 from cvat.apps.quality_control.models import AnnotationType
 
@@ -42,8 +45,12 @@ from cvat.apps.quality_control.models import AnnotationType
 
 
 class _MemoizingAnnotationConverterFactory:
-    def __init__(self):
+    def __init__(
+        self,
+        attribute_spec_ids_by_label: dict[str, dict[str, int]] | None = None,
+    ) -> None:
         self._annotation_mapping = {}  # dm annotation -> cvat annotation
+        self._attribute_spec_ids_by_label = attribute_spec_ids_by_label or {}
 
     def remember_conversion(self, cvat_ann, dm_anns):
         for dm_ann in dm_anns:
@@ -60,14 +67,34 @@ class _MemoizingAnnotationConverterFactory:
         self._annotation_mapping.clear()
 
     def __call__(self, *args, **kwargs) -> list[dm.Annotation]:
-        converter = _MemoizingAnnotationConverter(*args, factory=self, **kwargs)
+        converter = _MemoizingAnnotationConverter(
+            *args,
+            factory=self,
+            attribute_spec_ids_by_label=self._attribute_spec_ids_by_label,
+            **kwargs,
+        )
         return converter.convert()
 
 
 class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
-    def __init__(self, *args, factory: _MemoizingAnnotationConverterFactory, **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        factory: _MemoizingAnnotationConverterFactory,
+        attribute_spec_ids_by_label: dict[str, dict[str, int]],
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self._factory = factory
+        self._attribute_spec_ids_by_label = attribute_spec_ids_by_label
+
+    def _convert_attrs(self, label: str, cvat_attrs: list[Any]) -> dict[str, Any]:
+        dm_attrs = super()._convert_attrs(label, cvat_attrs)
+        attribute_spec_ids = self._attribute_spec_ids_by_label.get(label, {})
+        if attribute_spec_ids:
+            dm_attrs[CVAT_ATTRIBUTE_SPEC_IDS_ATTR] = attribute_spec_ids
+
+        return dm_attrs
 
     def _convert_tag(self, tag):
         converted = list(super()._convert_tag(tag))
@@ -103,7 +130,18 @@ class JobDataProvider:
             included_frames=included_frames,
         )
 
-        self._annotation_memo = _MemoizingAnnotationConverterFactory()
+        self._annotation_memo = _MemoizingAnnotationConverterFactory(
+            self._get_attribute_spec_ids_by_label()
+        )
+
+    def _get_attribute_spec_ids_by_label(self) -> dict[str, dict[str, int]]:
+        return {
+            f"{db_label.parent.name if db_label.parent else ''}{db_label.name}": {
+                db_attribute.name: db_attribute.id
+                for db_attribute in db_label.attributespec_set.all()
+            }
+            for db_label in self.job_data._label_mapping.values()
+        }
 
     @cached_property
     def dm_dataset(self):
@@ -163,7 +201,7 @@ def _serialize_confusion_matrix_csv(confusion_matrix) -> str:
     return output.getvalue()
 
 
-def _has_downloadable_confusion_matrix(confusion_matrix) -> bool:
+def _has_downloadable_confusion_matrix(confusion_matrix: ConfusionMatrix | None) -> bool:
     return (
         confusion_matrix is not None
         and confusion_matrix.labels is not None
@@ -172,9 +210,9 @@ def _has_downloadable_confusion_matrix(confusion_matrix) -> bool:
     )
 
 
-def prepare_requirement_confusion_matrix_for_downloading(
+def _get_requirement_confusion_matrix(
     db_report: models.QualityReport, *, requirement_name: str
-) -> str | None:
+) -> ConfusionMatrix | None:
     comparison_report = ComparisonReport.from_json(db_report.get_report_data())
     group_report = (comparison_report.groups or {}).get(requirement_name)
     if not group_report:
@@ -182,6 +220,32 @@ def prepare_requirement_confusion_matrix_for_downloading(
 
     confusion_matrix = group_report.comparison_summary.annotations.confusion_matrix
     if not _has_downloadable_confusion_matrix(confusion_matrix):
+        return None
+
+    return confusion_matrix
+
+
+def prepare_requirement_confusion_matrix_json(
+    db_report: models.QualityReport, *, requirement_name: str
+) -> dict[str, Any] | None:
+    confusion_matrix = _get_requirement_confusion_matrix(
+        db_report,
+        requirement_name=requirement_name,
+    )
+    if confusion_matrix is None:
+        return None
+
+    return confusion_matrix.to_dict()
+
+
+def prepare_requirement_confusion_matrix_for_downloading(
+    db_report: models.QualityReport, *, requirement_name: str
+) -> str | None:
+    confusion_matrix = _get_requirement_confusion_matrix(
+        db_report,
+        requirement_name=requirement_name,
+    )
+    if confusion_matrix is None:
         return None
 
     return _serialize_confusion_matrix_csv(confusion_matrix)

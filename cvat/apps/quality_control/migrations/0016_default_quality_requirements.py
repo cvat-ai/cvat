@@ -29,7 +29,7 @@ _ROOT_REQUIREMENT_DEFAULTS = {
     "check_covered_annotations": True,
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": True,
-    "compare_attributes": True,
+    "compare_attributes": False,
     "attribute_comparison": None,
     "empty_is_annotated": False,
 }
