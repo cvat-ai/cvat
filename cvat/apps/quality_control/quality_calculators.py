@@ -39,7 +39,6 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportTaskStats,
     deduplicate_annotation_conflicts,
 )
-from cvat.apps.quality_control.models import AnnotationConflictSeverity
 from cvat.apps.quality_control.quality_handlers import (
     DatasetQualityEstimator,
     build_requirement_report,
@@ -339,7 +338,6 @@ class TaskQualityCalculator:
         target_requirements: list = requirements or [
             group_report.parameters for group_report in requirement_groups.values()
         ]
-        conflicts_by_severity = Counter(c.severity for c in task_conflicts)
         task_report_data = ComparisonReport(
             parameters=parameters,
             comparison_summary=ComparisonReportSummary(
@@ -347,8 +345,8 @@ class TaskQualityCalculator:
                 total_frames=task_total_frames,
                 frames=sorted(task_validated_frames),
                 conflict_count=len(task_conflicts),
-                warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
-                error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR, 0),
+                warning_count=0,
+                error_count=len(task_conflicts),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
                 annotations=task_annotations_summary,
                 annotation_components=task_ann_components_summary,
@@ -684,7 +682,6 @@ class ProjectQualityCalculator:
             group_conflicts = deduplicate_annotation_conflicts(
                 project_group_conflicts.get(group_name, [])
             )
-            group_conflicts_by_severity = Counter(c.severity for c in group_conflicts)
             requirement_groups[group_name] = ComparisonReportRequirementSummary(
                 parameters=parameters,
                 comparison_summary=ComparisonReportSummary(
@@ -692,12 +689,8 @@ class ProjectQualityCalculator:
                     frame_count=project_group_validated_frames[group_name],
                     frames=None,
                     conflict_count=len(group_conflicts),
-                    warning_count=group_conflicts_by_severity.get(
-                        AnnotationConflictSeverity.WARNING, 0
-                    ),
-                    error_count=group_conflicts_by_severity.get(
-                        AnnotationConflictSeverity.ERROR, 0
-                    ),
+                    warning_count=0,
+                    error_count=len(group_conflicts),
                     conflicts_by_type=Counter(c.type for c in group_conflicts),
                     annotations=project_group_annotations[group_name],
                     annotation_components=project_group_components[group_name],
@@ -726,7 +719,6 @@ class ProjectQualityCalculator:
             group_report.parameters for group_report in requirement_groups.values()
         ]
         project_conflicts = deduplicate_annotation_conflicts(project_conflicts)
-        conflicts_by_severity = Counter(c.severity for c in project_conflicts)
         project_report_data = ComparisonReport(
             parameters=quality_params,
             comparison_summary=ComparisonReportSummary(
@@ -734,8 +726,8 @@ class ProjectQualityCalculator:
                 frame_count=total_validated_frames,
                 frames=None,  # project reports do not provide this info
                 conflict_count=len(project_conflicts),
-                warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
-                error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR, 0),
+                warning_count=0,
+                error_count=len(project_conflicts),
                 conflicts_by_type=Counter(c.type for c in project_conflicts),
                 annotations=project_annotations_summary,
                 annotation_components=project_ann_components_summary,

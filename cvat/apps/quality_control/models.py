@@ -24,7 +24,6 @@ class AnnotationConflictType(str, Enum):
     MISSING_ANNOTATION = "missing_annotation"
     EXTRA_ANNOTATION = "extra_annotation"
     MISMATCHING_LABEL = "mismatching_label"
-    LOW_OVERLAP = "low_overlap"
     MISMATCHING_DIRECTION = "mismatching_direction"
     MISMATCHING_ATTRIBUTES = "mismatching_attributes"
     MISMATCHING_GROUPS = "mismatching_groups"
@@ -39,7 +38,6 @@ class AnnotationConflictType(str, Enum):
 
 
 class AnnotationConflictSeverity(str, Enum):
-    WARNING = "warning"
     ERROR = "error"
 
     def __str__(self) -> str:
@@ -371,8 +369,6 @@ class QualityRequirement(TimestampedModel):
     iou_threshold = models.FloatField(null=True, blank=True)
     oks_sigma = models.FloatField(null=True, blank=True)
     line_thickness = models.FloatField(null=True, blank=True)
-
-    low_overlap_threshold = models.FloatField(null=True, blank=True)
 
     point_size_base = models.CharField(
         max_length=32,

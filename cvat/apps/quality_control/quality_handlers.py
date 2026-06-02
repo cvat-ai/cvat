@@ -77,7 +77,6 @@ class EffectiveQualityRequirement:
     iou_threshold: float | None = None
     oks_sigma: float | None = None
     line_thickness: float | None = None
-    low_overlap_threshold: float | None = None
     point_size_base: str | None = None
     compare_line_orientation: bool | None = None
     line_orientation_threshold: float | None = None
@@ -99,7 +98,6 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "iou_threshold",
     "oks_sigma",
     "line_thickness",
-    "low_overlap_threshold",
     "point_size_base",
     "compare_line_orientation",
     "line_orientation_threshold",
@@ -295,6 +293,7 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
         params["parent_requirement"] = getattr(parent, "id", parent)
 
     for internal_name, public_name in {
+        "source_requirement_id": "requirement_id",
         "target_metric": "metric",
         "target_metric_threshold": "required_score",
         "oks_sigma": "point_size",
@@ -383,15 +382,14 @@ def build_requirement_report(
     annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
     conflicts = deduplicate_annotation_conflicts(conflicts)
 
-    conflicts_by_severity = Counter(c.severity for c in conflicts)
     return ComparisonReportRequirementSummary(
         parameters=serialize_requirement_parameters(requirement),
         comparison_summary=ComparisonReportSummary(
             frames=sorted(frame_results),
             total_frames=total_frames,
             conflict_count=len(conflicts),
-            warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
-            error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR, 0),
+            warning_count=0,
+            error_count=len(conflicts),
             conflicts_by_type=Counter(c.type for c in conflicts),
             annotations=annotations_summary,
             annotation_components=annotation_components,
@@ -432,6 +430,9 @@ def build_requirements_summary(
                 metric=str(metric),
                 score=float(actual_score) if actual_score is not None else None,
                 threshold=float(required_score),
+                requirement_id=_get_requirement_field(
+                    requirement, "source_requirement_id", "requirement_id"
+                ),
             )
         )
         if actual_score is not None and required_score <= actual_score:
@@ -479,7 +480,6 @@ class RequirementHandler(ABC):
             "iou_threshold",
             "oks_sigma",
             "line_thickness",
-            "low_overlap_threshold",
             "point_size_base",
             "compare_line_orientation",
             "line_orientation_threshold",
@@ -620,13 +620,6 @@ class RequirementHandler(ABC):
         """Convert Datumaro item to frame ID"""
         return self.context.estimator._dm_item_to_frame_id(item, dataset)
 
-    def _get_conflict_severity(self) -> AnnotationConflictSeverity:
-        return (
-            AnnotationConflictSeverity.ERROR
-            if getattr(self.requirement, "enabled", True)
-            else AnnotationConflictSeverity.WARNING
-        )
-
     def _make_conflict(
         self,
         *,
@@ -639,7 +632,7 @@ class RequirementHandler(ABC):
             frame_id=frame_id,
             type=conflict_type,
             annotation_ids=annotation_ids,
-            severity=self._get_conflict_severity(),
+            severity=AnnotationConflictSeverity.ERROR,
             attribute_names=sorted(set(attribute_names or [])),
         )
 
@@ -1017,20 +1010,6 @@ class ShapeRequirementHandler(RequirementHandler):
             matched_ann, distance = max(this_shape_distances, key=lambda v: v[1], default=(None, 0))
             return matched_ann, distance
 
-        for gt_ann, ds_ann in itertools.chain(matches, mismatches):
-            similarity = _get_similarity(gt_ann, ds_ann)
-            if similarity and similarity < self.settings.low_overlap_threshold:
-                conflicts.append(
-                    self._make_conflict(
-                        frame_id=frame_id,
-                        conflict_type=AnnotationConflictType.LOW_OVERLAP,
-                        annotation_ids=[
-                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                        ],
-                    )
-                )
-
         for unmatched_ann in gt_unmatched:
             conflicts.append(
                 self._make_conflict(
@@ -1371,6 +1350,9 @@ class DatasetQualityEstimator:
             return
 
         for requirement in self._requirements:
+            if not getattr(requirement, "enabled", True):
+                continue
+
             handler = RequirementHandler.for_requirement(
                 requirement,
                 context=MatchingContext(
@@ -1461,15 +1443,14 @@ class DatasetQualityEstimator:
             for requirement in self._requirements
         }
         requirement_stats = build_requirements_summary(self._requirements, group_reports)
-        conflicts_by_severity = Counter(c.severity for c in conflicts)
         return ComparisonReport(
             parameters=self.DEFAULT_SETTINGS,
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
                 total_frames=self._get_total_frames(),
                 conflict_count=len(conflicts),
-                warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
-                error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR, 0),
+                warning_count=0,
+                error_count=len(conflicts),
                 conflicts_by_type=Counter(c.type for c in conflicts),
                 annotations=total_annotations_summary,
                 annotation_components=total_annotation_components,
