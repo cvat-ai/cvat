@@ -39,7 +39,6 @@ jobs:
             cargo \
             g++ \
             gcc \
-            libgeos-dev \
             libhdf5-dev \
             libldap2-dev \
             libmp3lame-dev \
