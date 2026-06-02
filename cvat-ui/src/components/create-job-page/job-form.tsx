@@ -16,7 +16,7 @@ import Space from 'antd/lib/space';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-import { JobType } from 'cvat-core/src/enums';
+import { JobType, MediaType } from 'cvat-core/src/enums';
 import { Task } from 'cvat-core-wrapper';
 import { createJobAsync } from 'actions/jobs-actions';
 
@@ -44,13 +44,13 @@ export interface JobFormData extends JobDataMutual {
 
 interface Props {
     task: Task;
-    audio?: boolean;
 }
 
 const defaultQuantity = 5;
 
 function JobForm(props: Props): JSX.Element {
-    const { task, audio = false } = props;
+    const { task } = props;
+    const supportsFrameSelection = task.mediaType !== MediaType.AUDIO;
     const { size: taskSize, segmentSize } = task;
     const [form] = Form.useForm();
     const dispatch = useDispatch();
@@ -63,9 +63,10 @@ function JobForm(props: Props): JSX.Element {
             const values: JobFormData = await form.validateFields();
             const data: JobData = {
                 taskID: task.id,
-                frameSelectionMethod: audio ? FrameSelectionMethod.RANDOM : values.frameSelectionMethod,
                 type: values.type,
-                ...(!audio ? {
+                frameSelectionMethod: supportsFrameSelection ?
+                    values.frameSelectionMethod : FrameSelectionMethod.RANDOM,
+                ...(supportsFrameSelection ? {
                     randomSeed: values.randomSeed,
                     ...(values.frameSelectionMethod === FrameSelectionMethod.RANDOM ?
                         { frameCount: values.frameCount } : { framesPerJobCount: values.frameCount }
@@ -136,7 +137,7 @@ function JobForm(props: Props): JSX.Element {
                     layout='vertical'
                     initialValues={{
                         type: JobType.GROUND_TRUTH,
-                        ...(!audio ? {
+                        ...(supportsFrameSelection ? {
                             frameSelectionMethod: FrameSelectionMethod.RANDOM,
                             quantity: defaultQuantity,
                             frameCount: frameCountFromQuantity(defaultQuantity),
@@ -158,7 +159,7 @@ function JobForm(props: Props): JSX.Element {
                                 </Select.Option>
                             </Select>
                         </Form.Item>
-                        {!audio && (
+                        {supportsFrameSelection && (
                             <Form.Item
                                 name='frameSelectionMethod'
                                 label='Frame selection method'
@@ -179,7 +180,7 @@ function JobForm(props: Props): JSX.Element {
                             </Form.Item>
                         )}
                     </Col>
-                    {!audio && (
+                    {supportsFrameSelection && (
                         <Col>
                             <Row justify='space-between'>
                                 <Col>
