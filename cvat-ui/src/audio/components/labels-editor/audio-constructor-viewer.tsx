@@ -6,8 +6,8 @@ import React from 'react';
 import { PlusCircleOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 
-import ConstructorViewerItem from './constructor-viewer-item';
-import { LabelOptColor } from './common';
+import ConstructorViewerItem from 'components/labels-editor/constructor-viewer-item';
+import { LabelOptColor } from 'components/labels-editor/common';
 
 interface AudioConstructorViewerProps {
     labels: LabelOptColor[];

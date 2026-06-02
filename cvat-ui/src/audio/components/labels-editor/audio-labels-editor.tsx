@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
-
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
@@ -11,11 +9,12 @@ import modal from 'antd/lib/modal';
 import { EditOutlined, BuildOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 
 import { SerializedLabel, SerializedAttribute, LabelType } from 'cvat-core-wrapper';
-import RawViewer from './raw-viewer';
-import AudioConstructorViewer from './audio-constructor-viewer';
-import ConstructorCreator from './constructor-creator';
-import ConstructorUpdater from './constructor-updater';
-import { idGenerator, LabelOptColor } from './common';
+import 'components/labels-editor/styles.scss';
+import AudioConstructorViewer from 'audio/components/labels-editor/audio-constructor-viewer';
+import RawViewer from 'components/labels-editor/raw-viewer';
+import ConstructorCreator from 'components/labels-editor/constructor-creator';
+import ConstructorUpdater from 'components/labels-editor/constructor-updater';
+import { idGenerator, LabelOptColor } from 'components/labels-editor/common';
 
 enum ConstructorMode {
     SHOW = 'SHOW',

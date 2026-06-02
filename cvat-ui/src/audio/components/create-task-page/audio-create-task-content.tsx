@@ -15,7 +15,7 @@ import Alert from 'antd/lib/alert';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 import { getCore, Storage, StorageLocation } from 'cvat-core-wrapper';
-import AudioLabelsEditor from 'components/labels-editor/audio-labels-editor';
+import AudioLabelsEditor from 'audio/components/labels-editor/audio-labels-editor';
 import FileManagerComponent from 'components/file-manager/file-manager';
 import { RemoteFile } from 'components/file-manager/remote-browser';
 import { isAudioFile, isAudioPath } from 'audio/utils/audio-files';
@@ -23,15 +23,15 @@ import { getFileNameFromPath } from 'utils/files';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import { formFieldsError } from 'utils/validation';
-import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
-import ProjectSearchField from './project-search-field';
-import ProjectSubsetField from './project-subset-field';
-import MultiTasksProgress from './multi-task-progress';
-import { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
+import BasicConfigurationForm, { BaseConfiguration } from 'components/create-task-page/basic-configuration-form';
+import ProjectSearchField from 'components/create-task-page/project-search-field';
+import ProjectSubsetField from 'components/create-task-page/project-subset-field';
+import MultiTasksProgress from 'components/create-task-page/multi-task-progress';
+import { AdvancedConfiguration, SortingMethod } from 'components/create-task-page/advanced-configuration-form';
+import { QualityConfiguration, ValidationMode } from 'components/create-task-page/quality-configuration-form';
+import { CreateTaskData } from 'components/create-task-page/create-task-content';
 import AudioAdvancedConfigurationForm from './audio-advanced-configuration-form';
-import { QualityConfiguration, ValidationMode } from './quality-configuration-form';
 import AudioQualityConfigurationForm from './audio-quality-configuration-form';
-import { CreateTaskData } from './create-task-content';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
+import 'components/create-job-page/styles.scss';
 
 import React, { useCallback, useState } from 'react';
 import { useHistory } from 'react-router';
@@ -15,7 +15,7 @@ import Select from 'antd/lib/select';
 import { JobType } from 'cvat-core/src/enums';
 import { Task } from 'cvat-core-wrapper';
 import { createJobAsync } from 'actions/jobs-actions';
-import { FrameSelectionMethod, JobData, JobFormData } from './job-form';
+import { FrameSelectionMethod, JobData, JobFormData } from 'components/create-job-page/job-form';
 
 interface Props {
     task: Task;

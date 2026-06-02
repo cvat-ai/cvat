@@ -10,12 +10,12 @@ import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
+import AudioJobForm from 'audio/components/create-job-page/audio-job-form';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import { useIsMounted } from 'utils/hooks';
 import { MediaType } from 'cvat-core/src/enums';
 import { getCore, Task } from 'cvat-core-wrapper';
 import JobForm from './job-form';
-import AudioJobForm from './audio-job-form';
 
 const core = getCore();
 

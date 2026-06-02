@@ -19,11 +19,11 @@ import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
-import UserSelector from './user-selector';
-import BugTrackerEditor from './bug-tracker-editor';
-import CloudStorageEditor from './cloud-storage-editor';
-import AudioLabelsEditor from '../labels-editor/audio-labels-editor';
-import ProjectSubsetField from '../create-task-page/project-subset-field';
+import UserSelector from 'components/task-page/user-selector';
+import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
+import CloudStorageEditor from 'components/task-page/cloud-storage-editor';
+import AudioLabelsEditor from 'audio/components/labels-editor/audio-labels-editor';
+import ProjectSubsetField from 'components/create-task-page/project-subset-field';
 
 interface OwnProps {
     task: Task;

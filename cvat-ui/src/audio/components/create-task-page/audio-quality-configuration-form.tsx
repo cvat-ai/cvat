@@ -9,7 +9,7 @@ import { Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
-import { QualityConfiguration, ValidationMode } from './quality-configuration-form';
+import { QualityConfiguration, ValidationMode } from 'components/create-task-page/quality-configuration-form';
 
 interface Props {
     initialValues: QualityConfiguration;

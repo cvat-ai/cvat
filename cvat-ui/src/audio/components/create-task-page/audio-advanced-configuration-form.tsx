@@ -13,7 +13,7 @@ import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
 
 import { getCore, Storage, StorageLocation } from 'cvat-core-wrapper';
-import { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
+import { AdvancedConfiguration, SortingMethod } from 'components/create-task-page/advanced-configuration-form';
 
 const core = getCore();
 

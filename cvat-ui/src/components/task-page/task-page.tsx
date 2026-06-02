@@ -24,9 +24,9 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import { CombinedState } from 'reducers';
 import { updateTaskAsync, updateTaskMetadataAsync } from 'actions/tasks-actions';
+import AudioDetailsComponent from 'audio/components/task-page/audio-details';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
-import AudioDetailsComponent from './audio-details';
 import { getCloudStorageById } from './cloud-storage-editor';
 
 const core = getCore();
