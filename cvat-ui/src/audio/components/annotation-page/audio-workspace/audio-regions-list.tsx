@@ -11,8 +11,8 @@ import {
 import { AudioRegion, ColorBy } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import { toClipboard } from 'utils/to-clipboard';
-import { formatTimeShort } from 'utils/format-audio-time';
-import { hexToRgbComponents } from 'utils/hex-color';
+import { formatTimeShort } from 'audio/utils/format-audio-time';
+import { hexToRgbComponents } from 'audio/utils/hex-color';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { getRegionItemColor } from './audio-region-colors';
 import AudioRegionItemMenu from './audio-region-item-menu';

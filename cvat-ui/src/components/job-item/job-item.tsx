@@ -22,7 +22,7 @@ import { DurationIcon, FramesIcon } from 'icons';
 import {
     Job, JobStage, JobState, JobType, Task, User, DimensionType,
 } from 'cvat-core-wrapper';
-import { formatTimeShort } from 'utils/format-audio-time';
+import { formatTimeShort } from 'audio/utils/format-audio-time';
 import { useIsMounted, useContextMenuClick } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';

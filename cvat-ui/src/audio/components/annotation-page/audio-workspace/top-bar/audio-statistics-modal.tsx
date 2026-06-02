@@ -12,7 +12,7 @@ import Text from 'antd/lib/typography/Text';
 import { AudioRegion, CombinedState, Workspace } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import { showStatistics } from 'actions/annotation-actions';
-import { formatTimeShort } from 'utils/format-audio-time';
+import { formatTimeShort } from 'audio/utils/format-audio-time';
 
 interface StateToProps {
     visible: boolean;

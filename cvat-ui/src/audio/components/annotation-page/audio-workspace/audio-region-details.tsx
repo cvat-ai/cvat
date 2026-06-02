@@ -11,7 +11,7 @@ import { EditOutlined } from '@ant-design/icons';
 import { AudioRegion } from 'reducers';
 import { Label, Attribute } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
-import { formatTimeShort } from 'utils/format-audio-time';
+import { formatTimeShort } from 'audio/utils/format-audio-time';
 
 interface AudioRegionDetailsProps {
     region: AudioRegion;

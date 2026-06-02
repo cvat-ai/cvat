@@ -18,7 +18,8 @@ import { getCore, Storage, StorageLocation } from 'cvat-core-wrapper';
 import AudioLabelsEditor from 'components/labels-editor/audio-labels-editor';
 import FileManagerComponent from 'components/file-manager/file-manager';
 import { RemoteFile } from 'components/file-manager/remote-browser';
-import { getFileNameFromPath, isAudioFile, isAudioPath } from 'utils/files';
+import { isAudioFile, isAudioPath } from 'audio/utils/audio-files';
+import { getFileNameFromPath } from 'utils/files';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import { formFieldsError } from 'utils/validation';
@@ -458,7 +459,6 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const promises = Array(queueSize)
             .fill(undefined)
             .map(async (): Promise<void> => {
-                // eslint-disable-next-line no-constant-condition
                 while (true) {
                     index++;
                     if (index > length) break;

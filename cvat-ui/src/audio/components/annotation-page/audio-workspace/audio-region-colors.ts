@@ -1,6 +1,6 @@
 import { AudioRegion, ColorBy } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
-import { hexToRgba } from 'utils/hex-color';
+import { hexToRgba } from 'audio/utils/hex-color';
 
 const DEFAULT_COLOR = '#6366F1';
 const AUDIO_MIN_OPACITY = 20;
