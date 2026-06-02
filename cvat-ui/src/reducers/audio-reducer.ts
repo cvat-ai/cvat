@@ -6,21 +6,11 @@ import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AudioActionTypes } from 'actions/audio-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
-import { AudioRegion, AudioState } from '.';
+import {
+    AudioHistoryEntry, AudioRegion, AudioRegionDiff, AudioState,
+} from '.';
 
 const MAX_AUDIO_HISTORY = 32;
-
-type AudioRegionDiff =
-    | { kind: 'added'; region: AudioRegion }
-    | { kind: 'removed'; region: AudioRegion }
-    | { kind: 'updated'; before: AudioRegion; after: AudioRegion };
-
-interface AudioHistoryEntry {
-    actionName: string;
-    diffs: AudioRegionDiff[];
-    activeRegionIdBefore: string | null;
-    activeRegionIdAfter: string | null;
-}
 
 function cloneRegion(region: AudioRegion): AudioRegion {
     return { ...region, attributes: { ...region.attributes } };

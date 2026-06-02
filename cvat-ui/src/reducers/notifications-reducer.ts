@@ -1337,6 +1337,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AudioActionTypes.LOAD_AUDIO_ANNOTATIONS_FAILED:
         case AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED: {
             return {
                 ...state,
@@ -1346,22 +1347,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         fetchingAnnotations: {
                             message: 'Could not fetch annotations',
-                            reason: action.payload.error,
-                            shouldLog: shouldLog(action.payload.error),
-                        },
-                    },
-                },
-            };
-        }
-        case AudioActionTypes.LOAD_AUDIO_ANNOTATIONS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        fetchingAnnotations: {
-                            message: 'Could not fetch audio annotations',
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },
