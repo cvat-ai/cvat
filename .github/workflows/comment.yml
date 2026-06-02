@@ -55,7 +55,7 @@ jobs:
 
   run-full:
     needs: verify_author
-    uses: ./.github/workflows/full.yml
+    uses: ./.github/workflows/main.yml
     with:
       ref: ${{ needs.verify_author.outputs.ref }}
 
