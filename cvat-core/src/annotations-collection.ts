@@ -249,7 +249,7 @@ export default class Collection {
         return updatedStates;
     }
 
-    public import(data: SerializedCollection): {
+    public import(data: Partial<SerializedCollection>): {
         tags: Tag[];
         shapes: Shape[];
         tracks: Track[];
@@ -262,7 +262,7 @@ export default class Collection {
             intervals: [],
         };
 
-        for (const tag of data.tags) {
+        for (const tag of data.tags ?? []) {
             const clientID = this.injection.nextClientID();
             const color = colors[clientID % colors.length];
             const tagModel = new Tag(tag, clientID, color, this.injection);
@@ -273,7 +273,7 @@ export default class Collection {
             result.tags.push(tagModel);
         }
 
-        for (const shape of data.shapes) {
+        for (const shape of data.shapes ?? []) {
             const clientID = this.injection.nextClientID();
             const shapeModel = shapeFactory(shape, clientID, this.injection);
             this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
@@ -283,7 +283,7 @@ export default class Collection {
             result.shapes.push(shapeModel);
         }
 
-        for (const track of data.tracks) {
+        for (const track of data.tracks ?? []) {
             const clientID = this.injection.nextClientID();
             const trackModel = trackFactory(track, clientID, this.injection);
             // The function can return null if track doesn't have any shapes.
@@ -295,7 +295,7 @@ export default class Collection {
             }
         }
 
-        for (const interval of data.intervals) {
+        for (const interval of data.intervals ?? []) {
             const clientID = this.injection.nextClientID();
             const color = colors[clientID % colors.length];
             const intervalModel = new Interval(interval, clientID, color, this.injection);
@@ -323,7 +323,7 @@ export default class Collection {
         const removedCollection: AnnotationObject[] = [].concat(removed.shapes, removed.tags, removed.tracks)
             .map((object) => this.objects[object.clientID as number]);
 
-        const imported = this.import({ ...appended, intervals: [] });
+        const imported = this.import(appended);
         const appendedCollection = ([] as (AnnotationObject)[])
             .concat(imported.shapes, imported.tags, imported.tracks);
         if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
@@ -645,12 +645,7 @@ export default class Collection {
         }
 
         const track = this._mergeInternal(objectsForMerge as (Shape | Track)[], shapeType, label);
-        const imported = this.import({
-            tracks: [track],
-            tags: [],
-            shapes: [],
-            intervals: [],
-        });
+        const imported = this.import({ tracks: [track] });
 
         // Remove other shapes
         for (const object of objectsForMerge) {
@@ -759,12 +754,7 @@ export default class Collection {
         if (frame <= +keyframes[0]) return;
 
         const [prev, next] = this._splitInternal(objectState, object, frame);
-        const imported = this.import({
-            tracks: [prev, next],
-            tags: [],
-            shapes: [],
-            intervals: [],
-        });
+        const imported = this.import({ tracks: [prev, next] });
 
         // Remove source object
         object.removed = true;
@@ -896,12 +886,7 @@ export default class Collection {
             }
 
             // Append newly created object(s) to the collection
-            const imported = this.import({
-                shapes: shapesToCreate,
-                tracks: [],
-                tags: [],
-                intervals: [],
-            });
+            const imported = this.import({ shapes: shapesToCreate });
 
             // and remove joined shapes
             for (const object of objectsToJoin) {
@@ -995,9 +980,6 @@ export default class Collection {
                 source: Source.MANUAL,
                 elements: [],
             }],
-            tracks: [],
-            tags: [],
-            intervals: [],
         });
         slicedObject.removed = true;
 
@@ -1362,7 +1344,7 @@ export default class Collection {
         }
 
         // Add constructed objects to a collection
-        const imported = this.import({ ...constructed, intervals: [] });
+        const imported = this.import(constructed);
         const importedArray = ([] as (Tag | Track | Shape)[])
             .concat(imported.tags, imported.tracks, imported.shapes);
         const additionalUndo = [];
