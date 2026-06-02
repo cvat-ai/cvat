@@ -153,6 +153,31 @@ class TestTaskDataset:
         assert dataset.samples[5].media.load_image() == PIL.Image.open(self.images[6])
         assert len(dataset.samples[5].annotations.shapes) == 1
 
+    @pytest.mark.parametrize("media_download_policy", cvatds.MediaDownloadPolicy)
+    def test_iter_samples_with_deleted_frames(
+        self, media_download_policy: cvatds.MediaDownloadPolicy
+    ):
+        deleted_frame_indexes = {1, 3, 8}
+        self.task.remove_frames_by_ids(sorted(deleted_frame_indexes))
+
+        dataset = cvatds.TaskDataset(
+            self.client,
+            self.task.id,
+            load_annotations=False,
+            media_download_policy=media_download_policy,
+        )
+
+        with dataset.iter_samples() as samples:
+            actual_samples = list(samples)
+
+        expected_frame_indexes = [
+            index for index in range(len(self.images)) if index not in deleted_frame_indexes
+        ]
+        assert [sample.frame_index for sample in actual_samples] == expected_frame_indexes
+
+        for sample in actual_samples:
+            assert sample.media.load_image() == PIL.Image.open(self.images[sample.frame_index])
+
     def test_offline(self, monkeypatch: pytest.MonkeyPatch):
         dataset = cvatds.TaskDataset(
             self.client,
@@ -236,6 +261,8 @@ class TestTaskDataset:
     def test_iter_samples_prefetches_and_deletes_finished_chunks(
         self, monkeypatch: pytest.MonkeyPatch
     ):
+        # Seed the shared cache first. The iterator below uses a temporary chunk directory,
+        # so these files let the test verify that temporary cleanup does not touch cached chunks.
         cvatds.TaskDataset(
             self.client,
             self.task.id,
@@ -259,9 +286,11 @@ class TestTaskDataset:
             if chunk_dir != dataset._chunk_dir:
                 observed_temp_chunk_dirs.add(chunk_dir)
 
+            # Pause the background prefetch of chunk #1. This keeps chunk #0 readable
+            # while proving that chunk #1 is being fetched before callers request it.
             if chunk_dir != dataset._chunk_dir and chunk_index == 1:
                 second_chunk_download_started.set()
-                assert allow_second_chunk_download.wait(timeout=5)
+                allow_second_chunk_download.wait()
 
             return original_ensure_chunk_in_dir(chunk_dir, chunk_index)
 
@@ -271,11 +300,12 @@ class TestTaskDataset:
         assert (chunk_dir / "0.zip").exists()
         assert (chunk_dir / "1.zip").exists()
 
-        with dataset.iter_samples(delete_finished_chunks=True) as samples:
+        with dataset.iter_samples(temporary_chunks=True) as samples:
+            # Reading the first chunk should start downloading the next chunk in the background.
             first_chunk_samples = [next(samples) for _ in range(3)]
 
             assert [sample.frame_index for sample in first_chunk_samples] == [0, 1, 2]
-            assert second_chunk_download_started.wait(timeout=5)
+            second_chunk_download_started.wait()
             assert len(observed_temp_chunk_dirs) == 1
             temp_chunk_dir = next(iter(observed_temp_chunk_dirs))
             assert temp_chunk_dir != chunk_dir
@@ -287,6 +317,8 @@ class TestTaskDataset:
             for sample in first_chunk_samples:
                 assert sample.media.load_image() == PIL.Image.open(self.images[sample.frame_index])
 
+            # Let the background download finish. Advancing into chunk #1 should then delete
+            # the temporary copy of chunk #0, while leaving the shared cache untouched.
             allow_second_chunk_download.set()
 
             fourth_sample = next(samples)
@@ -309,9 +341,23 @@ class TestTaskDataset:
         )
 
         with dataset.iter_samples() as samples:
-            actual_frame_indexes = [sample.frame_index for sample in samples]
+            actual_samples = list(samples)
 
-        assert actual_frame_indexes == list(range(self.task.size))
+        assert [sample.frame_index for sample in actual_samples] == list(range(self.task.size))
+        for sample in actual_samples:
+            assert sample.media.load_image() == PIL.Image.open(self.images[sample.frame_index])
+
+    def test_iter_samples_rejects_temporary_chunks_with_preload_all(self):
+        dataset = cvatds.TaskDataset(
+            self.client,
+            self.task.id,
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.PRELOAD_ALL,
+        )
+
+        with pytest.raises(AssertionError):
+            with dataset.iter_samples(temporary_chunks=True):
+                pass
 
     def test_non_imageset_video_task_is_unsupported_for_chunk_based_media_access(self):
         video_file = generate_video_file(4)
@@ -340,43 +386,30 @@ class TestTaskDataset:
                 media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
             )
 
-    def test_iter_samples_keeps_files_when_delete_is_disabled(self):
+    @pytest.mark.parametrize(
+        "media_download_policy",
+        [
+            cvatds.MediaDownloadPolicy.PRELOAD_ALL,
+            cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        ],
+    )
+    def test_iter_samples_keeps_files_when_delete_is_disabled(
+        self, media_download_policy: cvatds.MediaDownloadPolicy
+    ):
         dataset = cvatds.TaskDataset(
             self.client,
             self.task.id,
             load_annotations=False,
-            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+            media_download_policy=media_download_policy,
         )
 
         chunk_dir = dataset._cache_manager.chunk_dir(self.task.id)
 
-        with dataset.iter_samples(delete_finished_chunks=False) as samples:
-            actual_frame_indexes = [sample.frame_index for sample in samples]
+        with dataset.iter_samples(temporary_chunks=False) as samples:
+            actual_samples = list(samples)
 
-        assert actual_frame_indexes == list(range(self.task.size))
+        assert [sample.frame_index for sample in actual_samples] == list(range(self.task.size))
+        for sample in actual_samples:
+            assert sample.media.load_image() == PIL.Image.open(self.images[sample.frame_index])
+
         assert all((chunk_dir / f"{chunk_index}.zip").exists() for chunk_index in range(4))
-
-    def test_iter_samples_yields_single_chunk(self):
-        single_chunk_task = self.client.tasks.create_from_data(
-            models.TaskWriteRequest(
-                "Dataset layer single chunk task",
-                labels=[
-                    models.PatchedLabelRequest(name="person"),
-                ],
-            ),
-            resource_type=ResourceType.LOCAL,
-            resources=self.image_paths,
-            data_params={"chunk_size": len(self.image_paths)},
-        )
-
-        dataset = cvatds.TaskDataset(
-            self.client,
-            single_chunk_task.id,
-            load_annotations=False,
-            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
-        )
-
-        with dataset.iter_samples() as samples:
-            actual_frame_indexes = [sample.frame_index for sample in samples]
-
-        assert actual_frame_indexes == list(range(len(self.image_paths)))
