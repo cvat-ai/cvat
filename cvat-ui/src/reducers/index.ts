@@ -32,7 +32,6 @@ export interface AudioRegion {
     color?: string;
     hidden?: boolean;
     locked?: boolean;
-    zOrder: number;
 }
 
 export type AudioRegionDiff =

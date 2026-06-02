@@ -32,8 +32,6 @@ function sortRegions(regions: AudioRegion[], ordering: AudioRegionsOrdering, lab
     switch (ordering) {
         case AudioRegionsOrdering.START_TIME:
             return copy.sort((a, b) => a.start - b.start);
-        case AudioRegionsOrdering.Z_ORDER:
-            return copy.sort((a, b) => a.zOrder - b.zOrder);
         case AudioRegionsOrdering.LABEL_NAME: {
             const nameOf = (id: number | null): string => {
                 if (id == null) return '';

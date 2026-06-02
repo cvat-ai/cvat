@@ -110,8 +110,6 @@ export function useAudioRecording(params: Params): void {
                 if (attr.id !== undefined) defaultAttrs[attr.id] = attr.defaultValue;
             });
         }
-        const maxZ = currentRegions.length > 0 ?
-            Math.max(...currentRegions.map((r) => r.zOrder)) : 0;
         const newRegion: AudioRegion = {
             id: `audio-region-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             start,
@@ -120,7 +118,6 @@ export function useAudioRecording(params: Params): void {
             attributes: defaultAttrs,
             source: 'manual',
             color: pickInstanceColor(currentRegions),
-            zOrder: maxZ + 1,
         };
         onSetRegionsRef.current([...currentRegions, newRegion]);
         onSetActiveRegionRef.current(newRegion.id);
@@ -149,7 +146,6 @@ export function useAudioRecording(params: Params): void {
                 end: start,
                 labelId: activeLabelIdRef.current,
                 attributes: {},
-                zOrder: 0,
             };
             const color = getAudioRegionColor(
                 colorRegion,

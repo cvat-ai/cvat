@@ -31,9 +31,6 @@ export function createAudioRegion(
         });
     }
 
-    const maxZ = existingRegions.length > 0 ?
-        Math.max(...existingRegions.map((r) => r.zOrder)) : 0;
-
     return {
         id: wsRegion.id,
         start: wsRegion.start,
@@ -42,6 +39,5 @@ export function createAudioRegion(
         attributes: defaultAttrs,
         source: 'manual',
         color: pickInstanceColor(existingRegions),
-        zOrder: maxZ + 1,
     };
 }

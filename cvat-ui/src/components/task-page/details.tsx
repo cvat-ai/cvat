@@ -32,6 +32,8 @@ interface OwnProps {
     taskMeta: FramesMetaData;
     cloudStorageInstance: CloudStorage | null;
     onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
+    detailsClassName?: string;
+    labelsEditorProps?: Record<string, unknown>;
 }
 
 interface StateToProps {
@@ -172,12 +174,13 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderLabelsEditor(): JSX.Element {
-        const { task: taskInstance, onUpdateTask } = this.props;
+        const { task: taskInstance, onUpdateTask, labelsEditorProps } = this.props;
 
         return (
             <Row>
                 <Col span={24}>
                     <LabelsEditorComponent
+                        {...labelsEditorProps}
                         labels={taskInstance.labels.map((label) => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
                             onUpdateTask(taskInstance, {
@@ -224,10 +227,11 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             task: taskInstance,
             cancelAutoAnnotation,
             onUpdateTask,
+            detailsClassName,
         } = this.props;
 
         return (
-            <div className='cvat-task-details'>
+            <div className={`cvat-task-details${detailsClassName ? ` ${detailsClassName}` : ''}`}>
                 <Row justify='start' align='middle'>
                     <Col className='cvat-task-details-task-name'>{this.renderTaskName()}</Col>
                 </Row>

@@ -15,7 +15,6 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 export enum AudioRegionsOrdering {
     INSERTION = 'Insertion order',
     START_TIME = 'Start time',
-    Z_ORDER = 'Z Order',
     LABEL_NAME = 'Label name',
 }
 

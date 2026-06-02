@@ -50,18 +50,6 @@ const componentShortcuts = {
         sequences: ['del', 'shift+del'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
-    AUDIO_TO_BACKGROUND: {
-        name: 'Move region to background',
-        description: 'Move the active audio region to the background layer',
-        sequences: ['-', '_'],
-        scope: ShortcutScope.OBJECTS_SIDEBAR,
-    },
-    AUDIO_TO_FOREGROUND: {
-        name: 'Move region to foreground',
-        description: 'Move the active audio region to the foreground layer',
-        sequences: ['+', '='],
-        scope: ShortcutScope.OBJECTS_SIDEBAR,
-    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -185,22 +173,6 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
             if (activeRegion.locked && !force) return;
             onSetRegions(regions.filter((r) => r.id !== activeRegion.id));
             onSetActiveRegion(null);
-        },
-        AUDIO_TO_BACKGROUND: (e) => {
-            preventDefault(e);
-            if (!activeRegion) return;
-            const minZ = Math.min(...regions.map((r) => r.zOrder));
-            onSetRegions(regions.map((r) => (
-                r.id === activeRegion.id ? { ...r, zOrder: minZ - 1 } : r
-            )));
-        },
-        AUDIO_TO_FOREGROUND: (e) => {
-            preventDefault(e);
-            if (!activeRegion) return;
-            const maxZ = Math.max(...regions.map((r) => r.zOrder));
-            onSetRegions(regions.map((r) => (
-                r.id === activeRegion.id ? { ...r, zOrder: maxZ + 1 } : r
-            )));
         },
     };
 

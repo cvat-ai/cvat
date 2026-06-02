@@ -14,7 +14,7 @@ import Alert from 'antd/lib/alert';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 import { getCore, Storage, StorageLocation } from 'cvat-core-wrapper';
-import AudioLabelsEditor from 'audio/components/labels-editor/audio-labels-editor';
+import LabelsEditor from 'components/labels-editor/labels-editor';
 import FileManagerComponent from 'components/file-manager/file-manager';
 import { RemoteFile } from 'components/file-manager/remote-browser';
 import { isAudioFile, isAudioPath } from 'audio/utils/audio-files';
@@ -26,11 +26,15 @@ import BasicConfigurationForm, { BaseConfiguration } from 'components/create-tas
 import ProjectSearchField from 'components/create-task-page/project-search-field';
 import ProjectSubsetField from 'components/create-task-page/project-subset-field';
 import MultiTasksProgress from 'components/create-task-page/multi-task-progress';
-import { AdvancedConfiguration, SortingMethod } from 'components/create-task-page/advanced-configuration-form';
-import { QualityConfiguration, ValidationMode } from 'components/create-task-page/quality-configuration-form';
+import AdvancedConfigurationForm, {
+    AdvancedConfiguration,
+    SortingMethod,
+} from 'components/create-task-page/advanced-configuration-form';
+import QualityConfigurationForm, {
+    QualityConfiguration,
+    ValidationMode,
+} from 'components/create-task-page/quality-configuration-form';
 import { CreateTaskData } from 'components/create-task-page/create-task-content';
-import AudioAdvancedConfigurationForm from './audio-advanced-configuration-form';
-import AudioQualityConfigurationForm from './audio-quality-configuration-form';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
@@ -107,16 +111,16 @@ function pathsHaveNonAudio(paths: string[]): boolean {
 
 class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
-    private advancedConfigurationComponent: RefObject<AudioAdvancedConfigurationForm>;
-    private qualityConfigurationComponent: RefObject<AudioQualityConfigurationForm>;
+    private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
+    private qualityConfigurationComponent: RefObject<QualityConfigurationForm>;
     private fileManagerComponent: any;
 
     public constructor(props: Props & RouteComponentProps) {
         super(props);
         this.state = { ...defaultState };
         this.basicConfigurationComponent = React.createRef<BasicConfigurationForm>();
-        this.advancedConfigurationComponent = React.createRef<AudioAdvancedConfigurationForm>();
-        this.qualityConfigurationComponent = React.createRef<AudioQualityConfigurationForm>();
+        this.advancedConfigurationComponent = React.createRef<AdvancedConfigurationForm>();
+        this.qualityConfigurationComponent = React.createRef<QualityConfigurationForm>();
     }
 
     public componentDidMount(): void {
@@ -675,7 +679,11 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         return (
             <Col span={24}>
                 <Text className='cvat-text-color'>Labels</Text>
-                <AudioLabelsEditor
+                <LabelsEditor
+                    className='cvat-audio-labels-editor'
+                    creatorTypes={['basic']}
+                    includeDeletedAttributes={false}
+                    includeSkeletonLabels={false}
                     labels={labels}
                     onSubmit={(newLabels): void => {
                         this.setState({ labels: newLabels });
@@ -740,8 +748,9 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                         key: '1',
                         label: <Text className='cvat-title'>Advanced configuration</Text>,
                         children: (
-                            <AudioAdvancedConfigurationForm
+                            <AdvancedConfigurationForm
                                 ref={this.advancedConfigurationComponent}
+                                audio
                                 onSubmit={this.handleSubmitAdvancedConfiguration}
                                 projectId={projectId}
                                 useProjectSourceStorage={useProjectSourceStorage}
@@ -765,7 +774,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     }
 
     private renderQualityBlock(): JSX.Element {
-        const { quality: { validationMode } } = this.state;
+        const { quality: { frameSelectionMethod, validationMode } } = this.state;
 
         return (
             <Col span={24}>
@@ -775,10 +784,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                         key: '1',
                         label: <Text className='cvat-title'>Quality</Text>,
                         children: (
-                            <AudioQualityConfigurationForm
+                            <QualityConfigurationForm
                                 ref={this.qualityConfigurationComponent}
+                                audio
                                 initialValues={defaultState.quality}
                                 onSubmit={this.handleSubmitQualityConfiguration}
+                                frameSelectionMethod={frameSelectionMethod}
                                 onChangeFrameSelectionMethod={this.handleFrameSelectionMethodChange}
                                 validationMode={validationMode}
                                 onChangeValidationMode={this.handleValidationModeChange}

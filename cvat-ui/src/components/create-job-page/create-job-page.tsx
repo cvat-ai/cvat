@@ -10,7 +10,6 @@ import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
-import AudioJobForm from 'audio/components/create-job-page/audio-job-form';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import { useIsMounted } from 'utils/hooks';
 import { MediaType } from 'cvat-core/src/enums';
@@ -70,11 +69,7 @@ function CreateJobPage(): JSX.Element {
             </Row>
             <Row justify='center' align='top'>
                 <Col md={20} lg={16} xl={14} xxl={9}>
-                    {taskInstance.mediaType === MediaType.AUDIO ? (
-                        <AudioJobForm task={taskInstance} />
-                    ) : (
-                        <JobForm task={taskInstance} />
-                    )}
+                    <JobForm task={taskInstance} audio={taskInstance.mediaType === MediaType.AUDIO} />
                 </Col>
             </Row>
         </div>

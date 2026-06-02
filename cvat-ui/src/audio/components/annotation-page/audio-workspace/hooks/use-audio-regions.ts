@@ -20,7 +20,6 @@ import { getPlayOnceRegionId, setPlayOnceRegionId } from '../utils/play-once-reg
 import { attachRegionAutoScroll } from '../utils/region-auto-scroll';
 
 const ACTIVE_BORDER_FALLBACK = '#6366F1';
-const ACTIVE_Z_OFFSET = 10000;
 
 function clampRegionDragToBounds(region: Region): void {
     /* eslint-disable no-underscore-dangle */
@@ -348,7 +347,7 @@ export function useAudioRegions(params: Params): Result {
                 getAudioRegionColor(reduxRegion, labels, colorBy, opacity, selectedOpacity, isActive) :
                 getAudioRegionColor(
                     {
-                        id: wsRegion.id, start: 0, end: 0, labelId: null, attributes: {}, zOrder: 0,
+                        id: wsRegion.id, start: 0, end: 0, labelId: null, attributes: {},
                     },
                     labels,
                     colorBy,
@@ -365,10 +364,7 @@ export function useAudioRegions(params: Params): Result {
             });
             const { element } = wsRegion;
             if (element) {
-                const baseZ = reduxRegion?.zOrder ?? 0;
                 const isHovered = wsRegion.id === hoveredRegionId;
-                element.style.zIndex = isActive || isHovered ?
-                    String(baseZ + ACTIVE_Z_OFFSET) : String(baseZ);
 
                 const borderColor = reduxRegion ?
                     getRegionItemColor(reduxRegion, labels, colorBy) : ACTIVE_BORDER_FALLBACK;

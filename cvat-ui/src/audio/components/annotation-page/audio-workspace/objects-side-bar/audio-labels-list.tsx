@@ -22,7 +22,7 @@ import { getCVATStore } from 'cvat-store';
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
-const makeKey = (index: number) => `SWITCH_LABEL_AUDIO_${index}`;
+const makeKey = (index: number): string => `SWITCH_LABEL_AUDIO_${index}`;
 
 for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
     componentShortcuts[makeKey(index)] = {

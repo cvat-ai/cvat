@@ -12,7 +12,7 @@ import { EditOutlined, BuildOutlined, ExclamationCircleOutlined } from '@ant-des
 
 import { SerializedLabel, SerializedAttribute } from 'cvat-core-wrapper';
 import RawViewer from './raw-viewer';
-import ConstructorViewer from './constructor-viewer';
+import ConstructorViewer, { CreatorType } from './constructor-viewer';
 import ConstructorCreator from './constructor-creator';
 import ConstructorUpdater from './constructor-updater';
 import { idGenerator, LabelOptColor } from './common';
@@ -26,6 +26,10 @@ enum ConstructorMode {
 interface LabelsEditorProps {
     labels: SerializedLabel[];
     onSubmit: (labels: LabelOptColor[]) => void;
+    className?: string;
+    creatorTypes?: CreatorType[];
+    includeDeletedAttributes?: boolean;
+    includeSkeletonLabels?: boolean;
 }
 
 interface LabelsEditorState {
@@ -198,7 +202,12 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 }));
         }
 
-        function transformLabel(label: LabelOptColor, originalLabels: SerializedLabel[]): LabelOptColor {
+        function transformLabel(
+            label: LabelOptColor,
+            originalLabels: SerializedLabel[],
+            includeDeletedAttributes: boolean,
+            includeSkeletonLabels: boolean,
+        ): LabelOptColor {
             const originalLabel = findLabelByID(originalLabels, label.id);
             const transformed: any = {
                 name: label.name,
@@ -213,33 +222,45 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 })),
             };
 
-            if (originalLabel) {
+            if (includeDeletedAttributes && originalLabel) {
                 transformed.attributes.push(...findDeletedAttributes(label, originalLabel));
             }
 
-            if (label.type === 'skeleton') {
+            if (includeSkeletonLabels && label.type === 'skeleton') {
                 transformed.svg = label.svg;
                 transformed.sublabels = (label.sublabels || [])
                     .map((internalLabel: LabelOptColor) => {
                         const originalSublabel = originalLabel ?
                             findLabelByID(originalLabel.sublabels || [], internalLabel.id) :
                             null;
-                        return transformLabel(internalLabel, originalSublabel ? [originalSublabel] : []);
+                        return transformLabel(
+                            internalLabel,
+                            originalSublabel ? [originalSublabel] : [],
+                            includeDeletedAttributes,
+                            includeSkeletonLabels,
+                        );
                     });
             }
 
             return transformed;
         }
 
-        const { labels, onSubmit } = this.props;
+        const {
+            labels,
+            onSubmit,
+            includeDeletedAttributes = true,
+            includeSkeletonLabels = true,
+        } = this.props;
         const output = savedLabels.concat(unsavedLabels)
-            .map((label: LabelOptColor): LabelOptColor => transformLabel(label, labels));
+            .map((label: LabelOptColor): LabelOptColor => (
+                transformLabel(label, labels, includeDeletedAttributes, includeSkeletonLabels)
+            ));
 
         onSubmit(output);
     }
 
     public render(): JSX.Element {
-        const { labels } = this.props;
+        const { labels, className, creatorTypes } = this.props;
         const {
             savedLabels, unsavedLabels, constructorMode, labelForUpdate, creatorType,
         } = this.state;
@@ -264,6 +285,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                             constructorMode: ConstructorMode.CREATE,
                         });
                     }}
+                    creatorTypes={creatorTypes}
                 />
             );
         } else if (constructorMode === ConstructorMode.UPDATE && labelForUpdate !== null) {
@@ -288,7 +310,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
             );
         }
 
-        return (
+        const content = (
             <Tabs
                 defaultActiveKey='configurator'
                 type='card'
@@ -314,5 +336,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 }]}
             />
         );
+
+        return className ? <div className={className}>{content}</div> : content;
     }
 }

@@ -19,7 +19,7 @@ function cloneRegion(region: AudioRegion): AudioRegion {
 function regionsEqual(a: AudioRegion, b: AudioRegion): boolean {
     if (
         a.start !== b.start || a.end !== b.end ||
-        a.labelId !== b.labelId || a.zOrder !== b.zOrder ||
+        a.labelId !== b.labelId ||
         a.locked !== b.locked || a.hidden !== b.hidden ||
         a.color !== b.color || a.group !== b.group ||
         a.source !== b.source || a.serverId !== b.serverId

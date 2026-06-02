@@ -24,7 +24,6 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import { CombinedState } from 'reducers';
 import { updateTaskAsync, updateTaskMetadataAsync } from 'actions/tasks-actions';
-import AudioDetailsComponent from 'audio/components/task-page/audio-details';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
 import { getCloudStorageById } from './cloud-storage-editor';
@@ -127,7 +126,6 @@ function TaskPageComponent(): JSX.Element {
     };
 
     const isAudioTask = taskInstance.dimension === DimensionType.DIMENSION_1D;
-    const Details = isAudioTask ? AudioDetailsComponent : DetailsComponent;
 
     return (
         <div className='cvat-task-page'>
@@ -139,12 +137,19 @@ function TaskPageComponent(): JSX.Element {
             >
                 <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} onUpdateTask={onUpdateTask} />
-                    <Details
+                    <DetailsComponent
                         task={taskInstance}
                         onUpdateTask={onUpdateTask}
                         taskMeta={taskMeta}
                         cloudStorageInstance={cloudStorageInstance}
                         onUpdateTaskMeta={onUpdateTaskMeta}
+                        detailsClassName={isAudioTask ? 'cvat-audio-task-details' : undefined}
+                        labelsEditorProps={isAudioTask ? {
+                            className: 'cvat-audio-labels-editor',
+                            creatorTypes: ['basic'],
+                            includeDeletedAttributes: false,
+                            includeSkeletonLabels: false,
+                        } : undefined}
                     />
                     <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>

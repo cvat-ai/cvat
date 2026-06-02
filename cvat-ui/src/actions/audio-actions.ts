@@ -150,7 +150,7 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
         try {
             const intervals: SerializedInterval[] = await jobInstance.annotations.intervals();
 
-            const regions: AudioRegion[] = intervals.reduce<AudioRegion[]>((acc, interval, index) => {
+            const regions: AudioRegion[] = intervals.reduce<AudioRegion[]>((acc, interval) => {
                 const startSec = interval.start / 1000;
                 const stopMs = interval.stop ?? interval.start;
                 const endSec = stopMs / 1000;
@@ -170,7 +170,6 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
                     source: String(interval.source),
                     group: interval.group,
                     color: pickInstanceColor(acc),
-                    zOrder: index,
                     locked: false,
                     hidden: false,
                 });
@@ -257,15 +256,12 @@ export function copyAudioRegionAsync(regionId: string): ThunkAction {
         const source = regions.find((r) => r.id === regionId);
         if (!source) return;
 
-        const maxZOrder = regions.length > 0 ?
-            Math.max(...regions.map((r) => r.zOrder)) : 0;
         const rand = Math.random().toString(36).slice(2);
         const newId = `copy-${Date.now()}-${rand}`;
         const copied: AudioRegion = {
             ...source,
             id: newId,
             serverId: undefined,
-            zOrder: maxZOrder + 1,
         };
 
         dispatch(audioActions.setAudioRegions([...regions, copied]));
@@ -293,7 +289,6 @@ export function extendAudioRegionFromLastAsync(labelId: number | null): ThunkAct
             });
         }
 
-        const maxZOrder = regions.length > 0 ? Math.max(...regions.map((r) => r.zOrder)) : 0;
         const rand = Math.random().toString(36).slice(2);
         const newId = `extend-${Date.now()}-${rand}`;
         const newRegion: AudioRegion = {
@@ -304,7 +299,6 @@ export function extendAudioRegionFromLastAsync(labelId: number | null): ThunkAct
             attributes: defaultAttrs,
             source: 'manual',
             color: pickInstanceColor(regions),
-            zOrder: maxZOrder + 1,
         };
 
         dispatch(audioActions.setAudioRegions([...regions, newRegion]));
