@@ -4364,7 +4364,6 @@ paths:
         schema:
           type: string
           enum:
-          - warning
           - error
       - name: sort
         required: false
@@ -4388,7 +4387,6 @@ paths:
           - missing_annotation
           - extra_annotation
           - mismatching_label
-          - low_overlap
           - mismatching_direction
           - mismatching_attributes
           - mismatching_groups
@@ -7420,18 +7418,15 @@ components:
         * `track` - TRACK
     AnnotationConflictSeverity:
       enum:
-      - warning
       - error
       type: string
       description: |-
-        * `warning` - WARNING
         * `error` - ERROR
     AnnotationConflictType:
       enum:
       - missing_annotation
       - extra_annotation
       - mismatching_label
-      - low_overlap
       - mismatching_direction
       - mismatching_attributes
       - mismatching_groups
@@ -7441,7 +7436,6 @@ components:
         * `missing_annotation` - MISSING_ANNOTATION
         * `extra_annotation` - EXTRA_ANNOTATION
         * `mismatching_label` - MISMATCHING_LABEL
-        * `low_overlap` - LOW_OVERLAP
         * `mismatching_direction` - MISMATCHING_DIRECTION
         * `mismatching_attributes` - MISMATCHING_ATTRIBUTES
         * `mismatching_groups` - MISMATCHING_GROUPS
@@ -10590,14 +10584,6 @@ components:
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
             inside of which the checked line points should be
-        low_overlap_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          nullable: true
-          description: |
-            Used for distinction between strong / weak (low_overlap) matches
         match_orientation:
           type: boolean
           nullable: true
@@ -11163,6 +11149,7 @@ components:
           type: integer
         warning_count:
           type: integer
+          description: Deprecated. Always 0 for new reports.
         error_count:
           type: integer
         conflicts_by_type:
@@ -11362,14 +11349,6 @@ components:
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
             inside of which the checked line points should be
-        low_overlap_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          nullable: true
-          description: |
-            Used for distinction between strong / weak (low_overlap) matches
         match_orientation:
           type: boolean
           nullable: true
@@ -11551,14 +11530,6 @@ components:
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
             inside of which the checked line points should be
-        low_overlap_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          nullable: true
-          description: |
-            Used for distinction between strong / weak (low_overlap) matches
         match_orientation:
           type: boolean
           nullable: true
@@ -11727,14 +11698,6 @@ components:
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
             inside of which the checked line points should be
-        low_overlap_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          nullable: true
-          description: |
-            Used for distinction between strong / weak (low_overlap) matches
         match_orientation:
           type: boolean
           nullable: true

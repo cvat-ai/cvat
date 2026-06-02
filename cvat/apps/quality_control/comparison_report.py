@@ -169,29 +169,14 @@ class AnnotationConflict(ReportNode):
     frame_id: int
     type: AnnotationConflictType
     annotation_ids: list[AnnotationId]
-    severity: AnnotationConflictSeverity = AnnotationConflictSeverity.WARNING
+    severity: AnnotationConflictSeverity = AnnotationConflictSeverity.ERROR
     attribute_names: list[str] = field(factory=list)
 
     @staticmethod
     def default_severity_for_type(
         conflict_type: AnnotationConflictType,
     ) -> AnnotationConflictSeverity:
-        if conflict_type in [
-            AnnotationConflictType.MISSING_ANNOTATION,
-            AnnotationConflictType.EXTRA_ANNOTATION,
-            AnnotationConflictType.MISMATCHING_LABEL,
-        ]:
-            return AnnotationConflictSeverity.ERROR
-        elif conflict_type in [
-            AnnotationConflictType.LOW_OVERLAP,
-            AnnotationConflictType.MISMATCHING_ATTRIBUTES,
-            AnnotationConflictType.MISMATCHING_DIRECTION,
-            AnnotationConflictType.MISMATCHING_GROUPS,
-            AnnotationConflictType.COVERED_ANNOTATION,
-        ]:
-            return AnnotationConflictSeverity.WARNING
-        else:
-            assert False
+        return AnnotationConflictSeverity.ERROR
 
     def _value_serializer(self, v):
         if isinstance(v, (AnnotationConflictType, AnnotationConflictSeverity)):
@@ -213,12 +198,6 @@ class AnnotationConflict(ReportNode):
             ),
             attribute_names=sorted(set(d.get("attribute_names") or [])),
         )
-
-
-_CONFLICT_SEVERITY_RANK = {
-    AnnotationConflictSeverity.WARNING: 0,
-    AnnotationConflictSeverity.ERROR: 1,
-}
 
 
 def _annotation_id_key(
@@ -249,9 +228,6 @@ def annotation_conflict_key(
 def merge_annotation_conflicts(
     target: AnnotationConflict, other: AnnotationConflict
 ) -> AnnotationConflict:
-    if _CONFLICT_SEVERITY_RANK[other.severity] > _CONFLICT_SEVERITY_RANK[target.severity]:
-        target.severity = other.severity
-
     merged_attribute_names = sorted(set(target.attribute_names) | set(other.attribute_names))
     if merged_attribute_names != target.attribute_names:
         target.attribute_names = merged_attribute_names
@@ -304,9 +280,6 @@ class ComparisonParameters(ReportNode):
 
     iou_threshold: float = 0.4
     "Used for distinction between matched / unmatched shapes"
-
-    low_overlap_threshold: float = 0.8
-    "Used for distinction between strong / weak (low_overlap) matches"
 
     oks_sigma: float = 0.09
     "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
@@ -884,11 +857,11 @@ class ComparisonReportFrameSummary(ReportNode):
 
     @cached_property
     def warning_count(self) -> int:
-        return len([c for c in self.conflicts if c.severity == AnnotationConflictSeverity.WARNING])
+        return 0
 
     @cached_property
     def error_count(self) -> int:
-        return len([c for c in self.conflicts if c.severity == AnnotationConflictSeverity.ERROR])
+        return len(self.conflicts)
 
     @cached_property
     def conflicts_by_type(self) -> dict[AnnotationConflictType, int]:

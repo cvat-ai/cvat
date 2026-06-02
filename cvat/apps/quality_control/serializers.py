@@ -140,7 +140,7 @@ class QualityReportSummarySerializer(serializers.Serializer):
     validation_frame_share = serializers.FloatField(source="frame_share")
 
     conflict_count = serializers.IntegerField()
-    warning_count = serializers.IntegerField()
+    warning_count = serializers.IntegerField(help_text="Deprecated. Always 0 for new reports.")
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
 
@@ -272,7 +272,6 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "iou_threshold",
     "oks_sigma",
     "line_thickness",
-    "low_overlap_threshold",
     "point_size_base",
     "compare_line_orientation",
     "line_orientation_threshold",
@@ -717,7 +716,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "point_size",
             "point_size_base",
             "line_thickness",
-            "low_overlap_threshold",
             "match_orientation",
             "line_orientation_threshold",
             "match_groups",
@@ -745,9 +743,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         for field_name, help_text in {
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
-            "low_overlap_threshold": """
-                Used for distinction between strong / weak (low_overlap) matches
-            """,
             "point_size_base": """
                 When comparing point annotations (including both separate points and point groups),
                 the point size parameter defines matching area for each GT point based to the

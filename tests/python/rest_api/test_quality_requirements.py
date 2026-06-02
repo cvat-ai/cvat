@@ -1619,8 +1619,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert disabled_group["parameters"]["enabled"] is False
         assert disabled_group["parameters"]["metric"] == "accuracy"
         assert disabled_group["parameters"]["required_score"] == 1.0
-        assert disabled_group["comparison_summary"]["annotations"]["accuracy"] == 1.0
-        assert disabled_group["comparison_summary"]["annotations"]["total_count"] == 1
+        disabled_summary = disabled_group["comparison_summary"]
+        assert disabled_summary["warning_count"] == 0
+        assert disabled_summary["error_count"] == disabled_summary["conflict_count"] == 0
+        assert disabled_summary["annotations"]["total_count"] == 0
+        assert disabled_group["frame_results"] == {}
+        report_summary = report_data["comparison_summary"]
+        assert report_summary["warning_count"] == 0
+        assert report_summary["error_count"] == report_summary["conflict_count"]
         assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
 
     def test_project_report_summary_counts_completed_jobs_and_tasks(self, admin_user):
@@ -1800,20 +1806,15 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                 if matrix["scope"] == "group"
             }
             assert enabled_requirement_id in group_matrices
-            assert disabled_requirement_id in group_matrices
+            assert disabled_requirement_id not in group_matrices
             assert group_matrices[enabled_requirement_id]["name"] == enabled_requirement_name
-            assert group_matrices[disabled_requirement_id]["name"] == disabled_requirement_name
 
             overall_csv = archive.read("overall.csv").decode()
             enabled_group_csv = archive.read(
                 group_matrices[enabled_requirement_id]["path"]
             ).decode()
-            disabled_group_csv = archive.read(
-                group_matrices[disabled_requirement_id]["path"]
-            ).decode()
             assert "ds \\ gt" in overall_csv
             assert "ds \\ gt" in enabled_group_csv
-            assert "ds \\ gt" in disabled_group_csv
 
         response = get_method(
             admin_user,
@@ -1859,6 +1860,4 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             requirement=disabled_requirement_id,
             format="csv",
         )
-        assert response.status_code == HTTPStatus.OK
-        assert response.headers["Content-Type"].startswith("text/csv")
-        assert response.content.decode() == disabled_group_csv
+        assert response.status_code == HTTPStatus.NOT_FOUND
