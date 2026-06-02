@@ -15,12 +15,7 @@ import {
     showFilters as showFiltersAction,
     showStatistics as showStatisticsAction,
 } from 'actions/annotation-actions';
-import {
-    audioRedoAction,
-    audioUndoAction,
-    setAudioCurrentTime,
-    switchAudioPlay,
-} from 'actions/audio-actions';
+import { audioActions } from 'actions/audio-actions';
 import AudioTopBarComponent from 'components/annotation-page/audio-workspace/top-bar/audio-top-bar';
 import { Job } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
@@ -123,10 +118,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(showFiltersAction(true));
         },
         audioUndo(): void {
-            dispatch(audioUndoAction());
+            dispatch(audioActions.audioUndo());
         },
         audioRedo(): void {
-            dispatch(audioRedoAction());
+            dispatch(audioActions.audioRedo());
         },
         changeWorkspace(workspace: Workspace): void {
             dispatch(changeWorkspaceAsync(workspace));
@@ -137,10 +132,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onAudioPlayPause(): void {
             const store = getCVATStore();
             const { player } = store.getState().audio;
-            dispatch(switchAudioPlay(!player.playing));
+            dispatch(audioActions.switchAudioPlay(!player.playing));
         },
         onAudioSeek(time: number): void {
-            dispatch(setAudioCurrentTime(time));
+            dispatch(audioActions.setAudioCurrentTime(time));
         },
     };
 }

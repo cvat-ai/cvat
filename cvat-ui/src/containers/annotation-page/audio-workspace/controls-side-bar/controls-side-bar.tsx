@@ -7,11 +7,7 @@ import { Label } from 'cvat-core-wrapper';
 import { ThunkDispatch } from 'utils/redux';
 import { updateActiveControl } from 'actions/annotation-actions';
 import {
-    setAudioZoom,
-    setAudioPlaybackRate,
-    setAudioVolume,
-    setAudioLoop,
-    setAudioActiveLabel,
+    audioActions,
     extendAudioRegionFromLastAsync,
 } from 'actions/audio-actions';
 
@@ -69,19 +65,19 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
             dispatch(updateActiveControl(activeControl));
         },
         onZoomChange(zoom: number): void {
-            dispatch(setAudioZoom(zoom));
+            dispatch(audioActions.setAudioZoom(zoom));
         },
         onPlaybackRateChange(rate: number): void {
-            dispatch(setAudioPlaybackRate(rate));
+            dispatch(audioActions.setAudioPlaybackRate(rate));
         },
         onVolumeChange(volume: number): void {
-            dispatch(setAudioVolume(volume));
+            dispatch(audioActions.setAudioVolume(volume));
         },
         onLoopChange(loop: boolean): void {
-            dispatch(setAudioLoop(loop));
+            dispatch(audioActions.setAudioLoop(loop));
         },
         onSetActiveLabel(labelId: number | null): void {
-            dispatch(setAudioActiveLabel(labelId));
+            dispatch(audioActions.setAudioActiveLabel(labelId));
         },
         onExtendRegion(labelId: number): void {
             dispatch(extendAudioRegionFromLastAsync(labelId));

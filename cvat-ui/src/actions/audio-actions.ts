@@ -118,27 +118,6 @@ export const audioActions = {
 
 export type AudioActions = ActionUnion<typeof audioActions>;
 
-export const {
-    switchAudioPlay,
-    setAudioCurrentTime,
-    setAudioDuration,
-    setAudioPlaybackRate,
-    setAudioZoom,
-    setAudioLoop,
-    setAudioVolume,
-    setAudioRegions,
-    updateAudioRegionAttribute,
-    toggleAudioRegionLock,
-    toggleAudioRegionHidden,
-    setAudioActiveRegion,
-    setAudioHoveredRegion,
-    setWaveformReady,
-    setAudioActiveLabel,
-} = audioActions;
-
-export const audioUndoAction = audioActions.audioUndo;
-export const audioRedoAction = audioActions.audioRedo;
-
 export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const prevAudioUrl = getState().audio.player.audioUrl;
@@ -268,7 +247,7 @@ export function updateAudioRegionAsync(
         const target = regions.find((r) => r.id === regionId);
         if (!target) return;
         const resolved = typeof patch === 'function' ? patch(target, regions) : patch;
-        dispatch(setAudioRegions(regions.map((r) => (r.id === regionId ? { ...r, ...resolved } : r))));
+        dispatch(audioActions.setAudioRegions(regions.map((r) => (r.id === regionId ? { ...r, ...resolved } : r))));
     };
 }
 
@@ -289,8 +268,8 @@ export function copyAudioRegionAsync(regionId: string): ThunkAction {
             zOrder: maxZOrder + 1,
         };
 
-        dispatch(setAudioRegions([...regions, copied]));
-        dispatch(setAudioActiveRegion(newId));
+        dispatch(audioActions.setAudioRegions([...regions, copied]));
+        dispatch(audioActions.setAudioActiveRegion(newId));
     };
 }
 
@@ -328,7 +307,7 @@ export function extendAudioRegionFromLastAsync(labelId: number | null): ThunkAct
             zOrder: maxZOrder + 1,
         };
 
-        dispatch(setAudioRegions([...regions, newRegion]));
-        dispatch(setAudioActiveRegion(newId));
+        dispatch(audioActions.setAudioRegions([...regions, newRegion]));
+        dispatch(audioActions.setAudioActiveRegion(newId));
     };
 }

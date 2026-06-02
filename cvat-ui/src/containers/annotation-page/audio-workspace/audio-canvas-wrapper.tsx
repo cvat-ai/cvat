@@ -7,17 +7,7 @@ import {
     ActiveControl, AudioRegion, ColorBy, CombinedState,
 } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
-import {
-    switchAudioPlay,
-    setAudioCurrentTime,
-    setAudioDuration,
-    setAudioRegions,
-    setAudioActiveRegion,
-    setAudioHoveredRegion,
-    setAudioZoom,
-    updateAudioRegionAttribute,
-    setWaveformReady,
-} from 'actions/audio-actions';
+import { audioActions } from 'actions/audio-actions';
 import { updateActiveControl } from 'actions/annotation-actions';
 
 interface StateToProps {
@@ -92,31 +82,31 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: Dispatch): DispatchToProps {
     return {
         onSwitchPlay(playing: boolean): void {
-            dispatch(switchAudioPlay(playing));
+            dispatch(audioActions.switchAudioPlay(playing));
         },
         onSetCurrentTime(time: number): void {
-            dispatch(setAudioCurrentTime(time));
+            dispatch(audioActions.setAudioCurrentTime(time));
         },
         onSetDuration(duration: number): void {
-            dispatch(setAudioDuration(duration));
+            dispatch(audioActions.setAudioDuration(duration));
         },
         onSetRegions(regions: AudioRegion[]): void {
-            dispatch(setAudioRegions(regions));
+            dispatch(audioActions.setAudioRegions(regions));
         },
         onSetActiveRegion(regionId: string | null): void {
-            dispatch(setAudioActiveRegion(regionId));
+            dispatch(audioActions.setAudioActiveRegion(regionId));
         },
         onSetHoveredRegion(regionId: string | null): void {
-            dispatch(setAudioHoveredRegion(regionId));
+            dispatch(audioActions.setAudioHoveredRegion(regionId));
         },
         onSetZoom(zoom: number): void {
-            dispatch(setAudioZoom(zoom));
+            dispatch(audioActions.setAudioZoom(zoom));
         },
         onUpdateRegionAttribute(regionId: string, attrID: number, value: string): void {
-            dispatch(updateAudioRegionAttribute(regionId, attrID, value));
+            dispatch(audioActions.updateAudioRegionAttribute(regionId, attrID, value));
         },
         onWaveformReady(ready: boolean): void {
-            dispatch(setWaveformReady(ready));
+            dispatch(audioActions.setWaveformReady(ready));
         },
         onUpdateActiveControl(activeControl: ActiveControl): void {
             dispatch(updateActiveControl(activeControl));

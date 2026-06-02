@@ -5,13 +5,7 @@ import AudioRegionsList from 'components/annotation-page/audio-workspace/audio-r
 import { filterAudioRegions } from 'components/annotation-page/audio-workspace/utils/filter-audio-regions';
 import { AudioRegion, CombinedState } from 'reducers';
 import {
-    setAudioActiveRegion,
-    setAudioHoveredRegion,
-    switchAudioPlay,
-    setAudioCurrentTime,
-    setAudioRegions,
-    toggleAudioRegionLock,
-    toggleAudioRegionHidden,
+    audioActions,
     copyAudioRegionAsync,
     updateAudioRegionAsync,
 } from 'actions/audio-actions';
@@ -114,25 +108,25 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onSetActiveRegion(regionId: string | null): void {
-            dispatch(setAudioActiveRegion(regionId));
+            dispatch(audioActions.setAudioActiveRegion(regionId));
         },
         onSetHoveredRegion(regionId: string | null): void {
-            dispatch(setAudioHoveredRegion(regionId));
+            dispatch(audioActions.setAudioHoveredRegion(regionId));
         },
         onSwitchPlay(playing: boolean): void {
-            dispatch(switchAudioPlay(playing));
+            dispatch(audioActions.switchAudioPlay(playing));
         },
         onSetCurrentTime(time: number): void {
-            dispatch(setAudioCurrentTime(time));
+            dispatch(audioActions.setAudioCurrentTime(time));
         },
         onToggleRegionLock(regionId: string): void {
-            dispatch(toggleAudioRegionLock(regionId));
+            dispatch(audioActions.toggleAudioRegionLock(regionId));
         },
         onToggleRegionHidden(regionId: string): void {
-            dispatch(toggleAudioRegionHidden(regionId));
+            dispatch(audioActions.toggleAudioRegionHidden(regionId));
         },
         onSetRegions(regions: AudioRegion[]): void {
-            dispatch(setAudioRegions(regions));
+            dispatch(audioActions.setAudioRegions(regions));
         },
         onCopyRegion(regionId: string): void {
             dispatch(copyAudioRegionAsync(regionId));

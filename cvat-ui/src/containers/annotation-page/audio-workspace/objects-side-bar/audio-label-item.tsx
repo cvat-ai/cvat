@@ -6,7 +6,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { setAudioRegions } from 'actions/audio-actions';
+import { audioActions } from 'actions/audio-actions';
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
 import { AudioRegion, CombinedState } from 'reducers';
 
@@ -44,7 +44,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         updateAudioRegions(regions: AudioRegion[]): void {
-            dispatch(setAudioRegions(regions));
+            dispatch(audioActions.setAudioRegions(regions));
         },
     };
 }

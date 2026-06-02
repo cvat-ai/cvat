@@ -9,7 +9,7 @@ import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
 import { CombinedState } from 'reducers';
-import { setAudioActiveLabel, setAudioRegions } from 'actions/audio-actions';
+import { audioActions } from 'actions/audio-actions';
 import AudioLabelItemContainer from 'containers/annotation-page/audio-workspace/objects-side-bar/audio-label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
@@ -86,9 +86,9 @@ function AudioLabelsList(): JSX.Element {
             const next = regions.map((r) => (
                 r.id === activeRegionId ? { ...r, labelId: labelID, attributes: defaultAttrs } : r
             ));
-            dispatch(setAudioRegions(next));
+            dispatch(audioActions.setAudioRegions(next));
         } else {
-            dispatch(setAudioActiveLabel(labelID));
+            dispatch(audioActions.setAudioActiveLabel(labelID));
             message.destroy();
             message.success(`Default label has been changed to "${label.name}"`);
         }
