@@ -1013,7 +1013,6 @@ export default class Collection {
             this.shapes = {};
             this.tags = {};
             this.tracks = [];
-            this.intervals = [];
             this.objects = {};
 
             this.flush = true;
@@ -1026,10 +1025,6 @@ export default class Collection {
                 this.shapes[frame] = [];
                 this.tags[frame] = [];
             }
-
-            this.intervals = this.intervals.filter(
-                (interval) => interval.start > to || (interval.stop !== null && interval.stop < from),
-            );
 
             this.tracks.slice(0).forEach((track) => {
                 if (track.frame <= to) {
