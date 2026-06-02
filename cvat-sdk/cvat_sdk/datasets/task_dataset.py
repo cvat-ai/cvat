@@ -241,7 +241,7 @@ class TaskDataset:
         Returns a context manager yielding an iterator over the task samples.
 
         When `media_download_policy` is `FETCH_CHUNKS_ON_DEMAND`, the iterator downloads the first
-        image-set chunk, then starts prefetching the next chunk while the caller processes samples
+        chunk, then starts prefetching the next chunk while the caller processes samples
         from the current chunk.
 
         If `delete_finished_chunks` is true, chunk files are materialized in a temporary directory
