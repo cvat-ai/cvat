@@ -18,13 +18,10 @@ import StandardWorkspaceComponent from 'components/annotation-page/standard-work
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
-import AudioFiltersModalComponent from 'audio/components/annotation-page/audio-workspace/top-bar/audio-filters-modal';
 import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
-import AudioStatisticsModalComponent from 'audio/components/annotation-page/audio-workspace/top-bar/audio-statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
-import AudioTopBarContainer from 'audio/containers/annotation-page/audio-workspace/top-bar/audio-top-bar';
-import AudioWorkspaceComponent from 'audio/components/annotation-page/audio-workspace/audio-workspace';
+import AudioAnnotationPage from 'audio/components/annotation-page/audio-annotation-page';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
@@ -149,10 +146,14 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         return <JobNotFoundComponent />;
     }
 
+    if (isAudio) {
+        return <AudioAnnotationPage />;
+    }
+
     return (
         <Layout className='cvat-annotation-page'>
             <Layout.Header className='cvat-annotation-header'>
-                {isAudio ? <AudioTopBarContainer /> : <AnnotationTopBarContainer />}
+                <AnnotationTopBarContainer />
             </Layout.Header>
             <Layout.Content className='cvat-annotation-layout-content'>
                 {workspace === Workspace.STANDARD3D && <StandardWorkspace3DComponent />}
@@ -161,10 +162,9 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 {workspace === Workspace.ATTRIBUTES && <AttributeAnnotationWorkspace />}
                 {workspace === Workspace.TAGS && <TagAnnotationWorkspace />}
                 {workspace === Workspace.REVIEW && <ReviewAnnotationsWorkspace />}
-                {isAudio && <AudioWorkspaceComponent />}
             </Layout.Content>
-            {isAudio ? <AudioFiltersModalComponent /> : <FiltersModalComponent />}
-            {isAudio ? <AudioStatisticsModalComponent /> : <StatisticsModalComponent />}
+            <FiltersModalComponent />
+            <StatisticsModalComponent />
             <SearchFramesModal />
         </Layout>
     );
