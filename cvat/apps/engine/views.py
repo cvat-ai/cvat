@@ -3721,9 +3721,13 @@ class AssetsViewSet(
 
     def retrieve(self, request: ExtendedRequest, *args, **kwargs):
         instance = self.get_object()
-        return sendfile(
+        response = sendfile(
             request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename)
         )
+        # A backup measure in case a way is found to sneak malicious content
+        # into one of the asset formats we allow.
+        response["Content-Security-Policy"] = "default-src 'none'; sandbox"
+        return response
 
     def perform_destroy(self, instance):
         full_path = os.path.join(instance.get_asset_dir(), instance.filename)
