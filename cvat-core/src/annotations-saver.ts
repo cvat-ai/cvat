@@ -364,12 +364,11 @@ export default class AnnotationsSaver {
             if (updated.shapes.length || updated.tags.length || updated.tracks.length) {
                 onUpdate('Updated objects are being saved on the server');
                 const updatedIndexes = this._extractClientIDs(updated);
-                const requestBody = { ...updated };
                 let updatedData = null;
                 try {
-                    updatedData = await this._update(requestBody);
+                    updatedData = await this._update(updated);
                 } catch (error: unknown) {
-                    updatedData = await retryIf504Status(error, requestBody, 'update');
+                    updatedData = await retryIf504Status(error, updated, 'update');
                 }
 
                 this._updateCreatedObjects(updatedData, updatedIndexes);
@@ -383,12 +382,11 @@ export default class AnnotationsSaver {
             if (deleted.shapes.length || deleted.tags.length || deleted.tracks.length) {
                 onUpdate('Deleted objects are being deleted from the server');
                 this._extractClientIDs(deleted);
-                const requestBody = { ...deleted };
                 let deletedData = null;
                 try {
-                    deletedData = await this._delete(requestBody);
+                    deletedData = await this._delete(deleted);
                 } catch (error: unknown) {
-                    deletedData = await retryIf504Status(error, requestBody, 'delete');
+                    deletedData = await retryIf504Status(error, deleted, 'delete');
                 }
 
                 for (const type of Object.keys(this.initialObjects)) {
@@ -401,12 +399,11 @@ export default class AnnotationsSaver {
             if (created.shapes.length || created.tags.length || created.tracks.length) {
                 onUpdate('Created objects are being saved on the server');
                 const createdIndexes = this._extractClientIDs(created);
-                const requestBody = { ...created };
                 let createdData = null;
                 try {
-                    createdData = await this._create(requestBody);
+                    createdData = await this._create(created);
                 } catch (error: unknown) {
-                    createdData = await retryIf504Status(error, requestBody, 'create');
+                    createdData = await retryIf504Status(error, created, 'create');
                 }
 
                 this._updateCreatedObjects(createdData, createdIndexes);
