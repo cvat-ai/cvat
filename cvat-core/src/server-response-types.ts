@@ -534,8 +534,6 @@ export interface SerializedChapter {
 }
 
 export interface SerializedFramesMetaData {
-    dimension: DimensionType;
-    media_type: MediaType;
     chunk_size: number;
     chapters: SerializedChapter[] | null
     deleted_frames: number[];

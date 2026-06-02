@@ -92,8 +92,8 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
 type AnnotationObject = Shape | Tag | Track;
 
 // AUDIO TODO:
-// Now collection only used in terms of fetch intervals from the server and give them to UI.
-// Adding/Modifying/Filtration/Saving are implemented in a separated code.
+// Now collection only used in pipe of fetch intervals from the server and give them to UI.
+// Adding/Modifying/Filtration/Saving/History are implemented in a separated code.
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
