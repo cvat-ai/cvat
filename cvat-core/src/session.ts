@@ -564,7 +564,7 @@ export class Job extends Session {
         task_name: string | null;
         labels: Label[];
         dimension?: DimensionType;
-        media_type?: MediaType;
+        media_type: MediaType;
         data_compressed_chunk_type?: ChunkType;
         data_chunk_size?: number;
         bug_tracker: string | null;
@@ -734,10 +734,10 @@ export class Job extends Session {
     }
 
     public get dimension(): DimensionType {
-        return this.#data.dimension;
+        return this.#data.dimension!;
     }
 
-    public get mediaType(): MediaType | undefined {
+    public get mediaType(): MediaType {
         return this.#data.media_type;
     }
 
@@ -762,7 +762,7 @@ export class Job extends Session {
     }
 
     public get mode(): TaskMode {
-        return this.#data.mode;
+        return this.#data.mode!;
     }
 
     public get labels(): Label[] {
@@ -845,7 +845,7 @@ export class Task extends Session {
     public readonly id: number;
     public readonly status: TaskStatus;
     public readonly size: number;
-    public readonly mode: TaskMode;
+    public readonly mode: TaskMode | undefined;
     public readonly owner: User;
     public readonly createdDate: string;
     public readonly updatedDate: string;
@@ -854,8 +854,8 @@ export class Task extends Session {
     public readonly imageQuality: number;
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
-    public readonly dimension: DimensionType;
-    public readonly mediaType: MediaType | null;
+    public readonly dimension: DimensionType | undefined;
+    public readonly mediaType: MediaType | undefined;
     public readonly progress: {
         completedJobs: number,
         totalJobs: number,
@@ -1145,7 +1145,7 @@ export class Task extends Session {
                     get: () => data.dimension,
                 },
                 mediaType: {
-                    get: () => data.media_type ?? null,
+                    get: () => data.media_type,
                 },
                 cloudStorageId: {
                     get: () => data.data_cloud_storage_id,

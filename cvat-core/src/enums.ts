@@ -46,13 +46,6 @@ export enum DimensionType {
     DIMENSION_3D = '3d',
 }
 
-export enum MediaType {
-    IMAGE = 'image',
-    VIDEO = 'video',
-    POINT_CLOUD = 'point_cloud',
-    AUDIO = 'audio',
-}
-
 export enum RQStatus {
     QUEUED = 'queued',
     STARTED = 'started',
@@ -65,6 +58,12 @@ export enum RQStatus {
 export enum TaskMode {
     ANNOTATION = 'annotation',
     INTERPOLATION = 'interpolation',
+}
+
+export enum MediaType {
+    IMAGE = 'image',
+    POINT_CLOUD = 'point_cloud',
+    AUDIO = 'audio',
 }
 
 export enum AttributeType {

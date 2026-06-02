@@ -861,6 +861,17 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
     }
 }
 
+function normaliseTask(task: SerializedTask): SerializedTask {
+    // Server returns '' for media_type/mode/dimension on tasks without uploaded data;
+    // collapse to undefined so downstream consumers see a clean optional value.
+    return {
+        ...task,
+        media_type: (task.media_type as unknown) === '' ? undefined : task.media_type,
+        mode: (task.mode as unknown) === '' ? undefined : task.mode,
+        dimension: (task.dimension as unknown) === '' ? undefined : task.dimension,
+    };
+}
+
 async function getTasks(
     filter: TasksFilter = {},
     aggregate?: boolean,
@@ -877,7 +888,7 @@ async function getTasks(
             };
         } else if ('id' in filter) {
             response = await Axios.get(`${backendAPI}/tasks/${filter.id}`);
-            const results = [response.data];
+            const results = [normaliseTask(response.data)];
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
@@ -895,8 +906,9 @@ async function getTasks(
         throw generateError(errorData);
     }
 
-    response.data.results.count = response.data.count;
-    return response.data.results;
+    const results = response.data.results.map(normaliseTask) as PaginatedResource<SerializedTask>;
+    results.count = response.data.count;
+    return results;
 }
 
 async function saveTask(id: number, taskData: Record<string, unknown>): Promise<SerializedTask> {
@@ -909,7 +921,7 @@ async function saveTask(id: number, taskData: Record<string, unknown>): Promise<
         throw generateError(errorData);
     }
 
-    return response.data;
+    return normaliseTask(response.data);
 }
 
 async function deleteTask(id: number, organizationID: string | null = null): Promise<void> {
@@ -1617,16 +1629,23 @@ async function updateUser(id: number, userData: Partial<SerializedUser>): Promis
     return response.data;
 }
 
+export const PREVIEW_DEFAULT = Symbol('preview-default');
+export type PreviewResponse = Blob | typeof PREVIEW_DEFAULT | null;
+
 function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
-    return async function (id: number | string): Promise<Blob | null> {
+    return async function (id: number | string): Promise<PreviewResponse> {
         const { backendAPI } = config;
 
-        let response = null;
         try {
             const url = `${backendAPI}/${instance}/${id}/preview`;
-            response = await Axios.get(url, {
+            const response = await Axios.get(url, {
                 responseType: 'blob',
+                headers: { Prefer: 'handling=empty' },
             });
+
+            if (response.status === 204) {
+                return PREVIEW_DEFAULT;
+            }
 
             return response.data;
         } catch (errorData) {

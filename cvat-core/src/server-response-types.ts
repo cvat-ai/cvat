@@ -110,8 +110,8 @@ export interface SerializedTask {
     data_compressed_chunk_type: ChunkType
     data_original_chunk_type: ChunkType;
     data_cloud_storage_id: number | null;
-    dimension: DimensionType;
-    media_type?: MediaType | null;
+    dimension?: DimensionType;
+    media_type?: MediaType;
     id: number;
     image_quality: number;
     jobs: {
@@ -121,7 +121,7 @@ export interface SerializedTask {
         validation: number;
     };
     labels: { count: number; url: string; };
-    mode: TaskMode | '';
+    mode?: TaskMode;
     name: string;
     organization_id: number | null;
     overlap: number | null;
@@ -146,7 +146,7 @@ export interface SerializedJob {
     data_chunk_size: number | null;
     data_compressed_chunk_type: ChunkType
     dimension: DimensionType;
-    media_type?: MediaType;
+    media_type: MediaType;
     id: number;
     issues: { count: number; url: string };
     labels: { count: number; url: string };

@@ -103,7 +103,9 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
         );
     }
 
-    if (preview.initialized && !preview.preview) {
+    const imgSrc = preview.preview;
+
+    if (preview.initialized && !imgSrc) {
         return (
             <div className={emptyPreviewClassName || ''} onClick={onClick} aria-hidden>
                 {isAudio ? <SoundOutlined /> : <PictureOutlined />}
@@ -115,7 +117,7 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
         <div className={previewWrapperClassName || ''} aria-hidden>
             <img
                 className={previewClassName || ''}
-                src={preview.preview}
+                src={imgSrc}
                 onClick={onClick}
                 alt='Preview image'
                 aria-hidden

@@ -33,7 +33,7 @@ import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
     DimensionType, JobType, Source, MembershipRole,
-    JobStage, JobState, RQStatus, StorageLocation,
+    JobStage, JobState, RQStatus, StorageLocation, MediaType,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -62,6 +62,10 @@ cvat.config.origin = window.location.origin;
 // A larger value may cause a server-side timeout errors in the current implementation.
 cvat.config.uploadChunkSize = 2;
 cvat.config.opencvPath = config.OPENCV_PATH;
+cvat.config.previewPlaceholders = {
+    [MediaType.POINT_CLOUD]: '/assets/point_cloud_preview.png',
+    [MediaType.AUDIO]: '/assets/audio_preview.png',
+};
 (globalThis as any).cvat = cvat;
 
 function getCore(): typeof cvat {
