@@ -4,6 +4,7 @@
 
 import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { AudioActionTypes } from 'actions/audio-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AudioRegion, AudioState } from '.';
 
@@ -163,7 +164,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SWITCH_AUDIO_PLAY: {
+        case AudioActionTypes.SWITCH_AUDIO_PLAY: {
             return {
                 ...state,
                 player: {
@@ -172,7 +173,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_CURRENT_TIME: {
+        case AudioActionTypes.SET_AUDIO_CURRENT_TIME: {
             return {
                 ...state,
                 player: {
@@ -181,7 +182,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_DURATION: {
+        case AudioActionTypes.SET_AUDIO_DURATION: {
             return {
                 ...state,
                 player: {
@@ -190,7 +191,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_PLAYBACK_RATE: {
+        case AudioActionTypes.SET_AUDIO_PLAYBACK_RATE: {
             return {
                 ...state,
                 player: {
@@ -199,7 +200,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_ZOOM: {
+        case AudioActionTypes.SET_AUDIO_ZOOM: {
             return {
                 ...state,
                 player: {
@@ -208,7 +209,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_VOLUME: {
+        case AudioActionTypes.SET_AUDIO_VOLUME: {
             return {
                 ...state,
                 player: {
@@ -217,7 +218,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_LOOP: {
+        case AudioActionTypes.SET_AUDIO_LOOP: {
             return {
                 ...state,
                 player: {
@@ -226,7 +227,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_REGIONS: {
+        case AudioActionTypes.SET_AUDIO_REGIONS: {
             const diffs = diffRegions(state.player.regions, action.payload.regions);
             if (diffs.length === 0) {
                 return state;
@@ -246,7 +247,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.UPDATE_AUDIO_REGION_ATTRIBUTE: {
+        case AudioActionTypes.UPDATE_AUDIO_REGION_ATTRIBUTE: {
             const { regionId, attrID, value } = action.payload;
             const before = state.player.regions.find((r) => r.id === regionId);
             if (!before) return state;
@@ -265,7 +266,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_ACTIVE_REGION: {
+        case AudioActionTypes.SET_AUDIO_ACTIVE_REGION: {
             return {
                 ...state,
                 player: {
@@ -274,7 +275,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_HOVERED_REGION: {
+        case AudioActionTypes.SET_AUDIO_HOVERED_REGION: {
             return {
                 ...state,
                 player: {
@@ -283,7 +284,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.LOAD_AUDIO_DATA: {
+        case AudioActionTypes.LOAD_AUDIO_DATA: {
             return {
                 ...state,
                 player: {
@@ -295,7 +296,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.LOAD_AUDIO_DATA_SUCCESS: {
+        case AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS: {
             return {
                 ...state,
                 player: {
@@ -306,7 +307,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.LOAD_AUDIO_DATA_FAILED: {
+        case AudioActionTypes.LOAD_AUDIO_DATA_FAILED: {
             return {
                 ...state,
                 player: {
@@ -316,7 +317,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_WAVEFORM_READY: {
+        case AudioActionTypes.SET_WAVEFORM_READY: {
             return {
                 ...state,
                 player: {
@@ -325,7 +326,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.SET_AUDIO_ACTIVE_LABEL: {
+        case AudioActionTypes.SET_AUDIO_ACTIVE_LABEL: {
             return {
                 ...state,
                 player: {
@@ -334,7 +335,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.TOGGLE_AUDIO_REGION_LOCK: {
+        case AudioActionTypes.TOGGLE_AUDIO_REGION_LOCK: {
             const { regionId } = action.payload;
             const before = state.player.regions.find((r) => r.id === regionId);
             if (!before) return state;
@@ -350,7 +351,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.TOGGLE_AUDIO_REGION_HIDDEN: {
+        case AudioActionTypes.TOGGLE_AUDIO_REGION_HIDDEN: {
             const { regionId } = action.payload;
             const before = state.player.regions.find((r) => r.id === regionId);
             if (!before) return state;
@@ -366,7 +367,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS: {
+        case AudioActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS: {
             return {
                 ...state,
                 player: {
@@ -378,7 +379,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 history: { undo: [], redo: [] },
             };
         }
-        case AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_SUCCESS: {
+        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS_SUCCESS: {
             return {
                 ...state,
                 player: {
@@ -388,7 +389,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.AUDIO_UNDO: {
+        case AudioActionTypes.AUDIO_UNDO: {
             const undoStack = [...state.history.undo];
             const entry = undoStack.pop();
             if (!entry) return state;
@@ -408,7 +409,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AnnotationActionTypes.AUDIO_REDO: {
+        case AudioActionTypes.AUDIO_REDO: {
             const redoStack = [...state.history.redo];
             const entry = redoStack.pop();
             if (!entry) return state;

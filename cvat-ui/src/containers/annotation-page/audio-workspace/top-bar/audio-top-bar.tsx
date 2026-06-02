@@ -9,16 +9,18 @@ import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
 
 import {
-    audioRedoAction,
-    audioUndoAction,
     changeWorkspaceAsync,
     saveAnnotationsAsync,
-    setAudioCurrentTime,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
     showFilters as showFiltersAction,
     showStatistics as showStatisticsAction,
-    switchAudioPlay,
 } from 'actions/annotation-actions';
+import {
+    audioRedoAction,
+    audioUndoAction,
+    setAudioCurrentTime,
+    switchAudioPlay,
+} from 'actions/audio-actions';
 import AudioTopBarComponent from 'components/annotation-page/audio-workspace/top-bar/audio-top-bar';
 import { Job } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';

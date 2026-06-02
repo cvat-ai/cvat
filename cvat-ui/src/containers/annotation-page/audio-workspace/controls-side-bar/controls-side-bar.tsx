@@ -5,15 +5,15 @@ import { computeMaxZoom } from 'components/annotation-page/audio-workspace/utils
 import { ActiveControl, CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import { ThunkDispatch } from 'utils/redux';
+import { updateActiveControl } from 'actions/annotation-actions';
 import {
-    updateActiveControl,
     setAudioZoom,
     setAudioPlaybackRate,
     setAudioVolume,
     setAudioLoop,
     setAudioActiveLabel,
     extendAudioRegionFromLastAsync,
-} from 'actions/annotation-actions';
+} from 'actions/audio-actions';
 
 interface StateToProps {
     activeControl: ActiveControl;

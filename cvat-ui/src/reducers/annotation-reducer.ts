@@ -6,6 +6,7 @@
 import _ from 'lodash';
 import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { AudioActionTypes } from 'actions/audio-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
@@ -336,8 +337,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_FAILED: {
+        case AudioActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS:
+        case AudioActionTypes.LOAD_AUDIO_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 annotations: {
@@ -346,7 +347,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS: {
+        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS: {
             return {
                 ...state,
                 annotations: {
@@ -358,8 +359,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_FAILED: {
+        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS_SUCCESS:
+        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 annotations: {

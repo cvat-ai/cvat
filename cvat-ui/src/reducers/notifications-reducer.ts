@@ -13,6 +13,7 @@ import { TasksActionTypes } from 'actions/tasks-actions';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { AboutActionTypes } from 'actions/about-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { AudioActionTypes } from 'actions/audio-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
@@ -1117,7 +1118,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED:
-        case AnnotationActionTypes.SAVE_AUDIO_ANNOTATIONS_FAILED: {
+        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 errors: {
@@ -1352,7 +1353,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.LOAD_AUDIO_ANNOTATIONS_FAILED: {
+        case AudioActionTypes.LOAD_AUDIO_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 errors: {

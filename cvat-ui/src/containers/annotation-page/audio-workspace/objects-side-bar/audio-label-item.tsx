@@ -6,7 +6,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { setAudioRegions } from 'actions/annotation-actions';
+import { setAudioRegions } from 'actions/audio-actions';
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
 import { AudioRegion, CombinedState } from 'reducers';
 

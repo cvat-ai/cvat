@@ -17,8 +17,8 @@ import {
     setAudioZoom,
     updateAudioRegionAttribute,
     setWaveformReady,
-    updateActiveControl,
-} from 'actions/annotation-actions';
+} from 'actions/audio-actions';
+import { updateActiveControl } from 'actions/annotation-actions';
 
 interface StateToProps {
     isPlaying: boolean;

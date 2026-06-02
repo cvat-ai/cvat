@@ -14,7 +14,7 @@ import {
     toggleAudioRegionHidden,
     copyAudioRegionAsync,
     updateAudioRegionAsync,
-} from 'actions/annotation-actions';
+} from 'actions/audio-actions';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';

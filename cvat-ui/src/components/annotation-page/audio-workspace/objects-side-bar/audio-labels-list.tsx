@@ -9,7 +9,7 @@ import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
 import { CombinedState } from 'reducers';
-import { setAudioActiveLabel, setAudioRegions } from 'actions/annotation-actions';
+import { setAudioActiveLabel, setAudioRegions } from 'actions/audio-actions';
 import AudioLabelItemContainer from 'containers/annotation-page/audio-workspace/objects-side-bar/audio-label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
