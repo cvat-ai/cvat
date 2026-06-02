@@ -7420,8 +7420,7 @@ components:
       enum:
       - error
       type: string
-      description: |-
-        * `error` - ERROR
+      description: '* `error` - ERROR'
     AnnotationConflictType:
       enum:
       - missing_annotation
