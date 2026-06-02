@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, { useState } from 'react';
 import { PlayCircleOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';

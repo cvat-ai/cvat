@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 import { colors as paletteColors } from 'cvat-core/src/enums';
 import { AudioRegion } from 'reducers';

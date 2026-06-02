@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 const STYLE_ID = 'cvat-scrollbar-style';
 
 const SCROLLBAR_CSS = `

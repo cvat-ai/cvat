@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';

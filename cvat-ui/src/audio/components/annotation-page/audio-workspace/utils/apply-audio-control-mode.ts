@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import type RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 import { ActiveControl, AudioRegion } from 'reducers';

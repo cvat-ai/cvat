@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 export const ZOOM_MIN = 1;
 const MAX_PX_PER_SEC = 2500;
 const MAX_TOTAL_PX = 300000;

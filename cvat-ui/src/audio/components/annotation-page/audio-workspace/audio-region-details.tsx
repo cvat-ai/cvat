@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, { useCallback, useState } from 'react';
 import Select from 'antd/lib/select';
 import Collapse from 'antd/lib/collapse';

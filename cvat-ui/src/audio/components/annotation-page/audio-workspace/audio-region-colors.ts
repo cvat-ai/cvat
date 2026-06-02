@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { AudioRegion, ColorBy } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import { hexToRgba } from 'audio/utils/hex-color';

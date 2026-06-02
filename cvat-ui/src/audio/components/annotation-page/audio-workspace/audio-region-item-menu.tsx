@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';

@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import { useEffect, useRef } from 'react';
 import type WaveSurfer from 'wavesurfer.js';
 

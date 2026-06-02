@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import jsonLogic from 'json-logic-js';
 
 import { AudioRegion } from 'reducers';

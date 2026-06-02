@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, {
     useRef, useState, useEffect, useCallback, useMemo,
 } from 'react';

@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';

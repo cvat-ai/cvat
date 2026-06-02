@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, { useState } from 'react';
 import Popover from 'antd/lib/popover';
 import Slider from 'antd/lib/slider';

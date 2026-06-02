@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RetweetOutlined } from '@ant-design/icons';
