@@ -89,6 +89,8 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     }, {})
 );
 
+type AnnotationObject = Shape | Tag | Track | Interval;
+
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
@@ -99,7 +101,7 @@ export default class Collection {
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
     private intervals: Interval[];
-    private objects: Record<number, Shape | Tag | Track | Interval>;
+    private objects: Record<number, AnnotationObject>;
     private groups: { max: number };
     private injection: BasicInjection;
 
@@ -308,21 +310,8 @@ export default class Collection {
         removed: Partial<Omit<SerializedCollection, 'version'>>,
         frame: number,
     ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; intervals: Interval[]; } {
-        const fullAppended: Omit<SerializedCollection, 'version'> = {
-            shapes: appended.shapes ?? [],
-            tags: appended.tags ?? [],
-            tracks: appended.tracks ?? [],
-            intervals: appended.intervals ?? [],
-        };
-        const fullRemoved: Omit<SerializedCollection, 'version'> = {
-            shapes: removed.shapes ?? [],
-            tags: removed.tags ?? [],
-            tracks: removed.tracks ?? [],
-            intervals: removed.intervals ?? [],
-        };
-
         const isCollectionConsistent = [].concat(
-            fullRemoved.shapes, fullRemoved.tags, fullRemoved.tracks, fullRemoved.intervals,
+            removed.shapes ?? [], removed.tags ?? [], removed.tracks ?? [], removed.intervals ?? [],
         ).every((object) => typeof object.clientID === 'number' &&
             Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
 
@@ -330,12 +319,17 @@ export default class Collection {
             throw new ArgumentError('Objects required to be deleted were not found in the collection');
         }
 
-        const removedCollection: (Shape | Tag | Track | Interval)[] = [].concat(
-            fullRemoved.shapes, fullRemoved.tags, fullRemoved.tracks, fullRemoved.intervals,
+        const removedCollection: AnnotationObject[] = [].concat(
+            removed.shapes ?? [], removed.tags ?? [], removed.tracks ?? [], removed.intervals ?? [],
         ).map((object) => this.objects[object.clientID as number]);
 
-        const imported = this.import(fullAppended);
-        const appendedCollection = ([] as (Shape | Tag | Track | Interval)[])
+        const imported = this.import({
+            shapes: appended.shapes ?? [],
+            tags: appended.tags ?? [],
+            tracks: appended.tracks ?? [],
+            intervals: appended.intervals ?? [],
+        });
+        const appendedCollection = ([] as AnnotationObject[])
             .concat(imported.shapes, imported.tags, imported.tracks, imported.intervals);
         if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
             // nothing to commit
