@@ -12,7 +12,7 @@ import Layout from 'antd/lib/layout';
 
 import { CombinedState } from 'reducers';
 import { collapseSidebar as collapseSidebarAction } from 'actions/annotation-actions';
-import AudioAppearanceBlock from 'components/annotation-page/audio-workspace/audio-appearance-block';
+import AudioAppearanceBlock from 'audio/components/annotation-page/audio-workspace/audio-appearance-block';
 import AudioLabelsList from './audio-labels-list';
 
 interface OwnProps {

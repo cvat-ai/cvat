@@ -107,11 +107,9 @@ export function attachRegionAutoScroll(
     document.addEventListener('pointercancel', onPointerCancel);
     document.addEventListener('pointerlockchange', onPointerLockChange);
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const pluginAny = plugin as any;
     const originalAdjustScroll = pluginAny.adjustScroll?.bind(plugin);
     pluginAny.adjustScroll = () => undefined;
-    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     return () => {
         plugin.un('region-update', onRegionUpdate);
@@ -122,7 +120,6 @@ export function attachRegionAutoScroll(
         document.removeEventListener('pointercancel', onPointerCancel);
         document.removeEventListener('pointerlockchange', onPointerLockChange);
         if (originalAdjustScroll) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (plugin as any).adjustScroll = originalAdjustScroll;
         }
         releaseLock();

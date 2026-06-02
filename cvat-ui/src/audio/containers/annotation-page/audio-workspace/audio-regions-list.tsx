@@ -1,8 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import AudioRegionsList from 'components/annotation-page/audio-workspace/audio-regions-list';
-import { filterAudioRegions } from 'components/annotation-page/audio-workspace/utils/filter-audio-regions';
+import AudioRegionsList from 'audio/components/annotation-page/audio-workspace/audio-regions-list';
+import { filterAudioRegions } from 'audio/components/annotation-page/audio-workspace/utils/filter-audio-regions';
 import { AudioRegion, CombinedState } from 'reducers';
 import {
     audioActions,

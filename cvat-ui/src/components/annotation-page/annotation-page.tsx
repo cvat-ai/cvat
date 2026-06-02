@@ -18,13 +18,13 @@ import StandardWorkspaceComponent from 'components/annotation-page/standard-work
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
-import AudioFiltersModalComponent from 'components/annotation-page/audio-workspace/top-bar/audio-filters-modal';
+import AudioFiltersModalComponent from 'audio/components/annotation-page/audio-workspace/top-bar/audio-filters-modal';
 import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
-import AudioStatisticsModalComponent from 'components/annotation-page/audio-workspace/top-bar/audio-statistics-modal';
+import AudioStatisticsModalComponent from 'audio/components/annotation-page/audio-workspace/top-bar/audio-statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
-import AudioTopBarContainer from 'containers/annotation-page/audio-workspace/top-bar/audio-top-bar';
-import AudioWorkspaceComponent from 'components/annotation-page/audio-workspace/audio-workspace';
+import AudioTopBarContainer from 'audio/containers/annotation-page/audio-workspace/top-bar/audio-top-bar';
+import AudioWorkspaceComponent from 'audio/components/annotation-page/audio-workspace/audio-workspace';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';

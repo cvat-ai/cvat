@@ -11,7 +11,7 @@ import {
 import type { SerializedInterval } from 'cvat-core-wrapper';
 import serverProxy from 'cvat-core/src/server-proxy';
 import { AudioRegion } from 'reducers';
-import { pickInstanceColor } from 'components/annotation-page/audio-workspace/utils/create-audio-region';
+import { pickInstanceColor } from 'audio/components/annotation-page/audio-workspace/utils/create-audio-region';
 import { updateJobAsync } from './jobs-actions';
 
 export enum AudioActionTypes {

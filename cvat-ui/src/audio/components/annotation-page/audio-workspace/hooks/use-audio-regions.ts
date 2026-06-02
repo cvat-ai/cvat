@@ -19,7 +19,7 @@ const ACTIVE_BORDER_FALLBACK = '#6366F1';
 const ACTIVE_Z_OFFSET = 10000;
 
 function clampRegionDragToBounds(region: Region): void {
-    /* eslint-disable @typescript-eslint/no-explicit-any, no-underscore-dangle */
+    /* eslint-disable no-underscore-dangle */
     const r = region as any;
     const original = r._onUpdate.bind(r) as (
         dx: number, side?: 'start' | 'end', startTime?: number,
@@ -39,7 +39,7 @@ function clampRegionDragToBounds(region: Region): void {
         const clampedSec = Math.max(-region.start, Math.min(total - region.end, deltaSec));
         original((clampedSec / total) * width, side, startTime);
     };
-    /* eslint-enable @typescript-eslint/no-explicit-any, no-underscore-dangle */
+    /* eslint-enable no-underscore-dangle */
 }
 
 interface Params {

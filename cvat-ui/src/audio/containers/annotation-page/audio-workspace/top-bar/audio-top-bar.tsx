@@ -16,7 +16,7 @@ import {
     showStatistics as showStatisticsAction,
 } from 'actions/annotation-actions';
 import { audioActions } from 'actions/audio-actions';
-import AudioTopBarComponent from 'components/annotation-page/audio-workspace/top-bar/audio-top-bar';
+import AudioTopBarComponent from 'audio/components/annotation-page/audio-workspace/top-bar/audio-top-bar';
 import { Job } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
 import { KeyMap } from 'utils/mousetrap-react';
