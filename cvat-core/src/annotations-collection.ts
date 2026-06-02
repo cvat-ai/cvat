@@ -89,7 +89,7 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     }, {})
 );
 
-type AnnotationObject = Shape | Tag | Track | Interval;
+type AnnotationObject = Shape | Tag | Track;
 
 // AUDIO TODO:
 // Now collection only used in terms of fetch intervals from the server and give them to UI.
@@ -300,8 +300,7 @@ export default class Collection {
             const color = colors[clientID % colors.length];
             const intervalModel = new Interval(interval, clientID, color, this.injection);
             this.intervals.push(intervalModel);
-            this.objects[clientID] = intervalModel;
-
+            // do not keep in this.objects as it is currently not necessary
             result.intervals.push(intervalModel);
         }
 
@@ -313,26 +312,19 @@ export default class Collection {
         removed: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         frame: number,
     ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; } {
-        const isCollectionConsistent = [].concat(
-            removed.shapes ?? [], removed.tags ?? [], removed.tracks ?? [],
-        ).every((object) => typeof object.clientID === 'number' &&
-            Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
+        const isCollectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
+            .every((object) => typeof object.clientID === 'number' &&
+                Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
 
         if (!isCollectionConsistent) {
             throw new ArgumentError('Objects required to be deleted were not found in the collection');
         }
 
-        const removedCollection: AnnotationObject[] = [].concat(
-            removed.shapes ?? [], removed.tags ?? [], removed.tracks ?? [],
-        ).map((object) => this.objects[object.clientID as number]);
+        const removedCollection: AnnotationObject[] = [].concat(removed.shapes, removed.tags, removed.tracks)
+            .map((object) => this.objects[object.clientID as number]);
 
-        const imported = this.import({
-            shapes: appended.shapes ?? [],
-            tags: appended.tags ?? [],
-            tracks: appended.tracks ?? [],
-            intervals: [],
-        });
-        const appendedCollection = ([] as AnnotationObject[])
+        const imported = this.import({ ...appended, intervals: [] });
+        const appendedCollection = ([] as (AnnotationObject)[])
             .concat(imported.shapes, imported.tags, imported.tracks);
         if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
             // nothing to commit
@@ -1183,10 +1175,6 @@ export default class Collection {
                 continue;
             }
 
-            if (object instanceof Interval) {
-                continue;
-            }
-
             let objectType = null;
             if (object instanceof Shape) {
                 objectType = 'shape';
@@ -1374,15 +1362,9 @@ export default class Collection {
         }
 
         // Add constructed objects to a collection
-        const imported = this.import({
-            ...constructed,
-            intervals: [],
-        });
-        const importedArray: AnnotationObject[] = [
-            ...imported.tags,
-            ...imported.tracks,
-            ...imported.shapes,
-        ];
+        const imported = this.import({ ...constructed, intervals: [] });
+        const importedArray = ([] as (Tag | Track | Shape)[])
+            .concat(imported.tags, imported.tracks, imported.shapes);
         const additionalUndo = [];
         const additionalRedo = [];
         const additionalClientIDs = [];
