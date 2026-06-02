@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    shapeFactory, trackFactory, Track, Shape, Tag, Interval,
+    shapeFactory, trackFactory, Track, Shape, Tag,
     MaskShape, BasicInjection, SkeletonShape,
     SkeletonTrack, PolygonShape, CuboidShape,
     RectangleShape, PolylineShape, PointsShape, EllipseShape,
@@ -103,7 +103,7 @@ export default class Collection {
     private shapes: Record<number, Shape[]>;
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
-    private intervals: Interval[];
+    private intervals: SerializedInterval[];
     private objects: Record<number, AnnotationObject>;
     private groups: { max: number };
     private injection: BasicInjection;
@@ -253,7 +253,7 @@ export default class Collection {
         tags: Tag[];
         shapes: Shape[];
         tracks: Track[];
-        intervals: Interval[];
+        intervals: SerializedInterval[];
     } {
         const result = {
             tags: [],
@@ -296,12 +296,8 @@ export default class Collection {
         }
 
         for (const interval of data.intervals ?? []) {
-            const clientID = this.injection.nextClientID();
-            const color = colors[clientID % colors.length];
-            const intervalModel = new Interval(interval, clientID, color, this.injection);
-            this.intervals.push(intervalModel);
-            // do not keep in this.objects as it is currently not necessary
-            result.intervals.push(intervalModel);
+            this.intervals.push(interval);
+            result.intervals.push(interval);
         }
 
         return result;
@@ -366,9 +362,7 @@ export default class Collection {
     }
 
     public getAllIntervals(): SerializedInterval[] {
-        return this.intervals
-            .filter((interval) => !interval.removed)
-            .map((interval) => interval.toJSON());
+        return this.intervals.map((interval) => ({ ...interval }));
     }
 
     public export(): Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'> {
