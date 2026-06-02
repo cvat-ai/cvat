@@ -23,6 +23,12 @@ type Props = TableProps & {
     onFilterDataSource?(data: TableProps['dataSource']): void;
     onChangeColumnVisibility?(id: number, isHidden: boolean): void;
     renderExtraActions?(): JSX.Element;
+    columnVisibility?: {
+        groups?: Record<string, {
+            maxVisible?: number;
+            hint?: string;
+        }>;
+    };
     queryBuilder?: {
         config: Partial<Config>;
         memoryKey: string;
@@ -38,6 +44,18 @@ type Props = TableProps & {
 
 function stringifyDataIndex(dataIndex: string | string[]): string {
     return [dataIndex].flat(Number.MAX_SAFE_INTEGER).join('.');
+}
+
+function getColumnTitle(column: NonNullable<TableProps['columns']>[0]): string {
+    if (typeof column.title === 'function') {
+        return `${column.title({})}`;
+    }
+
+    if (typeof column.title === 'string') {
+        return column.title;
+    }
+
+    return '';
 }
 
 function getValueFromDataItem<T>(
@@ -72,6 +90,7 @@ function CVATTable(props: Props): JSX.Element {
         dataSource,
         csvExport,
         columns,
+        columnVisibility,
         ...rest
     } = props;
 
@@ -79,6 +98,7 @@ function CVATTable(props: Props): JSX.Element {
     const [filterValue, setFilterValue] = useState<string | null>(null);
     const [searchPhrase, setSearchPhrase] = useState<string | null>(null);
     const [visibility, setVisibility] = useState(defaultVisibility);
+    const [columnSearchPhrase, setColumnSearchPhrase] = useState('');
     const [filteredDataSource, setFilteredDataSource] = useState<typeof dataSource>(dataSource);
     const [modifiedColumns, setModifiedColumns] = useState<NonNullable<typeof columns>>([]);
 
@@ -216,33 +236,78 @@ function CVATTable(props: Props): JSX.Element {
                             placement='right'
                             trigger={['click']}
                             content={() => {
-                                const items = modifiedColumns.map((column, idx: number) => (
-                                    <Checkbox
-                                        key={idx}
-                                        onChange={(e: CheckboxChangeEvent) => {
-                                            const newIsHidden = !e.target.checked;
-                                            setModifiedColumns([
-                                                ...modifiedColumns.slice(0, idx),
-                                                {
-                                                    ...column,
-                                                    hidden: newIsHidden,
-                                                },
-                                                ...modifiedColumns.slice(idx + 1),
-                                            ]);
+                                const groups = columnVisibility?.groups ?? {};
+                                const groupHints = Object.entries(groups).map(([group, params]) => {
+                                    if (!params.maxVisible) {
+                                        return null;
+                                    }
 
-                                            if (onChangeColumnVisibility) {
-                                                onChangeColumnVisibility(idx, newIsHidden);
-                                            }
-                                        }}
-                                        checked={!(column.hidden ?? false)}
-                                    >
-                                        {typeof column.title === 'function' ?
-                                            column.title({}) : (column.title ?? '')}
-                                    </Checkbox>
-                                ));
+                                    const visibleCount = modifiedColumns.filter((column) => {
+                                        const columnGroup = (column as { visibilityGroup?: string }).visibilityGroup;
+                                        return columnGroup === group && !(column.hidden ?? false);
+                                    }).length;
+
+                                    return (
+                                        <Text key={group} type='secondary'>
+                                            {params.hint ?? `You can select up to ${params.maxVisible} columns`}
+                                            {` (${visibleCount} of ${params.maxVisible})`}
+                                        </Text>
+                                    );
+                                }).filter((item): item is JSX.Element => item !== null);
+
+                                const items = modifiedColumns.map((column, idx: number) => {
+                                    const title = getColumnTitle(column);
+                                    if (columnSearchPhrase &&
+                                        !title.toLowerCase().includes(columnSearchPhrase.toLowerCase())) {
+                                        return null;
+                                    }
+
+                                    const columnGroup = (column as { visibilityGroup?: string }).visibilityGroup;
+                                    const maxVisible = columnGroup ? groups[columnGroup]?.maxVisible : undefined;
+                                    const visibleCount = columnGroup ? modifiedColumns.filter((modifiedColumn) => {
+                                        const modifiedColumnGroup = (
+                                            modifiedColumn as { visibilityGroup?: string }
+                                        ).visibilityGroup;
+                                        return modifiedColumnGroup === columnGroup && !(modifiedColumn.hidden ?? false);
+                                    }).length : 0;
+                                    const checked = !(column.hidden ?? false);
+                                    const disabled = !checked && typeof maxVisible === 'number' && visibleCount >= maxVisible;
+
+                                    return (
+                                        <Checkbox
+                                            key={idx}
+                                            disabled={disabled}
+                                            onChange={(e: CheckboxChangeEvent) => {
+                                                const newIsHidden = !e.target.checked;
+                                                setModifiedColumns([
+                                                    ...modifiedColumns.slice(0, idx),
+                                                    {
+                                                        ...column,
+                                                        hidden: newIsHidden,
+                                                    },
+                                                    ...modifiedColumns.slice(idx + 1),
+                                                ]);
+
+                                                if (onChangeColumnVisibility) {
+                                                    onChangeColumnVisibility(idx, newIsHidden);
+                                                }
+                                            }}
+                                            checked={checked}
+                                        >
+                                            {title}
+                                        </Checkbox>
+                                    );
+                                });
 
                                 return (
                                     <div className='cvat-table-columns-settings-menu'>
+                                        <Input.Search
+                                            size='small'
+                                            placeholder='Search'
+                                            onChange={(event) => setColumnSearchPhrase(event.target.value)}
+                                            value={columnSearchPhrase}
+                                        />
+                                        {groupHints}
                                         {items}
                                     </div>
                                 );
