@@ -14,6 +14,7 @@ import { defaultTaskSpec } from '../../support/default-specs';
 it('Prepare for testing', () => {
     cy.log('Seeding shared data');
     cy.visit('/auth/login');
+    throw Error('Something very bad happened during setup');
     const attributes = [
         { name: attrName, values: textDefaultValue, type: 'text' },
         { ...multiAttrParams },
@@ -29,7 +30,7 @@ it('Prepare for testing', () => {
         frameFilter: `step=${advancedConfigurationParams.frameStep}`,
     });
     cy.headlessLogin();
-    cy.intercept('POST', '/api/tasks**').as('createTaskRequest');
+    cy.intercept('POST', '/api  /tasks**').as('createTaskRequest');
     cy.headlessCreateTask(taskSpec, dataSpec, extras);
     cy.wait('@createTaskRequest');
 });
