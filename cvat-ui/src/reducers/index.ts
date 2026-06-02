@@ -837,11 +837,7 @@ export enum ActiveControl {
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
-    PHOTO_CONTEXT = 'PHOTO_CONTEXT',
     OPENCV_TOOLS = 'opencv_tools',
-    AUDIO_REGION_CREATE = 'audio_region_create',
-    AUDIO_REGION_EDIT = 'audio_region_edit',
-    AUDIO_REGION_RECORD = 'audio_region_record',
 }
 
 export enum StatesOrdering {
@@ -1014,7 +1010,7 @@ export enum Workspace {
     SINGLE_SHAPE = 'Single shape',
     TAGS = 'Tag annotation',
     REVIEW = 'Review',
-    AUDIO = 'Audio',
+    AUDIO = 'Audio annotation',
 }
 
 export enum GridColor {
