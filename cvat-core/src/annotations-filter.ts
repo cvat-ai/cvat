@@ -241,7 +241,7 @@ export default class AnnotationsFilter {
     }
 
     private _convertSerializedCollection(
-        collection: Omit<SerializedCollection, 'version' | 'intervals'>,
+        collection: Omit<SerializedCollection, 'intervals'>,
         labelsSpec: Label[],
     ): {
         shapes: ConvertedObjectData[];
@@ -397,7 +397,7 @@ export default class AnnotationsFilter {
     }
 
     public filterSerializedCollection(
-        collection: Omit<SerializedCollection, 'version' | 'intervals'>,
+        collection: Omit<SerializedCollection, 'intervals'>,
         labelsSpec: Label[],
         filters: object[],
     ): { shapes: number[]; tags: number[]; tracks: number[]; } {

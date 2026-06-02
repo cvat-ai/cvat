@@ -1797,7 +1797,8 @@ async function updateAnnotations(
 
     let response = null;
     try {
-        response = await Axios(url, { method, data, params });
+        // Annotation version is unused by the server now, but older API schema still accepts it.
+        response = await Axios(url, { method, data: { ...data, version: 0 }, params });
     } catch (errorData) {
         throw generateError(errorData);
     }

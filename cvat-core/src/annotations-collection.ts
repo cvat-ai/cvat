@@ -246,7 +246,7 @@ export default class Collection {
         return updatedStates;
     }
 
-    public import(data: Omit<SerializedCollection, 'version'>): {
+    public import(data: SerializedCollection): {
         tags: Tag[];
         shapes: Shape[];
         tracks: Track[];
@@ -306,8 +306,8 @@ export default class Collection {
     }
 
     public commit(
-        appended: Partial<Omit<SerializedCollection, 'version'>>,
-        removed: Partial<Omit<SerializedCollection, 'version'>>,
+        appended: Partial<SerializedCollection>,
+        removed: Partial<SerializedCollection>,
         frame: number,
     ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; intervals: Interval[]; } {
         const isCollectionConsistent = [].concat(
@@ -376,7 +376,7 @@ export default class Collection {
             .map((interval) => interval.toJSON());
     }
 
-    public export(): Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags' | 'intervals'> {
+    public export(): SerializedCollection {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed)
                 .map((track) => track.toJSON() as SerializedTrack),
@@ -1385,8 +1385,11 @@ export default class Collection {
 
         // Add constructed objects to a collection
         const imported = this.import(constructed);
-        const importedArray: (Tag | Track | Shape | Interval)[] = [
-            ...imported.tags, ...imported.tracks, ...imported.shapes, ...imported.intervals,
+        const importedArray: AnnotationObject[] = [
+            ...imported.tags,
+            ...imported.tracks,
+            ...imported.shapes,
+            ...imported.intervals,
         ];
         const additionalUndo = [];
         const additionalRedo = [];

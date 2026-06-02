@@ -19,9 +19,9 @@ interface ExtractedIDs {
 }
 
 interface SplittedCollection {
-    created: Omit<SerializedCollection, 'version'>;
-    updated: Omit<SerializedCollection, 'version'>;
-    deleted: Omit<SerializedCollection, 'version'>;
+    created: SerializedCollection;
+    updated: SerializedCollection;
+    deleted: SerializedCollection;
 }
 
 type CollectionObject = SerializedShape | SerializedTrack | SerializedTag | SerializedInterval;
@@ -69,7 +69,6 @@ function removeIDFromObject<T extends SerializedShape | SerializedTag | Serializ
 export default class AnnotationsSaver {
     private sessionType: 'task' | 'job';
     private id: number;
-    public version: number;
     private collection: any;
     private hash: string;
     private initialObjects: {
@@ -79,10 +78,9 @@ export default class AnnotationsSaver {
         intervals: Record<number, SerializedCollection['intervals'][0]>,
     };
 
-    constructor(version: number, collection, session: Task | Job) {
+    constructor(collection, session: Task | Job) {
         this.sessionType = session instanceof Task ? 'task' : 'job';
         this.id = session.id;
-        this.version = version;
         this.collection = collection;
         this.hash = this._getHash();
         this.initialObjects = {
@@ -206,7 +204,7 @@ export default class AnnotationsSaver {
         }
     }
 
-    _extractClientIDs(exported: Omit<SerializedCollection, 'version'>): ExtractedIDs {
+    _extractClientIDs(exported: SerializedCollection): ExtractedIDs {
         // Receive client IDs before saving
         const indexes = {
             tracks: exported.tracks.map((track) => track.clientID),
@@ -226,7 +224,6 @@ export default class AnnotationsSaver {
     }
 
     _updateInitialObjects(responseBody: SerializedCollection): void {
-        this.version = responseBody.version;
         for (const type of COLLECTION_KEYS) {
             for (const object of responseBody[type]) {
                 this.initialObjects[type][object.id] = object;
@@ -251,8 +248,7 @@ export default class AnnotationsSaver {
                 }
             }
 
-            const savedData = await this._put({ ...exported, version: this.version });
-            this.version = savedData.version;
+            const savedData = await this._put(exported);
             this.collection.flush = false;
 
             this._updateCreatedObjects(savedData, indexes);
@@ -360,7 +356,6 @@ export default class AnnotationsSaver {
                                         tracks: [],
                                         tags: [],
                                         intervals: [],
-                                        version: serverCollection.version,
                                     };
                                     for (const type of COLLECTION_KEYS) {
                                         for (const obj of requestBody[type]) {
@@ -392,7 +387,7 @@ export default class AnnotationsSaver {
                 updated.intervals.length) {
                 onUpdate('Updated objects are being saved on the server');
                 const updatedIndexes = this._extractClientIDs(updated);
-                const requestBody = { ...updated, version: this.version };
+                const requestBody = updated;
                 let updatedData = null;
                 try {
                     updatedData = await this._update(requestBody);
@@ -400,7 +395,6 @@ export default class AnnotationsSaver {
                     updatedData = await retryIf504Status(error, requestBody, 'update');
                 }
 
-                this.version = updatedData.version;
                 this._updateCreatedObjects(updatedData, updatedIndexes);
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of updatedData[type]) {
@@ -413,7 +407,7 @@ export default class AnnotationsSaver {
                 deleted.intervals.length) {
                 onUpdate('Deleted objects are being deleted from the server');
                 this._extractClientIDs(deleted);
-                const requestBody = { ...deleted, version: this.version };
+                const requestBody = deleted;
                 let deletedData = null;
                 try {
                     deletedData = await this._delete(requestBody);
@@ -421,7 +415,6 @@ export default class AnnotationsSaver {
                     deletedData = await retryIf504Status(error, requestBody, 'delete');
                 }
 
-                this.version = deletedData.version;
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of deletedData[type]) {
                         delete this.initialObjects[type][object.id];
@@ -433,7 +426,7 @@ export default class AnnotationsSaver {
                 created.intervals.length) {
                 onUpdate('Created objects are being saved on the server');
                 const createdIndexes = this._extractClientIDs(created);
-                const requestBody = { ...created, version: this.version };
+                const requestBody = created;
                 let createdData = null;
                 try {
                     createdData = await this._create(requestBody);
@@ -441,7 +434,6 @@ export default class AnnotationsSaver {
                     createdData = await retryIf504Status(error, requestBody, 'create');
                 }
 
-                this.version = createdData.version;
                 this._updateCreatedObjects(createdData, createdIndexes);
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of createdData[type]) {

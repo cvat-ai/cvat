@@ -116,7 +116,7 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
         });
 
         collection.import(serializedAnnotations);
-        const saver = new AnnotationsSaver(serializedAnnotations.version, collection, session);
+        const saver = new AnnotationsSaver(collection, session);
         cache.collection.set(session, { collection, saver });
         cache.history.set(session, history);
     }

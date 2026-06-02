@@ -429,11 +429,11 @@ export class Session {
             state: ObjectState,
             distance: number | null,
         }>;
-        import: (data: Omit<SerializedCollection, 'version'>) => Promise<void>;
-        export: () => Promise<Omit<SerializedCollection, 'version'>>;
+        import: (data: SerializedCollection) => Promise<void>;
+        export: () => Promise<SerializedCollection>;
         commit: (
-            added: Partial<Omit<SerializedCollection, 'version'>>,
-            removed: Partial<Omit<SerializedCollection, 'version'>>,
+            added: Partial<SerializedCollection>,
+            removed: Partial<SerializedCollection>,
             frame: number,
         ) => Promise<void>;
         statistics: () => Promise<Statistics>;

@@ -469,7 +469,7 @@ export function saveAudioAnnotationsAsync(): ThunkAction {
                 'job',
                 jobInstance.id,
                 {
-                    shapes: [], tracks: [], tags: [], intervals, version: 0,
+                    shapes: [], tracks: [], tags: [], intervals,
                 },
                 'put',
             );

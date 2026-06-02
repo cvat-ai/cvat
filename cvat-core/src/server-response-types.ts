@@ -499,7 +499,6 @@ export interface SerializedCollection {
     shapes: SerializedShape[];
     tracks: SerializedTrack[];
     intervals: SerializedInterval[];
-    version: number;
 }
 
 export interface SerializedCloudStorage {
