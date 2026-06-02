@@ -276,7 +276,6 @@ export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 export interface SerializedQualitySettingsData {
     id?: number;
     task_id?: number;
-    project_id?: number;
     target_metric?: string;
     target_metric_threshold?: number;
     max_validations_per_job?: number;
@@ -297,13 +296,6 @@ export interface SerializedQualitySettingsData {
     descriptions?: Record<string, string>;
     inherit?: boolean;
     job_filter?: string;
-    transcription_requirements?: SerializedTranscriptionRequirement[];
-}
-
-export interface SerializedTranscriptionRequirement {
-    attribute_id: number;
-    metric: 'wer' | 'cer';
-    acceptance_threshold: number;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {
