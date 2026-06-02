@@ -42,20 +42,10 @@ type Props = TableProps & {
     searchDataIndex?: (string | string[])[];
 };
 
+type CVATColumn = NonNullable<TableProps['columns']>[0] & { visibilityGroup?: string };
+
 function stringifyDataIndex(dataIndex: string | string[]): string {
     return [dataIndex].flat(Number.MAX_SAFE_INTEGER).join('.');
-}
-
-function getColumnTitle(column: NonNullable<TableProps['columns']>[0]): string {
-    if (typeof column.title === 'function') {
-        return `${column.title({})}`;
-    }
-
-    if (typeof column.title === 'string') {
-        return column.title;
-    }
-
-    return '';
 }
 
 function getValueFromDataItem<T>(
@@ -238,12 +228,12 @@ function CVATTable(props: Props): JSX.Element {
                             content={() => {
                                 const groups = columnVisibility?.groups ?? {};
                                 const groupHints = Object.entries(groups).map(([group, params]) => {
-                                    if (!params.maxVisible) {
+                                    if (params.maxVisible == null) {
                                         return null;
                                     }
 
                                     const visibleCount = modifiedColumns.filter((column) => {
-                                        const columnGroup = (column as { visibilityGroup?: string }).visibilityGroup;
+                                        const columnGroup = (column as CVATColumn).visibilityGroup;
                                         return columnGroup === group && !(column.hidden ?? false);
                                     }).length;
 
@@ -256,22 +246,20 @@ function CVATTable(props: Props): JSX.Element {
                                 }).filter((item): item is JSX.Element => item !== null);
 
                                 const items = modifiedColumns.map((column, idx: number) => {
-                                    const title = getColumnTitle(column);
+                                    const title = typeof column.title === 'string' ? column.title : '';
                                     if (columnSearchPhrase &&
                                         !title.toLowerCase().includes(columnSearchPhrase.toLowerCase())) {
                                         return null;
                                     }
 
-                                    const columnGroup = (column as { visibilityGroup?: string }).visibilityGroup;
+                                    const columnGroup = (column as CVATColumn).visibilityGroup;
                                     const maxVisible = columnGroup ? groups[columnGroup]?.maxVisible : undefined;
                                     const visibleCount = columnGroup ? modifiedColumns.filter((modifiedColumn) => {
-                                        const modifiedColumnGroup = (
-                                            modifiedColumn as { visibilityGroup?: string }
-                                        ).visibilityGroup;
+                                        const modifiedColumnGroup = (modifiedColumn as CVATColumn).visibilityGroup;
                                         return modifiedColumnGroup === columnGroup && !(modifiedColumn.hidden ?? false);
                                     }).length : 0;
                                     const checked = !(column.hidden ?? false);
-                                    const disabled = !checked && typeof maxVisible === 'number' && visibleCount >= maxVisible;
+                                    const disabled = !checked && maxVisible != null && visibleCount >= maxVisible;
 
                                     return (
                                         <Checkbox
