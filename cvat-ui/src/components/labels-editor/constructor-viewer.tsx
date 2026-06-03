@@ -17,23 +17,28 @@ interface ConstructorViewerProps {
     onUpdate: (label: LabelOptColor) => void;
     onDelete: (label: LabelOptColor) => void;
     onCreate: (creatorType: CreatorType) => void;
-    creatorTypes?: CreatorType[];
+    enableSkeletonCreator?: boolean;
+    enableFromModelCreator?: boolean;
 }
 
 function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
     const {
-        onCreate, onUpdate, onDelete, labels, creatorTypes = ['basic', 'skeleton', 'model'],
+        onCreate,
+        onUpdate,
+        onDelete,
+        labels,
+        enableSkeletonCreator = true,
+        enableFromModelCreator = true,
     } = props;
-    const list: JSX.Element[] = [];
-    if (creatorTypes.includes('basic')) {
-        list.push(
-            <Button key='create' onClick={() => onCreate('basic')} className='cvat-constructor-viewer-new-item'>
-                Add label
-                <PlusCircleOutlined />
-            </Button>,
-        );
-    }
-    if (creatorTypes.includes('skeleton')) {
+
+    const list: JSX.Element[] = [
+        <Button key='create' onClick={() => onCreate('basic')} className='cvat-constructor-viewer-new-item'>
+            Add label
+            <PlusCircleOutlined />
+        </Button>,
+    ];
+
+    if (enableSkeletonCreator) {
         list.push(
             <Button
                 key='create_skeleton'
@@ -45,7 +50,8 @@ function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
             </Button>,
         );
     }
-    if (creatorTypes.includes('model')) {
+
+    if (enableFromModelCreator) {
         list.push(
             <Button
                 key='from_model'
@@ -57,6 +63,7 @@ function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
             </Button>,
         );
     }
+
     for (const label of labels) {
         list.push(
             <ConstructorViewerItem

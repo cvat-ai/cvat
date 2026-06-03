@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
@@ -93,6 +93,14 @@ function TaskPageComponent(): JSX.Element {
         }
     }, [deletes]);
 
+    const isAudioTask = taskInstance && taskInstance.dimension === DimensionType.DIMENSION_1D;
+    const labelsEditorProps = useMemo(() => (isAudioTask ? {
+        enableSkeletonCreator: false,
+        enableFromModelCreator: false,
+        includeSkeletonLabels: false,
+        showLabelType: false,
+    } : undefined), [isAudioTask]);
+
     if (fetchingTask) {
         return <Spin size='large' className='cvat-spinner' />;
     }
@@ -125,8 +133,6 @@ function TaskPageComponent(): JSX.Element {
         dispatch(updateJobAsync(job, data));
     };
 
-    const isAudioTask = taskInstance.dimension === DimensionType.DIMENSION_1D;
-
     return (
         <div className='cvat-task-page'>
             { isTaskUpdating ? <CVATLoadingSpinner size='large' /> : null }
@@ -144,12 +150,7 @@ function TaskPageComponent(): JSX.Element {
                         cloudStorageInstance={cloudStorageInstance}
                         onUpdateTaskMeta={onUpdateTaskMeta}
                         detailsClassName={isAudioTask ? 'cvat-audio-task-details' : undefined}
-                        labelsEditorProps={isAudioTask ? {
-                            className: 'cvat-audio-labels-editor',
-                            creatorTypes: ['basic'],
-                            includeDeletedAttributes: false,
-                            includeSkeletonLabels: false,
-                        } : undefined}
+                        labelsEditorProps={labelsEditorProps}
                     />
                     <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>

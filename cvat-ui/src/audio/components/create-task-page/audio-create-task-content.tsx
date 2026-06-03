@@ -497,10 +497,10 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
             <Col span={24}>
                 <Text className='cvat-text-color'>Labels</Text>
                 <LabelsEditor
-                    className='cvat-audio-labels-editor'
-                    creatorTypes={['basic']}
-                    includeDeletedAttributes={false}
+                    enableSkeletonCreator={false}
+                    enableFromModelCreator={false}
                     includeSkeletonLabels={false}
+                    showLabelType={false}
                     labels={labels}
                     onSubmit={(newLabels): void => {
                         this.setState({ labels: newLabels });
