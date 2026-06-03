@@ -54,6 +54,36 @@ export interface AdvancedConfiguration {
     targetStorage: StorageData;
 }
 
+export enum AdvancedConfigurationSection {
+    SORTING = 'sorting',
+    COPY_DATA = 'copyData',
+    CHUNKING = 'chunking',
+    IMAGE_QUALITY = 'imageQuality',
+    FRAME_RANGE = 'frameRange',
+    CHUNK_SIZE = 'chunkSize',
+    CONSENSUS = 'consensus',
+    BUG_TRACKER = 'bugTracker',
+    STORAGE = 'storage',
+}
+
+export const CV_ADVANCED_CONFIGURATION_SECTIONS = [
+    AdvancedConfigurationSection.SORTING,
+    AdvancedConfigurationSection.COPY_DATA,
+    AdvancedConfigurationSection.CHUNKING,
+    AdvancedConfigurationSection.IMAGE_QUALITY,
+    AdvancedConfigurationSection.FRAME_RANGE,
+    AdvancedConfigurationSection.CHUNK_SIZE,
+    AdvancedConfigurationSection.CONSENSUS,
+    AdvancedConfigurationSection.BUG_TRACKER,
+    AdvancedConfigurationSection.STORAGE,
+];
+
+export const AUDIO_ADVANCED_CONFIGURATION_SECTIONS = [
+    AdvancedConfigurationSection.CONSENSUS,
+    AdvancedConfigurationSection.BUG_TRACKER,
+    AdvancedConfigurationSection.STORAGE,
+];
+
 const initialValues: AdvancedConfiguration = {
     imageQuality: 70,
     useZipChunks: true,
@@ -80,14 +110,14 @@ interface Props {
     onChangeUseProjectTargetStorage(value: boolean): void;
     onChangeSourceStorageLocation: (value: StorageLocation) => void;
     onChangeTargetStorageLocation: (value: StorageLocation) => void;
-    onChangeSortingMethod?(value: SortingMethod): void;
+    onChangeSortingMethod(value: SortingMethod): void;
     projectId: number | null;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
     activeFileManagerTab?: string;
     sourceStorageLocation: StorageLocation;
     targetStorageLocation: StorageLocation;
-    audio?: boolean;
+    visibleSections?: AdvancedConfigurationSection[];
 }
 
 function validateURL(_: RuleObject, value: string): Promise<void> {
@@ -136,8 +166,14 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         this.formRef = React.createRef<FormInstance>();
     }
 
+    private hasSection(section: AdvancedConfigurationSection): boolean {
+        const { visibleSections = CV_ADVANCED_CONFIGURATION_SECTIONS } = this.props;
+        return visibleSections.includes(section);
+    }
+
     public submit(): Promise<void> {
-        const { onSubmit, projectId, audio = false } = this.props;
+        const { onSubmit, projectId } = this.props;
+        const supportsFrameFilter = this.hasSection(AdvancedConfigurationSection.FRAME_RANGE);
 
         if (this.formRef.current) {
             if (projectId) {
@@ -146,14 +182,15 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     this.formRef.current.validateFields(),
                 ]).then(([getProjectResponse, values]) => {
                     const [project] = getProjectResponse;
-                    const frameFilter = !audio && values.frameStep ? `step=${values.frameStep}` : undefined;
+                    const frameFilter = supportsFrameFilter && values.frameStep ?
+                        `step=${values.frameStep}` : undefined;
                     const entries = Object.entries(values).filter(
                         (entry: [string, unknown]): boolean => entry[0] !== 'frameStep',
                     );
 
                     return onSubmit({
                         ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
-                        ...(!audio ? { frameFilter } : {}),
+                        ...(supportsFrameFilter ? { frameFilter } : {}),
                         sourceStorage: values.useProjectSourceStorage ?
                             new Storage(project.sourceStorage || { location: StorageLocation.LOCAL }) :
                             new Storage(values.sourceStorage),
@@ -167,14 +204,15 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             return this.formRef.current.validateFields()
                 .then(
                     (values: Store): Promise<void> => {
-                        const frameFilter = !audio && values.frameStep ? `step=${values.frameStep}` : undefined;
+                        const frameFilter = supportsFrameFilter && values.frameStep ?
+                            `step=${values.frameStep}` : undefined;
                         const entries = Object.entries(values).filter(
                             (entry: [string, unknown]): boolean => entry[0] !== 'frameStep',
                         );
 
                         return onSubmit({
                             ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
-                            ...(!audio ? { frameFilter } : {}),
+                            ...(supportsFrameFilter ? { frameFilter } : {}),
                             sourceStorage: new Storage(values.sourceStorage),
                             targetStorage: new Storage(values.targetStorage),
                         });
@@ -220,7 +258,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 ]}
                 help='Specify how to sort images. It is not relevant for videos.'
             >
-                <Radio.Group buttonStyle='solid' onChange={(e) => onChangeSortingMethod?.(e.target.value)}>
+                <Radio.Group buttonStyle='solid' onChange={(e) => onChangeSortingMethod(e.target.value)}>
                     <Radio.Button value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
                         Lexicographical
                     </Radio.Button>
@@ -454,17 +492,75 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { activeFileManagerTab, audio = false } = this.props;
+        const { activeFileManagerTab } = this.props;
+        const hasSorting = this.hasSection(AdvancedConfigurationSection.SORTING);
+        const hasCopyData = this.hasSection(AdvancedConfigurationSection.COPY_DATA);
+        const hasChunking = this.hasSection(AdvancedConfigurationSection.CHUNKING);
+        const hasImageQuality = this.hasSection(AdvancedConfigurationSection.IMAGE_QUALITY);
+        const hasFrameRange = this.hasSection(AdvancedConfigurationSection.FRAME_RANGE);
+        const hasChunkSize = this.hasSection(AdvancedConfigurationSection.CHUNK_SIZE);
+        const hasConsensus = this.hasSection(AdvancedConfigurationSection.CONSENSUS);
+        const hasBugTracker = this.hasSection(AdvancedConfigurationSection.BUG_TRACKER);
+        const hasStorage = this.hasSection(AdvancedConfigurationSection.STORAGE);
 
-        if (audio) {
-            return (
-                <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
-                    <Row justify='start'>
-                        <Col span={7}>{this.renderConsensusReplicas()}</Col>
+        return (
+            <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
+                {hasSorting && (
+                    <Row>
+                        <Col>{this.renderSortingMethodRadio()}</Col>
                     </Row>
+                )}
+                {hasCopyData && activeFileManagerTab === 'share' && (
+                    <Row>
+                        <Col>{this.renderCopyDataCheckbox()}</Col>
+                    </Row>
+                )}
+                {hasChunking && (
+                    <Row>
+                        <Col span={12}>{this.renderUzeZipChunks()}</Col>
+                        <Col span={12}>{this.renderCreateTaskMethod()}</Col>
+                    </Row>
+                )}
+                {hasImageQuality && (
+                    <Row justify='start'>
+                        <Col span={7}>{this.renderImageQuality()}</Col>
+                        <Col span={7} offset={1}>
+                            {this.renderOverlap()}
+                        </Col>
+                        <Col span={7} offset={1}>
+                            {this.renderSegmentSize()}
+                        </Col>
+                    </Row>
+                )}
+                {hasFrameRange && (
+                    <Row justify='start'>
+                        <Col span={7}>{this.renderStartFrame()}</Col>
+                        <Col span={7} offset={1}>
+                            {this.renderStopFrame()}
+                        </Col>
+                        <Col span={7} offset={1}>
+                            {this.renderFrameStep()}
+                        </Col>
+                    </Row>
+                )}
+                {hasChunkSize && (
+                    <Row justify='start'>
+                        <Col span={7}>{this.renderChunkSize()}</Col>
+                    </Row>
+                )}
+                {hasConsensus && (
+                    <Row justify='start'>
+                        <Col span={7}>
+                            {this.renderConsensusReplicas()}
+                        </Col>
+                    </Row>
+                )}
+                {hasBugTracker && (
                     <Row>
                         <Col span={24}>{this.renderBugTracker()}</Col>
                     </Row>
+                )}
+                {hasStorage && (
                     <Row justify='space-between'>
                         <Col span={11}>
                             {this.renderSourceStorage()}
@@ -473,64 +569,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             {this.renderTargetStorage()}
                         </Col>
                     </Row>
-                </Form>
-            );
-        }
-
-        return (
-            <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
-                <Row>
-                    <Col>{this.renderSortingMethodRadio()}</Col>
-                </Row>
-                {activeFileManagerTab === 'share' ? (
-                    <Row>
-                        <Col>{this.renderCopyDataCheckbox()}</Col>
-                    </Row>
-                ) : null}
-                <Row>
-                    <Col span={12}>{this.renderUzeZipChunks()}</Col>
-                    <Col span={12}>{this.renderCreateTaskMethod()}</Col>
-                </Row>
-                <Row justify='start'>
-                    <Col span={7}>{this.renderImageQuality()}</Col>
-                    <Col span={7} offset={1}>
-                        {this.renderOverlap()}
-                    </Col>
-                    <Col span={7} offset={1}>
-                        {this.renderSegmentSize()}
-                    </Col>
-                </Row>
-
-                <Row justify='start'>
-                    <Col span={7}>{this.renderStartFrame()}</Col>
-                    <Col span={7} offset={1}>
-                        {this.renderStopFrame()}
-                    </Col>
-                    <Col span={7} offset={1}>
-                        {this.renderFrameStep()}
-                    </Col>
-                </Row>
-
-                <Row justify='start'>
-                    <Col span={7}>{this.renderChunkSize()}</Col>
-                </Row>
-                <Row justify='start'>
-                    <Col span={7}>
-                        {this.renderConsensusReplicas()}
-                    </Col>
-                </Row>
-
-                <Row>
-                    <Col span={24}>{this.renderBugTracker()}</Col>
-                </Row>
-                <Row justify='space-between'>
-                    <Col span={11}>
-                        {this.renderSourceStorage()}
-                    </Col>
-                    <Col span={11} offset={1}>
-                        {this.renderTargetStorage()}
-                    </Col>
-                </Row>
+                )}
             </Form>
         );
     }

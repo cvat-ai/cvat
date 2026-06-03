@@ -136,8 +136,6 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         }
     }, [job, workspace]);
 
-    const isAudio = workspace === Workspace.AUDIO;
-
     if (job === null || !annotationsInitialized) {
         return <Spin size='large' className='cvat-spinner' />;
     }
@@ -146,7 +144,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         return <JobNotFoundComponent />;
     }
 
-    if (isAudio) {
+    if (workspace === Workspace.AUDIO) {
         return <AudioAnnotationPage />;
     }
 

@@ -50,7 +50,7 @@ const defaultQuantity = 5;
 
 function JobForm(props: Props): JSX.Element {
     const { task } = props;
-    const isOneDimensionTask = task.mediaType !== MediaType.AUDIO;
+    const isVisionTask = task.mediaType && [MediaType.IMAGE, MediaType.POINT_CLOUD].includes(task.mediaType);
     const { size: taskSize, segmentSize } = task;
     const [form] = Form.useForm();
     const dispatch = useDispatch();
@@ -65,7 +65,7 @@ function JobForm(props: Props): JSX.Element {
                 taskID: task.id,
                 type: values.type,
                 frameSelectionMethod: FrameSelectionMethod.RANDOM,
-                ...(isOneDimensionTask ? {
+                ...(isVisionTask ? {
                     randomSeed: values.randomSeed,
                     frameSelectionMethod: values.frameSelectionMethod,
                     ...(values.frameSelectionMethod === FrameSelectionMethod.RANDOM ?
@@ -249,14 +249,14 @@ function JobForm(props: Props): JSX.Element {
                     layout='vertical'
                     initialValues={{
                         type: JobType.GROUND_TRUTH,
-                        ...(isOneDimensionTask ? {
+                        ...(isVisionTask ? {
                             frameSelectionMethod: FrameSelectionMethod.RANDOM,
                             quantity: defaultQuantity,
                             frameCount: frameCountFromQuantity(defaultQuantity),
                         } : {}),
                     }}
                 >
-                    {isOneDimensionTask ? CV_FORM_ITEMS : AUDIO_FORM_ITEMS}
+                    {isVisionTask ? CV_FORM_ITEMS : AUDIO_FORM_ITEMS}
                 </Form>
             </Col>
             <Col span={24} className='cvat-create-job-actions'>

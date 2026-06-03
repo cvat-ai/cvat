@@ -27,6 +27,7 @@ import ProjectSearchField from 'components/create-task-page/project-search-field
 import ProjectSubsetField from 'components/create-task-page/project-subset-field';
 import MultiTasksProgress from 'components/create-task-page/multi-task-progress';
 import AdvancedConfigurationForm, {
+    AUDIO_ADVANCED_CONFIGURATION_SECTIONS,
     AdvancedConfiguration,
     SortingMethod,
 } from 'components/create-task-page/advanced-configuration-form';
@@ -209,6 +210,15 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
 
     private handleTaskSubsetChange = (value: string): void => {
         this.setState({ subset: value });
+    };
+
+    private handleSortingMethodChange = (value: SortingMethod): void => {
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                sortingMethod: value,
+            },
+        }));
     };
 
     private changeFileManagerTab = (value: TabName): void => {
@@ -733,6 +743,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         const { projectId } = this.state;
 
         const {
+            activeFileManagerTab,
             advanced: {
                 useProjectSourceStorage,
                 useProjectTargetStorage,
@@ -740,6 +751,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                 targetStorage: { location: targetStorageLocation },
             },
         } = this.state;
+
         return (
             <Col span={24}>
                 <Collapse
@@ -749,8 +761,9 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                         label: <Text className='cvat-title'>Advanced configuration</Text>,
                         children: (
                             <AdvancedConfigurationForm
+                                activeFileManagerTab={activeFileManagerTab}
                                 ref={this.advancedConfigurationComponent}
-                                audio
+                                visibleSections={AUDIO_ADVANCED_CONFIGURATION_SECTIONS}
                                 onSubmit={this.handleSubmitAdvancedConfiguration}
                                 projectId={projectId}
                                 useProjectSourceStorage={useProjectSourceStorage}
@@ -759,6 +772,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                                 targetStorageLocation={targetStorageLocation}
                                 onChangeUseProjectSourceStorage={this.handleUseProjectSourceStorageChange}
                                 onChangeUseProjectTargetStorage={this.handleUseProjectTargetStorageChange}
+                                onChangeSortingMethod={this.handleSortingMethodChange}
                                 onChangeSourceStorageLocation={(value: StorageLocation) => {
                                     this.handleChangeStorageLocation('sourceStorage', value);
                                 }}
