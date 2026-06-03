@@ -16,7 +16,7 @@ context('Audio annotation. Label selector shows color dot in audio popovers.', (
 
     describe(`Testing case "${caseId}"`, () => {
         it('Audio popovers render a color indicator next to the selected label and in dropdown options', () => {
-            cy.get('.cvat-audio-create-region-control').click();
+            cy.get('.cvat-audio-interval-region-control').click();
             cy.get('.cvat-audio-interval-region-popover-content .cvat-label-color-dot', { timeout: 5000 })
                 .should('be.visible');
 

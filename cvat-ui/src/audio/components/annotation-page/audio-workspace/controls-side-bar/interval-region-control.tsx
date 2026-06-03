@@ -257,9 +257,9 @@ function IntervalRegionControl(props: Props): JSX.Element {
                         component={IntervalToolsIcon}
                         className={
                             (isActive ?
-                                'cvat-active-canvas-control cvat-audio-create-region-control' :
-                                'cvat-audio-create-region-control') +
-                            (noLabels ? ' cvat-audio-create-region-control-disabled' : '')
+                                'cvat-active-canvas-control cvat-audio-interval-region-control' :
+                                'cvat-audio-interval-region-control') +
+                            (noLabels ? ' cvat-audio-interval-region-control-disabled' : '')
                         }
                         onClick={() => {
                             if (!noLabels) setPopoverOpen(!popoverOpen);
