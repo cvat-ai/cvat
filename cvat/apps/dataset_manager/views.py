@@ -24,7 +24,6 @@ from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_rq_lock_by_user, parse_exception_message
 
-from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .signals import ExportStatus, export_finished
 from .util import (
     ExportCacheManager,
@@ -281,10 +280,14 @@ def export_project_annotations(project_id: int, dst_format: str, *, server_url: 
 
 
 def get_export_formats():
+    from .formats.registry import EXPORT_FORMATS
+
     return list(EXPORT_FORMATS.values())
 
 
 def get_import_formats():
+    from .formats.registry import IMPORT_FORMATS
+
     return list(IMPORT_FORMATS.values())
 
 

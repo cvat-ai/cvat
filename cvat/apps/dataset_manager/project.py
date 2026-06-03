@@ -25,7 +25,6 @@ from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_re
 
 from .annotation import AnnotationIR
 from .bindings import CvatDatasetNotFoundError, CvatImportError, ProjectData, load_dataset_data
-from .formats.registry import make_exporter, make_importer
 
 dlogger = DatasetLogManager()
 
@@ -40,6 +39,8 @@ def export_project(
     save_images: bool = False,
     temp_dir: str | None = None,
 ):
+    from .formats.registry import make_exporter
+
     project = ProjectAnnotation(project_id)
     project.init_from_db(streaming=True)
 
@@ -213,6 +214,8 @@ class ProjectAnnotation:
 
 @transaction.atomic
 def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_poly):
+    from .formats.registry import make_importer
+
     rq_job = rq.get_current_job()
     rq_job_meta = ImportRQMeta.for_job(rq_job)
     rq_job_meta.status = "Dataset import has been started..."
