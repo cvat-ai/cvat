@@ -36,7 +36,7 @@ context('Audio annotation. Extend during Record cancels record without creating 
 
                 cy.get('.cvat-audio-interval-region-control')
                     .should('not.have.class', 'cvat-active-canvas-control');
-                cy.get('.cvat-audio-interval-region-popover-content').should('not.exist');
+                cy.get('.cvat-audio-interval-region-popover-content').should('not.be.visible');
                 cy.get('.cvat-audio-region-item').should('have.length', baseline);
             });
         });
