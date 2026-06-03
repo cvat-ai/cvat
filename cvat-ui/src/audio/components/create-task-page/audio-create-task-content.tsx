@@ -93,6 +93,7 @@ const defaultState: State = {
 };
 
 const NON_AUDIO_ERROR = 'Wrong list of files. Only audio files are allowed for an audio task. ';
+const LOCAL_AUDIO_FILES_HINT = 'You can upload an audio file';
 
 function localFilesHaveNonAudio(files: File[]): boolean {
     const meaningful = files.filter((f) => !f.name.endsWith('.jsonl'));
@@ -518,8 +519,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                     <Text type='danger'>* </Text>
                     <Text className='cvat-text-color'>Select files</Text>
                     <FileManagerComponent
-                        many={false}
-                        audio
+                        localFilesHint={LOCAL_AUDIO_FILES_HINT}
                         onChangeActiveKey={this.changeFileManagerTab}
                         onUploadLocalFiles={this.handleUploadLocalFiles}
                         onUploadRemoteFiles={this.handleUploadRemoteFiles}

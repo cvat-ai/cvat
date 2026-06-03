@@ -11,23 +11,14 @@ import { InboxOutlined } from '@ant-design/icons';
 
 interface Props {
     files: File[];
-    many: boolean;
-    audio?: boolean;
+    hint: string;
     onUpload: (_: RcFile, uploadedFiles: RcFile[]) => boolean;
 }
 
 export default function LocalFiles(props: Props): JSX.Element {
     const {
-        files, onUpload, many, audio,
+        files, onUpload, hint,
     } = props;
-    let hintText: string;
-    if (audio) {
-        hintText = 'You can upload an audio file';
-    } else if (many) {
-        hintText = 'You can upload one or more videos';
-    } else {
-        hintText = 'You can upload an archive with images, a video, or multiple images';
-    }
 
     return (
         <>
@@ -46,7 +37,7 @@ export default function LocalFiles(props: Props): JSX.Element {
                     <InboxOutlined />
                 </p>
                 <p className='ant-upload-text'>Click or drag files to this area</p>
-                <p className='ant-upload-hint'>{ hintText }</p>
+                <p className='ant-upload-hint'>{ hint }</p>
             </Upload.Dragger>
             {files.length >= 5 && (
                 <>
