@@ -71,10 +71,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
     ), [keyMap, searchValue]);
 
     const items: any = useMemo(() => {
-        const hiddenScopes: ShortcutScope[] = [ShortcutScope.AUDIO_WORKSPACE_CONTROLS];
-        const scopeItems = Object.values(ShortcutScope).filter(
-            (scope) => !hiddenScopes.includes(scope as ShortcutScope),
-        ).map((scope: string) => {
+        const scopeItems = Object.values(ShortcutScope).map((scope: string) => {
             const viewFilteredItems = filteredKeyMap.filter(
                 ([, item]) => item.scope === scope,
             ).sort(([, item1], [, item2]) => (item1.displayWeight ?? 0) - (item2.displayWeight ?? 0));
