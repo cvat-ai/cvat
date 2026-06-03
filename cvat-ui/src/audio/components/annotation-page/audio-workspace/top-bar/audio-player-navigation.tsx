@@ -62,31 +62,53 @@ const componentShortcuts = {
 
 registerComponentShortcuts(componentShortcuts);
 
-const getButtonStyle = (enabled: boolean): React.CSSProperties => ({
-    background: 'none',
-    border: 'none',
-    padding: '4px 6px',
-    cursor: enabled ? 'pointer' : 'not-allowed',
-    color: enabled ? '#374151' : '#9ca3af',
-    fontSize: 12,
-});
-
 type SeekButton = {
     title: string;
+    className: string;
     icon: React.ComponentType;
     getTarget(currentTime: number, duration: number): number;
 };
 
 const LEFT_BUTTONS: SeekButton[] = [
-    { title: 'Jump to start', icon: FirstIcon, getTarget: () => 0 },
-    { title: '-30 seconds', icon: BackJumpIcon, getTarget: (t) => t - 30 },
-    { title: '-10 seconds', icon: PreviousIcon, getTarget: (t) => t - 10 },
+    {
+        title: 'Jump to start',
+        className: 'cvat-player-begin-button',
+        icon: FirstIcon,
+        getTarget: () => 0,
+    },
+    {
+        title: '-30 seconds',
+        className: 'cvat-player-long-jump-backward-button',
+        icon: BackJumpIcon,
+        getTarget: (t) => t - 30,
+    },
+    {
+        title: '-10 seconds',
+        className: 'cvat-player-short-jump-backward-button',
+        icon: PreviousIcon,
+        getTarget: (t) => t - 10,
+    },
 ];
 
 const RIGHT_BUTTONS: SeekButton[] = [
-    { title: '+10 seconds', icon: NextIcon, getTarget: (t) => t + 10 },
-    { title: '+30 seconds', icon: ForwardJumpIcon, getTarget: (t) => t + 30 },
-    { title: 'Jump to end', icon: LastIcon, getTarget: (_, d) => d },
+    {
+        title: '+10 seconds',
+        className: 'cvat-player-short-jump-forward-button',
+        icon: NextIcon,
+        getTarget: (t) => t + 10,
+    },
+    {
+        title: '+30 seconds',
+        className: 'cvat-player-long-jump-forward-button',
+        icon: ForwardJumpIcon,
+        getTarget: (t) => t + 30,
+    },
+    {
+        title: 'Jump to end',
+        className: 'cvat-player-end-button',
+        icon: LastIcon,
+        getTarget: (_, d) => d,
+    },
 ];
 
 function AudioPlayerNavigation(props: Props): JSX.Element {
@@ -101,8 +123,6 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
     } = props;
 
     const isAudioLoaded = duration > 0;
-    const buttonStyle = getButtonStyle(isAudioLoaded);
-
     const seekTo = (time: number): void => {
         if (!isAudioLoaded) return;
 
@@ -143,11 +163,12 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
         },
     };
 
-    const renderSeekButton = ({ title, icon, getTarget }: SeekButton): JSX.Element => (
+    const renderSeekButton = ({
+        title, icon, getTarget, className,
+    }: SeekButton): JSX.Element => (
         <CVATTooltip key={title} title={title}>
             <Icon
-                style={buttonStyle}
-                className='cvat-player-backward-button'
+                className={className}
                 component={icon}
                 onClick={() => seekTo(getTarget(currentTime, duration))}
                 disabled={!isAudioLoaded}
@@ -155,17 +176,21 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
         </CVATTooltip>
     );
 
+    const blockStyle = isAudioLoaded ? {} : {
+        pointerEvents: 'none',
+        cursor: 'not-allowed',
+    } as const;
+
     return (
         <>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={hotkeyHandlers} />
-            <Row align='middle' justify='center' style={{ gap: '15px', width: '100%' }}>
+            <Row align='middle' justify='center'>
                 <Col>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={blockStyle} className='cvat-player-buttons'>
                         {LEFT_BUTTONS.map(renderSeekButton)}
-                        <CVATTooltip title='Pause/Play'>
+                        <CVATTooltip title={playing ? 'Pause' : 'Play'}>
                             <Icon
-                                style={buttonStyle}
-                                className='cvat-player-backward-button'
+                                className={playing ? 'cvat-player-pause-button' : 'cvat-player-play-button'}
                                 component={playing ? PauseIcon : PlayIcon}
                                 onClick={onPlayPause}
                                 disabled={!isAudioLoaded}
