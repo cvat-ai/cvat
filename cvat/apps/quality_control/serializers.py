@@ -960,6 +960,7 @@ class QualityRequirementListSerializer(QualityRequirementSerializer):
         return fields
 
 
+@extend_schema_field(QualityRequirementListSerializer(many=True))
 class QualitySettingsRequirementsField(serializers.Field):
     def to_representation(self, value):
         requirements = value.all() if hasattr(value, "all") else value
