@@ -33,7 +33,6 @@ urlpatterns = original_urlpatterns + [
 ]
 
 
-
 class UserRegisterAPITestCase(ApiTestBase):
     user_data = {
         "first_name": "test_first",
