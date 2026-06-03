@@ -38,7 +38,6 @@ export default function CreateTaskPage(props: Props): JSX.Element {
                     <AudioCreateTaskContent
                         projectId={projectId}
                         onCreate={handleCreate}
-                        many={many}
                     />
                 ) : (
                     <CreateTaskContent

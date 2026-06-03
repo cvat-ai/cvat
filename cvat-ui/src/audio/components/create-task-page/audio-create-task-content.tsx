@@ -18,14 +18,12 @@ import LabelsEditor from 'components/labels-editor/labels-editor';
 import FileManagerComponent from 'components/file-manager/file-manager';
 import { RemoteFile } from 'components/file-manager/remote-browser';
 import { isAudioFile, isAudioPath } from 'audio/utils/audio-files';
-import { getFileNameFromPath } from 'utils/files';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import { formFieldsError } from 'utils/validation';
 import BasicConfigurationForm, { BaseConfiguration } from 'components/create-task-page/basic-configuration-form';
 import ProjectSearchField from 'components/create-task-page/project-search-field';
 import ProjectSubsetField from 'components/create-task-page/project-subset-field';
-import MultiTasksProgress from 'components/create-task-page/multi-task-progress';
 import AdvancedConfigurationForm, {
     AUDIO_ADVANCED_CONFIGURATION_SECTIONS,
     AdvancedConfiguration,
@@ -43,13 +41,9 @@ const core = getCore();
 interface Props {
     onCreate: (data: CreateTaskData, onProgress?: (status: string, progress?: number) => void) => Promise<any>;
     projectId: number | null;
-    many: boolean;
 }
 
 type State = CreateTaskData & {
-    multiTasks: (CreateTaskData & {
-        status: 'pending' | 'progress' | 'failed' | 'completed' | 'cancelled';
-    })[];
     uploadFileErrorMessage: string;
     loading: boolean;
     statusInProgressTask: string;
@@ -92,7 +86,6 @@ const defaultState: State = {
     },
     activeFileManagerTab: 'local',
     cloudStorageId: null,
-    multiTasks: [],
     uploadFileErrorMessage: '',
     loading: false,
     statusInProgressTask: '',
@@ -430,201 +423,13 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
             .finally(this.stopLoading);
     };
 
-    private setStatusOneOfMultiTasks = async (index: number, status: string): Promise<void> => {
-        const { multiTasks } = this.state;
-        const resultTask = {
-            ...multiTasks[index],
-            status,
-        };
-
-        return new Promise((resolve) => {
-            const newMultiTasks: any = [
-                ...multiTasks.slice(0, index),
-                resultTask,
-                ...multiTasks.slice(index + 1),
-            ];
-            this.setState({ multiTasks: newMultiTasks }, resolve);
-        });
-    };
-
-    private createOneOfMultiTasks = async (index: any): Promise<void> => {
-        const { onCreate } = this.props;
-        const { multiTasks } = this.state;
-        const task = multiTasks[index];
-
-        if (task.status !== 'pending') return;
-
-        await this.setStatusOneOfMultiTasks(index, 'progress');
-        try {
-            await onCreate(task);
-            await this.setStatusOneOfMultiTasks(index, 'completed');
-        } catch (_err) {
-            await this.setStatusOneOfMultiTasks(index, 'failed');
-        }
-    };
-
-    private createMultiTasks = async (): Promise<any> => {
-        const { multiTasks } = this.state;
-        this.startLoading();
-        const { length } = multiTasks;
-        let index = 0;
-        const queueSize = 1;
-        const promises = Array(queueSize)
-            .fill(undefined)
-            .map(async (): Promise<void> => {
-                while (true) {
-                    index++;
-                    if (index > length) break;
-                    await this.createOneOfMultiTasks(index - 1);
-                }
-            });
-        await Promise.allSettled(promises);
-        this.stopLoading();
-    };
-
-    private addMultiTasks = async (): Promise<void> => new Promise((resolve) => {
-        const {
-            projectId,
-            subset,
-            advanced,
-            quality,
-            labels,
-            files: allFiles,
-            activeFileManagerTab,
-            cloudStorageId,
-        } = this.state;
-
-        const files: (File | string)[] = allFiles[activeFileManagerTab];
-
-        this.setState({
-            multiTasks: files.map((file, index) => ({
-                projectId,
-                basic: {
-                    name: this.getTaskName(index, activeFileManagerTab),
-                },
-                subset,
-                advanced,
-                quality,
-                labels,
-                files: {
-                    ...defaultState.files,
-                    [activeFileManagerTab]: [file],
-                },
-                activeFileManagerTab,
-                cloudStorageId,
-                status: 'pending',
-            })),
-        }, resolve);
-    });
-
-    private handleSubmitMultiTasks = (): void => {
-        this.validateBlocks()
-            .then(this.addMultiTasks)
-            .then(this.createMultiTasks)
-            .then(() => {
-                const { multiTasks } = this.state;
-                const countCompleted = multiTasks.filter((item) => item.status === 'completed').length;
-                const countFailed = multiTasks.filter((item) => item.status === 'failed').length;
-                const countCancelled = multiTasks.filter((item) => item.status === 'cancelled').length;
-                const countAll = multiTasks.length;
-
-                notification.info({
-                    message: 'The tasks have been created',
-                    description:
-                        `Completed: ${countCompleted}, failed: ${countFailed},${countCancelled ?
-                            ` cancelled: ${countCancelled},` :
-                            ''} total: ${countAll}, `,
-                    className: 'cvat-notification-create-task-success',
-                });
-            });
-    };
-
-    private handleCancelMultiTasks = (): void => {
-        const { multiTasks } = this.state;
-        let count = 0;
-        const newMultiTasks: any = multiTasks.map((it) => {
-            if (it.status === 'pending') {
-                count++;
-                return { ...it, status: 'cancelled' };
-            }
-            return it;
-        });
-        this.setState({ multiTasks: newMultiTasks }, () => {
-            notification.info({
-                message: `Creation of ${count} tasks have been canceled`,
-                className: 'cvat-notification-create-task-success',
-            });
-        });
-    };
-
-    private handleOkMultiTasks = (): void => {
-        const { history, projectId } = this.props;
-        if (projectId) {
-            history.push(`/projects/${projectId}`);
-        } else {
-            history.push('/tasks/');
-        }
-    };
-
-    private handleRetryCancelledMultiTasks = (): void => {
-        const { multiTasks } = this.state;
-        const newMultiTasks: any = multiTasks.map((it) => {
-            if (it.status === 'cancelled') {
-                return { ...it, status: 'pending' };
-            }
-            return it;
-        });
-        this.setState({ multiTasks: newMultiTasks }, () => {
-            this.createMultiTasks();
-        });
-    };
-
-    private handleRetryFailedMultiTasks = (): void => {
-        const { multiTasks } = this.state;
-        const newMultiTasks: any = multiTasks.map((it) => {
-            if (it.status === 'failed') {
-                return { ...it, status: 'pending' };
-            }
-            return it;
-        });
-        this.setState({ multiTasks: newMultiTasks }, () => {
-            this.createMultiTasks();
-        });
-    };
-
-    private getTaskName = (indexFile: number, fileManagerTabName: TabName, defaultFileName = ''): string => {
-        const { many } = this.props;
-        const { basic, files } = this.state;
-        const file = files[fileManagerTabName][indexFile];
-        let fileName = defaultFileName;
-        switch (fileManagerTabName) {
-            case 'remote':
-                fileName = getFileNameFromPath(file as string) || defaultFileName;
-                break;
-            case 'share':
-                fileName = getFileNameFromPath(file as string) || defaultFileName;
-                break;
-            default:
-                fileName = (file as File)?.name || (file as string) || defaultFileName;
-                break;
-        }
-        return many ?
-            basic.name
-                .replaceAll('{{file_name}}', fileName)
-                .replaceAll('{{index}}', indexFile.toString()) :
-            basic.name;
-    };
-
     private renderBasicBlock(): JSX.Element {
-        const { many } = this.props;
-        const exampleMultiTaskName = many ? this.getTaskName(0, 'local', 'fileName.mp4') : '';
-
         return (
             <Col span={24}>
                 <BasicConfigurationForm
                     ref={this.basicConfigurationComponent}
-                    many={many}
-                    exampleMultiTaskName={exampleMultiTaskName}
+                    many={false}
+                    exampleMultiTaskName=''
                     onChange={this.handleChangeBasicConfiguration}
                 />
             </Col>
@@ -704,7 +509,6 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     }
 
     private renderFilesBlock(): JSX.Element {
-        const { many } = this.props;
         const { uploadFileErrorMessage } = this.state;
 
         return (
@@ -713,7 +517,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                     <Text type='danger'>* </Text>
                     <Text className='cvat-text-color'>Select files</Text>
                     <FileManagerComponent
-                        many={many}
+                        many={false}
                         audio
                         onChangeActiveKey={this.changeFileManagerTab}
                         onUploadLocalFiles={this.handleUploadLocalFiles}
@@ -847,52 +651,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         );
     }
 
-    private renderFooterMultiTasks(): JSX.Element {
-        const {
-            multiTasks: items,
-            uploadFileErrorMessage,
-            files,
-            activeFileManagerTab,
-            loading,
-        } = this.state;
-        const currentFiles = files[activeFileManagerTab];
-        const countPending = items.filter((item) => item.status === 'pending').length;
-        const countAll = items.length;
-
-        if ((loading || countPending !== countAll) && currentFiles.length) {
-            return (
-                <MultiTasksProgress
-                    tasks={items}
-                    onOk={this.handleOkMultiTasks}
-                    onCancel={this.handleCancelMultiTasks}
-                    onRetryFailedTasks={this.handleRetryFailedMultiTasks}
-                    onRetryCancelledTasks={this.handleRetryCancelledMultiTasks}
-                />
-            );
-        }
-
-        return (
-            <Row justify='end' gutter={5}>
-                <Col>
-                    <Button
-                        className='cvat-submit-multiple-tasks-button'
-                        htmlType='submit'
-                        type='primary'
-                        onClick={this.handleSubmitMultiTasks}
-                        disabled={!!uploadFileErrorMessage}
-                    >
-                        Submit&nbsp;
-                        {currentFiles.length}
-                        &nbsp;tasks
-                    </Button>
-                </Col>
-            </Row>
-        );
-    }
-
     public render(): JSX.Element {
-        const { many } = this.props;
-
         return (
             <Row justify='start' align='middle' className='cvat-create-task-content'>
                 <Col span={24}>
@@ -908,7 +667,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                 {this.renderQualityBlock()}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
-                    {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }
+                    {this.renderFooterSingleTask()}
                 </Col>
             </Row>
         );
