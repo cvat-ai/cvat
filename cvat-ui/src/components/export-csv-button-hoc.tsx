@@ -23,7 +23,7 @@ interface CSVExportButtonConfig<T, Q> {
     fetchPage: (
         query: NonNullableProperties<Q>,
         page: number,
-        pageSize: number
+        pageSize: number,
     ) => Promise<{ results: T[]; count: number }>;
 }
 

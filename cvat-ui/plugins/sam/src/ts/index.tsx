@@ -38,7 +38,7 @@ interface SAMPlugin {
                 leave: (
                     plugin: SAMPlugin,
                     results: any[],
-                    query: { jobID?: number }
+                    query: { jobID?: number },
                 ) => Promise<any>;
             };
         };

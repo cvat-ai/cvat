@@ -127,7 +127,7 @@ export class OpenCVWrapper {
 
             try {
                 // Inject OpenCV to DOM
-                // eslint-disable-next-line no-new-func
+                // eslint-disable-next-line @typescript-eslint/no-implied-eval
                 const OpenCVConstructor = new Function(decodedScript);
                 OpenCVConstructor();
             } catch (error: unknown) {

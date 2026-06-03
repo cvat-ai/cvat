@@ -6,8 +6,8 @@
   "scripts": {
     "build": "webpack --config ./webpack.config.js",
     "start": "webpack serve --env API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
-    "lint": "eslint './src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint './src/**/*.{ts,tsx}' --fix"
+    "lint": "yarn run --top-level eslint './src/**/*.{ts,tsx}'",
+    "lint:fix": "yarn run --top-level eslint './src/**/*.{ts,tsx}' --fix"
   },
   "browserslist": [
     "Chrome >= 99",

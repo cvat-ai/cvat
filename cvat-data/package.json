@@ -7,7 +7,9 @@
   "scripts": {
     "build": "webpack --config ./webpack.config.cjs",
     "type-check": "tsc --noEmit",
-    "type-check:watch": "yarn run type-check --watch"
+    "type-check:watch": "yarn run type-check --watch",
+    "lint": "yarn run --top-level eslint './src/**/*.ts'",
+    "lint:fix": "yarn run --top-level eslint './src/**/*.ts' --fix"
   },
   "author": "CVAT.ai",
   "license": "MIT",
