@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from cvat.apps.webhooks.models import WebhookDelivery, WebhookDeliveryOutcomeChoice
+from cvat.apps.webhooks.models import WebhookDelivery
 from cvat.apps.webhooks.services import send_webhook
 
 from .utils import make_webhook, payload
@@ -29,6 +29,5 @@ class TestSendWebhook(TestCase):
         assert delivery.redelivery is True
         assert delivery.event == "update:project"
         assert delivery.attempt == 2
-        assert delivery.outcome == WebhookDeliveryOutcomeChoice.FAILURE.value
         assert delivery.request_duration >= 0
         assert WebhookDelivery.objects.get() == delivery

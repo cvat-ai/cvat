@@ -17,13 +17,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="webhookdelivery",
-            name="outcome",
-            field=models.CharField(
-                choices=[("success", "SUCCESS"), ("failure", "FAILURE")], null=True
-            ),
-        ),
-        migrations.AddField(
-            model_name="webhookdelivery",
             name="request_duration",
             field=models.PositiveIntegerField(null=True),
         ),

@@ -12,7 +12,6 @@ from cvat.apps.webhooks.exceptions import WebhookDeliveryError
 from cvat.apps.webhooks.models import (
     Webhook,
     WebhookDelivery,
-    WebhookDeliveryOutcomeChoice,
 )
 from cvat.apps.webhooks.tasks import send_webhook
 
@@ -68,7 +67,6 @@ class TestSendWebhook(TestCase):
 
         assert delivery is not None
         assert delivery.status_code == HTTPStatus.OK
-        assert delivery.outcome == WebhookDeliveryOutcomeChoice.SUCCESS.value
         assert delivery.attempt == 1
         assert delivery.request_duration >= 0
 
@@ -80,7 +78,6 @@ class TestSendWebhook(TestCase):
 
         assert delivery is not None
         assert delivery.status_code == HTTPStatus.BAD_REQUEST
-        assert delivery.outcome == WebhookDeliveryOutcomeChoice.FAILURE.value
 
     @patch("cvat.apps.webhooks.utils.perform_webhook_request")
     def test_5xx_records_failed_delivery_before_raising(self, perform: MagicMock) -> None:
@@ -94,7 +91,6 @@ class TestSendWebhook(TestCase):
         assert delivery.redelivery is False
         assert delivery.event == "update:project"
         assert delivery.attempt == 1
-        assert delivery.outcome == WebhookDeliveryOutcomeChoice.FAILURE.value
         assert delivery.request_duration >= 0
 
     @patch("cvat.apps.webhooks.utils.perform_webhook_request")

@@ -9,7 +9,6 @@ from .dispatch import add_to_queue
 from .models import (
     Webhook,
     WebhookDelivery,
-    WebhookDeliveryOutcomeChoice,
     WebhookTypeChoice,
 )
 
@@ -56,12 +55,6 @@ def send_webhook(
     status_code, response = utils.perform_webhook_request(webhook=webhook, payload=payload)
     request_duration = int((time.perf_counter() - start) * 1000)
 
-    outcome = (
-        WebhookDeliveryOutcomeChoice.SUCCESS.value
-        if 200 <= status_code < 300
-        else WebhookDeliveryOutcomeChoice.FAILURE.value
-    )
-
     return WebhookDelivery.objects.create(
         webhook_id=webhook.id,
         event=payload["event"],
@@ -71,7 +64,6 @@ def send_webhook(
         request=payload,
         response=response,
         attempt=attempt,
-        outcome=outcome,
         request_duration=request_duration,
     )
 

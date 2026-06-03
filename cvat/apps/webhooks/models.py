@@ -37,18 +37,6 @@ class WebhookContentTypeChoice(str, Enum):
         return self.value
 
 
-class WebhookDeliveryOutcomeChoice(str, Enum):
-    SUCCESS = "success"
-    FAILURE = "failure"
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-
 class Webhook(TimestampedModel):
     target_url = models.URLField(max_length=8192)
     description = models.CharField(max_length=128, default="", blank=True)
@@ -104,7 +92,6 @@ class WebhookDelivery(TimestampedModel):
     redelivery = models.BooleanField(default=False)
 
     attempt = models.PositiveIntegerField(null=True)
-    outcome = models.CharField(choices=WebhookDeliveryOutcomeChoice.choices(), null=True)
     request_duration = models.PositiveIntegerField(null=True)
 
     changed_fields = models.CharField(max_length=4096, default="")
