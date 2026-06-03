@@ -19,11 +19,11 @@ import { saveAnnotationsAsync } from 'actions/annotation-actions';
 import { SaveIcon } from 'icons';
 
 const componentShortcuts = {
-    SAVE_JOB_AUDIO: {
-        name: 'Save the job (audio)',
-        description: 'Submit unsaved changes of audio annotations to the server',
+    SAVE_JOB: {
+        name: 'Save the job',
+        description: 'Submit unsaved changes of annotations to the server',
         sequences: ['ctrl+s'],
-        scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
 
@@ -84,7 +84,7 @@ function AudioSaveAnnotationsButton(): JSX.Element {
     }, [isSaving, regions, dispatch]);
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        SAVE_JOB_AUDIO: (event: KeyboardEvent | undefined) => {
+        SAVE_JOB: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             trySave();
         },
@@ -93,7 +93,7 @@ function AudioSaveAnnotationsButton(): JSX.Element {
     return (
         <>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
-            <CVATTooltip overlay={`Save current changes ${normKeyMap.SAVE_JOB_AUDIO ?? ''}`}>
+            <CVATTooltip overlay={`Save current changes ${normKeyMap.SAVE_JOB ?? ''}`}>
                 <Button
                     type='link'
                     onClick={trySave}
