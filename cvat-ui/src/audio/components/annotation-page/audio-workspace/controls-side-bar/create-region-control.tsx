@@ -116,7 +116,6 @@ function CreateRegionControl(props: Props): JSX.Element {
                         style={{ width: '100%' }}
                         labels={labels}
                         value={selectedLabelId}
-                        withLabelColor
                         onChange={(label: Label) => setSelectedLabelId(label.id ?? null)}
                     />
                 </Col>

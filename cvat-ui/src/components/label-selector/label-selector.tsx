@@ -11,23 +11,24 @@ interface Props extends SelectProps<string> {
     value: any | number | null;
     onChange: (label: any) => void;
     onEnterPress?: (labelID: number) => void;
-    withLabelColor?: boolean;
 }
 
-const LABEL_COLOR_FALLBACK = '#9CA3AF';
+function LabelColorDot({ color }: { color?: string }): JSX.Element | null {
+    if (!color) {
+        return null;
+    }
 
-function LabelColorDot({ color }: { color: string }): JSX.Element {
     return (
         <span
             className='cvat-label-color-dot'
-            style={{ background: color || LABEL_COLOR_FALLBACK }}
+            style={{ background: color }}
         />
     );
 }
 
 export default function LabelSelector(props: Props): JSX.Element {
     const {
-        labels, value, onChange, onEnterPress, withLabelColor, ...rest
+        labels, value, onChange, onEnterPress, ...rest
     } = props;
     const dynamicProps = value ?
         {
@@ -77,12 +78,10 @@ export default function LabelSelector(props: Props): JSX.Element {
         >
             {labels.map((label: any) => (
                 <Select.Option title={label.name} key={label.id} value={label.id}>
-                    {withLabelColor ? (
-                        <span className='cvat-label-selector-option'>
-                            <LabelColorDot color={label.color} />
-                            {label.name}
-                        </span>
-                    ) : label.name}
+                    <span className='cvat-label-selector-option'>
+                        <LabelColorDot color={label.color} />
+                        {label.name}
+                    </span>
                 </Select.Option>
             ))}
         </Select>

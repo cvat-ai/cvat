@@ -100,6 +100,7 @@ export {
     ModelKind,
     ModelProviders,
     DimensionType,
+    MediaType,
     AnnotationFormats,
     Dumper,
     Loader,

@@ -5,6 +5,21 @@
 
 @import 'base';
 
+.cvat-label-selector-option {
+    display: inline-flex;
+    align-items: center;
+}
+
+.cvat-label-color-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    border: 1px solid rgba(0, 0, 0, 10%);
+}
+
 textarea.ant-input.cvat-raw-labels-viewer {
     border-color: $border-color-1;
     box-shadow: none;

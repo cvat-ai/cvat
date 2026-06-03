@@ -20,7 +20,7 @@ import {
 } from '@ant-design/icons/lib/icons';
 import { DurationIcon, FramesIcon } from 'icons';
 import {
-    Job, JobStage, JobState, JobType, Task, User, DimensionType,
+    Job, JobStage, JobState, JobType, Task, User, MediaType,
 } from 'cvat-core-wrapper';
 import { formatTimeShort } from 'audio/utils/format-audio-time';
 import { useIsMounted, useContextMenuClick } from 'utils/hooks';
@@ -127,7 +127,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
     }
     const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
-    const isAudioTask = task.dimension === DimensionType.DIMENSION_1D;
+    const isAudioTask = task.mediaType === MediaType.AUDIO;
     const audioJobDuration = isAudioTask ? formatTimeShort(job.frameCount / 1000) : '';
     const audioJobRange = isAudioTask ?
         `${formatTimeShort(job.startFrame / 1000)} – ${formatTimeShort(job.stopFrame / 1000)}` : '';
