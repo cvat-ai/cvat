@@ -99,7 +99,6 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
     }
 
     const imgSrc = preview.preview;
-
     if (preview.initialized && !imgSrc) {
         return (
             <div className={emptyPreviewClassName || ''} onClick={onClick} aria-hidden>

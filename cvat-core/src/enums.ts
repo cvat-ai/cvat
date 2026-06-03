@@ -41,6 +41,7 @@ export enum JobType {
 }
 
 export enum DimensionType {
+    DIMENSION_1D = '1d',
     DIMENSION_2D = '2d',
     DIMENSION_3D = '3d',
 }
@@ -77,6 +78,7 @@ export enum ObjectType {
     TAG = 'tag',
     SHAPE = 'shape',
     TRACK = 'track',
+    INTERVAL = 'interval',
 }
 
 export enum ShapeType {

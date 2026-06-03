@@ -1702,6 +1702,36 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality): Promi
     }
 }
 
+interface AudioChunkResponse {
+    data: ArrayBuffer;
+    contentOffset: number;
+}
+
+async function getAudioChunk(
+    jid: number,
+    chunk: number,
+    quality: ChunkQuality,
+): Promise<AudioChunkResponse> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/jobs/${jid}/data`, {
+            params: {
+                ...enableOrganization(),
+                quality,
+                type: 'chunk',
+                index: chunk,
+            },
+            responseType: 'arraybuffer',
+        });
+
+        const contentOffset = parseInt(response.headers['x-media-offset'] || '0', 10);
+        return { data: response.data, contentOffset };
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function getMeta(session: 'job' | 'task', id: number): Promise<SerializedFramesMetaData> {
     const { backendAPI } = config;
 
@@ -1767,7 +1797,8 @@ async function updateAnnotations(
 
     let response = null;
     try {
-        response = await Axios(url, { method, data, params });
+        // Annotation version is unused by the server now, but older API schema still accepts it.
+        response = await Axios(url, { method, data: { ...data, version: 0 }, params });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2610,6 +2641,7 @@ export default Object.freeze({
 
     frames: Object.freeze({
         getData,
+        getAudioChunk,
         getMeta,
         saveMeta,
         getPreview,

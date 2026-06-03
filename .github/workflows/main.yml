@@ -309,7 +309,8 @@ jobs:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
                 'actions_objects', 'actions_objects2', 'actions_users',
                 'actions_projects_models', 'canvas3d_functionality',
-                'issues_prs', 'issues_prs2', 'features', 'features2']
+                'issues_prs', 'issues_prs2', 'features', 'features2',
+                'audio_workspace']
     steps:
       - uses: actions/checkout@v4
 
@@ -380,6 +381,12 @@ jobs:
               --browser chrome \
               --config-file cypress_canvas3d.config.js \
               --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+          elif [[ ${{ matrix.specs }} == audio_* ]]; then
+            npx cypress run \
+              --headed \
+              --browser chrome \
+              --config-file cypress_audio.config.js \
+              --spec 'cypress/e2e/setup/setup_audio.js,cypress/e2e/audio_workspace/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \

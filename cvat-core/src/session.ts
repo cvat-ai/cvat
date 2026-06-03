@@ -16,7 +16,7 @@ import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
 import {
-    SerializedCollection, SerializedJob,
+    SerializedCollection, SerializedJob, SerializedInterval,
     SerializedLabel, SerializedTask,
 } from './server-response-types';
 import AnnotationGuide from './guide';
@@ -85,6 +85,14 @@ function buildDuplicatedAPI(prototype) {
                         frame,
                         allTracks,
                         filters,
+                    );
+                    return result;
+                },
+
+                async intervals() {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.intervals,
                     );
                     return result;
                 },
@@ -373,6 +381,7 @@ function buildDuplicatedAPI(prototype) {
 export class Session {
     public annotations: {
         get: (frame: number, allTracks: boolean, filters: object[]) => Promise<ObjectState[]>;
+        intervals: () => Promise<SerializedInterval[]>;
         put: (objectStates: ObjectState[]) => Promise<number[]>;
         merge: (objectStates: ObjectState[]) => Promise<void>;
         split: (objectState: ObjectState, frame: number) => Promise<void>;
@@ -420,11 +429,11 @@ export class Session {
             state: ObjectState,
             distance: number | null,
         }>;
-        import: (data: Omit<SerializedCollection, 'version'>) => Promise<void>;
-        export: () => Promise<Omit<SerializedCollection, 'version'>>;
+        import: (data: SerializedCollection) => Promise<void>;
+        export: () => Promise<Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>>;
         commit: (
-            added: Omit<SerializedCollection, 'version'>,
-            removed: Omit<SerializedCollection, 'version'>,
+            added: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
+            removed: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
             frame: number,
         ) => Promise<void>;
         statistics: () => Promise<Statistics>;
@@ -486,6 +495,7 @@ export class Session {
         // So, we need return it
         this.annotations = {
             get: Object.getPrototypeOf(this).annotations.get.bind(this),
+            intervals: Object.getPrototypeOf(this).annotations.intervals.bind(this),
             put: Object.getPrototypeOf(this).annotations.put.bind(this),
             save: Object.getPrototypeOf(this).annotations.save.bind(this),
             merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
@@ -554,7 +564,7 @@ export class Job extends Session {
         task_name: string | null;
         labels: Label[];
         dimension?: DimensionType;
-        media_type?: MediaType;
+        media_type: MediaType;
         data_compressed_chunk_type?: ChunkType;
         data_chunk_size?: number;
         bug_tracker: string | null;
@@ -728,7 +738,7 @@ export class Job extends Session {
     }
 
     public get mediaType(): MediaType {
-        return this.#data.media_type!;
+        return this.#data.media_type;
     }
 
     public get parentJobId(): number | null {

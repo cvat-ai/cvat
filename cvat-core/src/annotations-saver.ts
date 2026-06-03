@@ -17,10 +17,12 @@ interface ExtractedIDs {
     tags: number[];
 }
 
+type CollectionToSave = Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags'>;
+
 interface SplittedCollection {
-    created: Omit<SerializedCollection, 'version'>;
-    updated: Omit<SerializedCollection, 'version'>;
-    deleted: Omit<SerializedCollection, 'version'>;
+    created: CollectionToSave;
+    updated: CollectionToSave;
+    deleted: CollectionToSave;
 }
 
 type CollectionObject = SerializedShape | SerializedTrack | SerializedTag;
@@ -66,7 +68,6 @@ function removeIDFromObject<T extends SerializedShape | SerializedTag | Serializ
 export default class AnnotationsSaver {
     private sessionType: 'task' | 'job';
     private id: number;
-    private version: number;
     private collection: any;
     private hash: string;
     private initialObjects: {
@@ -75,10 +76,9 @@ export default class AnnotationsSaver {
         tags: Record<number, SerializedCollection['tags'][0]>,
     };
 
-    constructor(version: number, collection, session: Task | Job) {
+    constructor(collection, session: Task | Job) {
         this.sessionType = session instanceof Task ? 'task' : 'job';
         this.id = session.id;
-        this.version = version;
         this.collection = collection;
         this.hash = this._getHash();
         this.initialObjects = { shapes: {}, tracks: {}, tags: {} };
@@ -98,27 +98,29 @@ export default class AnnotationsSaver {
         return JSON.stringify(exported);
     }
 
-    async _request(data: SerializedCollection, action: 'put' | 'create' | 'update' | 'delete'): Promise<SerializedCollection> {
-        const result = await serverProxy.annotations.updateAnnotations(this.sessionType, this.id, data, action);
-        return result;
+    async _request(data: CollectionToSave, action: 'put' | 'create' | 'update' | 'delete'): Promise<CollectionToSave> {
+        const { shapes, tracks, tags } = await serverProxy.annotations.updateAnnotations(
+            this.sessionType, this.id, { ...data, intervals: [] }, action,
+        );
+        return { shapes, tracks, tags };
     }
 
-    async _put(data: SerializedCollection): Promise<SerializedCollection> {
+    async _put(data: CollectionToSave): Promise<CollectionToSave> {
         const result = await this._request(data, 'put');
         return result;
     }
 
-    async _create(created: SerializedCollection): Promise<SerializedCollection> {
+    async _create(created: CollectionToSave): Promise<CollectionToSave> {
         const result = await this._request(created, 'create');
         return result;
     }
 
-    async _update(updated: SerializedCollection): Promise<SerializedCollection> {
+    async _update(updated: CollectionToSave): Promise<CollectionToSave> {
         const result = await this._request(updated, 'update');
         return result;
     }
 
-    async _delete(deleted: SerializedCollection): Promise<SerializedCollection> {
+    async _delete(deleted: CollectionToSave): Promise<CollectionToSave> {
         const result = await this._request(deleted, 'delete');
         return result;
     }
@@ -176,7 +178,7 @@ export default class AnnotationsSaver {
         return splitted;
     }
 
-    _updateCreatedObjects(saved: SerializedCollection, indexes: ExtractedIDs): void {
+    _updateCreatedObjects(saved: CollectionToSave, indexes: ExtractedIDs): void {
         const savedLength = saved.tracks.length + saved.shapes.length + saved.tags.length;
         const indexesLength = indexes.tracks.length + indexes.shapes.length + indexes.tags.length;
         if (indexesLength !== savedLength) {
@@ -194,7 +196,7 @@ export default class AnnotationsSaver {
         }
     }
 
-    _extractClientIDs(exported: Omit<SerializedCollection, 'version'>): ExtractedIDs {
+    _extractClientIDs(exported: CollectionToSave): ExtractedIDs {
         // Receive client IDs before saving
         const indexes = {
             tracks: exported.tracks.map((track) => track.clientID),
@@ -213,7 +215,6 @@ export default class AnnotationsSaver {
     }
 
     _updateInitialObjects(responseBody: SerializedCollection): void {
-        this.version = responseBody.version;
         for (const type of COLLECTION_KEYS) {
             for (const object of responseBody[type]) {
                 this.initialObjects[type][object.id] = object;
@@ -238,8 +239,7 @@ export default class AnnotationsSaver {
                 }
             }
 
-            const savedData = await this._put({ ...exported, version: this.version });
-            this.version = savedData.version;
+            const savedData = await this._put({ ...exported });
             this.collection.flush = false;
 
             this._updateCreatedObjects(savedData, indexes);
@@ -304,9 +304,9 @@ export default class AnnotationsSaver {
 
             const retryIf504Status = async (
                 error: unknown,
-                requestBody: SerializedCollection,
+                requestBody: CollectionToSave,
                 action: 'update' | 'delete' | 'create',
-            ): Promise<SerializedCollection> => {
+            ): Promise<CollectionToSave> => {
                 if (error instanceof ServerError && error.code === 504) {
                     setTimeout(() => {
                         // just for logging
@@ -330,11 +330,10 @@ export default class AnnotationsSaver {
                                 case 'create': {
                                     const serverCollection = await serverProxy.annotations
                                         .getAnnotations(this.sessionType, this.id);
-                                    const foundPairs: SerializedCollection = {
+                                    const foundPairs: CollectionToSave = {
                                         shapes: [],
                                         tracks: [],
                                         tags: [],
-                                        version: serverCollection.version,
                                     };
                                     for (const type of COLLECTION_KEYS) {
                                         for (const obj of requestBody[type]) {
@@ -365,15 +364,13 @@ export default class AnnotationsSaver {
             if (updated.shapes.length || updated.tags.length || updated.tracks.length) {
                 onUpdate('Updated objects are being saved on the server');
                 const updatedIndexes = this._extractClientIDs(updated);
-                const requestBody = { ...updated, version: this.version };
                 let updatedData = null;
                 try {
-                    updatedData = await this._update(requestBody);
+                    updatedData = await this._update(updated);
                 } catch (error: unknown) {
-                    updatedData = await retryIf504Status(error, requestBody, 'update');
+                    updatedData = await retryIf504Status(error, updated, 'update');
                 }
 
-                this.version = updatedData.version;
                 this._updateCreatedObjects(updatedData, updatedIndexes);
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of updatedData[type]) {
@@ -385,15 +382,13 @@ export default class AnnotationsSaver {
             if (deleted.shapes.length || deleted.tags.length || deleted.tracks.length) {
                 onUpdate('Deleted objects are being deleted from the server');
                 this._extractClientIDs(deleted);
-                const requestBody = { ...deleted, version: this.version };
                 let deletedData = null;
                 try {
-                    deletedData = await this._delete(requestBody);
+                    deletedData = await this._delete(deleted);
                 } catch (error: unknown) {
-                    deletedData = await retryIf504Status(error, requestBody, 'delete');
+                    deletedData = await retryIf504Status(error, deleted, 'delete');
                 }
 
-                this.version = deletedData.version;
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of deletedData[type]) {
                         delete this.initialObjects[type][object.id];
@@ -404,15 +399,13 @@ export default class AnnotationsSaver {
             if (created.shapes.length || created.tags.length || created.tracks.length) {
                 onUpdate('Created objects are being saved on the server');
                 const createdIndexes = this._extractClientIDs(created);
-                const requestBody = { ...created, version: this.version };
                 let createdData = null;
                 try {
-                    createdData = await this._create(requestBody);
+                    createdData = await this._create(created);
                 } catch (error: unknown) {
-                    createdData = await retryIf504Status(error, requestBody, 'create');
+                    createdData = await retryIf504Status(error, created, 'create');
                 }
 
-                this.version = createdData.version;
                 this._updateCreatedObjects(createdData, createdIndexes);
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of createdData[type]) {

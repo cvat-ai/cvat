@@ -393,6 +393,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobId) => {
             shapes: objects.filter((object) => object.objectType === 'shape').map(convertShape(job)),
             tracks: objects.filter((object) => object.objectType === 'track').map(convertTrack(job)),
             tags: objects.filter((object) => object.objectType === 'tag').map(convertTag(job)),
+            intervals: [],
         }, $win);
 
         await job.annotations.import(data);

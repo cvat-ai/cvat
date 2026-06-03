@@ -241,9 +241,13 @@ export default class AnnotationsFilter {
     }
 
     private _convertSerializedCollection(
-        collection: Omit<SerializedCollection, 'version'>,
+        collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         labelsSpec: Label[],
-    ): { shapes: ConvertedObjectData[]; tags: ConvertedObjectData[]; tracks: ConvertedObjectData[] } {
+    ): {
+        shapes: ConvertedObjectData[];
+        tags: ConvertedObjectData[];
+        tracks: ConvertedObjectData[];
+    } {
         const { labelByID, attributeByID } = buildLabelMaps(labelsSpec);
 
         return {
@@ -393,10 +397,10 @@ export default class AnnotationsFilter {
     }
 
     public filterSerializedCollection(
-        collection: Omit<SerializedCollection, 'version'>,
+        collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         labelsSpec: Label[],
         filters: object[],
-    ): { shapes: number[]; tags: number[]; tracks: number[] } {
+    ): { shapes: number[]; tags: number[]; tracks: number[]; } {
         if (isEmptyFilter(filters[0]) && isEmptyFilter(filters[1])) {
             return {
                 shapes: collection.shapes.map((shape) => shape.clientID),
