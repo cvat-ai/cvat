@@ -241,6 +241,9 @@ class TaskDataset:
         If `temporary_chunks` is true and `media_download_policy` is `FETCH_CHUNKS_ON_DEMAND`,
         chunk files are materialized in a temporary directory separate from the shared cache
         and deleted after the iterator advances past them.
+
+        WARNING: Callers should finish using each sample's media data before advancing the iterator.
+        Keeping references to previous samples after requesting the next sample is unsupported.
         """
 
         if self._media_download_policy == MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND:

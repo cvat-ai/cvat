@@ -864,8 +864,6 @@ class _Agent:
 
         all_annotations = models.PatchedLabeledDataRequest(tags=[], shapes=[])
 
-        sample_index = 0
-
         with ds.iter_samples(temporary_chunks=True) as samples:
             for sample_index, sample in enumerate(samples):
                 context = self._create_detection_function_context(ar_params, sample.frame_name)
@@ -877,11 +875,10 @@ class _Agent:
                 all_annotations.tags.extend(tags)
                 all_annotations.shapes.extend(shapes)
 
-                sample_index += 1
                 current_timestamp = datetime.now(tz=timezone.utc)
 
                 if current_timestamp >= last_update_timestamp + _UPDATE_INTERVAL:
-                    self._update_ar(ar_id, sample_index / len(ds.samples))
+                    self._update_ar(ar_id, (sample_index + 1) / len(ds.samples))
                     last_update_timestamp = current_timestamp
 
                 # Interactive requests are time sensitive, so if there are any,

@@ -168,15 +168,17 @@ class TestTaskDataset:
         )
 
         with dataset.iter_samples() as samples:
-            actual_samples = list(samples)
-
-        expected_frame_indexes = [
-            index for index in range(len(self.images)) if index not in deleted_frame_indexes
-        ]
-        assert [sample.frame_index for sample in actual_samples] == expected_frame_indexes
-
-        for sample in actual_samples:
-            assert sample.media.load_image() == PIL.Image.open(self.images[sample.frame_index])
+            for sample, expected_frame_index in zip(
+                samples,
+                (
+                    index
+                    for index in range(len(self.images))
+                    if index not in deleted_frame_indexes
+                ),
+                strict=True,
+            ):
+                assert sample.frame_index == expected_frame_index
+                assert sample.media.load_image() == PIL.Image.open(self.images[expected_frame_index])
 
     def test_offline(self, monkeypatch: pytest.MonkeyPatch):
         dataset = cvatds.TaskDataset(
@@ -302,9 +304,13 @@ class TestTaskDataset:
 
         with dataset.iter_samples(temporary_chunks=True) as samples:
             # Reading the first chunk should start downloading the next chunk in the background.
-            first_chunk_samples = [next(samples) for _ in range(3)]
+            for expected_frame_index in range(3):
+                sample = next(samples)
+                assert sample.frame_index == expected_frame_index
+                assert sample.media.load_image() == PIL.Image.open(
+                    self.images[expected_frame_index]
+                )
 
-            assert [sample.frame_index for sample in first_chunk_samples] == [0, 1, 2]
             second_chunk_download_started.wait()
             assert len(observed_temp_chunk_dirs) == 1
             temp_chunk_dir = next(iter(observed_temp_chunk_dirs))
@@ -313,9 +319,6 @@ class TestTaskDataset:
             assert not (temp_chunk_dir / "1.zip").exists()
             assert (chunk_dir / "0.zip").exists()
             assert (chunk_dir / "1.zip").exists()
-
-            for sample in first_chunk_samples:
-                assert sample.media.load_image() == PIL.Image.open(self.images[sample.frame_index])
 
             # Let the background download finish. Advancing into chunk #1 should then delete
             # the temporary copy of chunk #0, while leaving the shared cache untouched.
@@ -341,11 +344,13 @@ class TestTaskDataset:
         )
 
         with dataset.iter_samples() as samples:
-            actual_samples = list(samples)
-
-        assert [sample.frame_index for sample in actual_samples] == list(range(self.task.size))
-        for sample in actual_samples:
-            assert sample.media.load_image() == PIL.Image.open(self.images[sample.frame_index])
+            for expected_frame_index, sample in zip(
+                range(self.task.size), samples, strict=True
+            ):
+                assert sample.frame_index == expected_frame_index
+                assert sample.media.load_image() == PIL.Image.open(
+                    self.images[expected_frame_index]
+                )
 
     def test_iter_samples_rejects_temporary_chunks_with_preload_all(self):
         dataset = cvatds.TaskDataset(
@@ -406,10 +411,12 @@ class TestTaskDataset:
         chunk_dir = dataset._cache_manager.chunk_dir(self.task.id)
 
         with dataset.iter_samples(temporary_chunks=False) as samples:
-            actual_samples = list(samples)
-
-        assert [sample.frame_index for sample in actual_samples] == list(range(self.task.size))
-        for sample in actual_samples:
-            assert sample.media.load_image() == PIL.Image.open(self.images[sample.frame_index])
+            for expected_frame_index, sample in zip(
+                range(self.task.size), samples, strict=True
+            ):
+                assert sample.frame_index == expected_frame_index
+                assert sample.media.load_image() == PIL.Image.open(
+                    self.images[expected_frame_index]
+                )
 
         assert all((chunk_dir / f"{chunk_index}.zip").exists() for chunk_index in range(4))
