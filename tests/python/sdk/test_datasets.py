@@ -170,15 +170,13 @@ class TestTaskDataset:
         with dataset.iter_samples() as samples:
             for sample, expected_frame_index in zip(
                 samples,
-                (
-                    index
-                    for index in range(len(self.images))
-                    if index not in deleted_frame_indexes
-                ),
+                (index for index in range(len(self.images)) if index not in deleted_frame_indexes),
                 strict=True,
             ):
                 assert sample.frame_index == expected_frame_index
-                assert sample.media.load_image() == PIL.Image.open(self.images[expected_frame_index])
+                assert sample.media.load_image() == PIL.Image.open(
+                    self.images[expected_frame_index]
+                )
 
     def test_offline(self, monkeypatch: pytest.MonkeyPatch):
         dataset = cvatds.TaskDataset(
@@ -344,9 +342,7 @@ class TestTaskDataset:
         )
 
         with dataset.iter_samples() as samples:
-            for expected_frame_index, sample in zip(
-                range(self.task.size), samples, strict=True
-            ):
+            for expected_frame_index, sample in zip(range(self.task.size), samples, strict=True):
                 assert sample.frame_index == expected_frame_index
                 assert sample.media.load_image() == PIL.Image.open(
                     self.images[expected_frame_index]
@@ -411,9 +407,7 @@ class TestTaskDataset:
         chunk_dir = dataset._cache_manager.chunk_dir(self.task.id)
 
         with dataset.iter_samples(temporary_chunks=False) as samples:
-            for expected_frame_index, sample in zip(
-                range(self.task.size), samples, strict=True
-            ):
+            for expected_frame_index, sample in zip(range(self.task.size), samples, strict=True):
                 assert sample.frame_index == expected_frame_index
                 assert sample.media.load_image() == PIL.Image.open(
                     self.images[expected_frame_index]
