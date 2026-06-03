@@ -37,25 +37,25 @@ const componentShortcuts = {
     AUDIO_BACKWARD: {
         name: 'Audio backward',
         description: 'Rewind audio by 5 seconds',
-        sequences: ['left'],
+        sequences: ['d'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_FORWARD: {
         name: 'Audio forward',
         description: 'Forward audio by 5 seconds',
-        sequences: ['right'],
+        sequences: ['f'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_FAST_BACKWARD: {
         name: 'Audio fast backward',
         description: 'Rewind audio by 30 seconds',
-        sequences: ['alt+left'],
+        sequences: ['c'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_FAST_FORWARD: {
         name: 'Audio fast forward',
         description: 'Forward audio by 30 seconds',
-        sequences: ['alt+right'],
+        sequences: ['v'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
 };
