@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 from cvat_sdk.api_client import ApiClient, Configuration
 from cvat_sdk.api_client.api.tasks_api import TasksApi
+
 from shared.utils.config import BASE_URL, make_api_client
 
 
