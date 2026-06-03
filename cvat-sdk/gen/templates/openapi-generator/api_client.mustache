@@ -183,8 +183,11 @@ class ApiClient(object):
         config = self.configuration
 
         # header parameters
-        header_params = header_params or {}
-        header_params.update(self.get_common_headers())
+        header_params = {
+            **self.get_common_headers(),
+            **(header_params or {}),
+        }
+        header_params = {k: v for k, v in header_params.items() if v is not None}
         if header_params:
             header_params = self.sanitize_for_serialization(header_params)
             header_params = dict(self.parameters_to_tuples(header_params,
@@ -828,6 +831,7 @@ class Endpoint(object):
             '_host_index',
             '_parse_response',
             '_request_timeout',
+            '_headers',
             '_validate_inputs',
             '_validate_outputs',
             '_check_status',
@@ -835,7 +839,7 @@ class Endpoint(object):
             '_spec_property_naming',
             '_request_auths'
         ])
-        self.params_map['nullable'].extend(['_request_timeout'])
+        self.params_map['nullable'].extend(['_request_timeout', '_headers'])
         self.validations = root_map['validations']
         self.allowed_values = root_map['allowed_values']
         self.openapi_types = root_map['openapi_types']
@@ -844,6 +848,7 @@ class Endpoint(object):
             '_host_index': (none_type, int),
             '_parse_response': (bool,),
             '_request_timeout': (none_type, float, (float,), [float], int, (int,), [int]),
+            '_headers': (none_type, dict),
             '_validate_inputs': (bool,),
             '_validate_outputs': (bool,),
             '_check_status': (bool,),
@@ -935,6 +940,7 @@ class Endpoint(object):
     def call_with_http_info(self,
             _parse_response: bool = True,
             _request_timeout: typing.Union[int, float, tuple] = None,
+            _headers: typing.Optional[dict[str, typing.Any]] = None,
             _validate_inputs: bool = True,
             _validate_outputs: bool = True,
             _check_status: bool = True,
@@ -954,6 +960,9 @@ class Endpoint(object):
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
                 Default is None.
+            _headers (dict): extra raw HTTP headers to merge into the request after
+                endpoint-defined headers are collected. These override default
+                headers and can suppress them by setting a value to None.
             _validate_inputs (bool): specifies if type checking
                 should be done one the data sent to the server.
                 Default is True.
@@ -987,6 +996,7 @@ class Endpoint(object):
 
         kwargs['_parse_response'] = _parse_response
         kwargs['_request_timeout'] = _request_timeout
+        kwargs['_headers'] = _headers
         kwargs['_validate_inputs'] = _validate_inputs
         kwargs['_validate_outputs'] = _validate_outputs
         kwargs['_check_status'] = _check_status
@@ -1059,6 +1069,9 @@ class Endpoint(object):
                         params['body'])
                     if content_types_list:
                         params['header']['Content-Type'] = content_types_list
+
+        if kwargs.get('_headers'):
+            params['header'].update(kwargs['_headers'])
 
         return self.api_client.call_api(
             self.settings['endpoint_path'], self.settings['http_method'],

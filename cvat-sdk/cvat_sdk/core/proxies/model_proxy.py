@@ -88,24 +88,28 @@ class Repo(ModelProxy[ModelType, ApiType]):
 
 
 def get_paginated_collection_with_organization(
-    client: Client,
+    _client: Client,
     endpoint: Endpoint,
     *,
     organization_id: int | None,
     return_json: bool = False,
     **kwargs,
 ):
+    header_overrides = {"X-Organization": None}
+
     if organization_id is None:
         # Empty org slug is the SDK/server convention for the personal workspace.
         params = {"org": ""}
-        temporary_org_slug = ""
     else:
-        # org_id cannot be combined with X-Organization, so clear any active slug.
         params = {"org_id": organization_id}
-        temporary_org_slug = None
 
-    with client._scoped_organization_slug(temporary_org_slug):
-        return get_paginated_collection(endpoint, return_json=return_json, **kwargs, **params)
+    return get_paginated_collection(
+        endpoint,
+        return_json=return_json,
+        _headers=header_overrides,
+        **kwargs,
+        **params,
+    )
 
 
 ### Utilities
