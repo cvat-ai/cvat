@@ -26,7 +26,7 @@ interface Props {
     onSubmit(values: QualityConfiguration): Promise<void>;
     onChangeFrameSelectionMethod: (method: FrameSelectionMethod) => void;
     onChangeValidationMode: (method: ValidationMode) => void;
-    audio?: boolean;
+    visibleSections?: QualityConfigurationSection[];
 }
 
 export enum ValidationMode {
@@ -34,6 +34,25 @@ export enum ValidationMode {
     GT = 'gt',
     HONEYPOTS = 'gt_pool',
 }
+
+export enum QualityConfigurationSection {
+    VALIDATION_MODE = 'validationMode',
+    FRAME_SELECTION = 'frameSelection',
+    VALIDATION_QUANTITY = 'validationQuantity',
+    HONEYPOTS = 'honeypots',
+}
+
+export const CV_QUALITY_CONFIGURATION_SECTIONS = [
+    QualityConfigurationSection.VALIDATION_MODE,
+    QualityConfigurationSection.FRAME_SELECTION,
+    QualityConfigurationSection.VALIDATION_QUANTITY,
+    QualityConfigurationSection.HONEYPOTS,
+];
+
+export const AUDIO_QUALITY_CONFIGURATION_SECTIONS = [
+    QualityConfigurationSection.VALIDATION_MODE,
+    QualityConfigurationSection.FRAME_SELECTION,
+];
 
 export default class QualityConfigurationForm extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
@@ -43,43 +62,47 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
         this.formRef = React.createRef<FormInstance>();
     }
 
-    public submit(): Promise<void> {
-        const { onSubmit, audio = false } = this.props;
-        if (this.formRef.current) {
-            return this.formRef.current.validateFields().then((values: QualityConfiguration) => {
-                if (audio) {
-                    return onSubmit({
-                        ...values,
-                        frameSelectionMethod: values.frameSelectionMethod,
-                    });
-                }
+    private hasSection(section: QualityConfigurationSection): boolean {
+        const { visibleSections = CV_QUALITY_CONFIGURATION_SECTIONS } = this.props;
+        return visibleSections.includes(section);
+    }
 
-                return onSubmit({
+    public submit(): Promise<void> {
+        const { onSubmit } = this.props;
+        const supportsValidationQuantity = this.hasSection(QualityConfigurationSection.VALIDATION_QUANTITY);
+        const supportsHoneypots = this.hasSection(QualityConfigurationSection.HONEYPOTS);
+
+        if (this.formRef.current) {
+            return this.formRef.current.validateFields().then((values: QualityConfiguration) => (
+                onSubmit({
                     ...values,
-                    frameSelectionMethod: values.validationMode === ValidationMode.HONEYPOTS ?
+                    frameSelectionMethod: supportsHoneypots && values.validationMode === ValidationMode.HONEYPOTS ?
                         FrameSelectionMethod.RANDOM : values.frameSelectionMethod,
-                    ...(typeof values.validationFramesPercent === 'number' ? {
+                    ...(supportsValidationQuantity && typeof values.validationFramesPercent === 'number' ? {
                         validationFramesPercent: values.validationFramesPercent / 100,
                     } : {}),
-                    ...(typeof values.validationFramesPerJobPercent === 'number' ? {
+                    ...(supportsValidationQuantity && typeof values.validationFramesPerJobPercent === 'number' ? {
                         validationFramesPerJobPercent: values.validationFramesPerJobPercent / 100,
                     } : {}),
-                });
-            });
+                })
+            ));
         }
 
         return Promise.reject(new Error('Quality form ref is empty'));
     }
 
     public resetFields(): void {
-        const { audio = false } = this.props;
+        const supportsValidationQuantity = this.hasSection(QualityConfigurationSection.VALIDATION_QUANTITY);
         this.formRef.current?.resetFields(
-            audio ? ['frameSelectionMethod'] : ['validationFramesPercent', 'validationFramesPerJobPercent', 'frameSelectionMethod'],
+            supportsValidationQuantity ?
+                ['validationFramesPercent', 'validationFramesPerJobPercent', 'frameSelectionMethod'] :
+                ['frameSelectionMethod'],
         );
     }
 
     private gtParamsBlock(): JSX.Element {
-        const { frameSelectionMethod, onChangeFrameSelectionMethod, audio = false } = this.props;
+        const { frameSelectionMethod, onChangeFrameSelectionMethod } = this.props;
+        const supportsValidationQuantity = this.hasSection(QualityConfigurationSection.VALIDATION_QUANTITY);
 
         return (
             <>
@@ -100,7 +123,7 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                 </Col>
 
                 {
-                    !audio && frameSelectionMethod === FrameSelectionMethod.RANDOM && (
+                    supportsValidationQuantity && frameSelectionMethod === FrameSelectionMethod.RANDOM && (
                         <Col span={7}>
                             <Form.Item
                                 label='Quantity'
@@ -125,7 +148,7 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                     )
                 }
                 {
-                    !audio && frameSelectionMethod === FrameSelectionMethod.RANDOM_PER_JOB && (
+                    supportsValidationQuantity && frameSelectionMethod === FrameSelectionMethod.RANDOM_PER_JOB && (
                         <Col span={7}>
                             <Form.Item
                                 label='Quantity per job'
@@ -192,13 +215,14 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
 
     public render(): JSX.Element {
         const {
-            initialValues, validationMode, onChangeValidationMode, audio = false,
+            initialValues, validationMode, onChangeValidationMode,
         } = this.props;
+        const supportsHoneypots = this.hasSection(QualityConfigurationSection.HONEYPOTS);
 
         let paramsBlock: JSX.Element | null = null;
         if (validationMode === ValidationMode.GT) {
             paramsBlock = this.gtParamsBlock();
-        } else if (!audio && validationMode === ValidationMode.HONEYPOTS) {
+        } else if (supportsHoneypots && validationMode === ValidationMode.HONEYPOTS) {
             paramsBlock = this.honeypotsParamsBlock();
         }
 
@@ -225,7 +249,7 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                         <Radio.Button value={ValidationMode.GT} key={ValidationMode.GT}>
                             Ground Truth
                         </Radio.Button>
-                        {!audio && (
+                        {supportsHoneypots && (
                             <Radio.Button value={ValidationMode.HONEYPOTS} key={ValidationMode.HONEYPOTS}>
                                 Honeypots
                             </Radio.Button>

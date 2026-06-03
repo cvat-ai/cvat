@@ -30,6 +30,7 @@ import AdvancedConfigurationForm, {
     SortingMethod,
 } from 'components/create-task-page/advanced-configuration-form';
 import QualityConfigurationForm, {
+    AUDIO_QUALITY_CONFIGURATION_SECTIONS,
     QualityConfiguration,
     ValidationMode,
 } from 'components/create-task-page/quality-configuration-form';
@@ -604,7 +605,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                         children: (
                             <QualityConfigurationForm
                                 ref={this.qualityConfigurationComponent}
-                                audio
+                                visibleSections={AUDIO_QUALITY_CONFIGURATION_SECTIONS}
                                 initialValues={defaultState.quality}
                                 onSubmit={this.handleSubmitQualityConfiguration}
                                 frameSelectionMethod={frameSelectionMethod}
