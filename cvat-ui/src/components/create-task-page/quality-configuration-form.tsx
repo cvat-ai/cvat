@@ -51,7 +51,6 @@ export const CV_QUALITY_CONFIGURATION_SECTIONS = [
 
 export const AUDIO_QUALITY_CONFIGURATION_SECTIONS = [
     QualityConfigurationSection.VALIDATION_MODE,
-    QualityConfigurationSection.FRAME_SELECTION,
 ];
 
 export default class QualityConfigurationForm extends React.PureComponent<Props> {
@@ -69,6 +68,7 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
 
     public submit(): Promise<void> {
         const { onSubmit } = this.props;
+        const supportsFrameSelection = this.hasSection(QualityConfigurationSection.FRAME_SELECTION);
         const supportsValidationQuantity = this.hasSection(QualityConfigurationSection.VALIDATION_QUANTITY);
         const supportsHoneypots = this.hasSection(QualityConfigurationSection.HONEYPOTS);
 
@@ -76,8 +76,10 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
             return this.formRef.current.validateFields().then((values: QualityConfiguration) => (
                 onSubmit({
                     ...values,
-                    frameSelectionMethod: supportsHoneypots && values.validationMode === ValidationMode.HONEYPOTS ?
-                        FrameSelectionMethod.RANDOM : values.frameSelectionMethod,
+                    ...(supportsFrameSelection ? {
+                        frameSelectionMethod: supportsHoneypots && values.validationMode === ValidationMode.HONEYPOTS ?
+                            FrameSelectionMethod.RANDOM : values.frameSelectionMethod,
+                    } : {}),
                     ...(supportsValidationQuantity && typeof values.validationFramesPercent === 'number' ? {
                         validationFramesPercent: values.validationFramesPercent / 100,
                     } : {}),
@@ -92,35 +94,44 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     }
 
     public resetFields(): void {
+        const supportsFrameSelection = this.hasSection(QualityConfigurationSection.FRAME_SELECTION);
         const supportsValidationQuantity = this.hasSection(QualityConfigurationSection.VALIDATION_QUANTITY);
+        const fields = [
+            ...(supportsValidationQuantity ? ['validationFramesPercent', 'validationFramesPerJobPercent'] : []),
+            ...(supportsFrameSelection ? ['frameSelectionMethod'] : []),
+        ];
+
         this.formRef.current?.resetFields(
-            supportsValidationQuantity ?
-                ['validationFramesPercent', 'validationFramesPerJobPercent', 'frameSelectionMethod'] :
-                ['frameSelectionMethod'],
+            fields,
         );
     }
 
     private gtParamsBlock(): JSX.Element {
         const { frameSelectionMethod, onChangeFrameSelectionMethod } = this.props;
+        const supportsFrameSelection = this.hasSection(QualityConfigurationSection.FRAME_SELECTION);
         const supportsValidationQuantity = this.hasSection(QualityConfigurationSection.VALIDATION_QUANTITY);
 
         return (
             <>
-                <Col>
-                    <Form.Item
-                        name='frameSelectionMethod'
-                        label='Frame selection method'
-                        rules={[{ required: true, message: 'Please, specify frame selection method' }]}
-                    >
-                        <Select
-                            className='cvat-select-frame-selection-method'
-                            onChange={onChangeFrameSelectionMethod}
+                {supportsFrameSelection && (
+                    <Col>
+                        <Form.Item
+                            name='frameSelectionMethod'
+                            label='Frame selection method'
+                            rules={[{ required: true, message: 'Please, specify frame selection method' }]}
                         >
-                            <Select.Option value={FrameSelectionMethod.RANDOM}>Random</Select.Option>
-                            <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>Random per job</Select.Option>
-                        </Select>
-                    </Form.Item>
-                </Col>
+                            <Select
+                                className='cvat-select-frame-selection-method'
+                                onChange={onChangeFrameSelectionMethod}
+                            >
+                                <Select.Option value={FrameSelectionMethod.RANDOM}>Random</Select.Option>
+                                <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>
+                                    Random per job
+                                </Select.Option>
+                            </Select>
+                        </Form.Item>
+                    </Col>
+                )}
 
                 {
                     supportsValidationQuantity && frameSelectionMethod === FrameSelectionMethod.RANDOM && (
