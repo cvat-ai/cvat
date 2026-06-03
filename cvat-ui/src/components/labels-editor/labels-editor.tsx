@@ -28,7 +28,6 @@ interface LabelsEditorProps {
     onSubmit: (labels: LabelOptColor[]) => void;
     enableSkeletonCreator?: boolean;
     enableFromModelCreator?: boolean;
-    includeSkeletonLabels?: boolean;
     showLabelType?: boolean;
 }
 
@@ -205,7 +204,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         function transformLabel(
             label: LabelOptColor,
             originalLabels: SerializedLabel[],
-            includeSkeletonLabels: boolean,
         ): LabelOptColor {
             const originalLabel = findLabelByID(originalLabels, label.id);
             const transformed: any = {
@@ -225,7 +223,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 transformed.attributes.push(...findDeletedAttributes(label, originalLabel));
             }
 
-            if (includeSkeletonLabels && label.type === 'skeleton') {
+            if (label.type === 'skeleton') {
                 transformed.svg = label.svg;
                 transformed.sublabels = (label.sublabels || [])
                     .map((internalLabel: LabelOptColor) => {
@@ -235,7 +233,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                         return transformLabel(
                             internalLabel,
                             originalSublabel ? [originalSublabel] : [],
-                            includeSkeletonLabels,
                         );
                     });
             }
@@ -246,11 +243,10 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         const {
             labels,
             onSubmit,
-            includeSkeletonLabels = true,
         } = this.props;
         const output = savedLabels.concat(unsavedLabels)
             .map((label: LabelOptColor): LabelOptColor => (
-                transformLabel(label, labels, includeSkeletonLabels)
+                transformLabel(label, labels)
             ));
 
         onSubmit(output);

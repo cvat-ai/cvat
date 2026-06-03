@@ -97,7 +97,6 @@ function TaskPageComponent(): JSX.Element {
     const labelsEditorProps = useMemo(() => (isAudioTask ? {
         enableSkeletonCreator: false,
         enableFromModelCreator: false,
-        includeSkeletonLabels: false,
         showLabelType: false,
     } : undefined), [isAudioTask]);
 
@@ -149,7 +148,6 @@ function TaskPageComponent(): JSX.Element {
                         taskMeta={taskMeta}
                         cloudStorageInstance={cloudStorageInstance}
                         onUpdateTaskMeta={onUpdateTaskMeta}
-                        detailsClassName={isAudioTask ? 'cvat-audio-task-details' : undefined}
                         labelsEditorProps={labelsEditorProps}
                     />
                     <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />

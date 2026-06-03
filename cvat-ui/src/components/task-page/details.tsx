@@ -32,7 +32,6 @@ interface OwnProps {
     taskMeta: FramesMetaData;
     cloudStorageInstance: CloudStorage | null;
     onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
-    detailsClassName?: string;
     labelsEditorProps?: Record<string, unknown>;
 }
 
@@ -227,11 +226,10 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             task: taskInstance,
             cancelAutoAnnotation,
             onUpdateTask,
-            detailsClassName,
         } = this.props;
 
         return (
-            <div className={`cvat-task-details${detailsClassName ? ` ${detailsClassName}` : ''}`}>
+            <div className='cvat-task-details'>
                 <Row justify='start' align='middle'>
                     <Col className='cvat-task-details-task-name'>{this.renderTaskName()}</Col>
                 </Row>

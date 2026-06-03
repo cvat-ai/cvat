@@ -499,7 +499,6 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
                 <LabelsEditor
                     enableSkeletonCreator={false}
                     enableFromModelCreator={false}
-                    includeSkeletonLabels={false}
                     showLabelType={false}
                     labels={labels}
                     onSubmit={(newLabels): void => {
