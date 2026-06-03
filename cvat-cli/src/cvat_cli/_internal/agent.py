@@ -157,7 +157,7 @@ class _TrackingStateContainer:
             raise _BadArError(f"Tracking state {state_id!r} is not for task #{task_id}")
 
         if image_dims != ext_state.original_image_dims:
-            raise _BadArError(f"Image sizes of the start frame and the current frame are different")
+            raise _BadArError("Image sizes of the start frame and the current frame are different")
 
         ext_state.last_accessed_at = datetime.now(tz=timezone.utc)
         self._id_to_ext_state.move_to_end(state_id)
@@ -848,7 +848,12 @@ class _Agent:
         )
 
     def _calculate_result_for_annotate_task_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
-        ds = cvatds.TaskDataset(self._client, ar_params["task"], load_annotations=False)
+        ds = cvatds.TaskDataset(
+            self._client,
+            ar_params["task"],
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        )
 
         # Fetching the dataset might take a while, so do a progress update to let the server
         # know we're still alive.
@@ -859,25 +864,26 @@ class _Agent:
 
         all_annotations = models.PatchedLabeledDataRequest(tags=[], shapes=[])
 
-        for sample_index, sample in enumerate(ds.samples):
-            context = self._create_detection_function_context(ar_params, sample.frame_name)
-            annotations = self._executor.result(
-                self._executor.submit(_worker_job_detect, context, sample.media.load_image())
-            )
+        with ds.iter_samples(temporary_chunks=True) as samples:
+            for sample_index, sample in enumerate(samples):
+                context = self._create_detection_function_context(ar_params, sample.frame_name)
+                annotations = self._executor.result(
+                    self._executor.submit(_worker_job_detect, context, sample.media.load_image())
+                )
 
-            tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
-            all_annotations.tags.extend(tags)
-            all_annotations.shapes.extend(shapes)
+                tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
+                all_annotations.tags.extend(tags)
+                all_annotations.shapes.extend(shapes)
 
-            current_timestamp = datetime.now(tz=timezone.utc)
+                current_timestamp = datetime.now(tz=timezone.utc)
 
-            if current_timestamp >= last_update_timestamp + _UPDATE_INTERVAL:
-                self._update_ar(ar_id, (sample_index + 1) / len(ds.samples))
-                last_update_timestamp = current_timestamp
+                if current_timestamp >= last_update_timestamp + _UPDATE_INTERVAL:
+                    self._update_ar(ar_id, (sample_index + 1) / len(ds.samples))
+                    last_update_timestamp = current_timestamp
 
-            # Interactive requests are time sensitive, so if there are any,
-            # we have to put the current AR on hold and process them ASAP.
-            self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
+                # Interactive requests are time sensitive, so if there are any,
+                # we have to put the current AR on hold and process them ASAP.
+                self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
 
         return {"annotations": all_annotations}
 
