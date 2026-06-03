@@ -30,7 +30,7 @@ context('Audio annotation. Extend region via Shift+E hotkey.', () => {
                     });
                 });
                 cy.audioExtendViaHotkey();
-                cy.get('.cvat-audio-extend-region-popover-content').should('not.exist');
+                cy.get('.cvat-audio-interval-region-popover-content').should('not.be.visible');
                 cy.get('.cvat-audio-region-item', { timeout: 5000 })
                     .should('have.length', initial + 2);
                 cy.get('.cvat-audio-region-item').last().should('contain.text', firstLabelName);

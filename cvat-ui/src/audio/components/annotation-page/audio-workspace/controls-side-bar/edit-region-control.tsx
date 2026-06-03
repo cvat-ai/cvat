@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { EditOutlined } from '@ant-design/icons';
+import Icon from '@ant-design/icons';
 
+import { IntervalEditIcon } from 'icons';
 import { ActiveControl, CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -55,8 +56,9 @@ function EditRegionControl(props: Props): JSX.Element {
                 keyMap={subKeyMap(componentShortcuts, keyMap)}
                 handlers={handlers}
             />
-            <CVATTooltip title={`Edit interval ${editRegionShortkey}`} placement='right'>
-                <EditOutlined
+            <CVATTooltip title={`Edit intervals ${editRegionShortkey}`} placement='right'>
+                <Icon
+                    component={IntervalEditIcon}
                     className={
                         isActive ?
                             'cvat-active-canvas-control cvat-audio-edit-region-control' :

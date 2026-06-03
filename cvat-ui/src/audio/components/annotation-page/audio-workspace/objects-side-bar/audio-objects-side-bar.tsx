@@ -68,7 +68,7 @@ function AudioObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): 
         <Layout.Sider
             className='cvat-objects-sidebar'
             theme='light'
-            width={300}
+            width={320}
             collapsedWidth={0}
             reverseArrow
             collapsible

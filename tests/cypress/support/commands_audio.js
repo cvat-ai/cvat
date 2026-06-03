@@ -75,14 +75,14 @@ Cypress.Commands.add('openAudioJob', (taskName) => {
 });
 
 Cypress.Commands.add('audioActivateCreate', (labelName) => {
-    cy.get('.cvat-audio-create-region-control').click();
-    cy.get('.cvat-audio-create-region-popover-content', { timeout: 5000 }).should('be.visible');
+    cy.get('.cvat-audio-interval-region-control').click();
+    cy.get('.cvat-audio-interval-region-popover-content', { timeout: 5000 }).should('be.visible');
     if (labelName) {
-        cy.get('.cvat-audio-create-region-popover-content .ant-select').click();
+        cy.get('.cvat-audio-interval-region-popover-content .ant-select').click();
         cy.get('.ant-select-dropdown').filter(':visible').contains('.ant-select-item-option', labelName).click();
     }
-    cy.get('.cvat-audio-create-region-popover-content').contains('button', 'Create').click();
-    cy.get('.cvat-audio-create-region-control').should('have.class', 'cvat-active-canvas-control');
+    cy.get('.cvat-audio-interval-region-popover-content').contains('button', 'Draw').click();
+    cy.get('.cvat-audio-interval-region-control').should('have.class', 'cvat-active-canvas-control');
 });
 
 Cypress.Commands.add('audioDrawRegion', (xStart, xEnd) => {
@@ -105,18 +105,18 @@ Cypress.Commands.add('audioCreateRegionViaButton', (labelName, xStart, xEnd) => 
 
 Cypress.Commands.add('audioCreateRegionViaHotkey', (xStart, xEnd) => {
     cy.get('body').type('n');
-    cy.get('.cvat-audio-create-region-control').should('have.class', 'cvat-active-canvas-control');
+    cy.get('.cvat-audio-interval-region-control').should('have.class', 'cvat-active-canvas-control');
     cy.audioDrawRegion(xStart, xEnd);
 });
 
 Cypress.Commands.add('audioExtendViaButton', (labelName) => {
-    cy.get('.cvat-audio-extend-region-control').click();
-    cy.get('.cvat-audio-extend-region-popover-content', { timeout: 5000 }).should('be.visible');
+    cy.get('.cvat-audio-interval-region-control').click();
+    cy.get('.cvat-audio-interval-region-popover-content', { timeout: 5000 }).should('be.visible');
     if (labelName) {
-        cy.get('.cvat-audio-extend-region-popover-content .ant-select').click();
+        cy.get('.cvat-audio-interval-region-popover-content .ant-select').click();
         cy.get('.ant-select-dropdown').filter(':visible').contains('.ant-select-item-option', labelName).click();
     }
-    cy.get('.cvat-audio-extend-region-popover-content').contains('button', 'Extend').click();
+    cy.get('.cvat-audio-interval-region-popover-content').contains('button', 'Extend').click();
 });
 
 Cypress.Commands.add('audioExtendViaHotkey', () => {
