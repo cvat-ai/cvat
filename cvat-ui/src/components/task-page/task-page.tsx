@@ -15,7 +15,7 @@ import notification from 'antd/lib/notification';
 import { getInferenceStatusAsync } from 'actions/models-actions';
 import { updateJobAsync, jobsActions } from 'actions/jobs-actions';
 import {
-    getCore, Task, Job, FramesMetaData, DimensionType,
+    getCore, Task, Job, FramesMetaData, MediaType,
 } from 'cvat-core-wrapper';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
@@ -93,7 +93,7 @@ function TaskPageComponent(): JSX.Element {
         }
     }, [deletes]);
 
-    const isAudioTask = taskInstance && taskInstance.dimension === DimensionType.DIMENSION_1D;
+    const isAudioTask = taskInstance && taskInstance.mediaType === MediaType.AUDIO;
     const labelsEditorProps = useMemo(() => (isAudioTask ? {
         enableSkeletonCreator: false,
         enableFromModelCreator: false,
