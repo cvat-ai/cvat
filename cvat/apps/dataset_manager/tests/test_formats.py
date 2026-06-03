@@ -52,13 +52,13 @@ class _DbTestBase(ApiTestBase):
 
     def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.put("/api/tasks/%s/annotations" % tid, data=data, format="json")
+            response = self.client.put(f"/api/tasks/{tid}/annotations", data=data, format="json")
 
         return response
 
     def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.put("/api/jobs/%s/annotations" % jid, data=data, format="json")
+            response = self.client.put(f"/api/jobs/{jid}/annotations", data=data, format="json")
 
         return response
 
@@ -68,7 +68,7 @@ class _DbTestBase(ApiTestBase):
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
 
@@ -76,7 +76,7 @@ class _DbTestBase(ApiTestBase):
             assert response.status_code == status.HTTP_200_OK, response.status_code
             assert response.json()["status"] == "finished", response.json().get("status")
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/tasks/{tid}")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
@@ -214,9 +214,7 @@ class TaskExportTest(_DbTestBase):
         return self._generate_custom_annotations(annotations, task)
 
     def _generate_task_images(self, count):  # pylint: disable=no-self-use
-        images = {
-            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i) for i in range(count)
-        }
+        images = {f"client_files[{i}]": generate_image_file(f"image_{i}.jpg") for i in range(count)}
         images["image_quality"] = 75
         return images
 
@@ -693,7 +691,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
 
     def _generate_task_images(self, count, name="image", **image_params):
         images = {
-            "client_files[%d]" % i: generate_image_file("%s_%d.jpg" % (name, i), **image_params)
+            f"client_files[{i}]": generate_image_file(f"{name}_{i}.jpg", **image_params)
             for i in range(count)
         }
         images["image_quality"] = 75
