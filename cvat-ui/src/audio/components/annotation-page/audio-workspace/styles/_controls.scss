@@ -91,21 +91,13 @@
     }
 }
 
-.cvat-audio-create-region-control,
-.cvat-audio-edit-region-control,
-.cvat-audio-record-region-control,
-.cvat-audio-extend-region-control,
-.cvat-audio-loop-control {
-    border-radius: $border-radius-base;
-    transition: $annotation-view-control-transition;
-    transform: scale(0.65);
-    padding: 2px;
-    font-size: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.cvat-audio-interval-region-popover {
+    .cvat-audio-interval-region-popover-content {
+        width: 232px;
 
-    &:hover:not(.cvat-disabled-canvas-control) {
-        background: $header-color;
+        .cvat-audio-interval-popover-label-row {
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
     }
 }
