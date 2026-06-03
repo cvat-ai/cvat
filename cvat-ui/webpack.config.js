@@ -229,6 +229,10 @@ module.exports = (env, argv = {}) => {
                         from: 'plugins/**/assets/*.(onnx|js)',
                         to  : 'assets/[name][ext]',
                     },
+                    {
+                        from: 'public/catalogue',
+                        to: 'catalogue',
+                    },
                 ],
             }),
         ],
