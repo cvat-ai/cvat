@@ -1030,9 +1030,7 @@ class TestListSettings(_PermissionTestBase):
         return response
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
-    def test_user_list_settings_in_sandbox(
-        self, admin_user, find_sandbox_task, is_staff, allow
-    ):
+    def test_user_list_settings_in_sandbox(self, admin_user, find_sandbox_task, is_staff, allow):
         task, user = find_sandbox_task(is_staff)
 
         settings = [self.get_task_quality_settings(admin_user, task["id"])]
@@ -1579,6 +1577,7 @@ class TestQualityReportContents(_PermissionTestBase):
             "validation_frames",
         ]:
             assert summary[summary_field] == sum(r["summary"][summary_field] for r in task_reports)
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostProjectQualityReports(_PermissionTestBase):

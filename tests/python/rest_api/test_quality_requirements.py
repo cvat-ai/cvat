@@ -1189,9 +1189,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             )
 
         changed_report = self.create_quality_report(user=admin_user, task_id=task_id)
-        assert changed_report["summary"]["conflict_count"] > initial_report["summary"][
-            "conflict_count"
-        ]
+        assert (
+            changed_report["summary"]["conflict_count"]
+            > initial_report["summary"]["conflict_count"]
+        )
         assert changed_report["summary"]["gt_count"] > initial_report["summary"]["gt_count"]
 
     def test_task_report_filter_matches_attribute_name_value_on_same_attribute(self, admin_user):
