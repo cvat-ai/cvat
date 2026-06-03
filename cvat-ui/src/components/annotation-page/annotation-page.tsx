@@ -138,7 +138,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
     const isAudio = workspace === Workspace.AUDIO;
 
-    if (job === null || (!annotationsInitialized && !isAudio)) {
+    if (job === null || !annotationsInitialized) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 

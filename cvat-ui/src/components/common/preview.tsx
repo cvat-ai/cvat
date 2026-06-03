@@ -5,13 +5,11 @@
 import React, { useEffect } from 'react';
 
 import { useDispatch, useSelector } from 'react-redux';
-import { PictureOutlined, SoundOutlined } from '@ant-design/icons';
+import { PictureOutlined } from '@ant-design/icons';
 import { useInView } from 'react-intersection-observer';
 import Spin from 'antd/lib/spin';
 import { CombinedState } from 'reducers';
-import {
-    Job, Task, Project, DimensionType,
-} from 'cvat-core-wrapper';
+import { Job, Task, Project } from 'cvat-core-wrapper';
 import MLModel from 'cvat-core/src/ml-model';
 import { previewQueue, getRequestId } from 'utils/preview-queue';
 
@@ -65,9 +63,6 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
         return { preview: undefined, entity: null };
     });
 
-    const isAudio = entity && 'dimension' in entity &&
-        (entity as Job | Task).dimension === DimensionType.DIMENSION_1D;
-
     useEffect(() => {
         if (inView && !hasFetched && preview === undefined) {
             setHasFetched(true);
@@ -104,11 +99,10 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
     }
 
     const imgSrc = preview.preview;
-
     if (preview.initialized && !imgSrc) {
         return (
             <div className={emptyPreviewClassName || ''} onClick={onClick} aria-hidden>
-                {isAudio ? <SoundOutlined /> : <PictureOutlined />}
+                <PictureOutlined />
             </div>
         );
     }
