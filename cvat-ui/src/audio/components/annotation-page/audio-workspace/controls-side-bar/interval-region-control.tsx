@@ -101,12 +101,6 @@ function IntervalRegionControl(props: Props): JSX.Element {
     const drawInterval = (): void => {
         if (noLabels) return;
 
-        if (drawing) {
-            updateActiveControl(ActiveControl.CURSOR);
-            setPopoverOpen(false);
-            return;
-        }
-
         const labelId = getLabelId();
         if (labelId === null) return;
 
@@ -117,12 +111,6 @@ function IntervalRegionControl(props: Props): JSX.Element {
 
     const recordInterval = (): void => {
         if (noLabels) return;
-
-        if (recording) {
-            updateActiveControl(ActiveControl.CURSOR);
-            setPopoverOpen(false);
-            return;
-        }
 
         const labelId = getLabelId();
         if (labelId === null) return;
@@ -143,14 +131,29 @@ function IntervalRegionControl(props: Props): JSX.Element {
         setPopoverOpen(false);
     };
 
+    const stopActiveIntervalControl = (): void => {
+        if (isActive) {
+            updateActiveControl(ActiveControl.CURSOR);
+            setPopoverOpen(false);
+        }
+    };
+
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         CREATE_AUDIO_REGION: (event?: KeyboardEvent) => {
             if (event) event.preventDefault();
-            drawInterval();
+            if (drawing) {
+                stopActiveIntervalControl();
+            } else {
+                drawInterval();
+            }
         },
         RECORD_AUDIO_REGION: (event?: KeyboardEvent) => {
             if (event) event.preventDefault();
-            recordInterval();
+            if (recording) {
+                stopActiveIntervalControl();
+            } else {
+                recordInterval();
+            }
         },
         EXTEND_AUDIO_REGION_FROM_LAST: (event?: KeyboardEvent) => {
             if (event) event.preventDefault();
@@ -202,8 +205,8 @@ function IntervalRegionControl(props: Props): JSX.Element {
             <Row gutter={8} style={{ marginTop: 8 }}>
                 <Col span={8}>
                     {renderAction(
-                        drawing ? 'Stop' : 'Draw',
-                        drawing ? 'Cancel drawing mode' : 'Draw an interval on the waveform',
+                        'Draw',
+                        'Draw an interval on the waveform',
                         createRegionShortkey,
                         drawInterval,
                         selectedLabelId === null,
@@ -211,8 +214,8 @@ function IntervalRegionControl(props: Props): JSX.Element {
                 </Col>
                 <Col span={8}>
                     {renderAction(
-                        recording ? 'Stop' : 'Record',
-                        recording ? 'Stop recording interval' : 'Record an interval from playback position',
+                        'Record',
+                        'Record an interval from playback position',
                         recordRegionShortkey,
                         recordInterval,
                         selectedLabelId === null,
@@ -262,7 +265,12 @@ function IntervalRegionControl(props: Props): JSX.Element {
                             (noLabels ? ' cvat-audio-interval-region-control-disabled' : '')
                         }
                         onClick={() => {
-                            if (!noLabels) setPopoverOpen(!popoverOpen);
+                            if (noLabels) return;
+                            if (isActive) {
+                                stopActiveIntervalControl();
+                            } else {
+                                setPopoverOpen(!popoverOpen);
+                            }
                         }}
                     />
                 </CVATTooltip>
