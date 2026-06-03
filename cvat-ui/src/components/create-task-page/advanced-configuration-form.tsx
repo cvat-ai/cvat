@@ -171,9 +171,26 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return visibleSections.includes(section);
     }
 
+    private getValuesWithoutFrameStep(values: Store): AdvancedConfiguration {
+        const entries = Object.entries(values).filter(
+            (entry: [string, unknown]): boolean => entry[0] !== 'frameStep',
+        );
+
+        return (Object.fromEntries(entries) as any) as AdvancedConfiguration;
+    }
+
+    private getFrameFilter(values: Store): Pick<AdvancedConfiguration, 'frameFilter'> {
+        if (!this.hasSection(AdvancedConfigurationSection.FRAME_RANGE)) {
+            return {};
+        }
+
+        return {
+            frameFilter: values.frameStep ? `step=${values.frameStep}` : undefined,
+        };
+    }
+
     public submit(): Promise<void> {
         const { onSubmit, projectId } = this.props;
-        const supportsFrameFilter = this.hasSection(AdvancedConfigurationSection.FRAME_RANGE);
 
         if (this.formRef.current) {
             if (projectId) {
@@ -182,15 +199,10 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     this.formRef.current.validateFields(),
                 ]).then(([getProjectResponse, values]) => {
                     const [project] = getProjectResponse;
-                    const frameFilter = supportsFrameFilter && values.frameStep ?
-                        `step=${values.frameStep}` : undefined;
-                    const entries = Object.entries(values).filter(
-                        (entry: [string, unknown]): boolean => entry[0] !== 'frameStep',
-                    );
 
                     return onSubmit({
-                        ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
-                        ...(supportsFrameFilter ? { frameFilter } : {}),
+                        ...this.getValuesWithoutFrameStep(values),
+                        ...this.getFrameFilter(values),
                         sourceStorage: values.useProjectSourceStorage ?
                             new Storage(project.sourceStorage || { location: StorageLocation.LOCAL }) :
                             new Storage(values.sourceStorage),
@@ -203,20 +215,14 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
             return this.formRef.current.validateFields()
                 .then(
-                    (values: Store): Promise<void> => {
-                        const frameFilter = supportsFrameFilter && values.frameStep ?
-                            `step=${values.frameStep}` : undefined;
-                        const entries = Object.entries(values).filter(
-                            (entry: [string, unknown]): boolean => entry[0] !== 'frameStep',
-                        );
-
-                        return onSubmit({
-                            ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
-                            ...(supportsFrameFilter ? { frameFilter } : {}),
+                    (values: Store): Promise<void> => (
+                        onSubmit({
+                            ...this.getValuesWithoutFrameStep(values),
+                            ...this.getFrameFilter(values),
                             sourceStorage: new Storage(values.sourceStorage),
                             targetStorage: new Storage(values.targetStorage),
-                        });
-                    },
+                        })
+                    ),
                 );
         }
 

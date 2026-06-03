@@ -25,22 +25,28 @@ export enum FrameSelectionMethod {
     RANDOM_PER_JOB = 'random_per_job',
 }
 
-interface JobDataMutual {
+export interface JobData {
     taskID: number;
-    frameSelectionMethod: FrameSelectionMethod;
     type: JobType;
+    frameSelectionMethod?: FrameSelectionMethod;
     randomSeed?: number;
-}
-
-export interface JobData extends JobDataMutual {
     frameCount?: number;
     framesPerJobCount?: number;
 }
 
-export interface JobFormData extends JobDataMutual {
-    quantity: number;
-    frameCount: number;
+enum JobFormSection {
+    JOB_TYPE = 'jobType',
+    FRAME_SELECTION = 'frameSelection',
 }
+
+const AUDIO_JOB_FORM_SECTIONS = [
+    JobFormSection.JOB_TYPE,
+];
+
+const CV_JOB_FORM_SECTIONS = [
+    JobFormSection.JOB_TYPE,
+    JobFormSection.FRAME_SELECTION,
+];
 
 interface Props {
     task: Task;
@@ -51,6 +57,9 @@ const defaultQuantity = 5;
 function JobForm(props: Props): JSX.Element {
     const { task } = props;
     const isVisionTask = task.mediaType && [MediaType.IMAGE, MediaType.POINT_CLOUD].includes(task.mediaType);
+    const visibleSections = isVisionTask ? CV_JOB_FORM_SECTIONS : AUDIO_JOB_FORM_SECTIONS;
+    const hasSection = (section: JobFormSection): boolean => visibleSections.includes(section);
+    const supportsFrameSelection = hasSection(JobFormSection.FRAME_SELECTION);
     const { size: taskSize, segmentSize } = task;
     const [form] = Form.useForm();
     const dispatch = useDispatch();
@@ -60,14 +69,13 @@ function JobForm(props: Props): JSX.Element {
 
     const submit = useCallback(async (): Promise<any> => {
         try {
-            const values: JobFormData = await form.validateFields();
+            const values = await form.validateFields();
             const data: JobData = {
                 taskID: task.id,
                 type: values.type,
-                frameSelectionMethod: FrameSelectionMethod.RANDOM,
-                ...(isVisionTask ? {
-                    randomSeed: values.randomSeed,
+                ...(supportsFrameSelection ? {
                     frameSelectionMethod: values.frameSelectionMethod,
+                    randomSeed: values.randomSeed,
                     ...(values.frameSelectionMethod === FrameSelectionMethod.RANDOM ?
                         { frameCount: values.frameCount } : { framesPerJobCount: values.frameCount }
                     ),
@@ -79,7 +87,7 @@ function JobForm(props: Props): JSX.Element {
         } catch (_e) {
             return false;
         }
-    }, [task]);
+    }, [dispatch, form, supportsFrameSelection, task]);
 
     const onSubmit = async (): Promise<void> => {
         try {
@@ -123,13 +131,14 @@ function JobForm(props: Props): JSX.Element {
     }, [taskSize, frameSelectionMethod, segmentSize]);
 
     useEffect(() => {
+        if (!supportsFrameSelection) return;
         const currentQuantity = form.getFieldValue('quantity');
         onQuantityChange(currentQuantity);
-    }, [form, frameSelectionMethod]);
+    }, [form, frameSelectionMethod, onQuantityChange, supportsFrameSelection]);
 
     const description = 'A representative set, 5-15% of randomly chosen frames is recommended';
-    const AUDIO_FORM_ITEMS = [
-        <Col key='job-type'>
+    const jobTypeItem = (
+        <Col key={JobFormSection.JOB_TYPE}>
             <Form.Item
                 name='type'
                 label='Job type'
@@ -144,13 +153,11 @@ function JobForm(props: Props): JSX.Element {
                     </Select.Option>
                 </Select>
             </Form.Item>
-        </Col>,
-    ];
+        </Col>
+    );
 
-    const CV_FORM_ITEMS = [
-        ...AUDIO_FORM_ITEMS,
-
-        <Col key='frame-selection-method'>
+    const frameSelectionItem = (
+        <Col key={JobFormSection.FRAME_SELECTION}>
             <Form.Item
                 name='frameSelectionMethod'
                 label='Frame selection method'
@@ -169,8 +176,10 @@ function JobForm(props: Props): JSX.Element {
                     </Select.Option>
                 </Select>
             </Form.Item>
-        </Col>,
+        </Col>
+    );
 
+    const frameSelectionDetailsItem = (
         <Col key='frame-selection-details'>
             <Row justify='space-between'>
                 <Col>
@@ -238,7 +247,13 @@ function JobForm(props: Props): JSX.Element {
                     </Form.Item>
                 </Col>
             </Row>
-        </Col>,
+        </Col>
+    );
+
+    const formItems = [
+        hasSection(JobFormSection.JOB_TYPE) ? jobTypeItem : null,
+        hasSection(JobFormSection.FRAME_SELECTION) ? frameSelectionItem : null,
+        hasSection(JobFormSection.FRAME_SELECTION) ? frameSelectionDetailsItem : null,
     ];
 
     return (
@@ -249,14 +264,14 @@ function JobForm(props: Props): JSX.Element {
                     layout='vertical'
                     initialValues={{
                         type: JobType.GROUND_TRUTH,
-                        ...(isVisionTask ? {
+                        ...(supportsFrameSelection ? {
                             frameSelectionMethod: FrameSelectionMethod.RANDOM,
                             quantity: defaultQuantity,
                             frameCount: frameCountFromQuantity(defaultQuantity),
                         } : {}),
                     }}
                 >
-                    {isVisionTask ? CV_FORM_ITEMS : AUDIO_FORM_ITEMS}
+                    {formItems}
                 </Form>
             </Col>
             <Col span={24} className='cvat-create-job-actions'>
