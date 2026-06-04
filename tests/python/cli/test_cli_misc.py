@@ -6,7 +6,6 @@ import os
 from datetime import timedelta
 from io import BytesIO
 from pathlib import Path
-from types import SimpleNamespace
 from unittest import mock
 
 import packaging.version as pv
@@ -211,19 +210,16 @@ def test_parse_event_stream(lines, messages):
     assert list(_parse_event_stream(stream)) == messages
 
 
-def test_task_cache_limiter_keeps_last_10_tasks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    task_cache_root = tmp_path / "task-cache"
+def test_task_cache_limiter_keeps_last_10_tasks(
+    tmp_path: Path,
+    fxt_login: tuple[Client, str],
+    fxt_logger,
+):
+    client = fxt_login[0]
+    client.logger = fxt_logger[0]
+    client.config.cache_dir = tmp_path / "cache"
 
-    class _FakeCacheManager:
-        def task_dir(self, task_id: int) -> Path:
-            return task_cache_root / str(task_id)
-
-    monkeypatch.setattr(
-        "cvat_cli._internal.agent.make_cache_manager",
-        lambda client, update_policy: _FakeCacheManager(),
-    )
-
-    limiter = _TaskCacheLimiter(SimpleNamespace(logger=mock.Mock()))
+    limiter = _TaskCacheLimiter(client)
 
     for task_id in range(1, 13):
         limiter._cache_manager.task_dir(task_id).mkdir(parents=True)
@@ -242,9 +238,3 @@ def test_task_cache_limiter_keeps_last_10_tasks(tmp_path: Path, monkeypatch: pyt
             assert not limiter._cache_manager.task_dir(2).exists()
             for cached_task_id in range(3, 13):
                 assert limiter._cache_manager.task_dir(cached_task_id).exists()
-
-    assert not limiter._cache_manager.task_dir(1).exists()
-    assert not limiter._cache_manager.task_dir(2).exists()
-
-    for task_id in range(3, 13):
-        assert limiter._cache_manager.task_dir(task_id).exists()
