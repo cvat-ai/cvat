@@ -1,0 +1,190 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+$skeleton-base: #e5e7eb;
+$skeleton-highlight: #f3f4f6;
+$skeleton-border: #e5e7eb;
+$skeleton-radius: 4px;
+
+@keyframes cvat-audio-skeleton-shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+
+@keyframes cvat-audio-skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+}
+
+%cvat-audio-skeleton-block {
+    background-color: $skeleton-base;
+    background-image: linear-gradient(
+        90deg,
+        $skeleton-base 0%,
+        $skeleton-highlight 50%,
+        $skeleton-base 100%
+    );
+    background-size: 800px 100%;
+    background-repeat: no-repeat;
+    border-radius: $skeleton-radius;
+    animation: cvat-audio-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.cvat-audio-skeleton-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 12px;
+    gap: 16px;
+    background-color: #fff;
+
+    .cvat-audio-skeleton-control {
+        @extend %cvat-audio-skeleton-block;
+
+        width: 24px;
+        height: 24px;
+    }
+}
+
+.cvat-audio-skeleton-canvas {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.cvat-audio-skeleton-waveform {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 10%);
+    margin-bottom: 20px;
+}
+
+.cvat-audio-skeleton-waveform-bars {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
+    height: 140px;
+    padding: 0 4px;
+
+    .cvat-audio-skeleton-bar {
+        flex: 1 1 0%;
+        min-width: 2px;
+        background-color: #c7d2fe;
+        border-radius: 2px;
+        animation: cvat-audio-skeleton-pulse 1.4s ease-in-out infinite;
+        height: 30%;
+
+        &:nth-child(3n) { height: 70%; }
+        &:nth-child(3n + 1) { height: 45%; }
+        &:nth-child(5n) { height: 90%; }
+        &:nth-child(7n) { height: 55%; }
+        &:nth-child(11n) { height: 25%; }
+    }
+}
+
+.cvat-audio-skeleton-minimap {
+    @extend %cvat-audio-skeleton-block;
+
+    margin-top: 16px;
+    height: 50px;
+    border-top: 1px solid $skeleton-border;
+    border-radius: 0;
+}
+
+.cvat-audio-skeleton-regions {
+    background-color: #fff;
+}
+
+.cvat-audio-skeleton-regions-header {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    border-bottom: 1px solid $skeleton-border;
+    background-color: #bebebe;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cvat-audio-skeleton-regions-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cvat-audio-skeleton-regions-list {
+    flex: 1 1 auto;
+    overflow: hidden;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cvat-audio-skeleton-region-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+    background-color: #f9fafb;
+    border: 1px solid $skeleton-border;
+    border-radius: 4px;
+}
+
+.cvat-audio-skeleton-region-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.cvat-audio-skeleton-region-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.cvat-audio-skeleton-line {
+    @extend %cvat-audio-skeleton-block;
+
+    height: 10px;
+    width: 100%;
+
+    &.cvat-audio-skeleton-line-xs {
+        width: 30%;
+        height: 8px;
+    }
+
+    &.cvat-audio-skeleton-line-sm {
+        width: 50%;
+        height: 9px;
+    }
+
+    &.cvat-audio-skeleton-line-md {
+        width: 70%;
+        height: 12px;
+    }
+
+    &.cvat-audio-skeleton-line-lg {
+        width: 85%;
+        height: 12px;
+    }
+}
+
+.cvat-audio-skeleton-square {
+    @extend %cvat-audio-skeleton-block;
+
+    width: 18px;
+    height: 18px;
+
+    &.cvat-audio-skeleton-square-xs {
+        width: 14px;
+        height: 14px;
+    }
+}

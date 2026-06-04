@@ -1,0 +1,15 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+export const ZOOM_MIN = 1;
+const MAX_PX_PER_SEC = 2500;
+const MAX_TOTAL_PX = 300000;
+const HARD_CEILING = 5000;
+
+export function computeMaxZoom(duration: number): number {
+    if (!duration || duration <= 0) return HARD_CEILING;
+    const byTotal = Math.floor(MAX_TOTAL_PX / duration);
+    const cap = Math.min(MAX_PX_PER_SEC, byTotal);
+    return Math.max(ZOOM_MIN + 1, Math.min(HARD_CEILING, cap));
+}

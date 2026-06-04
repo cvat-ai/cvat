@@ -167,7 +167,10 @@ interface State {
     portals: React.ReactPortal[];
 }
 
-type DetectorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { version: number }>;
+type DetectorResults = Extract<
+    Awaited<ReturnType<typeof core.lambda.call>>,
+    { tags: unknown[]; shapes: unknown[]; tracks: unknown[] }
+>;
 
 function trackedRectangleMapper(shape: MinimalShape): MinimalShape {
     return {
