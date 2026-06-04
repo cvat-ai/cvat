@@ -10,7 +10,9 @@ import {
     RectangleShape, PolylineShape, PointsShape, EllipseShape,
     InterpolationNotPossibleError,
 } from './annotations-objects';
-import { SerializedCollection, SerializedShape, SerializedTrack } from './server-response-types';
+import {
+    SerializedCollection, SerializedShape, SerializedTrack, SerializedInterval,
+} from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
@@ -87,6 +89,11 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     }, {})
 );
 
+type AnnotationObject = Shape | Tag | Track;
+
+// AUDIO TODO:
+// Collection is currently used for intervals only to fetch them from the server and expose them to the UI.
+// Adding/modifying/filtering/saving/history are implemented separately.
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
@@ -96,7 +103,8 @@ export default class Collection {
     private shapes: Record<number, Shape[]>;
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
-    private objects: Record<number, Shape | Tag | Track>;
+    private intervals: SerializedInterval[];
+    private objects: Record<number, AnnotationObject>;
     private groups: { max: number };
     private injection: BasicInjection;
 
@@ -127,6 +135,7 @@ export default class Collection {
         this.shapes = {}; // key is a frame
         this.tags = {}; // key is a frame
         this.tracks = [];
+        this.intervals = [];
         this.objects = {}; // key is a client id
         this.flush = false;
         this.groups = {
@@ -240,18 +249,20 @@ export default class Collection {
         return updatedStates;
     }
 
-    public import(data: Omit<SerializedCollection, 'version'>): {
+    public import(data: Partial<SerializedCollection>): {
         tags: Tag[];
         shapes: Shape[];
         tracks: Track[];
+        intervals: SerializedInterval[];
     } {
         const result = {
             tags: [],
             shapes: [],
             tracks: [],
+            intervals: [],
         };
 
-        for (const tag of data.tags) {
+        for (const tag of data.tags ?? []) {
             const clientID = this.injection.nextClientID();
             const color = colors[clientID % colors.length];
             const tagModel = new Tag(tag, clientID, color, this.injection);
@@ -262,7 +273,7 @@ export default class Collection {
             result.tags.push(tagModel);
         }
 
-        for (const shape of data.shapes) {
+        for (const shape of data.shapes ?? []) {
             const clientID = this.injection.nextClientID();
             const shapeModel = shapeFactory(shape, clientID, this.injection);
             this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
@@ -272,7 +283,7 @@ export default class Collection {
             result.shapes.push(shapeModel);
         }
 
-        for (const track of data.tracks) {
+        for (const track of data.tracks ?? []) {
             const clientID = this.injection.nextClientID();
             const trackModel = trackFactory(track, clientID, this.injection);
             // The function can return null if track doesn't have any shapes.
@@ -284,12 +295,17 @@ export default class Collection {
             }
         }
 
+        for (const interval of data.intervals ?? []) {
+            this.intervals.push(interval);
+            result.intervals.push(interval);
+        }
+
         return result;
     }
 
     public commit(
-        appended: Omit<SerializedCollection, 'version'>,
-        removed: Omit<SerializedCollection, 'version'>,
+        appended: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
+        removed: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         frame: number,
     ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; } {
         const isCollectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
@@ -300,11 +316,11 @@ export default class Collection {
             throw new ArgumentError('Objects required to be deleted were not found in the collection');
         }
 
-        const removedCollection: (Shape | Tag | Track)[] = [].concat(removed.shapes, removed.tags, removed.tracks)
+        const removedCollection: AnnotationObject[] = [].concat(removed.shapes, removed.tags, removed.tracks)
             .map((object) => this.objects[object.clientID as number]);
 
         const imported = this.import(appended);
-        const appendedCollection = ([] as (Shape | Tag | Track)[])
+        const appendedCollection = ([] as (AnnotationObject)[])
             .concat(imported.shapes, imported.tags, imported.tracks);
         if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
             // nothing to commit
@@ -345,7 +361,11 @@ export default class Collection {
         );
     }
 
-    public export(): Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags'> {
+    public getAllIntervals(): SerializedInterval[] {
+        return this.intervals.map((interval) => ({ ...interval }));
+    }
+
+    public export(): Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'> {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed)
                 .map((track) => track.toJSON() as SerializedTrack),
@@ -619,11 +639,7 @@ export default class Collection {
         }
 
         const track = this._mergeInternal(objectsForMerge as (Shape | Track)[], shapeType, label);
-        const imported = this.import({
-            tracks: [track],
-            tags: [],
-            shapes: [],
-        });
+        const imported = this.import({ tracks: [track] });
 
         // Remove other shapes
         for (const object of objectsForMerge) {
@@ -732,11 +748,7 @@ export default class Collection {
         if (frame <= +keyframes[0]) return;
 
         const [prev, next] = this._splitInternal(objectState, object, frame);
-        const imported = this.import({
-            tracks: [prev, next],
-            tags: [],
-            shapes: [],
-        });
+        const imported = this.import({ tracks: [prev, next] });
 
         // Remove source object
         object.removed = true;
@@ -868,11 +880,7 @@ export default class Collection {
             }
 
             // Append newly created object(s) to the collection
-            const imported = this.import({
-                shapes: shapesToCreate,
-                tracks: [],
-                tags: [],
-            });
+            const imported = this.import({ shapes: shapesToCreate });
 
             // and remove joined shapes
             for (const object of objectsToJoin) {
@@ -966,8 +974,6 @@ export default class Collection {
                 source: Source.MANUAL,
                 elements: [],
             }],
-            tracks: [],
-            tags: [],
         });
         slicedObject.removed = true;
 
@@ -1321,9 +1327,7 @@ export default class Collection {
                         }) : undefined,
                     });
                 } else {
-                    throw new ArgumentError(
-                        `Object type must be one of: ${JSON.stringify(Object.values(ObjectType))}`,
-                    );
+                    throw new ArgumentError('Object type must be one of SHAPE, TRACK, or TAG');
                 }
             }
         }

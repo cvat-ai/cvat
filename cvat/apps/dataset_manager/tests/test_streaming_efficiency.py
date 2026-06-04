@@ -372,7 +372,7 @@ class TestImporters(ApiTestBase):
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
 
@@ -380,7 +380,7 @@ class TestImporters(ApiTestBase):
             assert response.status_code == status.HTTP_200_OK, response.status_code
             assert response.json()["status"] == "finished", response.json().get("status")
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/tasks/{tid}")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(

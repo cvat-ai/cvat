@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import mimetypes
 import os
 import re
 import shutil
@@ -4776,6 +4777,12 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if value.content_type not in settings.ASSET_SUPPORTED_TYPES:
             raise serializers.ValidationError(
                 f"File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}"
+            )
+
+        guessed_type, guessed_encoding = mimetypes.guess_type(value.name)
+        if guessed_type != value.content_type or guessed_encoding is not None:
+            raise serializers.ValidationError(
+                "Provided Content-Type does not match the file extension."
             )
 
         return value

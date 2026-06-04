@@ -13,6 +13,7 @@ import { TasksActionTypes } from 'actions/tasks-actions';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { AboutActionTypes } from 'actions/about-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { AudioActionTypes } from 'actions/audio-actions';
 import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
@@ -36,7 +37,18 @@ import { NotificationsState } from '.';
 
 const shouldLog = (error: Error): boolean => {
     if (error instanceof ServerError) {
-        const ignoredCodes = [0, 400, 401, 403, 404, 429, 500];
+        const ignoredCodes = [
+            // 0, Network Error: may not to be logged on server. Log it here.
+            400, // client error: not interested
+            401, // client error: not interested
+            403, // client error: not interested
+            404, // client error: not interested
+            429, // client error: not interested
+            500, // usually logged by server
+            // 502, Bad Gateway: may not to be logged on server. Log it here.
+            // 503, Service Unavailable: may not to be logged on server. Log it here.
+            // 504, Gateway Timeout: may not to be logged on server. Log it here.
+        ];
         return !ignoredCodes.includes(error.code);
     }
 
@@ -1105,7 +1117,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED: {
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED:
+        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 errors: {
@@ -1324,6 +1337,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AudioActionTypes.LOAD_AUDIO_ANNOTATIONS_FAILED:
         case AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED: {
             return {
                 ...state,

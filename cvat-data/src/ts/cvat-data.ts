@@ -19,8 +19,9 @@ export enum ChunkQuality {
 }
 
 export enum DimensionType {
-    DIMENSION_3D = '3d',
+    DIMENSION_1D = '1d',
     DIMENSION_2D = '2d',
+    DIMENSION_3D = '3d',
 }
 
 export function decodeContextImages(

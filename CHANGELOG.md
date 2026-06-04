@@ -16,6 +16,102 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.67.0'></a>
+## \[2.67.0\] - 2026-06-02
+
+### Added
+
+- \[Server API\] The project/task/job `preview` endpoints accept
+  the `Prefer: handling=empty` header (RFC 7240). When set, entities without a
+  media-derived preview (e.g. point cloud tasks) return `204 No Content`
+  instead of the default placeholder.
+  (<https://github.com/cvat-ai/cvat/pull/10611>)
+
+### Fixed
+
+- \[SDK\] Fixed a PyTorch `UserWarning` about non-writable tensors when converting
+  polygon masks to tensors in `ExtractInstanceMasks`.
+  (<https://github.com/cvat-ai/cvat/pull/10680>)
+
+- Memory growth during schema generation
+  (<https://github.com/cvat-ai/cvat/pull/10679>)
+
+### Security
+
+- Fixed an XSS vulnerability in annotation guide asset handling
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-w6mx-95ff-72cv>)
+
+<a id='changelog-2.66.0'></a>
+## \[2.66.0\] - 2026-05-26
+
+### Added
+
+- \[Server API\] Interval annotations: new annotation type with `start`/`stop` boundaries
+  (<https://github.com/cvat-ai/cvat/pull/10583>)
+- \[Server API\] Backup export and import for audio tasks
+  (<https://github.com/cvat-ai/cvat/pull/10583>)
+- \[Server API\] Generic TSV dataset format for importing and exporting interval annotations
+  (<https://github.com/cvat-ai/cvat/pull/10583>)
+
+- Added client IP address tracking to event logs
+  (<https://github.com/cvat-ai/cvat/pull/10545>)
+
+- Added the ability to move objects between layers when z-order sorting is enabled in the object sidebar
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added the ability to move an object to a specific layer from the object item menu
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added the ability to move and merge existing layers by drag and drop
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added layer compaction for minimizing annotation z-order layers and re-enumerating them
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added z-order filtering for annotations
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added layer display support in canvas object details
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Chunk download retries in case of network errors
+  (<https://github.com/cvat-ai/cvat/pull/10651>)
+
+- \[CLI\] Added `backup` and `create-from-backup` commands for projects
+  (<https://github.com/cvat-ai/cvat/pull/10618>)
+
+- \[CLI\] Added `export-dataset` and `import-dataset` commands for projects in `cvat-cli`
+  (<https://github.com/cvat-ai/cvat/pull/10639>)
+
+- \[SDK\] Added an `ExtractInstanceMasks` PyTorch target transform for torchvision
+  instance segmentation models.
+  (<https://github.com/cvat-ai/cvat/pull/10654>)
+
+- Added CI to trigger build of agent images in cvat-models repo, moved code from ai-models/ to cvat-models repo
+  (<https://github.com/cvat-ai/cvat/pull/10629>)
+
+### Changed
+
+- \[SDK\] `ExtractBoundingBoxes` now returns an empty `boxes` tensor with shape
+  `[0, 4]` instead of `[0]`.
+  (<https://github.com/cvat-ai/cvat/pull/10654>)
+
+### Fixed
+
+- Return a validation error when swapping label attribute names instead of failing with an integrity error
+  (<https://github.com/cvat-ai/cvat/pull/10625>)
+
+- Return a validation error when renaming a label attribute to an existing attribute name
+  instead of failing with an integrity error
+  (<https://github.com/cvat-ai/cvat/pull/10625>)
+
+- Fixed severe truncation of label names in the annotation page Labels sidebar
+  (<https://github.com/cvat-ai/cvat/pull/10641>)
+
+- Fixed a crash when backing up a task with no manifest that's been migrated
+  to backing cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10668>)
+
 <a id='changelog-2.65.0'></a>
 ## \[2.65.0\] - 2026-05-19
 
