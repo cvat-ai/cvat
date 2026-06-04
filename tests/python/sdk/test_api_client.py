@@ -61,7 +61,7 @@ def test_call_api_request_headers_override_defaults_and_skip_none(monkeypatch):
     assert "X-Remove-Me" not in captured_headers
 
 
-def test_endpoint_raw_headers_can_suppress_default_headers(monkeypatch):
+def test_endpoint_header_params_with_none_are_omitted(monkeypatch):
     api_client = ApiClient(Configuration(host=BASE_URL))
     api_client.set_default_header("X-Organization", "default-org")
 
@@ -85,11 +85,10 @@ def test_endpoint_raw_headers_can_suppress_default_headers(monkeypatch):
 
     _, response = TasksApi(api_client).list_endpoint.call_with_http_info(
         org_id=123,
-        page=1,
-        _headers={"X-Organization": None},
+        x_organization=None,
         _parse_response=False,
     )
 
     assert response.status == 200
     assert "X-Organization" not in captured_request["headers"]
-    assert dict(captured_request["query_params"]) == {"org_id": 123, "page": 1}
+    assert dict(captured_request["query_params"]) == {"org_id": 123}

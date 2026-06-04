@@ -95,18 +95,17 @@ def get_paginated_collection_with_organization(
     return_json: bool = False,
     **kwargs,
 ):
-    header_overrides = {"X-Organization": None}
+    params = {"x_organization": None}
 
     if organization_id is None:
         # Empty org slug is the SDK/server convention for the personal workspace.
-        params = {"org": ""}
+        params["org"] = ""
     else:
-        params = {"org_id": organization_id}
+        params["org_id"] = organization_id
 
     return get_paginated_collection(
         endpoint,
         return_json=return_json,
-        _headers=header_overrides,
         **kwargs,
         **params,
     )
