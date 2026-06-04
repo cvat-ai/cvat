@@ -22,7 +22,6 @@ export interface QualitySummary {
         extraAnnotations: number;
         missingAnnotations: number;
         mismatchingLabel: number;
-        lowOverlap: number;
         mismatchingDirection: number;
         mismatchingAttributes: number;
         mismatchingGroups: number;
@@ -46,6 +45,7 @@ export interface QualitySummary {
         enabled: number;
         completed: number;
         items: {
+            requirementId: number | null;
             name: string;
             metric: string;
             score: number | null;
@@ -136,7 +136,6 @@ export default class QualityReport {
                 extraAnnotations: this.#summary.conflicts_by_type?.extra_annotation,
                 missingAnnotations: this.#summary.conflicts_by_type?.missing_annotation,
                 mismatchingLabel: this.#summary.conflicts_by_type?.mismatching_label,
-                lowOverlap: this.#summary.conflicts_by_type?.low_overlap,
                 mismatchingDirection: this.#summary.conflicts_by_type?.mismatching_direction,
                 mismatchingAttributes: this.#summary.conflicts_by_type?.mismatching_attributes,
                 mismatchingGroups: this.#summary.conflicts_by_type?.mismatching_groups,
@@ -161,7 +160,13 @@ export default class QualityReport {
                 total: this.#summary.requirements.total,
                 enabled: this.#summary.requirements.enabled,
                 completed: this.#summary.requirements.completed,
-                items: this.#summary.requirements.items,
+                items: this.#summary.requirements.items.map((item) => ({
+                    requirementId: item.requirement_id,
+                    name: item.name,
+                    metric: item.metric,
+                    score: item.score,
+                    threshold: item.threshold,
+                })),
             } : null,
         };
     }

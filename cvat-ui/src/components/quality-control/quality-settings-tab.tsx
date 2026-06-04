@@ -47,7 +47,6 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 targetMetric: values.targetMetric,
                 targetMetricThreshold: values.targetMetricThreshold / 100,
                 maxValidationsPerJob: values.maxValidationsPerJob,
-                lowOverlapThreshold: values.lowOverlapThreshold / 100,
                 iouThreshold: values.iouThreshold / 100,
                 compareAttributes: values.compareAttributes,
                 emptyIsAnnotated: values.emptyIsAnnotated,

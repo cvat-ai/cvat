@@ -312,7 +312,6 @@ export interface SerializedEffectiveQualityRequirementData {
     point_size?: number;
     point_size_base?: QualityRequirementPointSizeBase;
     line_thickness?: number;
-    low_overlap_threshold?: number;
     match_orientation?: boolean;
     line_orientation_threshold?: number;
     match_groups?: boolean;
@@ -350,7 +349,6 @@ export interface SerializedQualityRequirementData {
     point_size?: number | null;
     point_size_base?: QualityRequirementPointSizeBase | null;
     line_thickness?: number | null;
-    low_overlap_threshold?: number | null;
     match_orientation?: boolean | null;
     line_orientation_threshold?: number | null;
     match_groups?: boolean | null;
@@ -386,6 +384,7 @@ export interface APIQualityRequirementsFilter extends APICommonFilterParams {
 export type QualityRequirementsFilter = CamelizedV2<APIQualityRequirementsFilter>;
 
 export interface SerializedQualityRequirementReportSummaryItem {
+    requirement_id: number | null;
     name: string;
     metric: QualityRequirementMetric;
     score: number | null;
@@ -438,7 +437,6 @@ export interface SerializedQualitySettingsData {
     oks_sigma?: number;
     point_size_base?: string;
     line_thickness?: number;
-    low_overlap_threshold?: number;
     compare_line_orientation?: boolean;
     line_orientation_threshold?: number;
     compare_groups?: boolean;
@@ -516,7 +514,6 @@ export interface SerializedQualityReportData {
             extra_annotation: number;
             missing_annotation: number;
             mismatching_label: number;
-            low_overlap: number;
             mismatching_direction: number;
             mismatching_attributes: number;
             mismatching_groups: number;

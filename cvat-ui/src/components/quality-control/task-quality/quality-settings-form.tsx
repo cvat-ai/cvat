@@ -44,7 +44,6 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
         maxValidationsPerJob: settings.maxValidationsPerJob,
 
-        lowOverlapThreshold: settings.lowOverlapThreshold * 100,
         iouThreshold: settings.iouThreshold * 100,
         compareAttributes: settings.compareAttributes,
         emptyIsAnnotated: settings.emptyIsAnnotated,
@@ -106,10 +105,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
     );
 
     const shapeComparisonTooltip = makeTooltip(
-        <>
-            {makeTooltipFragment('Min overlap threshold (IoU)', settings.descriptions.iouThreshold)}
-            {makeTooltipFragment('Low overlap threshold', settings.descriptions.lowOverlapThreshold)}
-        </>,
+        makeTooltipFragment('Min overlap threshold (IoU)', settings.descriptions.iouThreshold),
     );
 
     const keypointTooltip = makeTooltip(
@@ -285,15 +281,6 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     <Form.Item
                         name='iouThreshold'
                         label='Min overlap threshold (%)'
-                        rules={[{ required: true, message: 'This field is required' }]}
-                    >
-                        <InputNumber min={0} max={100} precision={0} />
-                    </Form.Item>
-                </Col>
-                <Col span={12}>
-                    <Form.Item
-                        name='lowOverlapThreshold'
-                        label='Low overlap threshold (%)'
                         rules={[{ required: true, message: 'This field is required' }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />

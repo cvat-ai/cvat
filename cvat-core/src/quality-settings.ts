@@ -37,7 +37,6 @@ export default class QualitySettings {
     #oksSigma: number;
     #pointSizeBase: PointSizeBase;
     #lineThickness: number;
-    #lowOverlapThreshold: number;
     #compareLineOrientation: boolean;
     #lineOrientationThreshold: number;
     #compareGroups: boolean;
@@ -63,7 +62,6 @@ export default class QualitySettings {
         this.#oksSigma = initialData.oks_sigma;
         this.#pointSizeBase = initialData.point_size_base as PointSizeBase;
         this.#lineThickness = initialData.line_thickness;
-        this.#lowOverlapThreshold = initialData.low_overlap_threshold;
         this.#compareLineOrientation = initialData.compare_line_orientation;
         this.#lineOrientationThreshold = initialData.line_orientation_threshold;
         this.#compareGroups = initialData.compare_groups;
@@ -107,10 +105,6 @@ export default class QualitySettings {
 
     get lineThickness(): number {
         return this.#lineThickness;
-    }
-
-    get lowOverlapThreshold(): number {
-        return this.#lowOverlapThreshold;
     }
 
     get compareLineOrientation(): boolean {

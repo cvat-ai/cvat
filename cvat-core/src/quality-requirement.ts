@@ -44,7 +44,6 @@ export default class QualityRequirement {
     #pointSize: number | null;
     #pointSizeBase: QualityRequirementPointSizeBase | null;
     #lineThickness: number | null;
-    #lowOverlapThreshold: number | null;
     #matchOrientation: boolean | null;
     #lineOrientationThreshold: number | null;
     #matchGroups: boolean | null;
@@ -77,7 +76,6 @@ export default class QualityRequirement {
         this.#pointSize = initialData.point_size ?? null;
         this.#pointSizeBase = initialData.point_size_base ?? null;
         this.#lineThickness = initialData.line_thickness ?? null;
-        this.#lowOverlapThreshold = initialData.low_overlap_threshold ?? null;
         this.#matchOrientation = initialData.match_orientation ?? null;
         this.#lineOrientationThreshold = initialData.line_orientation_threshold ?? null;
         this.#matchGroups = initialData.match_groups ?? null;
@@ -162,10 +160,6 @@ export default class QualityRequirement {
 
     get lineThickness(): number | null {
         return this.#lineThickness;
-    }
-
-    get lowOverlapThreshold(): number | null {
-        return this.#lowOverlapThreshold;
     }
 
     get matchOrientation(): boolean | null {
