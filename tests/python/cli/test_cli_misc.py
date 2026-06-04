@@ -14,8 +14,8 @@ import pytest
 from cvat_cli._internal.agent import (
     _Event,
     _NewReconnectionDelay,
-    _TaskCacheLimiter,
     _parse_event_stream,
+    _TaskCacheLimiter,
 )
 from cvat_sdk import Client
 from cvat_sdk.api_client import models
