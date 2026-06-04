@@ -215,8 +215,15 @@ allow if {
 allow if {
     input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
     input.auth.organization.id == input.resource.organization.id
-    organizations.is_member
+    organizations.has_perm(organizations.SUPERVISOR)
     is_project_staff
+}
+
+allow if {
+    input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.is_member
+    utils.is_resource_owner
 }
 
 allow if {
