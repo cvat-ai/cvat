@@ -81,7 +81,7 @@ export class Drawn extends ImageObject {
 
         if (isChildObject(_parentId) || shapeType === ShapeType.CUBOID ||
             shapeType === ShapeType.ELLIPSE || !!rotation) {
-            // cuboids and rotated bounding boxes cannot be fitted
+            // cuboids, rotated bounding boxes, and skeleton elements cannot be fitted
             return points;
         }
 

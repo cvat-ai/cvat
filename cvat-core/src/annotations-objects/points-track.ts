@@ -11,8 +11,6 @@ import { PolyTrack } from './poly-track';
 import { PointsShape } from './points-shape';
 import { isChildObject } from './utils';
 
-const childReadOnlyFields = ['group', 'zOrder', 'source', 'rotation'];
-
 export class PointsTrack extends PolyTrack {
     constructor(
         data: SerializedTrack | SerializedTrack['elements'][0],
@@ -22,7 +20,7 @@ export class PointsTrack extends PolyTrack {
     ) {
         super(data, clientID, color, injection);
         if (isChildObject(this._parentId)) {
-            this.readOnlyFields = childReadOnlyFields;
+            this.readOnlyFields = ['group', 'zOrder', 'source', 'rotation'];
         }
         this.shapeType = ShapeType.POINTS;
         for (const shape of Object.values(this.shapes)) {

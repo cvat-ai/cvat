@@ -10,8 +10,6 @@ import type { AnnotationInjection } from './types';
 import { PolyShape } from './poly-shape';
 import { isChildObject } from './utils';
 
-const childReadOnlyFields = ['group', 'zOrder', 'source', 'rotation'];
-
 export class PointsShape extends PolyShape {
     constructor(
         data: SerializedShape | SerializedShape['elements'][0],
@@ -21,7 +19,7 @@ export class PointsShape extends PolyShape {
     ) {
         super(data, clientID, color, injection);
         if (isChildObject(this._parentId)) {
-            this.readOnlyFields = childReadOnlyFields;
+            this.readOnlyFields = ['group', 'zOrder', 'source', 'rotation'];
         }
         this.shapeType = ShapeType.POINTS;
         checkNumberOfPoints(this.shapeType, this.points);
