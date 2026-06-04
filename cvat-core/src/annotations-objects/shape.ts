@@ -8,7 +8,7 @@ import ObjectState, { SerializedData } from '../object-state';
 import { ScriptingError } from '../exceptions';
 import { ObjectType, HistoryActions } from '../enums';
 import type { SerializedShape } from '../server-response-types';
-import { computeNewSource, serializeAttributes } from './utils';
+import { computeNewSource, isChildObject, serializeAttributes } from './utils';
 import { Drawn } from './drawn';
 import type { AnnotationInjection } from './types';
 
@@ -67,7 +67,7 @@ export class Shape extends Drawn {
             result.id = this._serverId;
         }
 
-        if (typeof this._parentId === 'number') {
+        if (isChildObject(this._parentId)) {
             return omit(result, 'elements');
         }
 

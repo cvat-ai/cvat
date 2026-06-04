@@ -69,3 +69,7 @@ export function computeNewSource(currentSource: Source): Source {
 
     return Source.MANUAL;
 }
+
+export function isChildObject(parentId?: number): boolean {
+    return typeof parentId === 'number';
+}

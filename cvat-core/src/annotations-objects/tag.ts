@@ -7,7 +7,7 @@ import ObjectState, { SerializedData } from '../object-state';
 import { ScriptingError } from '../exceptions';
 import { ObjectType } from '../enums';
 import type { SerializedTag } from '../server-response-types';
-import { ImageObject } from './annotation';
+import { ImageObject } from './image-object';
 import { serializeAttributes } from './utils';
 
 export class Tag extends ImageObject {

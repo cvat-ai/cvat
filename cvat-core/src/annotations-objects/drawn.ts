@@ -10,8 +10,9 @@ import { ShapeType, HistoryActions, DimensionType } from '../enums';
 import {
     checkNumberOfPoints, checkShapeArea,
 } from '../object-utils';
-import { ImageObject } from './annotation';
+import { ImageObject } from './image-object';
 import type { AnnotationInjection } from './types';
+import { isChildObject } from './utils';
 
 export class Drawn extends ImageObject {
     protected descriptions: string[];
@@ -78,7 +79,7 @@ export class Drawn extends ImageObject {
         checkObjectType('rotation', rotation, 'number');
         points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number'));
 
-        if (_parentId !== undefined || shapeType === ShapeType.CUBOID ||
+        if (isChildObject(_parentId) || shapeType === ShapeType.CUBOID ||
             shapeType === ShapeType.ELLIPSE || !!rotation) {
             // cuboids and rotated bounding boxes cannot be fitted
             return points;

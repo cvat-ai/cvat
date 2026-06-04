@@ -10,10 +10,10 @@ import { Label } from '../labels';
 import type { SerializedTrack } from '../server-response-types';
 import { attrsAsAnObject } from '../object-utils';
 import { Drawn } from './drawn';
-import { InterpolationNotPossibleError } from './annotation';
+import { InterpolationNotPossibleError } from './image-object';
 import type { AnnotationInjection, InterpolatedPosition, TrackedShape } from './types';
 import {
-    computeNewSource, convertTrackedShape, copyShape, serializeAttributes,
+    computeNewSource, convertTrackedShape, copyShape, isChildObject, serializeAttributes,
 } from './utils';
 
 export class Track extends Drawn {
@@ -81,7 +81,7 @@ export class Track extends Drawn {
             result.id = this._serverId;
         }
 
-        if (typeof this._parentId === 'number') {
+        if (isChildObject(this._parentId)) {
             return omit(result, 'elements');
         }
 

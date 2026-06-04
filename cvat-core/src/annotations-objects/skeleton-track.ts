@@ -9,7 +9,7 @@ import {
 } from '../enums';
 import type { SerializedTrack } from '../server-response-types';
 import { computeWrappingBox, rotatePoint } from '../object-utils';
-import { ImageObject, InterpolationNotPossibleError } from './annotation';
+import { ImageObject, InterpolationNotPossibleError } from './image-object';
 import { Track } from './track';
 import type { AnnotationInjection, InterpolatedPosition } from './types';
 import { computeNewSource, copyShape } from './utils';
