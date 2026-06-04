@@ -483,7 +483,7 @@ context('Ground truth jobs', () => {
                 });
             });
 
-            it('Check GT annotation source in GT job and regular job review overlay', () => {
+            it('Check GT annotation source in GT job and regular job review overlay', { scrollBehavior: false }, () => {
                 const [frame] = groundTruthFrames;
                 const [rectangle] = groundTruthRectangles;
 
@@ -510,6 +510,13 @@ context('Ground truth jobs', () => {
                     cy.goCheckFrameNumber(frame);
                     checkRectangleAndObjectMenu(rectangle, true);
                     checkCanvasObjectSource(rectangle, 'auto', 'Ground truth');
+                    cy.get(`#cvat_canvas_shape_${rectangle.id}`)
+                        .trigger('mousedown', { which: 1 });
+                    cy.get('.cvat-canvas-container').trigger(
+                        'mousemove', rectangle.secondX + 20, rectangle.secondY + 20,
+                    );
+                    cy.get('body').trigger('mouseup');
+                    checkCanvasObjectSource(rectangle, 'semi-auto', 'Ground truth');
 
                     cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
                     cy.get('.cvat-canvas-container').should('exist');
