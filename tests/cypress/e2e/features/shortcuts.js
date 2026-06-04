@@ -308,5 +308,27 @@ context('Customizable Shortcuts', () => {
             checkShortcutsMounted((i) => `Switch label to label ${i}`);
             cy.contains('.cvat-shortcuts-modal-window [type="button"]', 'OK').click();
         });
+        it('Customized Switch label shortcut persists after reload', () => {
+            cy.window().then((window) => {
+                const { localStorage } = window;
+                const clientSettings = JSON.parse(localStorage.getItem('clientSettings'));
+                clientSettings.shortcuts.keyMap.SWITCH_LABEL_1 = {
+                    ...(clientSettings.shortcuts.keyMap.SWITCH_LABEL_1 ?? {}),
+                    sequences: ['1'],
+                };
+                localStorage.setItem('clientSettings', JSON.stringify(clientSettings));
+            });
+            cy.reload();
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+            cy.openSettings();
+            cy.contains('Shortcuts').click();
+            cy.get('.cvat-shortcuts-settings-search input')
+                .should('exist').and('be.visible').type('Switch label to label 1');
+            cy.get('.cvat-shortcuts-settings-collapse-item').should('have.length', 1);
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select')
+                .first().find('span.ant-select-selection-item').should('have.text', '1');
+            cy.get('.cvat-shortcuts-settings-search input').clear();
+            cy.closeSettings();
+        });
     });
 });
