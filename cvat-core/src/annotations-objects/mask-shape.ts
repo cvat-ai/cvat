@@ -11,15 +11,14 @@ import type { SerializedShape } from '../server-response-types';
 import { mask2Rle, rle2Mask } from '../rle-utils';
 import { cropMask } from '../object-utils';
 import { Shape } from './shape';
-import type { AnnotationInjection } from './types';
 import { computeNewSource } from './utils';
+import type { AnnotationInjection } from './types';
 
 export class MaskShape extends Shape {
     public left: number;
     public top: number;
     public right: number;
     public bottom: number;
-    private getMasksOnFrame: AnnotationInjection['getMasksOnFrame'];
 
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
@@ -29,7 +28,6 @@ export class MaskShape extends Shape {
             this.points = cropMask(this.points, width, height);
         }
         [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
-        this.getMasksOnFrame = injection.getMasksOnFrame;
         this.pinned = true;
         this.shapeType = ShapeType.MASK;
     }

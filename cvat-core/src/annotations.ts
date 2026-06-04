@@ -94,6 +94,8 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
 
         const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
         const collection = new AnnotationsCollection({
+            // Job collections use real job metadata. Task collections use constant defaults because
+            // task-level annotations are not tied to a particular job type or consensus replica set.
             jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
             stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
             labels: session.labels,

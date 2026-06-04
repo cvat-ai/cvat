@@ -12,7 +12,9 @@ import { attrsAsAnObject } from '../object-utils';
 import { Drawn } from './drawn';
 import { InterpolationNotPossibleError } from './annotation';
 import type { AnnotationInjection, InterpolatedPosition, TrackedShape } from './types';
-import { computeNewSource, convertTrackedShape, copyShape } from './utils';
+import {
+    computeNewSource, convertTrackedShape, copyShape, serializeAttributes,
+} from './utils';
 
 export class Track extends Drawn {
     public shapes: Record<number, TrackedShape>;
@@ -50,16 +52,8 @@ export class Track extends Drawn {
             frame: this.frame,
             group: this.group,
             source: this.source,
-            attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
-                if (!labelAttributes[attrId].mutable) {
-                    attributeAccumulator.push({
-                        spec_id: +attrId,
-                        value: this.attributes[attrId],
-                    });
-                }
-
-                return attributeAccumulator;
-            }, []),
+            attributes: serializeAttributes(this.attributes)
+                .filter((attr) => !labelAttributes[attr.spec_id].mutable),
             elements: [],
             shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
                 shapesAccumulator.push({
@@ -68,20 +62,9 @@ export class Track extends Drawn {
                     z_order: this.shapes[frame].zOrder,
                     rotation: this.shapes[frame].rotation,
                     outside: this.shapes[frame].outside,
-                    attributes: Object.keys(this.shapes[frame].attributes).reduce(
-                        (attributeAccumulator, attrId) => {
-                            if (labelAttributes[attrId].mutable) {
-                                attributeAccumulator.push({
-                                    spec_id: +attrId,
-                                    value: this.shapes[frame].attributes[attrId],
-                                });
-                            }
-
-                            return attributeAccumulator;
-                        },
-                        [],
-                    ),
-                    id: this.shapes[frame].serverID,
+                    attributes: serializeAttributes(this.shapes[frame].attributes)
+                        .filter((attr) => labelAttributes[attr.spec_id].mutable),
+                    id: this.shapes[frame].serverId,
                     frame: +frame,
                 });
 
@@ -94,11 +77,11 @@ export class Track extends Drawn {
             }, []),
         };
 
-        if (this.serverID !== null) {
-            result.id = this.serverID;
+        if (typeof this._serverId === 'number') {
+            result.id = this._serverId;
         }
 
-        if (this.parentID !== null) {
+        if (typeof this._parentId === 'number') {
             return omit(result, 'elements');
         }
 
@@ -118,8 +101,8 @@ export class Track extends Drawn {
             objectType: ObjectType.TRACK,
             shapeType: this.shapeType,
             clientID: this.clientID,
-            serverID: this.serverID,
-            parentID: this.parentID,
+            serverID: this._serverId ?? null,
+            parentID: this._parentId ?? null,
             lock: this.lock,
             color: this.color,
             hidden: this.hidden,
@@ -183,10 +166,8 @@ export class Track extends Drawn {
         const result = {};
 
         // First of all copy all unmutable attributes
-        for (const attrID in this.attributes) {
-            if (Object.prototype.hasOwnProperty.call(this.attributes, attrID)) {
-                result[attrID] = this.attributes[attrID];
-            }
+        for (const [id, value] of this.attributes.entries()) {
+            result[id] = value;
         }
 
         // Secondly get latest mutable attributes up to target frame
@@ -194,11 +175,8 @@ export class Track extends Drawn {
         for (const frame of frames) {
             if (+frame <= targetFrame) {
                 const { attributes } = this.shapes[frame];
-
-                for (const attrID in attributes) {
-                    if (Object.prototype.hasOwnProperty.call(attributes, attrID)) {
-                        result[attrID] = attributes[attrID];
-                    }
+                for (const [id, value] of attributes.entries()) {
+                    result[id] = value;
                 }
             }
         }
@@ -207,7 +185,7 @@ export class Track extends Drawn {
     }
 
     public updateFromServerResponse(body: SerializedTrack | SerializedTrack['elements'][0]): void {
-        this.serverID = body.id;
+        this._serverId = body.id;
         this.frame = body.frame;
         const updatedShapes = {};
         for (const shape of body.shapes) {
@@ -216,10 +194,10 @@ export class Track extends Drawn {
         this.shapes = updatedShapes;
     }
 
-    public clearServerID(): void {
-        Drawn.prototype.clearServerID.call(this);
-        for (const keyframe of Object.keys(this.shapes)) {
-            this.shapes[keyframe].serverID = undefined;
+    public clearServerId(): void {
+        Drawn.prototype.clearServerId.call(this);
+        for (const shape of Object.values(this.shapes)) {
+            shape.serverId = undefined;
         }
     }
 
@@ -229,26 +207,26 @@ export class Track extends Drawn {
         const undoSource = this.source;
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoAttributes = {
-            unmutable: { ...this.attributes },
+            unmutable: new Map(this.attributes),
             mutable: Object.keys(this.shapes).map((key) => ({
                 frame: +key,
-                attributes: { ...this.shapes[key].attributes },
+                attributes: new Map(this.shapes[+key].attributes),
             })),
         };
 
         this.label = label;
         this.source = redoSource;
-        this.attributes = {};
+        this.attributes = new Map();
         for (const shape of Object.values(this.shapes)) {
-            shape.attributes = {};
+            shape.attributes = new Map();
         }
         this.appendDefaultAttributes(label);
 
         const redoAttributes = {
-            unmutable: { ...this.attributes },
+            unmutable: new Map(this.attributes),
             mutable: Object.keys(this.shapes).map((key) => ({
                 frame: +key,
-                attributes: { ...this.shapes[key].attributes },
+                attributes: new Map(this.shapes[+key].attributes),
             })),
         };
 
@@ -282,22 +260,22 @@ export class Track extends Drawn {
         const labelAttributes = attrsAsAnObject(this.label.attributes);
 
         const wasKeyframe = frame in this.shapes;
-        const undoAttributes = this.attributes;
+        const undoAttributes = new Map(this.attributes);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
 
         let mutableAttributesUpdated = false;
-        const redoAttributes = { ...this.attributes };
-        for (const attrID of Object.keys(attributes)) {
+        const redoAttributes = new Map(this.attributes);
+        for (const [attrID, attrValue] of Object.entries(attributes)) {
             if (!labelAttributes[attrID].mutable) {
-                redoAttributes[attrID] = attributes[attrID];
-            } else if (attributes[attrID] !== current.attributes[attrID]) {
+                redoAttributes.set(+attrID, attrValue);
+            } else if (attrValue !== current.attributes[attrID]) {
                 mutableAttributesUpdated = mutableAttributesUpdated ||
                     // not keyframe yet
                     !(frame in this.shapes) ||
                     // keyframe, but without this attrID
-                    !(attrID in this.shapes[frame].attributes) ||
+                    !this.shapes[frame].attributes.has(+attrID) ||
                     // keyframe with attrID, but with another value
-                    this.shapes[frame].attributes[attrID] !== attributes[attrID];
+                    this.shapes[frame].attributes.get(+attrID) !== attrValue;
             }
         }
         let redoShape: TrackedShape | undefined;
@@ -305,18 +283,16 @@ export class Track extends Drawn {
             if (wasKeyframe) {
                 redoShape = {
                     ...this.shapes[frame],
-                    attributes: {
-                        ...this.shapes[frame].attributes,
-                    },
+                    attributes: new Map(this.shapes[frame].attributes),
                 };
             } else {
                 redoShape = copyShape(current);
             }
         }
 
-        for (const attrID of Object.keys(attributes)) {
-            if (labelAttributes[attrID].mutable && attributes[attrID] !== current.attributes[attrID]) {
-                redoShape.attributes[attrID] = attributes[attrID];
+        for (const [attrID, attrValue] of Object.entries(attributes)) {
+            if (redoShape && labelAttributes[attrID].mutable && attrValue !== current.attributes[attrID]) {
+                redoShape.attributes.set(+attrID, attrValue);
             }
         }
 

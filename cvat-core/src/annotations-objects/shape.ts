@@ -8,7 +8,7 @@ import ObjectState, { SerializedData } from '../object-state';
 import { ScriptingError } from '../exceptions';
 import { ObjectType, HistoryActions } from '../enums';
 import type { SerializedShape } from '../server-response-types';
-import { computeNewSource } from './utils';
+import { computeNewSource, serializeAttributes } from './utils';
 import { Drawn } from './drawn';
 import type { AnnotationInjection } from './types';
 
@@ -54,14 +54,7 @@ export class Shape extends Drawn {
             z_order: this.zOrder,
             points: this.points.slice(),
             rotation: this.rotation,
-            attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
-                attributeAccumulator.push({
-                    spec_id: +attrId,
-                    value: this.attributes[attrId],
-                });
-
-                return attributeAccumulator;
-            }, []),
+            attributes: serializeAttributes(this.attributes),
             elements: [],
             frame: this.frame,
             label_id: this.label.id,
@@ -70,11 +63,11 @@ export class Shape extends Drawn {
             score: this.score,
         };
 
-        if (this.serverID !== null) {
-            result.id = this.serverID;
+        if (typeof this._serverId === 'number') {
+            result.id = this._serverId;
         }
 
-        if (this.parentID !== null) {
+        if (typeof this._parentId === 'number') {
             return omit(result, 'elements');
         }
 
@@ -90,14 +83,14 @@ export class Shape extends Drawn {
             objectType: ObjectType.SHAPE,
             shapeType: this.shapeType,
             clientID: this.clientID,
-            serverID: this.serverID,
-            parentID: this.parentID,
+            serverID: this._serverId ?? null,
+            parentID: this._parentId ?? null,
             occluded: this.occluded,
             lock: this.lock,
             zOrder: this.zOrder,
             points: this.points.slice(),
             rotation: this.rotation,
-            attributes: { ...this.attributes },
+            attributes: Object.fromEntries(this.attributes),
             descriptions: [...this.descriptions],
             label: this.label,
             group: this.groupObject,

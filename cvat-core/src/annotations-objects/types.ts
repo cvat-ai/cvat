@@ -13,37 +13,39 @@ export type FrameInfo = {
     height: number;
 };
 
+export type GroupsInfo = {
+    max: number;
+    colors: Record<number, string>;
+};
+
 export interface BasicInjection {
     labels: Record<number, Label>;
-    groups: { max: number };
+    groupsInfo: GroupsInfo;
     framesInfo: Readonly<{
         [index: number]: Readonly<FrameInfo>;
         isFrameDeleted: (frame: number) => boolean;
     }>;
     history: AnnotationHistory;
-    groupColors: Record<number, string>;
-    parentID?: number;
-    readOnlyFields?: string[];
+    parentId?: number;
     dimension: DimensionType;
-    jobType: JobType;
+    jobType: JobType; // comes from job data or is set to JobType.ANNOTATION for task-level collections
+    replicasCount?: number; // comes from job data or is undefined for task-level collections
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
-    replicasCount?: number;
 }
 
 export type AnnotationInjection = BasicInjection & {
-    parentID?: number;
-    readOnlyFields?: string[];
+    parentId?: number;
 };
 
 export interface TrackedShape {
-    serverID?: number;
+    serverId?: number;
     occluded: boolean;
     outside: boolean;
     rotation: number;
     zOrder: number;
     points?: number[];
-    attributes: Record<number, string>;
+    attributes: Map<number, string>;
 }
 
 export interface InterpolatedPosition {

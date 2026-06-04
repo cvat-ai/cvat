@@ -10,6 +10,8 @@ import type { AnnotationInjection, InterpolatedPosition } from './types';
 import { PolyTrack } from './poly-track';
 import { PointsShape } from './points-shape';
 
+const childReadOnlyFields = ['group', 'zOrder', 'source', 'rotation'];
+
 export class PointsTrack extends PolyTrack {
     constructor(
         data: SerializedTrack | SerializedTrack['elements'][0],
@@ -18,6 +20,9 @@ export class PointsTrack extends PolyTrack {
         injection: AnnotationInjection,
     ) {
         super(data, clientID, color, injection);
+        if (typeof this._parentId === 'number') {
+            this.readOnlyFields = childReadOnlyFields;
+        }
         this.shapeType = ShapeType.POINTS;
         for (const shape of Object.values(this.shapes)) {
             checkNumberOfPoints(this.shapeType, shape.points);

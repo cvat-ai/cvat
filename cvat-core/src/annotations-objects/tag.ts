@@ -7,10 +7,11 @@ import ObjectState, { SerializedData } from '../object-state';
 import { ScriptingError } from '../exceptions';
 import { ObjectType } from '../enums';
 import type { SerializedTag } from '../server-response-types';
-import { Annotation } from './annotation';
+import { ImageObject } from './annotation';
+import { serializeAttributes } from './utils';
 
-export class Tag extends Annotation {
-    protected withContext(frame: number): ReturnType<Annotation['withContext']> & {
+export class Tag extends ImageObject {
+    protected withContext(frame: number): ReturnType<ImageObject['withContext']> & {
         save: (data: ObjectState) => ObjectState;
         export: () => SerializedTag;
     } {
@@ -29,18 +30,11 @@ export class Tag extends Annotation {
             label_id: this.label.id,
             source: this.source,
             group: 0, // TODO: why server requires group for tags?
-            attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
-                attributeAccumulator.push({
-                    spec_id: +attrId,
-                    value: this.attributes[attrId],
-                });
-
-                return attributeAccumulator;
-            }, []),
+            attributes: serializeAttributes(this.attributes),
         };
 
-        if (this.serverID !== null) {
-            result.id = this.serverID;
+        if (typeof this._serverId === 'number') {
+            result.id = this._serverId;
         }
 
         return result;
@@ -58,9 +52,9 @@ export class Tag extends Annotation {
         return {
             objectType: ObjectType.TAG,
             clientID: this.clientID,
-            serverID: this.serverID,
+            serverID: this._serverId ?? null,
             lock: this.lock,
-            attributes: { ...this.attributes },
+            attributes: Object.fromEntries(this.attributes),
             label: this.label,
             group: this.groupObject,
             color: this.color,

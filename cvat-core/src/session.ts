@@ -452,7 +452,10 @@ export class Session {
         redo: (count?: number) => Promise<number[]>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
-        get: () => Promise<{ undo: [HistoryActions, number][], redo: [HistoryActions, number][] }>;
+        get: () => Promise<{
+            undo: [HistoryActions, number | null][];
+            redo: [HistoryActions, number | null][];
+        }>;
     };
 
     public frames: {

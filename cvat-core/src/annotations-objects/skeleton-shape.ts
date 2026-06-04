@@ -13,7 +13,7 @@ import type { SerializedShape } from '../server-response-types';
 import { computeWrappingBox, rotatePoint } from '../object-utils';
 import { Shape } from './shape';
 import type { AnnotationInjection } from './types';
-import { computeNewSource } from './utils';
+import { computeNewSource, serializeAttributes } from './utils';
 // eslint-disable-next-line import/no-cycle
 import { shapeFactory } from './index';
 
@@ -59,8 +59,7 @@ export class SkeletonShape extends Shape {
                 frame: data.frame,
             }, injection.nextClientID(), {
                 ...injection,
-                parentID: this.clientID,
-                readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
+                parentId: this.clientID,
             });
         });
     }
@@ -117,14 +116,7 @@ export class SkeletonShape extends Shape {
             z_order: this.zOrder,
             points: [],
             rotation: 0,
-            attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
-                attributeAccumulator.push({
-                    spec_id: +attrId,
-                    value: this.attributes[attrId],
-                });
-
-                return attributeAccumulator;
-            }, []),
+            attributes: serializeAttributes(this.attributes),
             elements,
             frame: this.frame,
             label_id: this.label.id,
@@ -133,8 +125,8 @@ export class SkeletonShape extends Shape {
             score: this.score,
         };
 
-        if (this.serverID !== null) {
-            result.id = this.serverID;
+        if (typeof this._serverId === 'number') {
+            result.id = this._serverId;
         }
 
         return result;
@@ -157,12 +149,12 @@ export class SkeletonShape extends Shape {
             objectType: ObjectType.SHAPE,
             shapeType: this.shapeType,
             clientID: this.clientID,
-            serverID: this.serverID,
-            parentID: this.parentID,
+            serverID: this._serverId ?? null,
+            parentID: this._parentId ?? null,
             points: this.points,
             zOrder: this.zOrder,
             rotation: 0,
-            attributes: { ...this.attributes },
+            attributes: Object.fromEntries(this.attributes),
             descriptions: [...this.descriptions],
             elements,
             label: this.label,
@@ -190,10 +182,10 @@ export class SkeletonShape extends Shape {
         }
     }
 
-    public clearServerID(): void {
-        Shape.prototype.clearServerID.call(this);
+    public clearServerId(): void {
+        Shape.prototype.clearServerId.call(this);
         for (const element of this.elements) {
-            element.clearServerID();
+            element.clearServerId();
         }
     }
 

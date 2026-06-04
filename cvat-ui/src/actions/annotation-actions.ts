@@ -843,7 +843,7 @@ export function undoActionAsync(): ThunkAction {
             await jobInstance.actions.undo();
             await undoLog.close();
 
-            if (frame !== undoOnFrame || ['Removed frame', 'Restored frame'].includes(undo[0])) {
+            if (undoOnFrame !== null && (frame !== undoOnFrame || ['Removed frame', 'Restored frame'].includes(undo[0]))) {
                 // the action below fetches annotations
                 dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true));
             } else {
@@ -882,7 +882,7 @@ export function redoActionAsync(): ThunkAction {
             await jobInstance.actions.redo();
             await redoLog.close();
 
-            if (frame !== redoOnFrame || ['Removed frame', 'Restored frame'].includes(redo[0])) {
+            if (redoOnFrame !== null && (frame !== redoOnFrame || ['Removed frame', 'Restored frame'].includes(redo[0]))) {
                 // the action below fetches annotations
                 dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true));
             } else {
@@ -1189,7 +1189,11 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
     };
 }
 
-function dispatchAnnotationsUpdate(dispatch: ThunkDispatch, states: any[], history: any): void {
+function dispatchAnnotationsUpdate(
+    dispatch: ThunkDispatch,
+    states: CombinedState['annotation']['annotations']['states'],
+    history: CombinedState['annotation']['annotations']['history'],
+): void {
     dispatch({
         type: AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS,
         payload: {
