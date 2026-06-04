@@ -4,7 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import { Store } from 'antd/lib/form/interface';
-import { getCore, Membership, Organization, User } from 'cvat-core-wrapper';
+import {
+    getCore, Membership, Organization, User,
+} from 'cvat-core-wrapper';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { filterNull } from 'utils/filter-null';
 import { OrganizationsQuery, OrganizationMembersQuery } from 'reducers';
@@ -49,59 +51,80 @@ export enum OrganizationActionsTypes {
 
 export const organizationActions = {
     activateOrganization: () => createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION),
-    activateOrganizationSuccess: (organization: any | null) =>
-        createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization }),
-    activateOrganizationFailed: (error: any, slug: string | null) =>
-        createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED, { slug, error }),
-    createOrganizationSuccess: (organization: any) =>
-        createAction(OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS, { organization }),
-    createOrganizationFailed: (slug: string, error: any) =>
-        createAction(OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED, { slug, error }),
+    activateOrganizationSuccess: (organization: any | null) => createAction(
+        OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization },
+    ),
+    activateOrganizationFailed: (error: any, slug: string | null) => createAction(
+        OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED, { slug, error },
+    ),
+    createOrganizationSuccess: (organization: any) => createAction(
+        OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS, { organization },
+    ),
+    createOrganizationFailed: (slug: string, error: any) => createAction(
+        OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED, { slug, error },
+    ),
     updateOrganization: () => createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION),
-    updateOrganizationSuccess: (organization: any) =>
-        createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION_SUCCESS, { organization }),
-    updateOrganizationFailed: (slug: string, error: any) =>
-        createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION_FAILED, { slug, error }),
+    updateOrganizationSuccess: (organization: any) => createAction(
+        OrganizationActionsTypes.UPDATE_ORGANIZATION_SUCCESS, { organization },
+    ),
+    updateOrganizationFailed: (slug: string, error: any) => createAction(
+        OrganizationActionsTypes.UPDATE_ORGANIZATION_FAILED, { slug, error },
+    ),
     removeOrganization: () => createAction(OrganizationActionsTypes.REMOVE_ORGANIZATION),
-    removeOrganizationSuccess: (slug: string) =>
-        createAction(OrganizationActionsTypes.REMOVE_ORGANIZATION_SUCCESS, { slug }),
-    removeOrganizationFailed: (error: any, slug: string) =>
-        createAction(OrganizationActionsTypes.REMOVE_ORGANIZATION_FAILED, { error, slug }),
+    removeOrganizationSuccess: (slug: string) => createAction(
+        OrganizationActionsTypes.REMOVE_ORGANIZATION_SUCCESS, { slug },
+    ),
+    removeOrganizationFailed: (error: any, slug: string) => createAction(
+        OrganizationActionsTypes.REMOVE_ORGANIZATION_FAILED, { error, slug },
+    ),
     inviteOrganizationMembers: () => createAction(OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBERS),
-    inviteOrganizationMembersFailed: (error: any) =>
-        createAction(OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBERS_FAILED, { error }),
+    inviteOrganizationMembersFailed: (error: any) => createAction(
+        OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBERS_FAILED, { error },
+    ),
     inviteOrganizationMembersDone: () => createAction(OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBERS_DONE),
-    inviteOrganizationMemberSuccess: (email: string) =>
-        createAction(OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBER_SUCCESS, { email }),
-    inviteOrganizationMemberFailed: (email: string, error: any) =>
-        createAction(OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBER_FAILED, { email, error }),
+    inviteOrganizationMemberSuccess: (email: string) => createAction(
+        OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBER_SUCCESS, { email },
+    ),
+    inviteOrganizationMemberFailed: (email: string, error: any) => createAction(
+        OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBER_FAILED, { email, error },
+    ),
     leaveOrganization: () => createAction(OrganizationActionsTypes.LEAVE_ORGANIZATION),
-    leaveOrganizationSuccess: (slug: string) =>
-        createAction(OrganizationActionsTypes.LEAVE_ORGANIZATION_SUCCESS, { slug }),
-    leaveOrganizationFailed: (error: any) =>
-        createAction(OrganizationActionsTypes.LEAVE_ORGANIZATION_FAILED, { error }),
+    leaveOrganizationSuccess: (slug: string) => createAction(
+        OrganizationActionsTypes.LEAVE_ORGANIZATION_SUCCESS, { slug },
+    ),
+    leaveOrganizationFailed: (error: any) => createAction(
+        OrganizationActionsTypes.LEAVE_ORGANIZATION_FAILED, { error },
+    ),
     removeOrganizationMember: () => createAction(OrganizationActionsTypes.REMOVE_ORGANIZATION_MEMBER),
     removeOrganizationMemberSuccess: () => createAction(OrganizationActionsTypes.REMOVE_ORGANIZATION_MEMBER_SUCCESS),
-    removeOrganizationMemberFailed: (username: string, error: any) =>
-        createAction(OrganizationActionsTypes.REMOVE_ORGANIZATION_MEMBER_FAILED, { username, error }),
+    removeOrganizationMemberFailed: (username: string, error: any) => createAction(
+        OrganizationActionsTypes.REMOVE_ORGANIZATION_MEMBER_FAILED, { username, error },
+    ),
     updateOrganizationMember: () => createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER),
     updateOrganizationMemberSuccess: () => createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_SUCCESS),
-    updateOrganizationMemberFailed: (username: string, role: string, error: any) =>
-        createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED, { username, role, error }),
-    getOrganizations: (query: Partial<OrganizationsQuery>) =>
-        createAction(OrganizationActionsTypes.GET_ORGANIZATIONS, { query }),
-    getOrganizationsSuccess: (organizations: Organization[], count: number, nextPageUrl?: string) =>
-        createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS, { organizations, count, nextPageUrl }),
+    updateOrganizationMemberFailed: (username: string, role: string, error: any) => createAction(
+        OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED, { username, role, error },
+    ),
+    getOrganizations: (query: Partial<OrganizationsQuery>) => (
+        createAction(OrganizationActionsTypes.GET_ORGANIZATIONS, { query })
+    ),
+    getOrganizationsSuccess: (organizations: Organization[], count: number, nextPageUrl?: string) => (
+        createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS, { organizations, count, nextPageUrl })
+    ),
     getOrganizationsFailed: (error: any) => createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED, { error }),
-    openSelectOrganizationModal: (onSelectCallback: (org: Organization | null) => void) =>
-        createAction(OrganizationActionsTypes.OPEN_SELECT_ORGANIZATION_MODAL, { onSelectCallback }),
+    openSelectOrganizationModal: (
+        onSelectCallback: (org: Organization | null) => void,
+    ) => createAction(OrganizationActionsTypes.OPEN_SELECT_ORGANIZATION_MODAL, { onSelectCallback }),
     closeSelectOrganizationModal: () => createAction(OrganizationActionsTypes.CLOSE_SELECT_ORGANIZATION_MODAL, {}),
-    getOrganizationMembers: (membersQuery: OrganizationMembersQuery) =>
-        createAction(OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS, { membersQuery }),
-    getOrganizationMembersSuccess: (members: Membership[]) =>
-        createAction(OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_SUCCESS, { members }),
-    getOrganizationMembersFailed: (error: any) =>
-        createAction(OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_FAILED, { error }),
+    getOrganizationMembers: (membersQuery: OrganizationMembersQuery) => createAction(
+        OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS, { membersQuery },
+    ),
+    getOrganizationMembersSuccess: (members: Membership[]) => createAction(
+        OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_SUCCESS, { members },
+    ),
+    getOrganizationMembersFailed: (error: any) => createAction(
+        OrganizationActionsTypes.GET_ORGANIZATION_MEMBERS_FAILED, { error },
+    ),
 };
 
 export function activateOrganizationAsync(): ThunkAction {
@@ -111,13 +134,9 @@ export function activateOrganizationAsync(): ThunkAction {
 
         if (curSlug) {
             try {
-                const organizations = await core.organizations.get(
-                    curSlug
-                        ? {
-                              filter: `{"and":[{"==":[{"var":"slug"},"${curSlug}"]}]}`,
-                          }
-                        : {},
-                );
+                const organizations = await core.organizations.get(curSlug ? {
+                    filter: `{"and":[{"==":[{"var":"slug"},"${curSlug}"]}]}`,
+                } : {});
                 const [organization] = organizations;
                 if (organization?.slug === curSlug) {
                     await core.organizations.activate(organization);
@@ -217,7 +236,10 @@ export function inviteOrganizationMembersAsync(
     };
 }
 
-export function leaveOrganizationAsync(organization: any, onLeaveSuccess?: () => void): ThunkAction {
+export function leaveOrganizationAsync(
+    organization: any,
+    onLeaveSuccess?: () => void,
+): ThunkAction {
     return async function (dispatch, getState) {
         const { user } = getState().auth;
         dispatch(organizationActions.leaveOrganization());

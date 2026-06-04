@@ -41,7 +41,10 @@ const defaultState: OrganizationState = {
     },
 };
 
-export default function (state: OrganizationState = defaultState, action: AnyAction): OrganizationState {
+export default function (
+    state: OrganizationState = defaultState,
+    action: AnyAction,
+): OrganizationState {
     switch (action.type) {
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION: {
             return {
@@ -82,14 +85,6 @@ export default function (state: OrganizationState = defaultState, action: AnyAct
             return {
                 ...state,
                 updating: false,
-            };
-        }
-        case OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS: {
-            const { organization } = action.payload;
-            return {
-                ...state,
-                currentArray: [...state.currentArray, organization],
-                count: state.count + 1,
             };
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION: {
