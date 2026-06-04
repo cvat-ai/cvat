@@ -174,11 +174,17 @@ export class SkeletonShape extends Shape {
         };
     }
 
-    public updateFromServerResponse(body: SerializedShape): void {
+    public updateFromServerResponse(
+        body: Parameters<typeof Shape.prototype.updateFromServerResponse>[0] & {
+            elements?: { id: number, label_id: number }[];
+        },
+    ): void {
         Shape.prototype.updateFromServerResponse.call(this, body);
-        for (const element of body.elements) {
-            const context = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
-            context.updateFromServerResponse(element);
+        if ('elements' in body) {
+            for (const element of body.elements) {
+                const context = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
+                context.updateFromServerResponse(element);
+            }
         }
     }
 

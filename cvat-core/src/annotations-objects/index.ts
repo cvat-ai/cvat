@@ -26,12 +26,14 @@ import { PointsTrack } from './points-track';
 import { CuboidTrack } from './cuboid-track';
 // eslint-disable-next-line import/no-cycle
 import { SkeletonTrack } from './skeleton-track';
+import { AudioInterval } from './audio-interval';
 
 export type { BasicInjection, InterpolatedPosition } from './types';
 export { InterpolationNotPossibleError } from './image-object';
 export { Shape };
 export { Track };
 export { Tag } from './tag';
+export { AudioInterval };
 export {
     RectangleShape, EllipseShape, PolygonShape, PolylineShape, PointsShape,
     CuboidShape, SkeletonShape, MaskShape,

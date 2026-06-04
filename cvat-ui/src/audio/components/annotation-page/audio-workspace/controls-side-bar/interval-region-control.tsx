@@ -75,6 +75,7 @@ function IntervalRegionControl(props: Props): JSX.Element {
         onSetActiveLabel,
         onExtendRegion,
     } = props;
+
     const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
     const [popoverOpen, setPopoverOpen] = useState(false);
     const [selectedLabelId, setSelectedLabelId] = useState<number | null>(

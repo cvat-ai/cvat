@@ -16,14 +16,12 @@ import { isChildObject } from './utils';
 
 export class Drawn extends ImageObject {
     protected descriptions: string[];
-    public hidden: boolean;
     protected pinned: boolean;
     public shapeType: ShapeType;
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.descriptions = data.descriptions || [];
-        this.hidden = false;
         this.pinned = true;
         this.shapeType = null;
     }
@@ -51,27 +49,6 @@ export class Drawn extends ImageObject {
         );
 
         this.pinned = pinned;
-    }
-
-    protected saveHidden(hidden: boolean, frame: number): void {
-        const undoHidden = this.hidden;
-        const redoHidden = hidden;
-
-        this.history.do(
-            HistoryActions.CHANGED_HIDDEN,
-            () => {
-                this.hidden = undoHidden;
-                this.updated = Date.now();
-            },
-            () => {
-                this.hidden = redoHidden;
-                this.updated = Date.now();
-            },
-            [this.clientID],
-            frame,
-        );
-
-        this.hidden = hidden;
     }
 
     private fitPoints(points: number[], rotation: number, maxX: number, maxY: number): number[] {

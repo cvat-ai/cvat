@@ -17,15 +17,10 @@ export class InterpolationNotPossibleError extends Error {}
 
 export class ImageObject extends AnnotationBase {
     public frame: number;
-    public score: number;
-    public votes: number;
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.frame = data.frame;
-        this.score = data.score;
-        this.votes = injection.replicasCount !== undefined ?
-            Math.round(this.score * injection.replicasCount) : 0;
     }
 
     protected withContext(_: number): {

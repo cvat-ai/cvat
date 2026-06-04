@@ -8,10 +8,10 @@ import {
     MaskShape, BasicInjection, SkeletonShape,
     SkeletonTrack, PolygonShape, CuboidShape,
     RectangleShape, PolylineShape, PointsShape, EllipseShape,
-    InterpolationNotPossibleError,
+    InterpolationNotPossibleError, AudioInterval,
 } from './annotations-objects';
 import {
-    SerializedCollection, SerializedShape, SerializedTrack, SerializedInterval,
+    SerializedCollection, SerializedShape, SerializedTrack,
 } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
@@ -103,7 +103,7 @@ export default class Collection {
     private shapes: Record<number, Shape[]>;
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
-    private intervals: SerializedInterval[];
+    private intervals: AudioInterval[];
     private objects: Record<number, AnnotationObject>;
     private groupsInfo: BasicInjection['groupsInfo'];
     private injection: BasicInjection;
@@ -253,7 +253,7 @@ export default class Collection {
         tags: Tag[];
         shapes: Shape[];
         tracks: Track[];
-        intervals: SerializedInterval[];
+        intervals: AudioInterval[];
     } {
         const result = {
             tags: [],
@@ -296,8 +296,11 @@ export default class Collection {
         }
 
         for (const interval of data.intervals ?? []) {
-            this.intervals.push(interval);
-            result.intervals.push(interval);
+            const clientID = this.injection.nextClientID();
+            const color = colors[clientID % colors.length];
+            const intervalModel = new AudioInterval(interval, clientID, color, this.injection);
+            this.intervals.push(intervalModel);
+            result.intervals.push(intervalModel);
         }
 
         return result;
@@ -361,8 +364,8 @@ export default class Collection {
         );
     }
 
-    public getAllIntervals(): SerializedInterval[] {
-        return this.intervals.map((interval) => ({ ...interval }));
+    public getAllIntervals(): ReturnType<AudioInterval['get']>[] {
+        return this.intervals.map((interval) => interval.get());
     }
 
     public export(): Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'> {
