@@ -118,7 +118,11 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         response = get_method(user, self._settings_endpoint, project_id=project_id, **kwargs)
         assert response.status_code == HTTPStatus.OK
 
-        results = response.json()["results"]
+        results = [
+            settings
+            for settings in response.json()["results"]
+            if settings["project_id"] == project_id and settings["task_id"] is None
+        ]
         assert len(results) == 1
         return results[0]
 
@@ -1115,6 +1119,82 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert total_annotations["total_count"] == 1
         assert report_data["comparison_summary"]["conflict_count"] == 0
 
+    def test_task_report_metrics_change_after_gt_annotations_change(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "changed-gt-report",
+                "labels": [{"name": "car", "type": "rectangle"}],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+
+        requirement_name = f"changed-gt-{task_id}"
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    *self._retained_default_requirement_payloads(settings),
+                    self._build_requirement_payload(
+                        requirement_name,
+                        enabled=True,
+                        required_score=1.0,
+                    ),
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        car_label = self._get_task_labels_by_name(admin_user, task_id=task_id)["car"]
+        matching_shape = self._build_rectangle_shape(
+            frame=0,
+            label_id=car_label.id,
+            points=[0, 0, 10, 10],
+        )
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={"shapes": [matching_shape]},
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={"shapes": [matching_shape]},
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        initial_report = self.create_quality_report(user=admin_user, task_id=task_id)
+        assert initial_report["summary"]["conflict_count"] == 0
+        assert initial_report["summary"]["valid_count"] == 1
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update_annotations(
+                "create",
+                gt_job.id,
+                patched_labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=car_label.id,
+                            points=[20, 20, 30, 30],
+                        )
+                    ],
+                },
+            )
+
+        changed_report = self.create_quality_report(user=admin_user, task_id=task_id)
+        assert (
+            changed_report["summary"]["conflict_count"]
+            > initial_report["summary"]["conflict_count"]
+        )
+        assert changed_report["summary"]["gt_count"] > initial_report["summary"]["gt_count"]
+
     def test_task_report_filter_matches_attribute_name_value_on_same_attribute(self, admin_user):
         (
             task_id,
@@ -1861,3 +1941,116 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             format="csv",
         )
         assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
+    @pytest.mark.parametrize("inherit", [True, False])
+    def test_task_report_uses_project_requirements_when_inherit_is_enabled(
+        self, admin_user, inherit: bool
+    ):
+        with make_api_client(admin_user) as api_client:
+            project, response = api_client.projects_api.create(
+                {
+                    "name": f"project-requirement-inheritance-{inherit}",
+                    "labels": [{"name": "car", "type": "rectangle"}],
+                }
+            )
+            assert response.status == HTTPStatus.CREATED
+
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": f"task-requirement-inheritance-{inherit}",
+                "project_id": project.id,
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+
+        project_settings = self._get_project_settings(admin_user, project_id=project.id)
+        task_settings = self._get_task_settings(admin_user, task_id=task_id)
+
+        project_requirement_name = f"project-requirement-{project.id}-{inherit}"
+        project_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                project_requirement_name,
+                settings_id=project_settings["id"],
+                enabled=True,
+                required_score=1.0,
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        task_requirement_name = f"task-requirement-{task_id}-{inherit}"
+        task_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                task_requirement_name,
+                settings_id=task_settings["id"],
+                enabled=True,
+                required_score=1.0,
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        patched_settings, response = self._patch_settings(
+            admin_user,
+            task_settings["id"],
+            {"inherit": inherit},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert patched_settings["inherit"] is inherit
+
+        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        car_label = self._get_task_labels_by_name(admin_user, task_id=task_id)["car"]
+        car_shape = self._build_rectangle_shape(
+            frame=0,
+            label_id=car_label.id,
+            points=[0, 0, 10, 10],
+        )
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={"shapes": [car_shape]},
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={"shapes": [car_shape]},
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+
+        expected_requirement = project_requirement if inherit else task_requirement
+        expected_name = expected_requirement["name"]
+        unexpected_name = task_requirement_name if inherit else project_requirement_name
+
+        assert expected_name in report_data["groups"]
+        assert unexpected_name not in report_data["groups"]
+        assert report_data["groups"][expected_name]["parameters"]["requirement_id"] == (
+            expected_requirement["id"]
+        )
+
+        source_settings = project_settings if inherit else task_settings
+        expected_requirements_summary = {
+            "total": len(source_settings["requirements"]) + 1,
+            "enabled": 1,
+            "completed": 1,
+            "items": [
+                {
+                    "requirement_id": expected_requirement["id"],
+                    "name": expected_name,
+                    "metric": "accuracy",
+                    "score": 1.0,
+                    "threshold": 1.0,
+                }
+            ],
+        }
+        assert report["summary"]["requirements"] == expected_requirements_summary
+        assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
