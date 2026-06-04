@@ -12,7 +12,8 @@ import {
 } from 'cvat-canvas-wrapper';
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
-    ObjectState, ObjectType, ShapeType, JobState, JobValidationLayout, Source,
+    ObjectState, ObjectType, ShapeType, JobState, JobValidationLayout,
+    DimensionType,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -29,6 +30,11 @@ import {
 } from 'reducers';
 import { switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
+import {
+    loadAudioAnnotationsAsync,
+    loadAudioDataAsync,
+    saveAudioAnnotationsAsync,
+} from './audio-actions';
 
 interface AnnotationsParameters {
     filters: object[];
@@ -1021,15 +1027,16 @@ export function getJobAsync({
                     { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
                 )) || job.startFrame;
 
-            const frameData = await job.frames.get(frameNumber);
+            const isAudio = job.dimension === DimensionType.DIMENSION_1D;
+            const frameData = isAudio ? null : await job.frames.get(frameNumber);
             const jobMeta = await cvat.frames.getMeta('job', job.id);
             const frameNumbers = await job.frames.frameNumbers();
-            try {
-                // call first getting of frame data before rendering interface
-                // to load and decode first chunk
-                await frameData.data();
-            } catch (_error) {
-                // do nothing, user will be notified when data request is done
+            if (frameData) {
+                try {
+                    await frameData.data();
+                } catch (_error) {
+                    // do nothing, user will be notified when data request is done
+                }
             }
 
             await job.annotations.clear({ reload: true });
@@ -1070,16 +1077,21 @@ export function getJobAsync({
                     issues,
                     conflicts,
                     frameNumber,
-                    frameFilename: frameData.filename,
-                    relatedFiles: frameData.relatedFiles,
+                    frameFilename: frameData?.filename,
+                    relatedFiles: frameData?.relatedFiles ?? 0,
                     frameData,
                     colors,
                     filters,
                 },
             });
 
-            dispatch(fetchAnnotationsAsync());
-            dispatch(changeFrameAsync(frameNumber, false));
+            if (job.dimension === DimensionType.DIMENSION_1D) {
+                dispatch(loadAudioDataAsync(job, jobMeta));
+                dispatch(loadAudioAnnotationsAsync());
+            } else {
+                dispatch(fetchAnnotationsAsync());
+                dispatch(changeFrameAsync(frameNumber, false));
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_FAILED,
@@ -1092,7 +1104,13 @@ export function getJobAsync({
 }
 
 export function saveAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { workspace } = getState().annotation;
+        if (workspace === Workspace.AUDIO) {
+            await dispatch(saveAudioAnnotationsAsync());
+            return;
+        }
+
         const { jobInstance } = receiveAnnotationsParameters();
 
         dispatch({

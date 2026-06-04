@@ -51,7 +51,7 @@ class LogViewerPermission(OpenPolicyAgentPermission):
 
     def get_opa_auth_payload(self):
         data = super().get_opa_auth_payload()
-        data["auth"]["user"]["has_analytics_access"] = self.has_analytics_access
+        data["user"]["has_analytics_access"] = self.has_analytics_access
         return data
 
     def get_resource(self):

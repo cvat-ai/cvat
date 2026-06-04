@@ -16,6 +16,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.67.0'></a>
+## \[2.67.0\] - 2026-06-02
+
+### Added
+
+- \[Server API\] The project/task/job `preview` endpoints accept
+  the `Prefer: handling=empty` header (RFC 7240). When set, entities without a
+  media-derived preview (e.g. point cloud tasks) return `204 No Content`
+  instead of the default placeholder.
+  (<https://github.com/cvat-ai/cvat/pull/10611>)
+
+### Fixed
+
+- \[SDK\] Fixed a PyTorch `UserWarning` about non-writable tensors when converting
+  polygon masks to tensors in `ExtractInstanceMasks`.
+  (<https://github.com/cvat-ai/cvat/pull/10680>)
+
+- Memory growth during schema generation
+  (<https://github.com/cvat-ai/cvat/pull/10679>)
+
+### Security
+
+- Fixed an XSS vulnerability in annotation guide asset handling
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-w6mx-95ff-72cv>)
+
 <a id='changelog-2.66.0'></a>
 ## \[2.66.0\] - 2026-05-26
 

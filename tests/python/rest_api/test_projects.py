@@ -254,11 +254,10 @@ class TestGetPostProjectBackup:
 
         self._test_cannot_get_project_backup(user["username"], project["id"])
 
-    # Org worker that in [project:owner, project:assignee] can get project backup.
-    def test_org_worker_can_get_project_backup(
+    # Org worker that does not own the project cannot get project backup.
+    def test_org_worker_cannot_get_project_backup_without_ownership(
         self,
         find_users,
-        is_project_staff,
         is_org_member,
     ):
         users = find_users(role="worker", exclude_privilege="admin")
@@ -266,12 +265,12 @@ class TestGetPostProjectBackup:
         user, project = next(
             (user, project)
             for user, project in product(users, self.projects)
-            if is_project_staff(user["id"], project["id"])
+            if project["owner"]["id"] != user["id"]
             and project["organization"]
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(user["username"], project["id"])
+        self._test_cannot_get_project_backup(user["username"], project["id"])
 
     # Org supervisor that in [project:owner, project:assignee] can get project backup.
     def test_org_supervisor_can_get_project_backup(

@@ -101,6 +101,14 @@ is_task_staff if {
     is_task_assignee
 }
 
+is_task_or_project_owner if {
+    is_task_owner
+}
+
+is_task_or_project_owner if {
+    is_project_owner
+}
+
 default allow := false
 
 allow if {
@@ -202,13 +210,26 @@ allow if {
 
 allow if {
     input.scope in {
-        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP,
+        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_METADATA, utils.VIEW_DATA,
         utils.VIEW_VALIDATION_LAYOUT
     }
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     is_task_staff
+}
+
+allow if {
+    input.scope in {utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.SUPERVISOR)
+    is_task_staff
+}
+
+allow if {
+    input.scope in {utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    is_task_or_project_owner
 }
 
 allow if {

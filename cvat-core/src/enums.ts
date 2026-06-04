@@ -41,6 +41,7 @@ export enum JobType {
 }
 
 export enum DimensionType {
+    DIMENSION_1D = '1d',
     DIMENSION_2D = '2d',
     DIMENSION_3D = '3d',
 }
@@ -59,6 +60,12 @@ export enum TaskMode {
     INTERPOLATION = 'interpolation',
 }
 
+export enum MediaType {
+    IMAGE = 'image',
+    POINT_CLOUD = 'point_cloud',
+    AUDIO = 'audio',
+}
+
 export enum AttributeType {
     CHECKBOX = 'checkbox',
     RADIO = 'radio',
@@ -71,6 +78,7 @@ export enum ObjectType {
     TAG = 'tag',
     SHAPE = 'shape',
     TRACK = 'track',
+    INTERVAL = 'interval',
 }
 
 export enum ShapeType {

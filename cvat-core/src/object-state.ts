@@ -8,7 +8,9 @@ import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import { isEnum } from './common';
-import { SerializedShape, SerializedTag, SerializedTrack } from './server-response-types';
+import {
+    SerializedShape, SerializedTag, SerializedTrack,
+} from './server-response-types';
 
 interface UpdateFlags {
     label: boolean;
@@ -184,7 +186,6 @@ export default class ObjectState {
             objectType: serialized.objectType,
             shapeType: serialized.shapeType || null,
             updateFlags,
-            // score and votes are only available for shapes (not tracks or tags)
             score: serialized.objectType === ObjectType.SHAPE ? (serialized.score ?? 1.0) : undefined,
             votes: serialized.objectType === ObjectType.SHAPE ? (serialized.votes ?? 0) : undefined,
         };
