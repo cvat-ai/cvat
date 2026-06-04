@@ -9,6 +9,7 @@ import { checkNumberOfPoints } from '../object-utils';
 import type { AnnotationInjection, InterpolatedPosition } from './types';
 import { PolyTrack } from './poly-track';
 import { PointsShape } from './points-shape';
+import { isChildObject } from './utils';
 
 export class PointsTrack extends PolyTrack {
     constructor(
@@ -18,6 +19,9 @@ export class PointsTrack extends PolyTrack {
         injection: AnnotationInjection,
     ) {
         super(data, clientID, color, injection);
+        if (isChildObject(this._parentId)) {
+            this.readOnlyFields = ['group', 'zOrder', 'source', 'rotation'];
+        }
         this.shapeType = ShapeType.POINTS;
         for (const shape of Object.values(this.shapes)) {
             checkNumberOfPoints(this.shapeType, shape.points);

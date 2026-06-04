@@ -9,7 +9,7 @@ import {
 } from '../enums';
 import type { SerializedTrack } from '../server-response-types';
 import { computeWrappingBox, rotatePoint } from '../object-utils';
-import { Annotation, InterpolationNotPossibleError } from './annotation';
+import { ImageObject, InterpolationNotPossibleError } from './image-object';
 import { Track } from './track';
 import type { AnnotationInjection, InterpolatedPosition } from './types';
 import { computeNewSource, copyShape } from './utils';
@@ -68,10 +68,9 @@ export class SkeletonTrack extends Track {
                 })),
             }, injection.nextClientID(), {
                 ...injection,
-                parentID: this.clientID,
-                readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
+                parentId: this.clientID,
             });
-        }).filter(Boolean).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
+        }).filter(Boolean).sort((a: ImageObject, b: ImageObject) => a.label.id - b.label.id);
     }
 
     public updateFromServerResponse(body: SerializedTrack): void {
@@ -82,10 +81,10 @@ export class SkeletonTrack extends Track {
         }
     }
 
-    public clearServerID(): void {
-        Track.prototype.clearServerID.call(this);
+    public clearServerId(): void {
+        Track.prototype.clearServerId.call(this);
         for (const element of this.elements) {
-            element.clearServerID();
+            element.clearServerId();
         }
     }
 
@@ -204,7 +203,7 @@ export class SkeletonTrack extends Track {
             objectType: ObjectType.TRACK,
             shapeType: this.shapeType,
             clientID: this.clientID,
-            serverID: this.serverID,
+            serverID: this._serverId ?? null,
             color: this.color,
             updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
             label: this.label,

@@ -28,7 +28,7 @@ import { CuboidTrack } from './cuboid-track';
 import { SkeletonTrack } from './skeleton-track';
 
 export type { BasicInjection, InterpolatedPosition } from './types';
-export { InterpolationNotPossibleError } from './annotation';
+export { InterpolationNotPossibleError } from './image-object';
 export { Shape };
 export { Track };
 export { Tag } from './tag';

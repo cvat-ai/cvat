@@ -4,35 +4,36 @@
 // SPDX-License-Identifier: MIT
 
 import { Source } from '../enums';
-import type { SerializedShape, SerializedTrack } from '../server-response-types';
+import type { SerializedAttributes, SerializedTrack } from '../server-response-types';
 import type { TrackedShape } from './types';
 
 export const defaultGroupColor = '#E0E0E0';
 
-export function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): TrackedShape {
+type CopyShapeState = Omit<TrackedShape, 'attributes' | 'serverId'>;
+
+export function copyShape(state: CopyShapeState, data: Partial<TrackedShape> = {}): TrackedShape {
     return {
         rotation: state.rotation,
         zOrder: state.zOrder,
         points: state.points,
         occluded: state.occluded,
         outside: state.outside,
-        attributes: {},
+        attributes: new Map(),
         ...data,
     };
 }
 
-export function serverAttributesToDictionary(attributes: SerializedShape['attributes']): Record<number, string> {
-    const object = Object.create(null);
+export function serverAttributesToDictionary(attributes: SerializedAttributes): Map<number, string> {
+    const map = new Map<number, string>();
     for (const attr of attributes) {
-        object[attr.spec_id] = attr.value;
+        map.set(attr.spec_id, attr.value);
     }
-
-    return object;
+    return map;
 }
 
 export function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape {
     return {
-        serverID: shape.id,
+        serverId: shape.id,
         occluded: shape.occluded,
         zOrder: shape.z_order,
         points: shape.points,
@@ -40,6 +41,21 @@ export function convertTrackedShape(shape: SerializedTrack['shapes'][0]): Tracke
         rotation: shape.rotation || 0,
         attributes: serverAttributesToDictionary(shape.attributes),
     };
+}
+
+export function deserializeAttributes(attributes: SerializedAttributes): Map<number, string> {
+    const map = new Map<number, string>();
+    for (const attr of attributes) {
+        map.set(attr.spec_id, attr.value);
+    }
+    return map;
+}
+
+export function serializeAttributes(attributes: Map<number, string>): SerializedAttributes {
+    return Array.from(attributes.entries()).reduce((acc, [id, value]) => {
+        acc.push({ spec_id: id, value });
+        return acc;
+    }, []);
 }
 
 export function computeNewSource(currentSource: Source): Source {
@@ -52,4 +68,8 @@ export function computeNewSource(currentSource: Source): Source {
     }
 
     return Source.MANUAL;
+}
+
+export function isChildObject(parentId?: number): boolean {
+    return typeof parentId === 'number';
 }

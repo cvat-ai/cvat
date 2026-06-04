@@ -10,11 +10,11 @@ import { ShapeType, HistoryActions, DimensionType } from '../enums';
 import {
     checkNumberOfPoints, checkShapeArea,
 } from '../object-utils';
-import { Annotation } from './annotation';
+import { ImageObject } from './image-object';
 import type { AnnotationInjection } from './types';
+import { isChildObject } from './utils';
 
-export class Drawn extends Annotation {
-    protected framesInfo: AnnotationInjection['framesInfo'];
+export class Drawn extends ImageObject {
     protected descriptions: string[];
     public hidden: boolean;
     protected pinned: boolean;
@@ -22,7 +22,6 @@ export class Drawn extends Annotation {
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
-        this.framesInfo = injection.framesInfo;
         this.descriptions = data.descriptions || [];
         this.hidden = false;
         this.pinned = true;
@@ -76,13 +75,13 @@ export class Drawn extends Annotation {
     }
 
     private fitPoints(points: number[], rotation: number, maxX: number, maxY: number): number[] {
-        const { shapeType, parentID } = this;
+        const { shapeType, _parentId } = this;
         checkObjectType('rotation', rotation, 'number');
         points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number'));
 
-        if (parentID !== null || shapeType === ShapeType.CUBOID ||
+        if (isChildObject(_parentId) || shapeType === ShapeType.CUBOID ||
             shapeType === ShapeType.ELLIPSE || !!rotation) {
-            // cuboids and rotated bounding boxes cannot be fitted
+            // cuboids, rotated bounding boxes, and skeleton elements cannot be fitted
             return points;
         }
 
