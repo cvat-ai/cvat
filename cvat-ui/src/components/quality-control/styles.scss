@@ -11,6 +11,10 @@
 .cvat-quality-settings-title {
     margin-bottom: $grid-unit-size * 2;
     align-items: center;
+
+    .cvat-quality-settings-tooltip-icon {
+        opacity: 0.5;
+    }
 }
 
 .cvat-quality-control-settings-tab {
@@ -70,6 +74,39 @@
         display: block;
         position: relative;
         height: calc(100vh - $grid-unit-size * 30);
+    }
+
+    .cvat-quality-requirements-editor {
+        .ant-tabs-nav {
+            margin-bottom: $grid-unit-size * 2;
+        }
+    }
+
+    .cvat-quality-requirements-raw-viewer {
+        font-family: monospace;
+        min-height: $grid-unit-size * 62;
+    }
+
+    .cvat-quality-requirements-raw-actions {
+        display: flex;
+        gap: $grid-unit-size * 2;
+        margin-top: -$grid-unit-size;
+
+        .ant-btn {
+            min-width: $grid-unit-size * 11;
+        }
+    }
+
+    .cvat-table-wrapper:has(.cvat-quality-requirements-configuration-table) {
+        @include cvat-table-dynamic-size;
+
+        .ant-table-tbody .ant-table-cell {
+            padding: calc($grid-unit-size / 2) $grid-unit-size !important;
+        }
+
+        .cvat-quality-requirements-default-row {
+            color: $text-color-secondary;
+        }
     }
 }
 

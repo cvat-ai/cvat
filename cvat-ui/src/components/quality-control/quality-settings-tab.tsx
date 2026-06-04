@@ -28,6 +28,7 @@ interface Props {
         childrenSettings: QualitySettings[] | null;
     };
     setQualitySettings: (updatedSettingsData: UpdateSettingsData) => void;
+    refreshQualitySettings: () => Promise<void>;
 }
 
 function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
@@ -36,6 +37,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         fetching,
         qualitySettings: { settings, childrenSettings },
         setQualitySettings,
+        refreshQualitySettings,
     } = props;
 
     const [form] = Form.useForm();
@@ -44,22 +46,26 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         if (settings) {
             const values = await form.validateFields();
             const fields: QualitySettingsSaveFields = {
-                targetMetric: values.targetMetric,
-                targetMetricThreshold: values.targetMetricThreshold / 100,
-                maxValidationsPerJob: values.maxValidationsPerJob,
-                iouThreshold: values.iouThreshold / 100,
-                compareAttributes: values.compareAttributes,
-                emptyIsAnnotated: values.emptyIsAnnotated,
-                oksSigma: values.oksSigma / 100,
-                pointSizeBase: values.pointSizeBase,
-                lineThickness: values.lineThickness / 100,
-                lineOrientationThreshold: values.lineOrientationThreshold / 100,
-                compareLineOrientation: values.compareLineOrientation,
-                compareGroups: values.compareGroups,
-                groupMatchThreshold: values.groupMatchThreshold / 100,
-                checkCoveredAnnotations: values.checkCoveredAnnotations,
-                objectVisibilityThreshold: values.objectVisibilityThreshold / 100,
-                panopticComparison: values.panopticComparison,
+                targetMetric: values.targetMetric ?? settings.targetMetric,
+                targetMetricThreshold: (values.targetMetricThreshold ?? settings.targetMetricThreshold * 100) / 100,
+                maxValidationsPerJob: values.maxValidationsPerJob ?? settings.maxValidationsPerJob,
+                iouThreshold: (values.iouThreshold ?? settings.iouThreshold * 100) / 100,
+                compareAttributes: values.compareAttributes ?? settings.compareAttributes,
+                emptyIsAnnotated: values.emptyIsAnnotated ?? settings.emptyIsAnnotated,
+                oksSigma: (values.oksSigma ?? settings.oksSigma * 100) / 100,
+                pointSizeBase: values.pointSizeBase ?? settings.pointSizeBase,
+                lineThickness: (values.lineThickness ?? settings.lineThickness * 100) / 100,
+                lineOrientationThreshold: (
+                    values.lineOrientationThreshold ?? settings.lineOrientationThreshold * 100
+                ) / 100,
+                compareLineOrientation: values.compareLineOrientation ?? settings.compareLineOrientation,
+                compareGroups: values.compareGroups ?? settings.compareGroups,
+                groupMatchThreshold: (values.groupMatchThreshold ?? settings.groupMatchThreshold * 100) / 100,
+                checkCoveredAnnotations: values.checkCoveredAnnotations ?? settings.checkCoveredAnnotations,
+                objectVisibilityThreshold: (
+                    values.objectVisibilityThreshold ?? settings.objectVisibilityThreshold * 100
+                ) / 100,
+                panopticComparison: values.panopticComparison ?? settings.panopticComparison,
                 jobFilter: values.jobFilter ?? '',
             };
             setQualitySettings({ [settings.id]: { settings, fields } });
@@ -152,6 +158,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                     form={form}
                     settings={settings}
                     onSave={onSave}
+                    onReload={refreshQualitySettings}
                     disabled={settings.inherit && instance instanceof Task && instance.projectId !== null}
                 />
             </div>

@@ -322,6 +322,10 @@ function QualityControlPage(): JSX.Element {
         }
     }, [state.qualitySettings.settings, state.qualitySettings.childrenSettings]);
 
+    const refreshQualitySettings = useCallback(async (): Promise<void> => {
+        await receiveSettings(requestedInstanceType, requestedInstanceID);
+    }, [requestedInstanceType, requestedInstanceID]);
+
     const updateMeta = async (): Promise<void> => {
         dispatch(reducerActions.setFetching(true));
         try {
@@ -460,6 +464,7 @@ function QualityControlPage(): JSX.Element {
                         fetching={qualitySettingsFetching}
                         qualitySettings={{ settings: qualitySettings, childrenSettings: childrenQualitySettings }}
                         setQualitySettings={onSaveQualitySettings}
+                        refreshQualitySettings={refreshQualitySettings}
                     />
                 );
             }
