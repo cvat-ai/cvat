@@ -12,8 +12,8 @@ import {
     EyeInvisibleFilled, EyeOutlined,
     MoreOutlined,
 } from '@ant-design/icons';
-import { AudioRegion, ColorBy } from 'reducers';
-import { Label } from 'cvat-core-wrapper';
+import { ColorBy } from 'reducers';
+import { AudioIntervalState, Label } from 'cvat-core-wrapper';
 import { toClipboard } from 'utils/to-clipboard';
 import { formatTimeShort } from 'audio/utils/format-audio-time';
 import { hexToRgbComponents } from 'audio/utils/hex-color';
@@ -22,23 +22,23 @@ import { getRegionItemColor } from './audio-region-colors';
 import AudioRegionItemMenu from './audio-region-item-menu';
 import AudioRegionsListHeader, { AudioRegionsOrdering } from './audio-regions-list-header';
 import { setPlayOnceRegionId } from './utils/play-once-region';
+import {
+    intervalDurationSeconds,
+    intervalEndSeconds,
+    intervalID,
+    intervalStartSeconds,
+} from './utils/audio-interval';
 
-type RegionPatch =
-    | Partial<AudioRegion>
-    | ((region: AudioRegion, regions: AudioRegion[]) => Partial<AudioRegion>);
-
-function sortRegions(regions: AudioRegion[], ordering: AudioRegionsOrdering, labels: Label[]): AudioRegion[] {
-    const copy = [...regions];
+function sortIntervals(
+    intervals: AudioIntervalState[],
+    ordering: AudioRegionsOrdering,
+): AudioIntervalState[] {
+    const copy = [...intervals];
     switch (ordering) {
         case AudioRegionsOrdering.START_TIME:
             return copy.sort((a, b) => a.start - b.start);
-        case AudioRegionsOrdering.LABEL_NAME: {
-            const nameOf = (id: number | null): string => {
-                if (id == null) return '';
-                return labels.find((l) => l.id === id)?.name ?? '';
-            };
-            return copy.sort((a, b) => nameOf(a.labelId).localeCompare(nameOf(b.labelId)));
-        }
+        case AudioRegionsOrdering.LABEL_NAME:
+            return copy.sort((a, b) => a.label.name.localeCompare(b.label.name));
         case AudioRegionsOrdering.INSERTION:
         default:
             return copy;
@@ -46,81 +46,81 @@ function sortRegions(regions: AudioRegion[], ordering: AudioRegionsOrdering, lab
 }
 
 interface ItemProps {
-    region: AudioRegion;
-    label: Label | undefined;
+    interval: AudioIntervalState;
     displayIndex: number;
     isActive: boolean;
     itemColor: string;
     colorBy: ColorBy;
-    onSetActiveRegion(regionId: string | null): void;
-    onSetHoveredRegion(regionId: string | null): void;
+    onSetActiveInterval(clientID: number | null): void;
+    onSetHoveredInterval(clientID: number | null): void;
     onSwitchPlay(playing: boolean): void;
     onSetCurrentTime(time: number): void;
-    onToggleRegionLock(regionId: string): void;
-    onToggleRegionHidden(regionId: string): void;
-    onCopyRegion(regionId: string): void;
-    onDeleteRegion(regionId: string): void;
-    onUpdateRegion(regionId: string, patch: RegionPatch): void;
+    onToggleIntervalLock(clientID: number): void;
+    onToggleIntervalHidden(clientID: number): void;
+    onCopyInterval(clientID: number): void;
+    onDeleteInterval(clientID: number): void;
+    onChangeIntervalColor(clientID: number, color: string): void;
 }
 
 function AudioRegionItem(props: ItemProps): JSX.Element {
     const {
-        region, label, displayIndex, isActive, itemColor, colorBy,
-        onSetActiveRegion, onSetHoveredRegion, onSwitchPlay, onSetCurrentTime,
-        onToggleRegionLock, onToggleRegionHidden,
-        onCopyRegion, onDeleteRegion, onUpdateRegion,
+        interval, displayIndex, isActive, itemColor, colorBy,
+        onSetActiveInterval, onSetHoveredInterval, onSwitchPlay, onSetCurrentTime,
+        onToggleIntervalLock, onToggleIntervalHidden,
+        onCopyInterval, onDeleteInterval, onChangeIntervalColor,
     } = props;
 
-    const isHidden = !!region.hidden;
-    const isLocked = !!region.locked;
+    const id = intervalID(interval);
+    const isHidden = !!interval.hidden;
+    const isLocked = !!interval.lock;
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
-    const handleMouseEnter = useCallback(() => onSetHoveredRegion(region.id), [onSetHoveredRegion, region.id]);
-    const handleMouseLeave = useCallback(() => onSetHoveredRegion(null), [onSetHoveredRegion]);
-    const handleClick = useCallback(() => onSetActiveRegion(region.id), [onSetActiveRegion, region.id]);
+    const handleMouseEnter = useCallback(() => onSetHoveredInterval(id), [onSetHoveredInterval, id]);
+    const handleMouseLeave = useCallback(() => onSetHoveredInterval(null), [onSetHoveredInterval]);
+    const handleClick = useCallback(() => onSetActiveInterval(id), [onSetActiveInterval, id]);
     const handleDoubleClick = useCallback(() => {
-        setPlayOnceRegionId(region.id);
-        onSetActiveRegion(region.id);
-        onSetCurrentTime(Math.max(0, region.start));
+        setPlayOnceRegionId(String(id));
+        onSetActiveInterval(id);
+        onSetCurrentTime(Math.max(0, intervalStartSeconds(interval)));
         onSwitchPlay(true);
-    }, [onSetActiveRegion, onSetCurrentTime, onSwitchPlay, region.id, region.start]);
+    }, [onSetActiveInterval, onSetCurrentTime, onSwitchPlay, id, interval]);
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') onSetActiveRegion(region.id);
-    }, [onSetActiveRegion, region.id]);
+        if (e.key === 'Enter' || e.key === ' ') onSetActiveInterval(id);
+    }, [onSetActiveInterval, id]);
     const handleToggleLock = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
-        onToggleRegionLock(region.id);
-    }, [onToggleRegionLock, region.id]);
+        onToggleIntervalLock(id);
+    }, [onToggleIntervalLock, id]);
     const handleToggleHidden = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
-        if (!isLocked) onToggleRegionHidden(region.id);
-    }, [onToggleRegionHidden, region.id, isLocked]);
+        if (!isLocked) onToggleIntervalHidden(id);
+    }, [onToggleIntervalHidden, id, isLocked]);
 
     const menu = useMemo(() => AudioRegionItemMenu({
-        serverID: region.serverId,
+        serverID: interval.serverID ?? undefined,
         locked: isLocked,
         colorBy,
         onCreateURL: () => {
-            if (region.serverId) {
+            if (interval.serverID) {
                 const { origin, pathname } = window.location;
-                const url = `${origin}${pathname}?type=interval&serverID=${region.serverId}`;
+                const url = `${origin}${pathname}?type=interval&serverID=${interval.serverID}`;
                 toClipboard(url);
             }
         },
-        onCopy: () => onCopyRegion(region.id),
+        onCopy: () => onCopyInterval(id),
         onChangeColorClick: () => setColorPickerVisible(true),
-        onRemove: () => onDeleteRegion(region.id),
+        onRemove: () => onDeleteInterval(id),
     }), [
-        region.id, region.serverId,
+        id, interval.serverID,
         isLocked, colorBy,
-        onCopyRegion, onDeleteRegion,
+        onCopyInterval, onDeleteInterval,
     ]);
 
     return (
         <div
             role='button'
             tabIndex={0}
-            data-region-id={region.id}
+            data-interval-id={id}
             className={
                 'cvat-audio-region-item' +
                 `${isActive ? ' cvat-audio-region-item-active' : ''}` +
@@ -135,20 +135,16 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
         >
             <div className='cvat-audio-region-item-index'>{displayIndex + 1}</div>
             <div className='cvat-audio-region-item-info'>
-                <div className={
-                    'cvat-audio-region-item-label' +
-                        `${!label ? ' cvat-audio-region-item-label--none' : ''}`
-                }
-                >
-                    {label ? label.name : 'None'}
+                <div className='cvat-audio-region-item-label'>
+                    {interval.label.name}
                 </div>
                 <div className='cvat-audio-region-item-time'>
-                    <span>{formatTimeShort(region.start)}</span>
+                    <span>{formatTimeShort(intervalStartSeconds(interval))}</span>
                     <span className='cvat-audio-region-item-separator'>&rarr;</span>
-                    <span>{formatTimeShort(region.end)}</span>
+                    <span>{formatTimeShort(intervalEndSeconds(interval))}</span>
                 </div>
                 <div className='cvat-audio-region-item-duration'>
-                    {formatTimeShort(Math.max(0, region.end - region.start))}
+                    {formatTimeShort(intervalDurationSeconds(interval))}
                 </div>
             </div>
             <div className='cvat-audio-region-item-actions'>
@@ -176,9 +172,9 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
                 {colorPickerVisible ? (
                     <ColorPicker
                         visible
-                        value={region.color ?? ''}
+                        value={interval.color ?? ''}
                         onVisibleChange={setColorPickerVisible}
-                        onChange={(color: string) => onUpdateRegion(region.id, { color })}
+                        onChange={(color: string) => onChangeIntervalColor(id, color)}
                     >
                         <span
                             role='button'
@@ -216,105 +212,95 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
 const MemoAudioRegionItem = React.memo(AudioRegionItem);
 
 interface Props {
-    regions: AudioRegion[];
-    visibleRegionIds: Set<string>;
-    activeRegionId: string | null;
+    intervals: AudioIntervalState[];
+    visibleIntervalIds: Set<number>;
+    activeIntervalID: number | null;
     labels: Label[];
     colorBy: ColorBy;
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
-    onSetActiveRegion(regionId: string | null): void;
-    onSetHoveredRegion(regionId: string | null): void;
+    onSetActiveInterval(clientID: number | null): void;
+    onSetHoveredInterval(clientID: number | null): void;
     onSwitchPlay(playing: boolean): void;
     onSetCurrentTime(time: number): void;
-    onToggleRegionLock(regionId: string): void;
-    onToggleRegionHidden(regionId: string): void;
-    onSetRegions(regions: AudioRegion[]): void;
-    onCopyRegion(regionId: string): void;
-    onUpdateRegion(regionId: string, patch: RegionPatch): void;
+    onToggleIntervalLock(clientID: number): void;
+    onToggleIntervalHidden(clientID: number): void;
+    onToggleIntervalsLock(clientIDs: number[], lock: boolean): void;
+    onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void;
+    onCopyInterval(clientID: number): void;
+    onDeleteInterval(clientID: number, force?: boolean): void;
+    onChangeIntervalColor(clientID: number, color: string): void;
 }
 
 export default function AudioRegionsList(props: Props): JSX.Element {
     const {
-        regions,
-        visibleRegionIds,
-        activeRegionId,
+        intervals,
+        visibleIntervalIds,
+        activeIntervalID,
         labels,
         colorBy,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
-        onSetActiveRegion,
-        onSetHoveredRegion,
+        onSetActiveInterval,
+        onSetHoveredInterval,
         onSwitchPlay,
         onSetCurrentTime,
-        onToggleRegionLock,
-        onToggleRegionHidden,
-        onSetRegions,
-        onCopyRegion,
-        onUpdateRegion,
+        onToggleIntervalLock,
+        onToggleIntervalHidden,
+        onToggleIntervalsLock,
+        onToggleIntervalsHidden,
+        onCopyInterval,
+        onDeleteInterval,
+        onChangeIntervalColor,
     } = props;
 
     const [ordering, setOrdering] = useState<AudioRegionsOrdering>(AudioRegionsOrdering.INSERTION);
     const listRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!activeRegionId) return;
+        if (activeIntervalID === null) return;
         const container = listRef.current;
         if (!container) return;
-        const item = container.querySelector(`[data-region-id="${CSS.escape(activeRegionId)}"]`);
+        const item = container.querySelector(`[data-interval-id="${CSS.escape(String(activeIntervalID))}"]`);
         if (item) {
             (item as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
-    }, [activeRegionId]);
+    }, [activeIntervalID]);
 
-    const visibleRegions = useMemo(
-        () => regions.filter((r) => visibleRegionIds.has(r.id)),
-        [regions, visibleRegionIds],
+    const visibleIntervals = useMemo(
+        () => intervals.filter((interval) => visibleIntervalIds.has(intervalID(interval))),
+        [intervals, visibleIntervalIds],
     );
 
-    const allLocked = visibleRegions.length > 0 && visibleRegions.every((r) => !!r.locked);
-    const allHidden = visibleRegions.length > 0 && visibleRegions.every((r) => !!r.hidden);
-
-    const patchVisible = useCallback((patch: Partial<AudioRegion>): AudioRegion[] => (
-        regions.map((r) => (visibleRegionIds.has(r.id) ? { ...r, ...patch } : r))
-    ), [regions, visibleRegionIds]);
+    const allLocked = visibleIntervals.length > 0 && visibleIntervals.every((interval) => !!interval.lock);
+    const allHidden = visibleIntervals.length > 0 && visibleIntervals.every((interval) => !!interval.hidden);
+    const visibleIds = useMemo(() => visibleIntervals.map((interval) => intervalID(interval)), [visibleIntervals]);
 
     const onLockAll = useCallback(() => {
-        onSetRegions(patchVisible({ locked: true }));
-    }, [patchVisible, onSetRegions]);
+        onToggleIntervalsLock(visibleIds, true);
+    }, [visibleIds, onToggleIntervalsLock]);
     const onUnlockAll = useCallback(() => {
-        onSetRegions(patchVisible({ locked: false }));
-    }, [patchVisible, onSetRegions]);
+        onToggleIntervalsLock(visibleIds, false);
+    }, [visibleIds, onToggleIntervalsLock]);
     const onHideAll = useCallback(() => {
-        onSetRegions(patchVisible({ hidden: true }));
-    }, [patchVisible, onSetRegions]);
+        onToggleIntervalsHidden(visibleIds, true);
+    }, [visibleIds, onToggleIntervalsHidden]);
     const onShowAll = useCallback(() => {
-        onSetRegions(patchVisible({ hidden: false }));
-    }, [patchVisible, onSetRegions]);
+        onToggleIntervalsHidden(visibleIds, false);
+    }, [visibleIds, onToggleIntervalsHidden]);
 
-    const onDeleteRegion = useCallback((regionId: string) => {
-        const region = regions.find((r) => r.id === regionId);
-        if (region?.locked) {
-            return;
-        }
-        onSetRegions(regions.filter((r) => r.id !== regionId));
-        if (regionId === activeRegionId) {
-            onSetActiveRegion(null);
-        }
-    }, [regions, activeRegionId, onSetRegions, onSetActiveRegion]);
-
-    const sortedRegions = useMemo(() => sortRegions(visibleRegions, ordering, labels),
-        [visibleRegions, ordering, labels]);
+    const sortedIntervals = useMemo(() => sortIntervals(visibleIntervals, ordering),
+        [visibleIntervals, ordering, labels]);
 
     const indexById = useMemo(() => {
-        const map = new Map<string, number>();
-        regions.forEach((r, i) => map.set(r.id, i));
+        const map = new Map<number, number>();
+        intervals.forEach((interval, i) => map.set(intervalID(interval), i));
         return map;
-    }, [regions]);
+    }, [intervals]);
 
     const header = (
         <AudioRegionsListHeader
-            count={visibleRegions.length}
+            count={visibleIntervals.length}
             ordering={ordering}
             allLocked={allLocked}
             allHidden={allHidden}
@@ -328,8 +314,8 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         />
     );
 
-    if (!visibleRegions.length) {
-        const description = regions.length ? 'No intervals match filters' : 'No intervals created';
+    if (!visibleIntervals.length) {
+        const description = intervals.length ? 'No intervals match filters' : 'No intervals created';
         return (
             <div className='cvat-audio-regions-list-wrapper'>
                 {header}
@@ -346,26 +332,28 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         <div className='cvat-audio-regions-list-wrapper'>
             {header}
             <div className='cvat-audio-regions-list' ref={listRef}>
-                {sortedRegions.map((region) => (
-                    <MemoAudioRegionItem
-                        key={region.id}
-                        region={region}
-                        label={labels.find((l) => l.id === region.labelId)}
-                        displayIndex={indexById.get(region.id) ?? 0}
-                        isActive={region.id === activeRegionId}
-                        itemColor={getRegionItemColor(region, labels, colorBy)}
-                        colorBy={colorBy}
-                        onSetActiveRegion={onSetActiveRegion}
-                        onSetHoveredRegion={onSetHoveredRegion}
-                        onSwitchPlay={onSwitchPlay}
-                        onSetCurrentTime={onSetCurrentTime}
-                        onToggleRegionLock={onToggleRegionLock}
-                        onToggleRegionHidden={onToggleRegionHidden}
-                        onCopyRegion={onCopyRegion}
-                        onDeleteRegion={onDeleteRegion}
-                        onUpdateRegion={onUpdateRegion}
-                    />
-                ))}
+                {sortedIntervals.map((interval) => {
+                    const id = intervalID(interval);
+                    return (
+                        <MemoAudioRegionItem
+                            key={id}
+                            interval={interval}
+                            displayIndex={indexById.get(id) ?? 0}
+                            isActive={id === activeIntervalID}
+                            itemColor={getRegionItemColor(interval, labels, colorBy)}
+                            colorBy={colorBy}
+                            onSetActiveInterval={onSetActiveInterval}
+                            onSetHoveredInterval={onSetHoveredInterval}
+                            onSwitchPlay={onSwitchPlay}
+                            onSetCurrentTime={onSetCurrentTime}
+                            onToggleIntervalLock={onToggleIntervalLock}
+                            onToggleIntervalHidden={onToggleIntervalHidden}
+                            onCopyInterval={onCopyInterval}
+                            onDeleteInterval={onDeleteInterval}
+                            onChangeIntervalColor={onChangeIntervalColor}
+                        />
+                    );
+                })}
             </div>
         </div>
     );

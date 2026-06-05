@@ -13,7 +13,7 @@ import {
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
     ObjectState, ObjectType, ShapeType, JobState, JobValidationLayout,
-    DimensionType,
+    DimensionType, AudioIntervalState,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -30,11 +30,7 @@ import {
 } from 'reducers';
 import { switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
-import {
-    loadAudioAnnotationsAsync,
-    loadAudioDataAsync,
-    saveAudioAnnotationsAsync,
-} from './audio-actions';
+import { loadAudioDataAsync } from './audio-actions';
 
 interface AnnotationsParameters {
     filters: object[];
@@ -302,6 +298,7 @@ function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
 
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
+    intervals: AudioIntervalState[];
     history: CombinedState['annotation']['annotations']['history'];
 }> {
     const {
@@ -332,10 +329,13 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
         states = wrapStatesForReviewMode(states);
     }
 
+    const intervals = jobInstance.dimension === DimensionType.DIMENSION_1D ?
+        await jobInstance.annotations.intervals() : [];
     const history = await jobInstance.actions.get();
 
     return {
         states,
+        intervals,
         history,
     };
 }
@@ -343,7 +343,7 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
 export function fetchAnnotationsAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
-            const { states, history } = await fetchAnnotations();
+            const { states, intervals, history } = await fetchAnnotations();
 
             const { workspace } = getState().annotation;
             const finalStates = workspace === Workspace.REVIEW ?
@@ -353,6 +353,7 @@ export function fetchAnnotationsAsync(): ThunkAction {
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
                     states: finalStates,
+                    intervals,
                     history,
                 },
             });
@@ -1079,7 +1080,7 @@ export function getJobAsync({
 
             if (job.dimension === DimensionType.DIMENSION_1D) {
                 dispatch(loadAudioDataAsync(job, jobMeta));
-                dispatch(loadAudioAnnotationsAsync());
+                dispatch(fetchAnnotationsAsync());
             } else {
                 dispatch(fetchAnnotationsAsync());
                 dispatch(changeFrameAsync(frameNumber, false));
@@ -1096,13 +1097,7 @@ export function getJobAsync({
 }
 
 export function saveAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const { workspace } = getState().annotation;
-        if (workspace === Workspace.AUDIO) {
-            await dispatch(saveAudioAnnotationsAsync());
-            return;
-        }
-
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         const { jobInstance } = receiveAnnotationsParameters();
 
         dispatch({
@@ -1312,7 +1307,7 @@ export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
 }
 
 export function createAnnotationsAsync(
-    statesToCreate: ObjectState[],
+    statesToCreate: (ObjectState | AudioIntervalState)[],
     source: AnnotationSource = AnnotationSource.OTHER,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {

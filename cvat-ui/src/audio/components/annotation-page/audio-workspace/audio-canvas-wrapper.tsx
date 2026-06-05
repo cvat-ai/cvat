@@ -9,11 +9,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import WaveSurfer from 'wavesurfer.js';
 import WavesurferPlayer from '@wavesurfer/react';
 
-import { ActiveControl, AudioRegion, CombinedState } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import { Attribute } from 'cvat-core-wrapper';
 import { shallowEqual } from 'utils/redux';
-import { audioActions } from 'actions/audio-actions';
+import GlobalHotKeys from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
+import {
+    audioActions,
+    createAudioIntervalAsync,
+    updateAudioIntervalAsync,
+} from 'actions/audio-actions';
 import { updateActiveControl } from 'actions/annotation-actions';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 
 import AudioRegionDetails from './audio-region-details';
 import AudioCanvasSkeleton from './skeleton/audio-canvas-skeleton';
@@ -21,19 +29,37 @@ import { useAudioWaveform } from './hooks/use-audio-waveform';
 import { useAudioPlaybackSync } from './hooks/use-audio-playback-sync';
 import { useAudioRegions } from './hooks/use-audio-regions';
 import { useAudioRecording } from './hooks/use-audio-recording';
-import { filterAudioRegions } from './utils/filter-audio-regions';
+import { filterAudioIntervals } from './utils/filter-audio-regions';
 import { ZOOM_MIN, computeMaxZoom } from './utils/zoom-bounds';
+import { intervalID } from './utils/audio-interval';
 
 const ZOOM_STEP_FACTOR = 1.2;
+
+const componentShortcuts = {
+    NEXT_OBJECT: {
+        name: 'Next object',
+        description: 'Go to the next audio interval and center it on the waveform',
+        sequences: ['tab'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+    PREVIOUS_OBJECT: {
+        name: 'Previous object',
+        description: 'Go to the previous audio interval and center it on the waveform',
+        sequences: ['shift+tab'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function AudioCanvasWrapper(): JSX.Element {
     const dispatch = useDispatch();
     const {
         isPlaying, currentTime, duration, zoom, volume, loop, playbackRate,
-        activeControl, regions, activeRegionId, hoveredRegionId,
+        jobInstance, activeControl, intervals, activeIntervalID, hoveredIntervalID,
         audioUrl, audioLoading, audioError, waveformReady,
         labels, activeLabelId, colorBy, opacity, selectedOpacity,
-        filters,
+        filters, keyMap,
     } = useSelector((state: CombinedState) => ({
         isPlaying: state.audio.player.playing,
         currentTime: state.audio.player.currentTime,
@@ -42,10 +68,11 @@ function AudioCanvasWrapper(): JSX.Element {
         volume: state.audio.player.volume,
         loop: state.audio.player.loop,
         playbackRate: state.audio.player.playbackRate,
+        jobInstance: state.annotation.job.instance,
         activeControl: state.annotation.canvas.activeControl,
-        regions: state.audio.player.regions,
-        activeRegionId: state.audio.player.activeRegionId,
-        hoveredRegionId: state.audio.player.hoveredRegionId,
+        intervals: state.audio.player.intervals,
+        activeIntervalID: state.audio.player.activeIntervalID,
+        hoveredIntervalID: state.audio.player.hoveredIntervalID,
         audioUrl: state.audio.player.audioUrl,
         audioLoading: state.audio.player.audioLoading,
         audioError: state.audio.player.audioError,
@@ -56,6 +83,7 @@ function AudioCanvasWrapper(): JSX.Element {
         opacity: state.settings.shapes.opacity,
         selectedOpacity: state.settings.shapes.selectedOpacity,
         filters: state.annotation.annotations.filters,
+        keyMap: state.shortcuts.keyMap,
     }), shallowEqual);
 
     const [wavesurfer, setWavesurfer] = useState<WaveSurfer | null>(null);
@@ -65,9 +93,12 @@ function AudioCanvasWrapper(): JSX.Element {
     const maxZoom = computeMaxZoom(duration);
     const maxZoomRef = useRef(maxZoom);
     const phantomRegionIdsRef = useRef<Set<string>>(new Set());
-    const visibleRegionIds = useMemo(() => (
-        new Set(filterAudioRegions(regions, labels, filters).map((r) => r.id))
-    ), [regions, labels, filters]);
+    const visibleIntervalIds = useMemo(() => (
+        new Set(filterAudioIntervals(intervals, labels, filters).map((interval) => intervalID(interval)))
+    ), [intervals, labels, filters]);
+    const visibleIntervals = useMemo(() => (
+        intervals.filter((interval) => !interval.hidden && visibleIntervalIds.has(intervalID(interval)))
+    ), [intervals, visibleIntervalIds]);
     const onSwitchPlay = useCallback((playing: boolean): void => {
         dispatch(audioActions.switchAudioPlay(playing));
     }, [dispatch]);
@@ -77,20 +108,28 @@ function AudioCanvasWrapper(): JSX.Element {
     const onSetDuration = useCallback((nextDuration: number): void => {
         dispatch(audioActions.setAudioDuration(nextDuration));
     }, [dispatch]);
-    const onSetRegions = useCallback((nextRegions: AudioRegion[]): void => {
-        dispatch(audioActions.setAudioRegions(nextRegions));
+    const onSetActiveInterval = useCallback((clientID: number | null): void => {
+        dispatch(audioActions.setAudioActiveInterval(clientID));
     }, [dispatch]);
-    const onSetActiveRegion = useCallback((regionId: string | null): void => {
-        dispatch(audioActions.setAudioActiveRegion(regionId));
-    }, [dispatch]);
-    const onSetHoveredRegion = useCallback((regionId: string | null): void => {
-        dispatch(audioActions.setAudioHoveredRegion(regionId));
+    const onSetHoveredInterval = useCallback((clientID: number | null): void => {
+        dispatch(audioActions.setAudioHoveredInterval(clientID));
     }, [dispatch]);
     const onSetZoom = useCallback((nextZoom: number): void => {
         dispatch(audioActions.setAudioZoom(nextZoom));
     }, [dispatch]);
-    const onUpdateRegionAttribute = useCallback((regionId: string, attrID: number, value: string): void => {
-        dispatch(audioActions.updateAudioRegionAttribute(regionId, attrID, value));
+    const onCreateInterval = useCallback((start: number, stop: number, labelID: number | null): void => {
+        dispatch(createAudioIntervalAsync(start, stop, labelID));
+    }, [dispatch]);
+    const onUpdateIntervalPosition = useCallback((clientID: number, start: number, stop: number): void => {
+        dispatch(updateAudioIntervalAsync(clientID, {
+            start: Math.round(start * 1000),
+            stop: Math.round(stop * 1000),
+        }));
+    }, [dispatch]);
+    const onUpdateIntervalAttribute = useCallback((clientID: number, attrID: number, value: string): void => {
+        dispatch(updateAudioIntervalAsync(clientID, {
+            attributes: { [attrID]: value },
+        }));
     }, [dispatch]);
     const onWaveformReady = useCallback((ready: boolean): void => {
         dispatch(audioActions.setWaveformReady(ready));
@@ -98,6 +137,61 @@ function AudioCanvasWrapper(): JSX.Element {
     const onUpdateActiveControl = useCallback((control: ActiveControl): void => {
         dispatch(updateActiveControl(control));
     }, [dispatch]);
+
+    const centerViewportOnInterval = useCallback((clientID: number): void => {
+        if (!wavesurfer) return;
+        const interval = intervals.find((_interval) => _interval.clientID === clientID);
+        if (!interval) return;
+        const audioDuration = wavesurfer.getDuration();
+        if (!audioDuration) return;
+        const scrollContainer = wavesurfer.getWrapper()?.parentElement;
+        if (!scrollContainer) return;
+        const totalWidth = scrollContainer.scrollWidth;
+        const visibleWidth = wavesurfer.getWidth();
+        if (totalWidth <= visibleWidth) return;
+
+        const startPx = ((interval.start / 1000) / audioDuration) * totalWidth;
+        const endPx = (((interval.stop ?? interval.start) / 1000) / audioDuration) * totalWidth;
+        const midPx = (startPx + endPx) / 2;
+        wavesurfer.setScroll(Math.max(
+            0,
+            Math.min(totalWidth - visibleWidth, midPx - visibleWidth / 2),
+        ));
+    }, [intervals, wavesurfer]);
+
+    const navigateInterval = useCallback((step: number): void => {
+        if (
+            activeControl === ActiveControl.AUDIO_REGION_CREATE ||
+            activeControl === ActiveControl.AUDIO_REGION_RECORD
+        ) {
+            return;
+        }
+        if (!visibleIntervals.length) return;
+        const currentIndex = visibleIntervals.findIndex((interval) => interval.clientID === activeIntervalID);
+        let nextIndex = currentIndex + step;
+        if (nextIndex > visibleIntervals.length - 1) {
+            nextIndex = 0;
+        } else if (nextIndex < 0) {
+            nextIndex = visibleIntervals.length - 1;
+        }
+
+        const nextInterval = visibleIntervals[nextIndex];
+        if (nextInterval?.clientID !== null && nextInterval?.clientID !== activeIntervalID) {
+            onSetActiveInterval(nextInterval.clientID);
+            centerViewportOnInterval(nextInterval.clientID);
+        }
+    }, [activeControl, activeIntervalID, centerViewportOnInterval, onSetActiveInterval, visibleIntervals]);
+
+    const hotkeyHandlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        NEXT_OBJECT: (event?: KeyboardEvent) => {
+            event?.preventDefault();
+            navigateInterval(1);
+        },
+        PREVIOUS_OBJECT: (event?: KeyboardEvent) => {
+            event?.preventDefault();
+            navigateInterval(-1);
+        },
+    };
 
     useEffect(() => { zoomRef.current = zoom; }, [zoom]);
     useEffect(() => { maxZoomRef.current = maxZoom; }, [maxZoom]);
@@ -137,15 +231,16 @@ function AudioCanvasWrapper(): JSX.Element {
     });
 
     const { handleReady, handleFinish, handleTimeupdate } = useAudioRegions({
+        jobInstance,
         regionsPluginRef,
         wavesurfer,
         lastWsTimeRef,
         phantomRegionIdsRef,
         activeControl,
-        regions,
-        visibleRegionIds,
-        activeRegionId,
-        hoveredRegionId,
+        intervals,
+        visibleIntervalIds,
+        activeIntervalID,
+        hoveredIntervalID,
         labels,
         activeLabelId,
         colorBy,
@@ -155,10 +250,10 @@ function AudioCanvasWrapper(): JSX.Element {
         onSwitchPlay,
         onSetCurrentTime,
         onSetDuration,
-        onSetRegions,
-        onSetActiveRegion,
-        onSetHoveredRegion,
-        onUpdateActiveControl,
+        onCreateInterval,
+        onUpdateIntervalPosition,
+        onSetActiveInterval,
+        onSetHoveredInterval,
         onWaveformReady,
         onWavesurferReady: setWavesurfer,
     });
@@ -168,15 +263,15 @@ function AudioCanvasWrapper(): JSX.Element {
         wavesurfer,
         activeControl,
         isPlaying,
-        regions,
+        intervals,
         labels,
         activeLabelId,
         colorBy,
         opacity,
         selectedOpacity,
         phantomRegionIdsRef,
-        onSetRegions,
-        onSetActiveRegion,
+        onCreateInterval,
+        onSetActiveInterval,
         onUpdateActiveControl,
     });
 
@@ -193,31 +288,27 @@ function AudioCanvasWrapper(): JSX.Element {
         };
     }, [audioUrl]);
 
-    const activeRegion = activeRegionId ?
-        regions.find((r) => r.id === activeRegionId) : null;
+    const activeInterval = activeIntervalID !== null ?
+        intervals.find((interval) => interval.clientID === activeIntervalID) : null;
 
     const changeAttribute = useCallback((attrID: number, value: string): void => {
-        if (!activeRegionId) return;
-        onUpdateRegionAttribute(activeRegionId, attrID, value);
-    }, [activeRegionId, onUpdateRegionAttribute]);
+        if (activeIntervalID === null) return;
+        onUpdateIntervalAttribute(activeIntervalID, attrID, value);
+    }, [activeIntervalID, onUpdateIntervalAttribute]);
 
     const changeLabel = useCallback((labelId: number): void => {
-        if (!activeRegion) return;
+        if (!activeInterval) return;
         const label = labels.find((l) => l.id === labelId);
+        if (!label || activeInterval.clientID === null) return;
         const defaultAttrs: Record<number, string> = {};
-        if (label) {
-            label.attributes.forEach((attr: Attribute) => {
-                defaultAttrs[attr.id!] = attr.defaultValue;
-            });
-        }
-        onSetRegions(
-            regions.map((r) => (r.id === activeRegion.id ? {
-                ...r,
-                labelId,
-                attributes: defaultAttrs,
-            } : r)),
-        );
-    }, [activeRegion, labels, regions, onSetRegions]);
+        label.attributes.forEach((attr: Attribute) => {
+            defaultAttrs[attr.id!] = attr.defaultValue;
+        });
+        dispatch(updateAudioIntervalAsync(activeInterval.clientID, {
+            label,
+            attributes: defaultAttrs,
+        }));
+    }, [activeInterval, labels, dispatch]);
 
     if (audioLoading) {
         return (
@@ -253,6 +344,7 @@ function AudioCanvasWrapper(): JSX.Element {
 
     return (
         <div className='cvat-audio-canvas-wrapper' ref={wrapperRef}>
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={hotkeyHandlers} />
             {!waveformReady && <AudioCanvasSkeleton />}
             <div className='cvat-audio-waveform-wrapper' style={!waveformReady ? { visibility: 'hidden', height: 0, overflow: 'hidden' } : undefined}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', overflow: 'hidden' }}>
@@ -278,10 +370,10 @@ function AudioCanvasWrapper(): JSX.Element {
                 </div>
             </div>
 
-            {activeRegion && (
+            {activeInterval && (
                 <AudioRegionDetails
-                    region={activeRegion}
-                    regionIndex={regions.indexOf(activeRegion)}
+                    interval={activeInterval}
+                    intervalIndex={intervals.indexOf(activeInterval)}
                     labels={labels}
                     onChangeLabel={changeLabel}
                     onChangeAttribute={changeAttribute}

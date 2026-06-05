@@ -6,11 +6,15 @@ import React, {
     useCallback, useEffect, useMemo,
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { shallowEqual } from 'utils/redux';
+import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import message from 'antd/lib/message';
 
-import { AudioRegion, CombinedState } from 'reducers';
-import { audioActions } from 'actions/audio-actions';
+import { CombinedState } from 'reducers';
+import {
+    audioActions,
+    updateAudioIntervalAsync,
+    updateAudioIntervalsAsync,
+} from 'actions/audio-actions';
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
@@ -42,10 +46,10 @@ interface AudioLabelItemProps {
 
 function AudioLabelItem(props: AudioLabelItemProps): JSX.Element | null {
     const { labelID } = props;
-    const dispatch = useDispatch();
-    const { label, audioRegions } = useSelector((state: CombinedState) => ({
+    const dispatch = useDispatch<ThunkDispatch>();
+    const { label, audioIntervals } = useSelector((state: CombinedState) => ({
         label: state.annotation.job.labels.find((_label: any) => _label.id === labelID),
-        audioRegions: state.audio.player.regions,
+        audioIntervals: state.audio.player.intervals,
     }), shallowEqual);
 
     const {
@@ -53,33 +57,33 @@ function AudioLabelItem(props: AudioLabelItemProps): JSX.Element | null {
         statesHidden,
         statesLocked,
     } = useMemo(() => {
-        const ownRegions = audioRegions.filter(
-            (region: AudioRegion): boolean => region.labelId === labelID,
+        const ownIntervals = audioIntervals.filter(
+            (interval): boolean => interval.label.id === labelID,
         );
-        const unlockedOwnRegions = ownRegions.filter((region: AudioRegion): boolean => !region.locked);
+        const unlockedOwnIntervals = ownIntervals.filter((interval): boolean => !interval.lock);
 
         return {
-            visible: !!ownRegions.length,
-            statesHidden: unlockedOwnRegions.every((region: AudioRegion): boolean => !!region.hidden),
-            statesLocked: unlockedOwnRegions.length === 0,
+            visible: !!ownIntervals.length,
+            statesHidden: unlockedOwnIntervals.every((interval): boolean => !!interval.hidden),
+            statesLocked: unlockedOwnIntervals.length === 0,
         };
-    }, [audioRegions, labelID]);
+    }, [audioIntervals, labelID]);
 
     const switchHidden = useCallback((value: boolean): void => {
-        dispatch(audioActions.setAudioRegions(
-            audioRegions.map((region: AudioRegion) => (
-                region.labelId === labelID ? { ...region, hidden: value } : region
-            )),
+        dispatch(updateAudioIntervalsAsync(
+            audioIntervals.filter((interval) => interval.label.id === labelID && interval.clientID !== null)
+                .map((interval) => interval.clientID as number),
+            { hidden: value },
         ));
-    }, [audioRegions, dispatch, labelID]);
+    }, [audioIntervals, dispatch, labelID]);
 
     const switchLock = useCallback((value: boolean): void => {
-        dispatch(audioActions.setAudioRegions(
-            audioRegions.map((region: AudioRegion) => (
-                region.labelId === labelID ? { ...region, locked: value } : region
-            )),
+        dispatch(updateAudioIntervalsAsync(
+            audioIntervals.filter((interval) => interval.label.id === labelID && interval.clientID !== null)
+                .map((interval) => interval.clientID as number),
+            { lock: value },
         ));
-    }, [audioRegions, dispatch, labelID]);
+    }, [audioIntervals, dispatch, labelID]);
 
     const hideStates = useCallback((): void => {
         switchHidden(true);
@@ -114,7 +118,7 @@ function AudioLabelItem(props: AudioLabelItemProps): JSX.Element | null {
 const MemoizedAudioLabelItem = React.memo(AudioLabelItem);
 
 function AudioLabelsList(): JSX.Element {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<ThunkDispatch>();
 
     const { labels, keyMap } = useSelector((state: CombinedState) => ({
         labels: state.annotation.job.labels,
@@ -154,17 +158,17 @@ function AudioLabelsList(): JSX.Element {
         if (!Number.isInteger(labelID) || !label) return;
 
         const relevantAppState = getCVATStore().getState();
-        const { regions, activeRegionId } = relevantAppState.audio.player;
+        const { activeIntervalID } = relevantAppState.audio.player;
 
-        if (activeRegionId) {
+        if (activeIntervalID !== null) {
             const defaultAttrs: Record<number, string> = {};
             label.attributes.forEach((attr: any) => {
                 defaultAttrs[attr.id] = attr.defaultValue;
             });
-            const next = regions.map((r) => (
-                r.id === activeRegionId ? { ...r, labelId: labelID, attributes: defaultAttrs } : r
-            ));
-            dispatch(audioActions.setAudioRegions(next));
+            dispatch(updateAudioIntervalAsync(activeIntervalID, {
+                label,
+                attributes: defaultAttrs,
+            }));
         } else {
             dispatch(audioActions.setAudioActiveLabel(labelID));
             message.destroy();

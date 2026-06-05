@@ -11,7 +11,7 @@ import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { updateActiveControl } from 'actions/annotation-actions';
 import {
     audioActions,
-    extendAudioRegionFromLastAsync,
+    extendAudioIntervalFromLastAsync,
 } from 'actions/audio-actions';
 import ControlVisibilityObserver, { ExtraControlsControl } from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
 
@@ -76,7 +76,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
         dispatch(audioActions.setAudioActiveLabel(labelId));
     }, [dispatch]);
     const onExtendRegion = useCallback((labelId: number): void => {
-        dispatch(extendAudioRegionFromLastAsync(labelId));
+        dispatch(extendAudioIntervalFromLastAsync(labelId));
     }, [dispatch]);
 
     return (

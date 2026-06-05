@@ -378,7 +378,9 @@ export default class Collection {
     }
 
     public getAllIntervals(): ReturnType<AudioInterval['get']>[] {
-        return this.intervals.map((interval) => interval.get());
+        return this.intervals
+            .filter((interval) => !interval.removed)
+            .map((interval) => interval.get());
     }
 
     public export(): SerializedCollection {
