@@ -1040,6 +1040,17 @@ export default class Collection {
             const start = from ?? 0;
             const stop = to ?? this.stopFrame;
 
+            if (this.injection.dimension === DimensionType.DIMENSION_1D) {
+                this.intervals.slice(0).forEach((interval) => {
+                    const intervalStop = interval.stop ?? this.stopFrame;
+                    if (interval.start <= stop && intervalStop >= from) {
+                        this.intervals.splice(this.intervals.indexOf(interval), 1);
+                        delete this.objects[interval.clientID];
+                    }
+                });
+                return;
+            }
+
             // If only a range of annotations need to be cleared
             for (let frame = start; frame <= stop; frame++) {
                 this.shapes[frame] = [];
@@ -1072,14 +1083,6 @@ export default class Collection {
                     } else if (track.frame >= from) {
                         this.tracks.splice(this.tracks.indexOf(track), 1);
                     }
-                }
-            });
-
-            this.intervals.slice(0).forEach((interval) => {
-                const intervalStop = interval.stop ?? this.stopFrame;
-                if (interval.start <= to && intervalStop >= from) {
-                    this.intervals.splice(this.intervals.indexOf(interval), 1);
-                    delete this.objects[interval.clientID];
                 }
             });
         }
