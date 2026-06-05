@@ -12,7 +12,7 @@ import {
     EyeInvisibleFilled, EyeOutlined,
     MoreOutlined,
 } from '@ant-design/icons';
-import { ColorBy } from 'reducers';
+import { ActiveControl, ColorBy } from 'reducers';
 import { AudioIntervalState, Label } from 'cvat-core-wrapper';
 import { toClipboard } from 'utils/to-clipboard';
 import { formatTimeShort } from 'audio/utils/format-audio-time';
@@ -51,6 +51,7 @@ interface ItemProps {
     isActive: boolean;
     itemColor: string;
     colorBy: ColorBy;
+    activeControl: ActiveControl;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
     onSwitchPlay(playing: boolean): void;
@@ -65,6 +66,7 @@ interface ItemProps {
 function AudioRegionItem(props: ItemProps): JSX.Element {
     const {
         interval, displayIndex, isActive, itemColor, colorBy,
+        activeControl,
         onSetActiveInterval, onSetHoveredInterval, onSwitchPlay, onSetCurrentTime,
         onToggleIntervalLock, onToggleIntervalHidden,
         onCopyInterval, onDeleteInterval, onChangeIntervalColor,
@@ -73,20 +75,24 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
     const id = intervalID(interval);
     const isHidden = !!interval.hidden;
     const isLocked = !!interval.lock;
+    const isCursor = activeControl === ActiveControl.CURSOR;
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
     const handleMouseEnter = useCallback(() => onSetHoveredInterval(id), [onSetHoveredInterval, id]);
     const handleMouseLeave = useCallback(() => onSetHoveredInterval(null), [onSetHoveredInterval]);
-    const handleClick = useCallback(() => onSetActiveInterval(id), [onSetActiveInterval, id]);
+    const handleClick = useCallback(() => {
+        if (isCursor) onSetActiveInterval(id);
+    }, [isCursor, onSetActiveInterval, id]);
     const handleDoubleClick = useCallback(() => {
+        if (!isCursor) return;
         setPlayOnceRegionId(String(id));
         onSetActiveInterval(id);
         onSetCurrentTime(Math.max(0, intervalStartSeconds(interval)));
         onSwitchPlay(true);
-    }, [onSetActiveInterval, onSetCurrentTime, onSwitchPlay, id, interval]);
+    }, [isCursor, onSetActiveInterval, onSetCurrentTime, onSwitchPlay, id, interval]);
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') onSetActiveInterval(id);
-    }, [onSetActiveInterval, id]);
+        if (isCursor && (e.key === 'Enter' || e.key === ' ')) onSetActiveInterval(id);
+    }, [isCursor, onSetActiveInterval, id]);
     const handleToggleLock = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
         onToggleIntervalLock(id);
@@ -217,6 +223,7 @@ interface Props {
     activeIntervalID: number | null;
     labels: Label[];
     colorBy: ColorBy;
+    activeControl: ActiveControl;
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
     onSetActiveInterval(clientID: number | null): void;
@@ -239,6 +246,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         activeIntervalID,
         labels,
         colorBy,
+        activeControl,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
         onSetActiveInterval,
@@ -342,6 +350,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
                             isActive={id === activeIntervalID}
                             itemColor={getRegionItemColor(interval, labels, colorBy)}
                             colorBy={colorBy}
+                            activeControl={activeControl}
                             onSetActiveInterval={onSetActiveInterval}
                             onSetHoveredInterval={onSetHoveredInterval}
                             onSwitchPlay={onSwitchPlay}

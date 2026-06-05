@@ -30,7 +30,7 @@ import { useAudioPlaybackSync } from './hooks/use-audio-playback-sync';
 import { useAudioRegions } from './hooks/use-audio-regions';
 import { useAudioRecording } from './hooks/use-audio-recording';
 import { filterAudioIntervals } from './utils/filter-audio-regions';
-import { ZOOM_MIN, computeMaxZoom } from './utils/zoom-bounds';
+import { ZOOM_MAX, ZOOM_MIN, computeWaveformZoom } from './utils/zoom-bounds';
 import { intervalID } from './utils/audio-interval';
 
 const ZOOM_STEP_FACTOR = 1.2;
@@ -87,11 +87,14 @@ function AudioCanvasWrapper(): JSX.Element {
     }), shallowEqual);
 
     const [wavesurfer, setWavesurfer] = useState<WaveSurfer | null>(null);
+    const [waveformWidth, setWaveformWidth] = useState(0);
     const prevAudioUrlRef = useRef<string | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const zoomRef = useRef(zoom);
-    const maxZoom = computeMaxZoom(duration);
-    const maxZoomRef = useRef(maxZoom);
+    const waveformZoom = useMemo(
+        () => computeWaveformZoom(zoom, duration, waveformWidth),
+        [duration, waveformWidth, zoom],
+    );
     const phantomRegionIdsRef = useRef<Set<string>>(new Set());
     const visibleIntervalIds = useMemo(() => (
         new Set(filterAudioIntervals(intervals, labels, filters).map((interval) => intervalID(interval)))
@@ -194,11 +197,28 @@ function AudioCanvasWrapper(): JSX.Element {
     };
 
     useEffect(() => { zoomRef.current = zoom; }, [zoom]);
-    useEffect(() => { maxZoomRef.current = maxZoom; }, [maxZoom]);
 
     useEffect(() => {
-        if (zoom > maxZoom) onSetZoom(maxZoom);
-    }, [maxZoom, onSetZoom, zoom]);
+        const nextZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom));
+        if (nextZoom !== zoom) onSetZoom(nextZoom);
+    }, [onSetZoom, zoom]);
+
+    useEffect(() => {
+        const el = wrapperRef.current?.querySelector('.cvat-audio-waveform-wrapper') as HTMLElement | null;
+        if (!el) return undefined;
+
+        const updateWaveformWidth = (): void => {
+            setWaveformWidth(el.clientWidth);
+        };
+
+        updateWaveformWidth();
+        const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(updateWaveformWidth) : null;
+        ro?.observe(el);
+
+        return () => {
+            ro?.disconnect();
+        };
+    }, [audioUrl, waveformReady]);
 
     useEffect(() => {
         const el = wrapperRef.current;
@@ -213,7 +233,7 @@ function AudioCanvasWrapper(): JSX.Element {
             if (next === zoomRef.current) {
                 next = zoomRef.current + (zoomingIn ? 1 : -1);
             }
-            next = Math.max(ZOOM_MIN, Math.min(maxZoomRef.current, next));
+            next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
             if (next !== zoomRef.current) {
                 onSetZoom(next);
             }
@@ -227,7 +247,7 @@ function AudioCanvasWrapper(): JSX.Element {
     const { plugins, regionsPluginRef } = useAudioWaveform(wavesurfer, zoom);
 
     const { lastWsTimeRef } = useAudioPlaybackSync({
-        wavesurfer, isPlaying, currentTime, duration, zoom, volume, playbackRate,
+        wavesurfer, isPlaying, currentTime, duration, zoom: waveformZoom, volume, playbackRate,
     });
 
     const { handleReady, handleFinish, handleTimeupdate } = useAudioRegions({

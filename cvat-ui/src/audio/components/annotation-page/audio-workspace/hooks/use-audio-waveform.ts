@@ -10,6 +10,8 @@ import Minimap from 'wavesurfer.js/dist/plugins/minimap';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import HoverPlugin from 'wavesurfer.js/dist/plugins/hover';
 
+import { ZOOM_MIN } from '../utils/zoom-bounds';
+
 type MinimapInstance = InstanceType<typeof Minimap>;
 
 interface UseAudioWaveformResult {
@@ -62,7 +64,7 @@ export function useAudioWaveform(
         const minimap = minimapPluginRef.current;
         const overlay = (minimap as unknown as { overlay?: HTMLElement } | null)?.overlay;
         if (!overlay) return;
-        overlay.style.opacity = zoom > 1 ? '1' : '0';
+        overlay.style.opacity = zoom > ZOOM_MIN ? '1' : '0';
     }, [zoom]);
 
     useEffect(() => {

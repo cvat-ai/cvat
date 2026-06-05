@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import AudioRegionsList from 'audio/components/annotation-page/audio-workspace/audio-regions-list';
 import { filterAudioIntervals } from 'audio/components/annotation-page/audio-workspace/utils/filter-audio-regions';
 import { intervalID } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
-import { CombinedState } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import {
     audioActions,
     copyAudioIntervalAsync,
@@ -63,6 +63,7 @@ interface StateToProps {
     activeIntervalID: number | null;
     labels: Label[];
     colorBy: CombinedState['settings']['shapes']['colorBy'];
+    activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 }
@@ -94,6 +95,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeIntervalID: player.activeIntervalID,
         labels,
         colorBy: state.settings.shapes.colorBy,
+        activeControl: state.annotation.canvas.activeControl,
         keyMap: state.shortcuts.keyMap,
         normalizedKeyMap: state.shortcuts.normalizedKeyMap,
     };
@@ -142,6 +144,7 @@ type Props = StateToProps & DispatchToProps;
 function AudioRegionsListContainer(props: Props): JSX.Element {
     const {
         intervals, visibleIntervalIds, activeIntervalID, labels, colorBy,
+        activeControl,
         keyMap, normalizedKeyMap,
         onSetActiveInterval, onSetHoveredInterval, onSwitchPlay, onSetCurrentTime,
         onToggleIntervalLock, onToggleIntervalHidden, onToggleIntervalsLock, onToggleIntervalsHidden,
@@ -193,6 +196,7 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
                 activeIntervalID={activeIntervalID}
                 labels={labels}
                 colorBy={colorBy}
+                activeControl={activeControl}
                 switchLockAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_LOCK ?? ''}
                 switchHiddenAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_HIDDEN ?? ''}
                 onSetActiveInterval={onSetActiveInterval}
