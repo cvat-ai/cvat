@@ -519,7 +519,8 @@ context('Ground truth jobs', () => {
                     checkCanvasObjectSource(rectangle, 'semi-auto', 'Ground truth');
 
                     cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
-                    cy.get('.cvat-canvas-container').should('exist');
+                    cy.get('.cvat-spinner').should('not.exist');
+                    cy.get('.cvat-canvas-container').should('exist').and('be.visible');
                     cy.changeWorkspace('Review');
                     cy.get('.cvat-objects-sidebar-show-ground-truth').click();
                     cy.get('.cvat-objects-sidebar-show-ground-truth').should(
