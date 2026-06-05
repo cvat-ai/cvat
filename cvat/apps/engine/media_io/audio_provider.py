@@ -31,7 +31,12 @@ from cvat.apps.engine.media_io.media_chunks import (
     FileChunkLoader,
     ReaderFactory,
 )
-from cvat.apps.engine.media_io.media_provider import DataWithMeta, IMediaProvider
+from cvat.apps.engine.media_io.media_provider import (
+    DataWithMeta,
+    IMediaProvider,
+    PreviewNotAvailable,
+    segment_has_media_derived_preview,
+)
 from cvat.apps.engine.utils import take_by
 
 
@@ -44,9 +49,6 @@ class IAudioProvider(IMediaProvider, metaclass=ABCMeta):
 
     @abstractmethod
     def get_chunk_number(self, frame_number: int) -> int: ...
-
-    @abstractmethod
-    def get_preview_image(self) -> DataWithMeta[BytesIO]: ...
 
     @abstractmethod
     def get_chunk(
@@ -98,8 +100,8 @@ class TaskAudioProvider(IAudioProvider):
         """
         return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
-    def get_preview_image(self) -> DataWithMeta[BytesIO]:
-        return self._get_segment_audio_provider(0).get_preview_image()
+    def get_preview_image(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
+        return self._get_segment_audio_provider(0).get_preview_image(allow_empty=allow_empty)
 
     def _get_or_create_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
@@ -332,7 +334,10 @@ class SegmentAudioProvider(IAudioProvider):
             None,
         )
 
-    def get_preview_image(self) -> DataWithMeta[BytesIO]:
+    def get_preview_image(self, *, allow_empty: bool = False) -> DataWithMeta[BytesIO]:
+        if allow_empty and not segment_has_media_derived_preview(self._db_segment):
+            raise PreviewNotAvailable
+
         task_audio_provider = TaskAudioProvider(self._db_segment.task)
         first_segment = task_audio_provider._get_segment(
             task_audio_provider.validate_frame_number(0)

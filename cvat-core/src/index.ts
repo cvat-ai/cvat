@@ -221,6 +221,7 @@ export default interface CVATCore {
         globalObjectsCounter: typeof config.globalObjectsCounter;
         requestsStatusDelay: typeof config.requestsStatusDelay;
         jobMetaDataReloadPeriod: typeof config.jobMetaDataReloadPeriod;
+        previewPlaceholders: typeof config.previewPlaceholders;
     },
     enums,
     exceptions: {

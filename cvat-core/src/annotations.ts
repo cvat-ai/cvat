@@ -93,6 +93,8 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
 
         const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
         const collection = new AnnotationsCollection({
+            // Job collections use real job metadata. Task collections use constant defaults because
+            // task-level annotations are not tied to a particular job type or consensus replica set.
             jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
             stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
             labels: session.labels,
@@ -115,7 +117,7 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
         });
 
         collection.import(serializedAnnotations);
-        const saver = new AnnotationsSaver(serializedAnnotations.version, collection, session);
+        const saver = new AnnotationsSaver(collection, session);
         cache.collection.set(session, { collection, saver });
         cache.history.set(session, history);
     }
@@ -146,6 +148,18 @@ export async function getAnnotations(
         if (error instanceof InstanceNotInitializedError) {
             await getAnnotationsFromServer(session);
             return getCollection(session).get(frame, allTracks, filters);
+        }
+        throw error;
+    }
+}
+
+export async function getAllIntervals(session: Job | Task): Promise<ReturnType<AnnotationsCollection['getAllIntervals']>> {
+    try {
+        return getCollection(session).getAllIntervals();
+    } catch (error) {
+        if (error instanceof InstanceNotInitializedError) {
+            await getAnnotationsFromServer(session);
+            return getCollection(session).getAllIntervals();
         }
         throw error;
     }

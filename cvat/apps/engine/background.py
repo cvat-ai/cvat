@@ -17,7 +17,6 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.reverse import reverse
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
 from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.dataset_manager.views import get_export_callback
 from cvat.apps.engine.backup import (
@@ -149,6 +148,8 @@ class DatasetExporter(AbstractExporter):
         )
 
     def get_result_filename(self) -> str:
+        from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
+
         filename = self.export_args.filename
 
         if not filename:

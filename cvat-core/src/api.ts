@@ -340,6 +340,12 @@ function build(): CVATCore {
             set jobMetaDataReloadPeriod(value) {
                 config.jobMetaDataReloadPeriod = value;
             },
+            get previewPlaceholders() {
+                return config.previewPlaceholders;
+            },
+            set previewPlaceholders(value: Record<string, string>) {
+                config.previewPlaceholders = value;
+            },
         },
         enums,
         exceptions: {

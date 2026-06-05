@@ -20,6 +20,58 @@ import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/op
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { ImageFilter } from 'utils/image-processing';
 
+export interface AudioRegion {
+    id: string;
+    start: number;
+    end: number;
+    labelId: number | null;
+    attributes: Record<number, string>;
+    serverId?: number;
+    source?: string;
+    group?: number;
+    color?: string;
+    hidden?: boolean;
+    locked?: boolean;
+}
+
+export type AudioRegionDiff =
+    | { kind: 'added'; region: AudioRegion }
+    | { kind: 'removed'; region: AudioRegion }
+    | { kind: 'updated'; before: AudioRegion; after: AudioRegion };
+
+export interface AudioHistoryEntry {
+    actionName: string;
+    diffs: AudioRegionDiff[];
+    activeRegionIdBefore: string | null;
+    activeRegionIdAfter: string | null;
+}
+
+export interface AudioState {
+    player: {
+        playing: boolean;
+        currentTime: number;
+        duration: number;
+        playbackRate: number;
+        zoom: number;
+        volume: number;
+        loop: boolean;
+        regions: AudioRegion[];
+        activeRegionId: string | null;
+        hoveredRegionId: string | null;
+        audioUrl: string | null;
+        audioLoading: boolean;
+        audioError: string | null;
+        waveformReady: boolean;
+        activeLabelId: number | null;
+        hasUnsavedChanges: boolean;
+        savedRegions: AudioRegion[];
+    };
+    history: {
+        undo: AudioHistoryEntry[];
+        redo: AudioHistoryEntry[];
+    };
+}
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
@@ -789,15 +841,17 @@ export enum ActiveControl {
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
-    PHOTO_CONTEXT = 'PHOTO_CONTEXT',
     OPENCV_TOOLS = 'opencv_tools',
+    AUDIO_REGION_CREATE = 'audio_region_create',
+    AUDIO_REGION_EDIT = 'audio_region_edit',
+    AUDIO_REGION_RECORD = 'audio_region_record',
 }
 
 export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
     UPDATED = 'Updated time',
-    Z_ORDER = 'Z Order',
+    LAYER = 'Layer',
     LABEL_NAME = 'Label name',
 }
 
@@ -917,8 +971,8 @@ export interface AnnotationState {
         resetGroupFlag: boolean;
         initialized: boolean;
         history: {
-            undo: [string, number][];
-            redo: [string, number][];
+            undo: [string, number | null][];
+            redo: [string, number | null][];
         };
         saving: {
             forceExit: boolean;
@@ -963,6 +1017,7 @@ export enum Workspace {
     SINGLE_SHAPE = 'Single shape',
     TAGS = 'Tag annotation',
     REVIEW = 'Review',
+    AUDIO = 'Audio annotation',
 }
 
 export enum GridColor {
@@ -1186,6 +1241,7 @@ export interface CombinedState {
     models: ModelsState;
     notifications: NotificationsState;
     annotation: AnnotationState;
+    audio: AudioState;
     settings: SettingsState;
     shortcuts: ShortcutsState;
     review: ReviewState;

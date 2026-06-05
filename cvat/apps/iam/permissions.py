@@ -180,37 +180,36 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         return {
             "input": {
                 "scope": self.scope,
-                **self.get_opa_auth_payload(),
-                **self.get_opa_resource_payload(),
+                "auth": self.get_opa_auth_payload(),
+                "resource": self.get_resource(),
+                "settings": self.get_opa_settings_payload(),
             }
         }
 
     def get_opa_auth_payload(self):
         return {
-            "auth": {
-                "user": {
-                    "id": self.user_id,
-                    "privilege": self.group_name,
-                },
-                "organization": (
-                    {
-                        "id": self.org_id,
-                        "owner": {
-                            "id": self.org_owner_id,
-                        },
-                        "user": {
-                            "role": self.org_role,
-                        },
-                    }
-                    if self.org_id is not None
-                    else None
-                ),
-                "organization_specified": self.org_specified,
+            "user": {
+                "id": self.user_id,
+                "privilege": self.group_name,
             },
+            "organization": (
+                {
+                    "id": self.org_id,
+                    "owner": {
+                        "id": self.org_owner_id,
+                    },
+                    "user": {
+                        "role": self.org_role,
+                    },
+                }
+                if self.org_id is not None
+                else None
+            ),
+            "organization_specified": self.org_specified,
         }
 
-    def get_opa_resource_payload(self):
-        return {"resource": self.get_resource()}
+    def get_opa_settings_payload(self):
+        return {}
 
     @abstractmethod
     def get_resource(self):

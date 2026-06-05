@@ -8,9 +8,11 @@ import {
     MaskShape, BasicInjection, SkeletonShape,
     SkeletonTrack, PolygonShape, CuboidShape,
     RectangleShape, PolylineShape, PointsShape, EllipseShape,
-    InterpolationNotPossibleError,
+    InterpolationNotPossibleError, AudioInterval,
 } from './annotations-objects';
-import { SerializedCollection, SerializedShape, SerializedTrack } from './server-response-types';
+import {
+    SerializedCollection, SerializedShape, SerializedTrack,
+} from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
@@ -41,6 +43,45 @@ const objectAttributesAsList = (state: ObjectState): { spec_id: number, value: s
     }))
 );
 
+type LayerPlacement = { exact: number } | { before: number } | { after: number };
+type LayerPlacementData =
+    { kind: 'exact'; zOrder: number } |
+    { kind: 'before'; zOrder: number } |
+    { kind: 'after'; zOrder: number };
+
+function isLayerState(state: ObjectState): boolean {
+    return [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType);
+}
+
+function parseLayerPlacement(placement: LayerPlacement): LayerPlacementData {
+    checkObjectType('placement', placement, null, { cls: Object, name: 'Object' });
+
+    const hasExact = Object.hasOwn(placement, 'exact');
+    const hasBefore = Object.hasOwn(placement, 'before');
+    const hasAfter = Object.hasOwn(placement, 'after');
+    const specifiedCount = Number(hasExact) + Number(hasBefore) + Number(hasAfter);
+
+    if (specifiedCount !== 1) {
+        throw new ArgumentError('Exactly one of "exact", "before", or "after" must be specified');
+    }
+
+    if (hasExact) {
+        const { exact: zOrder } = placement as { exact: number };
+        checkObjectType('placement exact', zOrder, 'integer', null);
+        return { kind: 'exact', zOrder };
+    }
+
+    if (hasBefore) {
+        const { before: zOrder } = placement as { before: number };
+        checkObjectType('placement before', zOrder, 'integer', null);
+        return { kind: 'before', zOrder };
+    }
+
+    const { after: zOrder } = placement as { after: number };
+    checkObjectType('placement after', zOrder, 'integer', null);
+    return { kind: 'after', zOrder };
+}
+
 const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     label.attributes.reduce((accumulator, attribute) => {
         accumulator[attribute.id] = attribute;
@@ -48,6 +89,11 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     }, {})
 );
 
+type AnnotationObject = Shape | Tag | Track;
+
+// AUDIO TODO:
+// Collection is currently used for intervals only to fetch them from the server and expose them to the UI.
+// Adding/modifying/filtering/saving/history are implemented separately.
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
@@ -57,8 +103,9 @@ export default class Collection {
     private shapes: Record<number, Shape[]>;
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
-    private objects: Record<number, Shape | Tag | Track>;
-    private groups: { max: number };
+    private intervals: AudioInterval[];
+    private objects: Record<number, AnnotationObject>;
+    private groupsInfo: BasicInjection['groupsInfo'];
     private injection: BasicInjection;
 
     constructor(data: {
@@ -88,20 +135,21 @@ export default class Collection {
         this.shapes = {}; // key is a frame
         this.tags = {}; // key is a frame
         this.tracks = [];
+        this.intervals = [];
         this.objects = {}; // key is a client id
         this.flush = false;
-        this.groups = {
+        this.groupsInfo = {
             max: 0,
+            colors: {},
         }; // it is an object to we can pass it as an argument by a reference
 
         this.injection = {
             labels: this.labels,
-            groups: this.groups,
+            groupsInfo: this.groupsInfo,
             framesInfo: data.framesInfo,
             history: this.history,
             dimension: data.dimension,
             jobType: data.jobType,
-            groupColors: {},
             nextClientID: () => ++config.globalObjectsCounter,
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
@@ -109,18 +157,112 @@ export default class Collection {
         };
     }
 
-    public import(data: Omit<SerializedCollection, 'version'>): {
+    private _captureZOrderRestore(object: Shape | Track, frame: number): () => void {
+        if (object instanceof Track) {
+            const wasKeyframe = frame in object.shapes;
+            const shape = wasKeyframe ? object.shapes[frame] : undefined;
+            const { source } = object;
+
+            return (): void => {
+                object.source = source;
+                object.updated = Date.now();
+                if (shape) {
+                    object.shapes[frame] = shape;
+                } else {
+                    delete object.shapes[frame];
+                }
+            };
+        }
+
+        const { zOrder, source } = object;
+        return (): void => {
+            object.source = source;
+            object.updated = Date.now();
+            object.zOrder = zOrder;
+        };
+    }
+
+    private _applyZOrderUpdates(frame: number, zOrders: Map<number, number>): ObjectState[] {
+        const updatedStates: ObjectState[] = [];
+        const snapshots: {
+            clientID: number;
+            undo: () => void;
+            redo: () => void;
+        }[] = [];
+
+        // Prevent each individual object.save() from creating its own history item.
+        this.history.freeze(true);
+
+        try {
+            for (const [clientID, zOrder] of zOrders) {
+                const object = this.objects[clientID];
+                if (!(object instanceof Shape || object instanceof Track) || object.removed || object.lock) {
+                    throw new Error('Only non-removed and non-locked shapes and tracks can be reordered');
+                }
+
+                let currentState: ObjectState;
+                try {
+                    currentState = new ObjectState(object.get(frame));
+                } catch (error: unknown) {
+                    if (error instanceof InterpolationNotPossibleError) {
+                        continue;
+                    }
+                    throw error;
+                }
+
+                const previousZOrder = currentState.zOrder;
+                if (previousZOrder === zOrder) {
+                    continue;
+                }
+
+                const undo = this._captureZOrderRestore(object, frame);
+                currentState.zOrder = zOrder;
+                object.save(frame, currentState);
+                const redo = this._captureZOrderRestore(object, frame);
+
+                const updatedState = new ObjectState(object.get(frame));
+                snapshots.push({ clientID: object.clientID, undo, redo });
+                updatedStates.push(updatedState);
+            }
+        } catch (error: unknown) {
+            snapshots.forEach(({ undo }) => undo());
+            throw error;
+        } finally {
+            this.history.freeze(false);
+        }
+
+        if (snapshots.length) {
+            // Store the whole layer operation as one undo/redo item after all objects are updated.
+            this.history.do(
+                HistoryActions.CHANGED_ZORDER,
+                () => {
+                    snapshots.forEach(({ undo }) => undo());
+                },
+                () => {
+                    snapshots.forEach(({ redo }) => redo());
+                },
+                snapshots.map(({ clientID }) => clientID),
+                frame,
+            );
+        }
+
+        return updatedStates;
+    }
+
+    public import(data: Partial<SerializedCollection>): {
         tags: Tag[];
         shapes: Shape[];
         tracks: Track[];
+        intervals: AudioInterval[];
     } {
         const result = {
             tags: [],
             shapes: [],
             tracks: [],
+            intervals: [],
         };
 
-        for (const tag of data.tags) {
+        for (const tag of data.tags ?? []) {
             const clientID = this.injection.nextClientID();
             const color = colors[clientID % colors.length];
             const tagModel = new Tag(tag, clientID, color, this.injection);
@@ -131,7 +273,7 @@ export default class Collection {
             result.tags.push(tagModel);
         }
 
-        for (const shape of data.shapes) {
+        for (const shape of data.shapes ?? []) {
             const clientID = this.injection.nextClientID();
             const shapeModel = shapeFactory(shape, clientID, this.injection);
             this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
@@ -141,7 +283,7 @@ export default class Collection {
             result.shapes.push(shapeModel);
         }
 
-        for (const track of data.tracks) {
+        for (const track of data.tracks ?? []) {
             const clientID = this.injection.nextClientID();
             const trackModel = trackFactory(track, clientID, this.injection);
             // The function can return null if track doesn't have any shapes.
@@ -153,12 +295,20 @@ export default class Collection {
             }
         }
 
+        for (const interval of data.intervals ?? []) {
+            const clientID = this.injection.nextClientID();
+            const color = colors[clientID % colors.length];
+            const intervalModel = new AudioInterval(interval, clientID, color, this.injection);
+            this.intervals.push(intervalModel);
+            result.intervals.push(intervalModel);
+        }
+
         return result;
     }
 
     public commit(
-        appended: Omit<SerializedCollection, 'version'>,
-        removed: Omit<SerializedCollection, 'version'>,
+        appended: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
+        removed: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         frame: number,
     ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; } {
         const isCollectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
@@ -169,11 +319,11 @@ export default class Collection {
             throw new ArgumentError('Objects required to be deleted were not found in the collection');
         }
 
-        const removedCollection: (Shape | Tag | Track)[] = [].concat(removed.shapes, removed.tags, removed.tracks)
+        const removedCollection: AnnotationObject[] = [].concat(removed.shapes, removed.tags, removed.tracks)
             .map((object) => this.objects[object.clientID as number]);
 
         const imported = this.import(appended);
-        const appendedCollection = ([] as (Shape | Tag | Track)[])
+        const appendedCollection = ([] as (AnnotationObject)[])
             .concat(imported.shapes, imported.tags, imported.tracks);
         if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
             // nothing to commit
@@ -214,7 +364,11 @@ export default class Collection {
         );
     }
 
-    public export(): Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags'> {
+    public getAllIntervals(): ReturnType<AudioInterval['get']>[] {
+        return this.intervals.map((interval) => interval.get());
+    }
+
+    public export(): Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'> {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed)
                 .map((track) => track.toJSON() as SerializedTrack),
@@ -488,11 +642,7 @@ export default class Collection {
         }
 
         const track = this._mergeInternal(objectsForMerge as (Shape | Track)[], shapeType, label);
-        const imported = this.import({
-            tracks: [track],
-            tags: [],
-            shapes: [],
-        });
+        const imported = this.import({ tracks: [track] });
 
         // Remove other shapes
         for (const object of objectsForMerge) {
@@ -523,7 +673,7 @@ export default class Collection {
         const labelAttributes = labelAttributesAsDict(object.label);
         // first clear all server ids which may exist in the object being splitted
         const copy = trackFactory(object.toJSON(), -1, this.injection);
-        copy.clearServerID();
+        copy.clearServerId();
         const exported = copy.toJSON();
 
         // then create two copies, before this frame and after this frame
@@ -601,11 +751,7 @@ export default class Collection {
         if (frame <= +keyframes[0]) return;
 
         const [prev, next] = this._splitInternal(objectState, object, frame);
-        const imported = this.import({
-            tracks: [prev, next],
-            tags: [],
-            shapes: [],
-        });
+        const imported = this.import({ tracks: [prev, next] });
 
         // Remove source object
         object.removed = true;
@@ -640,7 +786,7 @@ export default class Collection {
             return object;
         });
 
-        const groupIdx = reset ? 0 : ++this.groups.max;
+        const groupIdx = reset ? 0 : ++this.groupsInfo.max;
         const undoGroups = objectsForGroup.map((object) => object.group);
         for (const object of objectsForGroup) {
             object.group = groupIdx;
@@ -737,11 +883,7 @@ export default class Collection {
             }
 
             // Append newly created object(s) to the collection
-            const imported = this.import({
-                shapes: shapesToCreate,
-                tracks: [],
-                tags: [],
-            });
+            const imported = this.import({ shapes: shapesToCreate });
 
             // and remove joined shapes
             for (const object of objectsToJoin) {
@@ -835,8 +977,6 @@ export default class Collection {
                 source: Source.MANUAL,
                 elements: [],
             }],
-            tracks: [],
-            tags: [],
         });
         slicedObject.removed = true;
 
@@ -1190,9 +1330,7 @@ export default class Collection {
                         }) : undefined,
                     });
                 } else {
-                    throw new ArgumentError(
-                        `Object type must be one of: ${JSON.stringify(Object.values(ObjectType))}`,
-                    );
+                    throw new ArgumentError('Object type must be one of SHAPE, TRACK, or TAG');
                 }
             }
         }
@@ -1237,7 +1375,7 @@ export default class Collection {
                 () => {
                     importedArray.forEach((object) => {
                         object.removed = false;
-                        object.serverID = undefined;
+                        object.serverId = undefined;
                     });
 
                     additionalRedo.forEach((redo) => {
@@ -1250,6 +1388,112 @@ export default class Collection {
         }
 
         return importedArray.map((value) => value.clientID);
+    }
+
+    public updateLayer(frame: number, placement: LayerPlacement, objectStates: ObjectState[]): ObjectState[] {
+        const parsedPlacement = parseLayerPlacement(placement);
+        // Validate the public inputs before reading collection state or applying any changes.
+        checkObjectType('frame', frame, 'integer', null);
+        checkObjectType('object states', objectStates, null, { cls: Array, name: 'Array' });
+        objectStates.forEach((state) => {
+            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
+            if (state.frame !== frame) {
+                throw new ArgumentError('Object state frame must match the requested frame');
+            }
+        });
+
+        // Resolve requested IDs against the whole collection on the frame
+        // Ignore objects which cannot be moved (e.g. tags or locked)
+        // And perform the grouping by clientID and by layer
+        const {
+            clientId: visibleStatesByClientID,
+            layer: visibleStatesByLayer,
+        } = this.get(frame, false, []).reduce(
+            (accumulator, state) => {
+                if (!isLayerState(state) || state.lock) {
+                    return accumulator;
+                }
+
+                accumulator.clientId.set(state.clientID, state);
+                accumulator.layer.set(state.zOrder, accumulator.layer.get(state.zOrder) ?? []);
+                accumulator.layer.get(state.zOrder)?.push(state);
+                return accumulator;
+            }, {
+                clientId: new Map<number, ObjectState>(),
+                layer: new Map<number, ObjectState[]>(),
+            },
+        );
+
+        // Filter the requested states to move by visibility and existence on the frame
+        const requestedStatesClientIds = new Set(
+            objectStates.map((state) => state.clientID)
+                .filter((clientID): clientID is number => (
+                    Number.isInteger(clientID) && visibleStatesByClientID.has(clientID)
+                )),
+        );
+
+        const requestedStates = Array.from(requestedStatesClientIds)
+            .map((clientID) => visibleStatesByClientID.get(clientID));
+        if (!requestedStates.length) {
+            return [];
+        }
+
+        if (parsedPlacement.kind === 'exact') {
+            const exactUpdates = new Map<number, number>();
+            requestedStates.forEach((state) => {
+                exactUpdates.set(state.clientID, parsedPlacement.zOrder);
+            });
+            return this._applyZOrderUpdates(frame, exactUpdates);
+        }
+
+        const updates = new Map<number, number>();
+        const scheduleMove = (states: ObjectState[], zOrder: number): void => {
+            // Find the objects already occupying the target layer, excluding the current move batch.
+            const movingClientIDs = new Set(states.map((state) => state.clientID));
+            const displacedStates = (visibleStatesByLayer.get(zOrder) ?? []).filter((state) => (
+                !movingClientIDs.has(state.clientID) && !requestedStatesClientIds.has(state.clientID)
+            ));
+
+            if (displacedStates.length) {
+                // First make room deeper in the stack, then place this batch into the freed layer.
+                scheduleMove(displacedStates, zOrder + 1);
+            }
+
+            // Record the planned move after deeper layers are scheduled, but before any mutation occurs.
+            states.forEach((state) => {
+                updates.set(state.clientID as number, zOrder);
+            });
+        };
+
+        if (parsedPlacement.kind === 'before') {
+            scheduleMove(requestedStates, parsedPlacement.zOrder - 1);
+        } else if (parsedPlacement.kind === 'after') {
+            scheduleMove(requestedStates, parsedPlacement.zOrder + 1);
+        }
+
+        // Apply all scheduled changes at once to preserve a single batched undo/redo action.
+        return this._applyZOrderUpdates(frame, updates);
+    }
+
+    public compactLayers(frame: number): ObjectState[] {
+        checkObjectType('frame', frame, 'integer', null);
+
+        const allStates = this.get(frame, false, []).filter((state) => isLayerState(state) && !state.lock);
+        const zOrderMap = new Map(
+            Array.from(new Set(allStates.map((state: ObjectState): number => state.zOrder)))
+                .sort((left: number, right: number): number => left - right)
+                .map((zOrder: number, index: number): [number, number] => [zOrder, index]),
+        );
+
+        const zOrders = new Map<number, number>();
+        allStates.forEach((state) => {
+            const newZOrder = zOrderMap.get(state.zOrder) as number;
+            if (newZOrder !== state.zOrder) {
+                zOrders.set(state.clientID, newZOrder);
+            }
+        });
+
+        return this._applyZOrderUpdates(frame, zOrders);
     }
 
     public select(objectStates: ObjectState[], x: number, y: number): {
@@ -1410,7 +1654,8 @@ export default class Collection {
         const filtersStr = JSON.stringify(annotationsFilters);
         const linearSearch = filtersStr.match(/"var":"width"/) ||
             filtersStr.match(/"var":"height"/) ||
-            filtersStr.match(/"var":"rotation"/);
+            filtersStr.match(/"var":"rotation"/) ||
+            filtersStr.match(/"var":"zOrder"/);
 
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
             if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {

@@ -24,7 +24,7 @@ import {
     findFrame,
     getContextImage,
     patchMeta,
-    decodePreview,
+    resolvePreviewResponse,
 } from './frames';
 import Issue from './issue';
 import {
@@ -34,6 +34,7 @@ import { getUpdatedLabels } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
+    getAllIntervals,
     importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
 import AnnotationGuide from './guide';
@@ -277,12 +278,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 return Promise.resolve('');
             }
 
-            return serverProxy.jobs.getPreview(this.id).then((preview) => {
-                if (!preview) {
-                    return Promise.resolve('');
-                }
-                return decodePreview(preview);
-            });
+            return serverProxy.jobs.getPreview(this.id).then(
+                (response) => resolvePreviewResponse(response, this.mediaType),
+            );
         },
     });
 
@@ -362,6 +360,14 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
 
             const annotationsData = await getAnnotations(this, frame, allTracks, filters);
             return annotationsData;
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.intervals, 'implementation', {
+        value: async function intervalsImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.annotations.intervals> {
+            return getAllIntervals(this);
         },
     });
 
@@ -457,6 +463,26 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             results: Parameters<typeof JobClass.prototype.annotations.slice>[1],
         ): ReturnType<typeof JobClass.prototype.annotations.slice> {
             return Promise.resolve(getCollection(this).slice(objectState, results));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.updateLayer, 'implementation', {
+        value: function updateLayerImplementation(
+            this: JobClass,
+            frame: Parameters<typeof JobClass.prototype.annotations.updateLayer>[0],
+            placement: Parameters<typeof JobClass.prototype.annotations.updateLayer>[1],
+            objectStates: Parameters<typeof JobClass.prototype.annotations.updateLayer>[2],
+        ): ReturnType<typeof JobClass.prototype.annotations.updateLayer> {
+            return Promise.resolve(getCollection(this).updateLayer(frame, placement, objectStates));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.compactLayers, 'implementation', {
+        value: function compactLayersImplementation(
+            this: JobClass,
+            frame: Parameters<typeof JobClass.prototype.annotations.compactLayers>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.compactLayers> {
+            return Promise.resolve(getCollection(this).compactLayers(frame));
         },
     });
 
@@ -967,12 +993,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 return Promise.resolve('');
             }
 
-            return serverProxy.tasks.getPreview(this.id).then((preview) => {
-                if (!preview) {
-                    return Promise.resolve('');
-                }
-                return decodePreview(preview);
-            });
+            return serverProxy.tasks.getPreview(this.id).then(
+                (response) => resolvePreviewResponse(response, this.mediaType),
+            );
         },
     });
 
@@ -1130,6 +1153,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.annotations.intervals, 'implementation', {
+        value: async function intervalsImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.annotations.intervals> {
+            return getAllIntervals(this);
+        },
+    });
+
     Object.defineProperty(Task.prototype.annotations.search, 'implementation', {
         value: function searchAnnotationsImplementation(
             this: TaskClass,
@@ -1220,6 +1251,26 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             results: Parameters<typeof TaskClass.prototype.annotations.slice>[1],
         ): ReturnType<typeof TaskClass.prototype.annotations.slice> {
             return Promise.resolve(getCollection(this).slice(objectState, results));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.updateLayer, 'implementation', {
+        value: function updateLayerImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[0],
+            placement: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[1],
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[2],
+        ): ReturnType<typeof TaskClass.prototype.annotations.updateLayer> {
+            return Promise.resolve(getCollection(this).updateLayer(frame, placement, objectStates));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.compactLayers, 'implementation', {
+        value: function compactLayersImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.annotations.compactLayers>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.compactLayers> {
+            return Promise.resolve(getCollection(this).compactLayers(frame));
         },
     });
 

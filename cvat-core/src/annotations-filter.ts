@@ -136,6 +136,7 @@ interface BaseConvertedData {
     occluded: boolean | null;
     score: number | null;
     votes: number | null;
+    zOrder: number | null;
 }
 
 interface ConvertedElementData extends BaseConvertedData {
@@ -213,6 +214,7 @@ export default class AnnotationsFilter {
                         occluded: element.occluded ?? false,
                         score: null,
                         votes: null,
+                        zOrder: null,
                     };
                 }) :
                 [];
@@ -232,15 +234,20 @@ export default class AnnotationsFilter {
                 occluded: state.occluded ?? null,
                 score: state.score ?? null,
                 votes: state.votes ?? null,
+                zOrder: state.zOrder ?? null,
                 elements,
             };
         });
     }
 
     private _convertSerializedCollection(
-        collection: Omit<SerializedCollection, 'version'>,
+        collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         labelsSpec: Label[],
-    ): { shapes: ConvertedObjectData[]; tags: ConvertedObjectData[]; tracks: ConvertedObjectData[] } {
+    ): {
+        shapes: ConvertedObjectData[];
+        tags: ConvertedObjectData[];
+        tracks: ConvertedObjectData[];
+    } {
         const { labelByID, attributeByID } = buildLabelMaps(labelsSpec);
 
         return {
@@ -277,6 +284,7 @@ export default class AnnotationsFilter {
                             occluded: element.occluded ?? false,
                             score: null,
                             votes: null,
+                            zOrder: null,
                         }];
                     }) :
                     [];
@@ -296,6 +304,7 @@ export default class AnnotationsFilter {
                     occluded: shape.occluded,
                     score: shape.score ?? null,
                     votes: null,
+                    zOrder: shape.z_order,
                     elements,
                 };
             }),
@@ -318,6 +327,7 @@ export default class AnnotationsFilter {
                     occluded: false,
                     score: null,
                     votes: null,
+                    zOrder: 0,
                     elements: [],
                 };
             }),
@@ -350,6 +360,7 @@ export default class AnnotationsFilter {
                             occluded: null,
                             score: null,
                             votes: null,
+                            zOrder: null,
                         }];
                     });
                 }
@@ -369,6 +380,7 @@ export default class AnnotationsFilter {
                     occluded: null,
                     score: null,
                     votes: null,
+                    zOrder: track.shapes[0]?.z_order ?? null,
                     elements,
                 };
             }),
@@ -385,10 +397,10 @@ export default class AnnotationsFilter {
     }
 
     public filterSerializedCollection(
-        collection: Omit<SerializedCollection, 'version'>,
+        collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         labelsSpec: Label[],
         filters: object[],
-    ): { shapes: number[]; tags: number[]; tracks: number[] } {
+    ): { shapes: number[]; tags: number[]; tracks: number[]; } {
         if (isEmptyFilter(filters[0]) && isEmptyFilter(filters[1])) {
             return {
                 shapes: collection.shapes.map((shape) => shape.clientID),

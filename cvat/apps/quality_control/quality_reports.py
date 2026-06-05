@@ -23,7 +23,6 @@ from cvat.apps.dataset_manager.bindings import (
     JobData,
     match_dm_item,
 )
-from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.models import (
@@ -145,6 +144,8 @@ class JobDataProvider:
 
     @cached_property
     def dm_dataset(self):
+        from cvat.apps.dataset_manager.formats.registry import dm_env
+
         extractor = GetCVATDataExtractor(self.job_data, convert_annotations=self._annotation_memo)
         return dm.Dataset.from_extractors(extractor, env=dm_env)
 
