@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { omit } from 'lodash';
-import ObjectState, { SerializedData } from '../object-state';
+import ObjectState, { type SerializedData } from '../object-state';
 import { ScriptingError } from '../exceptions';
 import { ObjectType, HistoryActions } from '../enums';
 import type { SerializedShape } from '../server-response-types';

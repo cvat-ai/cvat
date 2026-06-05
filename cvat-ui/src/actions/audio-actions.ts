@@ -166,7 +166,7 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
                     serverId: interval.serverID ?? undefined,
                     source: String(interval.source),
                     group: interval.group.id,
-                    color: pickInstanceColor(acc),
+                    color: interval.color,
                     locked: interval.lock,
                     hidden: interval.hidden,
                 });

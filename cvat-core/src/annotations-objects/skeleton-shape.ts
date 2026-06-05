@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import ObjectState, { SerializedData } from '../object-state';
+import ObjectState, { type SerializedData } from '../object-state';
 import { ScriptingError } from '../exceptions';
-import { Label } from '../labels';
+import type { Label } from '../labels';
 import {
     ShapeType, ObjectType, HistoryActions,
 } from '../enums';

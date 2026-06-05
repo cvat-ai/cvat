@@ -31,16 +31,19 @@ export function serverAttributesToDictionary(attributes: SerializedAttributes): 
     return map;
 }
 
-export function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape {
-    return {
-        serverId: shape.id,
-        occluded: shape.occluded,
-        zOrder: shape.z_order,
-        points: shape.points,
-        outside: shape.outside,
-        rotation: shape.rotation || 0,
-        attributes: serverAttributesToDictionary(shape.attributes),
-    };
+export function deserializeTrackedShapes(shapes: SerializedTrack['shapes']): Record<number, TrackedShape> {
+    return shapes.reduce((acc, shape) => {
+        acc[shape.frame] = {
+            serverId: shape.id,
+            occluded: shape.occluded,
+            zOrder: shape.z_order,
+            points: shape.points,
+            outside: shape.outside,
+            rotation: shape.rotation || 0,
+            attributes: serverAttributesToDictionary(shape.attributes),
+        };
+        return acc;
+    }, {} as Record<number, TrackedShape>);
 }
 
 export function deserializeAttributes(attributes: SerializedAttributes): Map<number, string> {

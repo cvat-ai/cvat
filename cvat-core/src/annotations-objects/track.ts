@@ -4,16 +4,16 @@
 // SPDX-License-Identifier: MIT
 
 import { omit } from 'lodash';
-import ObjectState, { SerializedData } from '../object-state';
+import ObjectState, { type SerializedData } from '../object-state';
 import { ObjectType, HistoryActions } from '../enums';
-import { Label } from '../labels';
+import type { Label } from '../labels';
 import type { SerializedTrack } from '../server-response-types';
 import { attrsAsAnObject } from '../object-utils';
 import { Drawn } from './drawn';
 import { InterpolationNotPossibleError } from './image-object';
 import type { AnnotationInjection, InterpolatedPosition, TrackedShape } from './types';
 import {
-    computeNewSource, convertTrackedShape, copyShape, isChildObject, serializeAttributes,
+    computeNewSource, deserializeTrackedShapes, copyShape, isChildObject, serializeAttributes,
 } from './utils';
 
 export class Track extends Drawn {
@@ -25,10 +25,7 @@ export class Track extends Drawn {
         injection: AnnotationInjection,
     ) {
         super(data, clientID, color, injection);
-        this.shapes = data.shapes.reduce((acc, shape) => {
-            acc[shape.frame] = convertTrackedShape(shape);
-            return acc;
-        }, {});
+        this.shapes = deserializeTrackedShapes(data.shapes);
     }
 
     protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
@@ -189,9 +186,7 @@ export class Track extends Drawn {
     }): void {
         this._serverId = body.id;
         this.frame = body.frame;
-        this.shapes = Object.fromEntries(
-            body.shapes.map((shape) => [shape.frame, convertTrackedShape(shape)]),
-        );
+        this.shapes = deserializeTrackedShapes(body.shapes);
     }
 
     public clearServerId(): void {

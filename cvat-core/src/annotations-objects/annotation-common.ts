@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import ObjectState from '../object-state';
+import type ObjectState from '../object-state';
 import { type Label } from '../labels';
 import {
     colors, Source, HistoryActions, JobType,

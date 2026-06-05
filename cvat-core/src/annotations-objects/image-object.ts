@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import ObjectState from '../object-state';
+import type ObjectState from '../object-state';
 import { checkObjectType } from '../common';
 import { ArgumentError } from '../exceptions';
 import { Label } from '../labels';

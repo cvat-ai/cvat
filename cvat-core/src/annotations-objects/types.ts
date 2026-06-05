@@ -8,7 +8,7 @@ import type { Label } from '../labels';
 import type {
     DimensionType, JobType, ObjectType, Source,
 } from '../enums';
-import type { MaskShape } from './shape-models';
+import type { MaskShape } from './mask-shape';
 
 export type FrameInfo = {
     width: number;

@@ -3,13 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import ObjectState, { SerializedData } from '../object-state';
+import ObjectState, { type SerializedData } from '../object-state';
 import {
     ShapeType, ObjectType, HistoryActions,
 } from '../enums';
 import type { SerializedTrack } from '../server-response-types';
 import { computeWrappingBox, rotatePoint } from '../object-utils';
-import { ImageObject, InterpolationNotPossibleError } from './image-object';
+import { type ImageObject, InterpolationNotPossibleError } from './image-object';
 import { Track } from './track';
 import type { AnnotationInjection, InterpolatedPosition } from './types';
 import { computeNewSource, copyShape } from './utils';
