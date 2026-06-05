@@ -16,9 +16,10 @@ import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
 import {
-    SerializedCollection, SerializedJob, SerializedInterval,
+    SerializedCollection, SerializedJob,
     SerializedLabel, SerializedTask,
 } from './server-response-types';
+import { type AudioIntervalState } from './annotations-objects/types';
 import AnnotationGuide from './guide';
 import { FrameData, FramesMetaData } from './frames';
 import Statistics from './statistics';
@@ -381,7 +382,7 @@ function buildDuplicatedAPI(prototype) {
 export class Session {
     public annotations: {
         get: (frame: number, allTracks: boolean, filters: object[]) => Promise<ObjectState[]>;
-        intervals: () => Promise<SerializedInterval[]>;
+        intervals: () => Promise<AudioIntervalState[]>;
         put: (objectStates: ObjectState[]) => Promise<number[]>;
         merge: (objectStates: ObjectState[]) => Promise<void>;
         split: (objectState: ObjectState, frame: number) => Promise<void>;
@@ -452,7 +453,10 @@ export class Session {
         redo: (count?: number) => Promise<number[]>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
-        get: () => Promise<{ undo: [HistoryActions, number][], redo: [HistoryActions, number][] }>;
+        get: () => Promise<{
+            undo: [HistoryActions, number | null][];
+            redo: [HistoryActions, number | null][];
+        }>;
     };
 
     public frames: {

@@ -14,7 +14,6 @@ import { Task, Job } from './session';
 import { ArgumentError } from './exceptions';
 import { getFramesMeta, getJobFramesMetaSync } from './frames';
 import { JobType } from './enums';
-import { SerializedInterval } from './server-response-types';
 
 const jobCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
 const taskCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
@@ -94,6 +93,8 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
 
         const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
         const collection = new AnnotationsCollection({
+            // Job collections use real job metadata. Task collections use constant defaults because
+            // task-level annotations are not tied to a particular job type or consensus replica set.
             jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
             stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
             labels: session.labels,
@@ -152,7 +153,7 @@ export async function getAnnotations(
     }
 }
 
-export async function getAllIntervals(session: Job | Task): Promise<SerializedInterval[]> {
+export async function getAllIntervals(session: Job | Task): Promise<ReturnType<AnnotationsCollection['getAllIntervals']>> {
     try {
         return getCollection(session).getAllIntervals();
     } catch (error) {
