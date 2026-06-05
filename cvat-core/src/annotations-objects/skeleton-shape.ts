@@ -64,7 +64,7 @@ export class SkeletonShape extends Shape {
         });
     }
 
-    static distance(points: number[], x: number, y: number): number {
+    static distance(points: number[], x: number, y: number): number | null {
         const distances = [];
         let xtl = Number.MAX_SAFE_INTEGER;
         let ytl = Number.MAX_SAFE_INTEGER;

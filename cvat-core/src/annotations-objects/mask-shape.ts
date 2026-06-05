@@ -196,7 +196,7 @@ export class MaskShape extends Shape {
         }
     }
 
-    static distance(rle: number[], x: number, y: number): null | number {
+    static distance(rle: number[], x: number, y: number): number | null {
         const [left, top, right, bottom] = rle.slice(-4);
         const [width, height] = [right - left + 1, bottom - top + 1];
         const [translatedX, translatedY] = [x - left, y - top];

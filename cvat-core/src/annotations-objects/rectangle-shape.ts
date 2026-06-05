@@ -17,7 +17,7 @@ export class RectangleShape extends Shape {
         checkNumberOfPoints(this.shapeType, this.points);
     }
 
-    static distance(points: number[], x: number, y: number, angle: number): number {
+    static distance(points: number[], x: number, y: number, angle: number): number | null {
         const [xtl, ytl, xbr, ybr] = points;
         const cx = xtl + (xbr - xtl) / 2;
         const cy = ytl + (ybr - ytl) / 2;

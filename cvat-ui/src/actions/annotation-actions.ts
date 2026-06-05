@@ -410,8 +410,8 @@ export function removeAnnotationsAsync(
             const { jobInstance } = receiveAnnotationsParameters();
             await jobInstance.annotations.clear({
                 reload: false,
-                startFrame,
-                stopFrame,
+                from: startFrame,
+                to: stopFrame,
                 delTrackKeyframesOnly,
             });
             await jobInstance.actions.clear();

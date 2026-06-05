@@ -20,11 +20,15 @@ import { Attribute, Label } from './labels';
 import { ArgumentError, ScriptingError } from './exceptions';
 import ObjectState from './object-state';
 import { cropMask } from './object-utils';
+import { AudioIntervalState } from './annotations-objects/audio-interval-state';
 import config from './config';
 import {
     HistoryActions, ShapeType, ObjectType, colors, Source, DimensionType, JobType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
+
+type AnnotationObject = Shape | Tag | Track | AudioInterval;
+type AnnotationState = ObjectState | AudioIntervalState;
 
 const validateAttributesList = (
     attributes: { spec_id: number, value: string }[],
@@ -36,7 +40,7 @@ const validateAttributesList = (
     return attributes;
 };
 
-const objectAttributesAsList = (state: ObjectState): { spec_id: number, value: string }[] => (
+const objectAttributesAsList = (state: AnnotationState): { spec_id: number, value: string }[] => (
     Object.entries(state.attributes).map(([key, value]) => ({
         spec_id: +key,
         value,
@@ -89,11 +93,6 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     }, {})
 );
 
-type AnnotationObject = Shape | Tag | Track;
-
-// AUDIO TODO:
-// Collection is currently used for intervals only to fetch them from the server and expose them to the UI.
-// Adding/modifying/filtering/saving/history are implemented separately.
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
@@ -300,6 +299,7 @@ export default class Collection {
             const color = colors[clientID % colors.length];
             const intervalModel = new AudioInterval(interval, clientID, color, this.injection);
             this.intervals.push(intervalModel);
+            this.objects[clientID] = intervalModel;
             result.intervals.push(intervalModel);
         }
 
@@ -307,30 +307,43 @@ export default class Collection {
     }
 
     public commit(
-        appended: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
-        removed: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
-        frame: number,
-    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; } {
-        const isCollectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
-            .every((object) => typeof object.clientID === 'number' &&
-                Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
+        appended: Partial<SerializedCollection>,
+        removed: Partial<SerializedCollection>,
+        frame: number | null,
+    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; intervals: AudioInterval[]; } {
+        const removedObjects = [].concat(
+            removed.shapes ?? [],
+            removed.tags ?? [],
+            removed.tracks ?? [],
+            removed.intervals ?? [],
+        );
 
-        if (!isCollectionConsistent) {
+        const allRemovedObjectsPresented = [].concat(removedObjects).every(
+            (object) => typeof object.clientID === 'number' &&
+                Object.prototype.hasOwnProperty.call(this.objects, object.clientID),
+        );
+
+        if (!allRemovedObjectsPresented) {
             throw new ArgumentError('Objects required to be deleted were not found in the collection');
         }
 
-        const removedCollection: AnnotationObject[] = [].concat(removed.shapes, removed.tags, removed.tracks)
-            .map((object) => this.objects[object.clientID as number]);
+        const removedCollection: AnnotationObject[] = [].concat(removedObjects)
+            .map((object) => this.objects[object.clientID]);
 
         const imported = this.import(appended);
-        const appendedCollection = ([] as (AnnotationObject)[])
-            .concat(imported.shapes, imported.tags, imported.tracks);
-        if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
+        const appendedCollection = ([] as (AnnotationObject)[]).concat(
+            imported.shapes,
+            imported.tags,
+            imported.tracks,
+            imported.intervals,
+        );
+
+        if (appendedCollection.length === 0 && removedCollection.length === 0) {
             // nothing to commit
             return;
         }
 
-        let prevRemoved = [];
+        let prevRemoved: boolean[] = [];
         removedCollection.forEach((collectionObject) => {
             prevRemoved.push(collectionObject.removed);
             collectionObject.removed = true;
@@ -368,7 +381,7 @@ export default class Collection {
         return this.intervals.map((interval) => interval.get());
     }
 
-    public export(): Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'> {
+    public export(): SerializedCollection {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed)
                 .map((track) => track.toJSON() as SerializedTrack),
@@ -386,6 +399,9 @@ export default class Collection {
                 }, [])
                 .filter((tag) => !tag.removed)
                 .map((tag) => tag.toJSON()),
+            intervals: this.intervals
+                .filter((interval) => !interval.removed)
+                .map((interval) => interval.toJSON()),
         };
 
         return data;
@@ -825,12 +841,16 @@ export default class Collection {
             throw new ArgumentError('All the objects must have the same label');
         }
 
-        const objectsToJoin = objectStates.map((state) => {
+        const objectsToJoin = objectStates.map((state): Shape => {
             checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
 
             const object = this.objects[state.clientID];
             if (typeof object === 'undefined') {
                 throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            }
+
+            if (!(object instanceof Shape)) {
+                throw new ArgumentError('Only shapes can be joined');
             }
 
             return object;
@@ -1000,34 +1020,35 @@ export default class Collection {
     }
 
     public clear(options?: {
-        startFrame?: number;
-        stopFrame?: number;
+        from?: number;
+        to?: number;
         delTrackKeyframesOnly?: boolean;
     }): void {
-        const { startFrame, stopFrame, delTrackKeyframesOnly } = options ?? {};
+        const { from, to, delTrackKeyframesOnly } = options ?? {};
 
-        if (typeof startFrame === 'undefined' && typeof stopFrame === 'undefined') {
+        if (typeof from === 'undefined' && typeof to === 'undefined') {
             this.shapes = {};
             this.tags = {};
             this.tracks = [];
+            this.intervals = [];
             this.objects = {};
 
             this.flush = true;
         } else {
-            const from = startFrame ?? 0;
-            const to = stopFrame ?? this.stopFrame;
+            const start = from ?? 0;
+            const stop = to ?? this.stopFrame;
 
             // If only a range of annotations need to be cleared
-            for (let frame = from; frame <= to; frame++) {
+            for (let frame = start; frame <= stop; frame++) {
                 this.shapes[frame] = [];
                 this.tags[frame] = [];
             }
 
             this.tracks.slice(0).forEach((track) => {
-                if (track.frame <= to) {
+                if (track.frame <= stop) {
                     if (delTrackKeyframesOnly) {
                         for (const keyframe of Object.keys(track.shapes)) {
-                            if (+keyframe >= from && +keyframe <= to) {
+                            if (+keyframe >= start && +keyframe <= stop) {
                                 // eslint-disable-next-line no-param-reassign
                                 delete track.shapes[keyframe];
                                 if (track instanceof SkeletonTrack) {
@@ -1051,6 +1072,14 @@ export default class Collection {
                     }
                 }
             });
+
+            this.intervals.slice(0).forEach((interval) => {
+                const intervalStop = interval.stop ?? interval.start;
+                if (interval.start <= to && intervalStop >= from) {
+                    this.intervals.splice(this.intervals.indexOf(interval), 1);
+                    delete this.objects[interval.clientID];
+                }
+            });
         }
     }
 
@@ -1065,6 +1094,11 @@ export default class Collection {
 
             mask: { shape: 0 },
             tag: 0,
+            interval: {
+                count: 0,
+                duration: 0,
+                coverage: 0,
+            },
             manually: 0,
             interpolated: 0,
             total: 0,
@@ -1085,6 +1119,13 @@ export default class Collection {
 
         const total = JSON.parse(JSON.stringify(body));
         fillBody(Object.values(this.labels).filter((label) => !label.hasParent));
+        const computeIntervalCoverage = (duration: number): number => {
+            if (this.stopFrame <= 0) {
+                return 0;
+            }
+
+            return Math.min(Math.max(duration / this.stopFrame, 0), 1);
+        };
 
         const scanTrack = (track, prefix = ''): void => {
             const countInterpolatedFrames = (start: number, stop: number, lastIsKeyframe: boolean): number => {
@@ -1156,31 +1197,43 @@ export default class Collection {
                 objectType = 'track';
             } else if (object instanceof Tag) {
                 objectType = 'tag';
+            } else if (object instanceof AudioInterval) {
+                objectType = 'interval';
             } else {
                 throw new ScriptingError(`Unexpected object type: "${objectType}"`);
             }
 
-            const { name: label } = object.label;
-            if (objectType === 'tag' && !this.injection.framesInfo.isFrameDeleted(object.frame)) {
-                labels[label].tag++;
-                labels[label].manually++;
-                labels[label].total++;
-            } else if (objectType === 'track') {
+            const { name: labelName } = object.label;
+            if (object instanceof AudioInterval) {
+                const stop = object.stop ?? this.stopFrame;
+                labels[labelName].interval.count++;
+                labels[labelName].interval.duration += Math.max(0, stop - object.start);
+                labels[labelName].manually++;
+                labels[labelName].total++;
+            } else if (object instanceof Tag && !this.injection.framesInfo.isFrameDeleted(object.frame)) {
+                labels[labelName].tag++;
+                labels[labelName].manually++;
+                labels[labelName].total++;
+            } else if (object instanceof Track) {
                 scanTrack(object);
-            } else if (!this.injection.framesInfo.isFrameDeleted(object.frame)) {
-                const { shapeType } = object as Shape;
-                labels[label][shapeType].shape++;
-                labels[label].manually++;
-                labels[label].total++;
+            } else if (object instanceof Shape && !this.injection.framesInfo.isFrameDeleted(object.frame)) {
+                const { shapeType } = object;
+                labels[labelName][shapeType].shape++;
+                labels[labelName].manually++;
+                labels[labelName].total++;
                 if (shapeType === ShapeType.SKELETON) {
                     (object as unknown as SkeletonShape).elements.forEach((element) => {
-                        const combinedName = [label, element.label.name].join(sep);
+                        const combinedName = [labelName, element.label.name].join(sep);
                         labels[combinedName][element.shapeType].shape++;
                         labels[combinedName].manually++;
                         labels[combinedName].total++;
                     });
                 }
             }
+        }
+
+        for (const label of Object.keys(labels)) {
+            labels[label].interval.coverage = computeIntervalCoverage(labels[label].interval.duration);
         }
 
         for (const label of Object.keys(labels)) {
@@ -1194,36 +1247,46 @@ export default class Collection {
                 }
             }
         }
+        total.interval.coverage = computeIntervalCoverage(total.interval.duration);
 
         return new Statistics(labels, total);
     }
 
-    public put(objectStates: ObjectState[]): number[] {
-        checkObjectType('shapes for put', objectStates, null, { cls: Array, name: 'Array' });
+    public put(annotationStates: AnnotationState[]): number[] {
+        checkObjectType('shapes for put', annotationStates, null, { cls: Array, name: 'Array' });
         const constructed = {
             shapes: [],
             tracks: [],
             tags: [],
+            intervals: [],
         };
 
-        for (const state of objectStates) {
-            checkObjectType('object state', state, null, { cls: ObjectState, name: 'ObjectState' });
+        for (const state of annotationStates) {
+            if (!(state instanceof ObjectState || state instanceof AudioIntervalState)) {
+                throw new ArgumentError('Object state must be an ObjectState or AudioIntervalState');
+            }
+
             if (state.clientID !== null) {
                 throw new ArgumentError('ObjectState.clientID must be null when adding new objects');
             }
-            checkObjectType('state frame', state.frame, 'integer');
-            checkObjectType('state rotation', state.rotation ?? 0, 'number');
+
             checkObjectType('state attributes', state.attributes, null, { cls: Object, name: 'Object' });
             checkObjectType('state label', state.label, null, { cls: Label, name: 'Label' });
 
             const attributes = validateAttributesList(objectAttributesAsList(state));
-            const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
-                accumulator[attribute.id] = attribute;
-                return accumulator;
-            }, {});
 
             // Construct whole objects from states
-            if (state.objectType === 'tag') {
+            if (state instanceof AudioIntervalState) {
+                constructed.intervals.push({
+                    attributes,
+                    start: state.start,
+                    stop: state.stop,
+                    label_id: state.label.id,
+                    group: 0,
+                    source: state.source,
+                    score: state.score,
+                });
+            } else if (state.objectType === 'tag') {
                 constructed.tags.push({
                     attributes,
                     frame: state.frame,
@@ -1232,11 +1295,16 @@ export default class Collection {
                     source: state.source,
                 });
             } else {
+                checkObjectType('state rotation', state.rotation ?? 0, 'number');
                 checkObjectType('state occluded', state.occluded, 'boolean');
                 checkObjectType('state points', state.points, null, { cls: Array, name: 'Array' });
                 checkObjectType('state zOrder', state.zOrder, 'integer');
                 checkObjectType('state descriptions', state.descriptions, null, { cls: Array, name: 'Array' });
                 state.descriptions.forEach((desc) => checkObjectType('state description', desc, 'string'));
+                const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
+                    accumulator[attribute.id] = attribute;
+                    return accumulator;
+                }, {});
 
                 for (const coord of state.points) {
                     checkObjectType('point coordinate', coord, 'number');
@@ -1337,8 +1405,12 @@ export default class Collection {
 
         // Add constructed objects to a collection
         const imported = this.import(constructed);
-        const importedArray = ([] as (Tag | Track | Shape)[])
-            .concat(imported.tags, imported.tracks, imported.shapes);
+        const importedArray = ([] as AnnotationObject[]).concat(
+            imported.tags,
+            imported.tracks,
+            imported.shapes,
+            imported.intervals,
+        );
         const additionalUndo = [];
         const additionalRedo = [];
         const additionalClientIDs = [];
@@ -1358,10 +1430,13 @@ export default class Collection {
                 globalEmptyMaskOccurred = emptyMaskOccurred || globalEmptyMaskOccurred;
             }
         }
+
         if (config.removeUnderlyingMaskPixels.enabled && globalEmptyMaskOccurred) {
             config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
         }
-        if (objectStates.length) {
+
+        if (annotationStates.length) {
+            const frame = annotationStates.find((state) => state instanceof ObjectState)?.frame ?? null;
             this.history.do(
                 HistoryActions.CREATED_OBJECTS,
                 () => {
@@ -1383,7 +1458,7 @@ export default class Collection {
                     });
                 },
                 [...importedArray.map((object) => object.clientID), ...additionalClientIDs.flat()],
-                objectStates[0].frame,
+                frame,
             );
         }
 
@@ -1549,6 +1624,34 @@ export default class Collection {
                 points = state.points;
             }
             const distance = distanceMetric(points, x, y, state.rotation);
+            if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
+                minimumDistance = distance;
+                minimumState = state;
+            }
+        }
+
+        return {
+            state: minimumState,
+            distance: minimumDistance,
+        };
+    }
+
+    public selectInterval(intervalStates: AudioIntervalState[], position: number): {
+        state: AudioIntervalState,
+        distance: number | null,
+    } {
+        checkObjectType('intervals for select', intervalStates, null, { cls: Array, name: 'Array' });
+        checkObjectType('position', position, 'number', null);
+
+        let minimumDistance = null;
+        let minimumState = null;
+        for (const state of intervalStates) {
+            checkObjectType('interval state', state, null, { cls: AudioIntervalState, name: 'AudioIntervalState' });
+            if (state.hidden) {
+                continue;
+            }
+
+            const distance = AudioInterval.distance(state.start, state.stop, position);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;
