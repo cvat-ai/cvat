@@ -5,7 +5,7 @@
 import ObjectState from '../object-state';
 import { type Label } from '../labels';
 import {
-    colors, Source, HistoryActions, JobType,
+    colors, Source, HistoryActions,
 } from '../enums';
 import { AnnotationContext } from './annotation-context';
 import type { AnnotationInjection } from './types';
@@ -68,7 +68,7 @@ export class AnnotationBase extends AnnotationContext {
         this.label = this.labels[data.label_id];
         this.lock = false;
         this.hidden = false;
-        this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
+        this.source = data.source;
         this.updated = Date.now();
         this.attributes = deserializeAttributes(data.attributes);
 
