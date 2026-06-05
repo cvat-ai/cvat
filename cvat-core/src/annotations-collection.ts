@@ -1074,7 +1074,7 @@ export default class Collection {
             });
 
             this.intervals.slice(0).forEach((interval) => {
-                const intervalStop = interval.stop ?? interval.start;
+                const intervalStop = interval.stop ?? this.stopFrame;
                 if (interval.start <= to && intervalStop >= from) {
                     this.intervals.splice(this.intervals.indexOf(interval), 1);
                     delete this.objects[interval.clientID];
