@@ -28,14 +28,14 @@ export class Track extends Drawn {
         this.shapes = deserializeTrackedShapes(data.shapes);
     }
 
-    protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
+    protected withContext(): ReturnType<Drawn['withContext']> & {
         save: (data: ObjectState) => ObjectState;
         export: () => SerializedTrack;
     } {
         return {
-            ...super.withContext(frame),
-            save: this.save.bind(this, frame),
-            export: this.toJSON.bind(this) as () => SerializedTrack,
+            ...super.withContext(),
+            save: this.save.bind(this),
+            export: this.toJSON.bind(this),
         };
     }
 
@@ -114,7 +114,7 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
-            __internal: this.withContext(frame),
+            __internal: this.withContext(),
         };
     }
 
@@ -484,7 +484,7 @@ export class Track extends Drawn {
 
         const updated = data.updateFlags;
         for (const readOnlyField of this.readOnlyFields) {
-            updated[readOnlyField] = false;
+            delete updated[readOnlyField];
         }
 
         const fittedPoints = this.validateStateBeforeSave(data, updated, frame);

@@ -170,7 +170,7 @@ export class SkeletonShape extends Shape {
             source: this.source,
             score: this.score,
             votes: this.votes,
-            __internal: this.withContext(frame),
+            __internal: this.withContext(),
         };
     }
 

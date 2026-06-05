@@ -151,6 +151,7 @@ export enum HistoryActions {
     CHANGED_COLOR = 'Changed color',
     CHANGED_HIDDEN = 'Changed hidden',
     CHANGED_SOURCE = 'Changed source',
+    CHANGED_AUDIO_POSITION = 'Changed audio position',
     MERGED_OBJECTS = 'Merged objects',
     JOINED_OBJECTS = 'Joined objects',
     SLICED_OBJECT = 'Sliced object',

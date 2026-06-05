@@ -225,7 +225,7 @@ export class SkeletonTrack extends Track {
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
-            __internal: this.withContext(frame),
+            __internal: this.withContext(),
         };
     }
 
