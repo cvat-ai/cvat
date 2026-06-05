@@ -81,7 +81,7 @@ export class SkeletonTrack extends Track {
             shapes: SerializedTrack['shapes'];
         }[];
     }): void {
-        Track.prototype.updateFromServerResponse.call(this, body);
+        super.updateFromServerResponse(body);
         if ('elements' in body) {
             for (const element of body.elements) {
                 const context = this.elements.find((_element: Track) => _element.label.id === element.label_id);
@@ -91,7 +91,7 @@ export class SkeletonTrack extends Track {
     }
 
     public clearServerId(): void {
-        Track.prototype.clearServerId.call(this);
+        super.clearServerId();
         for (const element of this.elements) {
             element.clearServerId();
         }

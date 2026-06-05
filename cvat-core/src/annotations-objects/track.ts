@@ -190,7 +190,7 @@ export class Track extends Drawn {
     }
 
     public clearServerId(): void {
-        Drawn.prototype.clearServerId.call(this);
+        super.clearServerId();
         for (const shape of Object.values(this.shapes)) {
             shape.serverId = undefined;
         }

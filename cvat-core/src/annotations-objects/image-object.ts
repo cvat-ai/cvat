@@ -23,14 +23,6 @@ export class ImageObject extends AnnotationBase {
         this.frame = data.frame;
     }
 
-    protected withContext(_: number): {
-        delete: ImageObject['delete'];
-    } {
-        return {
-            delete: this.delete.bind(this),
-        };
-    }
-
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags']): void {
         if (updated.label) {
             checkObjectType('label', data.label, null, { cls: Label, name: 'Label' });

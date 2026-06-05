@@ -214,6 +214,14 @@ export class AnnotationBase extends AnnotationContext {
         }
     }
 
+    protected withContext(_: number): {
+        delete: AnnotationBase['delete'];
+    } {
+        return {
+            delete: this.delete.bind(this),
+        };
+    }
+
     public delete(frame: number | null, force: boolean): boolean {
         if (!this.lock || force) {
             this.removed = true;
