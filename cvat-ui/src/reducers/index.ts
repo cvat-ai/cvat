@@ -28,7 +28,6 @@ export interface AudioRegion {
     attributes: Record<number, string>;
     serverId?: number;
     source?: string;
-    group?: number;
     color?: string;
     hidden?: boolean;
     locked?: boolean;
@@ -829,7 +828,6 @@ export enum ActiveControl {
     DRAW_CUBOID = 'draw_cuboid',
     DRAW_SKELETON = 'draw_skeleton',
     MERGE = 'merge',
-    GROUP = 'group',
     JOIN = 'join',
     SPLIT = 'split',
     SLICE = 'slice',

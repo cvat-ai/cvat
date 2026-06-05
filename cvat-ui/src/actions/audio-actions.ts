@@ -165,7 +165,6 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
                     attributes: interval.attributes,
                     serverId: interval.serverID ?? undefined,
                     source: String(interval.source),
-                    group: interval.group.id,
                     color: interval.color,
                     locked: interval.lock,
                     hidden: interval.hidden,
@@ -203,7 +202,7 @@ export function saveAudioAnnotationsAsync(): ThunkAction {
                     label_id: region.labelId as number,
                     start: startMs,
                     stop: stopMs,
-                    group: region.group || 0,
+                    group: 0,
                     source: (region.source || 'manual') as Source,
                     attributes: Object.entries(region.attributes || {}).map(([specId, value]) => ({
                         spec_id: Number(specId),

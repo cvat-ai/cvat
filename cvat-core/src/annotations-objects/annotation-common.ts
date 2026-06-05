@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import type ObjectState from '../object-state';
 import { type Label } from '../labels';
 import {
     colors, Source, HistoryActions, JobType,
 } from '../enums';
 import { AnnotationContext } from './annotation-context';
-import type { AnnotationInjection } from './types';
+import type { AnnotationInjection, CommonUpdateFlags } from './types';
 import { computeNewSource, defaultGroupColor, deserializeAttributes } from './utils';
 
 // Stores common annotation identity/state and field history mutations.
@@ -207,14 +206,14 @@ export class AnnotationBase extends AnnotationContext {
         this._serverId = undefined;
     }
 
-    protected updateTimestamp(updated: ObjectState['updateFlags']): void {
-        const anyChanges = Object.keys(updated).some((key) => !!updated[key]);
+    protected updateTimestamp<T extends CommonUpdateFlags>(updated: T): void {
+        const anyChanges = Object.values(updated).some((value) => value);
         if (anyChanges) {
             this.updated = Date.now();
         }
     }
 
-    protected withContext(_: number): {
+    protected withContext(): {
         delete: AnnotationBase['delete'];
     } {
         return {

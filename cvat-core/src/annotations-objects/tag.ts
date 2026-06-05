@@ -11,14 +11,14 @@ import { ImageObject } from './image-object';
 import { serializeAttributes } from './utils';
 
 export class Tag extends ImageObject {
-    protected withContext(frame: number): ReturnType<ImageObject['withContext']> & {
+    protected withContext(): ReturnType<ImageObject['withContext']> & {
         save: (data: ObjectState) => ObjectState;
         export: () => SerializedTag;
     } {
         return {
-            ...super.withContext(frame),
-            save: this.save.bind(this, frame),
-            export: this.toJSON.bind(this) as () => SerializedTag,
+            ...super.withContext(),
+            save: this.save.bind(this),
+            export: this.toJSON.bind(this),
         };
     }
 
@@ -61,7 +61,7 @@ export class Tag extends ImageObject {
             updated: this.updated,
             frame,
             source: this.source,
-            __internal: this.withContext(frame),
+            __internal: this.withContext(),
         };
     }
 
@@ -80,7 +80,7 @@ export class Tag extends ImageObject {
 
         const updated = data.updateFlags;
         for (const readOnlyField of this.readOnlyFields) {
-            updated[readOnlyField] = false;
+            delete updated[readOnlyField];
         }
 
         this.validateStateBeforeSave(data, updated);
