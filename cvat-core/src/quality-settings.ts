@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
 import { SerializedQualitySettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
-import { fieldsToSnakeCase } from './common';
+import { fieldsToCamelCase, fieldsToSnakeCase } from './common';
 import { Camelized } from './type-utils';
 import QualityRequirement from './quality-requirement';
 
@@ -23,8 +22,19 @@ export enum PointSizeBase {
 }
 
 export type QualitySettingsSaveFields = Partial<Camelized<
-    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'project_id' | 'descriptions'>
+    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'project_id' | 'descriptions' | 'requirement_descriptions'>
 >>;
+
+export async function getQualitySettingsSchemaDescriptions(): Promise<{
+    descriptions: Record<string, string>;
+    requirementDescriptions: Record<string, string>;
+}> {
+    const schema = await getServerAPISchema();
+    return {
+        descriptions: convertDescriptions(schema.components.schemas.QualitySettings.properties),
+        requirementDescriptions: convertDescriptions(schema.components.schemas.QualityRequirement.properties),
+    };
+}
 
 export default class QualitySettings {
     #id: number;
@@ -50,6 +60,7 @@ export default class QualitySettings {
     #inherit: boolean;
     #requirements: QualityRequirement[];
     #descriptions: Record<string, string>;
+    #requirementDescriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
@@ -76,7 +87,8 @@ export default class QualitySettings {
         this.#requirements = (initialData.requirements || []).map((requirement) => (
             new QualityRequirement(requirement)
         ));
-        this.#descriptions = initialData.descriptions;
+        this.#descriptions = initialData.descriptions || {};
+        this.#requirementDescriptions = initialData.requirement_descriptions || {};
     }
 
     get id(): number {
@@ -168,13 +180,11 @@ export default class QualitySettings {
     }
 
     get descriptions(): Record<string, string> {
-        const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
-            const camelCaseKey = _.camelCase(key);
-            acc[camelCaseKey] = this.#descriptions[key];
-            return acc;
-        }, {});
+        return fieldsToCamelCase(this.#descriptions);
+    }
 
-        return descriptions;
+    get requirementDescriptions(): Record<string, string> {
+        return fieldsToCamelCase(this.#requirementDescriptions);
     }
 
     public async save(fields: QualitySettingsSaveFields = {}): Promise<QualitySettings> {
@@ -195,9 +205,12 @@ Object.defineProperties(QualitySettings.prototype.save, {
             const result = await serverProxy.analytics.quality.settings.update(
                 this.id, data,
             );
-            const schema = await getServerAPISchema();
-            const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
-            return new QualitySettings({ ...result, descriptions });
+            const { descriptions, requirementDescriptions } = await getQualitySettingsSchemaDescriptions();
+            return new QualitySettings({
+                ...result,
+                descriptions,
+                requirement_descriptions: requirementDescriptions,
+            });
         },
     },
 });

@@ -287,7 +287,7 @@ export type QualityRequirementAttributeComparator = 'exact' | 'levenshtein';
 export type QualityRequirementJsonLogicFilter = string;
 
 export interface SerializedQualityRequirementAttributeRule {
-    name: string;
+    spec_id: number;
     enabled?: boolean | null;
     comparator?: QualityRequirementAttributeComparator | null;
     threshold?: number | null;
@@ -321,7 +321,6 @@ export interface SerializedEffectiveQualityRequirementData {
     check_covered_annotations?: boolean;
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
-    match_attributes?: boolean;
     attribute_comparison?: SerializedQualityRequirementAttributeComparison | null;
     empty_is_annotated?: boolean;
 }
@@ -358,7 +357,6 @@ export interface SerializedQualityRequirementData {
     check_covered_annotations?: boolean | null;
     object_visibility_threshold?: number | null;
     panoptic_comparison?: boolean | null;
-    match_attributes?: boolean | null;
     attribute_comparison?: SerializedQualityRequirementAttributeComparison | null;
     empty_is_annotated?: boolean | null;
     created_date?: string;
@@ -449,6 +447,7 @@ export interface SerializedQualitySettingsData {
     compare_attributes?: boolean;
     empty_is_annotated?: boolean;
     descriptions?: Record<string, string>;
+    requirement_descriptions?: Record<string, string>;
     inherit?: boolean;
     job_filter?: string;
     requirements?: SerializedQualityRequirementData[];

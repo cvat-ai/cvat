@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
@@ -10,12 +10,13 @@ import { Col, Row } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
 import Form, { FormInstance } from 'antd/lib/form';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { QualitySettings } from 'cvat-core-wrapper';
+import { QualityRequirement, QualitySettings } from 'cvat-core-wrapper';
 import { defaultVisibility, ResourceFilterHOC } from 'components/resource-sorting-filtering';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, config,
 } from './jobs-filter-configuration';
 import QualityRequirementsEditor from './quality-requirements-editor';
+import QualityRequirementForm from './quality-requirement-form';
 
 interface Props {
     form: FormInstance;
@@ -23,7 +24,13 @@ interface Props {
     disabled: boolean;
     onSave: () => void;
     onReload: () => Promise<void>;
+    onRequirementFormVisibilityChange: (visible: boolean) => void;
 }
+
+type RequirementFormMode =
+    { type: 'list' } |
+    { type: 'create'; parentRequirement: QualityRequirement } |
+    { type: 'edit'; requirement: QualityRequirement };
 
 const FilteringComponentBase = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity,
@@ -38,9 +45,20 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         settings,
         disabled,
         onReload,
+        onRequirementFormVisibilityChange,
     } = props;
 
     const [visibility, setVisibility] = useState(defaultVisibility);
+    const [requirementFormMode, setRequirementFormMode] = useState<RequirementFormMode>({ type: 'list' });
+    const requirementFormVisible = requirementFormMode.type !== 'list';
+
+    useEffect(() => {
+        onRequirementFormVisibilityChange(requirementFormVisible);
+
+        return () => {
+            onRequirementFormVisibilityChange(false);
+        };
+    }, [onRequirementFormVisibilityChange, requirementFormVisible]);
 
     const initialValues = {
         targetMetric: settings.targetMetric,
@@ -91,6 +109,21 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
     const jobValidationTooltip = makeTooltip(
         makeTooltipFragment('Max validations per job', settings.descriptions.maxValidationsPerJob),
     );
+
+    if (requirementFormMode.type !== 'list') {
+        return (
+            <QualityRequirementForm
+                settings={settings}
+                requirement={requirementFormMode.type === 'edit' ? requirementFormMode.requirement : null}
+                parentRequirement={
+                    requirementFormMode.type === 'create' ? requirementFormMode.parentRequirement : null
+                }
+                disabled={disabled}
+                onCancel={() => setRequirementFormMode({ type: 'list' })}
+                onReload={onReload}
+            />
+        );
+    }
 
     return (
         <Form
@@ -172,7 +205,17 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     />
                 </CVATTooltip>
             </Row>
-            <QualityRequirementsEditor settings={settings} disabled={disabled} onReload={onReload} />
+            <QualityRequirementsEditor
+                settings={settings}
+                disabled={disabled}
+                onReload={onReload}
+                onCreateRequirement={(parentRequirement: QualityRequirement) => {
+                    setRequirementFormMode({ type: 'create', parentRequirement });
+                }}
+                onEditRequirement={(requirement: QualityRequirement) => {
+                    setRequirementFormMode({ type: 'edit', requirement });
+                }}
+            />
         </Form>
     );
 }

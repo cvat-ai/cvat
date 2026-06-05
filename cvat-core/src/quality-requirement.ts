@@ -4,7 +4,7 @@
 
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import { fieldsToSnakeCase } from './common';
+import { fieldsToCamelCase, fieldsToSnakeCase } from './common';
 import { CamelizedV2 } from './type-utils';
 import {
     SerializedEffectiveQualityRequirementData,
@@ -51,7 +51,6 @@ export default class QualityRequirement {
     #checkCoveredAnnotations: boolean | null;
     #objectVisibilityThreshold: number | null;
     #panopticComparison: boolean | null;
-    #matchAttributes: boolean | null;
     #attributeComparison: SerializedQualityRequirementAttributeComparison | null;
     #emptyIsAnnotated: boolean | null;
     #createdDate?: string;
@@ -83,7 +82,6 @@ export default class QualityRequirement {
         this.#checkCoveredAnnotations = initialData.check_covered_annotations ?? null;
         this.#objectVisibilityThreshold = initialData.object_visibility_threshold ?? null;
         this.#panopticComparison = initialData.panoptic_comparison ?? null;
-        this.#matchAttributes = initialData.match_attributes ?? null;
         this.#attributeComparison = initialData.attribute_comparison ?? null;
         this.#emptyIsAnnotated = initialData.empty_is_annotated ?? null;
         this.#createdDate = initialData.created_date;
@@ -190,10 +188,6 @@ export default class QualityRequirement {
         return this.#panopticComparison;
     }
 
-    get matchAttributes(): boolean | null {
-        return this.#matchAttributes;
-    }
-
     get attributeComparison(): SerializedQualityRequirementAttributeComparison | null {
         return this.#attributeComparison;
     }
@@ -219,14 +213,6 @@ export default class QualityRequirement {
         const result = await PluginRegistry.apiWrapper.call(this, QualityRequirement.prototype.delete);
         return result;
     }
-}
-
-function fieldsToCamelCase<T extends object>(data: T): CamelizedV2<T> {
-    return Object.entries(data).reduce((acc, [key, value]) => {
-        const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-        acc[camelKey] = value;
-        return acc;
-    }, {} as Record<string, unknown>) as CamelizedV2<T>;
 }
 
 Object.defineProperties(QualityRequirement.prototype.save, {

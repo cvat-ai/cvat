@@ -21,9 +21,11 @@ import {
     QualitySettings,
 } from 'cvat-core-wrapper';
 import {
+    buildRequirementsById,
     formatAnnotationType,
     formatMetric,
     formatThreshold,
+    getRequirementDisplayValue,
     requirementToSaveFields,
 } from './quality-requirements-utils';
 
@@ -70,6 +72,8 @@ interface Props {
     settings: QualitySettings;
     disabled: boolean;
     onReload: () => Promise<void>;
+    onCreateRequirement: (parentRequirement: QualityRequirement) => void;
+    onEditRequirement: (requirement: QualityRequirement) => void;
 }
 
 function compareRequirements(first: QualityRequirement, second: QualityRequirement): number {
@@ -85,14 +89,8 @@ function compareRequirements(first: QualityRequirement, second: QualityRequireme
 }
 
 function buildRequirementTree(requirements: QualityRequirement[]): RequirementRow[] {
-    const requirementsById = new Map<number, QualityRequirement>();
+    const requirementsById = buildRequirementsById(requirements);
     const childrenByParent = new Map<number | null, QualityRequirement[]>();
-
-    for (const requirement of requirements) {
-        if (typeof requirement.id === 'number') {
-            requirementsById.set(requirement.id, requirement);
-        }
-    }
 
     for (const requirement of requirements) {
         const parentId = requirement.parentRequirementId;
@@ -109,9 +107,24 @@ function buildRequirementTree(requirements: QualityRequirement[]): RequirementRo
     const buildRows = (parentId: number | null): RequirementRow[] => (
         (childrenByParent.get(parentId) ?? []).map((requirement: QualityRequirement): RequirementRow => {
             const children = typeof requirement.id === 'number' ? buildRows(requirement.id) : [];
-            const annotationType = formatAnnotationType(requirement.effective?.annotationType ?? requirement.annotationType);
-            const metric = formatMetric(requirement.effective?.metric ?? requirement.metric);
-            const threshold = formatThreshold(requirement.effective?.requiredScore ?? requirement.requiredScore);
+            const annotationType = formatAnnotationType(getRequirementDisplayValue(
+                requirement,
+                requirementsById,
+                (item: QualityRequirement) => item.annotationType,
+                (item: QualityRequirement) => item.effective?.annotationType,
+            ));
+            const metric = formatMetric(getRequirementDisplayValue(
+                requirement,
+                requirementsById,
+                (item: QualityRequirement) => item.metric,
+                (item: QualityRequirement) => item.effective?.metric,
+            ));
+            const threshold = formatThreshold(getRequirementDisplayValue(
+                requirement,
+                requirementsById,
+                (item: QualityRequirement) => item.requiredScore,
+                (item: QualityRequirement) => item.effective?.requiredScore,
+            ));
             const descendantSearchValue = children.map((child: RequirementRow): string => child.searchValue).join(' ');
             const searchValue = [
                 requirement.name,
@@ -143,6 +156,8 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
         settings,
         disabled,
         onReload,
+        onCreateRequirement,
+        onEditRequirement,
     } = props;
 
     const [pendingRequirementId, setPendingRequirementId] = useState<number | null>(null);
@@ -285,40 +300,54 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
                     return (
                         <Space size='small'>
                             <CVATTooltip title='Create child requirement'>
-                                <Button type='link' size='small' disabled icon={<PlusOutlined />} />
+                                <Button
+                                    type='text'
+                                    className='cvat-quality-requirements-action-button'
+                                    size='small'
+                                    disabled={actionsDisabled}
+                                    icon={<PlusOutlined />}
+                                    onClick={() => onCreateRequirement(record.requirement)}
+                                />
                             </CVATTooltip>
                             <CVATTooltip title='Edit requirement'>
-                                <Button type='link' size='small' disabled icon={<EditOutlined />} />
+                                <Button
+                                    type='text'
+                                    className='cvat-quality-requirements-action-button'
+                                    size='small'
+                                    disabled={actionsDisabled}
+                                    icon={<EditOutlined />}
+                                    onClick={() => onEditRequirement(record.requirement)}
+                                />
                             </CVATTooltip>
                             <CVATTooltip title='Copy requirement'>
                                 <Button
-                                    type='link'
+                                    type='text'
+                                    className='cvat-quality-requirements-action-button'
                                     size='small'
                                     disabled={actionsDisabled}
                                     icon={<CopyOutlined />}
                                     onClick={() => onCopyRequirement(record.requirement)}
                                 />
                             </CVATTooltip>
-                            <CVATTooltip title={record.requirement.isDefault ? 'Default requirements cannot be deleted' : 'Delete requirement'}>
-                                <Button
-                                    type='link'
-                                    size='small'
-                                    danger
-                                    disabled={actionsDisabled || record.requirement.isDefault}
-                                    icon={<DeleteOutlined />}
-                                    onClick={() => onDeleteRequirement(record.requirement)}
-                                />
-                            </CVATTooltip>
+                            {!record.requirement.isDefault && (
+                                <CVATTooltip title='Delete requirement'>
+                                    <Button
+                                        type='text'
+                                        className='cvat-quality-requirements-action-button'
+                                        size='small'
+                                        disabled={actionsDisabled}
+                                        icon={<DeleteOutlined />}
+                                        onClick={() => onDeleteRequirement(record.requirement)}
+                                    />
+                                </CVATTooltip>
+                            )}
                         </Space>
                     );
                 },
             }]}
             dataSource={data}
-            rowSelection={{
-                getCheckboxProps: () => ({ disabled }),
-            }}
             size='small'
-            pagination={{ showSizeChanger: false, position: ['bottomCenter'] }}
+            pagination={false}
             locale={{
                 emptyText: (
                     <Space>

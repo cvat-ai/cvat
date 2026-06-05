@@ -38,7 +38,7 @@ import {
 import QualityReport from './quality-report';
 import AboutData from './about';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
-import QualitySettings from './quality-settings';
+import QualitySettings, { getQualitySettingsSchemaDescriptions } from './quality-settings';
 import QualityRequirement from './quality-requirement';
 import { getFramesMeta } from './frames';
 import ConsensusSettings from './consensus-settings';
@@ -552,10 +552,13 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             const params = fieldsToSnakeCase(filter);
 
             const settingsList = await serverProxy.analytics.quality.settings.get(params, aggregate);
-            const schema = await getServerAPISchema();
-            const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
+            const { descriptions, requirementDescriptions } = await getQualitySettingsSchemaDescriptions();
 
-            const settings = settingsList.map((setting) => new QualitySettings({ ...setting, descriptions }));
+            const settings = settingsList.map((setting) => new QualitySettings({
+                ...setting,
+                descriptions,
+                requirement_descriptions: requirementDescriptions,
+            }));
             return settings;
         });
     implementationMixin(

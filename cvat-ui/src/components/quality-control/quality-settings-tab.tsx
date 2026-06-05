@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import Form from 'antd/lib/form';
@@ -41,6 +41,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     } = props;
 
     const [form] = Form.useForm();
+    const [requirementFormVisible, setRequirementFormVisible] = useState(false);
 
     const onSave = useCallback(async () => {
         if (settings) {
@@ -146,19 +147,22 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     if (settings) {
         return (
             <div className='cvat-quality-control-settings-tab'>
-                <Row justify='end' className='cvat-quality-settings-save-btn'>
-                    <Col>
-                        <Button onClick={onSave} type='primary'>
-                            Save
-                        </Button>
-                    </Col>
-                </Row>
-                {header}
+                {!requirementFormVisible && (
+                    <Row justify='end' className='cvat-quality-settings-save-btn'>
+                        <Col>
+                            <Button onClick={onSave} type='primary'>
+                                Save
+                            </Button>
+                        </Col>
+                    </Row>
+                )}
+                {!requirementFormVisible && header}
                 <QualitySettingsForm
                     form={form}
                     settings={settings}
                     onSave={onSave}
                     onReload={refreshQualitySettings}
+                    onRequirementFormVisibilityChange={setRequirementFormVisible}
                     disabled={settings.inherit && instance instanceof Task && instance.projectId !== null}
                 />
             </div>

@@ -22,6 +22,7 @@
 
     display: block;
     height: 100%;
+    overflow-x: hidden;
     position: relative;
 
     .cvat-quality-settings-save-btn {
@@ -97,8 +98,92 @@
         }
     }
 
+    .cvat-quality-requirements-table-actions {
+        display: flex;
+        justify-content: flex-start;
+        margin-left: $grid-unit-size * 2;
+    }
+
+    .cvat-quality-requirements-action-button {
+        color: $text-color;
+
+        &:hover, &:focus {
+            color: $text-color;
+        }
+    }
+
+    .cvat-quality-requirement-form {
+        padding-top: $grid-unit-size;
+
+        .ant-form-item {
+            margin-bottom: $grid-unit-size * 2;
+        }
+    }
+
+    .cvat-quality-requirement-form-header {
+        justify-content: space-between;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .cvat-quality-requirement-form-section-title {
+        align-items: center;
+        gap: $grid-unit-size;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .cvat-quality-requirement-form-short-input {
+        width: $grid-unit-size * 12;
+    }
+
+    .cvat-quality-requirement-overridden-label {
+        color: $validation-progress-color;
+
+        span {
+            color: $validation-progress-color;
+        }
+
+        .ant-btn {
+            color: $validation-progress-color;
+            height: $grid-unit-size * 2;
+            padding: 0;
+        }
+    }
+
+    .cvat-quality-requirement-revert-button {
+        vertical-align: baseline;
+    }
+
+    .cvat-quality-requirement-clear-filter-button {
+        padding-left: 0;
+        height: $grid-unit-size * 2;
+    }
+
+    .cvat-quality-requirement-attribute-rules-title {
+        margin-bottom: $grid-unit-size;
+    }
+
+    .cvat-quality-requirement-attribute-rules {
+        width: 100%;
+    }
+
+    .cvat-quality-requirement-attribute-rule-header {
+        color: $text-color-secondary;
+        font-size: 12px;
+        padding: 0 $grid-unit-size $grid-unit-size;
+    }
+
+    .cvat-quality-requirement-attribute-rule-row {
+        min-height: $grid-unit-size * 5;
+
+        .ant-form-item {
+            margin-bottom: $grid-unit-size;
+        }
+    }
+
     .cvat-table-wrapper:has(.cvat-quality-requirements-configuration-table) {
         @include cvat-table-dynamic-size;
+
+        padding-bottom: $grid-unit-size * 3;
 
         .ant-table-tbody .ant-table-cell {
             padding: calc($grid-unit-size / 2) $grid-unit-size !important;

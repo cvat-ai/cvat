@@ -31,6 +31,77 @@ export const METRICS = Object.keys(METRIC_LABELS);
 
 export type RequirementRawData = SerializedQualityRequirementData;
 
+export function buildRequirementsById(requirements: QualityRequirement[]): Map<number, QualityRequirement> {
+    const requirementsById = new Map<number, QualityRequirement>();
+
+    for (const requirement of requirements) {
+        if (typeof requirement.id === 'number') {
+            requirementsById.set(requirement.id, requirement);
+        }
+    }
+
+    return requirementsById;
+}
+
+export function getRequirementEffectiveField<T>(
+    requirement: QualityRequirement,
+    fieldName: string,
+): T | null | undefined {
+    const effective = requirement.effective as Record<string, unknown> | null;
+    return effective?.[fieldName] as T | null | undefined;
+}
+
+export function getRequirementResolvedValue<T>(
+    requirement: QualityRequirement | null,
+    requirementsById: Map<number, QualityRequirement>,
+    getLocalValue: (item: QualityRequirement) => T | null | undefined,
+    getEffectiveValue: (item: QualityRequirement) => T | null | undefined,
+    defaultValue: T,
+): T {
+    let currentRequirement: QualityRequirement | null | undefined = requirement;
+    const visitedRequirementIds = new Set<number>();
+
+    while (currentRequirement) {
+        const currentId = currentRequirement.id;
+        if (typeof currentId === 'number') {
+            if (visitedRequirementIds.has(currentId)) {
+                return defaultValue;
+            }
+            visitedRequirementIds.add(currentId);
+        }
+
+        const effectiveValue = getEffectiveValue(currentRequirement);
+        if (effectiveValue !== null && typeof effectiveValue !== 'undefined') {
+            return effectiveValue;
+        }
+
+        const localValue = getLocalValue(currentRequirement);
+        if (localValue !== null && typeof localValue !== 'undefined') {
+            return localValue;
+        }
+
+        const parentId = currentRequirement.parentRequirementId;
+        currentRequirement = typeof parentId === 'number' ? requirementsById.get(parentId) : null;
+    }
+
+    return defaultValue;
+}
+
+export function getRequirementDisplayValue<T>(
+    requirement: QualityRequirement,
+    requirementsById: Map<number, QualityRequirement>,
+    getLocalValue: (item: QualityRequirement) => T | null | undefined,
+    getEffectiveValue: (item: QualityRequirement) => T | null | undefined,
+): T | null {
+    return getRequirementResolvedValue<T | null>(
+        requirement,
+        requirementsById,
+        getLocalValue,
+        getEffectiveValue,
+        null,
+    );
+}
+
 function formatUnknownValue(value: string | null): string {
     if (!value) {
         return 'N/A';
@@ -79,7 +150,6 @@ export function requirementToRaw(requirement: QualityRequirement): RequirementRa
         check_covered_annotations: requirement.checkCoveredAnnotations,
         object_visibility_threshold: requirement.objectVisibilityThreshold,
         panoptic_comparison: requirement.panopticComparison,
-        match_attributes: requirement.matchAttributes,
         attribute_comparison: requirement.attributeComparison,
         empty_is_annotated: requirement.emptyIsAnnotated,
         created_date: requirement.createdDate,

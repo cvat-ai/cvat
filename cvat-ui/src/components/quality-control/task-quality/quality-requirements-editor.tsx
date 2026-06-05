@@ -6,7 +6,7 @@ import React from 'react';
 import { BuildOutlined, EditOutlined } from '@ant-design/icons';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
-import { QualitySettings } from 'cvat-core-wrapper';
+import { QualityRequirement, QualitySettings } from 'cvat-core-wrapper';
 import QualityRequirementsConstructor from './quality-requirements-constructor';
 import QualityRequirementsRaw from './quality-requirements-raw';
 
@@ -14,6 +14,8 @@ interface Props {
     settings: QualitySettings;
     disabled: boolean;
     onReload: () => Promise<void>;
+    onCreateRequirement: (parentRequirement: QualityRequirement) => void;
+    onEditRequirement: (requirement: QualityRequirement) => void;
 }
 
 export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.Element {
@@ -21,6 +23,8 @@ export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.E
         settings,
         disabled,
         onReload,
+        onCreateRequirement,
+        onEditRequirement,
     } = props;
 
     return (
@@ -56,6 +60,8 @@ export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.E
                         settings={settings}
                         disabled={disabled}
                         onReload={onReload}
+                        onCreateRequirement={onCreateRequirement}
+                        onEditRequirement={onEditRequirement}
                     />
                 ),
             }]}
