@@ -39,6 +39,7 @@ function RemoveAnnotationsConfirm(props: RemoveAnnotationsConfirmProps): JSX.Ele
 
     return (
         <Modal
+            destroyOnClose
             open={open}
             title='Remove Annotations'
             className='cvat-modal-confirm-remove-annotation'

@@ -101,6 +101,8 @@ Cypress.Commands.add('audioDrawRegion', (xStart, xEnd) => {
 Cypress.Commands.add('audioCreateRegionViaButton', (labelName, xStart, xEnd) => {
     cy.audioActivateCreate(labelName);
     cy.audioDrawRegion(xStart, xEnd);
+    cy.get('.cvat-cursor-control').click();
+    cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
 });
 
 Cypress.Commands.add('audioCreateRegionViaHotkey', (xStart, xEnd) => {

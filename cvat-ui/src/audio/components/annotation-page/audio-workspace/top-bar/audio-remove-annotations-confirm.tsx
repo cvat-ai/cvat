@@ -87,6 +87,7 @@ function AudioRemoveAnnotationsConfirm(props: RemoveAnnotationsConfirmProps): JS
 
     return (
         <Modal
+            destroyOnClose
             open={open}
             title='Remove Audio Annotations'
             className='cvat-modal-confirm-remove-annotation cvat-modal-confirm-remove-audio-annotation'
