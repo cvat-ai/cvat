@@ -5,7 +5,9 @@
 
 import type AnnotationHistory from '../annotations-history';
 import type { Label } from '../labels';
-import type { DimensionType, JobType } from '../enums';
+import type {
+    DimensionType, JobType, ObjectType, Source,
+} from '../enums';
 import type { MaskShape } from './shape-models';
 
 export type FrameInfo = {
@@ -60,3 +62,24 @@ export interface Point2D {
     x: number;
     y: number;
 }
+
+export type AudioIntervalState = Readonly<{
+    objectType: ObjectType.INTERVAL;
+    clientID: number;
+    serverID: number | null;
+    label: Label;
+    start: number;
+    stop: number | null;
+    group: {
+        readonly color: string;
+        readonly id: number;
+    };
+    color: string;
+    lock: boolean;
+    updated: number;
+    source: Source;
+    score: number;
+    votes: number;
+    hidden: boolean;
+    attributes: Record<number, string>;
+}>;

@@ -43,7 +43,7 @@ export class Tag extends ImageObject {
     public get(frame: number): Omit<Required<SerializedData>,
     'elements' | 'occluded' | 'outside' | 'rotation' | 'zOrder' |
     'points' | 'hidden' | 'pinned' | 'keyframe' | 'shapeType' |
-    'parentID' | 'descriptions' | 'keyframes'
+    'parentID' | 'descriptions' | 'keyframes' | 'score' | 'votes'
     > {
         if (frame !== this.frame) {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
@@ -61,10 +61,12 @@ export class Tag extends ImageObject {
             updated: this.updated,
             frame,
             source: this.source,
-            score: this.score,
-            votes: this.votes,
             __internal: this.withContext(frame),
         };
+    }
+
+    public updateFromServerResponse(body: { id: number }): void {
+        this._serverId = body.id;
     }
 
     public save(frame: number, data: ObjectState): ObjectState {

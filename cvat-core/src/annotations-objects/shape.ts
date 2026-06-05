@@ -11,8 +11,9 @@ import type { SerializedShape } from '../server-response-types';
 import { computeNewSource, isChildObject, serializeAttributes } from './utils';
 import { Drawn } from './drawn';
 import type { AnnotationInjection } from './types';
+import { ScoredMixin } from './scored';
 
-export class Shape extends Drawn {
+export class Shape extends ScoredMixin(Drawn) {
     public points: number[];
     public occluded: boolean;
     public outside: boolean;
@@ -110,6 +111,10 @@ export class Shape extends Drawn {
         }
 
         return result;
+    }
+
+    public updateFromServerResponse(body: { id: number }): void {
+        this._serverId = body.id;
     }
 
     protected saveRotation(rotation: number, frame: number): void {

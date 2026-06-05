@@ -88,7 +88,7 @@ export class Track extends Drawn {
         return result;
     }
 
-    public get(frame: number): Omit<Required<SerializedData>, 'elements'> {
+    public get(frame: number): Omit<Required<SerializedData>, 'elements' | 'score' | 'votes'> {
         const {
             prev, next, first, last,
         } = this.boundedKeyframes(frame);
@@ -117,8 +117,6 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
-            score: this.score,
-            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -184,14 +182,16 @@ export class Track extends Drawn {
         return result;
     }
 
-    public updateFromServerResponse(body: SerializedTrack | SerializedTrack['elements'][0]): void {
+    public updateFromServerResponse(body: {
+        id: number;
+        frame: number;
+        shapes: SerializedTrack['shapes'];
+    }): void {
         this._serverId = body.id;
         this.frame = body.frame;
-        const updatedShapes = {};
-        for (const shape of body.shapes) {
-            updatedShapes[shape.frame] = convertTrackedShape(shape);
-        }
-        this.shapes = updatedShapes;
+        this.shapes = Object.fromEntries(
+            body.shapes.map((shape) => [shape.frame, convertTrackedShape(shape)]),
+        );
     }
 
     public clearServerId(): void {

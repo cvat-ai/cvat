@@ -3,17 +3,16 @@
 // SPDX-License-Identifier: MIT
 
 import ObjectState from '../object-state';
-import { Label } from '../labels';
+import { type Label } from '../labels';
 import {
     colors, Source, HistoryActions, JobType,
 } from '../enums';
-import type { SerializedShape, SerializedTrack, SerializedTag } from '../server-response-types';
 import { AnnotationContext } from './annotation-context';
 import type { AnnotationInjection } from './types';
 import { computeNewSource, defaultGroupColor, deserializeAttributes } from './utils';
 
 // Stores common annotation identity/state and field history mutations.
-export abstract class AnnotationBase extends AnnotationContext {
+export class AnnotationBase extends AnnotationContext {
     private _removed: boolean;
 
     protected _serverId?: number;
@@ -29,6 +28,7 @@ export abstract class AnnotationBase extends AnnotationContext {
     public group: number;
     public label: Label;
     public lock: boolean;
+    public hidden: boolean;
     public source: Source;
     public updated: number;
     public attributes: Map<number, string>;
@@ -67,6 +67,7 @@ export abstract class AnnotationBase extends AnnotationContext {
         this.group = data.group;
         this.label = this.labels[data.label_id];
         this.lock = false;
+        this.hidden = false;
         this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
         this.updated = Date.now();
         this.attributes = deserializeAttributes(data.attributes);
@@ -95,6 +96,27 @@ export abstract class AnnotationBase extends AnnotationContext {
         );
 
         this.lock = lock;
+    }
+
+    protected saveHidden(hidden: boolean, frame: number | null): void {
+        const undoHidden = this.hidden;
+        const redoHidden = hidden;
+
+        this.history.do(
+            HistoryActions.CHANGED_HIDDEN,
+            () => {
+                this.hidden = undoHidden;
+                this.updated = Date.now();
+            },
+            () => {
+                this.hidden = redoHidden;
+                this.updated = Date.now();
+            },
+            [this.clientID],
+            frame,
+        );
+
+        this.hidden = hidden;
     }
 
     protected saveColor(color: string, frame: number | null): void {
@@ -183,10 +205,6 @@ export abstract class AnnotationBase extends AnnotationContext {
 
     public clearServerId(): void {
         this._serverId = undefined;
-    }
-
-    public updateFromServerResponse(body: SerializedShape | SerializedTag | SerializedTrack): void {
-        this._serverId = body.id;
     }
 
     protected updateTimestamp(updated: ObjectState['updateFlags']): void {

@@ -73,11 +73,20 @@ export class SkeletonTrack extends Track {
         }).filter(Boolean).sort((a: ImageObject, b: ImageObject) => a.label.id - b.label.id);
     }
 
-    public updateFromServerResponse(body: SerializedTrack): void {
+    public updateFromServerResponse(body: Parameters<typeof Track.prototype.updateFromServerResponse>[0] & {
+        elements?: {
+            id: number;
+            frame: number;
+            label_id: number;
+            shapes: SerializedTrack['shapes'];
+        }[];
+    }): void {
         Track.prototype.updateFromServerResponse.call(this, body);
-        for (const element of body.elements) {
-            const context = this.elements.find((_element: Track) => _element.label.id === element.label_id);
-            context.updateFromServerResponse(element);
+        if ('elements' in body) {
+            for (const element of body.elements) {
+                const context = this.elements.find((_element: Track) => _element.label.id === element.label_id);
+                context.updateFromServerResponse(element);
+            }
         }
     }
 
@@ -182,7 +191,7 @@ export class SkeletonTrack extends Track {
         return result;
     }
 
-    public get(frame: number): Required<SerializedData> {
+    public get(frame: number): Omit<Required<SerializedData>, 'score' | 'votes'> {
         const { prev, next } = this.boundedKeyframes(frame);
         const position = this.getPosition(frame, prev, next);
         const elements = this.elements.map((element) => ({
@@ -216,8 +225,6 @@ export class SkeletonTrack extends Track {
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
-            score: this.score,
-            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
