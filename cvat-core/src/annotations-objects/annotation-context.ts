@@ -6,7 +6,7 @@ import type { AnnotationInjection } from './types';
 
 // Stores shared annotation infrastructure injected by the collection.
 // It intentionally has no behavior so derived classes can access context without owning object state.
-export abstract class AnnotationContext {
+export class AnnotationContext {
     protected labels: AnnotationInjection['labels'];
     protected groupsInfo: AnnotationInjection['groupsInfo'];
     protected framesInfo: AnnotationInjection['framesInfo'];

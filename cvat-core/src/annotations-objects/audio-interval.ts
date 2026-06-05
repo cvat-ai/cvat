@@ -8,9 +8,7 @@ import { AnnotationBase } from './annotation-common';
 import type { AnnotationInjection, AudioIntervalState } from './types';
 import { ScoredMixin } from './scored';
 
-const ScoredAnnotationBase = ScoredMixin(AnnotationBase);
-
-export class AudioInterval extends ScoredAnnotationBase {
+export class AudioInterval extends ScoredMixin(AnnotationBase) {
     public start: number;
     public stop: number | null;
 

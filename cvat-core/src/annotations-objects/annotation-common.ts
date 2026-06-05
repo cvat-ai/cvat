@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import ObjectState from '../object-state';
+import type ObjectState from '../object-state';
 import { type Label } from '../labels';
 import {
     colors, Source, HistoryActions, JobType,
@@ -212,6 +212,14 @@ export class AnnotationBase extends AnnotationContext {
         if (anyChanges) {
             this.updated = Date.now();
         }
+    }
+
+    protected withContext(_: number): {
+        delete: AnnotationBase['delete'];
+    } {
+        return {
+            delete: this.delete.bind(this),
+        };
     }
 
     public delete(frame: number | null, force: boolean): boolean {

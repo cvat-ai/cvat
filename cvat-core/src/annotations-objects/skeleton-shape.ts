@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import ObjectState, { SerializedData } from '../object-state';
+import ObjectState, { type SerializedData } from '../object-state';
 import { ScriptingError } from '../exceptions';
-import { Label } from '../labels';
+import type { Label } from '../labels';
 import {
     ShapeType, ObjectType, HistoryActions,
 } from '../enums';
@@ -179,7 +179,7 @@ export class SkeletonShape extends Shape {
             elements?: { id: number, label_id: number }[];
         },
     ): void {
-        Shape.prototype.updateFromServerResponse.call(this, body);
+        super.updateFromServerResponse(body);
         if ('elements' in body) {
             for (const element of body.elements) {
                 const context = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
@@ -189,7 +189,7 @@ export class SkeletonShape extends Shape {
     }
 
     public clearServerId(): void {
-        Shape.prototype.clearServerId.call(this);
+        super.clearServerId();
         for (const element of this.elements) {
             element.clearServerId();
         }

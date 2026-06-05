@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import config from '../config';
-import ObjectState from '../object-state';
+import type ObjectState from '../object-state';
 import { ArgumentError } from '../exceptions';
 import { ShapeType, HistoryActions } from '../enums';
 import type { SerializedShape } from '../server-response-types';
