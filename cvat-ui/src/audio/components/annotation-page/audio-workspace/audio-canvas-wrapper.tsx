@@ -91,6 +91,7 @@ function AudioCanvasWrapper(): JSX.Element {
     const prevAudioUrlRef = useRef<string | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const zoomRef = useRef(zoom);
+    const zoomAnchorRef = useRef<{ time: number; x: number } | null>(null);
     const waveformZoom = useMemo(
         () => computeWaveformZoom(zoom, duration, waveformWidth),
         [duration, waveformWidth, zoom],
@@ -224,7 +225,6 @@ function AudioCanvasWrapper(): JSX.Element {
         const el = wrapperRef.current;
         if (!el) return undefined;
         const onWheel = (e: WheelEvent): void => {
-            if (!e.ctrlKey && !e.metaKey) return;
             e.preventDefault();
             const zoomingIn = e.deltaY < 0;
             const factor = zoomingIn ? ZOOM_STEP_FACTOR : 1 / ZOOM_STEP_FACTOR;
@@ -235,6 +235,16 @@ function AudioCanvasWrapper(): JSX.Element {
             }
             next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
             if (next !== zoomRef.current) {
+                const scrollContainer = wavesurfer?.getWrapper()?.parentElement as HTMLElement | null;
+                if (scrollContainer && duration > 0) {
+                    const rect = scrollContainer.getBoundingClientRect();
+                    const x = Math.max(0, Math.min(scrollContainer.clientWidth, e.clientX - rect.left));
+                    const time = (scrollContainer.scrollLeft + x) / waveformZoom;
+                    zoomAnchorRef.current = {
+                        time: Math.max(0, Math.min(duration, time)),
+                        x,
+                    };
+                }
                 onSetZoom(next);
             }
         };
@@ -242,12 +252,12 @@ function AudioCanvasWrapper(): JSX.Element {
         return () => {
             el.removeEventListener('wheel', onWheel);
         };
-    }, [onSetZoom]);
+    }, [duration, onSetZoom, waveformZoom, wavesurfer]);
 
     const { plugins, regionsPluginRef } = useAudioWaveform(wavesurfer, zoom);
 
     const { lastWsTimeRef } = useAudioPlaybackSync({
-        wavesurfer, isPlaying, currentTime, duration, zoom: waveformZoom, volume, playbackRate,
+        wavesurfer, isPlaying, currentTime, duration, zoom: waveformZoom, volume, playbackRate, zoomAnchorRef,
     });
 
     const { handleReady, handleFinish, handleTimeupdate } = useAudioRegions({
