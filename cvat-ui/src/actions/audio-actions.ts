@@ -148,7 +148,7 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
         }
 
         try {
-            const intervals: SerializedInterval[] = await jobInstance.annotations.intervals();
+            const intervals = await jobInstance.annotations.intervals();
 
             const regions: AudioRegion[] = intervals.reduce<AudioRegion[]>((acc, interval) => {
                 const startSec = interval.start / 1000;
@@ -158,20 +158,17 @@ export function loadAudioAnnotationsAsync(): ThunkAction {
                     return acc;
                 }
                 acc.push({
-                    id: `server-${interval.id}`,
+                    id: `server-${interval.clientID}`,
                     start: startSec,
                     end: endSec,
-                    labelId: interval.label_id,
-                    attributes: interval.attributes.reduce<Record<number, string>>(
-                        (attrs, attr) => ({ ...attrs, [attr.spec_id]: attr.value }),
-                        {},
-                    ),
-                    serverId: interval.id,
+                    labelId: interval.label.id!,
+                    attributes: interval.attributes,
+                    serverId: interval.serverID ?? undefined,
                     source: String(interval.source),
-                    group: interval.group,
+                    group: interval.group.id,
                     color: pickInstanceColor(acc),
-                    locked: false,
-                    hidden: false,
+                    locked: interval.lock,
+                    hidden: interval.hidden,
                 });
                 return acc;
             }, []);

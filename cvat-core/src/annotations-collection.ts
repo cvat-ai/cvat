@@ -8,10 +8,10 @@ import {
     MaskShape, BasicInjection, SkeletonShape,
     SkeletonTrack, PolygonShape, CuboidShape,
     RectangleShape, PolylineShape, PointsShape, EllipseShape,
-    InterpolationNotPossibleError,
+    InterpolationNotPossibleError, AudioInterval,
 } from './annotations-objects';
 import {
-    SerializedCollection, SerializedShape, SerializedTrack, SerializedInterval,
+    SerializedCollection, SerializedShape, SerializedTrack,
 } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
@@ -103,9 +103,9 @@ export default class Collection {
     private shapes: Record<number, Shape[]>;
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
-    private intervals: SerializedInterval[];
+    private intervals: AudioInterval[];
     private objects: Record<number, AnnotationObject>;
-    private groups: { max: number };
+    private groupsInfo: BasicInjection['groupsInfo'];
     private injection: BasicInjection;
 
     constructor(data: {
@@ -138,18 +138,18 @@ export default class Collection {
         this.intervals = [];
         this.objects = {}; // key is a client id
         this.flush = false;
-        this.groups = {
+        this.groupsInfo = {
             max: 0,
+            colors: {},
         }; // it is an object to we can pass it as an argument by a reference
 
         this.injection = {
             labels: this.labels,
-            groups: this.groups,
+            groupsInfo: this.groupsInfo,
             framesInfo: data.framesInfo,
             history: this.history,
             dimension: data.dimension,
             jobType: data.jobType,
-            groupColors: {},
             nextClientID: () => ++config.globalObjectsCounter,
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
@@ -253,7 +253,7 @@ export default class Collection {
         tags: Tag[];
         shapes: Shape[];
         tracks: Track[];
-        intervals: SerializedInterval[];
+        intervals: AudioInterval[];
     } {
         const result = {
             tags: [],
@@ -296,8 +296,11 @@ export default class Collection {
         }
 
         for (const interval of data.intervals ?? []) {
-            this.intervals.push(interval);
-            result.intervals.push(interval);
+            const clientID = this.injection.nextClientID();
+            const color = colors[clientID % colors.length];
+            const intervalModel = new AudioInterval(interval, clientID, color, this.injection);
+            this.intervals.push(intervalModel);
+            result.intervals.push(intervalModel);
         }
 
         return result;
@@ -361,8 +364,8 @@ export default class Collection {
         );
     }
 
-    public getAllIntervals(): SerializedInterval[] {
-        return this.intervals.map((interval) => ({ ...interval }));
+    public getAllIntervals(): ReturnType<AudioInterval['get']>[] {
+        return this.intervals.map((interval) => interval.get());
     }
 
     public export(): Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'> {
@@ -670,7 +673,7 @@ export default class Collection {
         const labelAttributes = labelAttributesAsDict(object.label);
         // first clear all server ids which may exist in the object being splitted
         const copy = trackFactory(object.toJSON(), -1, this.injection);
-        copy.clearServerID();
+        copy.clearServerId();
         const exported = copy.toJSON();
 
         // then create two copies, before this frame and after this frame
@@ -783,7 +786,7 @@ export default class Collection {
             return object;
         });
 
-        const groupIdx = reset ? 0 : ++this.groups.max;
+        const groupIdx = reset ? 0 : ++this.groupsInfo.max;
         const undoGroups = objectsForGroup.map((object) => object.group);
         for (const object of objectsForGroup) {
             object.group = groupIdx;
@@ -1372,7 +1375,7 @@ export default class Collection {
                 () => {
                     importedArray.forEach((object) => {
                         object.removed = false;
-                        object.serverID = undefined;
+                        object.serverId = undefined;
                     });
 
                     additionalRedo.forEach((redo) => {

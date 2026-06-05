@@ -421,6 +421,8 @@ export interface SerializedApiToken {
     value?: string;
 }
 
+export type SerializedAttributes = { spec_id: number; value: string }[];
+
 export interface SerializedShape {
     id?: number;
     clientID?: number;
@@ -429,7 +431,7 @@ export interface SerializedShape {
     frame: number;
     source: Source;
     score?: number;
-    attributes: { spec_id: number; value: string }[];
+    attributes: SerializedAttributes;
     elements: Omit<SerializedShape, 'elements'>[];
     occluded: boolean;
     outside: boolean;
@@ -446,7 +448,7 @@ export interface SerializedTrack {
     group: number;
     frame: number;
     source: Source;
-    attributes: { spec_id: number; value: string }[];
+    attributes: SerializedAttributes;
     shapes: {
         attributes: SerializedTrack['attributes'];
         id?: number;
@@ -468,7 +470,7 @@ export interface SerializedTag {
     frame: number;
     group: number;
     source: Source;
-    attributes: { spec_id: number; value: string }[];
+    attributes: SerializedAttributes;
 }
 
 export interface SerializedInterval {
@@ -480,7 +482,7 @@ export interface SerializedInterval {
     group: number;
     source: Source;
     score?: number;
-    attributes: { spec_id: number; value: string }[];
+    attributes: SerializedAttributes;
 }
 
 export interface SerializedCollection {

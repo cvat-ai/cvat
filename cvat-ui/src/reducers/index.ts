@@ -966,8 +966,8 @@ export interface AnnotationState {
         resetGroupFlag: boolean;
         initialized: boolean;
         history: {
-            undo: [string, number][];
-            redo: [string, number][];
+            undo: [string, number | null][];
+            redo: [string, number | null][];
         };
         saving: {
             forceExit: boolean;
