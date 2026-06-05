@@ -21,7 +21,7 @@ function regionsEqual(a: AudioRegion, b: AudioRegion): boolean {
         a.start !== b.start || a.end !== b.end ||
         a.labelId !== b.labelId ||
         a.locked !== b.locked || a.hidden !== b.hidden ||
-        a.color !== b.color || a.group !== b.group ||
+        a.color !== b.color ||
         a.source !== b.source || a.serverId !== b.serverId
     ) return false;
     const aKeys = Object.keys(a.attributes);
