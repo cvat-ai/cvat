@@ -14,20 +14,12 @@ export class AudioInterval extends ScoredMixin(AnnotationBase) {
     public start: number;
     public stop: number | null;
 
-    public static distance(start: number, stop: number | null, position: number): number | null {
-        if (typeof position !== 'number' || Number.isNaN(position)) {
+    public static distance(start: number, stop: number, position: number): number | null {
+        if (position < start || position > stop) {
             return null;
         }
 
-        const end = stop ?? start;
-        const from = Math.min(start, end);
-        const to = Math.max(start, end);
-
-        if (position >= from && position <= to) {
-            return 0;
-        }
-
-        return Math.min(Math.abs(position - from), Math.abs(position - to));
+        return Math.min(Math.abs(position - start), Math.abs(position - stop));
     }
 
     constructor(data: SerializedInterval, clientID: number, color: string, injection: AnnotationInjection) {

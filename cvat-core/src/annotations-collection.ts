@@ -1651,7 +1651,7 @@ export default class Collection {
                 continue;
             }
 
-            const distance = AudioInterval.distance(state.start, state.stop, position);
+            const distance = AudioInterval.distance(state.start, state.stop ?? this.stopFrame, position);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;
