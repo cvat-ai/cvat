@@ -55,6 +55,9 @@ function ItemAttributeComponent(props: Props): JSX.Element {
 
     // Check if this is a catalogue reference attribute
     const isCatalogueRef = attrName.startsWith('catalogue_ref__');
+    const isAutomaticValue= attrValue == "automatic";
+    console.log("isAutomaticValue ?",isAutomaticValue)
+    console.log("attrInputType",attrInputType)
     const catalogueName = isCatalogueRef ? attrName.replace('catalogue_ref__', '') : '';
     useEffect(() => {
         // attribute value updated from inside the app (for example undo/redo)
@@ -130,6 +133,16 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     }
 
     if (attrInputType === 'select') {
+        if (isAutomaticValue) {
+            return  <>
+                <Col span={8} style={attrNameStyle}>
+                    <Text className='cvat-text'>{attrName}</Text>
+                </Col>
+                <Col span={16}>
+                    <Text className='cvat-text'>{attrValue}</Text>
+                </Col>
+                </>
+        }
         return (
             <>
                 <Col span={8} style={attrNameStyle}>
