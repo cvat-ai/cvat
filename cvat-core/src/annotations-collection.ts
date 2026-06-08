@@ -1044,7 +1044,7 @@ export default class Collection {
             if (this.injection.dimension === DimensionType.DIMENSION_1D) {
                 this.intervals.slice(0).forEach((interval) => {
                     const intervalStop = interval.stop ?? this.stopFrame;
-                    if (interval.start <= stop && intervalStop >= from) {
+                    if (interval.start <= stop && intervalStop >= start) {
                         this.intervals.splice(this.intervals.indexOf(interval), 1);
                         delete this.objects[interval.clientID];
                     }
