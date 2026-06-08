@@ -28,6 +28,23 @@ from cvat.apps.quality_control.models import (
 )
 from cvat.apps.quality_control.utils import array_safe_divide
 
+_LEGACY_ANNOTATION_CONFLICT_TYPES = frozenset({"low_overlap"})
+_LEGACY_ANNOTATION_CONFLICT_SEVERITIES = frozenset({"warning"})
+
+
+def _parse_annotation_conflict_type(value: str) -> AnnotationConflictType | str:
+    if value in _LEGACY_ANNOTATION_CONFLICT_TYPES:
+        return value
+
+    return AnnotationConflictType(value)
+
+
+def _parse_annotation_conflict_severity(value: str) -> AnnotationConflictSeverity | str:
+    if value in _LEGACY_ANNOTATION_CONFLICT_SEVERITIES:
+        return value
+
+    return AnnotationConflictSeverity(value)
+
 
 @define(slots=False)
 class Serializable(metaclass=ABCMeta):
@@ -167,14 +184,14 @@ class AnnotationId(ReportNode):
 @define(kw_only=True, init=False, slots=False)
 class AnnotationConflict(ReportNode):
     frame_id: int
-    type: AnnotationConflictType
+    type: AnnotationConflictType | str
     annotation_ids: list[AnnotationId]
-    severity: AnnotationConflictSeverity = AnnotationConflictSeverity.ERROR
+    severity: AnnotationConflictSeverity | str = AnnotationConflictSeverity.ERROR
     attribute_names: list[str] = field(factory=list)
 
     @staticmethod
     def default_severity_for_type(
-        conflict_type: AnnotationConflictType,
+        conflict_type: AnnotationConflictType | str,
     ) -> AnnotationConflictSeverity:
         return AnnotationConflictSeverity.ERROR
 
@@ -186,13 +203,13 @@ class AnnotationConflict(ReportNode):
 
     @classmethod
     def from_dict(cls, d: dict):
-        conflict_type = AnnotationConflictType(d["type"])
+        conflict_type = _parse_annotation_conflict_type(d["type"])
         return cls(
             frame_id=d["frame_id"],
             type=conflict_type,
             annotation_ids=list(AnnotationId.from_dict(v) for v in d["annotation_ids"]),
             severity=(
-                AnnotationConflictSeverity(d["severity"])
+                _parse_annotation_conflict_severity(d["severity"])
                 if d.get("severity")
                 else cls.default_severity_for_type(conflict_type)
             ),
@@ -214,7 +231,9 @@ def _annotation_id_key(
 def annotation_conflict_key(
     conflict: AnnotationConflict,
 ) -> tuple[
-    int, AnnotationConflictType, tuple[tuple[int, int, AnnotationType, ShapeType | None], ...]
+    int,
+    AnnotationConflictType | str,
+    tuple[tuple[int, int, AnnotationType, ShapeType | None], ...],
 ]:
     return (
         conflict.frame_id,
@@ -241,7 +260,7 @@ def deduplicate_annotation_conflicts(
     deduplicated_conflicts: dict[
         tuple[
             int,
-            AnnotationConflictType,
+            AnnotationConflictType | str,
             tuple[tuple[int, int, AnnotationType, ShapeType | None], ...],
         ],
         AnnotationConflict,
@@ -828,7 +847,8 @@ class ComparisonReportSummary(ReportNode):
             warning_count=d.get("warning_count", 0),
             error_count=d.get("error_count", 0),
             conflicts_by_type={
-                AnnotationConflictType(k): v for k, v in d.get("conflicts_by_type", {}).items()
+                _parse_annotation_conflict_type(k): v
+                for k, v in d.get("conflicts_by_type", {}).items()
             },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
             annotation_components=(
@@ -864,7 +884,7 @@ class ComparisonReportFrameSummary(ReportNode):
         return len(self.conflicts)
 
     @cached_property
-    def conflicts_by_type(self) -> dict[AnnotationConflictType, int]:
+    def conflicts_by_type(self) -> dict[AnnotationConflictType | str, int]:
         return Counter(c.type for c in self.conflicts)
 
     def _value_serializer(self, v):
@@ -883,7 +903,8 @@ class ComparisonReportFrameSummary(ReportNode):
             **(
                 dict(
                     conflicts_by_type={
-                        AnnotationConflictType(k): v for k, v in d["conflicts_by_type"].items()
+                        _parse_annotation_conflict_type(k): v
+                        for k, v in d["conflicts_by_type"].items()
                     }
                 )
                 if "conflicts_by_type" in d

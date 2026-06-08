@@ -28,7 +28,8 @@
           "excluded": 0,
           "included": 3,
           "not_checkable": 0,
-          "total": 3
+          "total": 3,
+          "completed": 0
         },
         "precision": 0.75,
         "recall": 0.3,
@@ -37,7 +38,8 @@
           "excluded": 0,
           "included": 2,
           "not_configured": 0,
-          "total": 2
+          "total": 2,
+          "completed": 0
         },
         "total_count": 22,
         "total_frames": 12,
@@ -141,7 +143,8 @@
           "excluded": 0,
           "included": 2,
           "not_checkable": 0,
-          "total": 2
+          "total": 2,
+          "completed": 0
         },
         "precision": 0.6666666666666666,
         "recall": 0.3333333333333333,
@@ -213,7 +216,8 @@
           "excluded": 0,
           "included": 1,
           "not_checkable": 0,
-          "total": 1
+          "total": 1,
+          "completed": 0
         },
         "precision": 1.0,
         "recall": 0.25,
@@ -297,7 +301,8 @@
           "excluded": 0,
           "included": 1,
           "not_checkable": 0,
-          "total": 1
+          "total": 1,
+          "completed": 0
         },
         "precision": 0.6111111111111112,
         "recall": 0.5945945945945946,

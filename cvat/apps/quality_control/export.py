@@ -111,7 +111,7 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
             serialized_data["frame_results"]
         )
 
-    for group in serialized_data.get("groups", {}).values():
+    for group in (serialized_data.get("groups") or {}).values():
         if group.get("frame_results") is None:
             continue
 
