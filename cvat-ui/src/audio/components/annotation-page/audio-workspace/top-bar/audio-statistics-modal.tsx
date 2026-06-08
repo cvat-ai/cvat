@@ -12,6 +12,7 @@ import Text from 'antd/lib/typography/Text';
 
 import { CombinedState, Workspace } from 'reducers';
 import { showStatistics } from 'actions/annotation-actions';
+import { formatMilliseconds } from 'audio/utils/format-audio-time';
 
 interface StateToProps {
     visible: boolean;
@@ -60,15 +61,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(showStatistics(false));
         },
     };
-}
-
-function formatMilliseconds(value: number): string {
-    const safe = Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-    const minutes = Math.floor(safe / 60000);
-    const seconds = Math.floor((safe % 60000) / 1000);
-    const milliseconds = safe % 1000;
-
-    return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
 }
 
 function formatCoverage(value: number): string {

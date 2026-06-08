@@ -155,7 +155,7 @@ export async function getAnnotations(
 
 export async function getAllIntervals(
     session: Job | Task,
-    filters: object[] = [],
+    filters: object[],
 ): Promise<ReturnType<AnnotationsCollection['getAllIntervals']>> {
     try {
         return getCollection(session).getAllIntervals(filters);

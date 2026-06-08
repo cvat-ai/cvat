@@ -184,8 +184,7 @@ export function useAudioRegions(params: Params): Result {
             return null;
         }
 
-        const visibleIntervals = intervalsRef.current.filter((interval) => !interval.hidden);
-        const { state } = await job.annotations.selectInterval(visibleIntervals, positionMs);
+        const { state } = await job.annotations.selectInterval(intervalsRef.current, positionMs);
         return state?.clientID ?? null;
     }, []);
 

@@ -130,7 +130,7 @@ export default class Collection {
             return labelAccumulator;
         }, {});
 
-        this.annotationsFilter = new AnnotationsFilter();
+        this.annotationsFilter = new AnnotationsFilter(this.stopFrame);
         this.history = data.history;
         this.shapes = {}; // key is a frame
         this.tags = {}; // key is a frame
@@ -378,12 +378,12 @@ export default class Collection {
         );
     }
 
-    public getAllIntervals(filters: object[] = []): ReturnType<AudioInterval['get']>[] {
+    public getAllIntervals(filters: object[]): AudioIntervalState[] {
         const intervals = this.intervals
             .filter((interval) => !interval.removed)
             .map((interval) => interval.get());
 
-        const filtered = this.annotationsFilter.filterSerializedAudioIntervalStates(intervals, filters);
+        const filtered = this.annotationsFilter.filterAudioIntervalStates(intervals, filters);
         return intervals.filter((interval) => !filters.length || filtered.includes(interval.clientID as number));
     }
 

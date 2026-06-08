@@ -152,15 +152,13 @@ interface ConvertedObjectData extends BaseConvertedData {
 
 interface ConvertedAudioIntervalData {
     clientID: number | null;
-    data: {
-        attr: Record<string, ConvertedAttributes>;
-        duration: number;
-        end: number;
-        label: string;
-        serverID: number | null;
-        source: string | null;
-        start: number;
-    };
+    attr: Record<string, ConvertedAttributes>;
+    duration: number;
+    end: number;
+    label: string;
+    serverID: number | null;
+    source: string | null;
+    start: number;
 }
 
 function getRotation(shapeType: ShapeType, rotation?: number | null): number | null {
@@ -189,27 +187,35 @@ function getMatchingIDs(
 }
 
 export default class AnnotationsFilter {
-    private _convertSerializedAudioIntervalStates(
+    private lastPosition: number | null;
+
+    constructor(lastPosition: number | null) {
+        this.lastPosition = lastPosition;
+    }
+
+    private _convertAudioIntervalStates(
         intervalsData: AudioIntervalState[],
     ): ConvertedAudioIntervalData[] {
+        if (this.lastPosition === null) {
+            throw new Error('Last position is required to filter audio intervals');
+        }
+
         return intervalsData.map((interval) => {
             const labelAttributes = buildAttributeMap(interval.label.attributes);
-            const attributes = convertAttributes(interval.attributes || {}, labelAttributes);
-            const end = interval.stop ?? interval.start;
+            const attributes = convertAttributes(interval.attributes, labelAttributes);
+            const end = interval.stop ?? this.lastPosition;
 
             return {
                 clientID: interval.clientID,
-                data: {
-                    attr: {
-                        [adjustName(interval.label.name)]: attributes,
-                    },
-                    duration: end - interval.start,
-                    end,
-                    label: interval.label.name,
-                    serverID: interval.serverID ?? null,
-                    source: interval.source ?? null,
-                    start: interval.start,
+                attr: {
+                    [adjustName(interval.label.name)]: attributes,
                 },
+                duration: end - interval.start,
+                end,
+                label: interval.label.name,
+                serverID: interval.serverID ?? null,
+                source: interval.source ?? null,
+                start: interval.start,
             };
         });
     }
@@ -435,19 +441,14 @@ export default class AnnotationsFilter {
         return getMatchingIDs(converted, filters[0], filters[1]);
     }
 
-    public filterSerializedAudioIntervalStates(
-        intervalsData: AudioIntervalState[],
-        filters: object[],
-    ): number[] {
+    public filterAudioIntervalStates(audioIntervalStates: AudioIntervalState[], filters: object[]): number[] {
         if (isEmptyFilter(filters[0])) {
-            return intervalsData
-                .map((intervalData): number | null => intervalData.clientID)
-                .filter((clientID): clientID is number => typeof clientID === 'number');
+            return audioIntervalStates.map((intervalData): number => intervalData.clientID!);
         }
 
-        return this._convertSerializedAudioIntervalStates(intervalsData)
-            .filter((interval) => typeof interval.clientID === 'number' && jsonLogic.apply(filters[0], interval.data))
-            .map((interval) => interval.clientID as number);
+        const converted = this._convertAudioIntervalStates(audioIntervalStates);
+        return converted.filter((interval) => jsonLogic.apply(filters[0], interval))
+            .map((interval) => interval.clientID);
     }
 
     public filterSerializedCollection(
