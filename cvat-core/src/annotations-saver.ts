@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import serverProxy, { sleep } from './server-proxy';
 import { Job, Task } from './session';
 import { DataError, ServerError } from './exceptions';
@@ -22,9 +23,6 @@ interface SplittedCollection {
 }
 
 type CollectionObject = SerializedCollection[keyof SerializedCollection][number];
-type SerializedTrackLike = Omit<SerializedTrack, 'elements'> & {
-    elements?: SerializedTrackLike[];
-};
 
 const COLLECTION_KEYS = ['shapes', 'tracks', 'tags', 'intervals'] as const;
 const JSON_SERIALIZER_KEYS = [
@@ -46,7 +44,6 @@ const JSON_SERIALIZER_KEYS = [
     'spec_id',
     'source',
     'outside',
-    'score',
 ];
 
 const sortAttributes = (attributes: { spec_id: number }[]): { spec_id: number }[] => (
@@ -80,16 +77,22 @@ const isTheSameTrackedShapes = (
     const sortedB = sortTrackedShapes(b);
 
     return sortedA.length === sortedB.length &&
-        sortedA.every((shape, index) => (
-            shape.frame === sortedB[index].frame &&
-            shape.type === sortedB[index].type &&
-            shape.occluded === sortedB[index].occluded &&
-            shape.outside === sortedB[index].outside &&
-            shape.z_order === sortedB[index].z_order &&
-            shape.rotation === sortedB[index].rotation &&
-            isTheSamePoints(shape.points, sortedB[index].points) &&
-            isTheSameAttributes(shape.attributes, sortedB[index].attributes)
-        ));
+        sortedA.every((shape, index) => {
+            // The server can extend tracked shape attributes with defaults or previous mutable values.
+            // During 504 recovery, only attributes sent by the client must be preserved for matching.
+            const receivedAttributes = sortedB[index].attributes.filter((attr) => (
+                shape.attributes.some((sentAttr) => sentAttr.spec_id === attr.spec_id)
+            ));
+
+            return shape.frame === sortedB[index].frame &&
+                shape.type === sortedB[index].type &&
+                shape.occluded === sortedB[index].occluded &&
+                shape.outside === sortedB[index].outside &&
+                shape.z_order === sortedB[index].z_order &&
+                shape.rotation === sortedB[index].rotation &&
+                isTheSamePoints(shape.points, sortedB[index].points) &&
+                isTheSameAttributes(shape.attributes, receivedAttributes);
+        });
 };
 
 const isTheSameTag = (
@@ -138,6 +141,9 @@ const isTheSameShape = (
     return isSame;
 };
 
+type SerializedTrackLike = Omit<SerializedTrack, 'elements'> & {
+    elements?: SerializedTrackLike[];
+};
 const isTheSameTrack = (
     a: SerializedTrackLike,
     b: SerializedTrackLike,
@@ -154,6 +160,37 @@ const isTheSameTrack = (
     }
 
     return isSame;
+};
+
+const isTheSameObject = (
+    type: typeof COLLECTION_KEYS[number],
+    left: CollectionObject,
+    right: CollectionObject,
+): boolean => {
+    switch (type) {
+        case 'shapes':
+            return isTheSameShape(
+                left as SerializedCollection['shapes'][number],
+                right as SerializedCollection['shapes'][number],
+            );
+        case 'tracks':
+            return isTheSameTrack(
+                left as SerializedCollection['tracks'][number],
+                right as SerializedCollection['tracks'][number],
+            );
+        case 'tags':
+            return isTheSameTag(
+                left as SerializedCollection['tags'][number],
+                right as SerializedCollection['tags'][number],
+            );
+        case 'intervals':
+            return isTheSameInterval(
+                left as SerializedCollection['intervals'][number],
+                right as SerializedCollection['intervals'][number],
+            );
+        default:
+            throw new Error(`Unknown collection type: ${type}`);
+    }
 };
 
 function removeIDFromObject<T extends CollectionObject>(
@@ -263,9 +300,7 @@ export default class AnnotationsSaver {
         // Find created and updated objects
         for (const objectType of COLLECTION_KEYS) {
             for (const object of exported[objectType]) {
-                if (typeof object.id === 'undefined') {
-                    splitted.created[objectType].push(object as any);
-                } else if (this.initialObjects[objectType].has(object.id)) {
+                if (Number.isInteger(object.id) && this.initialObjects[objectType].has(object.id)) {
                     const exportedHash = JSON.stringify(object, JSON_SERIALIZER_KEYS);
                     const initialHash = JSON.stringify(
                         this.initialObjects[objectType].get(object.id), JSON_SERIALIZER_KEYS,
@@ -274,6 +309,9 @@ export default class AnnotationsSaver {
                     if (exportedHash !== initialHash) {
                         splitted.updated[objectType].push(object as any);
                     }
+                } else {
+                    removeIDFromObject(object, 'id');
+                    splitted.created[objectType].push(object as any);
                 }
             }
         }
@@ -298,7 +336,7 @@ export default class AnnotationsSaver {
         return splitted;
     }
 
-    _updateCreatedObjects(saved: SerializedCollection, indexes: ExtractedIDs): void {
+    _updateSavedObjects(saved: SerializedCollection, indexes: ExtractedIDs): void {
         const savedLength = COLLECTION_KEYS.reduce((acc, type) => acc + saved[type].length, 0);
         const indexesLength = COLLECTION_KEYS.reduce((acc, type) => acc + indexes[type].length, 0);
         if (indexesLength !== savedLength) {
@@ -344,37 +382,6 @@ export default class AnnotationsSaver {
         }
     }
 
-    _isTheSameObject(
-        type: typeof COLLECTION_KEYS[number],
-        left: CollectionObject,
-        right: CollectionObject,
-    ): boolean {
-        switch (type) {
-            case 'shapes':
-                return isTheSameShape(
-                    left as SerializedCollection['shapes'][number],
-                    right as SerializedCollection['shapes'][number],
-                );
-            case 'tracks':
-                return isTheSameTrack(
-                    left as SerializedCollection['tracks'][number],
-                    right as SerializedCollection['tracks'][number],
-                );
-            case 'tags':
-                return isTheSameTag(
-                    left as SerializedCollection['tags'][number],
-                    right as SerializedCollection['tags'][number],
-                );
-            case 'intervals':
-                return isTheSameInterval(
-                    left as SerializedCollection['intervals'][number],
-                    right as SerializedCollection['intervals'][number],
-                );
-            default:
-                throw new Error(`Unknown collection type: ${type}`);
-        }
-    }
-
     async save(onUpdateArg?: (message: string) => void): Promise<void> {
         const onUpdate = typeof onUpdateArg === 'function' ? onUpdateArg : (message) => {
             console.log(message);
@@ -392,10 +399,10 @@ export default class AnnotationsSaver {
                 }
             }
 
-            const savedData = await this._put({ ...exported });
+            const savedData = await this._put(exported);
             this.collection.flush = false;
 
-            this._updateCreatedObjects(savedData, indexes);
+            this._updateSavedObjects(savedData, indexes);
             this.initialObjects = {
                 shapes: new Map(),
                 tracks: new Map(),
@@ -439,7 +446,7 @@ export default class AnnotationsSaver {
                     },
                 );
 
-                return potentialObjects.find((object) => this._isTheSameObject(key, objectToSave, object)) ?? null;
+                return potentialObjects.find((object) => isTheSameObject(key, objectToSave, object)) ?? null;
             };
 
             const retryIf504Status = async (
@@ -492,7 +499,7 @@ export default class AnnotationsSaver {
                                 default:
                                     throw new Error('Unknown action');
                             }
-                        } catch (_: unknown) {
+                        } catch {
                             retryCount--;
                         }
                     }
@@ -513,7 +520,7 @@ export default class AnnotationsSaver {
                     updatedData = await retryIf504Status(error, updated, 'update');
                 }
 
-                this._updateCreatedObjects(updatedData, updatedIndexes);
+                this._updateSavedObjects(updatedData, updatedIndexes);
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of updatedData[type]) {
                         this.initialObjects[type].set(object.id, object as any);
@@ -548,7 +555,7 @@ export default class AnnotationsSaver {
                     createdData = await retryIf504Status(error, created, 'create');
                 }
 
-                this._updateCreatedObjects(createdData, createdIndexes);
+                this._updateSavedObjects(createdData, createdIndexes);
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of createdData[type]) {
                         this.initialObjects[type].set(object.id, object as any);
