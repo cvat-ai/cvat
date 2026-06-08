@@ -13,7 +13,7 @@ import Alert from 'antd/lib/alert';
 import { ExclamationCircleFilled } from '@ant-design/icons/lib/icons';
 import Modal from 'antd/lib/modal';
 import {
-    Project, QualitySettings, QualitySettingsSaveFields, Task,
+    Label, Project, QualitySettings, QualitySettingsSaveFields, Task,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import QualitySettingsForm from './task-quality/quality-settings-form';
@@ -27,6 +27,7 @@ interface Props {
         settings: QualitySettings | null;
         childrenSettings: QualitySettings[] | null;
     };
+    labels: Label[];
     setQualitySettings: (updatedSettingsData: UpdateSettingsData) => void;
     refreshQualitySettings: () => Promise<void>;
 }
@@ -36,6 +37,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         instance,
         fetching,
         qualitySettings: { settings, childrenSettings },
+        labels,
         setQualitySettings,
         refreshQualitySettings,
     } = props;
@@ -160,6 +162,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 <QualitySettingsForm
                     form={form}
                     settings={settings}
+                    labels={labels}
                     onSave={onSave}
                     onReload={refreshQualitySettings}
                     onRequirementFormVisibilityChange={setRequirementFormVisible}

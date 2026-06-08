@@ -4,7 +4,6 @@
 
 import React, { useMemo, useState } from 'react';
 import {
-    FilterOutlined,
     QuestionCircleOutlined,
     UndoOutlined,
 } from '@ant-design/icons';
@@ -22,6 +21,7 @@ import Text from 'antd/lib/typography/Text';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     getCore,
+    Label,
     QualityRequirement,
     QualitySettings,
 } from 'cvat-core-wrapper';
@@ -40,6 +40,7 @@ import {
     getRequirementEffectiveField,
     getRequirementResolvedValue,
 } from './quality-requirements-utils';
+import QualityRequirementFilter from './quality-requirement-filter';
 
 const core = getCore();
 
@@ -190,6 +191,7 @@ interface RequirementFormValues {
 
 interface Props {
     settings: QualitySettings;
+    labels: Label[];
     requirement: QualityRequirement | null;
     parentRequirement: QualityRequirement | null;
     disabled: boolean;
@@ -651,7 +653,11 @@ function validateJsonLogic(_: unknown, value: string | undefined): Promise<void>
     }
 
     try {
-        JSON.parse(value);
+        const parsedValue = JSON.parse(value);
+        if (!parsedValue || Array.isArray(parsedValue) || typeof parsedValue !== 'object') {
+            return Promise.reject(new Error('Filter must be a JSON logic object'));
+        }
+
         return Promise.resolve();
     } catch (error: unknown) {
         return Promise.reject(new Error('Filter must be valid JSON logic'));
@@ -675,9 +681,34 @@ function removeInheritedFields(fields: Set<string>): Set<string> {
     return next;
 }
 
+function getAncestorFilters(
+    parent: QualityRequirement | null,
+    requirements: QualityRequirement[],
+): string[] {
+    const requirementsById = buildRequirementsById(requirements);
+    const filters: string[] = [];
+    const visited = new Set<number>();
+    let current = parent;
+
+    while (current && typeof current.id === 'number' && !visited.has(current.id)) {
+        visited.add(current.id);
+
+        if (current.filter) {
+            filters.unshift(current.filter);
+        }
+
+        current = typeof current.parentRequirementId === 'number' ?
+            requirementsById.get(current.parentRequirementId) ?? null :
+            null;
+    }
+
+    return filters;
+}
+
 export default function QualityRequirementForm(props: Readonly<Props>): JSX.Element {
     const {
         settings,
+        labels,
         requirement,
         parentRequirement,
         disabled,
@@ -711,6 +742,10 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
         rawParentRequirementId ?? null :
         initialValues.parentRequirement ?? null;
     const selectedParentRequirement = settings.requirements.find((item) => item.id === parentRequirementId) ?? null;
+    const parentFilters = useMemo(
+        () => getAncestorFilters(selectedParentRequirement, settings.requirements),
+        [selectedParentRequirement, settings.requirements],
+    );
     const formDisabled = disabled || submitting;
     const isDefaultRequirement = !!requirement?.isDefault;
     const parentRequirementRequired = !isDefaultRequirement;
@@ -1156,22 +1191,38 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
                 </Col>
                 <Col span={12}>
                     <Form.Item
-                        name='filter'
                         label='Filter'
-                        rules={[{ validator: validateJsonLogic }]}
                     >
-                        <Input
-                            placeholder='Filter'
-                            suffix={<FilterOutlined />}
-                        />
+                        <div className='cvat-quality-requirement-filter-control'>
+                            <Form.Item
+                                name='filter'
+                                rules={[{ validator: validateJsonLogic }]}
+                                noStyle
+                            >
+                                <QualityRequirementFilter
+                                    labels={labels}
+                                    parentFilters={parentFilters}
+                                    disabled={disabled}
+                                />
+                            </Form.Item>
+                            <Form.Item shouldUpdate noStyle>
+                                {(): JSX.Element => (
+                                    <Button
+                                        className='cvat-clear-filters-button'
+                                        disabled={!form.getFieldValue('filter') || disabled}
+                                        size='small'
+                                        type='link'
+                                        onClick={() => {
+                                            form.setFieldsValue({ filter: '' });
+                                            markTouchedFields({ filter: '' });
+                                        }}
+                                    >
+                                        Clear filters
+                                    </Button>
+                                )}
+                            </Form.Item>
+                        </div>
                     </Form.Item>
-                    <Button
-                        type='link'
-                        className='cvat-quality-requirement-clear-filter-button'
-                        onClick={() => form.setFieldsValue({ filter: '' })}
-                    >
-                        Clear filters
-                    </Button>
                 </Col>
                 <Col span={12}>
                     <Form.Item

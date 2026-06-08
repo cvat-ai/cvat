@@ -153,9 +153,27 @@
         vertical-align: baseline;
     }
 
-    .cvat-quality-requirement-clear-filter-button {
-        padding-left: 0;
-        height: $grid-unit-size * 2;
+    .cvat-quality-requirement-filter-control {
+        display: flex;
+        align-items: center;
+        gap: $grid-unit-size;
+
+        .cvat-quality-requirement-filter-input {
+            flex: 1;
+        }
+    }
+
+    .cvat-quality-requirement-filter-input {
+        cursor: pointer;
+
+        input {
+            cursor: pointer;
+        }
+
+        .ant-input-suffix .ant-btn {
+            height: $grid-unit-size * 3;
+            width: $grid-unit-size * 3;
+        }
     }
 
     .cvat-quality-requirement-attribute-rules-title {
@@ -192,6 +210,33 @@
         .cvat-quality-requirements-default-row {
             color: $text-color-secondary;
         }
+    }
+}
+
+.cvat-quality-requirement-filter-builder {
+    width: $grid-unit-size * 62;
+
+    .query-builder-container {
+        margin-top: $grid-unit-size;
+    }
+
+    .cvat-quality-requirement-filter-recent-button {
+        align-self: flex-end;
+    }
+
+    .cvat-quality-requirement-filter-section {
+        width: 100%;
+        margin-top: $grid-unit-size;
+    }
+
+    .cvat-quality-requirement-filter-section-title {
+        align-self: flex-start;
+        margin-top: $grid-unit-size * 2;
+    }
+
+    .cvat-quality-requirement-filter-readonly-builder {
+        opacity: 0.65;
+        pointer-events: none;
     }
 }
 

@@ -463,6 +463,7 @@ function QualityControlPage(): JSX.Element {
                         instance={instance}
                         fetching={qualitySettingsFetching}
                         qualitySettings={{ settings: qualitySettings, childrenSettings: childrenQualitySettings }}
+                        labels={instance.labels}
                         setQualitySettings={onSaveQualitySettings}
                         refreshQualitySettings={refreshQualitySettings}
                     />

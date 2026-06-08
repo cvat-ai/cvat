@@ -10,7 +10,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
 import Form, { FormInstance } from 'antd/lib/form';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { QualityRequirement, QualitySettings } from 'cvat-core-wrapper';
+import { Label, QualityRequirement, QualitySettings } from 'cvat-core-wrapper';
 import { defaultVisibility, ResourceFilterHOC } from 'components/resource-sorting-filtering';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, config,
@@ -21,6 +21,7 @@ import QualityRequirementForm from './quality-requirement-form';
 interface Props {
     form: FormInstance;
     settings: QualitySettings;
+    labels: Label[];
     disabled: boolean;
     onSave: () => void;
     onReload: () => Promise<void>;
@@ -43,6 +44,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
     const {
         form,
         settings,
+        labels,
         disabled,
         onReload,
         onRequirementFormVisibilityChange,
@@ -114,6 +116,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         return (
             <QualityRequirementForm
                 settings={settings}
+                labels={labels}
                 requirement={requirementFormMode.type === 'edit' ? requirementFormMode.requirement : null}
                 parentRequirement={
                     requirementFormMode.type === 'create' ? requirementFormMode.parentRequirement : null
