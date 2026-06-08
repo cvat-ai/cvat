@@ -12,39 +12,13 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
-    ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken,
+    ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
     Membership, AnnotationFormats, CloudStorage,
 } from 'cvat-core-wrapper';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { ImageFilter } from 'utils/image-processing';
-
-export interface AudioRegion {
-    id: string;
-    start: number;
-    end: number;
-    labelId: number | null;
-    attributes: Record<number, string>;
-    serverId?: number;
-    source?: string;
-    group?: number;
-    color?: string;
-    hidden?: boolean;
-    locked?: boolean;
-}
-
-export type AudioRegionDiff =
-    | { kind: 'added'; region: AudioRegion }
-    | { kind: 'removed'; region: AudioRegion }
-    | { kind: 'updated'; before: AudioRegion; after: AudioRegion };
-
-export interface AudioHistoryEntry {
-    actionName: string;
-    diffs: AudioRegionDiff[];
-    activeRegionIdBefore: string | null;
-    activeRegionIdAfter: string | null;
-}
 
 export interface AudioState {
     player: {
@@ -55,20 +29,14 @@ export interface AudioState {
         zoom: number;
         volume: number;
         loop: boolean;
-        regions: AudioRegion[];
-        activeRegionId: string | null;
-        hoveredRegionId: string | null;
+        intervals: AudioIntervalState[];
+        activeIntervalID: number | null;
+        hoveredIntervalID: number | null;
         audioUrl: string | null;
         audioLoading: boolean;
         audioError: string | null;
         waveformReady: boolean;
         activeLabelId: number | null;
-        hasUnsavedChanges: boolean;
-        savedRegions: AudioRegion[];
-    };
-    history: {
-        undo: AudioHistoryEntry[];
-        redo: AudioHistoryEntry[];
     };
 }
 
@@ -828,8 +796,8 @@ export enum ActiveControl {
     DRAW_MASK = 'draw_mask',
     DRAW_CUBOID = 'draw_cuboid',
     DRAW_SKELETON = 'draw_skeleton',
-    MERGE = 'merge',
     GROUP = 'group',
+    MERGE = 'merge',
     JOIN = 'join',
     SPLIT = 'split',
     SLICE = 'slice',
@@ -966,8 +934,8 @@ export interface AnnotationState {
         resetGroupFlag: boolean;
         initialized: boolean;
         history: {
-            undo: [string, number][];
-            redo: [string, number][];
+            undo: [string, number | null][];
+            redo: [string, number | null][];
         };
         saving: {
             forceExit: boolean;

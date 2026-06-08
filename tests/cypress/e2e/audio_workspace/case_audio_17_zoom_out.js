@@ -20,7 +20,7 @@ context('Audio annotation. Zoom out decreases zoom value.', () => {
             cy.get('.cvat-audio-zoom-control .cvat-audio-slider-value-badge').invoke('text').then((zoomedIn) => {
                 cy.audioSliderSetValue('cvat-audio-zoom-control', '{uparrow}', 100);
                 cy.get('.cvat-audio-zoom-control .cvat-audio-slider-value-badge')
-                    .invoke('text').should('not.equal', zoomedIn);
+                    .invoke('text').should('not.equal', zoomedIn).and('equal', 'x1');
             });
         });
     });

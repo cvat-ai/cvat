@@ -9,8 +9,8 @@ import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 
-import { AudioRegion, CombinedState, Workspace } from 'reducers';
-import { Label } from 'cvat-core-wrapper';
+import { CombinedState, Workspace } from 'reducers';
+import { AudioIntervalState } from 'cvat-core-wrapper';
 import { showStatistics } from 'actions/annotation-actions';
 import { formatTimeShort } from 'audio/utils/format-audio-time';
 
@@ -20,8 +20,7 @@ interface StateToProps {
     bugTracker: string | null;
     assignee: string;
     duration: number;
-    regions: AudioRegion[];
-    labels: Label[];
+    intervals: AudioIntervalState[];
     hasUnsavedChanges: boolean;
 }
 
@@ -36,14 +35,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
             statistics: { visible },
             job: {
                 instance,
-                labels,
             },
         },
         audio: {
             player: {
                 duration,
-                regions,
-                hasUnsavedChanges,
+                intervals,
             },
         },
     } = state;
@@ -54,9 +51,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         bugTracker: instance?.bugTracker ?? null,
         assignee: instance?.assignee?.username || 'Nobody',
         duration,
-        regions,
-        labels,
-        hasUnsavedChanges,
+        intervals,
+        hasUnsavedChanges: !!instance?.annotations.hasUnsavedChanges(),
     };
 }
 
@@ -88,8 +84,7 @@ function AudioStatisticsModalComponent(props: StateToProps & DispatchToProps): J
         assignee,
         bugTracker,
         duration,
-        regions,
-        labels,
+        intervals,
         hasUnsavedChanges,
         closeStatistics,
     } = props;
@@ -98,26 +93,22 @@ function AudioStatisticsModalComponent(props: StateToProps & DispatchToProps): J
         return null;
     }
 
-    const labelById = new Map<number, Label>();
-    labels.forEach((l) => {
-        if (typeof l.id === 'number') labelById.set(l.id, l);
-    });
-
     const perLabel = new Map<string, RegionStats>();
     const totals = emptyStats();
-    regions.forEach((r) => {
-        const labelName = (r.labelId != null && labelById.get(r.labelId)?.name) || 'Unlabeled';
+    intervals.forEach((interval) => {
+        const labelName = interval.label.name;
         const stats = perLabel.get(labelName) || emptyStats();
+        const intervalDuration = Math.max(0, ((interval.stop ?? interval.start) - interval.start) / 1000);
         stats.count += 1;
-        stats.totalDuration += Math.max(0, r.end - r.start);
-        if (r.locked) stats.locked += 1;
-        if (r.hidden) stats.hidden += 1;
+        stats.totalDuration += intervalDuration;
+        if (interval.lock) stats.locked += 1;
+        if (interval.hidden) stats.hidden += 1;
         perLabel.set(labelName, stats);
 
         totals.count += 1;
-        totals.totalDuration += Math.max(0, r.end - r.start);
-        if (r.locked) totals.locked += 1;
-        if (r.hidden) totals.hidden += 1;
+        totals.totalDuration += intervalDuration;
+        if (interval.lock) totals.locked += 1;
+        if (interval.hidden) totals.hidden += 1;
     });
 
     const coverageOf = (d: number): string => {
