@@ -55,9 +55,10 @@ function ItemAttributeComponent(props: Props): JSX.Element {
 
     // Check if this is a catalogue reference attribute
     const isCatalogueRef = attrName.startsWith('catalogue_ref__');
-    const isAutomaticValue= attrValue == "automatic";
-    console.log("isAutomaticValue ?",isAutomaticValue)
-    console.log("attrInputType",attrInputType)
+    //custom UI modification
+    const isAutomaticValue= attrValue == "auto";
+    const isPrivateAttribute = attrName.startsWith("_");
+
     const catalogueName = isCatalogueRef ? attrName.replace('catalogue_ref__', '') : '';
     useEffect(() => {
         // attribute value updated from inside the app (for example undo/redo)
@@ -83,6 +84,9 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         }
     }, [attrValue]);
 
+    if (isPrivateAttribute){
+        return (<></>)
+    }
     if (attrInputType === 'checkbox') {
         return (
             <Col span={24}>
@@ -135,12 +139,6 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     if (attrInputType === 'select') {
         if (isAutomaticValue) {
             return  <>
-                <Col span={8} style={attrNameStyle}>
-                    <Text className='cvat-text'>{attrName}</Text>
-                </Col>
-                <Col span={16}>
-                    <Text className='cvat-text'>{attrValue}</Text>
-                </Col>
                 </>
         }
         return (
