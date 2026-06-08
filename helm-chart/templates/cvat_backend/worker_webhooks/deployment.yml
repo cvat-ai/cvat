@@ -70,6 +70,7 @@ spec:
           {{- end }}
           securityContext:
             runAsNonRoot: true
+      terminationGracePeriodSeconds: {{ .Values.cvat.backend.worker.webhooks.terminationGracePeriodSeconds | default 30 }}
       {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}

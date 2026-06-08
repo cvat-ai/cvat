@@ -17,6 +17,7 @@ import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import AudioSaveAnnotationsButton from './audio-save-annotations-button';
+import AudioRemoveAnnotationsConfirm from './audio-remove-annotations-confirm';
 
 interface Props {
     saving: boolean;
@@ -89,7 +90,7 @@ function AudioLeftGroup(props: Props): JSX.Element {
                 </Modal>
             )}
             <Col className='cvat-annotation-header-left-group'>
-                <AnnotationMenuComponent />
+                <AnnotationMenuComponent removeAnnotationsConfirmComponent={AudioRemoveAnnotationsConfirm} />
                 <AudioSaveAnnotationsButton />
                 <CVATTooltip overlay={`Undo: ${undoAction} ${undoShortcut}`}>
                     <Button

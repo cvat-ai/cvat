@@ -6,47 +6,50 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import AudioRegionsList from 'audio/components/annotation-page/audio-workspace/audio-regions-list';
-import { filterAudioRegions } from 'audio/components/annotation-page/audio-workspace/utils/filter-audio-regions';
-import { AudioRegion, CombinedState } from 'reducers';
+import { filterAudioIntervals } from 'audio/components/annotation-page/audio-workspace/utils/filter-audio-regions';
+import { intervalID } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
+import { ActiveControl, CombinedState } from 'reducers';
 import {
     audioActions,
-    copyAudioRegionAsync,
-    updateAudioRegionAsync,
+    copyAudioIntervalAsync,
+    removeAudioIntervalAsync,
+    updateAudioIntervalAsync,
+    updateAudioIntervalsAsync,
 } from 'actions/audio-actions';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { Label } from 'cvat-core-wrapper';
+import { AudioIntervalState, Label } from 'cvat-core-wrapper';
 
 const componentShortcuts = {
     AUDIO_SWITCH_ALL_LOCK: {
-        name: 'Lock/unlock all regions',
-        description: 'Change locked state for all audio regions in the side bar',
+        name: 'Lock/unlock all intervals',
+        description: 'Change locked state for all audio intervals in the side bar',
         sequences: ['t l'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     AUDIO_SWITCH_LOCK: {
-        name: 'Lock/unlock a region',
-        description: 'Change locked state for the active audio region',
+        name: 'Lock/unlock an interval',
+        description: 'Change locked state for the active audio interval',
         sequences: ['l'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     AUDIO_SWITCH_ALL_HIDDEN: {
-        name: 'Hide/show all regions',
-        description: 'Change hidden state for all audio regions in the side bar',
+        name: 'Hide/show all intervals',
+        description: 'Change hidden state for all audio intervals in the side bar',
         sequences: ['t h'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     AUDIO_SWITCH_HIDDEN: {
-        name: 'Hide/show a region',
-        description: 'Change hidden state for the active audio region',
+        name: 'Hide/show an interval',
+        description: 'Change hidden state for the active audio interval',
         sequences: ['h'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     AUDIO_DELETE_REGION: {
-        name: 'Delete region',
-        description: 'Delete the active audio region. Use shift to force delete of locked regions',
+        name: 'Delete interval',
+        description: 'Delete the active audio interval. Use shift to force delete of locked intervals',
         sequences: ['del', 'shift+del'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
@@ -55,43 +58,44 @@ const componentShortcuts = {
 registerComponentShortcuts(componentShortcuts);
 
 interface StateToProps {
-    regions: AudioRegion[];
-    visibleRegionIds: Set<string>;
-    activeRegionId: string | null;
+    intervals: AudioIntervalState[];
+    visibleIntervalIds: Set<number>;
+    activeIntervalID: number | null;
     labels: Label[];
     colorBy: CombinedState['settings']['shapes']['colorBy'];
+    activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
 }
 
 interface DispatchToProps {
-    onSetActiveRegion(regionId: string | null): void;
-    onSetHoveredRegion(regionId: string | null): void;
+    onSetActiveInterval(clientID: number | null): void;
+    onSetHoveredInterval(clientID: number | null): void;
     onSwitchPlay(playing: boolean): void;
     onSetCurrentTime(time: number): void;
-    onToggleRegionLock(regionId: string): void;
-    onToggleRegionHidden(regionId: string): void;
-    onSetRegions(regions: AudioRegion[]): void;
-    onCopyRegion(regionId: string): void;
-    onUpdateRegion(
-        regionId: string,
-        patch: Partial<AudioRegion> | ((region: AudioRegion, regions: AudioRegion[]) => Partial<AudioRegion>),
-    ): void;
+    onToggleIntervalLock(clientID: number): void;
+    onToggleIntervalHidden(clientID: number): void;
+    onToggleIntervalsLock(clientIDs: number[], lock: boolean): void;
+    onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void;
+    onCopyInterval(clientID: number): void;
+    onDeleteInterval(clientID: number, force?: boolean): void;
+    onChangeIntervalColor(clientID: number, color: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { player } = state.audio;
     const { labels } = state.annotation.job;
     const { filters } = state.annotation.annotations;
-    const visibleRegionIds = new Set(
-        filterAudioRegions(player.regions, labels, filters).map((r) => r.id),
+    const visibleIntervalIds = new Set(
+        filterAudioIntervals(player.intervals, labels, filters).map((interval) => intervalID(interval)),
     );
     return {
-        regions: player.regions,
-        visibleRegionIds,
-        activeRegionId: player.activeRegionId,
+        intervals: player.intervals,
+        visibleIntervalIds,
+        activeIntervalID: player.activeIntervalID,
         labels,
         colorBy: state.settings.shapes.colorBy,
+        activeControl: state.annotation.canvas.activeControl,
         keyMap: state.shortcuts.keyMap,
         normalizedKeyMap: state.shortcuts.normalizedKeyMap,
     };
@@ -99,11 +103,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onSetActiveRegion(regionId: string | null): void {
-            dispatch(audioActions.setAudioActiveRegion(regionId));
+        onSetActiveInterval(clientID: number | null): void {
+            dispatch(audioActions.setAudioActiveInterval(clientID));
         },
-        onSetHoveredRegion(regionId: string | null): void {
-            dispatch(audioActions.setAudioHoveredRegion(regionId));
+        onSetHoveredInterval(clientID: number | null): void {
+            dispatch(audioActions.setAudioHoveredInterval(clientID));
         },
         onSwitchPlay(playing: boolean): void {
             dispatch(audioActions.switchAudioPlay(playing));
@@ -111,20 +115,26 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSetCurrentTime(time: number): void {
             dispatch(audioActions.setAudioCurrentTime(time));
         },
-        onToggleRegionLock(regionId: string): void {
-            dispatch(audioActions.toggleAudioRegionLock(regionId));
+        onToggleIntervalLock(clientID: number): void {
+            dispatch(updateAudioIntervalAsync(clientID, (interval) => ({ lock: !interval.lock })));
         },
-        onToggleRegionHidden(regionId: string): void {
-            dispatch(audioActions.toggleAudioRegionHidden(regionId));
+        onToggleIntervalHidden(clientID: number): void {
+            dispatch(updateAudioIntervalAsync(clientID, (interval) => ({ hidden: !interval.hidden })));
         },
-        onSetRegions(regions: AudioRegion[]): void {
-            dispatch(audioActions.setAudioRegions(regions));
+        onToggleIntervalsLock(clientIDs: number[], lock: boolean): void {
+            dispatch(updateAudioIntervalsAsync(clientIDs, { lock }));
         },
-        onCopyRegion(regionId: string): void {
-            dispatch(copyAudioRegionAsync(regionId));
+        onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void {
+            dispatch(updateAudioIntervalsAsync(clientIDs, { hidden }));
         },
-        onUpdateRegion(regionId, patch): void {
-            dispatch(updateAudioRegionAsync(regionId, patch));
+        onCopyInterval(clientID: number): void {
+            dispatch(copyAudioIntervalAsync(clientID));
+        },
+        onDeleteInterval(clientID: number, force = false): void {
+            dispatch(removeAudioIntervalAsync(clientID, force));
+        },
+        onChangeIntervalColor(clientID: number, color: string): void {
+            dispatch(updateAudioIntervalAsync(clientID, { color }));
         },
     };
 }
@@ -133,46 +143,47 @@ type Props = StateToProps & DispatchToProps;
 
 function AudioRegionsListContainer(props: Props): JSX.Element {
     const {
-        regions, visibleRegionIds, activeRegionId, labels, colorBy,
+        intervals, visibleIntervalIds, activeIntervalID, labels, colorBy,
+        activeControl,
         keyMap, normalizedKeyMap,
-        onSetActiveRegion, onSetHoveredRegion, onSwitchPlay, onSetCurrentTime,
-        onToggleRegionLock, onToggleRegionHidden, onSetRegions, onCopyRegion, onUpdateRegion,
+        onSetActiveInterval, onSetHoveredInterval, onSwitchPlay, onSetCurrentTime,
+        onToggleIntervalLock, onToggleIntervalHidden, onToggleIntervalsLock, onToggleIntervalsHidden,
+        onCopyInterval, onDeleteInterval, onChangeIntervalColor,
     } = props;
 
     const preventDefault = (e?: KeyboardEvent): void => {
         if (e) e.preventDefault();
     };
 
-    const activeRegion = activeRegionId ? regions.find((r) => r.id === activeRegionId) ?? null : null;
-    const allLocked = regions.length > 0 && regions.every((r) => !!r.locked);
-    const allHidden = regions.length > 0 && regions.every((r) => !!r.hidden);
+    const activeInterval = activeIntervalID !== null ?
+        intervals.find((interval) => interval.clientID === activeIntervalID) ?? null : null;
+    const allLocked = intervals.length > 0 && intervals.every((interval) => !!interval.lock);
+    const allHidden = intervals.length > 0 && intervals.every((interval) => !!interval.hidden);
+    const allIds = intervals.map((interval) => intervalID(interval));
 
     const handlers: Record<keyof typeof componentShortcuts, (e?: KeyboardEvent) => void> = {
         AUDIO_SWITCH_ALL_LOCK: (e) => {
             preventDefault(e);
-            const locked = !allLocked;
-            onSetRegions(regions.map((r) => ({ ...r, locked })));
+            onToggleIntervalsLock(allIds, !allLocked);
         },
         AUDIO_SWITCH_LOCK: (e) => {
             preventDefault(e);
-            if (activeRegion) onToggleRegionLock(activeRegion.id);
+            if (activeInterval) onToggleIntervalLock(intervalID(activeInterval));
         },
         AUDIO_SWITCH_ALL_HIDDEN: (e) => {
             preventDefault(e);
-            const hidden = !allHidden;
-            onSetRegions(regions.map((r) => ({ ...r, hidden })));
+            onToggleIntervalsHidden(allIds, !allHidden);
         },
         AUDIO_SWITCH_HIDDEN: (e) => {
             preventDefault(e);
-            if (activeRegion && !activeRegion.locked) onToggleRegionHidden(activeRegion.id);
+            if (activeInterval && !activeInterval.lock) onToggleIntervalHidden(intervalID(activeInterval));
         },
         AUDIO_DELETE_REGION: (e) => {
             preventDefault(e);
-            if (!activeRegion) return;
+            if (!activeInterval) return;
             const force = !!(e && e.shiftKey);
-            if (activeRegion.locked && !force) return;
-            onSetRegions(regions.filter((r) => r.id !== activeRegion.id));
-            onSetActiveRegion(null);
+            if (activeInterval.lock && !force) return;
+            onDeleteInterval(intervalID(activeInterval), force);
         },
     };
 
@@ -180,22 +191,25 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
         <>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <AudioRegionsList
-                regions={regions}
-                visibleRegionIds={visibleRegionIds}
-                activeRegionId={activeRegionId}
+                intervals={intervals}
+                visibleIntervalIds={visibleIntervalIds}
+                activeIntervalID={activeIntervalID}
                 labels={labels}
                 colorBy={colorBy}
+                activeControl={activeControl}
                 switchLockAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_LOCK ?? ''}
                 switchHiddenAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_HIDDEN ?? ''}
-                onSetActiveRegion={onSetActiveRegion}
-                onSetHoveredRegion={onSetHoveredRegion}
+                onSetActiveInterval={onSetActiveInterval}
+                onSetHoveredInterval={onSetHoveredInterval}
                 onSwitchPlay={onSwitchPlay}
                 onSetCurrentTime={onSetCurrentTime}
-                onToggleRegionLock={onToggleRegionLock}
-                onToggleRegionHidden={onToggleRegionHidden}
-                onSetRegions={onSetRegions}
-                onCopyRegion={onCopyRegion}
-                onUpdateRegion={onUpdateRegion}
+                onToggleIntervalLock={onToggleIntervalLock}
+                onToggleIntervalHidden={onToggleIntervalHidden}
+                onToggleIntervalsLock={onToggleIntervalsLock}
+                onToggleIntervalsHidden={onToggleIntervalsHidden}
+                onCopyInterval={onCopyInterval}
+                onDeleteInterval={onDeleteInterval}
+                onChangeIntervalColor={onChangeIntervalColor}
             />
         </>
     );

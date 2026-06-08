@@ -16,6 +16,7 @@ context('Audio annotation. Zoom in increases zoom value.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Adjusting zoom slider updates the value badge on the zoom control', () => {
+            cy.get('.cvat-audio-zoom-control .cvat-audio-slider-value-badge').should('have.text', 'x1');
             cy.get('.cvat-audio-zoom-control .cvat-audio-slider-value-badge').invoke('text').then((before) => {
                 cy.audioSliderSetValue('cvat-audio-zoom-control', '{downarrow}', 5);
                 cy.get('.cvat-audio-zoom-control .cvat-audio-slider-value-badge')
