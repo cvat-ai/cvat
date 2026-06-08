@@ -30,7 +30,7 @@ import ObjectState from './object-state';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { UpdateStatusData } from './core-types';
 
-function buildDuplicatedAPI(prototype) {
+function buildDuplicatedAPI(prototype): void {
     Object.defineProperties(prototype, {
         annotations: Object.freeze({
             value: {
@@ -116,6 +116,16 @@ function buildDuplicatedAPI(prototype) {
                         objectStates,
                         x,
                         y,
+                    );
+                    return result;
+                },
+
+                async selectInterval(intervalStates, position) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.selectInterval,
+                        intervalStates,
+                        position,
                     );
                     return result;
                 },
@@ -383,7 +393,7 @@ export class Session {
     public annotations: {
         get: (frame: number, allTracks: boolean, filters: object[]) => Promise<ObjectState[]>;
         intervals: () => Promise<AudioIntervalState[]>;
-        put: (objectStates: ObjectState[]) => Promise<number[]>;
+        put: (objectStates: (ObjectState | AudioIntervalState)[]) => Promise<number[]>;
         merge: (objectStates: ObjectState[]) => Promise<void>;
         split: (objectState: ObjectState, frame: number) => Promise<void>;
         group: (objectStates: ObjectState[], reset: boolean) => Promise<number>;
@@ -397,8 +407,8 @@ export class Session {
         compactLayers: (frame: number) => Promise<ObjectState[]>;
         clear: (options?: {
             reload?: boolean;
-            startFrame?: number;
-            stopFrame?: number;
+            from?: number;
+            to?: number;
             delTrackKeyframesOnly?: boolean;
         }) => Promise<void>;
         save: (
@@ -430,12 +440,16 @@ export class Session {
             state: ObjectState,
             distance: number | null,
         }>;
+        selectInterval: (intervalStates: AudioIntervalState[], position: number) => Promise<{
+            state: AudioIntervalState | null,
+            distance: number | null,
+        }>;
         import: (data: SerializedCollection) => Promise<void>;
-        export: () => Promise<Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>>;
+        export: () => Promise<SerializedCollection>;
         commit: (
-            added: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
-            removed: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
-            frame: number,
+            added: Partial<SerializedCollection>,
+            removed: Partial<SerializedCollection>,
+            frame: number | null,
         ) => Promise<void>;
         statistics: () => Promise<Statistics>;
         hasUnsavedChanges: () => boolean;
@@ -513,6 +527,7 @@ export class Session {
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
+            selectInterval: Object.getPrototypeOf(this).annotations.selectInterval.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
             commit: Object.getPrototypeOf(this).annotations.commit.bind(this),

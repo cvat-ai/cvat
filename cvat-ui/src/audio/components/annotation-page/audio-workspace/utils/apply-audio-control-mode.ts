@@ -4,7 +4,9 @@
 
 import type RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import type { Region } from 'wavesurfer.js/dist/plugins/regions';
-import { ActiveControl, AudioRegion } from 'reducers';
+import { AudioIntervalState } from 'cvat-core-wrapper';
+import { ActiveControl } from 'reducers';
+import { clientIDFromWaveRegionId } from './audio-interval';
 
 export type DragSelectionCleanup = (() => void) | null;
 
@@ -12,7 +14,7 @@ export function applyAudioControlMode(
     control: ActiveControl,
     plugin: RegionsPlugin | null,
     dragSelectionCleanupRef: React.MutableRefObject<DragSelectionCleanup>,
-    reduxRegions: AudioRegion[],
+    intervals: AudioIntervalState[],
 ): void {
     if (!plugin) return;
 
@@ -29,8 +31,9 @@ export function applyAudioControlMode(
     }
 
     plugin.getRegions().forEach((region: Region) => {
-        const reduxRegion = reduxRegions.find((r) => r.id === region.id);
-        const isLocked = reduxRegion?.locked;
+        const clientID = clientIDFromWaveRegionId(region.id);
+        const interval = intervals.find((_interval) => _interval.clientID === clientID);
+        const isLocked = interval?.lock;
         const canDrag = isEdit && !isLocked;
         region.setOptions({ drag: canDrag, resize: canDrag });
         const { element } = region;

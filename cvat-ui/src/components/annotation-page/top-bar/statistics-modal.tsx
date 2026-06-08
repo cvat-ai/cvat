@@ -82,7 +82,6 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
     } = props;
 
     const is2D = dimension === DimensionType.DIMENSION_2D;
-
     const baseProps = {
         cancelButtonProps: { style: { display: 'none' } },
         okButtonProps: { style: { width: 100 } },

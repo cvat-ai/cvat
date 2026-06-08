@@ -4,8 +4,7 @@
 
 import jsonLogic from 'json-logic-js';
 
-import { AudioRegion } from 'reducers';
-import { Label, Attribute } from 'cvat-core-wrapper';
+import { Attribute, AudioIntervalState, Label } from 'cvat-core-wrapper';
 
 function adjustName(name: string): string {
     return name.replace(/\./g, '∙');
@@ -22,10 +21,10 @@ function convertAttributeValue(
 }
 
 function regionToFilterShape(
-    region: AudioRegion,
+    interval: AudioIntervalState,
     labelById: Map<number, Label>,
 ): Record<string, unknown> {
-    const label = region.labelId != null ? labelById.get(region.labelId) : undefined;
+    const label = interval.label.id != null ? labelById.get(interval.label.id) : undefined;
     const labelName = label?.name ?? '';
     const attrSpecById = new Map<number, Attribute>();
     label?.attributes.forEach((attr: Attribute) => {
@@ -33,19 +32,19 @@ function regionToFilterShape(
     });
 
     const attrs: Record<string, string | number | boolean> = {};
-    Object.entries(region.attributes ?? {}).forEach(([id, value]) => {
+    Object.entries(interval.attributes ?? {}).forEach(([id, value]) => {
         const spec = attrSpecById.get(Number(id));
         const name = adjustName(spec?.name ?? id);
         attrs[name] = convertAttributeValue(value, spec);
     });
 
-    const startMs = region.start * 1000;
-    const endMs = region.end * 1000;
+    const startMs = interval.start;
+    const endMs = interval.stop ?? interval.start;
 
     return {
         label: labelName,
-        serverID: region.serverId ?? null,
-        source: region.source ?? null,
+        serverID: interval.serverID ?? null,
+        source: interval.source ?? null,
         duration: endMs - startMs,
         start: startMs,
         end: endMs,
@@ -53,12 +52,12 @@ function regionToFilterShape(
     };
 }
 
-export function filterAudioRegions(
-    regions: AudioRegion[],
+export function filterAudioIntervals(
+    intervals: AudioIntervalState[],
     labels: Label[],
     filters: object[],
-): AudioRegion[] {
-    if (!filters.length) return regions;
+): AudioIntervalState[] {
+    if (!filters.length) return intervals;
 
     const labelById = new Map<number, Label>();
     labels.forEach((label) => {
@@ -66,9 +65,9 @@ export function filterAudioRegions(
     });
 
     const rule = filters[0];
-    return regions.filter((region) => {
+    return intervals.filter((interval) => {
         try {
-            return !!jsonLogic.apply(rule, regionToFilterShape(region, labelById));
+            return !!jsonLogic.apply(rule, regionToFilterShape(interval, labelById));
         } catch {
             return true;
         }
