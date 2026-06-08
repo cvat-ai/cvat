@@ -29,11 +29,11 @@ import { useAudioWaveform } from './hooks/use-audio-waveform';
 import { useAudioPlaybackSync } from './hooks/use-audio-playback-sync';
 import { useAudioRegions } from './hooks/use-audio-regions';
 import { useAudioRecording } from './hooks/use-audio-recording';
-import { filterAudioIntervals } from './utils/filter-audio-regions';
 import { ZOOM_MAX, ZOOM_MIN, computeWaveformZoom } from './utils/zoom-bounds';
-import { intervalID } from './utils/audio-interval';
 
-const ZOOM_STEP_FACTOR = 1.2;
+const ZOOM_BASIC_COEF = 6 / 5;
+const ZOOM_ADJUST_COEF = 1 / 10;
+const ZOOM_DELTA_LIMIT = 8;
 
 const componentShortcuts = {
     NEXT_OBJECT: {
@@ -59,7 +59,7 @@ function AudioCanvasWrapper(): JSX.Element {
         jobInstance, activeControl, intervals, activeIntervalID, hoveredIntervalID,
         audioUrl, audioLoading, audioError, waveformReady,
         labels, activeLabelId, colorBy, opacity, selectedOpacity,
-        filters, keyMap,
+        keyMap,
     } = useSelector((state: CombinedState) => ({
         isPlaying: state.audio.player.playing,
         currentTime: state.audio.player.currentTime,
@@ -82,7 +82,6 @@ function AudioCanvasWrapper(): JSX.Element {
         colorBy: state.settings.shapes.colorBy,
         opacity: state.settings.shapes.opacity,
         selectedOpacity: state.settings.shapes.selectedOpacity,
-        filters: state.annotation.annotations.filters,
         keyMap: state.shortcuts.keyMap,
     }), shallowEqual);
 
@@ -97,12 +96,9 @@ function AudioCanvasWrapper(): JSX.Element {
         [duration, waveformWidth, zoom],
     );
     const phantomRegionIdsRef = useRef<Set<string>>(new Set());
-    const visibleIntervalIds = useMemo(() => (
-        new Set(filterAudioIntervals(intervals, labels, filters).map((interval) => intervalID(interval)))
-    ), [intervals, labels, filters]);
     const visibleIntervals = useMemo(() => (
-        intervals.filter((interval) => !interval.hidden && visibleIntervalIds.has(intervalID(interval)))
-    ), [intervals, visibleIntervalIds]);
+        intervals.filter((interval) => !interval.hidden)
+    ), [intervals]);
     const onSwitchPlay = useCallback((playing: boolean): void => {
         dispatch(audioActions.switchAudioPlay(playing));
     }, [dispatch]);
@@ -226,14 +222,26 @@ function AudioCanvasWrapper(): JSX.Element {
         if (!el) return undefined;
         const onWheel = (e: WheelEvent): void => {
             e.preventDefault();
-            const zoomingIn = e.deltaY < 0;
-            const factor = zoomingIn ? ZOOM_STEP_FACTOR : 1 / ZOOM_STEP_FACTOR;
-            const target = zoomRef.current * factor;
-            let next = zoomingIn ? Math.ceil(target) : Math.floor(target);
-            if (next === zoomRef.current) {
-                next = zoomRef.current + (zoomingIn ? 1 : -1);
+            if (e.shiftKey) {
+                zoomAnchorRef.current = null;
+                const scrollContainer = wavesurfer?.getWrapper()?.parentElement as HTMLElement | null;
+                if (scrollContainer) {
+                    const maxScroll = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
+                    const scrollDelta = e.deltaX || e.deltaY;
+                    const nextScroll = Math.max(0, Math.min(maxScroll, scrollContainer.scrollLeft + scrollDelta));
+
+                    if (wavesurfer) {
+                        wavesurfer.setScroll(nextScroll);
+                    } else {
+                        scrollContainer.scrollLeft = nextScroll;
+                    }
+                }
+                return;
             }
-            next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
+
+            const deltaY = Math.max(-ZOOM_DELTA_LIMIT, Math.min(ZOOM_DELTA_LIMIT, e.deltaY));
+            const scaleFactor = ZOOM_BASIC_COEF ** (-deltaY * ZOOM_ADJUST_COEF);
+            const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomRef.current * scaleFactor));
             if (next !== zoomRef.current) {
                 const scrollContainer = wavesurfer?.getWrapper()?.parentElement as HTMLElement | null;
                 if (scrollContainer && duration > 0) {
@@ -268,7 +276,6 @@ function AudioCanvasWrapper(): JSX.Element {
         phantomRegionIdsRef,
         activeControl,
         intervals,
-        visibleIntervalIds,
         activeIntervalID,
         hoveredIntervalID,
         labels,

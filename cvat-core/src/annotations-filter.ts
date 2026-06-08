@@ -8,6 +8,7 @@ import { SerializedData } from './object-state';
 import { AttributeType, ObjectType, ShapeType } from './enums';
 import { SerializedCollection } from './server-response-types';
 import { Attribute, Label } from './labels';
+import type { AudioIntervalState } from './annotations-objects/audio-interval-state';
 
 function adjustName(name): string {
     return name.replace(/\./g, '\u2219');
@@ -149,6 +150,19 @@ interface ConvertedObjectData extends BaseConvertedData {
     elements: ConvertedElementData[];
 }
 
+interface ConvertedAudioIntervalData {
+    clientID: number | null;
+    data: {
+        attr: Record<string, ConvertedAttributes>;
+        duration: number;
+        end: number;
+        label: string;
+        serverID: number | null;
+        source: string | null;
+        start: number;
+    };
+}
+
 function getRotation(shapeType: ShapeType, rotation?: number | null): number | null {
     return shapeType === ShapeType.RECTANGLE || shapeType === ShapeType.ELLIPSE ? rotation ?? null : null;
 }
@@ -175,6 +189,31 @@ function getMatchingIDs(
 }
 
 export default class AnnotationsFilter {
+    private _convertSerializedAudioIntervalStates(
+        intervalsData: AudioIntervalState[],
+    ): ConvertedAudioIntervalData[] {
+        return intervalsData.map((interval) => {
+            const labelAttributes = buildAttributeMap(interval.label.attributes);
+            const attributes = convertAttributes(interval.attributes || {}, labelAttributes);
+            const end = interval.stop ?? interval.start;
+
+            return {
+                clientID: interval.clientID,
+                data: {
+                    attr: {
+                        [adjustName(interval.label.name)]: attributes,
+                    },
+                    duration: end - interval.start,
+                    end,
+                    label: interval.label.name,
+                    serverID: interval.serverID ?? null,
+                    source: interval.source ?? null,
+                    start: interval.start,
+                },
+            };
+        });
+    }
+
     private _convertSerializedObjectStates(statesData: SerializedData[]): ConvertedObjectData[] {
         return statesData.map((state) => {
             const labelAttributes = buildAttributeMap(state.label.attributes);
@@ -394,6 +433,21 @@ export default class AnnotationsFilter {
 
         const converted = this._convertSerializedObjectStates(statesData);
         return getMatchingIDs(converted, filters[0], filters[1]);
+    }
+
+    public filterSerializedAudioIntervalStates(
+        intervalsData: AudioIntervalState[],
+        filters: object[],
+    ): number[] {
+        if (isEmptyFilter(filters[0])) {
+            return intervalsData
+                .map((intervalData): number | null => intervalData.clientID)
+                .filter((clientID): clientID is number => typeof clientID === 'number');
+        }
+
+        return this._convertSerializedAudioIntervalStates(intervalsData)
+            .filter((interval) => typeof interval.clientID === 'number' && jsonLogic.apply(filters[0], interval.data))
+            .map((interval) => interval.clientID as number);
     }
 
     public filterSerializedCollection(

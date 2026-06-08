@@ -378,10 +378,13 @@ export default class Collection {
         );
     }
 
-    public getAllIntervals(): ReturnType<AudioInterval['get']>[] {
-        return this.intervals
+    public getAllIntervals(filters: object[] = []): ReturnType<AudioInterval['get']>[] {
+        const intervals = this.intervals
             .filter((interval) => !interval.removed)
             .map((interval) => interval.get());
+
+        const filtered = this.annotationsFilter.filterSerializedAudioIntervalStates(intervals, filters);
+        return intervals.filter((interval) => !filters.length || filtered.includes(interval.clientID as number));
     }
 
     public export(): SerializedCollection {

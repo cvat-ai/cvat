@@ -6,7 +6,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import AudioRegionsList from 'audio/components/annotation-page/audio-workspace/audio-regions-list';
-import { filterAudioIntervals } from 'audio/components/annotation-page/audio-workspace/utils/filter-audio-regions';
 import { intervalID } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
 import { ActiveControl, CombinedState } from 'reducers';
 import {
@@ -59,7 +58,7 @@ registerComponentShortcuts(componentShortcuts);
 
 interface StateToProps {
     intervals: AudioIntervalState[];
-    visibleIntervalIds: Set<number>;
+    filtersActive: boolean;
     activeIntervalID: number | null;
     labels: Label[];
     colorBy: CombinedState['settings']['shapes']['colorBy'];
@@ -86,12 +85,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { player } = state.audio;
     const { labels } = state.annotation.job;
     const { filters } = state.annotation.annotations;
-    const visibleIntervalIds = new Set(
-        filterAudioIntervals(player.intervals, labels, filters).map((interval) => intervalID(interval)),
-    );
     return {
         intervals: player.intervals,
-        visibleIntervalIds,
+        filtersActive: filters.length > 0,
         activeIntervalID: player.activeIntervalID,
         labels,
         colorBy: state.settings.shapes.colorBy,
@@ -143,7 +139,7 @@ type Props = StateToProps & DispatchToProps;
 
 function AudioRegionsListContainer(props: Props): JSX.Element {
     const {
-        intervals, visibleIntervalIds, activeIntervalID, labels, colorBy,
+        intervals, filtersActive, activeIntervalID, labels, colorBy,
         activeControl,
         keyMap, normalizedKeyMap,
         onSetActiveInterval, onSetHoveredInterval, onSwitchPlay, onSetCurrentTime,
@@ -192,7 +188,7 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <AudioRegionsList
                 intervals={intervals}
-                visibleIntervalIds={visibleIntervalIds}
+                filtersActive={filtersActive}
                 activeIntervalID={activeIntervalID}
                 labels={labels}
                 colorBy={colorBy}

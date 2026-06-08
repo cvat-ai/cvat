@@ -9,6 +9,7 @@ import { RouteComponentProps } from 'react-router-dom';
 
 import {
     changeWorkspaceAsync,
+    collectStatisticsAsync,
     saveAnnotationsAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
     showFilters as showFiltersAction,
@@ -43,7 +44,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     onSaveAnnotation(): void;
-    showStatistics(): void;
+    showStatistics(sessionInstance: Job): void;
     showFilters(): void;
     audioUndo(): void;
     audioRedo(): void;
@@ -107,7 +108,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSaveAnnotation(): void {
             dispatch(saveAnnotationsAsync());
         },
-        showStatistics(): void {
+        showStatistics(sessionInstance: Job): void {
+            dispatch(collectStatisticsAsync(sessionInstance));
             dispatch(showStatisticsAction(true));
         },
         showFilters(): void {
@@ -270,7 +272,7 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
                 initialOpenGuide={initialOpenGuide}
                 changeWorkspace={this.changeWorkspace}
                 showFilters={showFilters}
-                showStatistics={showStatistics}
+                showStatistics={() => showStatistics(jobInstance)}
                 onUndoClick={this.undo}
                 onRedoClick={this.redo}
                 onAudioPlayPause={onAudioPlayPause}
