@@ -396,7 +396,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                     selectedLoader?.format
                         .toLowerCase()
                         .split(',')
-                        .map((v: string) => `.${v}`)
+                        .map((v: string) => `.${v.trim()}`)
                         .join(',')
                 }
                 beforeUpload={(_file: RcFile): boolean => {
