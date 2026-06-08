@@ -6,11 +6,9 @@
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import {
     getCore, Storage, Job, Task, Project, ProjectOrTaskOrJob,
-    MediaType,
 } from 'cvat-core-wrapper';
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
-import { loadAudioAnnotationsAsync } from './audio-actions';
 import {
     listen, RequestInstanceType,
     RequestsActions, updateRequestProgress,
@@ -142,12 +140,7 @@ export const importDatasetAsync = (
                 const relevantInstance = getState().annotation.job.instance;
                 if (relevantInstance && relevantInstance.id === instance.id) {
                     setTimeout(() => {
-                        if (relevantInstance.mediaType === MediaType.AUDIO) {
-                            // TODO: unify annotation loading for different workspaces
-                            dispatch(loadAudioAnnotationsAsync());
-                        } else {
-                            dispatch(fetchAnnotationsAsync());
-                        }
+                        dispatch(fetchAnnotationsAsync());
                     });
                 }
             }
