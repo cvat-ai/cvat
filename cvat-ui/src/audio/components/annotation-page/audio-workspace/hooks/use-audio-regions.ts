@@ -183,7 +183,9 @@ export function useAudioRegions(params: Params): Result {
 
     const pickIntervalAtPosition = useCallback(async (positionMs: number): Promise<number | null> => {
         const job = jobInstanceRef.current;
-        if (!job) return null;
+        if (!job) {
+            return null;
+        }
 
         const visibleIntervals = intervalsRef.current.filter((interval) => (
             !interval.hidden && visibleIntervalIdsRef.current.has(intervalID(interval))

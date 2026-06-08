@@ -441,14 +441,14 @@ export class Session {
             distance: number | null,
         }>;
         selectInterval: (intervalStates: AudioIntervalState[], position: number) => Promise<{
-            state: AudioIntervalState,
+            state: AudioIntervalState | null,
             distance: number | null,
         }>;
         import: (data: SerializedCollection) => Promise<void>;
-        export: () => Promise<Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks' | 'intervals'>>;
+        export: () => Promise<SerializedCollection>;
         commit: (
-            added: Partial<Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks' | 'intervals'>>,
-            removed: Partial<Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks' | 'intervals'>>,
+            added: Partial<SerializedCollection>,
+            removed: Partial<SerializedCollection>,
             frame: number | null,
         ) => Promise<void>;
         statistics: () => Promise<Statistics>;

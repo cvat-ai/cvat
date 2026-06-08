@@ -310,7 +310,7 @@ export default class Collection {
         appended: Partial<SerializedCollection>,
         removed: Partial<SerializedCollection>,
         frame: number | null,
-    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; intervals: AudioInterval[]; } {
+    ): void {
         const removedObjects = [].concat(
             removed.shapes ?? [],
             removed.tags ?? [],
@@ -318,16 +318,16 @@ export default class Collection {
             removed.intervals ?? [],
         );
 
-        const allRemovedObjectsPresented = [].concat(removedObjects).every(
+        const allRemovedObjectsPresented = removedObjects.every(
             (object) => typeof object.clientID === 'number' &&
-                Object.prototype.hasOwnProperty.call(this.objects, object.clientID),
+                Object.hasOwn(this.objects, object.clientID),
         );
 
         if (!allRemovedObjectsPresented) {
             throw new ArgumentError('Objects required to be deleted were not found in the collection');
         }
 
-        const removedCollection: AnnotationObject[] = [].concat(removedObjects)
+        const removedCollection: AnnotationObject[] = removedObjects
             .map((object) => this.objects[object.clientID]);
 
         const imported = this.import(appended);
@@ -1642,7 +1642,7 @@ export default class Collection {
     }
 
     public selectInterval(intervalStates: AudioIntervalState[], position: number): {
-        state: AudioIntervalState,
+        state: AudioIntervalState | null,
         distance: number | null,
     } {
         checkObjectType('intervals for select', intervalStates, null, { cls: Array, name: 'Array' });
