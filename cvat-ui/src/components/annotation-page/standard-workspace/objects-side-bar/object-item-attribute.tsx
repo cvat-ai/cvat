@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
@@ -14,6 +15,7 @@ import Button from 'antd/lib/button';
 import { BookOutlined } from '@ant-design/icons';
 
 import config from 'config';
+import { CombinedState } from 'reducers';
 import { clamp } from 'utils/math';
 import TextArea, { TextAreaRef } from 'antd/lib/input/TextArea';
 import CatalogueReferenceModal from './catalogue-reference-modal';
@@ -53,11 +55,16 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     const [localAttrValue, setAttributeValue] = useState(attrValue);
     const [catalogueModalVisible, setCatalogueModalVisible] = useState(false);
 
+    const showPrivateAttributes = useSelector(
+        (state: CombinedState) => state.settings.workspace.showPrivateAttributes,
+    );
+
     // Check if this is a catalogue reference attribute
     const isCatalogueRef = attrName.startsWith('catalogue_ref__');
     //custom UI modification
-    const isAutomaticValue= attrValue == "auto";
-    const isPrivateAttribute = attrName.startsWith("_");
+    const isAutomaticValue = attrValue === 'auto';
+    const isPrivateAttribute = attrName.startsWith('_');
+    const showAttribute = (!isPrivateAttribute && !isAutomaticValue) || showPrivateAttributes;
 
     const catalogueName = isCatalogueRef ? attrName.replace('catalogue_ref__', '') : '';
     useEffect(() => {
@@ -84,9 +91,10 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         }
     }, [attrValue]);
 
-    if (isPrivateAttribute){
-        return (<></>)
+    if (!showAttribute) {
+        return <></>;
     }
+
     if (attrInputType === 'checkbox') {
         return (
             <Col span={24}>
@@ -137,10 +145,6 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     }
 
     if (attrInputType === 'select') {
-        if (isAutomaticValue) {
-            return  <>
-                </>
-        }
         return (
             <>
                 <Col span={8} style={attrNameStyle}>

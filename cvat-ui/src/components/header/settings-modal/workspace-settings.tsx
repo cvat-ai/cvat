@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { VoidFunctionComponent } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
@@ -30,6 +30,7 @@ interface Props {
     textPosition: 'center' | 'auto';
     textContent: string;
     showTagsOnFrame: boolean;
+    showPrivateAttributes: boolean;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeFocusedObjectPadding(padding: number): void;
@@ -43,6 +44,7 @@ interface Props {
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
     onSwitchShowingTagsOnFrame(enabled: boolean): void;
+    onSwitchShowingPrivateAttributes(enabled:boolean):void;
 }
 
 function WorkspaceSettingsComponent(props: Props): JSX.Element {
@@ -60,6 +62,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         textPosition,
         textContent,
         showTagsOnFrame,
+        showPrivateAttributes,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeFocusedObjectPadding,
@@ -73,6 +76,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onChangeTextPosition,
         onChangeTextContent,
         onSwitchShowingTagsOnFrame,
+        onSwitchShowingPrivateAttributes
     } = props;
 
     const minAutoSaveInterval = 1;
@@ -247,6 +251,22 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={24}>
                     <Text type='secondary'>Show frame tags in the corner of the workspace</Text>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-show-frame-tags cvat-player-setting'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={showPrivateAttributes}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchShowingPrivateAttributes(event.target.checked);
+                        }}
+                    >
+                        Show private attributes
+                    </Checkbox>
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>Show private attributes in item details</Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-focused-object-padding cvat-player-setting'>

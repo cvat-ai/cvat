@@ -61,6 +61,7 @@ export enum SettingsActionTypes {
     DISABLE_IMAGE_FILTER = 'DISABLE_IMAGE_FILTER',
     RESET_IMAGE_FILTERS = 'RESET_IMAGE_FILTERS',
     CHANGE_SHAPES_ORIENTATION_VISIBILITY = 'CHANGE_SHAPES_ORIENTATION_VISIBILITY',
+    SWITCH_SHOWING_PRIVATE_ATTRIBUTES = 'SWITCH_SHOWING_PRIVATE_ATTRIBUTES',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -418,6 +419,15 @@ export function switchShowingTagsOnFrame(showTagsOnFrame: boolean): AnyAction {
         type: SettingsActionTypes.SWITCH_SHOWING_TAGS_ON_FRAME,
         payload: {
             showTagsOnFrame,
+        },
+    };
+}
+
+export function switchShowingPrivateAttributes(showPrivateAttributes: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SHOWING_PRIVATE_ATTRIBUTES,
+        payload: {
+            showPrivateAttributes,
         },
     };
 }
