@@ -25,6 +25,7 @@ interface Props {
     jobInstance: Job;
     audioCurrentTime: number;
     audioDuration: number;
+    audioZoom: number;
     annotationFilters: object[];
     initialOpenGuide: boolean;
     changeWorkspace(workspace: Workspace): void;
@@ -49,6 +50,7 @@ export default function AudioTopBarComponent(props: Props): JSX.Element {
         keyMap,
         audioCurrentTime,
         audioDuration,
+        audioZoom,
         annotationFilters,
         initialOpenGuide,
         showStatistics,
@@ -78,6 +80,7 @@ export default function AudioTopBarComponent(props: Props): JSX.Element {
                         playing={playing}
                         currentTime={audioCurrentTime}
                         duration={audioDuration}
+                        zoom={audioZoom}
                         workspace={workspace}
                         keyMap={keyMap}
                         onPlayPause={onAudioPlayPause}

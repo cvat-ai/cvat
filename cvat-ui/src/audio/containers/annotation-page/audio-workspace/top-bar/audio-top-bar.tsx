@@ -40,6 +40,7 @@ interface StateToProps {
     initialOpenGuide: boolean;
     audioCurrentTime: number;
     audioDuration: number;
+    audioZoom: number;
 }
 
 interface DispatchToProps {
@@ -73,6 +74,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 playing,
                 currentTime: audioCurrentTime,
                 duration: audioDuration,
+                zoom: audioZoom,
             },
         },
         settings: {
@@ -100,6 +102,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         initialOpenGuide,
         audioCurrentTime,
         audioDuration,
+        audioZoom,
     };
 }
 
@@ -249,6 +252,7 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
             initialOpenGuide,
             audioCurrentTime,
             audioDuration,
+            audioZoom,
             onAudioPlayPause,
             onAudioSeek,
             showFilters,
@@ -268,6 +272,7 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
                 redoShortcut={normalizedKeyMap.AUDIO_REDO ?? normalizedKeyMap.REDO ?? ''}
                 audioCurrentTime={audioCurrentTime ?? 0}
                 audioDuration={audioDuration ?? 0}
+                audioZoom={audioZoom ?? 1}
                 annotationFilters={annotationFilters}
                 initialOpenGuide={initialOpenGuide}
                 changeWorkspace={this.changeWorkspace}
