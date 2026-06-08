@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AnnotationContext } from './annotation-context';
+import type { AnnotationContext } from './annotation-context';
 
 type Constructor<T = object> = new (...args: any[]) => T;
 type AnnotationContextConstructor = Constructor<AnnotationContext>;

@@ -19,7 +19,7 @@ import {
     SerializedCollection, SerializedJob,
     SerializedLabel, SerializedTask,
 } from './server-response-types';
-import { type AudioIntervalState } from './annotations-objects/types';
+import { type AudioIntervalState } from './annotations-objects/audio-interval-state';
 import AnnotationGuide from './guide';
 import { FrameData, FramesMetaData } from './frames';
 import Statistics from './statistics';

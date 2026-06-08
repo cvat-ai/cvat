@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { omit } from 'lodash';
-import ObjectState, { SerializedData } from '../object-state';
+import ObjectState, { type SerializedData } from '../object-state';
 import { ScriptingError } from '../exceptions';
 import { ObjectType, HistoryActions } from '../enums';
 import type { SerializedShape } from '../server-response-types';
@@ -34,14 +34,14 @@ export class Shape extends ScoredMixin(Drawn) {
         this.zOrder = data.z_order;
     }
 
-    protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
+    protected withContext(): ReturnType<Drawn['withContext']> & {
         save: (data: ObjectState) => ObjectState;
         export: () => SerializedShape;
     } {
         return {
-            ...super.withContext(frame),
-            save: this.save.bind(this, frame),
-            export: this.toJSON.bind(this) as () => SerializedShape,
+            ...super.withContext(),
+            save: this.save.bind(this),
+            export: this.toJSON.bind(this),
         };
     }
 
@@ -103,7 +103,7 @@ export class Shape extends ScoredMixin(Drawn) {
             source: this.source,
             score: this.score,
             votes: this.votes,
-            __internal: this.withContext(frame),
+            __internal: this.withContext(),
         };
 
         if (typeof this.outside !== 'undefined') {
@@ -258,7 +258,7 @@ export class Shape extends ScoredMixin(Drawn) {
 
         const updated = data.updateFlags;
         for (const readOnlyField of this.readOnlyFields) {
-            updated[readOnlyField] = false;
+            delete updated[readOnlyField];
         }
 
         const fittedPoints = this.validateStateBeforeSave(data, updated, frame);

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import ObjectState from '../object-state';
+import type ObjectState from '../object-state';
 import { checkObjectType } from '../common';
 import { ArgumentError } from '../exceptions';
 import { Label } from '../labels';
@@ -21,14 +21,6 @@ export class ImageObject extends AnnotationBase {
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.frame = data.frame;
-    }
-
-    protected withContext(_: number): {
-        delete: ImageObject['delete'];
-    } {
-        return {
-            delete: this.delete.bind(this),
-        };
     }
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags']): void {

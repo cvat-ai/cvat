@@ -23,26 +23,6 @@ export function copyShape(state: CopyShapeState, data: Partial<TrackedShape> = {
     };
 }
 
-export function serverAttributesToDictionary(attributes: SerializedAttributes): Map<number, string> {
-    const map = new Map<number, string>();
-    for (const attr of attributes) {
-        map.set(attr.spec_id, attr.value);
-    }
-    return map;
-}
-
-export function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape {
-    return {
-        serverId: shape.id,
-        occluded: shape.occluded,
-        zOrder: shape.z_order,
-        points: shape.points,
-        outside: shape.outside,
-        rotation: shape.rotation || 0,
-        attributes: serverAttributesToDictionary(shape.attributes),
-    };
-}
-
 export function deserializeAttributes(attributes: SerializedAttributes): Map<number, string> {
     const map = new Map<number, string>();
     for (const attr of attributes) {
@@ -56,6 +36,21 @@ export function serializeAttributes(attributes: Map<number, string>): Serialized
         acc.push({ spec_id: id, value });
         return acc;
     }, []);
+}
+
+export function deserializeTrackedShapes(shapes: SerializedTrack['shapes']): Record<number, TrackedShape> {
+    return shapes.reduce((acc, shape) => {
+        acc[shape.frame] = {
+            serverId: shape.id,
+            occluded: shape.occluded,
+            zOrder: shape.z_order,
+            points: shape.points,
+            outside: shape.outside,
+            rotation: shape.rotation || 0,
+            attributes: deserializeAttributes(shape.attributes),
+        };
+        return acc;
+    }, {} as Record<number, TrackedShape>);
 }
 
 export function computeNewSource(currentSource: Source): Source {
