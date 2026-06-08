@@ -26,7 +26,7 @@ import { createAction, ActionUnion, shallowEqual } from 'utils/redux';
 import { getCVATStore } from 'cvat-store';
 import {
     BaseCollectionAction, BaseAction, Job, getCore,
-    ObjectState, ActionParameterType,
+    ObjectState, ActionParameterType, DimensionType,
 } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
@@ -322,9 +322,15 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
     const filteredActions = targetObjectState ? actions
         .filter((_action) => _action.isApplicableForObject(targetObjectState)) : actions;
     const jobInstance = storage.getState().annotation.job.instance as Job;
+    const is1D = jobInstance.dimension === DimensionType.DIMENSION_1D;
     const currentFrameAction = activeAction instanceof BaseCollectionAction || targetObjectState !== null;
 
     useEffect(() => {
+        if (!is1D) {
+            dispatch(reducerActions.setVisible(true));
+            return;
+        }
+
         core.actions.list().then((list: BaseAction[]) => {
             dispatch(reducerActions.setAnnotationsActions(list));
 
@@ -344,6 +350,28 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
             dispatch(reducerActions.updateTargetObjectState(defaultTargetObjectState ?? null));
         });
     }, []);
+
+    if (is1D) {
+        return (
+            <Modal
+                closable={false}
+                width={640}
+                open={modalVisible}
+                destroyOnClose
+                afterClose={onClose}
+                className='cvat-action-runner-content'
+                okText='Close'
+                cancelButtonProps={{ style: { display: 'none' } }}
+                onOk={() => dispatch(reducerActions.setVisible(false))}
+            >
+                <Alert
+                    message='Annotation actions are not available for audio jobs'
+                    type='info'
+                    showIcon
+                />
+            </Modal>
+        );
+    }
 
     return (
         <Modal
