@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
     MaskShape, BasicInjection, SkeletonShape,
@@ -17,7 +18,7 @@ import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
 import { Attribute, Label } from './labels';
-import { ArgumentError, ScriptingError } from './exceptions';
+import { ArgumentError } from './exceptions';
 import ObjectState from './object-state';
 import { cropMask } from './object-utils';
 import { AudioIntervalState } from './annotations-objects/audio-interval-state';
@@ -1090,13 +1091,14 @@ export default class Collection {
 
     public statistics(): Statistics {
         const labels = {};
-        const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
         const body = {
-            ...(shapes.reduce((acc, val) => ({
-                ...acc,
-                [val]: { shape: 0, track: 0 },
-            }), {})),
-
+            rectangle: { shape: 0, track: 0 },
+            polygon: { shape: 0, track: 0 },
+            polyline: { shape: 0, track: 0 },
+            points: { shape: 0, track: 0 },
+            ellipse: { shape: 0, track: 0 },
+            cuboid: { shape: 0, track: 0 },
+            skeleton: { shape: 0, track: 0 },
             mask: { shape: 0 },
             tag: 0,
             interval: {
@@ -1114,7 +1116,7 @@ export default class Collection {
             const pref = prefix ? `${prefix}${sep}` : '';
             for (const label of spec) {
                 const { name } = label;
-                labels[`${pref}${name}`] = JSON.parse(JSON.stringify(body));
+                labels[`${pref}${name}`] = _.cloneDeep(body);
 
                 if (label?.structure?.sublabels) {
                     fillBody(label.structure.sublabels, `${pref}${name}`);
@@ -1122,15 +1124,8 @@ export default class Collection {
             }
         };
 
-        const total = JSON.parse(JSON.stringify(body));
+        const total = _.cloneDeep(body);
         fillBody(Object.values(this.labels).filter((label) => !label.hasParent));
-        const computeIntervalCoverage = (duration: number): number => {
-            if (this.stopFrame <= 0) {
-                return 0;
-            }
-
-            return Math.min(Math.max(duration / this.stopFrame, 0), 1);
-        };
 
         const scanTrack = (track, prefix = ''): void => {
             const countInterpolatedFrames = (start: number, stop: number, lastIsKeyframe: boolean): number => {
@@ -1195,20 +1190,16 @@ export default class Collection {
                 continue;
             }
 
-            let objectType = null;
-            if (object instanceof Shape) {
-                objectType = 'shape';
-            } else if (object instanceof Track) {
-                objectType = 'track';
-            } else if (object instanceof Tag) {
-                objectType = 'tag';
-            } else if (object instanceof AudioInterval) {
-                objectType = 'interval';
-            } else {
-                throw new ScriptingError(`Unexpected object type: "${objectType}"`);
+            if (!(
+                object instanceof Shape ||
+                object instanceof Track ||
+                object instanceof Tag ||
+                object instanceof AudioInterval
+            )) {
+                continue;
             }
 
-            const { name: labelName } = object.label;
+            const labelName = object.label.name;
             if (object instanceof AudioInterval) {
                 const stop = object.stop ?? this.stopFrame;
                 labels[labelName].interval.count++;
@@ -1226,6 +1217,7 @@ export default class Collection {
                 labels[labelName][shapeType].shape++;
                 labels[labelName].manually++;
                 labels[labelName].total++;
+
                 if (shapeType === ShapeType.SKELETON) {
                     (object as unknown as SkeletonShape).elements.forEach((element) => {
                         const combinedName = [labelName, element.label.name].join(sep);
@@ -1238,7 +1230,7 @@ export default class Collection {
         }
 
         for (const label of Object.keys(labels)) {
-            labels[label].interval.coverage = computeIntervalCoverage(labels[label].interval.duration);
+            labels[label].interval.coverage = labels[label].interval.duration / this.stopFrame;
         }
 
         for (const label of Object.keys(labels)) {
@@ -1252,8 +1244,8 @@ export default class Collection {
                 }
             }
         }
-        total.interval.coverage = computeIntervalCoverage(total.interval.duration);
 
+        total.interval.coverage = total.interval.duration / this.stopFrame;
         return new Statistics(labels, total);
     }
 
@@ -1268,7 +1260,7 @@ export default class Collection {
 
         for (const state of annotationStates) {
             if (!(state instanceof ObjectState || state instanceof AudioIntervalState)) {
-                throw new ArgumentError('Object state must be an ObjectState or AudioIntervalState');
+                throw new ArgumentError('annotationState must be an ObjectState or AudioIntervalState');
             }
 
             if (state.clientID !== null) {
@@ -1279,6 +1271,10 @@ export default class Collection {
             checkObjectType('state label', state.label, null, { cls: Label, name: 'Label' });
 
             const attributes = validateAttributesList(objectAttributesAsList(state));
+            const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
+                accumulator[attribute.id] = attribute;
+                return accumulator;
+            }, {});
 
             // Construct whole objects from states
             if (state instanceof AudioIntervalState) {
@@ -1306,10 +1302,6 @@ export default class Collection {
                 checkObjectType('state zOrder', state.zOrder, 'integer');
                 checkObjectType('state descriptions', state.descriptions, null, { cls: Array, name: 'Array' });
                 state.descriptions.forEach((desc) => checkObjectType('state description', desc, 'string'));
-                const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
-                    accumulator[attribute.id] = attribute;
-                    return accumulator;
-                }, {});
 
                 for (const coord of state.points) {
                     checkObjectType('point coordinate', coord, 'number');
