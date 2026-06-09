@@ -284,6 +284,7 @@ export interface SerializedQualitySettingsData {
     point_size_base?: string;
     line_thickness?: number;
     low_overlap_threshold?: number;
+    interval_boundary_tolerance?: number;
     compare_line_orientation?: boolean;
     line_orientation_threshold?: number;
     compare_groups?: boolean;
