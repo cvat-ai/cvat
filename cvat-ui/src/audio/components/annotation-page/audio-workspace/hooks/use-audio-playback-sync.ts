@@ -38,7 +38,7 @@ export function useAudioPlaybackSync({
 
     useEffect(() => {
         if (!wavesurfer || !duration) return;
-        if (Math.abs(currentTime - lastWsTimeRef.current) < 0.05) return;
+        if (Math.abs(currentTime - lastWsTimeRef.current) < Number.EPSILON) return;
         const clampedTime = Math.max(0, Math.min(duration, currentTime));
         wavesurfer.setTime(clampedTime);
     }, [currentTime, duration, wavesurfer]);
