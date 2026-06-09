@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { VoidFunctionComponent } from 'react';
+import React from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
@@ -76,7 +76,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onChangeTextPosition,
         onChangeTextContent,
         onSwitchShowingTagsOnFrame,
-        onSwitchShowingPrivateAttributes
+        onSwitchShowingPrivateAttributes,
     } = props;
 
     const minAutoSaveInterval = 1;

@@ -40,12 +40,12 @@
         border: 2px solid transparent;
 
         &:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 15%);
         }
 
         &.cvat-catalogue-item-selected {
             border-color: #1890ff;
-            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 30%);
         }
 
         .ant-card-body {
@@ -79,7 +79,7 @@
     .cvat-catalogue-item-description {
         display: block;
         font-size: 12px;
-        color: rgba(0, 0, 0, 0.65);
+        color: rgba(0, 0, 0, 65%);
         margin-bottom: 8px;
         min-height: 40px;
     }
