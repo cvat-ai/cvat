@@ -326,7 +326,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
     const currentFrameAction = activeAction instanceof BaseCollectionAction || targetObjectState !== null;
 
     useEffect(() => {
-        if (!is1D) {
+        if (is1D) {
             dispatch(reducerActions.setVisible(true));
             return;
         }
@@ -349,7 +349,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
             dispatch(reducerActions.updateFrameTo(jobInstance.stopFrame));
             dispatch(reducerActions.updateTargetObjectState(defaultTargetObjectState ?? null));
         });
-    }, []);
+    }, [jobInstance]);
 
     if (is1D) {
         return (
