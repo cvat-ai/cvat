@@ -15,8 +15,8 @@ import { defaultVisibility, ResourceFilterHOC } from 'components/resource-sortin
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, config,
 } from './jobs-filter-configuration';
-import QualityRequirementsEditor from './quality-requirements-editor';
-import QualityRequirementForm from './quality-requirement-form';
+import QualityRequirementsEditor from '../requirements/quality-requirements-editor';
+import QualityRequirementForm from '../requirements/quality-requirement-form';
 
 interface Props {
     form: FormInstance;

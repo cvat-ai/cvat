@@ -16,7 +16,7 @@ import {
     Label, Project, QualitySettings, QualitySettingsSaveFields, Task,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import QualitySettingsForm from './task-quality/quality-settings-form';
+import QualitySettingsForm from './shared/settings/quality-settings-form';
 
 export type UpdateSettingsData = Record<number, { settings: QualitySettings, fields: QualitySettingsSaveFields }>;
 
