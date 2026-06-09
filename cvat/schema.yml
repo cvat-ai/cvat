@@ -11867,6 +11867,14 @@ components:
         redelivery:
           type: boolean
           readOnly: true
+        attempt:
+          type: integer
+          readOnly: true
+          nullable: true
+        request_duration:
+          type: integer
+          readOnly: true
+          nullable: true
         created_date:
           type: string
           format: date-time
