@@ -385,6 +385,10 @@ class _Agent:
 
         remote_function = json.loads(response.data)
 
+        self._calculate_result_for_ar: Callable[
+            [dict[str, Any], Callable[[float], None]], dict[str, Any]
+        ]
+
         self._validate_function_compatibility(remote_function)
 
         self._agent_id = secrets.token_hex(16)
@@ -678,9 +682,22 @@ class _Agent:
         )
         self._client.logger.debug("AR %r parameters: %r", ar_id, ar_params)
 
-        try:
-            result = self._calculate_result_for_ar(ar_id, ar_params)
+        last_update_timestamp = datetime.now(tz=timezone.utc)
 
+        def check_in(*, current_progress: float) -> None:
+            nonlocal last_update_timestamp
+            current_timestamp = datetime.now(tz=timezone.utc)
+
+            if current_timestamp >= last_update_timestamp + _UPDATE_INTERVAL:
+                self._update_ar(ar_id, current_progress)
+                last_update_timestamp = current_timestamp
+
+            # Interactive requests are time sensitive, so if there are any,
+            # we have to put the current AR on hold and process them ASAP.
+            self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
+
+        try:
+            result = self._calculate_result_for_ar(ar_params, check_in)
             self._complete_ar(ar_id, result)
         except Exception as ex:
             self._client.logger.error("Failed to process AR %r", ar_id, exc_info=True)
@@ -784,13 +801,15 @@ class _Agent:
         response_data = json.loads(response.data)
         return response_data["ar_assignment"]
 
-    def _calculate_result_for_detection_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
+    def _calculate_result_for_detection_ar(
+        self, ar_params: dict[str, Any], check_in: Callable[[float], None]
+    ) -> dict[str, Any]:
         if ar_params["type"] == "annotate_task":
             with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
-                return self._calculate_result_for_annotate_task_ar(ar_id, ar_params)
+                return self._calculate_result_for_annotate_task_ar(ar_params, check_in)
         elif ar_params["type"] == "annotate_frame":
             with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
-                return self._calculate_result_for_annotate_frame_ar(ar_id, ar_params)
+                return self._calculate_result_for_annotate_frame_ar(ar_params)
         else:
             raise _BadArError(f"unsupported type: {ar_params['type']!r}")
 
@@ -822,7 +841,9 @@ class _Agent:
             conv_mask_to_poly=ar_params["conv_mask_to_poly"],
         )
 
-    def _calculate_result_for_annotate_task_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
+    def _calculate_result_for_annotate_task_ar(
+        self, ar_params: dict[str, Any], check_in: Callable[[float], None]
+    ) -> dict[str, Any]:
         ds = cvatds.TaskDataset(
             self._client,
             ar_params["task"],
@@ -830,10 +851,9 @@ class _Agent:
             media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
         )
 
-        # Fetching the dataset might take a while, so do a progress update to let the server
+        # Fetching the dataset might take a while, so check in to let the server
         # know we're still alive.
-        self._update_ar(ar_id, 0)
-        last_update_timestamp = datetime.now(tz=timezone.utc)
+        check_in(current_progress=0)
 
         mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds.labels)
 
@@ -850,19 +870,11 @@ class _Agent:
                 all_annotations.tags.extend(tags)
                 all_annotations.shapes.extend(shapes)
 
-                current_timestamp = datetime.now(tz=timezone.utc)
-
-                if current_timestamp >= last_update_timestamp + _UPDATE_INTERVAL:
-                    self._update_ar(ar_id, (sample_index + 1) / len(ds.samples))
-                    last_update_timestamp = current_timestamp
-
-                # Interactive requests are time sensitive, so if there are any,
-                # we have to put the current AR on hold and process them ASAP.
-                self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
+                check_in(current_progress=(sample_index + 1) / len(ds.samples))
 
         return {"annotations": all_annotations}
 
-    def _calculate_result_for_annotate_frame_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
+    def _calculate_result_for_annotate_frame_ar(self, ar_params: dict[str, Any]) -> dict[str, Any]:
         sample, ds_labels = self._get_sample_from_ar_params(ar_params)
 
         mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds_labels)
@@ -876,17 +888,19 @@ class _Agent:
         tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
         return {"annotations": models.PatchedLabeledDataRequest(tags=tags, shapes=shapes)}
 
-    def _calculate_result_for_tracking_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
+    def _calculate_result_for_tracking_ar(
+        self, ar_params: dict[str, Any], check_in: Callable[[float], None]
+    ) -> dict[str, Any]:
         if ar_params["type"] == "init_tracking":
             with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
-                return self._calculate_result_for_init_tracking_ar(ar_id, ar_params)
+                return self._calculate_result_for_init_tracking_ar(ar_params)
         elif ar_params["type"] == "track":
             with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
-                return self._calculate_result_for_track_ar(ar_id, ar_params)
+                return self._calculate_result_for_track_ar(ar_params)
         else:
             raise _BadArError(f"unsupported type: {ar_params['type']!r}")
 
-    def _calculate_result_for_init_tracking_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
+    def _calculate_result_for_init_tracking_ar(self, ar_params: dict[str, Any]) -> dict[str, Any]:
         sample, _ = self._get_sample_from_ar_params(ar_params)
 
         def convert_shape(shape: dict) -> cvataa.TrackableShape:
@@ -907,7 +921,7 @@ class _Agent:
 
         return {"states": states}
 
-    def _calculate_result_for_track_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
+    def _calculate_result_for_track_ar(self, ar_params: dict[str, Any]) -> dict[str, Any]:
         sample, _ = self._get_sample_from_ar_params(ar_params)
 
         states = ar_params["states"]
