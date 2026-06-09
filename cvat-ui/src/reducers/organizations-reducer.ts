@@ -94,10 +94,13 @@ export default function (
             };
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION_SUCCESS: {
+            const { slug } = action.payload;
             return {
                 ...state,
                 fetching: false,
-                current: null,
+                current: state.current && state.current.slug === slug ? null : state.current,
+                currentArray: state.currentArray.filter((org) => org.slug !== slug),
+                count: state.count ? state.count - 1 : 0,
             };
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION_FAILED: {
@@ -125,7 +128,16 @@ export default function (
                 leaving: true,
             };
         }
-        case OrganizationActionsTypes.LEAVE_ORGANIZATION_SUCCESS:
+        case OrganizationActionsTypes.LEAVE_ORGANIZATION_SUCCESS: {
+            const { slug } = action.payload;
+            return {
+                ...state,
+                leaving: false,
+                current: state.current && state.current.slug === slug ? null : state.current,
+                currentArray: state.currentArray.filter((org) => org.slug !== slug),
+                count: state.count ? state.count - 1 : 0,
+            };
+        }
         case OrganizationActionsTypes.LEAVE_ORGANIZATION_FAILED: {
             return {
                 ...state,
