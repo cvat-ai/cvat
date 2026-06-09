@@ -8,6 +8,9 @@ import {
 import {
     AudioIntervalState, FramesMetaData, Job, Source, fetchAndAssembleAudio,
 } from 'cvat-core-wrapper';
+import {
+    getAudioContext, setAudioBuffer, deleteAudioBuffer,
+} from 'audio/components/annotation-page/audio-workspace/utils/audio-buffer-store';
 
 export enum AudioActionTypes {
     SWITCH_AUDIO_PLAY = 'SWITCH_AUDIO_PLAY',
@@ -59,8 +62,8 @@ export const audioActions = {
     loadAudioData: () => (
         createAction(AudioActionTypes.LOAD_AUDIO_DATA)
     ),
-    loadAudioDataSuccess: (audioUrl: string) => (
-        createAction(AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS, { audioUrl })
+    loadAudioDataSuccess: (audioToken: string) => (
+        createAction(AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS, { audioUrl: audioToken })
     ),
     loadAudioDataFailed: (error: string) => (
         createAction(AudioActionTypes.LOAD_AUDIO_DATA_FAILED, { error })
@@ -100,9 +103,9 @@ async function dispatchFetchAnnotations(dispatch: ThunkDispatch): Promise<void> 
 
 export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const prevAudioUrl = getState().audio.player.audioUrl;
-        if (prevAudioUrl) {
-            URL.revokeObjectURL(prevAudioUrl);
+        const prevToken = getState().audio.player.audioUrl;
+        if (prevToken) {
+            deleteAudioBuffer(prevToken);
         }
 
         dispatch(audioActions.loadAudioData());
@@ -110,10 +113,11 @@ export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkActi
         try {
             const totalFrames = jobMeta.size;
             const { chunkSize } = jobMeta;
-            const blob = await fetchAndAssembleAudio(job.id, totalFrames, chunkSize);
-            const audioUrl = URL.createObjectURL(blob);
+            const buffer = await fetchAndAssembleAudio(getAudioContext(), job.id, totalFrames, chunkSize);
 
-            dispatch(audioActions.loadAudioDataSuccess(audioUrl));
+            const audioToken = `audio-${job.id}`;
+            setAudioBuffer(audioToken, buffer);
+            dispatch(audioActions.loadAudioDataSuccess(audioToken));
         } catch (error) {
             dispatch(audioActions.loadAudioDataFailed(error instanceof Error ? error.message : String(error)));
         }

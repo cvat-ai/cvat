@@ -7,7 +7,6 @@ import React, {
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import WaveSurfer from 'wavesurfer.js';
-import WavesurferPlayer from '@wavesurfer/react';
 
 import { ActiveControl, CombinedState } from 'reducers';
 import { Attribute } from 'cvat-core-wrapper';
@@ -32,6 +31,7 @@ import { useAudioRecording } from './hooks/use-audio-recording';
 import { filterAudioIntervals } from './utils/filter-audio-regions';
 import { ZOOM_MAX, ZOOM_MIN, computeWaveformZoom } from './utils/zoom-bounds';
 import { intervalID } from './utils/audio-interval';
+import { getAudioBuffer } from './utils/audio-buffer-store';
 
 const ZOOM_STEP_FACTOR = 1.2;
 
@@ -88,8 +88,8 @@ function AudioCanvasWrapper(): JSX.Element {
 
     const [wavesurfer, setWavesurfer] = useState<WaveSurfer | null>(null);
     const [waveformWidth, setWaveformWidth] = useState(0);
-    const prevAudioUrlRef = useRef<string | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const waveContainerRef = useRef<HTMLDivElement>(null);
     const zoomRef = useRef(zoom);
     const zoomAnchorRef = useRef<{ time: number; x: number } | null>(null);
     const waveformZoom = useMemo(
@@ -318,18 +318,50 @@ function AudioCanvasWrapper(): JSX.Element {
         onUpdateActiveControl,
     });
 
+    const handlersRef = useRef({ handleReady, handleTimeupdate, handleFinish });
+    handlersRef.current = { handleReady, handleTimeupdate, handleFinish };
+
     useEffect(() => {
-        if (prevAudioUrlRef.current && prevAudioUrlRef.current !== audioUrl) {
-            URL.revokeObjectURL(prevAudioUrlRef.current);
+        const container = waveContainerRef.current;
+        if (!container || !audioUrl) return undefined;
+        const buffer = getAudioBuffer(audioUrl);
+        if (!buffer) return undefined;
+
+        const ws = WaveSurfer.create({
+            container,
+            backend: 'WebAudio',
+            height: 140,
+            waveColor: '#4F46E5',
+            progressColor: '#818CF8',
+            cursorColor: '#C084FC',
+            barWidth: 2,
+            barRadius: 3,
+            cursorWidth: 2,
+            normalize: true,
+            plugins,
+        });
+
+        ws.on('ready', () => handlersRef.current.handleReady(ws));
+        ws.on('timeupdate', () => handlersRef.current.handleTimeupdate(ws));
+        ws.on('finish', () => handlersRef.current.handleFinish());
+
+        const channelData: Float32Array[] = [];
+        for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+            channelData.push(buffer.getChannelData(ch));
         }
-        prevAudioUrlRef.current = audioUrl;
+
+        // Render the waveform from the already-decoded peaks (no second decode)
+        // and set the exact duration. load('') clears the WebAudio player's
+        // buffer, so hand the decoded buffer to it afterwards for playback.
+        const player = ws.getMediaElement() as unknown as { buffer: AudioBuffer | null };
+        ws.load('', channelData, buffer.duration)
+            .then(() => { player.buffer = buffer; })
+            .catch(() => {});
 
         return () => {
-            if (prevAudioUrlRef.current) {
-                URL.revokeObjectURL(prevAudioUrlRef.current);
-            }
+            ws.destroy();
         };
-    }, [audioUrl]);
+    }, [audioUrl, plugins]);
 
     const activeInterval = activeIntervalID !== null ?
         intervals.find((interval) => interval.clientID === activeIntervalID) : null;
@@ -391,23 +423,7 @@ function AudioCanvasWrapper(): JSX.Element {
             {!waveformReady && <AudioCanvasSkeleton />}
             <div className='cvat-audio-waveform-wrapper' style={!waveformReady ? { visibility: 'hidden', height: 0, overflow: 'hidden' } : undefined}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', overflow: 'hidden' }}>
-                    <WavesurferPlayer
-                        key={audioUrl}
-                        onReady={handleReady}
-                        url={audioUrl}
-                        backend='WebAudio'
-                        height={140}
-                        waveColor='#4F46E5'
-                        progressColor='#818CF8'
-                        cursorColor='#C084FC'
-                        barWidth={2}
-                        barRadius={3}
-                        cursorWidth={2}
-                        normalize
-                        onTimeupdate={handleTimeupdate}
-                        onFinish={handleFinish}
-                        plugins={plugins}
-                    />
+                    <div ref={waveContainerRef} className='cvat-audio-waveform-canvas' />
                 </div>
                 <div className='cvat-audio-minimap-section'>
                     <div id='minimap' />
