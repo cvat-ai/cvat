@@ -61,7 +61,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
 
     // Check if this is a catalogue reference attribute
     const isCatalogueRef = attrName.startsWith('catalogue_ref__');
-    //custom UI modification
+    // custom UI modification
     const isAutomaticValue = attrValue === 'auto';
     const isPrivateAttribute = attrName.startsWith('_');
     const showAttribute = (!isPrivateAttribute && !isAutomaticValue) || showPrivateAttributes;
