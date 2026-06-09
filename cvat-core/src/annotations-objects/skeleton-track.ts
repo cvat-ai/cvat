@@ -3,13 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import ObjectState, { SerializedData } from '../object-state';
+import ObjectState, { type SerializedData } from '../object-state';
 import {
     ShapeType, ObjectType, HistoryActions,
 } from '../enums';
 import type { SerializedTrack } from '../server-response-types';
 import { computeWrappingBox, rotatePoint } from '../object-utils';
-import { ImageObject, InterpolationNotPossibleError } from './image-object';
+import { type ImageObject, InterpolationNotPossibleError } from './image-object';
 import { Track } from './track';
 import type { AnnotationInjection, InterpolatedPosition } from './types';
 import { computeNewSource, copyShape } from './utils';
@@ -81,7 +81,7 @@ export class SkeletonTrack extends Track {
             shapes: SerializedTrack['shapes'];
         }[];
     }): void {
-        Track.prototype.updateFromServerResponse.call(this, body);
+        super.updateFromServerResponse(body);
         if ('elements' in body) {
             for (const element of body.elements) {
                 const context = this.elements.find((_element: Track) => _element.label.id === element.label_id);
@@ -91,7 +91,7 @@ export class SkeletonTrack extends Track {
     }
 
     public clearServerId(): void {
-        Track.prototype.clearServerId.call(this);
+        super.clearServerId();
         for (const element of this.elements) {
             element.clearServerId();
         }
@@ -225,7 +225,7 @@ export class SkeletonTrack extends Track {
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
-            __internal: this.withContext(frame),
+            __internal: this.withContext(),
         };
     }
 

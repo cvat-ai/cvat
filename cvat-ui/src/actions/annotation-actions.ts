@@ -13,7 +13,7 @@ import {
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
     ObjectState, ObjectType, ShapeType, JobState, JobValidationLayout,
-    DimensionType,
+    DimensionType, Source, AudioIntervalState,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -30,11 +30,7 @@ import {
 } from 'reducers';
 import { switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
-import {
-    loadAudioAnnotationsAsync,
-    loadAudioDataAsync,
-    saveAudioAnnotationsAsync,
-} from './audio-actions';
+import { loadAudioDataAsync } from './audio-actions';
 
 interface AnnotationsParameters {
     filters: object[];
@@ -251,23 +247,32 @@ export function highlightConflict(conflict: QualityConflict | null): AnyAction {
     };
 }
 
-function wrapAnnotationsInGTJob(states: ObjectState[]): ObjectState[] {
+function presentStatesAsGroundTruth(states: ObjectState[]): ObjectState[] {
     return states.map((state: ObjectState) => new Proxy(state, {
         get(_state, prop) {
+            if (prop === 'source') {
+                return Source.GT;
+            }
+
             if (prop === 'isGroundTruth') {
-                // ground truth objects are not considered as gt objects, relatively to a gt jobs
-                // to avoid extra css styles, or restrictions applied
-                return false;
+                return true;
             }
 
             return Reflect.get(_state, prop);
+        },
+        set(_state, prop, value) {
+            if (prop === 'source') {
+                return true;
+            }
+
+            return Reflect.set(_state, prop, value);
         },
     }));
 }
 
 const userUnlockedInReviewMode = new Set<number>();
 
-function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
+function lockStatesForReviewWorkspace(states: ObjectState[]): ObjectState[] {
     return states.map((state: ObjectState) => new Proxy(state, {
         get(target, prop) {
             if (prop === 'lock') {
@@ -302,6 +307,7 @@ function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
 
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
+    intervals: AudioIntervalState[];
     history: CombinedState['annotation']['annotations']['history'];
 }> {
     const {
@@ -313,9 +319,7 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
     let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
 
-    if (jobInstance.type === JobType.GROUND_TRUTH) {
-        states = wrapAnnotationsInGTJob(states);
-    } else if (showGroundTruth && groundTruthInstance) {
+    if (jobInstance.type !== JobType.GROUND_TRUTH && showGroundTruth && groundTruthInstance) {
         let gtFrame: number | null = fetchFrame;
 
         if (validationLayout) {
@@ -323,36 +327,41 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
         }
 
         if (gtFrame !== null) {
-            const gtStates = await groundTruthInstance.annotations.get(gtFrame, showAllInterpolationTracks, filters);
+            let gtStates = await groundTruthInstance.annotations.get(gtFrame, showAllInterpolationTracks, filters);
+
+            if (workspace === Workspace.REVIEW) {
+                gtStates = presentStatesAsGroundTruth(gtStates);
+            }
+
             states.push(...gtStates);
         }
     }
 
     if (workspace === Workspace.REVIEW) {
-        states = wrapStatesForReviewMode(states);
+        states = lockStatesForReviewWorkspace(states);
     }
 
+    const intervals = jobInstance.dimension === DimensionType.DIMENSION_1D ?
+        await jobInstance.annotations.intervals() : [];
     const history = await jobInstance.actions.get();
 
     return {
         states,
+        intervals,
         history,
     };
 }
 
 export function fetchAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
-            const { states, history } = await fetchAnnotations();
-
-            const { workspace } = getState().annotation;
-            const finalStates = workspace === Workspace.REVIEW ?
-                wrapStatesForReviewMode(states) : states;
+            const { states, intervals, history } = await fetchAnnotations();
 
             await dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
-                    states: finalStates,
+                    states,
+                    intervals,
                     history,
                 },
             });
@@ -410,8 +419,8 @@ export function removeAnnotationsAsync(
             const { jobInstance } = receiveAnnotationsParameters();
             await jobInstance.annotations.clear({
                 reload: false,
-                startFrame,
-                stopFrame,
+                from: startFrame,
+                to: stopFrame,
                 delTrackKeyframesOnly,
             });
             await jobInstance.actions.clear();
@@ -1079,7 +1088,7 @@ export function getJobAsync({
 
             if (job.dimension === DimensionType.DIMENSION_1D) {
                 dispatch(loadAudioDataAsync(job, jobMeta));
-                dispatch(loadAudioAnnotationsAsync());
+                dispatch(fetchAnnotationsAsync());
             } else {
                 dispatch(fetchAnnotationsAsync());
                 dispatch(changeFrameAsync(frameNumber, false));
@@ -1096,13 +1105,7 @@ export function getJobAsync({
 }
 
 export function saveAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const { workspace } = getState().annotation;
-        if (workspace === Workspace.AUDIO) {
-            await dispatch(saveAudioAnnotationsAsync());
-            return;
-        }
-
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         const { jobInstance } = receiveAnnotationsParameters();
 
         dispatch({
@@ -1214,12 +1217,8 @@ async function updateObjectsLayers(
             return;
         }
 
-        if (jobInstance.type === JobType.GROUND_TRUTH) {
-            updatedStates = wrapAnnotationsInGTJob(updatedStates);
-        }
-
         if (workspace === Workspace.REVIEW) {
-            updatedStates = wrapStatesForReviewMode(updatedStates);
+            updatedStates = lockStatesForReviewWorkspace(updatedStates);
         }
 
         dispatch(activateObject(null, null, null));
@@ -1242,15 +1241,16 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
                 dispatch(activateObject(null, null, null));
             }
 
-            const promises = statesToUpdate.map((objectState) => objectState.save());
-            let states = await Promise.all(promises);
-
-            if (jobInstance.type === JobType.GROUND_TRUTH) {
-                states = wrapAnnotationsInGTJob(states);
+            const statesToSave = statesToUpdate.filter((objectState) => !objectState.isGroundTruth);
+            if (!statesToSave.length) {
+                return;
             }
 
+            const promises = statesToSave.map((objectState) => objectState.save());
+            let states = await Promise.all(promises);
+
             if (workspace === Workspace.REVIEW) {
-                states = wrapStatesForReviewMode(states);
+                states = lockStatesForReviewWorkspace(states);
             }
 
             const needToUpdateAll = states
@@ -1312,7 +1312,7 @@ export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
 }
 
 export function createAnnotationsAsync(
-    statesToCreate: ObjectState[],
+    statesToCreate: (ObjectState | AudioIntervalState)[],
     source: AnnotationSource = AnnotationSource.OTHER,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {

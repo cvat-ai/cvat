@@ -6,114 +6,7 @@ import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AudioActionTypes } from 'actions/audio-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
-import {
-    AudioHistoryEntry, AudioRegion, AudioRegionDiff, AudioState,
-} from '.';
-
-const MAX_AUDIO_HISTORY = 32;
-
-function cloneRegion(region: AudioRegion): AudioRegion {
-    return { ...region, attributes: { ...region.attributes } };
-}
-
-function regionsEqual(a: AudioRegion, b: AudioRegion): boolean {
-    if (
-        a.start !== b.start || a.end !== b.end ||
-        a.labelId !== b.labelId ||
-        a.locked !== b.locked || a.hidden !== b.hidden ||
-        a.color !== b.color || a.group !== b.group ||
-        a.source !== b.source || a.serverId !== b.serverId
-    ) return false;
-    const aKeys = Object.keys(a.attributes);
-    const bKeys = Object.keys(b.attributes);
-    if (aKeys.length !== bKeys.length) return false;
-    return aKeys.every((k) => a.attributes[Number(k)] === b.attributes[Number(k)]);
-}
-
-function regionListsEqual(a: AudioRegion[], b: AudioRegion[]): boolean {
-    if (a.length !== b.length) return false;
-    const bById = new Map(b.map((r) => [r.id, r]));
-    return a.every((r) => {
-        const other = bById.get(r.id);
-        return other !== undefined && regionsEqual(r, other);
-    });
-}
-
-function diffRegions(oldRegions: AudioRegion[], newRegions: AudioRegion[]): AudioRegionDiff[] {
-    const diffs: AudioRegionDiff[] = [];
-    const oldById = new Map(oldRegions.map((r) => [r.id, r]));
-    const newById = new Map(newRegions.map((r) => [r.id, r]));
-
-    newById.forEach((region, id) => {
-        const before = oldById.get(id);
-        if (!before) {
-            diffs.push({ kind: 'added', region: cloneRegion(region) });
-        } else if (!regionsEqual(before, region)) {
-            diffs.push({ kind: 'updated', before: cloneRegion(before), after: cloneRegion(region) });
-        }
-    });
-    oldById.forEach((region, id) => {
-        if (!newById.has(id)) diffs.push({ kind: 'removed', region: cloneRegion(region) });
-    });
-    return diffs;
-}
-
-function applyReverseDiffs(regions: AudioRegion[], diffs: AudioRegionDiff[]): AudioRegion[] {
-    let result = regions;
-    diffs.forEach((diff) => {
-        if (diff.kind === 'added') {
-            result = result.filter((r) => r.id !== diff.region.id);
-        } else if (diff.kind === 'removed') {
-            result = [...result, cloneRegion(diff.region)];
-        } else {
-            result = result.map((r) => (r.id === diff.after.id ? cloneRegion(diff.before) : r));
-        }
-    });
-    return result;
-}
-
-function applyForwardDiffs(regions: AudioRegion[], diffs: AudioRegionDiff[]): AudioRegion[] {
-    let result = regions;
-    diffs.forEach((diff) => {
-        if (diff.kind === 'added') {
-            result = [...result, cloneRegion(diff.region)];
-        } else if (diff.kind === 'removed') {
-            result = result.filter((r) => r.id !== diff.region.id);
-        } else {
-            result = result.map((r) => (r.id === diff.before.id ? cloneRegion(diff.after) : r));
-        }
-    });
-    return result;
-}
-
-function describeDiffs(diffs: AudioRegionDiff[]): string {
-    const added = diffs.filter((d) => d.kind === 'added').length;
-    const removed = diffs.filter((d) => d.kind === 'removed').length;
-    const updated = diffs.filter((d) => d.kind === 'updated').length;
-    if (added && !removed && !updated) return added === 1 ? 'Created region' : 'Created regions';
-    if (removed && !added && !updated) return removed === 1 ? 'Deleted region' : 'Deleted regions';
-    if (updated && !added && !removed) return updated === 1 ? 'Updated region' : 'Updated regions';
-    return 'Edited regions';
-}
-
-function pushAudioUndo(
-    state: AudioState,
-    actionName: string,
-    diffs: AudioRegionDiff[],
-    activeRegionIdAfter: string | null,
-): AudioState['history'] {
-    if (diffs.length === 0 && state.player.activeRegionId === activeRegionIdAfter) {
-        return state.history;
-    }
-    const entry: AudioHistoryEntry = {
-        actionName,
-        diffs,
-        activeRegionIdBefore: state.player.activeRegionId,
-        activeRegionIdAfter,
-    };
-    const undo = [...state.history.undo, entry].slice(-MAX_AUDIO_HISTORY);
-    return { undo, redo: [] };
-}
+import { ActiveControl, AudioState } from '.';
 
 const defaultState: AudioState = {
     player: {
@@ -124,20 +17,14 @@ const defaultState: AudioState = {
         zoom: 1,
         volume: 1,
         loop: false,
-        regions: [],
-        activeRegionId: null,
-        hoveredRegionId: null,
+        intervals: [],
+        activeIntervalID: null,
+        hoveredIntervalID: null,
         audioUrl: null,
         audioLoading: false,
         audioError: null,
         waveformReady: false,
         activeLabelId: null,
-        hasUnsavedChanges: false,
-        savedRegions: [],
-    },
-    history: {
-        undo: [],
-        redo: [],
     },
 };
 
@@ -217,60 +104,21 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AudioActionTypes.SET_AUDIO_REGIONS: {
-            const diffs = diffRegions(state.player.regions, action.payload.regions);
-            if (diffs.length === 0) {
-                return state;
-            }
+        case AudioActionTypes.SET_AUDIO_ACTIVE_INTERVAL: {
             return {
                 ...state,
-                history: pushAudioUndo(
-                    state,
-                    describeDiffs(diffs),
-                    diffs,
-                    state.player.activeRegionId,
-                ),
                 player: {
                     ...state.player,
-                    regions: action.payload.regions,
-                    hasUnsavedChanges: true,
+                    activeIntervalID: action.payload.clientID,
                 },
             };
         }
-        case AudioActionTypes.UPDATE_AUDIO_REGION_ATTRIBUTE: {
-            const { regionId, attrID, value } = action.payload;
-            const before = state.player.regions.find((r) => r.id === regionId);
-            if (!before) return state;
-            const after: AudioRegion = {
-                ...before,
-                attributes: { ...before.attributes, [attrID]: value },
-            };
-            const diffs: AudioRegionDiff[] = [{ kind: 'updated', before: cloneRegion(before), after: cloneRegion(after) }];
-            return {
-                ...state,
-                history: pushAudioUndo(state, 'Changed attribute', diffs, state.player.activeRegionId),
-                player: {
-                    ...state.player,
-                    regions: state.player.regions.map((r) => (r.id === regionId ? after : r)),
-                    hasUnsavedChanges: true,
-                },
-            };
-        }
-        case AudioActionTypes.SET_AUDIO_ACTIVE_REGION: {
+        case AudioActionTypes.SET_AUDIO_HOVERED_INTERVAL: {
             return {
                 ...state,
                 player: {
                     ...state.player,
-                    activeRegionId: action.payload.regionId,
-                },
-            };
-        }
-        case AudioActionTypes.SET_AUDIO_HOVERED_REGION: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    hoveredRegionId: action.payload.regionId,
+                    hoveredIntervalID: action.payload.clientID,
                 },
             };
         }
@@ -325,99 +173,46 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AudioActionTypes.TOGGLE_AUDIO_REGION_LOCK: {
-            const { regionId } = action.payload;
-            const before = state.player.regions.find((r) => r.id === regionId);
-            if (!before) return state;
-            const after: AudioRegion = { ...before, locked: !before.locked };
-            const diffs: AudioRegionDiff[] = [{ kind: 'updated', before: cloneRegion(before), after: cloneRegion(after) }];
-            return {
-                ...state,
-                history: pushAudioUndo(state, 'Toggled lock', diffs, state.player.activeRegionId),
-                player: {
-                    ...state.player,
-                    regions: state.player.regions.map((r) => (r.id === regionId ? after : r)),
-                    hasUnsavedChanges: true,
-                },
-            };
-        }
-        case AudioActionTypes.TOGGLE_AUDIO_REGION_HIDDEN: {
-            const { regionId } = action.payload;
-            const before = state.player.regions.find((r) => r.id === regionId);
-            if (!before) return state;
-            const after: AudioRegion = { ...before, hidden: !before.hidden };
-            const diffs: AudioRegionDiff[] = [{ kind: 'updated', before: cloneRegion(before), after: cloneRegion(after) }];
-            return {
-                ...state,
-                history: pushAudioUndo(state, 'Toggled visibility', diffs, state.player.activeRegionId),
-                player: {
-                    ...state.player,
-                    regions: state.player.regions.map((r) => (r.id === regionId ? after : r)),
-                    hasUnsavedChanges: true,
-                },
-            };
-        }
-        case AudioActionTypes.LOAD_AUDIO_ANNOTATIONS_SUCCESS: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    regions: action.payload.regions,
-                    savedRegions: action.payload.regions,
-                    hasUnsavedChanges: false,
-                },
-                history: { undo: [], redo: [] },
-            };
-        }
-        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS_SUCCESS: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    savedRegions: state.player.regions,
-                    hasUnsavedChanges: false,
-                },
-            };
-        }
-        case AudioActionTypes.AUDIO_UNDO: {
-            const undoStack = [...state.history.undo];
-            const entry = undoStack.pop();
-            if (!entry) return state;
+        case AnnotationActionTypes.UPDATE_ACTIVE_CONTROL: {
+            const { activeControl } = action.payload;
+            if (
+                activeControl !== ActiveControl.AUDIO_REGION_CREATE &&
+                activeControl !== ActiveControl.AUDIO_REGION_RECORD
+            ) {
+                return state;
+            }
 
-            const regions = applyReverseDiffs(state.player.regions, entry.diffs);
             return {
                 ...state,
-                history: {
-                    undo: undoStack,
-                    redo: [...state.history.redo, entry].slice(-MAX_AUDIO_HISTORY),
-                },
                 player: {
                     ...state.player,
-                    regions,
-                    activeRegionId: entry.activeRegionIdBefore,
-                    hasUnsavedChanges: !regionListsEqual(regions, state.player.savedRegions),
+                    activeIntervalID: null,
+                    hoveredIntervalID: null,
                 },
             };
         }
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
+            const intervals = action.payload.intervals ?? [];
+            const activeIntervalID = intervals.some((interval) => interval.clientID === state.player.activeIntervalID) ?
+                state.player.activeIntervalID : null;
+            const hoveredIntervalID = intervals.some(
+                (interval) => interval.clientID === state.player.hoveredIntervalID,
+            ) ?
+                state.player.hoveredIntervalID : null;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    intervals,
+                    activeIntervalID,
+                    hoveredIntervalID,
+                },
+            };
+        }
+        case AudioActionTypes.AUDIO_UNDO:
         case AudioActionTypes.AUDIO_REDO: {
-            const redoStack = [...state.history.redo];
-            const entry = redoStack.pop();
-            if (!entry) return state;
-
-            const regions = applyForwardDiffs(state.player.regions, entry.diffs);
-            return {
-                ...state,
-                history: {
-                    undo: [...state.history.undo, entry].slice(-MAX_AUDIO_HISTORY),
-                    redo: redoStack,
-                },
-                player: {
-                    ...state.player,
-                    regions,
-                    activeRegionId: entry.activeRegionIdAfter,
-                    hasUnsavedChanges: !regionListsEqual(regions, state.player.savedRegions),
-                },
-            };
+            return state;
         }
         default:
             return state;

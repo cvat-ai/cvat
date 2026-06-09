@@ -17,7 +17,7 @@ export class EllipseShape extends Shape {
         checkNumberOfPoints(this.shapeType, this.points);
     }
 
-    static distance(points: number[], x: number, y: number, angle: number): number {
+    static distance(points: number[], x: number, y: number, angle: number): number | null {
         const [cx, cy, rightX, topY] = points;
         const [rx, ry] = [rightX - cx, cy - topY];
         const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);

@@ -5,10 +5,8 @@
 
 import type AnnotationHistory from '../annotations-history';
 import type { Label } from '../labels';
-import type {
-    DimensionType, JobType, ObjectType, Source,
-} from '../enums';
-import type { MaskShape } from './shape-models';
+import type { DimensionType, JobType } from '../enums';
+import type { MaskShape } from './mask-shape';
 
 export type FrameInfo = {
     width: number;
@@ -63,23 +61,27 @@ export interface Point2D {
     y: number;
 }
 
-export type AudioIntervalState = Readonly<{
-    objectType: ObjectType.INTERVAL;
-    clientID: number;
-    serverID: number | null;
-    label: Label;
-    start: number;
-    stop: number | null;
-    group: {
-        readonly color: string;
-        readonly id: number;
-    };
-    color: string;
-    lock: boolean;
-    updated: number;
-    source: Source;
-    score: number;
-    votes: number;
-    hidden: boolean;
-    attributes: Record<number, string>;
-}>;
+export interface CommonUpdateFlags {
+    label?: boolean;
+    attributes?: boolean;
+    lock?: boolean;
+    color?: boolean;
+    hidden?: boolean;
+    reset: () => void;
+}
+
+export interface UpdateFlags extends CommonUpdateFlags {
+    description?: boolean;
+    points?: boolean;
+    rotation?: boolean;
+    outside?: boolean;
+    occluded?: boolean;
+    keyframe?: boolean;
+    zOrder?: boolean;
+    pinned?: boolean;
+    descriptions?: boolean;
+}
+
+export interface AudioIntervalUpdateFlags extends CommonUpdateFlags {
+    position?: boolean;
+}

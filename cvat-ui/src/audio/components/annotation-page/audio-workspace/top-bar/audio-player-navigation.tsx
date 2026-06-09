@@ -17,6 +17,9 @@ import {
     NextIcon, PauseIcon, PlayIcon, PreviousIcon,
 } from 'icons';
 
+const AUDIO_SHORT_JUMP_SECONDS = 0.1;
+const AUDIO_LONG_JUMP_SECONDS = 1;
+
 interface Props {
     playing: boolean;
     currentTime: number;
@@ -36,25 +39,25 @@ const componentShortcuts = {
     },
     AUDIO_BACKWARD: {
         name: 'Audio backward',
-        description: 'Rewind audio by 5 seconds',
+        description: 'Rewind audio by 0.1 seconds',
         sequences: ['d'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_FORWARD: {
         name: 'Audio forward',
-        description: 'Forward audio by 5 seconds',
+        description: 'Forward audio by 0.1 seconds',
         sequences: ['f'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_FAST_BACKWARD: {
         name: 'Audio fast backward',
-        description: 'Rewind audio by 30 seconds',
+        description: 'Rewind audio by 1 second',
         sequences: ['c'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_FAST_FORWARD: {
         name: 'Audio fast forward',
-        description: 'Forward audio by 30 seconds',
+        description: 'Forward audio by 1 second',
         sequences: ['v'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
@@ -77,31 +80,31 @@ const LEFT_BUTTONS: SeekButton[] = [
         getTarget: () => 0,
     },
     {
-        title: '-30 seconds',
+        title: '-1 second',
         className: 'cvat-player-long-jump-backward-button',
         icon: BackJumpIcon,
-        getTarget: (t) => t - 30,
+        getTarget: (t) => t - AUDIO_LONG_JUMP_SECONDS,
     },
     {
-        title: '-10 seconds',
+        title: '-0.1 seconds',
         className: 'cvat-player-short-jump-backward-button',
         icon: PreviousIcon,
-        getTarget: (t) => t - 10,
+        getTarget: (t) => t - AUDIO_SHORT_JUMP_SECONDS,
     },
 ];
 
 const RIGHT_BUTTONS: SeekButton[] = [
     {
-        title: '+10 seconds',
+        title: '+0.1 seconds',
         className: 'cvat-player-short-jump-forward-button',
         icon: NextIcon,
-        getTarget: (t) => t + 10,
+        getTarget: (t) => t + AUDIO_SHORT_JUMP_SECONDS,
     },
     {
-        title: '+30 seconds',
+        title: '+1 second',
         className: 'cvat-player-long-jump-forward-button',
         icon: ForwardJumpIcon,
-        getTarget: (t) => t + 30,
+        getTarget: (t) => t + AUDIO_LONG_JUMP_SECONDS,
     },
     {
         title: 'Jump to end',
@@ -140,25 +143,25 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
         AUDIO_BACKWARD: (event: KeyboardEvent) => {
             event.preventDefault();
             if (workspace === Workspace.AUDIO) {
-                onSeek(Math.max(0, currentTime - 5));
+                onSeek(Math.max(0, currentTime - AUDIO_SHORT_JUMP_SECONDS));
             }
         },
         AUDIO_FORWARD: (event: KeyboardEvent) => {
             event.preventDefault();
             if (workspace === Workspace.AUDIO) {
-                onSeek(Math.min(duration, currentTime + 5));
+                onSeek(Math.min(duration, currentTime + AUDIO_SHORT_JUMP_SECONDS));
             }
         },
         AUDIO_FAST_BACKWARD: (event: KeyboardEvent) => {
             event.preventDefault();
             if (workspace === Workspace.AUDIO) {
-                onSeek(Math.max(0, currentTime - 30));
+                onSeek(Math.max(0, currentTime - AUDIO_LONG_JUMP_SECONDS));
             }
         },
         AUDIO_FAST_FORWARD: (event: KeyboardEvent) => {
             event.preventDefault();
             if (workspace === Workspace.AUDIO) {
-                onSeek(Math.min(duration, currentTime + 30));
+                onSeek(Math.min(duration, currentTime + AUDIO_LONG_JUMP_SECONDS));
             }
         },
     };

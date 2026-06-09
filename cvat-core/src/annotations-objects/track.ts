@@ -4,16 +4,16 @@
 // SPDX-License-Identifier: MIT
 
 import { omit } from 'lodash';
-import ObjectState, { SerializedData } from '../object-state';
+import ObjectState, { type SerializedData } from '../object-state';
 import { ObjectType, HistoryActions } from '../enums';
-import { Label } from '../labels';
+import type { Label } from '../labels';
 import type { SerializedTrack } from '../server-response-types';
 import { attrsAsAnObject } from '../object-utils';
 import { Drawn } from './drawn';
 import { InterpolationNotPossibleError } from './image-object';
 import type { AnnotationInjection, InterpolatedPosition, TrackedShape } from './types';
 import {
-    computeNewSource, convertTrackedShape, copyShape, isChildObject, serializeAttributes,
+    computeNewSource, deserializeTrackedShapes, copyShape, isChildObject, serializeAttributes,
 } from './utils';
 
 export class Track extends Drawn {
@@ -25,20 +25,17 @@ export class Track extends Drawn {
         injection: AnnotationInjection,
     ) {
         super(data, clientID, color, injection);
-        this.shapes = data.shapes.reduce((acc, shape) => {
-            acc[shape.frame] = convertTrackedShape(shape);
-            return acc;
-        }, {});
+        this.shapes = deserializeTrackedShapes(data.shapes);
     }
 
-    protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
+    protected withContext(): ReturnType<Drawn['withContext']> & {
         save: (data: ObjectState) => ObjectState;
         export: () => SerializedTrack;
     } {
         return {
-            ...super.withContext(frame),
-            save: this.save.bind(this, frame),
-            export: this.toJSON.bind(this) as () => SerializedTrack,
+            ...super.withContext(),
+            save: this.save.bind(this),
+            export: this.toJSON.bind(this),
         };
     }
 
@@ -117,7 +114,7 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
-            __internal: this.withContext(frame),
+            __internal: this.withContext(),
         };
     }
 
@@ -189,13 +186,11 @@ export class Track extends Drawn {
     }): void {
         this._serverId = body.id;
         this.frame = body.frame;
-        this.shapes = Object.fromEntries(
-            body.shapes.map((shape) => [shape.frame, convertTrackedShape(shape)]),
-        );
+        this.shapes = deserializeTrackedShapes(body.shapes);
     }
 
     public clearServerId(): void {
-        Drawn.prototype.clearServerId.call(this);
+        super.clearServerId();
         for (const shape of Object.values(this.shapes)) {
             shape.serverId = undefined;
         }
@@ -489,7 +484,7 @@ export class Track extends Drawn {
 
         const updated = data.updateFlags;
         for (const readOnlyField of this.readOnlyFields) {
-            updated[readOnlyField] = false;
+            delete updated[readOnlyField];
         }
 
         const fittedPoints = this.validateStateBeforeSave(data, updated, frame);

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import ObjectState from '../object-state';
+import type ObjectState from '../object-state';
 import { checkObjectType } from '../common';
 import { clamp } from '../opencv/math-utils';
 import { ShapeType, HistoryActions, DimensionType } from '../enums';

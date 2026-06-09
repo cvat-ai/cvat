@@ -6,7 +6,6 @@
 import _ from 'lodash';
 import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
-import { AudioActionTypes } from 'actions/audio-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
@@ -454,7 +453,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS:
         case AnnotationActionTypes.SAVE_ANNOTATIONS: {
             return {
                 ...state,
@@ -468,9 +466,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED:
-        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS_SUCCESS:
-        case AudioActionTypes.SAVE_AUDIO_ANNOTATIONS_FAILED: {
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 annotations: {
