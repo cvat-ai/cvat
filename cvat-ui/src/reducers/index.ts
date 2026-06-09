@@ -1017,6 +1017,7 @@ export interface WorkspaceSettingsState {
     textPosition: 'auto' | 'center';
     textContent: string;
     showTagsOnFrame: boolean;
+    showPrivateAttributes:boolean;
 }
 
 export interface ShapesSettingsState {
