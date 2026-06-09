@@ -27,6 +27,14 @@ export function useAudioPlaybackSync({
     useEffect(() => {
         if (!wavesurfer) return;
         if (isPlaying) {
+            // The WebAudio backend creates a suspended AudioContext (no user
+            // gesture at construction); resume it on play or playback is silent.
+            const { audioContext } = wavesurfer.getMediaElement() as unknown as {
+                audioContext?: AudioContext;
+            };
+            if (audioContext?.state === 'suspended') {
+                audioContext.resume().catch(() => {});
+            }
             const result = wavesurfer.play();
             if (result && typeof (result as Promise<void>).catch === 'function') {
                 (result as Promise<void>).catch(() => {});

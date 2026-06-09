@@ -54,6 +54,11 @@ export async function fetchAndAssembleAudio(
 ): Promise<Blob> {
     const chunkCount = Math.ceil(totalFrames / chunkSize);
 
+    // Single chunk: serve the compressed blob as-is. The player must use the
+    // WebAudio backend, which derives duration from decodeAudioData (exact),
+    // so the waveform stays aligned with playback even for VBR streams. (The
+    // default MediaElement backend trusts the <audio> element duration, which
+    // the browser only estimates for VBR, desynchronizing render and seek.)
     if (chunkCount === 1) {
         const { data } = await serverProxy.frames.getAudioChunk(jobId, 0, quality);
         return new Blob([data], { type: 'audio/mpeg' });
