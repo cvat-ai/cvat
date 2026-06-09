@@ -79,70 +79,75 @@ const getLabelOptions = (labels: Label[]): { value: string; title: string }[] =>
     return options;
 });
 
-const getAttributeNameOptions = (labels: Label[]): { value: string; title: string }[] => {
-    const names = new Set<string>();
-    labels.forEach((label): void => {
-        label.attributes.forEach((attribute): void => {
-            names.add(attribute.name);
-        });
+const getConvertedInputType = (inputType: string): string => {
+    switch (inputType) {
+        case 'checkbox':
+            return 'boolean';
+        case 'radio':
+            return 'select';
+        default:
+            return inputType;
+    }
+};
 
-        if (label.type === 'skeleton' && label.structure?.sublabels) {
+const adjustName = (name: string): string => name.replace(/\./g, '\u2219');
+const restoreName = (name: string): string => name.replace(/\u2219/g, '.');
+
+const buildAttributeSubfield = (
+    displayLabel: string,
+    attributes: Label['attributes'],
+): Record<string, unknown> | null => {
+    if (!attributes.length) {
+        return null;
+    }
+
+    const attributeSubfield: Record<string, unknown> = {
+        type: '!struct',
+        label: displayLabel,
+        subfields: {},
+    };
+
+    const attrSubfields = attributeSubfield.subfields as Record<string, any>;
+    attributes.forEach((attribute): void => {
+        const adjustedAttrName = adjustName(attribute.name);
+        attrSubfields[adjustedAttrName] = {
+            label: attribute.name,
+            type: getConvertedInputType(attribute.inputType),
+        };
+        if (attrSubfields[adjustedAttrName].type === 'select') {
+            attrSubfields[adjustedAttrName] = {
+                ...attrSubfields[adjustedAttrName],
+                fieldSettings: {
+                    listValues: attribute.values,
+                },
+            };
+        }
+    });
+
+    return attributeSubfield;
+};
+
+const getAttributesSubfields = (labels: Label[], includeSublabels = true): Record<string, unknown> => {
+    const subfields: Record<string, unknown> = {};
+    labels.forEach((label): void => {
+        const attributeSubfield = buildAttributeSubfield(label.name, label.attributes);
+        if (attributeSubfield) {
+            subfields[adjustName(label.name)] = attributeSubfield;
+        }
+
+        if (includeSublabels && label.type === 'skeleton' && label.structure?.sublabels) {
             label.structure.sublabels.forEach((sublabel): void => {
-                sublabel.attributes.forEach((attribute): void => {
-                    names.add(attribute.name);
-                });
+                const displayLabel = `${label.name} / ${sublabel.name}`;
+                const sublabelAttributeSubfield = buildAttributeSubfield(displayLabel, sublabel.attributes);
+                if (sublabelAttributeSubfield) {
+                    subfields[adjustName(displayLabel)] = sublabelAttributeSubfield;
+                }
             });
         }
     });
 
-    return [...names].sort().map((name) => ({
-        value: name,
-        title: name,
-    }));
+    return subfields;
 };
-
-const getAttributeValueOptions = (labels: Label[]): { value: string; title: string }[] => {
-    const values = new Set<string>();
-    labels.forEach((label): void => {
-        label.attributes.forEach((attribute): void => {
-            attribute.values.forEach((value): void => {
-                values.add(value);
-            });
-        });
-
-        if (label.type === 'skeleton' && label.structure?.sublabels) {
-            label.structure.sublabels.forEach((sublabel): void => {
-                sublabel.attributes.forEach((attribute): void => {
-                    attribute.values.forEach((value): void => {
-                        values.add(value);
-                    });
-                });
-            });
-        }
-    });
-
-    return [...values].sort().map((value) => ({
-        value,
-        title: value,
-    }));
-};
-
-const getAttributesSubfields = (labels: Label[]): Record<string, unknown> => ({
-    name: {
-        label: 'Name',
-        type: 'select',
-        fieldSettings: {
-            listValues: getAttributeNameOptions(labels),
-        },
-    },
-    value: {
-        label: 'Value',
-        type: 'select',
-        fieldSettings: {
-            listValues: getAttributeValueOptions(labels),
-        },
-    },
-});
 
 const getShapeSubfields = (labels: Label[]): Record<string, unknown> => ({
     label: {
@@ -197,7 +202,202 @@ const getShapeSubfields = (labels: Label[]): Record<string, unknown> => ({
     },
 });
 
-const isEmptyLogic = (logic: Record<string, unknown> | null): boolean => !logic || !Object.keys(logic).length;
+const ATTRIBUTE_UI_PREFIXES = ['shape.skeleton.attribute', 'shape.track.attribute', 'shape.attribute'];
+const ATTRIBUTE_SERVER_FIELD_SUFFIXES = ['name', 'value'];
+
+const getAttributePathParts = (varName: string): {
+    prefix: string;
+    contextPrefix: string;
+    labelName: string;
+    attributeName: string;
+} | null => {
+    const prefix = ATTRIBUTE_UI_PREFIXES.find((candidate) => varName.startsWith(`${candidate}.`));
+    if (!prefix) {
+        return null;
+    }
+
+    const pathParts = varName.slice(prefix.length + 1).split('.');
+    if (pathParts.length !== 2 || ATTRIBUTE_SERVER_FIELD_SUFFIXES.includes(pathParts[0])) {
+        return null;
+    }
+
+    return {
+        prefix,
+        contextPrefix: prefix.replace(/\.attribute$/, ''),
+        labelName: restoreName(pathParts[0]),
+        attributeName: restoreName(pathParts[1]),
+    };
+};
+
+const isJsonLogicObject = (logic: unknown): logic is Record<string, unknown> => (
+    !!logic && !Array.isArray(logic) && typeof logic === 'object'
+);
+
+const getVarName = (operand: unknown): string | null => (
+    isJsonLogicObject(operand) && typeof operand.var === 'string' ? operand.var : null
+);
+
+const makeAttributeServerCondition = (
+    op: string,
+    args: unknown[],
+    varIndex: number,
+    pathParts: NonNullable<ReturnType<typeof getAttributePathParts>>,
+): Record<string, unknown> => {
+    const valueArgs = [...args];
+    valueArgs[varIndex] = { var: `${pathParts.prefix}.value` };
+
+    return {
+        and: [
+            { '==': [{ var: `${pathParts.contextPrefix}.label` }, pathParts.labelName] },
+            { '==': [{ var: `${pathParts.prefix}.name` }, pathParts.attributeName] },
+            { [op]: valueArgs },
+        ],
+    };
+};
+
+const convertAttributeUiLogicToServer = (logic: unknown): unknown => {
+    if (Array.isArray(logic)) {
+        return logic.map(convertAttributeUiLogicToServer);
+    }
+
+    if (!isJsonLogicObject(logic)) {
+        return logic;
+    }
+
+    const [op, rawArgs] = Object.entries(logic)[0] || [];
+    if (!op) {
+        return logic;
+    }
+
+    const args = Array.isArray(rawArgs) ? rawArgs : [rawArgs];
+    if (['==', '!=', '<', '>', '<=', '>=', 'in'].includes(op)) {
+        const varIndex = args.findIndex((arg) => !!getVarName(arg));
+        const varName = varIndex >= 0 ? getVarName(args[varIndex]) : null;
+        const pathParts = varName ? getAttributePathParts(varName) : null;
+        if (pathParts) {
+            return makeAttributeServerCondition(op, args, varIndex, pathParts);
+        }
+    }
+
+    return {
+        [op]: Array.isArray(rawArgs) ?
+            rawArgs.map(convertAttributeUiLogicToServer) :
+            convertAttributeUiLogicToServer(rawArgs),
+    };
+};
+
+const getEqualsValue = (logic: unknown, varName: string): unknown => {
+    if (!isJsonLogicObject(logic)) {
+        return undefined;
+    }
+
+    const args = logic['=='];
+    if (!Array.isArray(args) || args.length !== 2) {
+        return undefined;
+    }
+
+    return getVarName(args[0]) === varName ? args[1] : undefined;
+};
+
+const getValueConditionInfo = (logic: unknown, valueVarName: string): {
+    op: string;
+    args: unknown[];
+    varIndex: number;
+} | null => {
+    if (!isJsonLogicObject(logic)) {
+        return null;
+    }
+
+    const [op, rawArgs] = Object.entries(logic)[0] || [];
+    if (!op || !['==', '!=', '<', '>', '<=', '>=', 'in'].includes(op) || !Array.isArray(rawArgs)) {
+        return null;
+    }
+
+    const varIndex = rawArgs.findIndex((arg) => getVarName(arg) === valueVarName);
+    return varIndex >= 0 ? { op, args: rawArgs, varIndex } : null;
+};
+
+const makeAttributeUiCondition = (
+    valueConditionInfo: NonNullable<ReturnType<typeof getValueConditionInfo>>,
+    prefix: string,
+    labelName: string,
+    attributeName: string,
+): Record<string, unknown> => {
+    const valueArgs = [...valueConditionInfo.args];
+    valueArgs[valueConditionInfo.varIndex] = {
+        var: `${prefix}.${adjustName(labelName)}.${adjustName(attributeName)}`,
+    };
+
+    return { [valueConditionInfo.op]: valueArgs };
+};
+
+// An attribute condition is encoded on the server as a self-contained, nested `and` block of
+// exactly three parts: a label equality, an attribute-name equality and the value condition
+// (see makeAttributeServerCondition). Fuse such a block back into a single UI condition only when
+// those three parts are its entire content. This keeps each attribute's label/name/value bound
+// together, so multiple attribute conditions (stored as separate nested blocks) can never be
+// cross-paired. A flattened or hand-edited `and` that does not match this exact shape is left
+// untouched and rendered as its raw parts rather than silently mis-grouped.
+const tryFuseAttributeAndBlock = (convertedArgs: unknown[]): unknown | null => {
+    if (convertedArgs.length !== 3) {
+        return null;
+    }
+
+    for (const prefix of ATTRIBUTE_UI_PREFIXES) {
+        const contextPrefix = prefix.replace(/\.attribute$/, '');
+        const labelArg = convertedArgs.find((arg) => getEqualsValue(arg, `${contextPrefix}.label`) !== undefined);
+        const nameArg = convertedArgs.find((arg) => getEqualsValue(arg, `${prefix}.name`) !== undefined);
+        const valueArg = convertedArgs.find((arg) => !!getValueConditionInfo(arg, `${prefix}.value`));
+
+        if (!labelArg || !nameArg || !valueArg ||
+            labelArg === nameArg || labelArg === valueArg || nameArg === valueArg) {
+            continue;
+        }
+
+        const labelName = getEqualsValue(labelArg, `${contextPrefix}.label`);
+        const attributeName = getEqualsValue(nameArg, `${prefix}.name`);
+        const valueConditionInfo = getValueConditionInfo(valueArg, `${prefix}.value`);
+
+        if (typeof labelName === 'string' && typeof attributeName === 'string' && valueConditionInfo) {
+            return makeAttributeUiCondition(valueConditionInfo, prefix, labelName, attributeName);
+        }
+    }
+
+    return null;
+};
+
+const convertAttributeServerLogicToUi = (logic: unknown): unknown => {
+    if (Array.isArray(logic)) {
+        return logic.map(convertAttributeServerLogicToUi);
+    }
+
+    if (!isJsonLogicObject(logic)) {
+        return logic;
+    }
+
+    const [op, rawArgs] = Object.entries(logic)[0] || [];
+    if (!op) {
+        return logic;
+    }
+
+    if (op === 'and' && Array.isArray(rawArgs)) {
+        const convertedArgs = rawArgs.map(convertAttributeServerLogicToUi);
+        const fused = tryFuseAttributeAndBlock(convertedArgs);
+        if (fused) {
+            return fused;
+        }
+
+        return { and: convertedArgs };
+    }
+
+    return {
+        [op]: Array.isArray(rawArgs) ?
+            rawArgs.map(convertAttributeServerLogicToUi) :
+            convertAttributeServerLogicToUi(rawArgs),
+    };
+};
+
+const isEmptyLogic = (logic: unknown): boolean => !isJsonLogicObject(logic) || !Object.keys(logic).length;
 
 const parseFilter = (value?: string): Record<string, unknown> | null => {
     if (!value) {
@@ -206,7 +406,7 @@ const parseFilter = (value?: string): Record<string, unknown> | null => {
 
     try {
         const logic = JSON.parse(value);
-        return logic && !Array.isArray(logic) && typeof logic === 'object' ? logic : null;
+        return isJsonLogicObject(logic) ? logic : null;
     } catch (_: unknown) {
         return null;
     }
@@ -234,12 +434,13 @@ const combineFiltersWithAnd = (filters: string[]): Record<string, unknown> | nul
 };
 
 const loadTreeFromValue = (value: string | undefined, config: Config): ImmutableTree => {
-    const logic = parseFilter(value);
+    const parsedLogic = parseFilter(value);
+    const logic = convertAttributeServerLogicToUi(parsedLogic);
     if (isEmptyLogic(logic)) {
         return createDefaultTree();
     }
 
-    const tree = QbUtils.loadFromJsonLogic(logic, config);
+    const tree = QbUtils.loadFromJsonLogic(logic as Record<string, unknown>, config);
     return tree ? QbUtils.checkTree(tree, config) : createDefaultTree();
 };
 
@@ -267,7 +468,7 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
         const shapeSubfields = getShapeSubfields(labels);
         return {
             ...AntdConfig,
-                fields: {
+            fields: {
                 'shape.label': {
                     label: 'Label',
                     type: 'select',
@@ -325,6 +526,36 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
                         treeNodeFilterProp: 'title',
                     },
                 },
+                'shape.attribute.name': {
+                    label: 'Attribute name',
+                    type: 'text',
+                    hideForSelect: true,
+                },
+                'shape.attribute.value': {
+                    label: 'Attribute value',
+                    type: 'text',
+                    hideForSelect: true,
+                },
+                'shape.track.attribute.name': {
+                    label: 'Track attribute name',
+                    type: 'text',
+                    hideForSelect: true,
+                },
+                'shape.track.attribute.value': {
+                    label: 'Track attribute value',
+                    type: 'text',
+                    hideForSelect: true,
+                },
+                'shape.skeleton.attribute.name': {
+                    label: 'Skeleton attribute name',
+                    type: 'text',
+                    hideForSelect: true,
+                },
+                'shape.skeleton.attribute.value': {
+                    label: 'Skeleton attribute value',
+                    type: 'text',
+                    hideForSelect: true,
+                },
                 'shape.occluded': {
                     label: 'Occluded',
                     type: 'boolean',
@@ -367,17 +598,20 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
             return null;
         }
 
-        const tree = QbUtils.loadFromJsonLogic(parentFilter, readonlyConfig);
+        const tree = QbUtils.loadFromJsonLogic(
+            convertAttributeServerLogicToUi(parentFilter) as Record<string, unknown>,
+            readonlyConfig,
+        );
         return tree ? QbUtils.checkTree(tree, readonlyConfig) : null;
     }, [parentFilters, readonlyConfig]);
 
     const preview = useMemo(() => {
-        const logic = parseFilter(value);
+        const logic = convertAttributeServerLogicToUi(parseFilter(value));
         if (isEmptyLogic(logic)) {
             return '';
         }
 
-        const tree = QbUtils.loadFromJsonLogic(logic, config);
+        const tree = QbUtils.loadFromJsonLogic(logic as Record<string, unknown>, config);
         return tree ? QbUtils.queryString(tree, config) || value || '' : value || '';
     }, [config, value]);
 
@@ -419,7 +653,7 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
 
     const applyFilter = (): void => {
         const logic = QbUtils.jsonLogicFormat(draftTree, config).logic as Record<string, unknown> | undefined;
-        const nextLogic = logic || {};
+        const nextLogic = (convertAttributeUiLogicToServer(logic || {}) || {}) as Record<string, unknown>;
         updateFiltersHistory(nextLogic);
         onChange?.(isEmptyLogic(nextLogic) ? '' : JSON.stringify(nextLogic));
         setVisible(false);
@@ -429,7 +663,10 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
         <Menu
             items={filters
                 .map((filter) => {
-                    const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
+                    const tree = QbUtils.loadFromJsonLogic(
+                        convertAttributeServerLogicToUi(filter.logic) as Record<string, unknown>,
+                        config,
+                    );
                     const queryString = tree ? QbUtils.queryString(tree, config) : '';
                     return {
                         filter,

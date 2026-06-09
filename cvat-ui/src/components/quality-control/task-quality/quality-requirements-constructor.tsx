@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     CopyOutlined, DeleteOutlined, EditOutlined, PlusOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
@@ -16,7 +16,6 @@ import Text from 'antd/lib/typography/Text';
 import CVATTable from 'components/common/cvat-table';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
-    getCore,
     QualityRequirement,
     QualitySettings,
 } from 'cvat-core-wrapper';
@@ -26,10 +25,7 @@ import {
     formatMetric,
     formatThreshold,
     getRequirementDisplayValue,
-    requirementToSaveFields,
 } from './quality-requirements-utils';
-
-const core = getCore();
 
 const requirementsFilterConfig: Partial<Config> = {
     fields: {
@@ -56,6 +52,8 @@ const requirementsFilterConfig: Partial<Config> = {
     },
 };
 
+const EXPANDED_REQUIREMENT_ROWS_STORAGE_KEY_PREFIX = 'qualityRequirementsConstructorExpandedRows';
+
 interface RequirementRow {
     key: string;
     requirement: QualityRequirement;
@@ -74,6 +72,7 @@ interface Props {
     onReload: () => Promise<void>;
     onCreateRequirement: (parentRequirement: QualityRequirement) => void;
     onEditRequirement: (requirement: QualityRequirement) => void;
+    onCopyRequirement: (requirement: QualityRequirement) => void;
 }
 
 function compareRequirements(first: QualityRequirement, second: QualityRequirement): number {
@@ -151,6 +150,40 @@ function buildRequirementTree(requirements: QualityRequirement[]): RequirementRo
     return buildRows(null);
 }
 
+function buildExpandedRowsStorageKey(settings: QualitySettings): string {
+    return [
+        EXPANDED_REQUIREMENT_ROWS_STORAGE_KEY_PREFIX,
+        `project:${settings.projectId ?? 'none'}`,
+        `task:${settings.taskId ?? 'none'}`,
+    ].join('.');
+}
+
+function readExpandedRowKeys(storageKey: string): React.Key[] {
+    try {
+        const rawValue = localStorage.getItem(storageKey);
+        if (!rawValue) {
+            return [];
+        }
+
+        const parsedValue = JSON.parse(rawValue);
+        if (!Array.isArray(parsedValue)) {
+            return [];
+        }
+
+        return parsedValue.filter((key): key is string => typeof key === 'string');
+    } catch (_error: unknown) {
+        return [];
+    }
+}
+
+function saveExpandedRowKeys(storageKey: string, expandedRowKeys: React.Key[]): void {
+    try {
+        localStorage.setItem(storageKey, JSON.stringify(expandedRowKeys.map(String)));
+    } catch (_error: unknown) {
+        // Ignore localStorage failures: table expansion should still work for the current session.
+    }
+}
+
 export default function QualityRequirementsConstructor(props: Readonly<Props>): JSX.Element {
     const {
         settings,
@@ -158,10 +191,19 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
         onReload,
         onCreateRequirement,
         onEditRequirement,
+        onCopyRequirement,
     } = props;
 
+    const expandedRowsStorageKey = useMemo(() => buildExpandedRowsStorageKey(settings), [settings]);
     const [pendingRequirementId, setPendingRequirementId] = useState<number | null>(null);
+    const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>(
+        () => readExpandedRowKeys(expandedRowsStorageKey),
+    );
     const data = useMemo(() => buildRequirementTree(settings.requirements), [settings.requirements]);
+
+    useEffect(() => {
+        setExpandedRowKeys(readExpandedRowKeys(expandedRowsStorageKey));
+    }, [expandedRowsStorageKey]);
 
     const updateRequirement = async (
         requirement: QualityRequirement,
@@ -192,20 +234,6 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
             requirement,
             () => requirement.save({ enabled }).then(() => undefined),
             'Could not update requirement',
-        );
-    };
-
-    const onCopyRequirement = async (requirement: QualityRequirement): Promise<void> => {
-        await updateRequirement(
-            requirement,
-            async () => {
-                await core.analytics.quality.requirements.create({
-                    ...requirementToSaveFields(requirement),
-                    name: `Copy of ${requirement.name}`,
-                    sort_order: requirement.sortOrder + 1,
-                });
-            },
-            'Could not copy requirement',
         );
     };
 
@@ -282,7 +310,9 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
             }, {
                 title: 'Enabled',
                 dataIndex: 'enabled',
-                sorter: (first: RequirementRow, second: RequirementRow) => Number(first.enabled) - Number(second.enabled),
+                sorter: (first: RequirementRow, second: RequirementRow) => (
+                    Number(first.enabled) - Number(second.enabled)
+                ),
                 render: (_: boolean, record: RequirementRow): JSX.Element => (
                     <Switch
                         checked={record.requirement.enabled}
@@ -319,16 +349,18 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
                                     onClick={() => onEditRequirement(record.requirement)}
                                 />
                             </CVATTooltip>
-                            <CVATTooltip title='Copy requirement'>
-                                <Button
-                                    type='text'
-                                    className='cvat-quality-requirements-action-button'
-                                    size='small'
-                                    disabled={actionsDisabled}
-                                    icon={<CopyOutlined />}
-                                    onClick={() => onCopyRequirement(record.requirement)}
-                                />
-                            </CVATTooltip>
+                            {!record.requirement.isDefault && (
+                                <CVATTooltip title='Copy requirement'>
+                                    <Button
+                                        type='text'
+                                        className='cvat-quality-requirements-action-button'
+                                        size='small'
+                                        disabled={actionsDisabled}
+                                        icon={<CopyOutlined />}
+                                        onClick={() => onCopyRequirement(record.requirement)}
+                                    />
+                                </CVATTooltip>
+                            )}
                             {!record.requirement.isDefault && (
                                 <CVATTooltip title='Delete requirement'>
                                     <Button
@@ -348,6 +380,14 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
             dataSource={data}
             size='small'
             pagination={false}
+            expandable={{
+                expandedRowKeys,
+                onExpandedRowsChange: (keys) => {
+                    const nextKeys = [...keys];
+                    setExpandedRowKeys(nextKeys);
+                    saveExpandedRowKeys(expandedRowsStorageKey, nextKeys);
+                },
+            }}
             locale={{
                 emptyText: (
                     <Space>

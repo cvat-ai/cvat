@@ -153,6 +153,16 @@
         vertical-align: baseline;
     }
 
+    .cvat-quality-requirement-overridden-attribute-rule
+        .cvat-quality-requirement-match-unspecified-label {
+        color: $validation-progress-color;
+    }
+
+    .cvat-quality-requirement-overridden-attribute-rule
+        .cvat-quality-requirement-revert-button {
+        color: $validation-progress-color;
+    }
+
     .cvat-quality-requirement-filter-control {
         display: flex;
         align-items: center;
@@ -176,25 +186,41 @@
         }
     }
 
-    .cvat-quality-requirement-attribute-rules-title {
-        margin-bottom: $grid-unit-size;
-    }
+    .cvat-table-wrapper:has(.cvat-quality-requirement-attribute-rules-table) {
+        @include cvat-table-dynamic-size;
 
-    .cvat-quality-requirement-attribute-rules {
-        width: 100%;
-    }
-
-    .cvat-quality-requirement-attribute-rule-header {
-        color: $text-color-secondary;
-        font-size: 12px;
-        padding: 0 $grid-unit-size $grid-unit-size;
-    }
-
-    .cvat-quality-requirement-attribute-rule-row {
-        min-height: $grid-unit-size * 5;
+        padding-bottom: $grid-unit-size * 18;
 
         .ant-form-item {
-            margin-bottom: $grid-unit-size;
+            margin-bottom: 0;
+        }
+
+        .ant-table-tbody .ant-table-cell {
+            padding: calc($grid-unit-size / 2) $grid-unit-size !important;
+        }
+
+        .cvat-quality-requirement-attribute-rule-field {
+            max-width: $grid-unit-size * 52;
+        }
+
+        .cvat-quality-requirement-inherited-attribute-rule {
+            color: $text-color-secondary;
+
+            .ant-select-selection-item,
+            .ant-table-cell {
+                color: $text-color-secondary;
+            }
+        }
+
+        .cvat-quality-requirement-overridden-attribute-rule {
+            .ant-select-selection-item,
+            .ant-table-cell {
+                color: $validation-progress-color;
+            }
+        }
+
+        .cvat-quality-requirement-attribute-rule-threshold-row {
+            padding: $grid-unit-size 0;
         }
     }
 

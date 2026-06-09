@@ -16,6 +16,7 @@ interface Props {
     onReload: () => Promise<void>;
     onCreateRequirement: (parentRequirement: QualityRequirement) => void;
     onEditRequirement: (requirement: QualityRequirement) => void;
+    onCopyRequirement: (requirement: QualityRequirement) => void;
 }
 
 export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.Element {
@@ -25,6 +26,7 @@ export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.E
         onReload,
         onCreateRequirement,
         onEditRequirement,
+        onCopyRequirement,
     } = props;
 
     return (
@@ -62,6 +64,7 @@ export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.E
                         onReload={onReload}
                         onCreateRequirement={onCreateRequirement}
                         onEditRequirement={onEditRequirement}
+                        onCopyRequirement={onCopyRequirement}
                     />
                 ),
             }]}

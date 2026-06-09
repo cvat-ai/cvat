@@ -23,6 +23,7 @@ type Props = TableProps & {
     onFilterDataSource?(data: TableProps['dataSource']): void;
     onChangeColumnVisibility?(id: number, isHidden: boolean): void;
     renderExtraActions?(): JSX.Element;
+    renderHeaderActions?(): JSX.Element;
     columnVisibility?: {
         groups?: Record<string, {
             maxVisible?: number;
@@ -74,6 +75,7 @@ function CVATTable(props: Props): JSX.Element {
         onChangeColumnVisibility,
         onFilterDataSource,
         renderExtraActions,
+        renderHeaderActions,
         queryBuilder,
         searchDataIndex,
         tableTitle,
@@ -303,6 +305,7 @@ function CVATTable(props: Props): JSX.Element {
                         >
                             <MoreOutlined />
                         </Popover>
+                        { !!renderHeaderActions && renderHeaderActions() }
                     </Space>
                 </Col>
             </Row>

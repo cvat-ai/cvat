@@ -31,6 +31,7 @@ interface Props {
 type RequirementFormMode =
     { type: 'list' } |
     { type: 'create'; parentRequirement: QualityRequirement } |
+    { type: 'copy'; sourceRequirement: QualityRequirement; parentRequirement: QualityRequirement } |
     { type: 'edit'; requirement: QualityRequirement };
 
 const FilteringComponentBase = ResourceFilterHOC(
@@ -119,8 +120,11 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 labels={labels}
                 requirement={requirementFormMode.type === 'edit' ? requirementFormMode.requirement : null}
                 parentRequirement={
-                    requirementFormMode.type === 'create' ? requirementFormMode.parentRequirement : null
+                    requirementFormMode.type === 'create' || requirementFormMode.type === 'copy' ?
+                        requirementFormMode.parentRequirement :
+                        null
                 }
+                copiedRequirement={requirementFormMode.type === 'copy' ? requirementFormMode.sourceRequirement : null}
                 disabled={disabled}
                 onCancel={() => setRequirementFormMode({ type: 'list' })}
                 onReload={onReload}
@@ -217,6 +221,15 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 }}
                 onEditRequirement={(requirement: QualityRequirement) => {
                     setRequirementFormMode({ type: 'edit', requirement });
+                }}
+                onCopyRequirement={(sourceRequirement: QualityRequirement) => {
+                    const parentRequirement = typeof sourceRequirement.parentRequirementId === 'number' ?
+                        settings.requirements.find((item) => item.id === sourceRequirement.parentRequirementId) :
+                        sourceRequirement;
+
+                    if (parentRequirement) {
+                        setRequirementFormMode({ type: 'copy', sourceRequirement, parentRequirement });
+                    }
                 }}
             />
         </Form>

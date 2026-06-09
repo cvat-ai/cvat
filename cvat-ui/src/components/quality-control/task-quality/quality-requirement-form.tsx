@@ -4,9 +4,12 @@
 
 import React, { useMemo, useState } from 'react';
 import {
+    DeleteOutlined,
+    PlusOutlined,
     QuestionCircleOutlined,
     UndoOutlined,
 } from '@ant-design/icons';
+import { Config } from '@react-awesome-query-builder/antd';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
 import Divider from 'antd/lib/divider';
@@ -17,7 +20,9 @@ import notification from 'antd/lib/notification';
 import { Col, Row } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Space from 'antd/lib/space';
+import Switch from 'antd/lib/switch';
 import Text from 'antd/lib/typography/Text';
+import CVATTable from 'components/common/cvat-table';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     getCore,
@@ -30,6 +35,7 @@ import {
     QualityRequirementMetric,
     QualityRequirementPointSizeBase,
     SerializedQualityRequirementAttributeComparison,
+    SerializedQualityRequirementAttributeRule,
     SerializedQualityRequirementData,
 } from 'cvat-core/src/server-response-types';
 import {
@@ -80,6 +86,30 @@ const SEGMENTATION_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>(
     'polygon',
     'mask',
 ]);
+const ATTRIBUTE_COMPARATORS = ['exact', 'levenshtein'] as const;
+const ATTRIBUTE_RULE_DEFAULT_THRESHOLD = 0.8;
+const attributeRulesFilterConfig: Partial<Config> = {
+    fields: {
+        name: {
+            label: 'Name',
+            type: 'text',
+            valueSources: ['value'],
+        },
+        enabled: {
+            label: 'Enabled',
+            type: 'boolean',
+            valueSources: ['value'],
+        },
+        comparator: {
+            label: 'Comparator',
+            type: 'select',
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: ATTRIBUTE_COMPARATORS.map((value) => ({ value, title: value })),
+            },
+        },
+    },
+};
 type InheritedFormFieldName =
     'annotationType' |
     'metric' |
@@ -163,6 +193,7 @@ interface AttributeRuleFormValue {
     enabled?: boolean;
     comparator?: 'exact' | 'levenshtein';
     threshold?: number | null;
+    isLocal?: boolean;
 }
 
 interface RequirementFormValues {
@@ -194,6 +225,7 @@ interface Props {
     labels: Label[];
     requirement: QualityRequirement | null;
     parentRequirement: QualityRequirement | null;
+    copiedRequirement: QualityRequirement | null;
     disabled: boolean;
     onCancel: () => void;
     onReload: () => Promise<void>;
@@ -203,6 +235,24 @@ interface SerializedInheritedFieldDescriptor {
     fieldName: InheritedFormFieldName;
     serializedFieldName: keyof SerializedQualityRequirementData;
     getValue: (values: RequirementFormValues, isRootRequirement: boolean) => unknown;
+}
+
+interface AttributeOption {
+    value: number;
+    label: string;
+}
+
+interface AttributeRuleRow {
+    key: string;
+    fieldName: number;
+    index: number;
+    specId?: number;
+    name: string;
+    enabled: boolean;
+    comparator: 'exact' | 'levenshtein';
+    isLocal: boolean;
+    hasInheritedCounterpart: boolean;
+    searchValue: string;
 }
 
 function toPercent(value: number | null | undefined): number | undefined {
@@ -276,22 +326,100 @@ function getPointSizeBaseDescription(description = ''): string {
     return formatDescription(trimmedDescription);
 }
 
-function getAttributeComparison(
-    requirement: QualityRequirement | null,
-    requirementsById: Map<number, QualityRequirement>,
-): SerializedQualityRequirementAttributeComparison | null {
-    return getRequirementResolvedValue(
-        requirement,
-        requirementsById,
-        (item: QualityRequirement) => item.attributeComparison,
-        (item: QualityRequirement) => item.effective?.attributeComparison,
-        null,
-    );
-}
-
 function getAttributeRuleSpecId(rule: Record<string, unknown>): number | undefined {
     const value = rule.spec_id ?? rule.specId;
     return typeof value === 'number' ? value : undefined;
+}
+
+function normalizeAttributeRule(rule: SerializedQualityRequirementAttributeRule): AttributeRuleFormValue {
+    return {
+        specId: getAttributeRuleSpecId(rule as unknown as Record<string, unknown>),
+        enabled: rule.enabled ?? true,
+        comparator: rule.comparator ?? 'exact',
+        threshold: typeof rule.threshold === 'number' ? rule.threshold : null,
+    };
+}
+
+function collectRequirementChain(
+    requirement: QualityRequirement | null,
+    requirementsById: Map<number, QualityRequirement>,
+): QualityRequirement[] {
+    const chain: QualityRequirement[] = [];
+    const visited = new Set<number>();
+    let current: QualityRequirement | null | undefined = requirement;
+    while (current) {
+        const currentId = current.id;
+        if (typeof currentId === 'number') {
+            if (visited.has(currentId)) {
+                break;
+            }
+            visited.add(currentId);
+        }
+        chain.push(current);
+        const parentId = current.parentRequirementId;
+        current = typeof parentId === 'number' ? requirementsById.get(parentId) ?? null : null;
+    }
+    return chain;
+}
+
+// The server stores attribute comparison incrementally (each requirement keeps only its own
+// overrides) and `effective` is not reliably present on requirements loaded from settings, so the
+// inherited view is rebuilt here from the ancestor chain — applied root-first, each descendant
+// overriding by spec id — mirroring the backend merge.
+function resolveInheritedAttributeComparison(
+    requirement: QualityRequirement | null,
+    requirementsById: Map<number, QualityRequirement>,
+): { defaultEnabled: boolean; rules: Map<number, AttributeRuleFormValue> } {
+    const chain = collectRequirementChain(requirement, requirementsById);
+    const rules = new Map<number, AttributeRuleFormValue>();
+    let defaultEnabled = false;
+
+    for (let i = chain.length - 1; i >= 0; i -= 1) {
+        const comparison = chain[i].attributeComparison;
+        if (!comparison) {
+            continue;
+        }
+
+        const enabled = comparison.default?.enabled;
+        if (typeof enabled === 'boolean') {
+            defaultEnabled = enabled;
+        }
+
+        for (const rule of comparison.rules ?? []) {
+            const normalized = normalizeAttributeRule(rule);
+            if (typeof normalized.specId === 'number') {
+                rules.set(normalized.specId, normalized);
+            }
+        }
+    }
+
+    return { defaultEnabled, rules };
+}
+
+function buildAttributeOptions(labels: Label[]): AttributeOption[] {
+    const options: AttributeOption[] = [];
+    const registerLabelAttributes = (label: Label, labelName: string): void => {
+        label.attributes.forEach((attribute) => {
+            if (typeof attribute.id !== 'number' || attribute.deleted) {
+                return;
+            }
+
+            const optionLabel = `${labelName}.${attribute.name}`;
+            options.push({
+                value: attribute.id,
+                label: optionLabel,
+            });
+        });
+    };
+
+    labels.forEach((label) => {
+        registerLabelAttributes(label, label.name);
+        label.structure?.sublabels.forEach((sublabel) => {
+            registerLabelAttributes(sublabel, `${label.name}.${sublabel.name}`);
+        });
+    });
+
+    return options.sort((first, second) => first.label.localeCompare(second.label));
 }
 
 function getInitialValues(
@@ -301,7 +429,42 @@ function getInitialValues(
 ): RequirementFormValues {
     const sourceRequirement = requirement ?? parentRequirement;
     const requirementsById = buildRequirementsById(requirements);
-    const attributeComparison = getAttributeComparison(sourceRequirement, requirementsById);
+    // Inherited (ancestor) comparison: everything above an existing requirement, or the selected
+    // parent's resolved comparison when creating a new one. The requirement's own rules then
+    // override matching spec ids and any remaining own-only rules are appended as local.
+    let inheritanceRoot: QualityRequirement | null;
+    if (requirement) {
+        inheritanceRoot = typeof requirement.parentRequirementId === 'number' ?
+            requirementsById.get(requirement.parentRequirementId) ?? null :
+            null;
+    } else {
+        inheritanceRoot = parentRequirement;
+    }
+    const inheritedComparison = resolveInheritedAttributeComparison(inheritanceRoot, requirementsById);
+    const ownAttributeComparison = requirement?.attributeComparison ?? null;
+    const ownAttributeRulesBySpecId = new Map<number, AttributeRuleFormValue>();
+    for (const rule of ownAttributeComparison?.rules ?? []) {
+        const normalized = normalizeAttributeRule(rule);
+        if (typeof normalized.specId === 'number') {
+            ownAttributeRulesBySpecId.set(normalized.specId, normalized);
+        }
+    }
+
+    const attributeRules: AttributeRuleFormValue[] = [];
+    for (const [specId, inheritedRule] of inheritedComparison.rules) {
+        const ownRule = ownAttributeRulesBySpecId.get(specId);
+        attributeRules.push(ownRule ? { ...ownRule, isLocal: true } : { ...inheritedRule, isLocal: false });
+    }
+    for (const [specId, ownRule] of ownAttributeRulesBySpecId) {
+        if (!inheritedComparison.rules.has(specId)) {
+            attributeRules.push({ ...ownRule, isLocal: true });
+        }
+    }
+
+    const ownDefaultEnabled = ownAttributeComparison?.default?.enabled;
+    const matchUnspecifiedAttributes = typeof ownDefaultEnabled === 'boolean' ?
+        ownDefaultEnabled :
+        inheritedComparison.defaultEnabled;
 
     return {
         name: requirement?.name ?? '',
@@ -401,16 +564,20 @@ function getInitialValues(
             (item: QualityRequirement) => getRequirementEffectiveField(item, 'emptyIsAnnotated'),
             ROOT_DEFAULTS.emptyIsAnnotated,
         ),
-        matchUnspecifiedAttributes: attributeComparison?.default?.enabled ?? false,
-        attributeRules: (attributeComparison?.rules ?? []).map((rule): AttributeRuleFormValue => {
-            const ruleRecord = rule as unknown as Record<string, unknown>;
-            return {
-                specId: getAttributeRuleSpecId(ruleRecord),
-                enabled: rule.enabled ?? true,
-                comparator: rule.comparator ?? 'exact',
-                threshold: toPercent(rule.threshold),
-            };
-        }),
+        matchUnspecifiedAttributes,
+        attributeRules,
+    };
+}
+
+function getCopiedInitialValues(
+    copiedRequirement: QualityRequirement,
+    parentRequirement: QualityRequirement | null,
+    requirements: QualityRequirement[],
+): RequirementFormValues {
+    return {
+        ...getInitialValues(copiedRequirement, null, requirements),
+        name: `Copy of ${copiedRequirement.name}`,
+        parentRequirement: parentRequirement?.id ?? copiedRequirement.parentRequirementId ?? null,
     };
 }
 
@@ -492,6 +659,21 @@ function hasLocalInheritedField(requirement: QualityRequirement, fieldName: Inhe
     return value !== null && typeof value !== 'undefined';
 }
 
+function getCopiedTouchedFields(copiedRequirement: QualityRequirement | null): Set<string> {
+    const fields = new Set<string>();
+    if (!copiedRequirement || copiedRequirement.parentRequirementId === null) {
+        return fields;
+    }
+
+    for (const fieldName of INHERITED_FORM_FIELDS) {
+        if (hasLocalInheritedField(copiedRequirement, fieldName)) {
+            fields.add(fieldName);
+        }
+    }
+
+    return fields;
+}
+
 function setResettableFieldValue(
     fields: SerializedQualityRequirementData,
     resetFields: Set<string>,
@@ -499,7 +681,9 @@ function setResettableFieldValue(
     serializedFieldName: keyof SerializedQualityRequirementData,
     value: unknown,
 ): void {
-    (fields as Record<string, unknown>)[serializedFieldName] = resetFields.has(fieldName) ? null : value;
+    Object.assign(fields, {
+        [serializedFieldName]: resetFields.has(fieldName) ? null : value,
+    });
 }
 
 function buildAttributeComparison(
@@ -508,7 +692,7 @@ function buildAttributeComparison(
 ): SerializedQualityRequirementAttributeComparison | null {
     const rules = (values.attributeRules ?? [])
         .filter((rule): rule is Required<Pick<AttributeRuleFormValue, 'specId'>> & AttributeRuleFormValue => (
-            typeof rule.specId === 'number'
+            typeof rule.specId === 'number' && (isRootRequirement || !!rule.isLocal)
         ))
         .map((rule) => {
             const comparator = rule.comparator ?? 'exact';
@@ -517,7 +701,7 @@ function buildAttributeComparison(
                 enabled: rule.enabled ?? true,
                 comparator,
                 ...(comparator === 'levenshtein' && typeof rule.threshold === 'number' ? {
-                    threshold: fromPercent(rule.threshold),
+                    threshold: rule.threshold,
                 } : {}),
             };
         });
@@ -659,7 +843,7 @@ function validateJsonLogic(_: unknown, value: string | undefined): Promise<void>
         }
 
         return Promise.resolve();
-    } catch (error: unknown) {
+    } catch (_error: unknown) {
         return Promise.reject(new Error('Filter must be valid JSON logic'));
     }
 }
@@ -711,6 +895,7 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
         labels,
         requirement,
         parentRequirement,
+        copiedRequirement,
         disabled,
         onCancel,
         onReload,
@@ -718,11 +903,16 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
 
     const [form] = Form.useForm<RequirementFormValues>();
     const [submitting, setSubmitting] = useState(false);
-    const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+    const [touchedFields, setTouchedFields] = useState<Set<string>>(() => getCopiedTouchedFields(copiedRequirement));
     const [resetFields, setResetFields] = useState<Set<string>>(new Set());
+    const [expandedAttributeRuleKeys, setExpandedAttributeRuleKeys] = useState<React.Key[]>([]);
     const initialValues = useMemo(
-        () => getInitialValues(requirement, parentRequirement, settings.requirements),
-        [requirement, parentRequirement, settings.requirements],
+        () => (
+            copiedRequirement ?
+                getCopiedInitialValues(copiedRequirement, parentRequirement, settings.requirements) :
+                getInitialValues(requirement, parentRequirement, settings.requirements)
+        ),
+        [copiedRequirement, requirement, parentRequirement, settings.requirements],
     );
     const parentOptions = useMemo(
         () => buildParentOptions(settings.requirements, requirement),
@@ -730,6 +920,11 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
     );
     const watchedAnnotationType = Form.useWatch('annotationType', form);
     const watchedParentRequirement = Form.useWatch('parentRequirement', form);
+    const watchedAttributeRules = Form.useWatch('attributeRules', form);
+    const attributeOptions = useMemo(() => buildAttributeOptions(labels), [labels]);
+    const attributeOptionsBySpecId = useMemo(() => (
+        new Map(attributeOptions.map((option) => [option.value, option]))
+    ), [attributeOptions]);
     const annotationType = (
         watchedAnnotationType ??
         form.getFieldValue('annotationType') ??
@@ -745,6 +940,21 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
     const parentFilters = useMemo(
         () => getAncestorFilters(selectedParentRequirement, settings.requirements),
         [selectedParentRequirement, settings.requirements],
+    );
+    const watchedMatchUnspecifiedAttributes = Form.useWatch('matchUnspecifiedAttributes', form);
+    const inheritedAttributeComparisonValues = useMemo(
+        () => getInitialValues(null, selectedParentRequirement, settings.requirements),
+        [selectedParentRequirement, settings.requirements],
+    );
+    const inheritedAttributeRuleSpecIds = useMemo(() => new Set(
+        inheritedAttributeComparisonValues.attributeRules
+            .map((rule) => rule.specId)
+            .filter((specId): specId is number => typeof specId === 'number'),
+    ), [inheritedAttributeComparisonValues]);
+    const matchUnspecifiedOverridden = parentRequirementId !== null && (
+        (watchedMatchUnspecifiedAttributes ??
+            form.getFieldValue('matchUnspecifiedAttributes') ??
+            false) !== inheritedAttributeComparisonValues.matchUnspecifiedAttributes
     );
     const formDisabled = disabled || submitting;
     const isDefaultRequirement = !!requirement?.isDefault;
@@ -771,6 +981,26 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
 
         return next;
     }, [parentRequirementId, requirement, resetFields, touchedFields]);
+    const attributeComparisonOverridden = parentRequirementId !== null && !resetFields.has('attributeComparison') && (
+        touchedFields.has('attributeComparison') ||
+        (!!requirement && hasLocalInheritedField(requirement, 'attributeComparison'))
+    );
+
+    // Shared inherited/overridden styling for the attribute-comparison block, so both the
+    // "match unspecified attributes" checkbox and the individual rule rows reflect the same state.
+    // The colouring only applies to values that have an inherited counterpart: greyed while still
+    // inherited, highlighted once it locally overrides the inherited value. A purely local value
+    // (a rule added here, or any value at a root requirement) has nothing to deviate from and stays
+    // un-styled.
+    const getAttributeComparisonStateClassName = (isLocal: boolean, hasInheritedCounterpart: boolean): string => {
+        if (parentRequirementId === null || !hasInheritedCounterpart) {
+            return '';
+        }
+
+        return isLocal ?
+            'cvat-quality-requirement-overridden-attribute-rule' :
+            'cvat-quality-requirement-inherited-attribute-rule';
+    };
 
     const makeTooltipFragment = (metric: string, description: string): JSX.Element | null => {
         const formattedDescription = formatDescription(description);
@@ -934,6 +1164,92 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
         });
     };
 
+    // Recompute the section-level touched/reset state from whatever is still locally overridden,
+    // so the serialized payload (and the section Undo) stays correct after partial reverts:
+    // any remaining local rule or a checkbox differing from the parent keeps the override; once
+    // nothing local remains we clear it, sending an explicit null only when the saved requirement
+    // currently holds its own attribute comparison.
+    const syncAttributeComparisonState = (
+        nextRules: AttributeRuleFormValue[],
+        nextMatchUnspecified: boolean,
+    ): void => {
+        const anyLocal = nextRules.some((rule) => rule.isLocal) ||
+            nextMatchUnspecified !== inheritedAttributeComparisonValues.matchUnspecifiedAttributes;
+
+        setTouchedFields((prev) => {
+            const next = new Set(prev);
+            if (anyLocal) {
+                next.add('attributeComparison');
+            } else {
+                next.delete('attributeComparison');
+            }
+            return next;
+        });
+        setResetFields((prev) => {
+            const next = new Set(prev);
+            if (!anyLocal && requirement && hasLocalInheritedField(requirement, 'attributeComparison')) {
+                next.add('attributeComparison');
+            } else {
+                next.delete('attributeComparison');
+            }
+            return next;
+        });
+    };
+
+    const onRevertAttributeComparison = (): void => {
+        form.setFieldsValue({
+            matchUnspecifiedAttributes: inheritedAttributeComparisonValues.matchUnspecifiedAttributes,
+            attributeRules: inheritedAttributeComparisonValues.attributeRules,
+        });
+        syncAttributeComparisonState(
+            inheritedAttributeComparisonValues.attributeRules,
+            inheritedAttributeComparisonValues.matchUnspecifiedAttributes,
+        );
+    };
+
+    const onRevertAttributeRule = (index: number): void => {
+        const currentRules = [...(form.getFieldValue('attributeRules') ?? [])] as AttributeRuleFormValue[];
+        const rule = currentRules[index];
+        if (!rule) {
+            return;
+        }
+
+        const inheritedRule = inheritedAttributeComparisonValues.attributeRules
+            .find((candidate) => candidate.specId === rule.specId);
+        if (!inheritedRule) {
+            return;
+        }
+
+        currentRules[index] = { ...inheritedRule };
+        form.setFieldsValue({ attributeRules: currentRules });
+        syncAttributeComparisonState(currentRules, form.getFieldValue('matchUnspecifiedAttributes') ?? false);
+    };
+
+    const onRevertMatchUnspecified = (): void => {
+        const nextMatchUnspecified = inheritedAttributeComparisonValues.matchUnspecifiedAttributes;
+        form.setFieldsValue({ matchUnspecifiedAttributes: nextMatchUnspecified });
+        syncAttributeComparisonState(
+            (form.getFieldValue('attributeRules') ?? []) as AttributeRuleFormValue[],
+            nextMatchUnspecified,
+        );
+    };
+
+    const setAttributeRuleLocal = (index: number): void => {
+        const rules = [...(form.getFieldValue('attributeRules') ?? [])];
+        if (rules[index]) {
+            rules[index] = {
+                ...rules[index],
+                isLocal: true,
+            };
+            form.setFieldsValue({ attributeRules: rules });
+        }
+    };
+
+    const markAttributeRuleChanged = (index: number): void => {
+        setAttributeRuleLocal(index);
+        markTouchedFields({ attributeRules: form.getFieldValue('attributeRules') ?? [] });
+    };
+
     const renderOverrideControl = (
         fieldName: OverridableFormFieldName,
         label: string,
@@ -1005,6 +1321,343 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
             />
         </Form.Item>
     );
+
+    const renderAttributeComparisonTitle = (): JSX.Element => {
+        if (!attributeComparisonOverridden) {
+            return <Text strong>Attribute comparison</Text>;
+        }
+
+        return (
+            <Space size={4} className='cvat-quality-requirement-overridden-label'>
+                <Text strong>Attribute comparison</Text>
+                <CVATTooltip title='Revert to inherited value'>
+                    <Button
+                        type='link'
+                        size='small'
+                        icon={<UndoOutlined />}
+                        className='cvat-quality-requirement-revert-button'
+                        disabled={formDisabled}
+                        onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onRevertAttributeComparison();
+                        }}
+                    />
+                </CVATTooltip>
+            </Space>
+        );
+    };
+
+    const renderAttributeRules = (): JSX.Element => {
+        const rules = (watchedAttributeRules ?? form.getFieldValue('attributeRules') ?? []) as AttributeRuleFormValue[];
+        const usedSpecIds = new Set(
+            rules
+                .map((rule) => rule?.specId)
+                .filter((specId: number | undefined): specId is number => typeof specId === 'number'),
+        );
+
+        return (
+            <>
+                <Divider />
+                <Row className='cvat-quality-requirement-form-section-title'>
+                    {renderAttributeComparisonTitle()}
+                    <CVATTooltip
+                        title={formatDescription(requirementDescriptions.attributeComparison)}
+                        className='cvat-settings-tooltip'
+                    >
+                        <QuestionCircleOutlined className='cvat-quality-settings-tooltip-icon' />
+                    </CVATTooltip>
+                </Row>
+                <Form.Item
+                    name='matchUnspecifiedAttributes'
+                    valuePropName='checked'
+                    className={matchUnspecifiedOverridden ?
+                        'cvat-quality-requirement-overridden-attribute-rule' :
+                        undefined}
+                >
+                    <Checkbox>
+                        <Space direction='vertical' size={0}>
+                            <Space size={4}>
+                                <Text className='cvat-quality-requirement-match-unspecified-label'>
+                                    Match unspecified attributes exactly
+                                </Text>
+                                {matchUnspecifiedOverridden && (
+                                    <CVATTooltip title='Revert to inherited value'>
+                                        <Button
+                                            type='link'
+                                            size='small'
+                                            icon={<UndoOutlined />}
+                                            className='cvat-quality-requirement-revert-button'
+                                            disabled={formDisabled}
+                                            onClick={(event) => {
+                                                event.preventDefault();
+                                                event.stopPropagation();
+                                                onRevertMatchUnspecified();
+                                            }}
+                                        />
+                                    </CVATTooltip>
+                                )}
+                            </Space>
+                            <Text type='secondary'>
+                                Attributes without a custom rule will be matched using Exact comparator.
+                            </Text>
+                        </Space>
+                    </Checkbox>
+                </Form.Item>
+                <Form.List name='attributeRules'>
+                    {(fields, { add, remove }): JSX.Element => {
+                        const data = fields.map((field, index): AttributeRuleRow => {
+                            const rule = rules[index] ?? {};
+                            const attributeOption = typeof rule.specId === 'number' ?
+                                attributeOptionsBySpecId.get(rule.specId) :
+                                null;
+                            const name = attributeOption?.label ?? (
+                                typeof rule.specId === 'number' ? `Unknown attribute #${rule.specId}` : ''
+                            );
+                            const comparator = rule.comparator ?? 'exact';
+
+                            return {
+                                key: String(field.key),
+                                fieldName: field.name,
+                                index,
+                                specId: rule.specId,
+                                name,
+                                enabled: rule.enabled ?? true,
+                                comparator,
+                                isLocal: rule.isLocal ?? false,
+                                hasInheritedCounterpart: typeof rule.specId === 'number' &&
+                                    inheritedAttributeRuleSpecIds.has(rule.specId),
+                                searchValue: [
+                                    name,
+                                    rule.enabled ? 'enabled' : 'disabled',
+                                    comparator,
+                                ].join(' ').toLowerCase(),
+                            };
+                        });
+
+                        const addRule = (): void => {
+                            const availableOption = attributeOptions.find((option) => !usedSpecIds.has(option.value));
+                            if (!availableOption) {
+                                return;
+                            }
+
+                            add({
+                                specId: availableOption.value,
+                                enabled: true,
+                                comparator: 'exact',
+                                threshold: ATTRIBUTE_RULE_DEFAULT_THRESHOLD,
+                                isLocal: true,
+                            });
+                            markTouchedFields({ attributeRules: form.getFieldValue('attributeRules') ?? [] });
+                        };
+
+                        return (
+                            <CVATTable
+                                tableTitle='Attribute rules'
+                                className='cvat-quality-requirement-attribute-rules-table'
+                                searchDataIndex={['searchValue']}
+                                queryBuilder={{
+                                    config: attributeRulesFilterConfig,
+                                    memoryKey: 'recentlyAppliedQualityRequirementAttributeRulesFilters',
+                                    memoryCapacity: 10,
+                                }}
+                                csvExport={{ filename: `quality-requirement-attribute-rules-${settings.id}.csv` }}
+                                renderHeaderActions={() => (
+                                    <Button
+                                        type='primary'
+                                        icon={<PlusOutlined />}
+                                        disabled={
+                                            formDisabled ||
+                                            attributeOptions.every((option) => usedSpecIds.has(option.value))
+                                        }
+                                        onClick={addRule}
+                                    />
+                                )}
+                                rowClassName={(record: AttributeRuleRow): string => (
+                                    getAttributeComparisonStateClassName(record.isLocal, record.hasInheritedCounterpart)
+                                )}
+                                columns={[{
+                                    title: 'Name',
+                                    dataIndex: 'name',
+                                    sorter: (first: AttributeRuleRow, second: AttributeRuleRow) => (
+                                        first.name.localeCompare(second.name)
+                                    ),
+                                    render: (_: string, record: AttributeRuleRow): JSX.Element => (
+                                        <Form.Item
+                                            name={[record.fieldName, 'specId']}
+                                            className='cvat-quality-requirement-attribute-rule-field'
+                                            rules={[{ required: true, message: 'This field is required' }]}
+                                        >
+                                            <Select
+                                                showSearch
+                                                // The target attribute of a rule inherited from a parent is fixed:
+                                                // repointing it would detach the override from the parent rule.
+                                                disabled={formDisabled || record.hasInheritedCounterpart}
+                                                optionFilterProp='children'
+                                                onChange={() => markAttributeRuleChanged(record.index)}
+                                            >
+                                                {attributeOptions.map((option) => (
+                                                    <Select.Option
+                                                        key={option.value}
+                                                        value={option.value}
+                                                        disabled={
+                                                            usedSpecIds.has(option.value) &&
+                                                            option.value !== rules[record.index]?.specId
+                                                        }
+                                                    >
+                                                        {option.label}
+                                                    </Select.Option>
+                                                ))}
+                                            </Select>
+                                        </Form.Item>
+                                    ),
+                                }, {
+                                    title: 'Enabled',
+                                    dataIndex: 'enabled',
+                                    sorter: (first: AttributeRuleRow, second: AttributeRuleRow) => (
+                                        Number(first.enabled) - Number(second.enabled)
+                                    ),
+                                    render: (_: boolean, record: AttributeRuleRow): JSX.Element => (
+                                        <Form.Item
+                                            name={[record.fieldName, 'enabled']}
+                                            valuePropName='checked'
+                                            className='cvat-quality-requirement-attribute-rule-field'
+                                        >
+                                            <Switch
+                                                disabled={formDisabled}
+                                                onChange={() => markAttributeRuleChanged(record.index)}
+                                            />
+                                        </Form.Item>
+                                    ),
+                                }, {
+                                    title: 'Comparator',
+                                    dataIndex: 'comparator',
+                                    sorter: (first: AttributeRuleRow, second: AttributeRuleRow) => (
+                                        first.comparator.localeCompare(second.comparator)
+                                    ),
+                                    render: (_: string, record: AttributeRuleRow): JSX.Element => (
+                                        <Form.Item
+                                            name={[record.fieldName, 'comparator']}
+                                            className='cvat-quality-requirement-attribute-rule-field'
+                                        >
+                                            <Select
+                                                disabled={formDisabled}
+                                                onChange={(value) => {
+                                                    markAttributeRuleChanged(record.index);
+                                                    if (value === 'exact') {
+                                                        setExpandedAttributeRuleKeys((prev) => (
+                                                            prev.filter((key) => key !== record.key)
+                                                        ));
+                                                    }
+                                                }}
+                                            >
+                                                <Select.Option value='exact'>Exact</Select.Option>
+                                                <Select.Option value='levenshtein'>Levenshtein</Select.Option>
+                                            </Select>
+                                        </Form.Item>
+                                    ),
+                                }, {
+                                    title: 'Actions',
+                                    dataIndex: 'actions',
+                                    render: (_: unknown, record: AttributeRuleRow): JSX.Element => {
+                                        if (parentRequirementId !== null && !record.isLocal) {
+                                            return <Text type='secondary'>Inherited</Text>;
+                                        }
+
+                                        // An overridden rule that also exists in the parent reverts
+                                        // back to the inherited value; a purely local rule is deleted.
+                                        if (parentRequirementId !== null && record.hasInheritedCounterpart) {
+                                            return (
+                                                <CVATTooltip title='Revert to inherited value'>
+                                                    <Button
+                                                        type='text'
+                                                        className='cvat-quality-requirements-action-button'
+                                                        size='small'
+                                                        icon={<UndoOutlined />}
+                                                        disabled={formDisabled}
+                                                        onClick={() => onRevertAttributeRule(record.index)}
+                                                    />
+                                                </CVATTooltip>
+                                            );
+                                        }
+
+                                        return (
+                                            <CVATTooltip title='Delete rule'>
+                                                <Button
+                                                    type='text'
+                                                    className='cvat-quality-requirements-action-button'
+                                                    size='small'
+                                                    icon={<DeleteOutlined />}
+                                                    disabled={formDisabled}
+                                                    onClick={() => {
+                                                        remove(record.fieldName);
+                                                        syncAttributeComparisonState(
+                                                            (form.getFieldValue('attributeRules') ?? []) as AttributeRuleFormValue[],
+                                                            form.getFieldValue('matchUnspecifiedAttributes') ?? false,
+                                                        );
+                                                    }}
+                                                />
+                                            </CVATTooltip>
+                                        );
+                                    },
+                                }]}
+                                dataSource={data}
+                                size='small'
+                                pagination={false}
+                                expandable={{
+                                    expandedRowKeys: expandedAttributeRuleKeys,
+                                    rowExpandable: (record: AttributeRuleRow) => record.comparator === 'levenshtein',
+                                    onExpandedRowsChange: (keys) => setExpandedAttributeRuleKeys([...keys]),
+                                    expandedRowRender: (record: AttributeRuleRow): JSX.Element => (
+                                        <Row className='cvat-quality-requirement-attribute-rule-threshold-row'>
+                                            <Col>
+                                                <Form.Item
+                                                    name={[record.fieldName, 'threshold']}
+                                                    label={(
+                                                        <Space>
+                                                            <Text>Threshold</Text>
+                                                            <CVATTooltip title='Minimum normalized similarity for Levenshtein comparator. Value must be from 0 to 1.'>
+                                                                <QuestionCircleOutlined className='cvat-quality-settings-tooltip-icon' />
+                                                            </CVATTooltip>
+                                                        </Space>
+                                                    )}
+                                                    rules={[{
+                                                        validator: (
+                                                            _,
+                                                            value: number | null | undefined,
+                                                        ): Promise<void> => {
+                                                            if (value === null || typeof value === 'undefined') {
+                                                                return Promise.resolve();
+                                                            }
+
+                                                            return value >= 0 && value <= 1 ?
+                                                                Promise.resolve() :
+                                                                Promise.reject(new Error('Value must be from 0 to 1'));
+                                                        },
+                                                    }]}
+                                                >
+                                                    <InputNumber
+                                                        min={0}
+                                                        max={1}
+                                                        step={0.1}
+                                                        precision={2}
+                                                        disabled={formDisabled}
+                                                        className='cvat-quality-requirement-form-short-input'
+                                                        onChange={() => markAttributeRuleChanged(record.index)}
+                                                    />
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+                                    ),
+                                }}
+                                locale={{ emptyText: 'No attribute rules configured' }}
+                            />
+                        );
+                    }}
+                </Form.List>
+            </>
+        );
+    };
 
     const renderShapeComparison = (): JSX.Element | null => {
         if (annotationType === 'tag') {
@@ -1249,6 +1902,7 @@ export default function QualityRequirementForm(props: Readonly<Props>): JSX.Elem
                 </Col>
             </Row>
             {renderShapeComparison()}
+            {renderAttributeRules()}
         </Form>
     );
 }
