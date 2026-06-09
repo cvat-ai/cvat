@@ -34,11 +34,11 @@ const defaultState: PluginsState = {
         },
         qualityControlPage: {
             task: {
-                overviewTab: [],
+                requirementsTab: [],
                 allocationTable: [],
             },
             project: {
-                overviewTab: [],
+                requirementsTab: [],
             },
         },
         analyticsReportPage: {

@@ -27,7 +27,7 @@ import { updateJobAsync } from 'actions/jobs-actions';
 import { ActionUnion, createAction } from 'utils/redux';
 import { getTabFromHash } from 'utils/location-utils';
 import { useInstanceId, useInstanceType, usePlugins } from 'utils/hooks';
-import QualityOverviewTab from './quality-overview-tab';
+import QualityRequirementsTab from './quality-requirements-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
 import QualitySettingsTab, { UpdateSettingsData } from './quality-settings-tab';
 
@@ -184,7 +184,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     return state;
 };
 
-const supportedTabs = ['requirements', 'jobs', 'tasks', 'management', 'settings', 'overview'];
+const supportedTabs = ['requirements', 'jobs', 'tasks', 'management', 'settings'];
 function QualityControlPage(): JSX.Element {
     const reduxDispatch = useDispatch();
     const [state, dispatch] = useReducer(reducer, {
@@ -516,10 +516,10 @@ function QualityControlPage(): JSX.Element {
 
         if (!pluginTabs.length && qualitySettings) {
             tabsItems.push({
-                key: 'overview',
-                label: 'Overview',
+                key: 'requirements',
+                label: 'Requirements',
                 children: (
-                    <QualityOverviewTab
+                    <QualityRequirementsTab
                         instance={instance}
                         qualitySettings={{ settings: qualitySettings, childrenSettings: childrenQualitySettings }}
                     />
@@ -550,7 +550,7 @@ function QualityControlPage(): JSX.Element {
             <Tabs
                 type='card'
                 activeKey={resolvedActiveTab}
-                defaultActiveKey='Overview'
+                defaultActiveKey='requirements'
                 onChange={onTabKeyChange}
                 className='cvat-quality-control-page-tabs'
                 items={tabsItems}

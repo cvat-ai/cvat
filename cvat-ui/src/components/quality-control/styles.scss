@@ -269,8 +269,7 @@
 .cvat-quality-requirement-filter-modal {
     .ant-modal-body {
         max-height: calc(100vh - $grid-unit-size * 28);
-        overflow-x: hidden;
-        overflow-y: auto;
+        overflow: hidden auto;
         padding: 0;
     }
 

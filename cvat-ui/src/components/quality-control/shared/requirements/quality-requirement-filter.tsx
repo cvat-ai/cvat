@@ -337,7 +337,7 @@ const makeAttributeUiCondition = (
 // those three parts are its entire content. This keeps each attribute's label/name/value bound
 // together, so multiple attribute conditions (stored as separate nested blocks) can never be
 // cross-paired. A flattened or hand-edited `and` that does not match this exact shape is left
-// untouched and rendered as its raw parts rather than silently mis-grouped.
+// untouched and rendered as its raw parts rather than silently grouped incorrectly.
 const tryFuseAttributeAndBlock = (convertedArgs: unknown[]): unknown | null => {
     if (convertedArgs.length !== 3) {
         return null;
