@@ -99,3 +99,30 @@
         }
     }
 }
+
+.cvat-modal-confirm-remove-audio-annotation {
+    .cvat-audio-remove-annotations-time-range {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .cvat-audio-remove-annotations-time-row {
+        display: grid;
+        grid-template-columns: 52px 112px 14px 112px 14px 112px;
+        align-items: center;
+    }
+
+    .cvat-audio-remove-annotations-time-label {
+        justify-self: end;
+        margin-right: 8px;
+    }
+
+    .cvat-audio-remove-annotations-time-separator {
+        justify-self: center;
+    }
+
+    .cvat-audio-remove-annotations-time-input {
+        width: 100%;
+    }
+}

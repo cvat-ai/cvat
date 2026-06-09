@@ -18,6 +18,7 @@ context('Audio annotation. Region details panel shows active region info.', () =
         it('No details panel before any selection; details panel appears after creating a region', () => {
             cy.get('.cvat-audio-region-details').should('not.exist');
             cy.audioCreateRegionViaButton(firstLabelName, 120, 280);
+            cy.clickRegionOnWaveform((120 + 280) / 2);
             cy.get('.cvat-audio-region-details', { timeout: 5000 }).should('be.visible');
             cy.get('.cvat-audio-region-details-time-range').should('not.be.empty');
             cy.get('.cvat-audio-region-details-duration').should('not.be.empty');

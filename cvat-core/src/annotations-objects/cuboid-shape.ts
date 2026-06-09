@@ -102,7 +102,7 @@ export class CuboidShape extends Shape {
         return wn !== 0;
     }
 
-    static distance(actualPoints: number[], x: number, y: number): number {
+    static distance(actualPoints: number[], x: number, y: number): number | null {
         const points = [];
 
         for (let i = 0; i < 16; i += 2) {

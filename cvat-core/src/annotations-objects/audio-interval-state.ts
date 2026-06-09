@@ -12,7 +12,7 @@ import type { AudioIntervalUpdateFlags } from './types';
 export interface SerializedAudioIntervalState {
     objectType: ObjectType.INTERVAL;
     label: Label;
-    clientID: number;
+    clientID: number | null;
     serverID: number | null;
     start: number;
     stop: number | null;
@@ -24,7 +24,7 @@ export interface SerializedAudioIntervalState {
     votes: number;
     hidden: boolean;
     attributes: Record<number, string>;
-    __internal: {
+    __internal?: {
         save: (audioIntervalState: AudioIntervalState) => AudioIntervalState;
         delete: (frame: number | null, force: boolean) => boolean;
         export: () => SerializedInterval;
@@ -37,7 +37,7 @@ export class AudioIntervalState {
     public readonly updateFlags: AudioIntervalUpdateFlags;
     public readonly objectType: ObjectType.INTERVAL;
     public readonly source: Source;
-    public readonly clientID: number;
+    public readonly clientID: number | null;
     public readonly serverID: number | null;
     public readonly updated: number;
     public readonly score: number;
@@ -273,6 +273,34 @@ export class AudioIntervalState {
     async export(): Promise<SerializedInterval> {
         const result = await PluginRegistry.apiWrapper.call(this, AudioIntervalState.prototype.export);
         return result;
+    }
+
+    /**
+     * Creates a new unsaved audio interval state from user input.
+     * The returned state is intended to be passed to AnnotationCollection.put().
+     */
+    static create(body: {
+        label: Label;
+        start: number;
+        stop: number | null;
+        source: Source;
+    }): AudioIntervalState {
+        return new AudioIntervalState({
+            objectType: ObjectType.INTERVAL,
+            clientID: null,
+            serverID: null,
+            label: body.label,
+            start: body.start,
+            stop: body.stop,
+            color: body.label.color!,
+            lock: false,
+            updated: Date.now(),
+            source: body.source,
+            score: 1,
+            votes: 0,
+            hidden: false,
+            attributes: {},
+        });
     }
 }
 

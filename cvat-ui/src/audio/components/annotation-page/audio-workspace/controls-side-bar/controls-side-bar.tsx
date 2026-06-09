@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Layout from 'antd/lib/layout';
 
@@ -11,7 +11,7 @@ import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { updateActiveControl } from 'actions/annotation-actions';
 import {
     audioActions,
-    extendAudioRegionFromLastAsync,
+    extendAudioIntervalFromLastAsync,
 } from 'actions/audio-actions';
 import ControlVisibilityObserver, { ExtraControlsControl } from 'components/annotation-page/standard-workspace/controls-side-bar/control-visibility-observer';
 
@@ -22,7 +22,6 @@ import LoopControl, { Props as LoopControlProps } from './loop-control';
 import ZoomControl, { Props as ZoomControlProps } from './zoom-control';
 import SpeedControl, { Props as SpeedControlProps } from './speed-control';
 import VolumeControl, { Props as VolumeControlProps } from './volume-control';
-import { computeMaxZoom } from '../utils/zoom-bounds';
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(AudioCursorControl, 'audioCursorControl');
 const ObservedIntervalRegionControl = ControlVisibilityObserver<IntervalRegionControlProps>(IntervalRegionControl, 'audioIntervalRegionControl');
@@ -41,7 +40,6 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
         volume,
         loop,
         playbackRate,
-        duration,
         labels,
         activeLabelId,
     } = useSelector((state: CombinedState) => ({
@@ -51,12 +49,10 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
         volume: state.audio.player.volume,
         loop: state.audio.player.loop,
         playbackRate: state.audio.player.playbackRate,
-        duration: state.audio.player.duration,
         labels: state.annotation.job.labels,
         activeLabelId: state.audio.player.activeLabelId,
     }), shallowEqual);
 
-    const maxZoom = useMemo(() => computeMaxZoom(duration), [duration]);
     const updateAudioActiveControl = useCallback((control: ActiveControl): void => {
         dispatch(updateActiveControl(control));
     }, [dispatch]);
@@ -76,7 +72,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
         dispatch(audioActions.setAudioActiveLabel(labelId));
     }, [dispatch]);
     const onExtendRegion = useCallback((labelId: number): void => {
-        dispatch(extendAudioRegionFromLastAsync(labelId));
+        dispatch(extendAudioIntervalFromLastAsync(labelId));
     }, [dispatch]);
 
     return (
@@ -111,7 +107,6 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
             <hr />
             <ObservedZoomControl
                 zoom={zoom}
-                maxZoom={maxZoom}
                 onZoomChange={onZoomChange}
             />
             <ObservedVolumeControl
