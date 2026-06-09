@@ -170,9 +170,7 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
             <Form.Item
                 name='matchUnspecifiedAttributes'
                 valuePropName='checked'
-                className={matchUnspecifiedOverridden ?
-                    'cvat-quality-requirement-overridden-attribute-rule' :
-                    undefined}
+                className={matchUnspecifiedOverridden ? 'cvat-quality-requirement-overridden-attribute-rule' : ''}
             >
                 <Checkbox>
                     <Space direction='vertical' size={0}>

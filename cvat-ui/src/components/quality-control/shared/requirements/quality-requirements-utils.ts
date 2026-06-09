@@ -31,6 +31,31 @@ export const METRICS = Object.keys(METRIC_LABELS);
 
 export type RequirementRawData = SerializedQualityRequirementData;
 
+const QUALITY_REQUIREMENT_SAVE_FIELD_NAMES: (keyof SerializedQualityRequirementData)[] = [
+    'settings_id',
+    'name',
+    'sort_order',
+    'filter',
+    'enabled',
+    'annotation_type',
+    'metric',
+    'required_score',
+    'parent_requirement',
+    'iou_threshold',
+    'point_size',
+    'point_size_base',
+    'line_thickness',
+    'match_orientation',
+    'line_orientation_threshold',
+    'match_groups',
+    'group_match_threshold',
+    'check_covered_annotations',
+    'object_visibility_threshold',
+    'panoptic_comparison',
+    'attribute_comparison',
+    'empty_is_annotated',
+];
+
 export function buildRequirementsById(requirements: QualityRequirement[]): Map<number, QualityRequirement> {
     const requirementsById = new Map<number, QualityRequirement>();
 
@@ -157,32 +182,14 @@ export function requirementToRaw(requirement: QualityRequirement): RequirementRa
     };
 }
 
-export function requirementToSaveFields(requirement: QualityRequirement): SerializedQualityRequirementData {
-    const {
-        id,
-        is_default,
-        task_id,
-        project_id,
-        effective,
-        created_date,
-        updated_date,
-        ...fields
-    } = requirementToRaw(requirement);
-
-    return fields;
+export function rawToSaveFields(rawRequirement: RequirementRawData): SerializedQualityRequirementData {
+    const fields: SerializedQualityRequirementData = {};
+    for (const fieldName of QUALITY_REQUIREMENT_SAVE_FIELD_NAMES) {
+        fields[fieldName] = rawRequirement[fieldName] as never;
+    }
+    return fields as SerializedQualityRequirementData;
 }
 
-export function rawToSaveFields(rawRequirement: RequirementRawData): SerializedQualityRequirementData {
-    const {
-        id,
-        is_default,
-        task_id,
-        project_id,
-        effective,
-        created_date,
-        updated_date,
-        ...fields
-    } = rawRequirement;
-
-    return fields;
+export function requirementToSaveFields(requirement: QualityRequirement): SerializedQualityRequirementData {
+    return rawToSaveFields(requirementToRaw(requirement));
 }

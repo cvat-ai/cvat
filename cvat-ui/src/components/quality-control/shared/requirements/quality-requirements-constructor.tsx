@@ -20,12 +20,21 @@ import {
     QualitySettings,
 } from 'cvat-core-wrapper';
 import {
+    ANNOTATION_TYPE_LABELS,
+    METRIC_LABELS,
     buildRequirementsById,
     formatAnnotationType,
     formatMetric,
     formatThreshold,
     getRequirementDisplayValue,
 } from './quality-requirements-utils';
+
+// The table rows hold formatted display labels (see buildRequirementTree), so the select
+// option values must be those labels for jsonLogic filtering to match.
+const annotationTypeFilterValues = Object.values(ANNOTATION_TYPE_LABELS)
+    .map((label) => ({ value: label, title: label }));
+const metricFilterValues = Object.values(METRIC_LABELS)
+    .map((label) => ({ value: label, title: label }));
 
 const requirementsFilterConfig: Partial<Config> = {
     fields: {
@@ -36,13 +45,21 @@ const requirementsFilterConfig: Partial<Config> = {
         },
         annotationType: {
             label: 'Annotation type',
-            type: 'text',
+            type: 'select',
             valueSources: ['value'],
+            operators: ['select_any_in', 'select_equals'],
+            fieldSettings: {
+                listValues: annotationTypeFilterValues,
+            },
         },
         metric: {
             label: 'Metric',
-            type: 'text',
+            type: 'select',
             valueSources: ['value'],
+            operators: ['select_any_in', 'select_equals'],
+            fieldSettings: {
+                listValues: metricFilterValues,
+            },
         },
         enabled: {
             label: 'Enabled',
