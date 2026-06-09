@@ -36,7 +36,9 @@ def _add_default_iscrowd(annotation_file: Path) -> None:
             json.dump(annotation_data, f, ensure_ascii=False)
 
 
-def _add_default_iscrowd_to_archive_annotations(temp_dir: Path | str, prefixes: tuple[str, ...]) -> None:
+def _add_default_iscrowd_to_archive_annotations(
+    temp_dir: Path | str, prefixes: tuple[str, ...]
+) -> None:
     """Inject a default ``iscrowd`` value into COCO annotation files inside a ZIP archive.
 
     Only files whose names start with one of *prefixes* are patched (e.g.
