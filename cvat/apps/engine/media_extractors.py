@@ -17,12 +17,12 @@ from bisect import bisect
 from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
 from contextlib import ExitStack, closing, contextmanager
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import Enum, IntEnum
 from fractions import Fraction
 from functools import cached_property
 from pathlib import Path, PurePath
 from random import shuffle
-from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
+from typing import ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
 
 import av
 import av.codec
@@ -354,8 +354,9 @@ class ImageListReader(IImageReader):
         if self._dimension == DimensionType.DIM_3D:
             properties = ValidateDimension.get_pcd_properties(Path(self.get_path(i)))
             return int(properties["WIDTH"]), int(properties["HEIGHT"])
-        with Image.open(self._source_paths[i]) as img:
-            return image_size_within_orientation(img)
+        else:
+            with Image.open(self._source_paths[i]) as img:
+                return image_size_within_orientation(img)
 
     def reconcile(
         self, source_paths, step=1, start=0, stop=None, dimension=None, sorting_method=None
@@ -1037,63 +1038,11 @@ class IChunkWriter(ABC):
     CHUNK_MIME_TYPE: ClassVar[str]
 
     def __init__(self, *, quality: int, dimension: DimensionType) -> None:
-        self._image_quality = quality
+        self._quality = quality
         self._dimension = dimension
 
-    @staticmethod
-    def _compress_image(
-        source_image: av.VideoFrame | io.IOBase | Image.Image, quality: int
-    ) -> io.BytesIO:
-        image = None
-        if isinstance(source_image, av.VideoFrame):
-            image = source_image.to_image()
-        elif isinstance(source_image, io.IOBase):
-            image, _ = load_image((source_image, None))
-        elif isinstance(source_image, Image.Image):
-            image = source_image
-
-        assert image is not None
-
-        if has_exif_rotation(image):
-            image = ImageOps.exif_transpose(image)
-
-        # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
-        if image.mode == "I":
-            # Image mode is 32bit integer pixels.
-            # Autoscale pixels by factor 2**8 / im_data.max() to fit into 8bit
-            im_data = np.array(image)
-            im_data = im_data * (2**8 / im_data.max())
-            image = Image.fromarray(im_data.astype(np.int32))
-
-        # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
-        # Summary:
-        # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
-        # Simple Conversion from I;16 to I/RGB/L doesn't work as well.
-        #   Including any Intermediate Conversions doesn't work either. (eg. I;16 to I to L)
-        # Seems like an internal Bug of PIL
-        #     See Issue for further details: https://github.com/python-pillow/Pillow/issues/3011
-        #     Issue was opened 2018, so don't expect any changes soon and work with manual conversions.
-        if image.mode == "I;16":
-            # fmt: off
-            image = np.array(image, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
-            image = image - image.min()              # In case the used range lies in [a, 2^16] with a > 0
-            image = image / image.max() * 255        # Downscale into real numbers of range [0, 255]
-            image = image.astype(np.uint8)           # Floor to integers of range [0, 255]
-            image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
-            image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
-            # fmt: on
-
-        if image.mode != "RGB" and image.mode != "L":
-            image = image.convert("RGB")
-
-        buf = io.BytesIO()
-        image.save(buf, format="JPEG", quality=quality, optimize=True)
-        buf.seek(0)
-
-        return buf
-
     @abstractmethod
-    def save_as_chunk(self, images, chunk_path):
+    def save_as_chunk(self, images, chunk_path: str | io.IOBase):
         pass
 
 
@@ -1101,6 +1050,14 @@ class ZipChunkWriter(IChunkWriter):
     CHUNK_MIME_TYPE = "application/zip"
     IMAGE_EXT = "jpeg"
     POINT_CLOUD_EXT = "pcd"
+
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
+        super().__init__(quality=quality, dimension=dimension)
+        self._validate_configuration()
+
+    def _validate_configuration(self):
+        assert self._dimension in (DimensionType.DIM_2D, DimensionType.DIM_3D)
+        assert self._quality == 100
 
     def _write_pcd_file(self, image: str | Path | io.BytesIO) -> tuple[io.BytesIO, str]:
         with ExitStack() as es:
@@ -1165,6 +1122,61 @@ class ZipChunkWriter(IChunkWriter):
 
 
 class ZipCompressedChunkWriter(ZipChunkWriter):
+    def _validate_configuration(self):
+        assert self._dimension in (DimensionType.DIM_2D, DimensionType.DIM_3D)
+
+    @staticmethod
+    def _compress_image(
+        source_image: av.VideoFrame | io.IOBase | Image.Image, quality: int
+    ) -> io.BytesIO:
+        image = None
+        if isinstance(source_image, av.VideoFrame):
+            image = source_image.to_image()
+        elif isinstance(source_image, io.IOBase):
+            image, _ = load_image((source_image, None))
+        elif isinstance(source_image, Image.Image):
+            image = source_image
+
+        assert image is not None
+
+        if has_exif_rotation(image):
+            image = ImageOps.exif_transpose(image)
+
+        # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
+        if image.mode == "I":
+            # Image mode is 32bit integer pixels.
+            # Autoscale pixels by factor 2**8 / im_data.max() to fit into 8bit
+            im_data = np.array(image)
+            im_data = im_data * (2**8 / im_data.max())
+            image = Image.fromarray(im_data.astype(np.int32))
+
+        # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
+        # Summary:
+        # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
+        # Simple Conversion from I;16 to I/RGB/L doesn't work as well.
+        #   Including any Intermediate Conversions doesn't work either. (eg. I;16 to I to L)
+        # Seems like an internal Bug of PIL
+        #     See Issue for further details: https://github.com/python-pillow/Pillow/issues/3011
+        #     Issue was opened 2018, so don't expect any changes soon and work with manual conversions.
+        if image.mode == "I;16":
+            # fmt: off
+            image = np.array(image, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
+            image = image - image.min()              # In case the used range lies in [a, 2^16] with a > 0
+            image = image / image.max() * 255        # Downscale into real numbers of range [0, 255]
+            image = image.astype(np.uint8)           # Floor to integers of range [0, 255]
+            image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
+            image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
+            # fmt: on
+
+        if image.mode != "RGB" and image.mode != "L":
+            image = image.convert("RGB")
+
+        buf = io.BytesIO()
+        image.save(buf, format="JPEG", quality=quality, optimize=True)
+        buf.seek(0)
+
+        return buf
+
     def save_as_chunk(
         self,
         images: Iterator[tuple[Image.Image | io.IOBase | str, str | None]],
@@ -1178,7 +1190,7 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
                         try:
-                            image_buf = self._compress_image(image, self._image_quality)
+                            image_buf = self._compress_image(image, self._quality)
                         except Exception as ex:
                             if path is None:
                                 raise
@@ -1207,11 +1219,11 @@ class Mpeg4ChunkWriter(IChunkWriter):
     MAX_MBS_PER_FRAME = 36864
 
     def __init__(self, *, quality: int, dimension: DimensionType) -> None:
+        assert dimension == DimensionType.DIM_2D
+
         # translate inversed range [1:100] to [0:51]
         quality = round(51 * (100 - quality) / 99)
         super().__init__(quality=quality, dimension=dimension)
-
-        assert self._dimension == DimensionType.DIM_2D
 
         self._output_fps = 25
         try:
@@ -1219,15 +1231,15 @@ class Mpeg4ChunkWriter(IChunkWriter):
             self._codec_name = codec.name
             self._codec_opts = {
                 "profile": "constrained_baseline",
-                "qmin": str(self._image_quality),
-                "qmax": str(self._image_quality),
+                "qmin": str(self._quality),
+                "qmax": str(self._quality),
                 "rc_mode": "buffer",
             }
         except av.codec.codec.UnknownCodecError:
             codec = av.codec.Codec("libx264", "w")
             self._codec_name = codec.name
             self._codec_opts = {
-                "crf": str(self._image_quality),
+                "crf": str(self._quality),
                 "preset": "ultrafast",
             }
 
@@ -1262,11 +1274,9 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
-    FrameDescriptor: TypeAlias = tuple[av.VideoFrame, Any]
-
     def _peek_first_frame(
-        self, frame_iter: Iterator[FrameDescriptor]
-    ) -> tuple[FrameDescriptor | None, Iterator[FrameDescriptor]]:
+        self, frame_iter: Iterator[IMediaReader.VideoFrame]
+    ) -> tuple[IMediaReader.VideoFrame | None, Iterator[IMediaReader.VideoFrame]]:
         "Gets the first frame and returns the same full iterator"
 
         if not hasattr(frame_iter, "__next__"):
@@ -1275,7 +1285,11 @@ class Mpeg4ChunkWriter(IChunkWriter):
         first_frame = next(frame_iter, None)
         return first_frame, itertools.chain((first_frame,), frame_iter)
 
-    def save_as_chunk(self, images: Iterator[FrameDescriptor], chunk_path: str) -> None:
+    def save_as_chunk(
+        self,
+        images: Iterator[IMediaReader.VideoFrame],
+        chunk_path: str | io.IOBase,
+    ) -> None:
         first_frame, images = self._peek_first_frame(images)
         if not first_frame:
             raise Exception("no images to save")
@@ -1314,11 +1328,12 @@ class Mpeg4ChunkWriter(IChunkWriter):
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
     def __init__(self, *, quality, dimension):
         super().__init__(quality=quality, dimension=dimension)
+
         if self._codec_name == "libx264":
             self._codec_opts = {
                 "profile": "baseline",
                 "coder": "0",
-                "crf": str(self._image_quality),
+                "crf": str(self._quality),
                 "wpredp": "0",
                 "flags": "-loop",
             }
@@ -1348,6 +1363,99 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
             )
 
             self._encode_images(images, output_container, output_v_stream)
+
+
+class Mp3ChunkWriter(IChunkWriter):
+    CHUNK_MIME_TYPE = "audio/mpeg"
+    FORMAT = "mp3"
+
+    class AudioQuality(str, Enum):
+        medium = "medium"
+        high = "high"
+
+    def __init__(self, *, quality: AudioQuality):
+        self.rate = 44100
+
+        self.allow_source_reuse = True
+        # MP3 is a lossy format, so recoding from MP3 to MP3 will reduce quality.
+        # Reuse the source file if it's an MP3 with the same sampling rate and
+        # bitrate <= required by quality.
+
+        codec = av.codec.Codec("libmp3lame", "w")
+        self.codec_name = codec.name
+
+        # Read more about quality levels:
+        # https://svn.code.sf.net/p/lame/svn/trunk/lame/doc/html/usage.html
+        # https://trac.ffmpeg.org/wiki/Encode/MP3
+        #
+        # Options list:
+        # https://github.com/FFmpeg/FFmpeg/blob/0fefecd53f316372f5860e9f629cee35c061332d/libavcodec/libmp3lame.c#L314-L321
+        #
+        # Option use:
+        # https://github.com/FFmpeg/FFmpeg/blob/0fefecd53f316372f5860e9f629cee35c061332d/libavcodec/libmp3lame.c#L120-L131
+        #
+        # WARNING: the "-V" ("-q") API option in FFmpeg, which is supposed to be "global_quality"
+        # in the library API IS NOT AVAILABLE in PyAV:
+        # https://github.com/search?q=repo%3APyAV-Org%2FPyAV+global_quality&type=code
+        # so VBR cannot be specified this way.
+        # It's possible to specify ABR though, which is not really worse, so that's what we do.
+        # Supported options:
+        # "abr": "0" or "1",
+        # "bit_rate": number in the range [0; 320]
+        #
+        # The resulting bitrate can be checked with:
+        # ffprobe -v error -show_format -show_streams <filename> | grep bit_rate
+        if quality == self.AudioQuality.high:
+            self.codec_opts = {
+                "abr": "1",
+                "bit_rate": 192000,
+            }
+        elif quality == self.AudioQuality.medium:
+            self.codec_opts = {
+                "abr": "1",
+                "bit_rate": 160000,
+            }
+        else:
+            assert False, f"Unknown quality {quality}"
+
+    def _add_audio_stream(self, container: av.container.Container) -> av.AudioStream:
+        audio_stream: av.AudioStream = container.add_stream(
+            self.codec_name, rate=self.rate, layout="stereo"
+        )
+
+        options = dict(self.codec_opts)
+
+        # Not supported by PyAV
+        assert "global_quality" not in options
+        assert "qscale" not in options
+
+        if "bit_rate" in options:
+            # For CBR or ABR
+            audio_stream.bit_rate = options.pop("bit_rate")
+
+        for key, value in options.items():
+            audio_stream.options[key] = value
+
+        return audio_stream
+
+    def save_as_chunk(self, frames: Iterable[IMediaReader.AudioFrame], chunk_path: str | io.IOBase):
+        with av.open(chunk_path, "w", format=self.FORMAT) as output_container:
+            output_stream = self._add_audio_stream(output_container)
+
+            self._encode_audio_frames(frames, output_container, output_stream)
+
+    def _encode_audio_frames(
+        self,
+        frames: Iterable[IMediaReader.AudioFrame],
+        container: av.container.Container,
+        stream: av.AudioStream,
+    ):
+        for frame, _ in frames:
+            container.mux(stream.encode_lazy(frame))
+
+        # Flush streams
+        for packet in stream.encode():
+            container.mux(packet)
 
 
 def _is_archive(path):

@@ -834,6 +834,8 @@ def check_annotation_response(
             )
         if key_path and key_path[-1] == "tracks":
             return filter_dict(optional_fields, keep=["source", "attributes", "elements"])
+        if key_path and key_path[-1] == "intervals":
+            return filter_dict(optional_fields, keep=["source", "attributes"])
         if format_key(key_path, index_placeholder="*").endswith("tracks.*.elements"):
             return filter_dict(optional_fields, keep=["source", "attributes"])
         if format_key(key_path, index_placeholder="*").endswith("tracks.*.elements.*.shapes"):
@@ -853,6 +855,8 @@ def check_annotation_response(
                     "score",
                 ],
             )
+        if not key_path:
+            return {"tags": [], "shapes": [], "tracks": [], "intervals": []}
 
         return None
 

@@ -17,6 +17,7 @@ cvat:
     affinity: {}
     tolerations: []
     additionalEnv: []
+    numProxies: 1
 
     # This should only be used by supercharts;
     # to set custom environment for a Helm release, use additionalEnv.
@@ -104,6 +105,7 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        terminationGracePeriodSeconds: 30
       qualityreports:
         replicas: 1
         labels: {}

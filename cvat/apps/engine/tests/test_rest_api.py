@@ -36,6 +36,7 @@ from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from botocore.exceptions import ClientError, EndpointConnectionError
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import CommandError, call_command
 from django.http import FileResponse, HttpResponse
 from django.test import SimpleTestCase, override_settings
@@ -54,6 +55,7 @@ from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cloud_provider import AzureBlobCloudStorage, S3CloudStorage, Status
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
+    AnnotationGuide,
     AttributeSpec,
     AttributeType,
     CloudStorage,
@@ -99,20 +101,16 @@ def create_db_users(
     extra: bool = True,
 ):
     if admin:
-        group_admin, _ = Group.objects.get_or_create(name="admin")
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
-        user_admin.groups.add(group_admin)
         cls.admin = user_admin
 
     if primary:
-        group_user, _ = Group.objects.get_or_create(name="user")
-        group_annotator, _ = Group.objects.get_or_create(name="worker")
+        group_worker, _ = Group.objects.get_or_create(name="worker")
         user_owner = User.objects.create_user(username="user1", password="user1")
-        user_owner.groups.add(group_user)
         user_assignee = User.objects.create_user(username="user2", password="user2")
-        user_assignee.groups.add(group_annotator)
+        user_assignee.groups.set([group_worker])
         user_annotator = User.objects.create_user(username="user3", password="user3")
-        user_annotator.groups.add(group_annotator)
+        user_annotator.groups.set([group_worker])
         cls.owner = cls.user1 = user_owner
         cls.assignee = cls.user2 = user_assignee
         cls.annotator = cls.user3 = user_annotator
@@ -122,7 +120,6 @@ def create_db_users(
         user_somebody = User.objects.create_user(username="user4", password="user4")
         user_somebody.groups.add(group_somebody)
         user_dummy = User.objects.create_user(username="user5", password="user5")
-        user_dummy.groups.add(group_user)
         cls.somebody = cls.user4 = user_somebody
         cls.user = cls.user5 = user_dummy
 
@@ -321,7 +318,7 @@ class JobGetAPITestCase(ApiTestBase):
 
     def _run_api_v2_jobs_id(self, jid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/jobs/{}".format(jid))
+            response = self.client.get(f"/api/jobs/{jid}")
 
         return response
 
@@ -383,7 +380,7 @@ class JobPartialUpdateAPITestCase(ApiTestBase):
 
     def _run_api_v2_jobs_id(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch("/api/jobs/{}".format(jid), data=data, format="json")
+            response = self.client.patch(f"/api/jobs/{jid}", data=data, format="json")
 
         return response
 
@@ -468,7 +465,7 @@ class JobUpdateAPITestCase(ApiTestBase):
 
     def _run_api_v2_jobs_id(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put("/api/jobs/{}".format(jid), data=data, format="json")
+            response = self.client.put(f"/api/jobs/{jid}", data=data, format="json")
 
         return response
 
@@ -497,9 +494,7 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
 
     def _run_api_v1_jobs_data_meta_id(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch(
-                "/api/jobs/{}/data/meta".format(jid), data=data, format="json"
-            )
+            response = self.client.patch(f"/api/jobs/{jid}/data/meta", data=data, format="json")
 
         return response
 
@@ -543,6 +538,29 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
             self.assertLess(res.data["updated_date"], res2.data["updated_date"])
 
 
+class AssetCreateAPITestCase(ApiTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.project = create_db_project({"name": "project", "owner": cls.admin})
+        cls.guide = AnnotationGuide.objects.create(project=cls.project)
+
+    def test_filename_content_type_mismatch(self):
+        asset_file = SimpleUploadedFile("evil.html", b"<script></script>", content_type="image/gif")
+
+        with ForceLogin(self.admin, self.client):
+            response = self.client.post(
+                "/api/assets",
+                data={"guide_id": self.guide.id, "file": asset_file},
+                format="multipart",
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(b"Content-Type does not match", response.content)
+
+        self.assertEqual(self.guide.assets.count(), 0)
+
+
 class ServerAboutAPITestCase(ApiTestBase):
     ACCEPT_HEADER_TEMPLATE = "application/vnd.cvat+json; version={}"
 
@@ -559,7 +577,7 @@ class ServerAboutAPITestCase(ApiTestBase):
     def _run_api_server_about(self, user, version):
         with ForceLogin(user, self.client):
             response = self.client.get(
-                "/api/server/about", HTTP_ACCEPT=self.ACCEPT_HEADER_TEMPLATE.format(version)
+                "/api/server/about", headers={"Accept": self.ACCEPT_HEADER_TEMPLATE.format(version)}
             )
         return response
 
@@ -782,7 +800,7 @@ class UserSelfAPITestCase(UserAPITestCase):
 class UserGetAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/users/{}".format(user_id))
+            response = self.client.get(f"/api/users/{user_id}")
 
         return response
 
@@ -825,7 +843,7 @@ class UserGetAPITestCase(UserAPITestCase):
 class UserPartialUpdateAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch("/api/users/{}".format(user_id), data=data, format="json")
+            response = self.client.patch(f"/api/users/{user_id}", data=data, format="json")
 
         return response
 
@@ -879,7 +897,7 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
 class UserDeleteAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):
         with ForceLogin(user, self.client):
-            response = self.client.delete("/api/users/{}".format(user_id))
+            response = self.client.delete(f"/api/users/{user_id}")
 
         return response
 
@@ -968,7 +986,7 @@ class ProjectGetAPITestCase(ApiTestBase):
 
     def _run_api_v2_projects_id(self, pid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/projects/{}".format(pid))
+            response = self.client.get(f"/api/projects/{pid}")
 
         return response
 
@@ -1015,7 +1033,7 @@ class ProjectDeleteAPITestCase(ApiTestBase):
 
     def _run_api_v2_projects_id(self, pid, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete("/api/projects/{}".format(pid), format="json")
+            response = self.client.delete(f"/api/projects/{pid}", format="json")
 
         return response
 
@@ -1166,7 +1184,7 @@ class ProjectPartialUpdateAPITestCase(ApiTestBase):
 
     def _run_api_v2_projects_id(self, pid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch("/api/projects/{}".format(pid), data=data, format="json")
+            response = self.client.patch(f"/api/projects/{pid}", data=data, format="json")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
@@ -1317,7 +1335,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
 
     def _run_api_v2_project_id(self, pid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch("/api/projects/{}".format(pid), data=data, format="json")
+            response = self.client.patch(f"/api/projects/{pid}", data=data, format="json")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
@@ -1442,17 +1460,12 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         cls.media_data.append(
             {
-                **{
-                    "image_quality": 75,
-                    "copy_data": True,
-                    "start_frame": 2,
-                    "stop_frame": 9,
-                    "frame_filter": "step=2",
-                },
-                **{
-                    "server_files[{}]".format(i): imagename_pattern.format(i)
-                    for i in range(image_count)
-                },
+                "image_quality": 75,
+                "copy_data": True,
+                "start_frame": 2,
+                "stop_frame": 9,
+                "frame_filter": "step=2",
+                **{f"server_files[{i}]": imagename_pattern.format(i) for i in range(image_count)},
             }
         )
 
@@ -1516,19 +1529,12 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         cls.media["files"].append(manifest_path)
         cls.media_data.append(
             {
-                **{
-                    "image_quality": 70,
-                    "copy_data": True,
-                    "use_cache": True,
-                    "frame_filter": "step=2",
-                    "server_files[0]": "manifest.jsonl",
-                },
-                **{
-                    **{
-                        "server_files[{}]".format(i): imagename_pattern.format(i)
-                        for i in range(1, 8)
-                    },
-                },
+                "image_quality": 70,
+                "copy_data": True,
+                "use_cache": True,
+                "frame_filter": "step=2",
+                "server_files[0]": "manifest.jsonl",
+                **{f"server_files[{i}]": imagename_pattern.format(i) for i in range(1, 8)},
             }
         )
 
@@ -1569,7 +1575,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
             for media in media_data.values():
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
-            response = cls.client.post("/api/tasks/{}/data".format(tid), data=media_data)
+            response = cls.client.post(f"/api/tasks/{tid}/data", data=media_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
 
@@ -1579,7 +1585,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
             rqjob_status, msg = response_json["status"], response_json["message"]
             assert rqjob_status == "finished", f"{rqjob_status=}\n{msg=}"
 
-            response = cls.client.get("/api/tasks/{}".format(tid))
+            response = cls.client.get(f"/api/tasks/{tid}")
             data_id = response.data["data"]
             cls.tasks.append(
                 {
@@ -1740,7 +1746,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
     def _run_api_v2_projects_id(self, pid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/projects/{}".format(pid), format="json")
+            response = self.client.get(f"/api/projects/{pid}", format="json")
 
         return response.data
 
@@ -1902,6 +1908,37 @@ class _CloudStorageTestBase(ApiTestBase):
                 for key in files:
                     del self._files[key]
 
+            def _list_raw_content_on_one_page(
+                self,
+                prefix: str = "",
+                *,
+                next_token: str | None = None,
+                page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
+            ) -> dict:
+                start = int(next_token or 0)
+                entries = []
+                seen_directories = set()
+
+                for key in sorted(k for k in self._files if k.startswith(prefix)):
+                    suffix = key[len(prefix) :]
+                    match suffix.split("/", maxsplit=1):
+                        case [dirname, _]:
+                            directory = prefix + dirname + "/"
+                            if directory not in seen_directories:
+                                entries.append(directory)
+                                seen_directories.add(directory)
+                        case _:
+                            entries.append(key)
+
+                page = entries[start : start + page_size]
+                next_page_start = start + page_size
+
+                return {
+                    "files": [name for name in page if not name.endswith("/")],
+                    "directories": [name for name in page if name.endswith("/")],
+                    "next": str(next_page_start) if next_page_start < len(entries) else None,
+                }
+
         cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.S3CloudStorage", MockS3)
         cls._aws_patch.start()
 
@@ -1939,13 +1976,109 @@ class _CloudStorageTestBase(ApiTestBase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            rq_id = response.data["rq_id"]
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/requests/{rq_id}")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(
+                response.data["status"], "finished", "Message: " + response.data["message"]
+            )
+
+            response = self.client.get(f"/api/tasks/{tid}")
             task = response.data
 
         return task
+
+
+class CloudStorageTestCase(_CloudStorageTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.client = APIClient()
+        cls.mock_aws.create_file("../manifest.jsonl", b"evil manifest")
+
+    def test_add_with_unsafe_manifest_path(self):
+        data = {
+            "provider_type": "AWS_S3_BUCKET",
+            "resource": "test",
+            "display_name": "Bucket",
+            "credentials_type": "ANONYMOUS_ACCESS",
+            "manifests": ["../manifest.jsonl"],
+        }
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.post("/api/cloudstorages", data=data, format="json")
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(b"'..' segment", response.content)
+
+    def test_update_with_unsafe_manifest_path(self):
+        cloud_storage_id = self._create_cloud_storage()
+        with ForceLogin(self.owner, self.client):
+            response = self.client.patch(
+                f"/api/cloudstorages/{cloud_storage_id}",
+                data={"manifests": ["/manifest.jsonl"]},
+                format="json",
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(b"not relative", response.content)
+
+    def test_contents_with_unsafe_manifest_path(self):
+        cloud_storage_id = self._create_cloud_storage()
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.get(
+                f"/api/cloudstorages/{cloud_storage_id}/content-v2",
+                data={"manifest_path": "../manifest.jsonl"},
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn(b"'..' segment", response.content)
+
+
+class TaskCloudStorageTestCase(_CloudStorageTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.client = APIClient()
+        cls.mock_aws.create_file("a/test.jpg", generate_image_file("test.jpg", (8, 8)).read())
+        cls.mock_aws.create_file("a/../evil.jpg", generate_image_file("evil.jpg", (8, 8)).read())
+
+    def test_unsafe_paths_in_directory(self):
+        cloud_storage_id = self._create_cloud_storage()
+
+        tid = self._create_task(
+            {"name": "test task"},
+            {
+                "server_files[0]": "a/",
+                "image_quality": 75,
+                "cloud_storage_id": cloud_storage_id,
+            },
+        )["id"]
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.get(f"/api/tasks/{tid}/data/meta")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(response.data["frames"]), 1)
+            self.assertEqual(response.data["frames"][0]["name"], "a/test.jpg")
+
+    def test_unsafe_paths_in_pattern_expansion(self):
+        cloud_storage_id = self._create_cloud_storage()
+
+        tid = self._create_task(
+            {"name": "test task"},
+            {
+                "filename_pattern": "a/*",
+                "image_quality": 75,
+                "cloud_storage_id": cloud_storage_id,
+            },
+        )["id"]
+
+        with ForceLogin(self.owner, self.client):
+            response = self.client.get(f"/api/tasks/{tid}/data/meta")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(response.data["frames"]), 1)
+            self.assertEqual(response.data["frames"][0]["name"], "a/test.jpg")
 
 
 @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
@@ -2072,7 +2205,7 @@ class ProjectExportAPITestCase(ExportApiTestBase):
 
     def _run_api_v2_tasks_id_delete(self, tid, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete("/api/tasks/{}".format(tid), format="json")
+            response = self.client.delete(f"/api/tasks/{tid}", format="json")
         return response
 
     def _check_tasks_count(self, project, expected_result):
@@ -2122,21 +2255,15 @@ class ProjectImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         cls.media_data = [
             {
                 **{
-                    **{
-                        f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
-                        for i in range(10)
-                    },
+                    f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
+                    for i in range(10)
                 },
-                **{
-                    "image_quality": 75,
-                },
+                "image_quality": 75,
             },
             {
                 **{
-                    **{
-                        f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
-                        for i in range(10)
-                    },
+                    f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
+                    for i in range(10)
                 },
                 "image_quality": 75,
             },
@@ -2153,7 +2280,7 @@ class ProjectImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             for media in media_data.values():
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
-            response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=media_data)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json()["rq_id"]
 
@@ -2163,7 +2290,7 @@ class ProjectImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             rqjob_status, msg = response_json["status"], response_json["message"]
             self.assertEqual(rqjob_status, "finished", f"Message: {msg}")
 
-            response = self.client.get("/api/tasks/{}".format(tid))
+            response = self.client.get(f"/api/tasks/{tid}")
             data_id = response.data["data"]
             self.tasks.append(
                 {
@@ -2307,7 +2434,7 @@ class TaskGetAPITestCase(ApiTestBase):
 
     def _run_api_v2_tasks_id(self, tid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/tasks/{}".format(tid))
+            response = self.client.get(f"/api/tasks/{tid}")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
@@ -2373,7 +2500,7 @@ class TaskDeleteAPITestCase(ApiTestBase):
 
     def _run_api_v2_tasks_id(self, tid, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete("/api/tasks/{}".format(tid), format="json")
+            response = self.client.delete(f"/api/tasks/{tid}", format="json")
 
         return response
 
@@ -2420,7 +2547,7 @@ class TaskUpdateAPITestCase(ApiTestBase):
 
     def _run_api_v2_tasks_id(self, tid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put("/api/tasks/{}".format(tid), data=data, format="json")
+            response = self.client.put(f"/api/tasks/{tid}", data=data, format="json")
 
         return response
 
@@ -2488,7 +2615,7 @@ class TaskPartialUpdateAPITestCase(ApiTestBase):
 
     def _run_api_v2_tasks_id(self, tid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch("/api/tasks/{}".format(tid), data=data, format="json")
+            response = self.client.patch(f"/api/tasks/{tid}", data=data, format="json")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
@@ -2615,9 +2742,7 @@ class TaskDataMetaPartialUpdateAPITestCase(ApiTestBase):
 
     def _run_api_v1_task_data_meta_id(self, tid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch(
-                "/api/tasks/{}/data/meta".format(tid), data=data, format="json"
-            )
+            response = self.client.patch(f"/api/tasks/{tid}/data/meta", data=data, format="json")
 
         return response
 
@@ -2672,7 +2797,13 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
                             "mutable": True,
                             "input_type": AttributeType.CHECKBOX,
                             "default_value": "true",
-                        }
+                        },
+                        {
+                            "name": "second_bool_attribute",
+                            "mutable": True,
+                            "input_type": AttributeType.CHECKBOX,
+                            "default_value": "false",
+                        },
                     ],
                 },
                 {
@@ -2689,9 +2820,20 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
         response = self._run_api_v2_task_id(self.task.id, self.admin, data)
         self._check_response(response, self.task, data)
 
+    @staticmethod
+    def _attribute_data(attribute, *, name):
+        return {
+            "id": attribute.id,
+            "name": name,
+            "mutable": attribute.mutable,
+            "input_type": attribute.input_type,
+            "default_value": attribute.default_value,
+            "values": [],
+        }
+
     def _run_api_v2_task_id(self, tid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch("/api/tasks/{}".format(tid), data=data, format="json")
+            response = self.client.patch(f"/api/tasks/{tid}", data=data, format="json")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
@@ -2730,6 +2872,103 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
     def test_api_v2_tasks_delete_label(self):
         data = {"labels": [{"id": 2, "name": "Label for deletion", "deleted": True}]}
         self._check_api_v2_task(data)
+
+    def test_api_v2_tasks_reject_attribute_name_swap(self):
+        label = self.task.label_set.get(name="car")
+        other_label = self.task.label_set.get(name="person")
+        first_attribute = label.attributespec_set.get(name="bool_attribute")
+        second_attribute = label.attributespec_set.get(name="second_bool_attribute")
+
+        data = {
+            "labels": [
+                {
+                    "id": other_label.id,
+                    "name": "updated person",
+                },
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "attributes": [
+                        self._attribute_data(first_attribute, name=second_attribute.name),
+                        self._attribute_data(second_attribute, name=first_attribute.name),
+                    ],
+                },
+            ],
+        }
+
+        response = self._run_api_v2_task_id(self.task.id, self.admin, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Cannot swap attribute names", str(response.data))
+        self.assertIn("bool_attribute", str(response.data))
+        self.assertIn("second_bool_attribute", str(response.data))
+        self.assertEqual(self.task.label_set.get(id=other_label.id).name, "person")
+        self.assertEqual(
+            label.attributespec_set.get(id=first_attribute.id).name,
+            "bool_attribute",
+        )
+        self.assertEqual(
+            label.attributespec_set.get(id=second_attribute.id).name,
+            "second_bool_attribute",
+        )
+
+    def test_api_v2_tasks_reject_attribute_name_conflict_with_database(self):
+        label = self.task.label_set.get(name="car")
+        first_attribute = label.attributespec_set.get(name="bool_attribute")
+        second_attribute = label.attributespec_set.get(name="second_bool_attribute")
+
+        data = {
+            "labels": [
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "attributes": [
+                        self._attribute_data(first_attribute, name=second_attribute.name),
+                    ],
+                }
+            ],
+        }
+
+        response = self._run_api_v2_task_id(self.task.id, self.admin, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Attribute names are already used by this label", str(response.data))
+        self.assertIn("second_bool_attribute", str(response.data))
+        self.assertEqual(
+            label.attributespec_set.get(id=first_attribute.id).name,
+            "bool_attribute",
+        )
+        self.assertEqual(
+            label.attributespec_set.get(id=second_attribute.id).name,
+            "second_bool_attribute",
+        )
+
+    def test_api_v2_tasks_allow_attribute_rename_to_deleted_attribute_name(self):
+        label = self.task.label_set.get(name="car")
+        first_attribute = label.attributespec_set.get(name="bool_attribute")
+        second_attribute = label.attributespec_set.get(name="second_bool_attribute")
+
+        data = {
+            "labels": [
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "attributes": [
+                        {"id": second_attribute.id, "deleted": True},
+                        self._attribute_data(first_attribute, name=second_attribute.name),
+                    ],
+                }
+            ],
+        }
+
+        response = self._run_api_v2_task_id(self.task.id, self.admin, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            label.attributespec_set.get(id=first_attribute.id).name,
+            "second_bool_attribute",
+        )
+        self.assertFalse(label.attributespec_set.filter(id=second_attribute.id).exists())
 
 
 class TaskMoveAPITestCase(ApiTestBase):
@@ -2888,14 +3127,14 @@ class TaskMoveAPITestCase(ApiTestBase):
 
     def _run_api_v2_tasks_id(self, tid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.patch("/api/tasks/{}".format(tid), data=data, format="json")
+            response = self.client.patch(f"/api/tasks/{tid}", data=data, format="json")
 
         return response
 
     def _run_api_v2_job_id_annotation(self, jid, data):
         with ForceLogin(self.admin, self.client):
             response = self.client.patch(
-                "/api/jobs/{}/annotations?action=create".format(jid), data=data, format="json"
+                f"/api/jobs/{jid}/annotations?action=create", data=data, format="json"
             )
 
         return response
@@ -3086,10 +3325,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             "start_frame": 2,
             "stop_frame": 9,
             "frame_filter": "step=2",
-            **{
-                "server_files[{}]".format(i): imagename_pattern.format(i)
-                for i in range(image_count)
-            },
+            **{f"server_files[{i}]": imagename_pattern.format(i) for i in range(image_count)},
         }
         use_cache_data = {
             **data,
@@ -3182,9 +3418,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                         root_dir=temp_dir,
                     )
 
-                cls.media_data[-1]["server_files[1]"] = os.path.join(
-                    settings.SHARE_ROOT, manifest_path.name
-                )
+                cls.media_data[-1]["server_files[1]"] = manifest_path.name
 
         filename = os.path.join("videos", "test_video_1.mp4")
         path = share_root / filename
@@ -3216,19 +3450,12 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
         cls.media_data.append(
             {
-                **{
-                    "image_quality": 70,
-                    "copy_data": True,
-                    "use_cache": True,
-                    "frame_filter": "step=2",
-                    "server_files[0]": "manifest.jsonl",
-                },
-                **{
-                    **{
-                        "server_files[{}]".format(i): imagename_pattern.format(i)
-                        for i in range(1, 8)
-                    },
-                },
+                "image_quality": 70,
+                "copy_data": True,
+                "use_cache": True,
+                "frame_filter": "step=2",
+                "server_files[0]": "manifest.jsonl",
+                **{f"server_files[{i}]": imagename_pattern.format(i) for i in range(1, 8)},
             }
         )
 
@@ -3342,7 +3569,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             for media in media_data.values():
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
-            response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=media_data)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json()["rq_id"]
 
@@ -3352,7 +3579,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             rqjob_status, msg = response_json["status"], response_json["message"]
             self.assertEqual(rqjob_status, "finished", f"Message: {msg}")
 
-            response = self.client.get("/api/tasks/{}".format(tid))
+            response = self.client.get(f"/api/tasks/{tid}")
             data_id = response.data["data"]
             self.tasks.append(
                 {
@@ -3421,7 +3648,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
     def _run_api_v2_tasks_id(self, tid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/tasks/{}".format(tid), format="json")
+            response = self.client.get(f"/api/tasks/{tid}", format="json")
 
         return response.data
 
@@ -3577,7 +3804,7 @@ def generate_zip_archive_file(filename, count):
     zip_buf = BytesIO()
     with zipfile.ZipFile(zip_buf, "w") as zip_chunk:
         for idx in range(count):
-            image_name = "image_{:6d}.jpg".format(idx)
+            image_name = f"image_{idx:6d}.jpg"
             size, image_buf = generate_random_image_file(image_name)
             image_sizes.append(size)
             zip_chunk.writestr(image_name, image_buf.getvalue())
@@ -3848,20 +4075,13 @@ class TaskDataAPITestCase(ApiTestBase):
 
     def _run_api_v2_tasks_id_data_post(self, tid, user, data, *, headers=None):
         with ForceLogin(user, self.client):
-            response = self.client.post(
-                "/api/tasks/{}/data".format(tid),
-                data=data,
-                **{"HTTP_" + k: v for k, v in (headers or {}).items()},
-            )
+            response = self.client.post(f"/api/tasks/{tid}/data", data=data, headers=headers)
 
         return response
 
     def _get_task_creation_status(self, tid, user, *, headers=None):
         with ForceLogin(user, self.client):
-            response = self.client.get(
-                "/api/tasks/{}/status".format(tid),
-                **{"HTTP_" + k: v for k, v in (headers or {}).items()},
-            )
+            response = self.client.get(f"/api/tasks/{tid}/status", headers=headers)
 
         return response
 
@@ -3872,7 +4092,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
     def _get_task(self, user, tid):
         with ForceLogin(user, self.client):
-            return self.client.get("/api/tasks/{}".format(tid))
+            return self.client.get(f"/api/tasks/{tid}")
 
     def _run_api_v2_task_id_data_get(
         self, tid, user, data_type, data_quality=None, data_number=None
@@ -3883,10 +4103,10 @@ class TaskDataAPITestCase(ApiTestBase):
         if data_number is not None:
             query_params["number"] = data_number
         with ForceLogin(user, self.client):
-            return self.client.get("/api/tasks/{}/data".format(tid), query_params=query_params)
+            return self.client.get(f"/api/tasks/{tid}/data", query_params=query_params)
 
     def _get_preview(self, tid, user):
-        url = "/api/tasks/{}/preview".format(tid)
+        url = f"/api/tasks/{tid}/preview"
         with ForceLogin(user, self.client):
             return self.client.get(url)
 
@@ -5450,6 +5670,30 @@ class TaskDataAPITestCase(ApiTestBase):
         response = self._create_task(None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_api_v2_tasks_id_data_unsafe_server_files(self):
+        response = self._create_task(self.admin, {"name": "my task"})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        task_id = response.data["id"]
+
+        response = self._run_api_v2_tasks_id_data_post(
+            task_id, self.admin, data={"server_files[0]": "../test.jpg"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assert b"'..' segment" in response.content
+
+    def test_api_v2_tasks_id_data_unsafe_server_files_exclude(self):
+        response = self._create_task(self.admin, {"name": "my task"})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        task_id = response.data["id"]
+
+        response = self._run_api_v2_tasks_id_data_post(
+            task_id,
+            self.admin,
+            data={"server_files[0]": "test/", "server_files_exclude[0]": "test/./test.jpg"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assert b"not in canonical form" in response.content
+
 
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
@@ -5673,7 +5917,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "image_quality": 100,
                 }
 
-            response = self.client.post("/api/tasks/{}/data".format(tid), data=images)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=images)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
             rq_id = response.data["rq_id"]
@@ -5681,7 +5925,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
             rqjob_status, msg = response.data["status"], response.data["message"]
             self.assertEqual(rqjob_status, "finished", f"Message: {msg}")
 
-            response = self.client.get("/api/tasks/{}".format(tid))
+            response = self.client.get(f"/api/tasks/{tid}")
             task = response.data
 
             if 200 <= response.status_code < 400:
@@ -5726,28 +5970,26 @@ class JobAnnotationAPITestCase(ApiTestBase):
 
     def _put_api_v2_jobs_id_data(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put(
-                "/api/jobs/{}/annotations".format(jid), data=data, format="json"
-            )
+            response = self.client.put(f"/api/jobs/{jid}/annotations", data=data, format="json")
 
         return response
 
     def _get_api_v2_jobs_id_data(self, jid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/jobs/{}/annotations".format(jid))
+            response = self.client.get(f"/api/jobs/{jid}/annotations")
 
         return response
 
     def _delete_api_v2_jobs_id_data(self, jid, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete("/api/jobs/{}/annotations".format(jid), format="json")
+            response = self.client.delete(f"/api/jobs/{jid}/annotations", format="json")
 
         return response
 
     def _patch_api_v2_jobs_id_data(self, jid, user, action, data):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/jobs/{}/annotations".format(jid),
+                f"/api/jobs/{jid}/annotations",
                 query_params={"action": action},
                 data=data,
                 format="json",
@@ -6171,28 +6413,26 @@ class JobAnnotationAPITestCase(ApiTestBase):
 class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotationAPITestCase):
     def _put_api_v2_tasks_id_annotations(self, pk, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put(
-                "/api/tasks/{}/annotations".format(pk), data=data, format="json"
-            )
+            response = self.client.put(f"/api/tasks/{pk}/annotations", data=data, format="json")
 
         return response
 
     def _get_api_v2_tasks_id_annotations(self, pk, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/tasks/{}/annotations".format(pk))
+            response = self.client.get(f"/api/tasks/{pk}/annotations")
 
         return response
 
     def _delete_api_v2_tasks_id_annotations(self, pk, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete("/api/tasks/{}/annotations".format(pk), format="json")
+            response = self.client.delete(f"/api/tasks/{pk}/annotations", format="json")
 
         return response
 
     def _patch_api_v2_tasks_id_annotations(self, pk, user, action, data):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/tasks/{}/annotations".format(pk),
+                f"/api/tasks/{pk}/annotations",
                 query_params={"action": action},
                 data=data,
                 format="json",
@@ -7317,7 +7557,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                 ]
                 annotations["shapes"] += skeleton_wo_attrs
             else:
-                raise Exception("Unknown format {}".format(annotation_format))
+                raise Exception(f"Unknown format {annotation_format}")
 
             return annotations
 
@@ -7356,6 +7596,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
 
         # Rare and buggy formats that are not crucial for testing
         formats.pop("Market-1501 1.0")  # Issue: https://github.com/cvat-ai/datumaro/issues/99
+        formats.pop("Generic TSV 1.0")  # Requires an audio task, checked in other test suite
 
         for export_format, import_format in formats.items():
             with self.subTest(export_format=export_format, import_format=import_format):
@@ -7650,13 +7891,15 @@ class ServerShareAPITestCase(ApiTestBase):
         self._test_api_v2_server_share(self.owner)
 
     def test_api_v2_server_share_assignee(self):
-        self._test_api_v2_server_share(self.assignee)
+        response = self._run_api_v2_server_share(self.assignee, "/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v2_server_share_user(self):
         self._test_api_v2_server_share(self.user)
 
     def test_api_v2_server_share_annotator(self):
-        self._test_api_v2_server_share(self.annotator)
+        response = self._run_api_v2_server_share(self.annotator, "/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v2_server_share_somebody(self):
         self._test_api_v2_server_share(self.somebody)
@@ -7697,9 +7940,9 @@ class ServerShareDifferentTypesAPITestCase(ApiTestBase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/tasks/{tid}")
             task = response.data
 
         return task
@@ -7720,10 +7963,10 @@ class ServerShareDifferentTypesAPITestCase(ApiTestBase):
         response = self._run_api_v2_server_share("/data1")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        shared_images = [img for img in shared_images if os.path.dirname(img) != "/data1/subdir"]
-        shared_images.append("/data1/subdir/")
-        shared_images.append("/data1/")
-        remote_files = {"server_files[%d]" % i: shared_images[i] for i in range(len(shared_images))}
+        shared_images = [img for img in shared_images if os.path.dirname(img) != "data1/subdir"]
+        shared_images.append("data1/subdir/")
+        shared_images.append("data1/")
+        remote_files = {f"server_files[{i}]": shared_images[i] for i in range(len(shared_images))}
 
         task = {
             "name": "task combined image and directory extractors",
@@ -7748,7 +7991,7 @@ class ServerShareDifferentTypesAPITestCase(ApiTestBase):
         image_data.update(remote_files)
         # create task with server
         task = self._create_task(task, image_data)
-        response = self._get_request("/api/tasks/%s/data/meta" % task["id"], self.user)
+        response = self._get_request(f"/api/tasks/{task['id']}/data/meta", self.user)
         self.assertEqual(len(response.data["frames"]), images_count)
 
 
@@ -7775,10 +8018,10 @@ class TaskAnnotation2DContext(ApiTestBase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/tasks/{tid}")
             task = response.data
 
         return task
@@ -7816,7 +8059,7 @@ class TaskAnnotation2DContext(ApiTestBase):
 
                 task_id = task["id"]
 
-                response = self._get_request("/api/tasks/%s/data/meta" % task_id, self.admin)
+                response = self._get_request(f"/api/tasks/{task_id}/data/meta", self.admin)
                 for frame in response.data["frames"]:
                     self.assertEqual(context_img_data[frame["name"]], frame["has_related_context"])
 
@@ -7838,7 +8081,7 @@ class TaskAnnotation2DContext(ApiTestBase):
             task_id = task["id"]
             query_params = {"quality": "original", "type": "context_image", "number": 0}
             response = self._get_request(
-                "/api/tasks/%s/data" % task_id, self.admin, query_params=query_params
+                f"/api/tasks/{task_id}/data", self.admin, query_params=query_params
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -7949,7 +8192,7 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
             )
 
 
-class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
+class TaskBackingCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase):
     _IMAGE_PATHS = ["test_1.jpg", "test_2.jpg", "related_images/test_1_jpg/context_1.jpg"]
 
     @classmethod
@@ -8063,6 +8306,36 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
 
         for p in self._IMAGE_PATHS:
             self.assertFalse(self.mock_aws.file_exists(cloud_key(p)))
+
+    def test_backup_task_without_manifest(self):
+        task = self._create_local_task()
+        task_id = task["id"]
+
+        data = Data.objects.get(task__id=task_id)
+        manifest_path = data.get_manifest_path()
+
+        # Simulate a task that was created before we started generating manifests in every task.
+        self.assertTrue(manifest_path.exists())
+        manifest_path.unlink()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
+
+        response = self._export_task_backup(self.owner, task_id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        backup_file = io.BytesIO(response.getvalue())
+        with zipfile.ZipFile(backup_file) as backup_zip:
+            backup_members = frozenset(backup_zip.namelist())
+            self.assertNotIn("data/manifest.jsonl", backup_members)
+            for image_path in self._IMAGE_PATHS:
+                self.assertIn(f"data/{image_path}", backup_members)
+
+            task_info = json.loads(backup_zip.read("task.json"))
+
+        self.assertNotIn("start_frame", task_info["data"])
+        self.assertNotIn("stop_frame", task_info["data"])
+        self.assertNotIn("frame_filter", task_info["data"])
 
     def test_move_to_backing_cs_with_cli(self):
         task = self._create_local_task()

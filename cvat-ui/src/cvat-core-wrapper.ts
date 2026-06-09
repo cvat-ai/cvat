@@ -8,6 +8,7 @@ import _cvat from 'cvat-core/src/api';
 import config from 'config';
 
 import ObjectState from 'cvat-core/src/object-state';
+import { AudioIntervalState } from 'cvat-core/src/annotations-objects/audio-interval-state';
 import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
 import CloudStorage from 'cvat-core/src/cloud-storage';
@@ -17,7 +18,7 @@ import {
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
     OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken,
-    ApiTokensFilter,
+    ApiTokensFilter, SerializedInterval,
 } from 'cvat-core/src/server-response-types';
 import { ApiTokenModifiableFields } from 'cvat-core/src/server-request-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
@@ -33,7 +34,7 @@ import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
     DimensionType, JobType, Source, MembershipRole,
-    JobStage, JobState, RQStatus, StorageLocation,
+    JobStage, JobState, RQStatus, StorageLocation, MediaType,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -52,6 +53,7 @@ import { Request, RequestOperation } from 'cvat-core/src/request';
 import { ImageProcessing, BaseImageFilter, SerializedImageFilter } from 'cvat-core/src/opencv/image-processing';
 import AboutData from 'cvat-core/src/about';
 import { MinimalShape, TrackerResults, InteractorResults } from 'cvat-core/src/lambda-manager';
+import { fetchAndAssembleAudio } from 'cvat-core/src/audio';
 
 const cvat: CVATCore = _cvat;
 
@@ -61,6 +63,10 @@ cvat.config.origin = window.location.origin;
 // A larger value may cause a server-side timeout errors in the current implementation.
 cvat.config.uploadChunkSize = 2;
 cvat.config.opencvPath = config.OPENCV_PATH;
+cvat.config.previewPlaceholders = {
+    [MediaType.POINT_CLOUD]: '/assets/point_cloud_preview.png',
+    [MediaType.AUDIO]: '/assets/audio_preview.png',
+};
 (globalThis as any).cvat = cvat;
 
 function getCore(): typeof cvat {
@@ -72,6 +78,7 @@ type ProjectOrTaskOrJob = Project | Task | Job;
 export {
     getCore,
     ObjectState,
+    AudioIntervalState,
     Label,
     Job,
     Task,
@@ -95,6 +102,7 @@ export {
     ModelKind,
     ModelProviders,
     DimensionType,
+    MediaType,
     AnnotationFormats,
     Dumper,
     Loader,
@@ -126,6 +134,7 @@ export {
     MembershipRole,
     AboutData,
     BaseImageFilter,
+    fetchAndAssembleAudio,
 };
 
 export type {
@@ -150,4 +159,5 @@ export type {
     ApiTokensFilter,
     ImageProcessing,
     SerializedImageFilter,
+    SerializedInterval,
 };

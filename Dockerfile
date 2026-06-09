@@ -83,7 +83,7 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.26.2 AS build-smokescreen
+FROM golang:1.26.3 AS build-smokescreen
 
 RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
 RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen
@@ -203,7 +203,7 @@ RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
 USER 1000:1000
 WORKDIR ${HOME}
 
-RUN mkdir -p data share keys logs /tmp/supervisord static
+RUN mkdir -p data share keys logs /tmp/supervisord /tmp/cvat static
 
 EXPOSE 8080
 ENTRYPOINT ["./backend_entrypoint.sh"]

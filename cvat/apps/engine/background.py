@@ -17,7 +17,6 @@ from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.reverse import reverse
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
 from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.dataset_manager.views import get_export_callback
 from cvat.apps.engine.backup import (
@@ -34,7 +33,6 @@ from cvat.apps.engine.models import (
     Data,
     Job,
     Location,
-    MediaType,
     Project,
     RequestAction,
     RequestSubresource,
@@ -91,24 +89,6 @@ class DatasetExporter(AbstractExporter):
 
     def validate_request(self):
         super().validate_request()
-
-        if (
-            isinstance(self.db_instance, Task)
-            and self.db_instance.media_type == MediaType.AUDIO
-            or isinstance(self.db_instance, Project)
-            and next(
-                iter(
-                    self.db_instance.tasks.exclude(media_type="").values_list(
-                        "media_type", flat=True
-                    )[:1]
-                ),
-                "",
-            )
-            == MediaType.AUDIO
-            or isinstance(self.db_instance, Job)
-            and self.db_instance.segment.task.media_type == MediaType.AUDIO
-        ):
-            raise serializers.ValidationError("Dataset export is not available in audio tasks")
 
         format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_export_formats()}.get(
             self.export_args.format
@@ -168,6 +148,8 @@ class DatasetExporter(AbstractExporter):
         )
 
     def get_result_filename(self) -> str:
+        from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
+
         filename = self.export_args.filename
 
         if not filename:
@@ -220,24 +202,6 @@ class BackupExporter(AbstractExporter):
 
     def validate_request(self):
         super().validate_request()
-
-        if (
-            isinstance(self.db_instance, Task)
-            and self.db_instance.media_type == MediaType.AUDIO
-            or isinstance(self.db_instance, Project)
-            and next(
-                iter(
-                    self.db_instance.tasks.exclude(media_type="").values_list(
-                        "media_type", flat=True
-                    )[:1]
-                ),
-                "",
-            )
-            == MediaType.AUDIO
-            or isinstance(self.db_instance, Job)
-            and self.db_instance.segment.task.media_type == MediaType.AUDIO
-        ):
-            raise serializers.ValidationError("Backup export is not available in audio tasks")
 
         # do not add this check when a project is backed up, as empty tasks are skipped
         if isinstance(self.db_instance, Task) and not self.db_instance.data:
@@ -518,24 +482,6 @@ class DatasetImporter(ResourceImporter):
 
     def validate_request(self):
         super().validate_request()
-
-        if (
-            isinstance(self.db_instance, Task)
-            and self.db_instance.media_type == MediaType.AUDIO
-            or isinstance(self.db_instance, Project)
-            and next(
-                iter(
-                    self.db_instance.tasks.exclude(media_type="").values_list(
-                        "media_type", flat=True
-                    )[:1]
-                ),
-                "",
-            )
-            == MediaType.AUDIO
-            or isinstance(self.db_instance, Job)
-            and self.db_instance.segment.task.media_type == MediaType.AUDIO
-        ):
-            raise serializers.ValidationError("Dataset import is not available in audio tasks")
 
         format_desc = {f.DISPLAY_NAME: f for f in dm.views.get_import_formats()}.get(
             self.import_args.format

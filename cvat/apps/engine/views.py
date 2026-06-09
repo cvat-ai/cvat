@@ -6,6 +6,7 @@
 import itertools
 import os
 import os.path as osp
+import re
 import shutil
 import textwrap
 import traceback
@@ -58,12 +59,17 @@ from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
+from cvat.apps.engine.media_io.audio_provider import (
+    IAudioProvider,
+    JobAudioProvider,
+    TaskAudioProvider,
+)
 from cvat.apps.engine.media_io.frame_provider import (
-    DataWithMeta,
     IFrameProvider,
     JobFrameProvider,
     TaskFrameProvider,
 )
+from cvat.apps.engine.media_io.media_provider import DataWithMeta, PreviewNotAvailable
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
@@ -152,6 +158,7 @@ from cvat.apps.engine.view_utils import (
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
+from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
 from . import models
@@ -164,6 +171,20 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 _DATA_CHECKSUM_HEADER_NAME = "X-Checksum"
 _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
+
+
+class AnnotationGetThrottleMixin:
+    annotations_get_throttle_scope: str
+
+    def get_throttles(self):
+        throttle_scope = self.annotations_get_throttle_scope
+        if (
+            self.action == "annotations"
+            and self.request.method == "GET"
+            and throttle_scope in api_settings.DEFAULT_THROTTLE_RATES
+        ):
+            self.throttle_scope = throttle_scope
+        return super().get_throttles()
 
 
 @extend_schema(tags=["server"])
@@ -579,8 +600,25 @@ class ProjectViewSet(
 
     @extend_schema(
         summary="Get a preview image for a project",
+        parameters=[
+            OpenApiParameter(
+                "Prefer",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                required=False,
+                description="RFC 7240 preference token. Send `handling=empty` to "
+                "receive a 204 No Content response when no media-derived preview "
+                "exists. Without the preference, the server returns a default "
+                "placeholder image with status 200.",
+            ),
+        ],
         responses={
             "200": OpenApiResponse(description="Project image preview"),
+            "204": OpenApiResponse(
+                description="No media-derived preview is available. The client should "
+                "render a placeholder image. Only returned when the request opts in "
+                "via `Prefer: handling=empty`."
+            ),
             "404": OpenApiResponse(description="Project image preview not found"),
         },
     )
@@ -596,6 +634,7 @@ class ProjectViewSet(
             db_task=first_task,
             data_type="preview",
             data_quality="compressed",
+            allow_empty_preview=_wants_empty_preview(request),
         )
 
         return data_getter()
@@ -620,8 +659,62 @@ class ProjectViewSet(
         return response
 
 
+_PREFER_HANDLING_EMPTY = "handling=empty"
+
+
+def _wants_empty_preview(request: ExtendedRequest) -> bool:
+    """Return True if the request opts in to 204-on-empty via ``Prefer: handling=empty``."""
+    for token in request.headers.get("Prefer", "").split(","):
+        key, _, value = token.strip().partition("=")
+        value = value.strip()
+        if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        if key.strip().lower() == "handling" and value.lower() == "empty":
+            return True
+    return False
+
+
+class _RangeHeaderSyntaxError(Exception): ...
+
+
+class _RangeNotSatisfiableError(Exception): ...
+
+
+def _parse_range_header(range_header: str | None) -> tuple[int | None, int | None] | None:
+    if not range_header:
+        return None
+
+    range_spec = re.fullmatch(r"([^=\s]+)\s*=\s*(.+)", range_header.strip())
+    if not range_spec:
+        raise _RangeHeaderSyntaxError
+
+    if range_spec.group(1).lower() != "bytes":
+        return None
+
+    matched = re.fullmatch(r"(\d*)-(\d*)", range_spec.group(2).strip())
+    if not matched:
+        raise _RangeHeaderSyntaxError
+
+    start_text, end_text = matched.groups()
+    if not start_text and not end_text:
+        raise _RangeHeaderSyntaxError
+
+    return (
+        int(start_text) if start_text else None,
+        int(end_text) if end_text else None,
+    )
+
+
 class _DataGetter(metaclass=ABCMeta):
-    def __init__(self, data_type: str, data_num: str | int | None, data_quality: str) -> None:
+    def __init__(
+        self,
+        data_type: str,
+        data_num: str | int | None,
+        data_quality: str,
+        *,
+        allow_empty_preview: bool = False,
+        data_range: tuple[int | None, int | None] | None = None,
+    ) -> None:
         possible_data_type_values = ("chunk", "frame", "preview", "context_image")
         possible_quality_values = ("compressed", "original")
 
@@ -638,28 +731,109 @@ class _DataGetter(metaclass=ABCMeta):
         self.quality = (
             FrameQuality.COMPRESSED if data_quality == "compressed" else FrameQuality.ORIGINAL
         )
+        self.allow_empty_preview = allow_empty_preview
+        self._range = data_range
 
     @abstractmethod
-    def _get_frame_provider(self) -> IFrameProvider: ...
+    def _get_media_provider(self) -> IFrameProvider | IAudioProvider: ...
+
+    @staticmethod
+    def _resolve_range(
+        data_range: tuple[int | None, int | None], content_size: int
+    ) -> tuple[int, int]:
+        start_value, end_value = data_range
+
+        if start_value is not None:
+            start = start_value
+            end = end_value if end_value is not None else content_size - 1
+        else:
+            suffix_length = end_value
+            assert suffix_length is not None
+            if suffix_length <= 0:
+                raise _RangeNotSatisfiableError
+            start = max(content_size - suffix_length, 0)
+            end = content_size - 1
+
+        if end < start or start >= content_size:
+            raise _RangeNotSatisfiableError
+
+        return start, min(end, content_size - 1)
+
+    def _make_ranged_chunk_response(self, chunk_data: DataWithMeta) -> HttpResponse:
+        data = chunk_data.data.getvalue()
+        content_size = len(data)
+        chunk_headers = {
+            **self._get_chunk_response_headers(chunk_data),
+            "Accept-Ranges": "bytes",
+        }
+
+        if self._range is None:
+            return HttpResponse(data, content_type=chunk_data.mime, headers=chunk_headers)
+
+        try:
+            start, end = self._resolve_range(self._range, content_size)
+        except _RangeNotSatisfiableError:
+            return HttpResponse(
+                status=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                headers={
+                    **chunk_headers,
+                    "Content-Range": f"bytes */{content_size}",
+                },
+            )
+
+        partial_data = data[start : end + 1]
+        return HttpResponse(
+            partial_data,
+            content_type=chunk_data.mime,
+            status=status.HTTP_206_PARTIAL_CONTENT,
+            headers={
+                **chunk_headers,
+                "Content-Range": f"bytes {start}-{end}/{content_size}",
+                "Content-Length": str(len(partial_data)),
+            },
+        )
 
     def _get_data_response(self) -> HttpResponse:
-        frame_provider = self._get_frame_provider()
+        media_provider = self._get_media_provider()
 
         if self.type == "chunk":
-            data = frame_provider.get_chunk(self.number, quality=self.quality)
+            data = media_provider.get_chunk(self.number, quality=self.quality)
+            return self._make_ranged_chunk_response(data)
+
+        elif self.type == "frame":
+            if isinstance(media_provider, IAudioProvider):
+                raise ValidationError(
+                    "Frame requests are not available for this data",
+                    code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            data = media_provider.get_frame(self.number, quality=self.quality)
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == "preview":
+            preview_headers = {"Vary": "Prefer"}
+            if self.allow_empty_preview:
+                preview_headers["Preference-Applied"] = _PREFER_HANDLING_EMPTY
+
+            try:
+                data = media_provider.get_preview_image(allow_empty=self.allow_empty_preview)
+            except PreviewNotAvailable:
+                return HttpResponse(
+                    status=status.HTTP_204_NO_CONTENT,
+                    headers=preview_headers,
+                )
             return HttpResponse(
                 data.data.getvalue(),
                 content_type=data.mime,
-                headers=self._get_chunk_response_headers(data),
+                headers=preview_headers,
             )
-        elif self.type == "frame":
-            data = frame_provider.get_frame(self.number, quality=self.quality)
-            return HttpResponse(data.data.getvalue(), content_type=data.mime)
-        elif self.type == "preview":
-            data = frame_provider.get_preview()
-            return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == "context_image":
-            data = frame_provider.get_frame_context_images_chunk(self.number)
+            if isinstance(media_provider, IAudioProvider):
+                raise ValidationError(
+                    "Context image requests are not available for this data",
+                    code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            data = media_provider.get_frame_context_images_chunk(self.number)
             if not data:
                 return HttpResponseNotFound()
 
@@ -706,7 +880,11 @@ class _DataGetter(metaclass=ABCMeta):
         size_checksum = zlib.crc32(str(len(data)).encode())
         return str(zlib.crc32(data[: self._CHUNK_HEADER_BYTES_LENGTH], size_checksum))
 
-    def _make_chunk_response_headers(self, checksum: str, updated_date: datetime) -> dict[str, str]:
+    def _make_chunk_response_headers(
+        self,
+        checksum: str,
+        updated_date: datetime,
+    ) -> dict[str, str]:
         return {
             _DATA_CHECKSUM_HEADER_NAME: str(checksum or ""),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(
@@ -723,15 +901,28 @@ class _TaskDataGetter(_DataGetter):
         data_type: str,
         data_quality: str,
         data_num: str | int | None = None,
+        allow_empty_preview: bool = False,
+        data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
-        super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
+        super().__init__(
+            data_type=data_type,
+            data_num=data_num,
+            data_quality=data_quality,
+            allow_empty_preview=allow_empty_preview,
+            data_range=data_range,
+        )
         self._db_task = db_task
 
-        if db_task.media_type == models.MediaType.AUDIO:
-            raise ValidationError("Media retrieval is not available in audio tasks")
-
-    def _get_frame_provider(self) -> TaskFrameProvider:
-        return TaskFrameProvider(self._db_task)
+    def _get_media_provider(self) -> TaskFrameProvider | TaskAudioProvider:
+        match self._db_task.media_type:
+            case models.MediaType.AUDIO:
+                return TaskAudioProvider(self._db_task)
+            case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+                return TaskFrameProvider(self._db_task)
+            case "":
+                raise NotFound("Task has no media")
+            case _ as media_type:
+                assert False, f"Unknown media type {media_type}"
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
@@ -749,6 +940,8 @@ class _JobDataGetter(_DataGetter):
         data_quality: str,
         data_num: str | int | None = None,
         data_index: str | int | None = None,
+        allow_empty_preview: bool = False,
+        data_range: tuple[int | None, int | None] | None = None,
     ) -> None:
         possible_data_type_values = ("chunk", "frame", "preview", "context_image")
         possible_quality_values = ("compressed", "original")
@@ -775,33 +968,34 @@ class _JobDataGetter(_DataGetter):
             FrameQuality.COMPRESSED if data_quality == "compressed" else FrameQuality.ORIGINAL
         )
 
+        self.allow_empty_preview = allow_empty_preview
+        self._range = data_range
         self._db_job = db_job
 
-        if db_job.segment.task.media_type == models.MediaType.AUDIO:
-            raise ValidationError("Media retrieval is not available in audio tasks")
-
-    def _get_frame_provider(self) -> JobFrameProvider:
-        return JobFrameProvider(self._db_job)
+    def _get_media_provider(self) -> JobFrameProvider | JobAudioProvider:
+        match self._db_job.segment.task.media_type:
+            case models.MediaType.AUDIO:
+                return JobAudioProvider(self._db_job)
+            case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+                return JobFrameProvider(self._db_job)
+            case _ as media_type:
+                assert False, f"Unknown media type {media_type}"
 
     def _get_data_response(self):
         if self.type == "chunk":
             # Reproduce the task chunk indexing
-            frame_provider = self._get_frame_provider()
+            media_provider = self._get_media_provider()
 
             if self.index is not None:
-                data = frame_provider.get_chunk(
+                data = media_provider.get_chunk(
                     self.index, quality=self.quality, is_task_chunk=False
                 )
             else:
-                data = frame_provider.get_chunk(
+                data = media_provider.get_chunk(
                     self.number, quality=self.quality, is_task_chunk=True
                 )
 
-            return HttpResponse(
-                data.data.getvalue(),
-                content_type=data.mime,
-                headers=self._get_chunk_response_headers(data),
-            )
+            return self._make_ranged_chunk_response(data)
         else:
             return super()._get_data_response()
 
@@ -924,6 +1118,7 @@ class _JobDataGetter(_DataGetter):
     ),
 )
 class TaskViewSet(
+    AnnotationGetThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -935,6 +1130,7 @@ class TaskViewSet(
     BackupMixin,
 ):
     queryset = Task.objects
+    annotations_get_throttle_scope = "task_annotations_get"
 
     lookup_fields = {
         "project_name": "project__name",
@@ -1402,7 +1598,7 @@ class TaskViewSet(
                 location=OpenApiParameter.HEADER,
                 type=OpenApiTypes.STR,
                 required=False,
-                response=[200],
+                response=[200, 206],
                 description="Data checksum, applicable for chunks only",
             ),
             OpenApiParameter(
@@ -1410,12 +1606,14 @@ class TaskViewSet(
                 location=OpenApiParameter.HEADER,
                 type=OpenApiTypes.DATETIME,
                 required=False,
-                response=[200],
+                response=[200, 206],
                 description="Data update date, applicable for chunks only",
             ),
         ],
         responses={
             "200": OpenApiResponse(description="Data of a specific type"),
+            "206": OpenApiResponse(description="Partial chunk data"),
+            "416": OpenApiResponse(description="Requested range is not satisfiable"),
         },
     )
     @action(
@@ -1451,9 +1649,17 @@ class TaskViewSet(
             data_type = request.query_params.get("type", None)
             data_num = request.query_params.get("number", None)
             data_quality = request.query_params.get("quality", "compressed")
+            try:
+                data_range = _parse_range_header(request.headers.get("Range"))
+            except _RangeHeaderSyntaxError:
+                return HttpResponse("Invalid Range header", status=status.HTTP_400_BAD_REQUEST)
 
             data_getter = _TaskDataGetter(
-                self._object, data_type=data_type, data_num=data_num, data_quality=data_quality
+                db_task=self._object,
+                data_type=data_type,
+                data_num=data_num,
+                data_quality=data_quality,
+                data_range=data_range,
             )
             return data_getter()
 
@@ -1815,8 +2021,25 @@ class TaskViewSet(
 
     @extend_schema(
         summary="Get a preview image for a task",
+        parameters=[
+            OpenApiParameter(
+                "Prefer",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                required=False,
+                description="RFC 7240 preference token. Send `handling=empty` to "
+                "receive a 204 No Content response when no media-derived preview "
+                "exists. Without the preference, the server returns a default "
+                "placeholder image with status 200.",
+            ),
+        ],
         responses={
             "200": OpenApiResponse(description="Task image preview"),
+            "204": OpenApiResponse(
+                description="No media-derived preview is available. The client should "
+                "render a placeholder image. Only returned when the request opts in "
+                "via `Prefer: handling=empty`."
+            ),
             "404": OpenApiResponse(description="Task image preview not found"),
         },
     )
@@ -1831,6 +2054,7 @@ class TaskViewSet(
             db_task=self._object,
             data_type="preview",
             data_quality="compressed",
+            allow_empty_preview=_wants_empty_preview(request),
         )
         return data_getter()
 
@@ -1988,6 +2212,7 @@ class TaskViewSet(
     ),
 )
 class JobViewSet(
+    AnnotationGetThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -2002,6 +2227,7 @@ class JobViewSet(
         "segment__task",
         "segment__task__project",
     )
+    annotations_get_throttle_scope = "job_annotations_get"
 
     iam_supports_organization_params = True
     iam_permission_class = JobPermission
@@ -2368,6 +2594,8 @@ class JobViewSet(
         ],
         responses={
             "200": OpenApiResponse(OpenApiTypes.BINARY, description="Data of a specific type"),
+            "206": OpenApiResponse(OpenApiTypes.BINARY, description="Partial chunk data"),
+            "416": OpenApiResponse(description="Requested range is not satisfiable"),
         },
     )
     @action(
@@ -2381,13 +2609,18 @@ class JobViewSet(
         data_num = request.query_params.get("number", None)
         data_index = request.query_params.get("index", None)
         data_quality = request.query_params.get("quality", "compressed")
+        try:
+            data_range = _parse_range_header(request.headers.get("Range"))
+        except _RangeHeaderSyntaxError:
+            return HttpResponse("Invalid Range header", status=status.HTTP_400_BAD_REQUEST)
 
         data_getter = _JobDataGetter(
-            db_job,
+            db_job=db_job,
             data_type=data_type,
             data_quality=data_quality,
             data_index=data_index,
             data_num=data_num,
+            data_range=data_range,
         )
         return data_getter()
 
@@ -2554,8 +2787,25 @@ class JobViewSet(
 
     @extend_schema(
         summary="Get a preview image for a job",
+        parameters=[
+            OpenApiParameter(
+                "Prefer",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.HEADER,
+                required=False,
+                description="RFC 7240 preference token. Send `handling=empty` to "
+                "receive a 204 No Content response when no media-derived preview "
+                "exists. Without the preference, the server returns a default "
+                "placeholder image with status 200.",
+            ),
+        ],
         responses={
             "200": OpenApiResponse(description="Job image preview"),
+            "204": OpenApiResponse(
+                description="No media-derived preview is available. The client should "
+                "render a placeholder image. Only returned when the request opts in "
+                "via `Prefer: handling=empty`."
+            ),
         },
     )
     @action(detail=True, methods=["GET"], url_path="preview")
@@ -2566,6 +2816,7 @@ class JobViewSet(
             db_job=self._object,
             data_type="preview",
             data_quality="compressed",
+            allow_empty_preview=_wants_empty_preview(request),
         )
         return data_getter()
 
@@ -3229,9 +3480,15 @@ class CloudStorageViewSet(
             next_token = request.query_params.get("next_token")
 
             if manifest_path := request.query_params.get("manifest_path"):
+                if problem := problem_with_untrusted_path(manifest_path):
+                    return HttpResponseBadRequest(f"manifest_path: {problem}")
+
                 manifest_prefix = os.path.dirname(manifest_path)
 
-                full_manifest_path = db_storage.get_storage_dirname() / manifest_path
+                full_manifest_path = join_untrusted_path(
+                    db_storage.get_storage_dirname(), manifest_path
+                )
+
                 if not full_manifest_path.exists() or datetime.fromtimestamp(
                     full_manifest_path.stat().st_mtime, tz=timezone.utc
                 ) < storage.get_file_last_modified(manifest_path):
@@ -3464,9 +3721,13 @@ class AssetsViewSet(
 
     def retrieve(self, request: ExtendedRequest, *args, **kwargs):
         instance = self.get_object()
-        return sendfile(
+        response = sendfile(
             request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename)
         )
+        # A backup measure in case a way is found to sneak malicious content
+        # into one of the asset formats we allow.
+        response["Content-Security-Policy"] = "default-src 'none'; sandbox"
+        return response
 
     def perform_destroy(self, instance):
         full_path = os.path.join(instance.get_asset_dir(), instance.filename)

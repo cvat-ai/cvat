@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.64.1
+  version: 2.67.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2765,6 +2765,15 @@ paths:
                 type: string
                 format: binary
           description: Data of a specific type
+        '206':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: string
+                format: binary
+          description: Partial chunk data
+        '416':
+          description: Requested range is not satisfiable
   /api/jobs/{id}/data/meta:
     get:
       operationId: jobs_retrieve_data_meta
@@ -2900,6 +2909,13 @@ paths:
       operationId: jobs_retrieve_preview
       summary: Get a preview image for a job
       parameters:
+      - in: header
+        name: Prefer
+        schema:
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -2918,6 +2934,10 @@ paths:
       responses:
         '200':
           description: Job image preview
+        '204':
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
   /api/jobs/{id}/validation_layout:
     get:
       operationId: jobs_retrieve_validation_layout
@@ -3105,6 +3125,7 @@ paths:
           - polyline
           - rectangle
           - skeleton
+          - interval
           - tag
       tags:
       - labels
@@ -4185,6 +4206,13 @@ paths:
       operationId: projects_retrieve_preview
       summary: Get a preview image for a project
       parameters:
+      - in: header
+        name: Prefer
+        schema:
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -4203,6 +4231,10 @@ paths:
       responses:
         '200':
           description: Project image preview
+        '204':
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
         '404':
           description: Project image preview not found
   /api/projects/backup/:
@@ -5850,6 +5882,20 @@ paths:
                 format: date-time
               description: Data update date, applicable for chunks only
           description: Data of a specific type
+        '206':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
+          description: Partial chunk data
+        '416':
+          description: Requested range is not satisfiable
     post:
       operationId: tasks_create_data
       description: |
@@ -6089,6 +6135,13 @@ paths:
       operationId: tasks_retrieve_preview
       summary: Get a preview image for a task
       parameters:
+      - in: header
+        name: Prefer
+        schema:
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -6107,6 +6160,10 @@ paths:
       responses:
         '200':
           description: Task image preview
+        '204':
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
         '404':
           description: Task image preview not found
   /api/tasks/{id}/status:
@@ -7318,10 +7375,12 @@ components:
       enum:
       - video
       - imageset
+      - audio_mp3
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
+        * `audio_mp3` - AUDIO_MP3
     ClientEvents:
       type: object
       properties:
@@ -8602,6 +8661,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -8656,6 +8716,7 @@ components:
       - polyline
       - rectangle
       - skeleton
+      - interval
       - tag
       type: string
       description: |-
@@ -8668,6 +8729,7 @@ components:
         * `polyline` - POLYLINE
         * `rectangle` - RECTANGLE
         * `skeleton` - SKELETON
+        * `interval` - INTERVAL
         * `tag` - TAG
     LabeledData:
       type: object
@@ -8690,6 +8752,11 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrack'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledInterval'
+          default: []
     LabeledDataRequest:
       type: object
       properties:
@@ -8710,6 +8777,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
+          default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
           default: []
     LabeledImage:
       type: object
@@ -8768,6 +8840,85 @@ components:
       required:
       - frame
       - label_id
+    LabeledInterval:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+          default: 0
+        source:
+          type: string
+          default: manual
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
+      required:
+      - label_id
+      - start
+      - stop
+    LabeledIntervalRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+          default: 0
+        source:
+          type: string
+          minLength: 1
+          default: manual
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
+      required:
+      - label_id
+      - start
+      - stop
     LabeledShape:
       type: object
       properties:
@@ -9074,7 +9225,6 @@ components:
           format: date-time
           readOnly: true
         contact:
-          type: object
           readOnly: true
         owner:
           allOf:
@@ -9095,8 +9245,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
       required:
       - slug
     PaginatedAccessTokenReadList:
@@ -9795,6 +9944,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -9823,6 +9973,11 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
+          default: []
     PatchedMembershipWriteRequest:
       type: object
       properties:
@@ -9841,8 +9996,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -11161,6 +11315,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11215,6 +11370,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11686,7 +11842,6 @@ components:
             The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
       required:
-      - frame_selection_method
       - mode
     WebhookContentType:
       enum:
@@ -11712,6 +11867,14 @@ components:
         redelivery:
           type: boolean
           readOnly: true
+        attempt:
+          type: integer
+          readOnly: true
+          nullable: true
+        request_duration:
+          type: integer
+          readOnly: true
+          nullable: true
         created_date:
           type: string
           format: date-time
@@ -11724,10 +11887,8 @@ components:
           type: string
           readOnly: true
         request:
-          type: object
           readOnly: true
         response:
-          type: object
           readOnly: true
     WebhookRead:
       type: object

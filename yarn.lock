@@ -2079,6 +2079,42 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@dnd-kit/accessibility@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@dnd-kit/accessibility@npm:3.1.1"
+  dependencies:
+    tslib: "npm:^2.0.0"
+  peerDependencies:
+    react: ">=16.8.0"
+  checksum: 10c0/be0bf41716dc58f9386bc36906ec1ce72b7b42b6d1d0e631d347afe9bd8714a829bd6f58a346dd089b1519e93918ae2f94497411a61a4f5e4d9247c6cfd1fef8
+  languageName: node
+  linkType: hard
+
+"@dnd-kit/core@npm:^6.3.1":
+  version: 6.3.1
+  resolution: "@dnd-kit/core@npm:6.3.1"
+  dependencies:
+    "@dnd-kit/accessibility": "npm:^3.1.1"
+    "@dnd-kit/utilities": "npm:^3.2.2"
+    tslib: "npm:^2.0.0"
+  peerDependencies:
+    react: ">=16.8.0"
+    react-dom: ">=16.8.0"
+  checksum: 10c0/196db95d81096d9dc248983533eab91ba83591770fa5c894b1ac776f42af0d99522b3fd5bb3923411470e4733fcfa103e6ee17adc17b9b7eb54c7fbec5ff7c52
+  languageName: node
+  linkType: hard
+
+"@dnd-kit/utilities@npm:^3.2.2":
+  version: 3.2.2
+  resolution: "@dnd-kit/utilities@npm:3.2.2"
+  dependencies:
+    tslib: "npm:^2.0.0"
+  peerDependencies:
+    react: ">=16.8.0"
+  checksum: 10c0/9aa90526f3e3fd567b5acc1b625a63177b9e8d00e7e50b2bd0e08fa2bf4dba7e19529777e001fdb8f89a7ce69f30b190c8364d390212634e0afdfa8c395e85a0
+  languageName: node
+  linkType: hard
+
 "@emotion/hash@npm:^0.8.0":
   version: 0.8.0
   resolution: "@emotion/hash@npm:0.8.0"
@@ -3872,6 +3908,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@wavesurfer/react@npm:^1.0.12":
+  version: 1.0.12
+  resolution: "@wavesurfer/react@npm:1.0.12"
+  peerDependencies:
+    react: ^18.2.0 || ^19.0.0
+    wavesurfer.js: ">=7.7.14"
+  checksum: 10c0/efb92f40c3c31d4e6767bb807c472d1eab328419e85dabdcb8a459ab160070c88430b55d66a4639363bdf5e3187ec6799b2358b8b01e008954f41571b1b06ac9
+  languageName: node
+  linkType: hard
+
 "@webassemblyjs/ast@npm:1.14.1, @webassemblyjs/ast@npm:^1.14.1":
   version: 1.14.1
   resolution: "@webassemblyjs/ast@npm:1.14.1"
@@ -4808,14 +4854,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.15.0":
-  version: 1.15.0
-  resolution: "axios@npm:1.15.0"
+"axios@npm:^1.15.2":
+  version: 1.16.0
+  resolution: "axios@npm:1.16.0"
   dependencies:
-    follow-redirects: "npm:^1.15.11"
+    follow-redirects: "npm:^1.16.0"
     form-data: "npm:^4.0.5"
     proxy-from-env: "npm:^2.1.0"
-  checksum: 10c0/47e0f860e98d4d7aa145e89ce0cae00e1fb0f1d2485f065c21fce955ddb1dba4103a46bd0e47acd18a27208a7f62c96249e620db575521b92a968619ab133409
+  checksum: 10c0/1c91a5221b77b76072026b4cc95ecdf38f7c3e33e63423abec09a85e6e9a12279637dcc9ac2ba1fc333e0c447fb3b0f46d7965acb5d7cea02d188e9c6d425c0b
   languageName: node
   linkType: hard
 
@@ -6182,7 +6228,7 @@ __metadata:
   resolution: "cvat-core@workspace:cvat-core"
   dependencies:
     "@babel/preset-typescript": "npm:^7.23.3"
-    axios: "npm:^1.15.0"
+    axios: "npm:^1.15.2"
     axios-retry: "npm:^4.0.0"
     babel-plugin-transform-import-meta: "npm:^2.2.1"
     cvat-data: "link:./../cvat-data"
@@ -6190,7 +6236,7 @@ __metadata:
     dompurify: "npm:^3.4.0"
     error-stack-parser: "npm:^2.0.2"
     form-data: "npm:^4.0.4"
-    js-cookie: "npm:^3.0.1"
+    js-cookie: "npm:^3.0.7"
     json-logic-js: "npm:^2.0.1"
     platform: "npm:^1.3.5"
     quickhull: "npm:^1.0.3"
@@ -6219,6 +6265,7 @@ __metadata:
   dependencies:
     "@ant-design/compatible": "npm:^5.1.2"
     "@ant-design/icons": "npm:^5.5.2"
+    "@dnd-kit/core": "npm:^6.3.1"
     "@react-awesome-query-builder/antd": "npm:^6.5.2"
     "@types/json-logic-js": "npm:^2.0.2"
     "@types/platform": "npm:^1.3.4"
@@ -6231,6 +6278,7 @@ __metadata:
     "@types/redux-logger": "npm:^3.0.9"
     "@types/resize-observer-browser": "npm:^0.1.6"
     "@uiw/react-md-editor": "npm:^3.22.0"
+    "@wavesurfer/react": "npm:^1.0.12"
     antd: "npm:5.17.1"
     chart.js: "npm:^4.4.8"
     chartjs-plugin-datalabels: "npm:^2.2.0"
@@ -6261,6 +6309,7 @@ __metadata:
     redux-logger: "npm:^4.0.0"
     redux-thunk: "npm:^2.3.0"
     rehype-sanitize: "npm:^6.0.0"
+    wavesurfer.js: "npm:^7.12.5"
   languageName: unknown
   linkType: soft
 
@@ -8109,7 +8158,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.15.11":
+"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.16.0":
   version: 1.16.0
   resolution: "follow-redirects@npm:1.16.0"
   peerDependenciesMeta:
@@ -10350,10 +10399,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-cookie@npm:^3.0.1":
-  version: 3.0.5
-  resolution: "js-cookie@npm:3.0.5"
-  checksum: 10c0/04a0e560407b4489daac3a63e231d35f4e86f78bff9d792011391b49c59f721b513411cd75714c418049c8dc9750b20fcddad1ca5a2ca616c3aca4874cce5b3a
+"js-cookie@npm:^3.0.7":
+  version: 3.0.7
+  resolution: "js-cookie@npm:3.0.7"
+  checksum: 10c0/c921c43014e98bb94a1765663a1a10d693048d61444e374c1ecf459eba92320381f9c406e724df9aa44e819c4b606e6a7240f2abe2d5c54ad1e73a3002b191c2
   languageName: node
   linkType: hard
 
@@ -19453,6 +19502,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"wavesurfer.js@npm:^7.12.5":
+  version: 7.12.5
+  resolution: "wavesurfer.js@npm:7.12.5"
+  checksum: 10c0/5b15ba5b373e6900777ef734f564d443a7443bad4ee8e0b8c0df34f0cbb09cbbc85179bd00a98f823c06765c271cdaa1f318b933a32778e239af8c48203e164f
+  languageName: node
+  linkType: hard
+
 "wbuf@npm:^1.1.0, wbuf@npm:^1.7.3":
   version: 1.7.3
   resolution: "wbuf@npm:1.7.3"
@@ -19923,8 +19979,8 @@ __metadata:
   linkType: hard
 
 "ws@npm:^8.18.0, ws@npm:^8.2.3":
-  version: 8.18.3
-  resolution: "ws@npm:8.18.3"
+  version: 8.20.1
+  resolution: "ws@npm:8.20.1"
   peerDependencies:
     bufferutil: ^4.0.1
     utf-8-validate: ">=5.0.2"
@@ -19933,7 +19989,7 @@ __metadata:
       optional: true
     utf-8-validate:
       optional: true
-  checksum: 10c0/eac918213de265ef7cb3d4ca348b891a51a520d839aa51cdb8ca93d4fa7ff9f6ccb339ccee89e4075324097f0a55157c89fa3f7147bde9d8d7e90335dc087b53
+  checksum: 10c0/ce162433218399cdedeb76fd33363d4d86a7d910058d4e3c679dce08cea65d6da6b39f11baa4d7808d024cf46ed88f6a05c17611621aaad8fc5e62edacc30c5d
   languageName: node
   linkType: hard
 

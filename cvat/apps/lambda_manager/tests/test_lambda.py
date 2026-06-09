@@ -18,6 +18,7 @@ from rest_framework import status
 from cvat.apps.engine.tests.utils import (
     ApiTestBase,
     ForceLogin,
+    check_annotation_response,
     filter_dict,
     generate_image_file,
     get_paginated_collection,
@@ -187,17 +188,17 @@ class _LambdaTestCaseBase(ApiTestBase):
         with ForceLogin(owner or self.admin, self.client):
             response = self.client.post(
                 "/api/tasks",
+                query_params={"org_id": org_id} if org_id is not None else None,
                 data=task_spec,
                 format="json",
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else None,
             )
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
             response = self.client.post(
-                "/api/tasks/%s/data" % tid,
+                f"/api/tasks/{tid}/data",
+                query_params={"org_id": org_id} if org_id is not None else None,
                 data=data,
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else None,
             )
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
@@ -207,17 +208,15 @@ class _LambdaTestCaseBase(ApiTestBase):
             assert response.json()["status"] == "finished", response.json().get("status")
 
             response = self.client.get(
-                "/api/tasks/%s" % tid,
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else None,
+                f"/api/tasks/{tid}",
+                query_params={"org_id": org_id} if org_id is not None else None,
             )
             task = response.data
 
         return task
 
     def _generate_task_images(self, count):  # pylint: disable=no-self-use
-        images = {
-            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i) for i in range(count)
-        }
+        images = {f"client_files[{i}]": generate_image_file(f"image_{i}.jpg") for i in range(count)}
         images["image_quality"] = 75
         return images
 
@@ -1502,8 +1501,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        annotations = response.json()
-        self.assertEqual(annotations, {"version": 0, "tags": [], "shapes": [], "tracks": []})
+        check_annotation_response(self, response, {})
 
     def test_can_run_offline_reid_function_on_whole_gt_job(self):
         requested_frame_range = self.task_rel_frame_range[::3]
@@ -1577,8 +1575,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        annotations = response.json()
-        self.assertEqual(annotations, {"version": 0, "tags": [], "shapes": [], "tracks": []})
+        check_annotation_response(self, response, {})
 
     def test_offline_function_run_on_task_does_not_affect_gt_job(self):
         response = self._post_request(
@@ -1612,8 +1609,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        annotations = response.json()
-        self.assertEqual(annotations, {"version": 0, "tags": [], "shapes": [], "tracks": []})
+        check_annotation_response(self, response, {})
 
     def test_can_run_online_function_on_valid_task_frame(self):
         data = self.common_request_data.copy()

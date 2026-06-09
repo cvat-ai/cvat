@@ -112,13 +112,10 @@ class AccessToken(AbstractAPIKey):
 
         return is_updated
 
-    # Replace function with @property, once it's working
-    # https://code.djangoproject.com/ticket/31558
+    @property
     @admin.display(boolean=True, description="Is stale")
-    def _is_stale(self):
+    def is_stale(self):
         # check comment in get_usable_keys()
         return (
             self.last_used_date or self.created
         ) + settings.ACCESS_TOKEN_STALE_PERIOD < timezone.now()
-
-    is_stale = property(_is_stale)

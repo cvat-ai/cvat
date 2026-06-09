@@ -290,6 +290,7 @@ export default [
             ...securityPlugin.configs['recommended-legacy'].rules,
             ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
             'no-constant-condition': ['error', { checkLoops: 'allExceptWhileTrue' }],
+            'security/detect-object-injection': 'off'
         },
     },
     // Legacy package configs are still the source of truth; FlatCompat scopes
@@ -377,9 +378,9 @@ export default [
             'no-prototype-builtins': 'off',
             'no-underscore-dangle': 'off',
             'cypress/no-unnecessary-waiting': 'off',
-            'security/detect-object-injection': 'off',
             'no-unused-expressions': 0,
             'chai-friendly/no-unused-expressions': 'error',
+            'security/detect-object-injection': 'off',
         },
     },
     {

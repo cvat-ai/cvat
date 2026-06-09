@@ -52,13 +52,13 @@ class _DbTestBase(ApiTestBase):
 
     def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.put("/api/tasks/%s/annotations" % tid, data=data, format="json")
+            response = self.client.put(f"/api/tasks/{tid}/annotations", data=data, format="json")
 
         return response
 
     def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.put("/api/jobs/%s/annotations" % jid, data=data, format="json")
+            response = self.client.put(f"/api/jobs/{jid}/annotations", data=data, format="json")
 
         return response
 
@@ -68,7 +68,7 @@ class _DbTestBase(ApiTestBase):
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
 
@@ -76,7 +76,7 @@ class _DbTestBase(ApiTestBase):
             assert response.status_code == status.HTTP_200_OK, response.status_code
             assert response.json()["status"] == "finished", response.json().get("status")
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/tasks/{tid}")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
@@ -214,9 +214,7 @@ class TaskExportTest(_DbTestBase):
         return self._generate_custom_annotations(annotations, task)
 
     def _generate_task_images(self, count):  # pylint: disable=no-self-use
-        images = {
-            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i) for i in range(count)
-        }
+        images = {f"client_files[{i}]": generate_image_file(f"image_{i}.jpg") for i in range(count)}
         images["image_quality"] = 75
         return images
 
@@ -265,38 +263,39 @@ class TaskExportTest(_DbTestBase):
         self.assertEqual(
             {f.DISPLAY_NAME for f in formats},
             {
+                "CamVid 1.0",
+                "Cityscapes 1.0",
                 "COCO 1.0",
                 "COCO Keypoints 1.0",
                 "CVAT for images 1.1",
                 "CVAT for video 1.1",
                 "Datumaro 1.0",
                 "Datumaro 3D 1.0",
+                "Generic TSV 1.0",
+                "ICDAR Localization 1.0",
+                "ICDAR Recognition 1.0",
+                "ICDAR Segmentation 1.0",
+                "ImageNet 1.0",
+                "KITTI 1.0",
+                "Kitti Raw Format 1.0",
                 "LabelMe 3.0",
+                "LFW 1.0",
+                "Market-1501 1.0",
                 "MOT 1.1",
                 "MOTS PNG 1.0",
+                "Open Images V6 1.0",
                 "PASCAL VOC 1.1",
                 "Segmentation mask 1.1",
-                "YOLO 1.1",
-                "ImageNet 1.0",
-                "CamVid 1.0",
-                "WiderFace 1.0",
-                "VGGFace2 1.0",
-                "Market-1501 1.0",
-                "ICDAR Recognition 1.0",
-                "ICDAR Localization 1.0",
-                "ICDAR Segmentation 1.0",
-                "Kitti Raw Format 1.0",
                 "Sly Point Cloud Format 1.0",
-                "KITTI 1.0",
-                "LFW 1.0",
-                "Cityscapes 1.0",
-                "Open Images V6 1.0",
                 "Ultralytics YOLO Classification 1.0",
-                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
                 "Ultralytics YOLO Detection 1.0",
                 "Ultralytics YOLO Detection Track 1.0",
+                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
                 "Ultralytics YOLO Pose 1.0",
                 "Ultralytics YOLO Segmentation 1.0",
+                "VGGFace2 1.0",
+                "WiderFace 1.0",
+                "YOLO 1.1",
             },
         )
 
@@ -306,36 +305,37 @@ class TaskExportTest(_DbTestBase):
         self.assertEqual(
             {f.DISPLAY_NAME for f in formats},
             {
+                "CamVid 1.0",
+                "Cityscapes 1.0",
                 "COCO 1.0",
                 "COCO Keypoints 1.0",
                 "CVAT 1.1",
-                "LabelMe 3.0",
-                "MOT 1.1",
-                "MOTS PNG 1.0",
-                "PASCAL VOC 1.1",
-                "Segmentation mask 1.1",
-                "YOLO 1.1",
-                "ImageNet 1.0",
-                "CamVid 1.0",
-                "WiderFace 1.0",
-                "VGGFace2 1.0",
-                "Market-1501 1.0",
-                "ICDAR Recognition 1.0",
-                "ICDAR Localization 1.0",
-                "ICDAR Segmentation 1.0",
-                "Kitti Raw Format 1.0",
-                "Sly Point Cloud Format 1.0",
-                "KITTI 1.0",
-                "LFW 1.0",
-                "Cityscapes 1.0",
-                "Open Images V6 1.0",
                 "Datumaro 1.0",
                 "Datumaro 3D 1.0",
+                "Generic TSV 1.0",
+                "ICDAR Localization 1.0",
+                "ICDAR Recognition 1.0",
+                "ICDAR Segmentation 1.0",
+                "ImageNet 1.0",
+                "KITTI 1.0",
+                "Kitti Raw Format 1.0",
+                "LabelMe 3.0",
+                "LFW 1.0",
+                "Market-1501 1.0",
+                "MOT 1.1",
+                "MOTS PNG 1.0",
+                "Open Images V6 1.0",
+                "PASCAL VOC 1.1",
+                "Segmentation mask 1.1",
+                "Sly Point Cloud Format 1.0",
                 "Ultralytics YOLO Classification 1.0",
-                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
                 "Ultralytics YOLO Detection 1.0",
+                "Ultralytics YOLO Oriented Bounding Boxes 1.0",
                 "Ultralytics YOLO Pose 1.0",
                 "Ultralytics YOLO Segmentation 1.0",
+                "VGGFace2 1.0",
+                "WiderFace 1.0",
+                "YOLO 1.1",
             },
         )
 
@@ -354,7 +354,7 @@ class TaskExportTest(_DbTestBase):
                 with self.subTest(format=format_name, save_images=save_images):
                     if not f.ENABLED:
                         self.skipTest("Format is disabled")
-                    if format_name == "VGGFace2 1.0":
+                    if format_name in ("VGGFace2 1.0", "Generic TSV 1.0"):
                         self.skipTest("Format is disabled")
 
                     self._test_export(check, task, format_name, save_images=save_images)
@@ -691,7 +691,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
 
     def _generate_task_images(self, count, name="image", **image_params):
         images = {
-            "client_files[%d]" % i: generate_image_file("%s_%d.jpg" % (name, i), **image_params)
+            f"client_files[{i}]": generate_image_file(f"{name}_{i}.jpg", **image_params)
             for i in range(count)
         }
         images["image_quality"] = 75
@@ -1011,6 +1011,8 @@ class TaskAnnotationsImportTest(_DbTestBase):
             with self.subTest(format=format_name):
                 if not f.ENABLED:
                     self.skipTest("Format is disabled")
+                elif f.DISPLAY_NAME == "Generic TSV 1.0":
+                    self.skipTest("Not relevant")
 
                 self._test_can_import_annotations(task, format_name)
 

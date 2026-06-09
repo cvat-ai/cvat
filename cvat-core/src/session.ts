@@ -6,7 +6,7 @@
 import { ChunkQuality } from 'cvat-data';
 import {
     ChunkType, DimensionType, HistoryActions, JobStage,
-    JobState, JobType, StorageLocation, TaskMode, TaskStatus,
+    JobState, JobType, MediaType, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -19,6 +19,7 @@ import {
     SerializedCollection, SerializedJob,
     SerializedLabel, SerializedTask,
 } from './server-response-types';
+import { type AudioIntervalState } from './annotations-objects/audio-interval-state';
 import AnnotationGuide from './guide';
 import { FrameData, FramesMetaData } from './frames';
 import Statistics from './statistics';
@@ -29,7 +30,7 @@ import ObjectState from './object-state';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { UpdateStatusData } from './core-types';
 
-function buildDuplicatedAPI(prototype) {
+function buildDuplicatedAPI(prototype): void {
     Object.defineProperties(prototype, {
         annotations: Object.freeze({
             value: {
@@ -89,6 +90,14 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
+                async intervals() {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.intervals,
+                    );
+                    return result;
+                },
+
                 async search(frameFrom, frameTo, searchParameters) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -107,6 +116,16 @@ function buildDuplicatedAPI(prototype) {
                         objectStates,
                         x,
                         y,
+                    );
+                    return result;
+                },
+
+                async selectInterval(intervalStates, position) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.selectInterval,
+                        intervalStates,
+                        position,
                     );
                     return result;
                 },
@@ -156,6 +175,26 @@ function buildDuplicatedAPI(prototype) {
                         prototype.annotations.slice,
                         objectState,
                         results,
+                    );
+                    return result;
+                },
+
+                async updateLayer(frame, placement, objectStates) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.updateLayer,
+                        frame,
+                        placement,
+                        objectStates,
+                    );
+                    return result;
+                },
+
+                async compactLayers(frame) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.compactLayers,
+                        frame,
                     );
                     return result;
                 },
@@ -353,16 +392,23 @@ function buildDuplicatedAPI(prototype) {
 export class Session {
     public annotations: {
         get: (frame: number, allTracks: boolean, filters: object[]) => Promise<ObjectState[]>;
-        put: (objectStates: ObjectState[]) => Promise<number[]>;
+        intervals: () => Promise<AudioIntervalState[]>;
+        put: (objectStates: (ObjectState | AudioIntervalState)[]) => Promise<number[]>;
         merge: (objectStates: ObjectState[]) => Promise<void>;
         split: (objectState: ObjectState, frame: number) => Promise<void>;
         group: (objectStates: ObjectState[], reset: boolean) => Promise<number>;
         join: (objectStates: ObjectState[], points: number[][]) => Promise<void>;
         slice: (state: ObjectState, results: number[][]) => Promise<void>;
+        updateLayer: (
+            frame: number,
+            placement: { exact: number } | { before: number } | { after: number },
+            objectStates: ObjectState[],
+        ) => Promise<ObjectState[]>;
+        compactLayers: (frame: number) => Promise<ObjectState[]>;
         clear: (options?: {
             reload?: boolean;
-            startFrame?: number;
-            stopFrame?: number;
+            from?: number;
+            to?: number;
             delTrackKeyframesOnly?: boolean;
         }) => Promise<void>;
         save: (
@@ -394,12 +440,16 @@ export class Session {
             state: ObjectState,
             distance: number | null,
         }>;
-        import: (data: Omit<SerializedCollection, 'version'>) => Promise<void>;
-        export: () => Promise<Omit<SerializedCollection, 'version'>>;
+        selectInterval: (intervalStates: AudioIntervalState[], position: number) => Promise<{
+            state: AudioIntervalState | null,
+            distance: number | null,
+        }>;
+        import: (data: SerializedCollection) => Promise<void>;
+        export: () => Promise<SerializedCollection>;
         commit: (
-            added: Omit<SerializedCollection, 'version'>,
-            removed: Omit<SerializedCollection, 'version'>,
-            frame: number,
+            added: Partial<SerializedCollection>,
+            removed: Partial<SerializedCollection>,
+            frame: number | null,
         ) => Promise<void>;
         statistics: () => Promise<Statistics>;
         hasUnsavedChanges: () => boolean;
@@ -417,7 +467,10 @@ export class Session {
         redo: (count?: number) => Promise<number[]>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
-        get: () => Promise<{ undo: [HistoryActions, number][], redo: [HistoryActions, number][] }>;
+        get: () => Promise<{
+            undo: [HistoryActions, number | null][];
+            redo: [HistoryActions, number | null][];
+        }>;
     };
 
     public frames: {
@@ -460,6 +513,7 @@ export class Session {
         // So, we need return it
         this.annotations = {
             get: Object.getPrototypeOf(this).annotations.get.bind(this),
+            intervals: Object.getPrototypeOf(this).annotations.intervals.bind(this),
             put: Object.getPrototypeOf(this).annotations.put.bind(this),
             save: Object.getPrototypeOf(this).annotations.save.bind(this),
             merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
@@ -467,10 +521,13 @@ export class Session {
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
             join: Object.getPrototypeOf(this).annotations.join.bind(this),
             slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
+            updateLayer: Object.getPrototypeOf(this).annotations.updateLayer.bind(this),
+            compactLayers: Object.getPrototypeOf(this).annotations.compactLayers.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
+            selectInterval: Object.getPrototypeOf(this).annotations.selectInterval.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
             commit: Object.getPrototypeOf(this).annotations.commit.bind(this),
@@ -526,6 +583,7 @@ export class Job extends Session {
         task_name: string | null;
         labels: Label[];
         dimension?: DimensionType;
+        media_type: MediaType;
         data_compressed_chunk_type?: ChunkType;
         data_chunk_size?: number;
         bug_tracker: string | null;
@@ -557,6 +615,7 @@ export class Job extends Session {
             task_name: null,
             labels: [],
             dimension: undefined,
+            media_type: undefined,
             data_compressed_chunk_type: undefined,
             data_chunk_size: undefined,
             bug_tracker: null,
@@ -578,6 +637,7 @@ export class Job extends Session {
         this.#data.task_name = initialData.task_name ?? this.#data.task_name;
         this.#data.project_name = initialData.project_name ?? this.#data.project_name;
         this.#data.dimension = initialData.dimension ?? this.#data.dimension;
+        this.#data.media_type = initialData.media_type ?? this.#data.media_type;
         this.#data.data_compressed_chunk_type =
             initialData.data_compressed_chunk_type ?? this.#data.data_compressed_chunk_type;
         this.#data.data_chunk_size = initialData.data_chunk_size ?? this.#data.data_chunk_size;
@@ -693,7 +753,11 @@ export class Job extends Session {
     }
 
     public get dimension(): DimensionType {
-        return this.#data.dimension;
+        return this.#data.dimension!;
+    }
+
+    public get mediaType(): MediaType {
+        return this.#data.media_type;
     }
 
     public get parentJobId(): number | null {
@@ -717,7 +781,7 @@ export class Job extends Session {
     }
 
     public get mode(): TaskMode {
-        return this.#data.mode;
+        return this.#data.mode!;
     }
 
     public get labels(): Label[] {
@@ -800,7 +864,7 @@ export class Task extends Session {
     public readonly id: number;
     public readonly status: TaskStatus;
     public readonly size: number;
-    public readonly mode: TaskMode;
+    public readonly mode: TaskMode | undefined;
     public readonly owner: User;
     public readonly createdDate: string;
     public readonly updatedDate: string;
@@ -809,7 +873,8 @@ export class Task extends Session {
     public readonly imageQuality: number;
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
-    public readonly dimension: DimensionType;
+    public readonly dimension: DimensionType | undefined;
+    public readonly mediaType: MediaType | undefined;
     public readonly progress: {
         completedJobs: number,
         totalJobs: number,
@@ -870,6 +935,7 @@ export class Task extends Session {
             data_original_chunk_type: undefined,
             data_cloud_storage_id: undefined,
             dimension: undefined,
+            media_type: undefined,
             source_storage: undefined,
             target_storage: undefined,
             progress: undefined,
@@ -953,6 +1019,7 @@ export class Task extends Session {
                     bug_tracker: data.bug_tracker,
                     mode: data.mode,
                     dimension: data.dimension,
+                    media_type: data.media_type,
                     data_compressed_chunk_type: data.data_compressed_chunk_type,
                     data_chunk_size: data.data_chunk_size,
                     target_storage: initialData.target_storage,
@@ -1095,6 +1162,9 @@ export class Task extends Session {
                 },
                 dimension: {
                     get: () => data.dimension,
+                },
+                mediaType: {
+                    get: () => data.media_type,
                 },
                 cloudStorageId: {
                     get: () => data.data_cloud_storage_id,
