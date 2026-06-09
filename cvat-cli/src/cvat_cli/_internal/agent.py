@@ -697,7 +697,8 @@ class _Agent:
             self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
 
         try:
-            result = self._calculate_result_for_ar(ar_params, check_in)
+            with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
+                result = self._calculate_result_for_ar(ar_params, check_in)
             self._complete_ar(ar_id, result)
         except Exception as ex:
             self._client.logger.error("Failed to process AR %r", ar_id, exc_info=True)
@@ -805,11 +806,9 @@ class _Agent:
         self, ar_params: dict[str, Any], check_in: Callable[[float], None]
     ) -> dict[str, Any]:
         if ar_params["type"] == "annotate_task":
-            with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
-                return self._calculate_result_for_annotate_task_ar(ar_params, check_in)
+            return self._calculate_result_for_annotate_task_ar(ar_params, check_in)
         elif ar_params["type"] == "annotate_frame":
-            with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
-                return self._calculate_result_for_annotate_frame_ar(ar_params)
+            return self._calculate_result_for_annotate_frame_ar(ar_params)
         else:
             raise _BadArError(f"unsupported type: {ar_params['type']!r}")
 
@@ -892,11 +891,9 @@ class _Agent:
         self, ar_params: dict[str, Any], check_in: Callable[[float], None]
     ) -> dict[str, Any]:
         if ar_params["type"] == "init_tracking":
-            with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
-                return self._calculate_result_for_init_tracking_ar(ar_params)
+            return self._calculate_result_for_init_tracking_ar(ar_params)
         elif ar_params["type"] == "track":
-            with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
-                return self._calculate_result_for_track_ar(ar_params)
+            return self._calculate_result_for_track_ar(ar_params)
         else:
             raise _BadArError(f"unsupported type: {ar_params['type']!r}")
 
