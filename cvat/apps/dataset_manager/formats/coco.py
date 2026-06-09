@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import zipfile
+from pathlib import Path
 from typing import BinaryIO
 
 from datumaro.components.annotation import AnnotationType
@@ -21,10 +22,10 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
 from .transformations import EllipsesToMasks
-from .utils import (
-    _add_default_iscrowd_to_archive_annotations,
-    _prepare_single_coco_annotation_file,
-)
+from .utils import import_coco_dataset
+
+
+_DEFAULT_ISCROWD = 0
 
 
 @exporter(name="COCO", ext="ZIP", version="1.0")
@@ -45,8 +46,9 @@ def _import_instances(
         zipfile.ZipFile(src_file).extractall(temp_dir)
         # We use coco importer because it gives better error message
         detect_dataset(temp_dir, format_name="coco", importer=CocoImporter)
-        _add_default_iscrowd_to_archive_annotations(temp_dir, ("instances_",))
-        dataset = StreamDataset.import_from(temp_dir, "coco_instances", env=dm_env)
+        dataset = import_coco_dataset(
+            temp_dir, "coco_instances", env=dm_env, default_iscrowd=_DEFAULT_ISCROWD
+        )
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
@@ -54,9 +56,14 @@ def _import_instances(
         if load_data_callback:
             raise NoMediaInAnnotationFileError()
 
-        annotation_file = _prepare_single_coco_annotation_file(src_file, temp_dir)
-        dataset = StreamDataset.import_from(
-            str(annotation_file.absolute()), "coco_instances", env=dm_env
+        annotation_file = Path(temp_dir) / "annotations" / "default.json"
+        annotation_file.parent.mkdir()
+        annotation_file.symlink_to(src_file.name)
+        dataset = import_coco_dataset(
+            str(annotation_file.absolute()),
+            "coco_instances",
+            env=dm_env,
+            default_iscrowd=_DEFAULT_ISCROWD,
         )
         import_dm_annotations(dataset, instance_data)
 
@@ -89,8 +96,12 @@ def _import_keypoints(src_file, temp_dir, instance_data, load_data_callback=None
         zipfile.ZipFile(src_file).extractall(temp_dir)
         # We use coco importer because it gives better error message
         detect_dataset(temp_dir, format_name="coco", importer=CocoImporter)
-        _add_default_iscrowd_to_archive_annotations(temp_dir, ("person_keypoints_",))
-        dataset = StreamDataset.import_from(temp_dir, "coco_person_keypoints", env=dm_env)
+        dataset = import_coco_dataset(
+            temp_dir,
+            "coco_person_keypoints",
+            env=dm_env,
+            default_iscrowd=_DEFAULT_ISCROWD,
+        )
         dataset = dataset.transform(RemoveBboxAnnotations)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
@@ -99,9 +110,14 @@ def _import_keypoints(src_file, temp_dir, instance_data, load_data_callback=None
         if load_data_callback:
             raise NoMediaInAnnotationFileError()
 
-        annotation_file = _prepare_single_coco_annotation_file(src_file, temp_dir)
-        dataset = StreamDataset.import_from(
-            str(annotation_file.absolute()), "coco_person_keypoints", env=dm_env
+        annotation_file = Path(temp_dir) / "annotations" / "default.json"
+        annotation_file.parent.mkdir()
+        annotation_file.symlink_to(src_file.name)
+        dataset = import_coco_dataset(
+            str(annotation_file.absolute()),
+            "coco_person_keypoints",
+            env=dm_env,
+            default_iscrowd=_DEFAULT_ISCROWD,
         )
         dataset = dataset.transform(RemoveBboxAnnotations)
         import_dm_annotations(dataset, instance_data)

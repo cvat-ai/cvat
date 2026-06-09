@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import os.path as osp
 import tempfile
 import zipfile
@@ -1054,3 +1055,55 @@ class TaskAnnotationsImportTest(_DbTestBase):
 
             dm.task.import_task_annotations(dataset_path, task["id"], format_name, True)
             self._test_can_import_annotations(task, format_name)
+
+    def _make_coco_annotation_without_iscrowd(self):
+        return {
+            "info": {},
+            "licenses": [],
+            "images": [{"id": 1, "file_name": "image_0.jpg", "height": 100, "width": 100}],
+            "annotations": [
+                {
+                    "id": 1,
+                    "image_id": 1,
+                    "category_id": 1,
+                    "segmentation": [[10.0, 10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 20.0]],
+                    "bbox": [10.0, 10.0, 10.0, 10.0],
+                    "area": 100.0,
+                    # No "iscrowd" field — simulates Azure-sourced annotations
+                }
+            ],
+            "categories": [{"id": 1, "name": "car", "supercategory": ""}],
+        }
+
+    def test_can_import_coco_instances_without_iscrowd_zip(self):
+        images = self._generate_task_images(1)
+        task = self._generate_task(images, "COCO 1.0")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            zip_path = osp.join(temp_dir, "annotations.zip")
+            with zipfile.ZipFile(zip_path, "w") as zf:
+                zf.writestr(
+                    "annotations/default.json",
+                    json.dumps(self._make_coco_annotation_without_iscrowd()),
+                )
+
+            dm.task.import_task_annotations(zip_path, task["id"], "COCO 1.0", True)
+
+            task_ann = TaskAnnotation(task["id"])
+            task_ann.init_from_db()
+            self.assertEqual(1, len(task_ann.ir_data.shapes))
+
+    def test_can_import_coco_instances_without_iscrowd_json(self):
+        images = self._generate_task_images(1)
+        task = self._generate_task(images, "COCO 1.0")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            json_path = osp.join(temp_dir, "annotations.json")
+            with open(json_path, "w") as f:
+                json.dump(self._make_coco_annotation_without_iscrowd(), f)
+
+            dm.task.import_task_annotations(json_path, task["id"], "COCO 1.0", True)
+
+            task_ann = TaskAnnotation(task["id"])
+            task_ann.init_from_db()
+            self.assertEqual(1, len(task_ann.ir_data.shapes))

@@ -2,65 +2,26 @@
 #
 # SPDX-License-Identifier: MIT
 
+import inspect
 import itertools
-import json
 import operator
 import os.path as osp
-import shutil
 from hashlib import blake2s
-from pathlib import Path
-from typing import BinaryIO
 
+from datumaro.components.dataset import StreamDataset
+from datumaro.components.errors import DatasetImportError
+from datumaro.plugins.data_formats.coco.base import _CocoBase
 from datumaro.util.os_util import make_file_name
 
 
-def _add_default_iscrowd(annotation_file: Path) -> None:
-    with annotation_file.open(encoding="utf-8") as f:
-        annotation_data = json.load(f)
-
-    if not isinstance(annotation_data, dict):
-        return
-
-    annotations = annotation_data.get("annotations")
-    if not isinstance(annotations, list):
-        return
-
-    updated = False
-    for annotation in annotations:
-        if isinstance(annotation, dict) and "iscrowd" not in annotation:
-            annotation["iscrowd"] = 0
-            updated = True
-
-    if updated:
-        with annotation_file.open("w", encoding="utf-8") as f:
-            json.dump(annotation_data, f, ensure_ascii=False)
-
-
-def _add_default_iscrowd_to_archive_annotations(
-    temp_dir: Path | str, prefixes: tuple[str, ...]
-) -> None:
-    """Inject a default ``iscrowd`` value into COCO annotation files inside a ZIP archive.
-
-    Only files whose names start with one of *prefixes* are patched (e.g.
-    ``"instances_"`` or ``"person_keypoints_"``).  Files that do not follow
-    the standard COCO naming convention are left untouched and will be handled
-    by the downstream importer, which may reject them for other reasons.
-    """
-    annotations_dir = Path(temp_dir) / "annotations"
-    for annotation_file in annotations_dir.glob("*.json"):
-        if annotation_file.name.startswith(prefixes):
-            _add_default_iscrowd(annotation_file)
-
-
-def _prepare_single_coco_annotation_file(src_file: BinaryIO, temp_dir: Path | str) -> Path:
-    src_file.seek(0)
-    annotation_file = Path(temp_dir) / "annotations" / "default.json"
-    annotation_file.parent.mkdir(exist_ok=True)
-    with annotation_file.open("wb") as f:
-        shutil.copyfileobj(src_file, f)
-
-    _add_default_iscrowd(annotation_file)
-    return annotation_file
+def import_coco_dataset(path: str, format_name: str, *, env, default_iscrowd: int):
+    if not "default_iscrowd" in inspect.signature(_CocoBase.__init__).parameters:
+        raise DatasetImportError(
+            "Importing COCO annotations without the 'iscrowd' field requires a newer "
+            "version of datumaro that supports the 'default_iscrowd' parameter. "
+            "Please upgrade datumaro."
+        )
+    return StreamDataset.import_from(path, format_name, env=env, default_iscrowd=default_iscrowd)
 
 
 def get_color_from_index(index):
