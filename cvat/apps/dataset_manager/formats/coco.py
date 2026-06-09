@@ -24,7 +24,6 @@ from .registry import dm_env, exporter, importer
 from .transformations import EllipsesToMasks
 from .utils import import_coco_dataset
 
-
 _DEFAULT_ISCROWD = 0
 
 
