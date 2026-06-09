@@ -16,8 +16,8 @@ import { DownOutlined, FilterOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import Menu from 'antd/lib/menu';
+import Modal from 'antd/lib/modal';
 import Popover from 'antd/lib/popover';
-import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 import { Label } from 'cvat-core-wrapper';
 
@@ -622,18 +622,6 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
         }
     };
 
-    const onBuilderVisibleChange = (nextVisible: boolean): void => {
-        if (disabled) {
-            return;
-        }
-
-        if (nextVisible) {
-            setDraftTree(loadTreeFromValue(value, config));
-        }
-
-        setVisible(nextVisible);
-    };
-
     const updateFiltersHistory = (logic: Record<string, unknown>): void => {
         if (isEmptyLogic(logic)) {
             return;
@@ -734,38 +722,11 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
                 onChange={(tree: ImmutableTree) => setDraftTree(tree)}
                 renderBuilder={renderBuilder}
             />
-            <Space className='cvat-resource-page-filters-space'>
-                <Button
-                    className='cvat-reset-filters-button'
-                    disabled={!QbUtils.queryString(draftTree, config)}
-                    size='small'
-                    onClick={() => setDraftTree(createDefaultTree())}
-                >
-                    Reset
-                </Button>
-                <Button
-                    className='cvat-apply-filters-button'
-                    size='small'
-                    type='primary'
-                    disabled={!QbUtils.isValidTree(draftTree, config)}
-                    onClick={applyFilter}
-                >
-                    Apply
-                </Button>
-            </Space>
         </div>
     );
 
     return (
-        <Popover
-            placement='bottomRight'
-            open={visible}
-            destroyTooltipOnHide
-            trigger='click'
-            overlayInnerStyle={{ padding: 0 }}
-            content={builder}
-            onOpenChange={onBuilderVisibleChange}
-        >
+        <>
             <Input
                 className='cvat-quality-requirement-filter-input'
                 readOnly
@@ -782,6 +743,40 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
                     />
                 )}
             />
-        </Popover>
+            <Modal
+                className='cvat-quality-requirement-filter-modal'
+                open={visible}
+                closable={false}
+                width={800}
+                destroyOnClose
+                centered
+                onCancel={() => setVisible(false)}
+                footer={[
+                    <Button
+                        key='reset'
+                        disabled={!QbUtils.queryString(draftTree, config)}
+                        onClick={() => setDraftTree(createDefaultTree())}
+                    >
+                        Reset
+                    </Button>,
+                    <Button
+                        key='cancel'
+                        onClick={() => setVisible(false)}
+                    >
+                        Cancel
+                    </Button>,
+                    <Button
+                        key='apply'
+                        type='primary'
+                        disabled={!QbUtils.isValidTree(draftTree, config)}
+                        onClick={applyFilter}
+                    >
+                        Apply
+                    </Button>,
+                ]}
+            >
+                {builder}
+            </Modal>
+        </>
     );
 }

@@ -240,7 +240,7 @@
 }
 
 .cvat-quality-requirement-filter-builder {
-    width: $grid-unit-size * 62;
+    width: 100%;
 
     .query-builder-container {
         margin-top: $grid-unit-size;
@@ -263,6 +263,22 @@
     .cvat-quality-requirement-filter-readonly-builder {
         opacity: 0.65;
         pointer-events: none;
+    }
+}
+
+.cvat-quality-requirement-filter-modal {
+    .ant-modal-body {
+        max-height: calc(100vh - $grid-unit-size * 28);
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: 0;
+    }
+
+    .cvat-quality-requirement-filter-builder {
+        align-items: stretch;
+        box-shadow: none;
+        border-radius: 0;
+        padding: $grid-unit-size * 2;
     }
 }
 
@@ -359,6 +375,10 @@ $excluded-background: #d9d9d973;
     > .ant-col {
         padding: 0 $grid-unit-size;
     }
+}
+
+.cvat-quality-control-gt-job {
+    margin-bottom: $grid-unit-size * 2;
 }
 
 .cvat-quality-control-management-tab {

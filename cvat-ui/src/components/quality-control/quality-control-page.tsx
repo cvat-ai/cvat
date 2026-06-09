@@ -12,6 +12,7 @@ import Tabs, { TabsProps } from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
 import Result from 'antd/lib/result';
+import { useDispatch } from 'react-redux';
 
 import {
     Job, JobType, QualityReport, QualitySettings, Task,
@@ -22,6 +23,7 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import ResourceLink from 'components/common/resource-link';
 import { CombinedState, InstanceType } from 'reducers';
+import { updateJobAsync } from 'actions/jobs-actions';
 import { ActionUnion, createAction } from 'utils/redux';
 import { getTabFromHash } from 'utils/location-utils';
 import { useInstanceId, useInstanceType, usePlugins } from 'utils/hooks';
@@ -184,6 +186,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
 
 const supportedTabs = ['requirements', 'jobs', 'tasks', 'management', 'settings', 'overview'];
 function QualityControlPage(): JSX.Element {
+    const reduxDispatch = useDispatch();
     const [state, dispatch] = useReducer(reducer, {
         instance: null,
         instanceType: null,
@@ -358,12 +361,23 @@ function QualityControlPage(): JSX.Element {
         }
     }, [state.gtJobInstance]);
 
+    const onJobUpdate = useCallback((job: Job, fields: Parameters<Job['save']>[0]): void => {
+        reduxDispatch(updateJobAsync(job, fields))
+            .then(() => receiveInstance(requestedInstanceType, requestedInstanceID))
+            .catch((error: unknown) => {
+                notification.error({
+                    message: 'Could not update job',
+                    description: error instanceof Error ? error.message : '',
+                });
+            });
+    }, [reduxDispatch, requestedInstanceType, requestedInstanceID]);
+
     useEffect(() => {
         initializeData();
     }, [requestedInstanceType, requestedInstanceID]);
 
     useEffect(() => {
-        const onHashChange = () => setActiveTab(getTabFromHash(supportedTabs));
+        const onHashChange = (): void => setActiveTab(getTabFromHash(supportedTabs));
         window.addEventListener('hashchange', onHashChange);
         return () => window.removeEventListener('hashchange', onHashChange);
     }, []);
@@ -443,10 +457,12 @@ function QualityControlPage(): JSX.Element {
                 return (
                     <QualityManagementTab
                         task={instance}
+                        gtJobInstance={gtJobInstance}
                         gtJobId={gtJobInstance.id}
                         gtJobMeta={gtJobMeta}
                         validationLayout={validationLayout}
                         qualitySettings={qualitySettings}
+                        onJobUpdate={onJobUpdate}
                         onDeleteFrames={onDeleteFrames}
                         onRestoreFrames={onRestoreFrames}
                     />
