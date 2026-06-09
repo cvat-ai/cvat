@@ -200,6 +200,19 @@ function AudioCanvasWrapper(): JSX.Element {
     useEffect(() => { zoomRef.current = zoom; }, [zoom]);
 
     useEffect(() => {
+        // Test-only handle. Lets e2e tests assert the waveform/playback alignment
+        // invariant directly: the decoded-buffer duration must equal the media
+        // element duration. They diverge when a VBR-compressed stream is served
+        // to the player instead of decoded PCM.
+        (window as any).cvatAudioWavesurfer = wavesurfer;
+        return () => {
+            if ((window as any).cvatAudioWavesurfer === wavesurfer) {
+                (window as any).cvatAudioWavesurfer = null;
+            }
+        };
+    }, [wavesurfer]);
+
+    useEffect(() => {
         const nextZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom));
         if (nextZoom !== zoom) onSetZoom(nextZoom);
     }, [onSetZoom, zoom]);
