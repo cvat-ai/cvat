@@ -14,6 +14,7 @@ import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import { BookOutlined } from '@ant-design/icons';
 
+import { showAttribute } from 'cvat-canvas/src/typescript/shared';
 import config from 'config';
 import { CombinedState } from 'reducers';
 import { clamp } from 'utils/math';
@@ -61,10 +62,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
 
     // Check if this is a catalogue reference attribute
     const isCatalogueRef = attrName.startsWith('catalogue_ref__');
-    // custom UI modification
-    const isAutomaticValue = attrValue === 'auto';
-    const isPrivateAttribute = attrName.startsWith('_');
-    const showAttribute = (!isPrivateAttribute && !isAutomaticValue) || showPrivateAttributes;
+    const isVisible = showAttribute(attrName, attrValue, showPrivateAttributes);
 
     const catalogueName = isCatalogueRef ? attrName.replace('catalogue_ref__', '') : '';
     useEffect(() => {
@@ -91,7 +89,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         }
     }, [attrValue]);
 
-    if (!showAttribute) {
+    if (!isVisible) {
         return <></>;
     }
 

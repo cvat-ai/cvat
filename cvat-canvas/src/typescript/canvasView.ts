@@ -36,6 +36,7 @@ import {
     composeShapeDimensions, getRoundedRotation,
     clamp, validateUnionResult, processPolygonUnionResult,
     applySnapToShapePoint, isPolygonSelfIntersecting,
+    showAttribute,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -3414,19 +3415,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         .addClass('cvat_canvas_text_score');
                 }
                 if (withAttr) {
+                    const { showPrivateAttributes } = this.configuration;
                     Object.keys(attributes).forEach((attrID: string, idx: number) => {
-                        const values = `${attributes[attrID] === undefinedAttrValue ?
-                            '' : attributes[attrID]}`.split('\n');
-                        const parent = block.tspan(`${attrNames[attrID]}: `)
-                            .attr({ attrID, dy: idx === 0 ? '1.25em' : '1em', x: 0 })
-                            .addClass('cvat_canvas_text_attribute');
-                        values.forEach((attrLine: string, index: number) => {
-                            parent
-                                .tspan(attrLine)
-                                .attr({
-                                    dy: index === 0 ? 0 : '1em',
-                                });
-                        });
+                        if (showAttribute(attrNames[attrID], attributes[attrID], showPrivateAttributes)) {
+                            const values = `${attributes[attrID] === undefinedAttrValue ?
+                                '' : attributes[attrID]}`.split('\n');
+                            const parent = block.tspan(`${attrNames[attrID]}: `)
+                                .attr({ attrID, dy: idx === 0 ? '1.25em' : '1em', x: 0 })
+                                .addClass('cvat_canvas_text_attribute');
+                            values.forEach((attrLine: string, index: number) => {
+                                parent
+                                    .tspan(attrLine)
+                                    .attr({
+                                        dy: index === 0 ? 0 : '1em',
+                                    });
+                            });
+                        }
                     });
                 }
             })

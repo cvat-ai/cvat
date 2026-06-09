@@ -127,6 +127,7 @@ interface StateToProps {
     imageFilters: ImageFilter[];
     activeControl: ActiveControl;
     activeObjectHidden: boolean;
+    showPrivateAttributes: boolean;
 }
 
 interface DispatchToProps {
@@ -207,6 +208,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 controlPointsSize,
                 textPosition,
                 textContent,
+                showPrivateAttributes,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, showGroundTruth,
@@ -274,6 +276,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         highlightedConflict,
         imageFilters,
         activeObjectHidden,
+        showPrivateAttributes,
     };
 }
 
@@ -427,6 +430,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showGroundTruth,
             resetZoom,
             focusedObjectPadding,
+            showPrivateAttributes,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -455,6 +459,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textContent,
             resetZoom,
             focusedObjectPadding,
+            showPrivateAttributes,
         });
 
         this.initialSetup();
@@ -500,6 +505,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             imageFilters,
             focusedObjectPadding,
             renderData,
+            showPrivateAttributes,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -522,7 +528,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.outlined !== outlined ||
             prevProps.showGroundTruth !== showGroundTruth ||
             prevProps.resetZoom !== resetZoom ||
-            prevProps.focusedObjectPadding !== focusedObjectPadding
+            prevProps.focusedObjectPadding !== focusedObjectPadding ||
+            prevProps.showPrivateAttributes !== showPrivateAttributes
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
@@ -544,6 +551,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 showConflicts: showGroundTruth,
                 resetZoom,
                 focusedObjectPadding,
+                showPrivateAttributes,
             });
         }
 
