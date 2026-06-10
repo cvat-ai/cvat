@@ -16,8 +16,12 @@ from datumaro.util.os_util import make_file_name
 logger = logging.getLogger(__name__)
 
 
+def supports_default_iscrowd() -> bool:
+    return "default_iscrowd" in inspect.signature(_CocoBase.__init__).parameters
+
+
 def import_coco_dataset(path: str, format_name: str, *, env, default_iscrowd: int):
-    if "default_iscrowd" not in inspect.signature(_CocoBase.__init__).parameters:
+    if not supports_default_iscrowd():
         logger.warning(
             "The installed Datumaro version does not support the 'default_iscrowd' "
             "COCO import option. COCO annotations without the 'iscrowd' field will "
