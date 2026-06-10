@@ -9,6 +9,7 @@ import { RouteComponentProps } from 'react-router-dom';
 
 import {
     changeWorkspaceAsync,
+    collectStatisticsAsync,
     saveAnnotationsAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
     showFilters as showFiltersAction,
@@ -39,11 +40,12 @@ interface StateToProps {
     initialOpenGuide: boolean;
     audioCurrentTime: number;
     audioDuration: number;
+    audioZoom: number;
 }
 
 interface DispatchToProps {
     onSaveAnnotation(): void;
-    showStatistics(): void;
+    showStatistics(sessionInstance: Job): void;
     showFilters(): void;
     audioUndo(): void;
     audioRedo(): void;
@@ -72,6 +74,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 playing,
                 currentTime: audioCurrentTime,
                 duration: audioDuration,
+                zoom: audioZoom,
             },
         },
         settings: {
@@ -99,6 +102,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         initialOpenGuide,
         audioCurrentTime,
         audioDuration,
+        audioZoom,
     };
 }
 
@@ -107,7 +111,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSaveAnnotation(): void {
             dispatch(saveAnnotationsAsync());
         },
-        showStatistics(): void {
+        showStatistics(sessionInstance: Job): void {
+            dispatch(collectStatisticsAsync(sessionInstance));
             dispatch(showStatisticsAction(true));
         },
         showFilters(): void {
@@ -247,6 +252,7 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
             initialOpenGuide,
             audioCurrentTime,
             audioDuration,
+            audioZoom,
             onAudioPlayPause,
             onAudioSeek,
             showFilters,
@@ -266,11 +272,12 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
                 redoShortcut={normalizedKeyMap.AUDIO_REDO ?? normalizedKeyMap.REDO ?? ''}
                 audioCurrentTime={audioCurrentTime ?? 0}
                 audioDuration={audioDuration ?? 0}
+                audioZoom={audioZoom ?? 1}
                 annotationFilters={annotationFilters}
                 initialOpenGuide={initialOpenGuide}
                 changeWorkspace={this.changeWorkspace}
                 showFilters={showFilters}
-                showStatistics={showStatistics}
+                showStatistics={() => showStatistics(jobInstance)}
                 onUndoClick={this.undo}
                 onRedoClick={this.redo}
                 onAudioPlayPause={onAudioPlayPause}

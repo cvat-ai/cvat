@@ -60,7 +60,6 @@ interface Params {
     phantomRegionIdsRef: React.MutableRefObject<Set<string>>;
     activeControl: ActiveControl;
     intervals: AudioIntervalState[];
-    visibleIntervalIds: Set<number>;
     activeIntervalID: number | null;
     hoveredIntervalID: number | null;
     labels: Label[];
@@ -90,7 +89,7 @@ export function useAudioRegions(params: Params): Result {
     const {
         jobInstance,
         regionsPluginRef, wavesurfer, lastWsTimeRef, phantomRegionIdsRef,
-        activeControl, intervals, visibleIntervalIds, activeIntervalID, hoveredIntervalID,
+        activeControl, intervals, activeIntervalID, hoveredIntervalID,
         labels, activeLabelId, colorBy, opacity, selectedOpacity, loop,
         onSwitchPlay, onSetCurrentTime, onSetDuration,
         onCreateInterval, onUpdateIntervalPosition, onSetActiveInterval, onSetHoveredInterval,
@@ -109,7 +108,6 @@ export function useAudioRegions(params: Params): Result {
 
     const activeControlRef = useRef(activeControl);
     const intervalsRef = useRef(intervals);
-    const visibleIntervalIdsRef = useRef(visibleIntervalIds);
     const activeIntervalIDRef = useRef(activeIntervalID);
     const hoveredIntervalIDRef = useRef(hoveredIntervalID);
     const activeLabelIdRef = useRef(activeLabelId);
@@ -125,7 +123,6 @@ export function useAudioRegions(params: Params): Result {
 
     useEffect(() => { activeControlRef.current = activeControl; }, [activeControl]);
     useEffect(() => { intervalsRef.current = intervals; }, [intervals]);
-    useEffect(() => { visibleIntervalIdsRef.current = visibleIntervalIds; }, [visibleIntervalIds]);
     useEffect(() => {
         if (getPlayOnceRegionId() && Number(getPlayOnceRegionId()) !== activeIntervalID) {
             setPlayOnceRegionId(null);
@@ -187,10 +184,7 @@ export function useAudioRegions(params: Params): Result {
             return null;
         }
 
-        const visibleIntervals = intervalsRef.current.filter((interval) => (
-            !interval.hidden && visibleIntervalIdsRef.current.has(intervalID(interval))
-        ));
-        const { state } = await job.annotations.selectInterval(visibleIntervals, positionMs);
+        const { state } = await job.annotations.selectInterval(intervalsRef.current, positionMs);
         return state?.clientID ?? null;
     }, []);
 
@@ -416,7 +410,7 @@ export function useAudioRegions(params: Params): Result {
             if (phantomRegionIdsRef.current.has(wsRegion.id)) return;
             const interval = intervalsById.get(wsRegion.id);
             const id = interval ? intervalID(interval) : null;
-            if (interval?.hidden || (interval && !visibleIntervalIds.has(id as number))) {
+            if (interval?.hidden) {
                 silentRemoveIdsRef.current.add(wsRegion.id);
                 wsRegion.remove();
                 return;
@@ -439,7 +433,7 @@ export function useAudioRegions(params: Params): Result {
             }
         });
     }, [
-        activeIntervalID, hoveredIntervalID, intervals, visibleIntervalIds, colorBy, opacity, selectedOpacity,
+        activeIntervalID, hoveredIntervalID, intervals, colorBy, opacity, selectedOpacity,
         labels, activeControl, regionsPluginRef,
     ]);
 
@@ -451,7 +445,7 @@ export function useAudioRegions(params: Params): Result {
 
         intervals.forEach((interval) => {
             const id = intervalID(interval);
-            if (interval.hidden || !visibleIntervalIds.has(id)) return;
+            if (interval.hidden) return;
             const regionId = waveRegionId(interval);
             const wsRegion = wsRegions.find((region: Region) => region.id === regionId);
             const start = intervalStartSeconds(interval);
@@ -477,7 +471,7 @@ export function useAudioRegions(params: Params): Result {
         });
 
         const intervalIds = new Set(
-            intervals.filter((interval) => !interval.hidden && visibleIntervalIds.has(intervalID(interval)))
+            intervals.filter((interval) => !interval.hidden)
                 .map((interval) => waveRegionId(interval)),
         );
         wsRegions.forEach((wsRegion: Region) => {
@@ -488,7 +482,7 @@ export function useAudioRegions(params: Params): Result {
             }
         });
     }, [
-        intervals, visibleIntervalIds, wavesurfer, activeControl, colorBy, opacity, selectedOpacity,
+        intervals, wavesurfer, activeControl, colorBy, opacity, selectedOpacity,
         labels, activeIntervalID, intervalSelectionDisabled, regionsPluginRef,
     ]);
 

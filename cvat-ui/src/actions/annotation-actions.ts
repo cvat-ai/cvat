@@ -342,7 +342,7 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     }
 
     const intervals = jobInstance.dimension === DimensionType.DIMENSION_1D ?
-        await jobInstance.annotations.intervals() : [];
+        await jobInstance.annotations.intervals(filters) : [];
     const history = await jobInstance.actions.get();
 
     return {
