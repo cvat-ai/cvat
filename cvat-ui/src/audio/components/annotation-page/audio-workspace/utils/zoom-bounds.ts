@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 export const ZOOM_MIN = 1;
-export const ZOOM_MAX = 25;
+export const ZOOM_MAX = 300;
 
 export function computeWaveformZoom(displayZoom: number, duration: number, containerWidth: number): number {
     if (!duration || duration <= 0 || !containerWidth || containerWidth <= 0) return 1;

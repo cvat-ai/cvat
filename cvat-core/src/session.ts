@@ -90,10 +90,11 @@ function buildDuplicatedAPI(prototype): void {
                     return result;
                 },
 
-                async intervals() {
+                async intervals(filters = []) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.intervals,
+                        filters,
                     );
                     return result;
                 },
@@ -392,7 +393,7 @@ function buildDuplicatedAPI(prototype): void {
 export class Session {
     public annotations: {
         get: (frame: number, allTracks: boolean, filters: object[]) => Promise<ObjectState[]>;
-        intervals: () => Promise<AudioIntervalState[]>;
+        intervals: (filters?: object[]) => Promise<AudioIntervalState[]>;
         put: (objectStates: (ObjectState | AudioIntervalState)[]) => Promise<number[]>;
         merge: (objectStates: ObjectState[]) => Promise<void>;
         split: (objectState: ObjectState, frame: number) => Promise<void>;

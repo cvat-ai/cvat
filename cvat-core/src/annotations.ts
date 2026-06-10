@@ -153,13 +153,16 @@ export async function getAnnotations(
     }
 }
 
-export async function getAllIntervals(session: Job | Task): Promise<ReturnType<AnnotationsCollection['getAllIntervals']>> {
+export async function getAllIntervals(
+    session: Job | Task,
+    filters: object[],
+): Promise<ReturnType<AnnotationsCollection['getAllIntervals']>> {
     try {
-        return getCollection(session).getAllIntervals();
+        return getCollection(session).getAllIntervals(filters);
     } catch (error) {
         if (error instanceof InstanceNotInitializedError) {
             await getAnnotationsFromServer(session);
-            return getCollection(session).getAllIntervals();
+            return getCollection(session).getAllIntervals(filters);
         }
         throw error;
     }

@@ -13,6 +13,10 @@ export interface Props {
     onZoomChange(zoom: number): void;
 }
 
+function formatZoom(zoom: number): string {
+    return Number.isInteger(zoom) ? `x${zoom}` : `x${zoom.toFixed(1)}`;
+}
+
 function ZoomControl(props: Props): JSX.Element {
     const { zoom, onZoomChange } = props;
     const currentZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom));
@@ -24,10 +28,10 @@ function ZoomControl(props: Props): JSX.Element {
             value={currentZoom}
             min={ZOOM_MIN}
             max={ZOOM_MAX}
-            step={1}
-            formatValue={(v) => `x${v}`}
+            step={0.1}
+            formatValue={formatZoom}
             className='cvat-audio-zoom-control'
-            valueBadge={`x${currentZoom}`}
+            valueBadge={formatZoom(currentZoom)}
             onChange={onZoomChange}
         />
     );
