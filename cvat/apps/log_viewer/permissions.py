@@ -3,9 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import StrEnum
+
 from django.conf import settings
 
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission, get_iam_context
 
 
 class LogViewerPermission(OpenPolicyAgentPermission):
