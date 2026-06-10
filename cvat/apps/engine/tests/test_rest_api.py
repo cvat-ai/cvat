@@ -49,7 +49,6 @@ from rest_framework.test import APIClient
 from rq.job import Job as RQJob
 from rq.queue import Queue as RQQueue
 
-from cvat.apps.dataset_manager.formats.utils import supports_default_iscrowd
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.cache import MediaCache
@@ -7791,15 +7790,9 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
         self._run_coco_annotation_upload_test(self.user)
 
     def test_api_v2_tasks_id_annotations_upload_coco_without_iscrowd(self):
-        if not supports_default_iscrowd():
-            self.skipTest("The installed Datumaro does not support default_iscrowd")
-
         self._run_coco_annotation_upload_test(self.user, include_iscrowd=False)
 
     def test_api_v2_tasks_id_annotations_upload_coco_zip_without_iscrowd(self):
-        if not supports_default_iscrowd():
-            self.skipTest("The installed Datumaro does not support default_iscrowd")
-
         task, _ = self._create_task(self.user, self.user)
 
         content = io.BytesIO()
@@ -7819,9 +7812,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
         self.assertEqual(len(response.data["shapes"]), 1)
 
     def test_api_v2_tasks_id_annotations_upload_coco_keypoints_without_iscrowd(self):
-        if not supports_default_iscrowd():
-            self.skipTest("The installed Datumaro does not support default_iscrowd")
-
         task, _ = self._create_task(self.user, self.user)
 
         content = io.BytesIO(self._generate_coco_anno(include_iscrowd=False))

@@ -22,9 +22,8 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
 from .transformations import EllipsesToMasks
-from .utils import import_coco_dataset
 
-_DEFAULT_ISCROWD = 0
+_REQUIRE_ISCROWD = False
 
 
 @exporter(name="COCO", ext="ZIP", version="1.0")
@@ -45,8 +44,8 @@ def _import_instances(
         zipfile.ZipFile(src_file).extractall(temp_dir)
         # We use coco importer because it gives better error message
         detect_dataset(temp_dir, format_name="coco", importer=CocoImporter)
-        dataset = import_coco_dataset(
-            temp_dir, "coco_instances", env=dm_env, default_iscrowd=_DEFAULT_ISCROWD
+        dataset = StreamDataset.import_from(
+            temp_dir, "coco_instances", env=dm_env, require_iscrowd=_REQUIRE_ISCROWD
         )
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
@@ -58,11 +57,11 @@ def _import_instances(
         annotation_file = Path(temp_dir) / "annotations" / "default.json"
         annotation_file.parent.mkdir()
         annotation_file.symlink_to(src_file.name)
-        dataset = import_coco_dataset(
+        dataset = StreamDataset.import_from(
             str(annotation_file.absolute()),
             "coco_instances",
             env=dm_env,
-            default_iscrowd=_DEFAULT_ISCROWD,
+            require_iscrowd=_REQUIRE_ISCROWD,
         )
         import_dm_annotations(dataset, instance_data)
 
@@ -95,11 +94,11 @@ def _import_keypoints(src_file, temp_dir, instance_data, load_data_callback=None
         zipfile.ZipFile(src_file).extractall(temp_dir)
         # We use coco importer because it gives better error message
         detect_dataset(temp_dir, format_name="coco", importer=CocoImporter)
-        dataset = import_coco_dataset(
+        dataset = StreamDataset.import_from(
             temp_dir,
             "coco_person_keypoints",
             env=dm_env,
-            default_iscrowd=_DEFAULT_ISCROWD,
+            require_iscrowd=_REQUIRE_ISCROWD,
         )
         dataset = dataset.transform(RemoveBboxAnnotations)
         if load_data_callback is not None:
@@ -112,11 +111,11 @@ def _import_keypoints(src_file, temp_dir, instance_data, load_data_callback=None
         annotation_file = Path(temp_dir) / "annotations" / "default.json"
         annotation_file.parent.mkdir()
         annotation_file.symlink_to(src_file.name)
-        dataset = import_coco_dataset(
+        dataset = StreamDataset.import_from(
             str(annotation_file.absolute()),
             "coco_person_keypoints",
             env=dm_env,
-            default_iscrowd=_DEFAULT_ISCROWD,
+            require_iscrowd=_REQUIRE_ISCROWD,
         )
         dataset = dataset.transform(RemoveBboxAnnotations)
         import_dm_annotations(dataset, instance_data)

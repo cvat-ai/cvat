@@ -19,7 +19,6 @@ from rest_framework import status
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
 from cvat.apps.dataset_manager.bindings import CvatDataExtractor, TaskData, find_dataset_root
-from cvat.apps.dataset_manager.formats.utils import supports_default_iscrowd
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import (
     ensure_extractors_efficiency,
@@ -1077,9 +1076,6 @@ class TaskAnnotationsImportTest(_DbTestBase):
         }
 
     def test_can_import_coco_instances_without_iscrowd_zip(self):
-        if not supports_default_iscrowd():
-            self.skipTest("The installed Datumaro does not support default_iscrowd")
-
         images = self._generate_task_images(1)
         task = self._generate_task(images, "COCO 1.0")
 
@@ -1098,9 +1094,6 @@ class TaskAnnotationsImportTest(_DbTestBase):
             self.assertEqual(1, len(task_ann.ir_data.shapes))
 
     def test_can_import_coco_instances_without_iscrowd_json(self):
-        if not supports_default_iscrowd():
-            self.skipTest("The installed Datumaro does not support default_iscrowd")
-
         images = self._generate_task_images(1)
         task = self._generate_task(images, "COCO 1.0")
 

@@ -2,34 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-import inspect
 import itertools
-import logging
 import operator
 import os.path as osp
 from hashlib import blake2s
 
-from datumaro.components.dataset import StreamDataset
-from datumaro.plugins.data_formats.coco.base import _CocoBase
 from datumaro.util.os_util import make_file_name
-
-logger = logging.getLogger(__name__)
-
-
-def supports_default_iscrowd() -> bool:
-    return "default_iscrowd" in inspect.signature(_CocoBase.__init__).parameters
-
-
-def import_coco_dataset(path: str, format_name: str, *, env, default_iscrowd: int):
-    if not supports_default_iscrowd():
-        logger.warning(
-            "The installed Datumaro version does not support the 'default_iscrowd' "
-            "COCO import option. COCO annotations without the 'iscrowd' field will "
-            "fail until Datumaro is upgraded."
-        )
-        return StreamDataset.import_from(path, format_name, env=env)
-
-    return StreamDataset.import_from(path, format_name, env=env, default_iscrowd=default_iscrowd)
 
 
 def get_color_from_index(index):
