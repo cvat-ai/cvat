@@ -34,10 +34,15 @@ function encodeWav(buffer: AudioBuffer): Blob {
     writeStr(36, 'data');
     view.setUint32(40, dataLength, true);
 
+    const byChannelDate = new Array(numberOfChannels);
+    for (let ch = 0; ch < numberOfChannels; ch++) {
+        byChannelDate[ch] = buffer.getChannelData(ch);
+    }
+
     let offset = headerLength;
     for (let i = 0; i < length; i++) {
         for (let ch = 0; ch < numberOfChannels; ch++) {
-            const sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+            const sample = Math.max(-1, Math.min(1, byChannelDate[ch][i]));
             view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
             offset += bytesPerSample;
         }
@@ -54,11 +59,13 @@ export async function fetchAndAssembleAudio(
 ): Promise<Blob> {
     const chunkCount = Math.ceil(totalFrames / chunkSize);
 
-    if (chunkCount === 1) {
-        const { data } = await serverProxy.frames.getAudioChunk(jobId, 0, quality);
-        return new Blob([data], { type: 'audio/mpeg' });
-    }
-
+    // NB: every chunk is decoded to PCM and re-encoded as WAV, including the
+    // single-chunk case. Serving the raw compressed blob (e.g. a VBR MP3)
+    // directly to the player desynchronizes the waveform from playback: the
+    // waveform is drawn from the Web-Audio-decoded buffer (exact duration),
+    // while seeking/cursor use the <audio> element's duration, which the
+    // browser only estimates for VBR streams. WAV is PCM, so both durations
+    // match and the rendered waveform stays aligned with what is played.
     const audioContext = new AudioContext();
     try {
         const rawChunks = await Promise.all(

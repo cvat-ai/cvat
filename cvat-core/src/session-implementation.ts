@@ -366,8 +366,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.annotations.intervals, 'implementation', {
         value: async function intervalsImplementation(
             this: JobClass,
+            filters: Parameters<typeof JobClass.prototype.annotations.intervals>[0],
         ): ReturnType<typeof JobClass.prototype.annotations.intervals> {
-            return getAllIntervals(this);
+            return getAllIntervals(this, filters);
         },
     });
 
@@ -1166,8 +1167,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     Object.defineProperty(Task.prototype.annotations.intervals, 'implementation', {
         value: async function intervalsImplementation(
             this: TaskClass,
+            filters: Parameters<typeof TaskClass.prototype.annotations.intervals>[0],
         ): ReturnType<typeof TaskClass.prototype.annotations.intervals> {
-            return getAllIntervals(this);
+            return getAllIntervals(this, filters);
         },
     });
 

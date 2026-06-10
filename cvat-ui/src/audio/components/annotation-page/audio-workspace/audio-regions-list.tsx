@@ -219,7 +219,7 @@ const MemoAudioRegionItem = React.memo(AudioRegionItem);
 
 interface Props {
     intervals: AudioIntervalState[];
-    visibleIntervalIds: Set<number>;
+    filtersActive: boolean;
     activeIntervalID: number | null;
     labels: Label[];
     colorBy: ColorBy;
@@ -242,7 +242,7 @@ interface Props {
 export default function AudioRegionsList(props: Props): JSX.Element {
     const {
         intervals,
-        visibleIntervalIds,
+        filtersActive,
         activeIntervalID,
         labels,
         colorBy,
@@ -275,14 +275,9 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         }
     }, [activeIntervalID]);
 
-    const visibleIntervals = useMemo(
-        () => intervals.filter((interval) => visibleIntervalIds.has(intervalID(interval))),
-        [intervals, visibleIntervalIds],
-    );
-
-    const allLocked = visibleIntervals.length > 0 && visibleIntervals.every((interval) => !!interval.lock);
-    const allHidden = visibleIntervals.length > 0 && visibleIntervals.every((interval) => !!interval.hidden);
-    const visibleIds = useMemo(() => visibleIntervals.map((interval) => intervalID(interval)), [visibleIntervals]);
+    const allLocked = intervals.length > 0 && intervals.every((interval) => !!interval.lock);
+    const allHidden = intervals.length > 0 && intervals.every((interval) => !!interval.hidden);
+    const visibleIds = useMemo(() => intervals.map((interval) => intervalID(interval)), [intervals]);
 
     const onLockAll = useCallback(() => {
         onToggleIntervalsLock(visibleIds, true);
@@ -297,8 +292,8 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         onToggleIntervalsHidden(visibleIds, false);
     }, [visibleIds, onToggleIntervalsHidden]);
 
-    const sortedIntervals = useMemo(() => sortIntervals(visibleIntervals, ordering),
-        [visibleIntervals, ordering, labels]);
+    const sortedIntervals = useMemo(() => sortIntervals(intervals, ordering),
+        [intervals, ordering, labels]);
 
     const indexById = useMemo(() => {
         const map = new Map<number, number>();
@@ -308,7 +303,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
 
     const header = (
         <AudioRegionsListHeader
-            count={visibleIntervals.length}
+            count={intervals.length}
             ordering={ordering}
             allLocked={allLocked}
             allHidden={allHidden}
@@ -322,8 +317,8 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         />
     );
 
-    if (!visibleIntervals.length) {
-        const description = intervals.length ? 'No intervals match filters' : 'No intervals created';
+    if (!intervals.length) {
+        const description = filtersActive ? 'No intervals match filters' : 'No intervals created';
         return (
             <div className='cvat-audio-regions-list-wrapper'>
                 {header}
