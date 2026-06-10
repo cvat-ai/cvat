@@ -14,35 +14,35 @@ import shutil
 import tempfile
 import threading
 import time
-from collections import OrderedDict
-from collections.abc import Callable, Generator, Iterator, Sequence
+from collections.abc import Generator, Iterator
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.datasets as cvatds
-import PIL.Image
 import urllib3.exceptions
-from cvat_sdk import Client, models
-from cvat_sdk.auto_annotation.driver import (
-    _AnnotationMapper,
-    _DetectionFunctionContextImpl,
-    _SpecNameMapping,
-)
+from cvat_sdk import Client
 from cvat_sdk.datasets.caching import make_cache_manager
 from cvat_sdk.exceptions import ApiException
 
+from .agent_driver import (
+    AgentFunctionDriver,
+    BadArError,
+    IncompatibleFunctionError,
+    set_worker_current_function,
+    worker_current_function,
+)
+from .agent_driver_detection import AgentDetectionFunctionDriver
+from .agent_driver_tracking import AgentTrackingFunctionDriver, TrackingStateIdGenerator
 from .common import CriticalError, FunctionLoader
 
 if TYPE_CHECKING:
     from _typeshed import SupportsReadline
 
 FUNCTION_PROVIDER_NATIVE = "native"
-FUNCTION_KIND_DETECTOR = "detector"
-FUNCTION_KIND_TRACKER = "tracker"
 REQUEST_CATEGORY_BATCH = "batch"
 REQUEST_CATEGORY_INTERACTIVE = "interactive"
 
@@ -54,8 +54,6 @@ _JITTER_AMOUNT = 0.15
 _DEFAULT_RETRY_DELAY = timedelta(seconds=5)
 
 _UPDATE_INTERVAL = timedelta(seconds=30)
-
-_MAX_AGE_OF_TRACKING_STATE = timedelta(hours=8)
 
 
 class _ExponentialBackoff:
@@ -72,7 +70,7 @@ class _ExponentialBackoff:
         return delay
 
 
-class _RecoverableExecutor:
+class RecoverableExecutor:
     # A wrapper around ProcessPoolExecutor that recreates the underlying
     # executor when a worker crashes.
     def __init__(self, initializer, initargs):
@@ -107,146 +105,23 @@ class _RecoverableExecutor:
             raise
 
 
-_TrackingStateIdGenerator: TypeAlias = Callable[[], str]
-
-
 def _default_tracking_state_id_generator() -> str:
     # This is defined as a separate function so that tests can monkeypatch it
     # in order to get deterministic state IDs.
     return secrets.token_urlsafe(32)
 
 
-_current_function: cvataa.AutoAnnotationFunction
-_tracking_states: _TrackingStateContainer
-_tracking_state_id_generator: _TrackingStateIdGenerator
+def _worker_init(
+    function_loader: FunctionLoader, state_id_generator: TrackingStateIdGenerator
+) -> None:
+    current_function = function_loader.load()
+    set_worker_current_function(current_function)
 
-
-@attrs.define
-class _ExtendedTrackingState:
-    inner_state: Any  # the state produced by the AA function
-    original_shape_type: str
-    original_task_id: int
-    original_image_dims: tuple[int, int]
-    last_accessed_at: datetime = attrs.field(factory=lambda: datetime.now(tz=timezone.utc))
-
-
-class _TrackingStateContainer:
-    def __init__(self):
-        self._id_to_ext_state: OrderedDict[str, _ExtendedTrackingState] = OrderedDict()
-
-    def store(self, state: Any, shape_type: str, task_id: int, image_dims: tuple[int, int]) -> str:
-        state_id = _tracking_state_id_generator()
-        self._id_to_ext_state[state_id] = _ExtendedTrackingState(
-            inner_state=state,
-            original_shape_type=shape_type,
-            original_task_id=task_id,
-            original_image_dims=image_dims,
-        )
-        return state_id
-
-    def retrieve(self, state_id: str, task_id: int, image_dims: tuple[int, int]) -> Any:
-        ext_state = self._id_to_ext_state.get(state_id)
-
-        if not ext_state:
-            raise _BadArError(f"Tracking state {state_id!r} not found - possibly expired")
-
-        if ext_state.original_task_id != task_id:
-            # This is a defense-in-depth measure. State IDs are supposed to be unguessable,
-            # but even if an attacker manages to obtain one, they will not be able to use it
-            # to get any information about a task they don't have access to.
-            raise _BadArError(f"Tracking state {state_id!r} is not for task #{task_id}")
-
-        if image_dims != ext_state.original_image_dims:
-            raise _BadArError("Image sizes of the start frame and the current frame are different")
-
-        ext_state.last_accessed_at = datetime.now(tz=timezone.utc)
-        self._id_to_ext_state.move_to_end(state_id)
-
-        return ext_state.inner_state, ext_state.original_shape_type
-
-    def prune(self) -> None:
-        cutoff = datetime.now(tz=timezone.utc) - _MAX_AGE_OF_TRACKING_STATE
-
-        while (
-            self._id_to_ext_state
-            and next(iter(self._id_to_ext_state.values())).last_accessed_at < cutoff
-        ):
-            self._id_to_ext_state.popitem(last=False)
-
-
-def _worker_init(function_loader: FunctionLoader, state_id_generator):
-    global _current_function
-    _current_function = function_loader.load()
-
-    if isinstance(_current_function.spec, cvataa.TrackingFunctionSpec):
-        global _tracking_states
-        _tracking_states = _TrackingStateContainer()
-
-        global _tracking_state_id_generator
-        _tracking_state_id_generator = state_id_generator
+    get_function_driver_class(current_function.spec).init_worker(state_id_generator)
 
 
 def _worker_job_get_function_spec():
-    return _current_function.spec
-
-
-def _worker_job_detect(
-    context: _DetectionFunctionContextImpl, image: PIL.Image.Image
-) -> list[cvataa.DetectionAnnotation]:
-    return _current_function.detect(context, image)
-
-
-def _worker_job_init_tracking(
-    task_id: int,
-    image: PIL.Image.Image,
-    shapes: list[cvataa.TrackableShape],
-) -> list[str]:
-    _tracking_states.prune()
-
-    if hasattr(_current_function, "preprocess_image"):
-        pp_image = _current_function.preprocess_image(_TrackingFunctionContextImpl(), image)
-    else:
-        pp_image = image
-
-    return [
-        _tracking_states.store(
-            state=_current_function.init_tracking_state(
-                _TrackingFunctionShapeContextImpl(original_shape_type=shape.type), pp_image, shape
-            ),
-            shape_type=shape.type,
-            task_id=task_id,
-            image_dims=image.size,
-        )
-        for shape in shapes
-    ]
-
-
-def _worker_job_track(
-    task_id: int, image: PIL.Image.Image, states: list[str]
-) -> list[cvataa.TrackableShape | None]:
-    _tracking_states.prune()
-
-    pp_image = _current_function.preprocess_image(_TrackingFunctionContextImpl(), image)
-
-    def track(state_id):
-        inner_state, original_shape_type = _tracking_states.retrieve(
-            state_id=state_id, task_id=task_id, image_dims=image.size
-        )
-
-        output_shape = _current_function.track(
-            _TrackingFunctionShapeContextImpl(original_shape_type=original_shape_type),
-            pp_image,
-            inner_state,
-        )
-
-        if output_shape and output_shape.type != original_shape_type:
-            raise cvataa.BadFunctionError(
-                f"function output shape of type {output_shape.type!r}, "
-                f"but original shape was of type {original_shape_type!r}"
-            )
-        return output_shape
-
-    return list(map(track, states))
+    return worker_current_function().spec
 
 
 @attrs.frozen
@@ -348,33 +223,25 @@ def _parse_event_stream(
                 yield _NewReconnectionDelay(timedelta(milliseconds=int(field_value)))
 
 
-class _BadArError(Exception):
-    pass
+def get_function_driver_class(function_spec: object) -> type[AgentFunctionDriver]:
+    if isinstance(function_spec, cvataa.DetectionFunctionSpec):
+        return AgentDetectionFunctionDriver
 
+    if isinstance(function_spec, cvataa.TrackingFunctionSpec):
+        return AgentTrackingFunctionDriver
 
-class _IncompatibleFunctionError(Exception):
-    # This should only be thrown from inside _validate_X_function_compatibility methods.
-    pass
-
-
-class _TrackingFunctionContextImpl(cvataa.TrackingFunctionContext):
-    pass
-
-
-@attrs.frozen(kw_only=True)
-class _TrackingFunctionShapeContextImpl(cvataa.TrackingFunctionShapeContext):
-    original_shape_type: str
+    raise CriticalError(f"Unsupported function spec type: {type(function_spec).__name__}")
 
 
 class _Agent:
-    def __init__(self, client: Client, executor: _RecoverableExecutor, function_id: int):
+    def __init__(self, client: Client, executor: RecoverableExecutor, function_id: int):
         self._rng = random.Random()  # nosec
 
         self._client = client
-        self._executor = executor
         self._function_id = function_id
-        self._function_spec = self._executor.result(
-            self._executor.submit(_worker_job_get_function_spec)
+        function_spec = executor.result(executor.submit(_worker_job_get_function_spec))
+        self._function_driver = get_function_driver_class(function_spec)(
+            client, executor, function_spec
         )
 
         _, response = self._client.api_client.call_api(
@@ -384,10 +251,6 @@ class _Agent:
         )
 
         remote_function = json.loads(response.data)
-
-        self._calculate_result_for_ar: Callable[
-            [dict[str, Any], Callable[[float], None]], dict[str, Any]
-        ]
 
         self._validate_function_compatibility(remote_function)
 
@@ -426,90 +289,17 @@ class _Agent:
             )
 
         try:
-            if isinstance(self._function_spec, cvataa.DetectionFunctionSpec):
-                self._validate_detection_function_compatibility(remote_function)
-                self._calculate_result_for_ar = self._calculate_result_for_detection_ar
-            elif isinstance(self._function_spec, cvataa.TrackingFunctionSpec):
-                self._validate_tracking_function_compatibility(remote_function)
-                self._calculate_result_for_ar = self._calculate_result_for_tracking_ar
-            else:
-                raise CriticalError(
-                    f"Unsupported function spec type: {type(self._function_spec).__name__}"
+            if remote_function["kind"] != self._function_driver.FUNCTION_KIND:
+                raise IncompatibleFunctionError(
+                    f"kind is {remote_function['kind']!r} "
+                    f"(expected {self._function_driver.FUNCTION_KIND!r})."
                 )
-        except _IncompatibleFunctionError as ex:
+
+            self._function_driver.validate_function_compatibility(remote_function)
+        except IncompatibleFunctionError as ex:
             raise CriticalError(
                 f"Function #{function_id} is incompatible with function object: {ex}"
             ) from ex
-
-    def _validate_detection_function_compatibility(self, remote_function: dict) -> None:
-        self._validate_remote_function_kind(remote_function, FUNCTION_KIND_DETECTOR)
-
-        labels_by_name = {label.name: label for label in self._function_spec.labels}
-
-        for remote_label in remote_function["labels_v2"]:
-            label_desc = f"label {remote_label['name']!r}"
-            label = labels_by_name.get(remote_label["name"])
-
-            self._validate_sublabel_compatibility(remote_label, label, label_desc)
-
-            sublabels_by_name = {sl.name: sl for sl in getattr(label, "sublabels", [])}
-
-            for remote_sl in remote_label.get("sublabels", []):
-                sl_desc = f"sublabel {remote_sl['name']!r} of {label_desc}"
-                sl = sublabels_by_name.get(remote_sl["name"])
-
-                self._validate_sublabel_compatibility(remote_sl, sl, sl_desc)
-
-    def _validate_sublabel_compatibility(
-        self, remote_sl: dict, sl: models.Sublabel | None, sl_desc: str
-    ):
-        if not sl:
-            raise _IncompatibleFunctionError(f"{sl_desc} is not supported.")
-
-        if remote_sl["type"] not in {"any", "unknown"} and remote_sl["type"] != sl.type:
-            raise _IncompatibleFunctionError(
-                f"{sl_desc} has type {remote_sl['type']!r}, "
-                f"but the function object declares type {sl.type!r}."
-            )
-
-        attrs_by_name = {attr.name: attr for attr in getattr(sl, "attributes", [])}
-
-        for remote_attr in remote_sl["attributes"]:
-            attr_desc = f"attribute {remote_attr['name']!r} of {sl_desc}"
-            attr = attrs_by_name.get(remote_attr["name"])
-
-            if not attr:
-                raise _IncompatibleFunctionError(f"{attr_desc} is not supported.")
-
-            if remote_attr["input_type"] != attr.input_type.value:
-                raise _IncompatibleFunctionError(
-                    f"{attr_desc} has input type {remote_attr['input_type']!r},"
-                    f" but the function object declares input type {attr.input_type.value!r}."
-                )
-
-            if remote_attr["values"] != attr.values:
-                raise _IncompatibleFunctionError(
-                    f"{attr_desc} has values {remote_attr['values']!r},"
-                    f" but the function object declares values {attr.values!r}."
-                )
-
-    def _validate_tracking_function_compatibility(self, remote_function: dict) -> None:
-        self._validate_remote_function_kind(remote_function, FUNCTION_KIND_TRACKER)
-
-        remote_supported_shape_types = frozenset(remote_function["supported_shape_types"])
-        unsupported = remote_supported_shape_types - self._function_spec.supported_shape_types
-
-        if unsupported:
-            raise _IncompatibleFunctionError(
-                "the function object does not support the following shape types: "
-                + ", ".join(map(repr, unsupported))
-            )
-
-    def _validate_remote_function_kind(self, remote_function: dict, expected_kind: str) -> None:
-        if remote_function["kind"] != expected_kind:
-            raise _IncompatibleFunctionError(
-                f"kind is {remote_function['kind']!r} (expected {expected_kind!r})."
-            )
 
     def _wait_between_polls(self):
         # offset the interval randomly to avoid synchronization between workers
@@ -698,7 +488,7 @@ class _Agent:
 
         try:
             with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
-                result = self._calculate_result_for_ar(ar_params, check_in)
+                result = self._function_driver.calculate_result_for_ar(ar_params, check_in)
             self._complete_ar(ar_id, result)
         except Exception as ex:
             self._client.logger.error("Failed to process AR %r", ar_id, exc_info=True)
@@ -724,7 +514,7 @@ class _Agent:
                 error_message = "Failed to make an HTTP request"
             elif isinstance(ex, cvataa.BadFunctionError):
                 error_message = "Underlying function returned incorrect result: " + str(ex)
-            elif isinstance(ex, _BadArError):
+            elif isinstance(ex, BadArError):
                 error_message = "Invalid annotation request: " + str(ex)
             elif isinstance(ex, concurrent.futures.BrokenExecutor):
                 error_message = "Worker process crashed"
@@ -802,157 +592,6 @@ class _Agent:
         response_data = json.loads(response.data)
         return response_data["ar_assignment"]
 
-    def _calculate_result_for_detection_ar(
-        self, ar_params: dict[str, Any], check_in: Callable[[float], None]
-    ) -> dict[str, Any]:
-        if ar_params["type"] == "annotate_task":
-            return self._calculate_result_for_annotate_task_ar(ar_params, check_in)
-        elif ar_params["type"] == "annotate_frame":
-            return self._calculate_result_for_annotate_frame_ar(ar_params)
-        else:
-            raise _BadArError(f"unsupported type: {ar_params['type']!r}")
-
-    def _create_annotation_mapper_for_detection_ar(
-        self, ar_params: dict, ds_labels: Sequence[models.ILabel]
-    ) -> _AnnotationMapper:
-        spec_nm = _SpecNameMapping.from_api(
-            {
-                k: models.LabelMappingEntryRequest._from_openapi_data(**v)
-                for k, v in ar_params["mapping"].items()
-            }
-        )
-
-        return _AnnotationMapper(
-            self._client.logger,
-            self._function_spec.labels,
-            ds_labels,
-            allow_unmatched_labels=False,
-            spec_nm=spec_nm,
-            conv_mask_to_poly=ar_params["conv_mask_to_poly"],
-        )
-
-    def _create_detection_function_context(
-        self, ar_params: dict, frame_name: str
-    ) -> cvataa.DetectionFunctionContext:
-        return _DetectionFunctionContextImpl(
-            frame_name=frame_name,
-            conf_threshold=ar_params["threshold"],
-            conv_mask_to_poly=ar_params["conv_mask_to_poly"],
-        )
-
-    def _calculate_result_for_annotate_task_ar(
-        self, ar_params: dict[str, Any], check_in: Callable[[float], None]
-    ) -> dict[str, Any]:
-        ds = cvatds.TaskDataset(
-            self._client,
-            ar_params["task"],
-            load_annotations=False,
-            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
-        )
-
-        # Fetching the dataset might take a while, so check in to let the server
-        # know we're still alive.
-        check_in(current_progress=0)
-
-        mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds.labels)
-
-        all_annotations = models.PatchedLabeledDataRequest(tags=[], shapes=[])
-
-        with ds.iter_samples(temporary_chunks=True) as samples:
-            for sample_index, sample in enumerate(samples):
-                context = self._create_detection_function_context(ar_params, sample.frame_name)
-                annotations = self._executor.result(
-                    self._executor.submit(_worker_job_detect, context, sample.media.load_image())
-                )
-
-                tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
-                all_annotations.tags.extend(tags)
-                all_annotations.shapes.extend(shapes)
-
-                check_in(current_progress=(sample_index + 1) / len(ds.samples))
-
-        return {"annotations": all_annotations}
-
-    def _calculate_result_for_annotate_frame_ar(self, ar_params: dict[str, Any]) -> dict[str, Any]:
-        sample, ds_labels = self._get_sample_from_ar_params(ar_params)
-
-        mapper = self._create_annotation_mapper_for_detection_ar(ar_params, ds_labels)
-
-        context = self._create_detection_function_context(ar_params, sample.frame_name)
-
-        annotations = self._executor.result(
-            self._executor.submit(_worker_job_detect, context, sample.media.load_image())
-        )
-
-        tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
-        return {"annotations": models.PatchedLabeledDataRequest(tags=tags, shapes=shapes)}
-
-    def _calculate_result_for_tracking_ar(
-        self, ar_params: dict[str, Any], check_in: Callable[[float], None]
-    ) -> dict[str, Any]:
-        if ar_params["type"] == "init_tracking":
-            return self._calculate_result_for_init_tracking_ar(ar_params)
-        elif ar_params["type"] == "track":
-            return self._calculate_result_for_track_ar(ar_params)
-        else:
-            raise _BadArError(f"unsupported type: {ar_params['type']!r}")
-
-    def _calculate_result_for_init_tracking_ar(self, ar_params: dict[str, Any]) -> dict[str, Any]:
-        sample, _ = self._get_sample_from_ar_params(ar_params)
-
-        def convert_shape(shape: dict) -> cvataa.TrackableShape:
-            if shape["type"] not in self._function_spec.supported_shape_types:
-                raise _BadArError(f"Unsupported shape type {shape['type']!r}")
-            return cvataa.TrackableShape(type=shape["type"], points=shape["points"])
-
-        shapes = list(map(convert_shape, ar_params["shapes"]))
-
-        states = self._executor.result(
-            self._executor.submit(
-                _worker_job_init_tracking,
-                ar_params["task"],
-                sample.media.load_image(),
-                shapes,
-            )
-        )
-
-        return {"states": states}
-
-    def _calculate_result_for_track_ar(self, ar_params: dict[str, Any]) -> dict[str, Any]:
-        sample, _ = self._get_sample_from_ar_params(ar_params)
-
-        states = ar_params["states"]
-        shapes = self._executor.result(
-            self._executor.submit(
-                _worker_job_track, ar_params["task"], sample.media.load_image(), states
-            )
-        )
-
-        return {
-            "states": states,
-            "shapes": [attrs.asdict(shape) if shape else None for shape in shapes],
-        }
-
-    def _get_sample_from_ar_params(self, ar_params):
-        ds = cvatds.TaskDataset(
-            self._client,
-            ar_params["task"],
-            load_annotations=False,
-            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND,
-        )
-
-        frame_index = ar_params["frame"]
-
-        # Since ds.samples excludes deleted frames, we can't just do sample = ds.samples[frame_index].
-        # Once we drop Python 3.9, we can change this to use bisect instead of the linear search.
-        for sample in ds.samples:
-            if sample.frame_index == frame_index:
-                break
-        else:
-            raise _BadArError(f"Frame with index {frame_index} does not exist in the task")
-
-        return sample, ds.labels
-
     def _update_ar(self, ar_id: str, progress: float) -> None:
         self._client.logger.info("Updating AR %r progress to %.2f%%...", ar_id, progress * 100)
 
@@ -1003,7 +642,7 @@ def run_agent(
     client: Client, function_loader: FunctionLoader, function_id: int, *, burst: bool
 ) -> None:
     with (
-        _RecoverableExecutor(
+        RecoverableExecutor(
             initializer=_worker_init,
             initargs=[function_loader, _default_tracking_state_id_generator],
         ) as executor,
