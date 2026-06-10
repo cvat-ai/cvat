@@ -45,13 +45,11 @@
 }
 
 .cvat-audio-regions-list {
+    background-color: $background-color-2;
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     padding: $grid-unit-size * 0.5;
-    display: flex;
-    flex-direction: column;
-    gap: $grid-unit-size * 0.5;
 }
 
 .cvat-audio-regions-list-empty {
@@ -61,6 +59,7 @@
 .cvat-audio-region-item {
     display: flex;
     align-items: flex-start;
+    box-sizing: border-box;
     width: 100%;
     gap: $grid-unit-size;
     padding: $grid-unit-size * 0.75;
@@ -70,12 +69,22 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 8%);
     overflow: hidden;
     cursor: pointer;
+    margin-left: 0;
+    margin-right: 0;
     transition:
         border-color $box-shadow-transition,
         box-shadow $box-shadow-transition;
 
+    &:not(:first-child) {
+        margin-top: $grid-unit-size * 0.5;
+    }
+
+    &:not(:last-child) {
+        margin-bottom: $grid-unit-size * 0.5;
+    }
+
     &:hover {
-        border-color: rgba(0, 0, 0, 28%);
+        border-color: rgba(0, 0, 0, 42%);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 12%);
     }
 
