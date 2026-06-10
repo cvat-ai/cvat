@@ -21,4 +21,4 @@ class WebhooksConfig(AppConfig):
 
         load_app_iam_rules(self)
 
-        from . import event_handlers, signals  # pylint: disable=unused-import
+        from . import signals  # pylint: disable=unused-import

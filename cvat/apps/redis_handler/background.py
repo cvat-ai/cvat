@@ -19,6 +19,7 @@ from django.utils import timezone
 from django_rq.queues import DjangoRQ, DjangoScheduler
 from rest_framework import serializers, status
 from rest_framework.response import Response
+from rq import Callback
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
@@ -54,6 +55,9 @@ class AbstractRequestManager(metaclass=ABCMeta):
     callback: Callable
     callback_args: tuple | None
     callback_kwargs: dict[str, Any] | None
+
+    job_on_success_callback: Callback | None
+    job_on_failure_callback: Callback | None
 
     def __init__(
         self,
@@ -122,6 +126,11 @@ class AbstractRequestManager(metaclass=ABCMeta):
     def _set_default_callback_params(self):
         self.callback_args = None
         self.callback_kwargs = None
+        self.job_on_success_callback = None
+        self.job_on_failure_callback = None
+
+    def init_job_callbacks(self) -> None:
+        """Hook to initialize RQ lifecycle callbacks for the job"""
 
     def validate_request(self) -> Response | None:
         """Hook to run some validations before processing a request"""
@@ -172,6 +181,8 @@ class AbstractRequestManager(metaclass=ABCMeta):
                 depends_on=define_dependent_job(queue, self.user_id, rq_id=request_id),
                 result_ttl=self.job_result_ttl,
                 failure_ttl=self.job_failed_ttl,
+                on_success=self.job_on_success_callback,
+                on_failure=self.job_on_failure_callback,
                 **kwargs,
             )
 
@@ -187,6 +198,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
         self.validate_request()
         self._set_default_callback_params()
         self.init_callback_with_params()
+        self.init_job_callbacks()
 
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
         request_id = self.build_request_id()
@@ -205,6 +217,17 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
 
 class AbstractExporter(AbstractRequestManager):
+    def init_job_callbacks(self) -> None:
+        from cvat.apps.engine import utils
+
+        self.job_on_success_callback = Callback(
+            utils.enqueue_send_webhooks_for_successful_request,
+            timeout=60,
+        )
+        self.job_on_failure_callback = Callback(
+            utils.enqueue_send_webhooks_for_failed_request,
+            timeout=60,
+        )
 
     class Downloader:
         def __init__(
