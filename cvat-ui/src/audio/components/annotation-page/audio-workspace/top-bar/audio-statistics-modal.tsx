@@ -7,22 +7,21 @@ import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
+import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 
-import { AudioRegion, CombinedState, Workspace } from 'reducers';
-import { Label } from 'cvat-core-wrapper';
+import { CombinedState, Workspace } from 'reducers';
 import { showStatistics } from 'actions/annotation-actions';
-import { formatTimeShort } from 'audio/utils/format-audio-time';
+import { formatMilliseconds } from 'audio/utils/format-audio-time';
 
 interface StateToProps {
     visible: boolean;
+    collecting: boolean;
+    data: any;
     workspace: Workspace;
     bugTracker: string | null;
     assignee: string;
     duration: number;
-    regions: AudioRegion[];
-    labels: Label[];
-    hasUnsavedChanges: boolean;
 }
 
 interface DispatchToProps {
@@ -33,30 +32,26 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             workspace,
-            statistics: { visible },
+            statistics: { visible, collecting, data },
             job: {
                 instance,
-                labels,
             },
         },
         audio: {
             player: {
                 duration,
-                regions,
-                hasUnsavedChanges,
             },
         },
     } = state;
 
     return {
         visible,
+        collecting,
+        data,
         workspace,
         bugTracker: instance?.bugTracker ?? null,
         assignee: instance?.assignee?.username || 'Nobody',
         duration,
-        regions,
-        labels,
-        hasUnsavedChanges,
     };
 }
 
@@ -68,29 +63,19 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-interface RegionStats {
-    count: number;
-    totalDuration: number;
-    locked: number;
-    hidden: number;
-}
-
-function emptyStats(): RegionStats {
-    return {
-        count: 0, totalDuration: 0, locked: 0, hidden: 0,
-    };
+function formatCoverage(value: number): string {
+    return Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : '—';
 }
 
 function AudioStatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.Element | null {
     const {
+        collecting,
+        data,
         visible,
         workspace,
         assignee,
         bugTracker,
         duration,
-        regions,
-        labels,
-        hasUnsavedChanges,
         closeStatistics,
     } = props;
 
@@ -98,53 +83,40 @@ function AudioStatisticsModalComponent(props: StateToProps & DispatchToProps): J
         return null;
     }
 
-    const labelById = new Map<number, Label>();
-    labels.forEach((l) => {
-        if (typeof l.id === 'number') labelById.set(l.id, l);
-    });
-
-    const perLabel = new Map<string, RegionStats>();
-    const totals = emptyStats();
-    regions.forEach((r) => {
-        const labelName = (r.labelId != null && labelById.get(r.labelId)?.name) || 'Unlabeled';
-        const stats = perLabel.get(labelName) || emptyStats();
-        stats.count += 1;
-        stats.totalDuration += Math.max(0, r.end - r.start);
-        if (r.locked) stats.locked += 1;
-        if (r.hidden) stats.hidden += 1;
-        perLabel.set(labelName, stats);
-
-        totals.count += 1;
-        totals.totalDuration += Math.max(0, r.end - r.start);
-        if (r.locked) totals.locked += 1;
-        if (r.hidden) totals.hidden += 1;
-    });
-
-    const coverageOf = (d: number): string => {
-        if (!duration || duration <= 0) return '—';
-        return `${((d / duration) * 100).toFixed(1)}%`;
+    const baseProps = {
+        cancelButtonProps: { style: { display: 'none' } },
+        okButtonProps: { style: { width: 100 } },
+        onOk: closeStatistics,
+        width: 800,
+        open: visible,
+        closable: false,
+        className: 'cvat-audio-statistics-modal',
     };
 
-    const rows = Array.from(perLabel.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([label, stats]) => ({
+    if (collecting || !data) {
+        return (
+            <Modal {...baseProps}>
+                <Spin style={{ margin: '0 50%' }} />
+            </Modal>
+        );
+    }
+
+    const rows = Object.keys(data.label)
+        .sort((a, b) => a.localeCompare(b))
+        .map((label: string) => ({
             key: label,
             label,
-            count: stats.count,
-            totalDuration: formatTimeShort(stats.totalDuration),
-            coverage: coverageOf(stats.totalDuration),
-            locked: stats.locked,
-            hidden: stats.hidden,
+            count: data.label[label].interval.count,
+            totalDuration: formatMilliseconds(data.label[label].interval.duration),
+            coverage: formatCoverage(data.label[label].interval.coverage),
         }));
 
     rows.push({
         key: '___total',
         label: 'Total',
-        count: totals.count,
-        totalDuration: formatTimeShort(totals.totalDuration),
-        coverage: coverageOf(totals.totalDuration),
-        locked: totals.locked,
-        hidden: totals.hidden,
+        count: data.total.interval.count,
+        totalDuration: formatMilliseconds(data.total.interval.duration),
+        coverage: formatCoverage(data.total.interval.coverage),
     });
 
     const columns = [
@@ -169,28 +141,10 @@ function AudioStatisticsModalComponent(props: StateToProps & DispatchToProps): J
             dataIndex: 'coverage',
             key: 'coverage',
         },
-        {
-            title: <Text strong>Locked</Text>,
-            dataIndex: 'locked',
-            key: 'locked',
-        },
-        {
-            title: <Text strong>Hidden</Text>,
-            dataIndex: 'hidden',
-            key: 'hidden',
-        },
     ];
 
     return (
-        <Modal
-            cancelButtonProps={{ style: { display: 'none' } }}
-            okButtonProps={{ style: { width: 100 } }}
-            onOk={closeStatistics}
-            width={800}
-            open={visible}
-            closable={false}
-            className='cvat-audio-statistics-modal'
-        >
+        <Modal {...baseProps}>
             <div className='cvat-job-info-modal-window'>
                 <Row justify='start'>
                     <Col>
@@ -205,16 +159,12 @@ function AudioStatisticsModalComponent(props: StateToProps & DispatchToProps): J
                     <Col span={6}>
                         <Text strong className='cvat-text'>Duration</Text>
                         <Text className='cvat-text'>
-                            {duration > 0 ? formatTimeShort(duration) : '—'}
+                            {duration > 0 ? formatMilliseconds(duration * 1000) : '—'}
                         </Text>
                     </Col>
                     <Col span={6}>
                         <Text strong className='cvat-text'>Regions</Text>
-                        <Text className='cvat-text'>{totals.count}</Text>
-                    </Col>
-                    <Col span={6}>
-                        <Text strong className='cvat-text'>Unsaved changes</Text>
-                        <Text className='cvat-text'>{hasUnsavedChanges ? 'Yes' : 'No'}</Text>
+                        <Text className='cvat-text'>{data.total.interval.count}</Text>
                     </Col>
                 </Row>
                 {!!bugTracker && (

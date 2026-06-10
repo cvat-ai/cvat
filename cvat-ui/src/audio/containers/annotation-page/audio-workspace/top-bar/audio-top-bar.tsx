@@ -9,12 +9,13 @@ import { RouteComponentProps } from 'react-router-dom';
 
 import {
     changeWorkspaceAsync,
+    collectStatisticsAsync,
     saveAnnotationsAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
     showFilters as showFiltersAction,
     showStatistics as showStatisticsAction,
 } from 'actions/annotation-actions';
-import { audioActions } from 'actions/audio-actions';
+import { audioActions, audioRedoAsync, audioUndoAsync } from 'actions/audio-actions';
 import AudioTopBarComponent from 'audio/components/annotation-page/audio-workspace/top-bar/audio-top-bar';
 import { Job } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
@@ -39,12 +40,12 @@ interface StateToProps {
     initialOpenGuide: boolean;
     audioCurrentTime: number;
     audioDuration: number;
-    audioHasUnsavedChanges: boolean;
+    audioZoom: number;
 }
 
 interface DispatchToProps {
     onSaveAnnotation(): void;
-    showStatistics(): void;
+    showStatistics(sessionInstance: Job): void;
     showFilters(): void;
     audioUndo(): void;
     audioRedo(): void;
@@ -63,6 +64,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 saving: { uploading: saving, forceExit },
                 filters: annotationFilters,
+                history: annotationsHistory,
             },
             job: { instance: jobInstance, queryParameters: { initialOpenGuide } },
             workspace,
@@ -72,9 +74,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 playing,
                 currentTime: audioCurrentTime,
                 duration: audioDuration,
-                hasUnsavedChanges: audioHasUnsavedChanges,
+                zoom: audioZoom,
             },
-            history: audioHistory,
         },
         settings: {
             workspace: { autoSave, autoSaveInterval },
@@ -87,10 +88,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameNumber,
         playing,
         saving,
-        undoAction: audioHistory.undo.length ?
-            audioHistory.undo[audioHistory.undo.length - 1].actionName : undefined,
-        redoAction: audioHistory.redo.length ?
-            audioHistory.redo[audioHistory.redo.length - 1].actionName : undefined,
+        undoAction: annotationsHistory.undo.length ?
+            annotationsHistory.undo[annotationsHistory.undo.length - 1][0] : undefined,
+        redoAction: annotationsHistory.redo.length ?
+            annotationsHistory.redo[annotationsHistory.redo.length - 1][0] : undefined,
         autoSave,
         autoSaveInterval,
         workspace,
@@ -101,7 +102,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         initialOpenGuide,
         audioCurrentTime,
         audioDuration,
-        audioHasUnsavedChanges,
+        audioZoom,
     };
 }
 
@@ -110,17 +111,18 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSaveAnnotation(): void {
             dispatch(saveAnnotationsAsync());
         },
-        showStatistics(): void {
+        showStatistics(sessionInstance: Job): void {
+            dispatch(collectStatisticsAsync(sessionInstance));
             dispatch(showStatisticsAction(true));
         },
         showFilters(): void {
             dispatch(showFiltersAction(true));
         },
         audioUndo(): void {
-            dispatch(audioActions.audioUndo());
+            dispatch(audioUndoAsync());
         },
         audioRedo(): void {
-            dispatch(audioActions.audioRedo());
+            dispatch(audioRedoAsync());
         },
         changeWorkspace(workspace: Workspace): void {
             dispatch(changeWorkspaceAsync(workspace));
@@ -154,12 +156,12 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
         this.unblock = history.block((location: any) => {
-            const { forceExit, frameNumber, audioHasUnsavedChanges } = self.props;
+            const { forceExit, frameNumber } = self.props;
             const { id: jobID, taskId: taskID } = jobInstance;
             writeLatestFrame(jobInstance.id, frameNumber);
 
             if (
-                (jobInstance.annotations.hasUnsavedChanges() || audioHasUnsavedChanges) &&
+                jobInstance.annotations.hasUnsavedChanges() &&
                 location.pathname !== `/tasks/${taskID}/jobs/${jobID}` &&
                 !forceExit
             ) {
@@ -211,11 +213,11 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
 
     private beforeUnloadCallback = (event: BeforeUnloadEvent): string | undefined => {
         const {
-            jobInstance, forceExit, setForceExitAnnotationFlag, audioHasUnsavedChanges, frameNumber,
+            jobInstance, forceExit, setForceExitAnnotationFlag, frameNumber,
         } = this.props;
 
         writeLatestFrame(jobInstance.id, frameNumber);
-        if ((jobInstance.annotations.hasUnsavedChanges() || audioHasUnsavedChanges) && !forceExit) {
+        if (jobInstance.annotations.hasUnsavedChanges() && !forceExit) {
             const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
             // eslint-disable-next-line no-param-reassign
             event.returnValue = confirmationMessage;
@@ -250,6 +252,7 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
             initialOpenGuide,
             audioCurrentTime,
             audioDuration,
+            audioZoom,
             onAudioPlayPause,
             onAudioSeek,
             showFilters,
@@ -269,11 +272,12 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
                 redoShortcut={normalizedKeyMap.AUDIO_REDO ?? normalizedKeyMap.REDO ?? ''}
                 audioCurrentTime={audioCurrentTime ?? 0}
                 audioDuration={audioDuration ?? 0}
+                audioZoom={audioZoom ?? 1}
                 annotationFilters={annotationFilters}
                 initialOpenGuide={initialOpenGuide}
                 changeWorkspace={this.changeWorkspace}
                 showFilters={showFilters}
-                showStatistics={showStatistics}
+                showStatistics={() => showStatistics(jobInstance)}
                 onUndoClick={this.undo}
                 onRedoClick={this.redo}
                 onAudioPlayPause={onAudioPlayPause}

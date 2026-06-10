@@ -153,13 +153,16 @@ export async function getAnnotations(
     }
 }
 
-export async function getAllIntervals(session: Job | Task): Promise<ReturnType<AnnotationsCollection['getAllIntervals']>> {
+export async function getAllIntervals(
+    session: Job | Task,
+    filters: object[],
+): Promise<ReturnType<AnnotationsCollection['getAllIntervals']>> {
     try {
-        return getCollection(session).getAllIntervals();
+        return getCollection(session).getAllIntervals(filters);
     } catch (error) {
         if (error instanceof InstanceNotInitializedError) {
             await getAnnotationsFromServer(session);
-            return getCollection(session).getAllIntervals();
+            return getCollection(session).getAllIntervals(filters);
         }
         throw error;
     }
@@ -243,22 +246,24 @@ export function importDataset(
         throw new ArgumentError('Option "importMode" must be "replace" or "append"');
     }
     const allowedFileExtensions = [
-        '.zip', '.xml', '.json',
+        '.zip', '.xml', '.json', '.tsv',
     ];
     const allowedFileExtensionsList = allowedFileExtensions.join(', ');
     if (typeof file === 'string' && !(allowedFileExtensions.some((ext) => file.toLowerCase().endsWith(ext)))) {
         throw new ArgumentError(
-            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}. ` +
+            `Found ${file}`,
         );
     }
     const allowedMimeTypes = [
         'application/zip', 'application/x-zip-compressed',
         'application/xml', 'text/xml',
-        'application/json',
+        'application/json', 'text/tab-separated-values',
     ];
     if (file instanceof File && !(allowedMimeTypes.includes(file.type))) {
         throw new ArgumentError(
-            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}. ` +
+            `Found ${file.type}`,
         );
     }
 

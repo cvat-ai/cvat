@@ -85,6 +85,19 @@ Cypress.Commands.add('audioActivateCreate', (labelName) => {
     cy.get('.cvat-audio-interval-region-control').should('have.class', 'cvat-active-canvas-control');
 });
 
+Cypress.Commands.add('clickRegionOnWaveform', (x) => {
+    cy.get('.cvat-audio-waveform-wrapper').first().then(($el) => {
+        const yOffset = $el[0].getBoundingClientRect().height / 2;
+        cy.get('.cvat-audio-waveform-wrapper').realMouseMove(x, yOffset);
+        cy.get('.cvat-audio-waveform-wrapper').realMouseDown({
+            position: { x, y: yOffset }, button: 'left',
+        });
+        cy.get('.cvat-audio-waveform-wrapper').realMouseUp({
+            position: { x, y: yOffset }, button: 'left',
+        });
+    });
+});
+
 Cypress.Commands.add('audioDrawRegion', (xStart, xEnd) => {
     cy.get('.cvat-audio-waveform-wrapper').first().then(($el) => {
         const yOffset = $el[0].getBoundingClientRect().height / 2;
@@ -101,6 +114,8 @@ Cypress.Commands.add('audioDrawRegion', (xStart, xEnd) => {
 Cypress.Commands.add('audioCreateRegionViaButton', (labelName, xStart, xEnd) => {
     cy.audioActivateCreate(labelName);
     cy.audioDrawRegion(xStart, xEnd);
+    cy.get('.cvat-cursor-control').click();
+    cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
 });
 
 Cypress.Commands.add('audioCreateRegionViaHotkey', (xStart, xEnd) => {

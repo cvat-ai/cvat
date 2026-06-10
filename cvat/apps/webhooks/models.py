@@ -91,6 +91,9 @@ class WebhookDelivery(TimestampedModel):
     status_code = models.PositiveIntegerField(null=True, default=None)
     redelivery = models.BooleanField(default=False)
 
+    attempt = models.PositiveIntegerField(null=True)
+    request_duration = models.PositiveIntegerField(null=True)
+
     changed_fields = models.CharField(max_length=4096, default="")
 
     request = models.JSONField(default=dict)

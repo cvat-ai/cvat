@@ -8,6 +8,7 @@ import { SerializedData } from './object-state';
 import { AttributeType, ObjectType, ShapeType } from './enums';
 import { SerializedCollection } from './server-response-types';
 import { Attribute, Label } from './labels';
+import type { AudioIntervalState } from './annotations-objects/audio-interval-state';
 
 function adjustName(name): string {
     return name.replace(/\./g, '\u2219');
@@ -149,6 +150,17 @@ interface ConvertedObjectData extends BaseConvertedData {
     elements: ConvertedElementData[];
 }
 
+interface ConvertedAudioIntervalData {
+    clientID: number | null;
+    attr: Record<string, ConvertedAttributes>;
+    duration: number;
+    end: number;
+    label: string;
+    serverID: number | null;
+    source: string | null;
+    start: number;
+}
+
 function getRotation(shapeType: ShapeType, rotation?: number | null): number | null {
     return shapeType === ShapeType.RECTANGLE || shapeType === ShapeType.ELLIPSE ? rotation ?? null : null;
 }
@@ -175,6 +187,39 @@ function getMatchingIDs(
 }
 
 export default class AnnotationsFilter {
+    private lastPosition: number | null;
+
+    constructor(lastPosition: number | null) {
+        this.lastPosition = lastPosition;
+    }
+
+    private _convertAudioIntervalStates(
+        intervalsData: AudioIntervalState[],
+    ): ConvertedAudioIntervalData[] {
+        if (this.lastPosition === null) {
+            throw new Error('Last position is required to filter audio intervals');
+        }
+
+        return intervalsData.map((interval) => {
+            const labelAttributes = buildAttributeMap(interval.label.attributes);
+            const attributes = convertAttributes(interval.attributes, labelAttributes);
+            const end = interval.stop ?? this.lastPosition;
+
+            return {
+                clientID: interval.clientID,
+                attr: {
+                    [adjustName(interval.label.name)]: attributes,
+                },
+                duration: end - interval.start,
+                end,
+                label: interval.label.name,
+                serverID: interval.serverID ?? null,
+                source: interval.source ?? null,
+                start: interval.start,
+            };
+        });
+    }
+
     private _convertSerializedObjectStates(statesData: SerializedData[]): ConvertedObjectData[] {
         return statesData.map((state) => {
             const labelAttributes = buildAttributeMap(state.label.attributes);
@@ -394,6 +439,16 @@ export default class AnnotationsFilter {
 
         const converted = this._convertSerializedObjectStates(statesData);
         return getMatchingIDs(converted, filters[0], filters[1]);
+    }
+
+    public filterAudioIntervalStates(audioIntervalStates: AudioIntervalState[], filters: object[]): number[] {
+        if (isEmptyFilter(filters[0])) {
+            return audioIntervalStates.map((intervalData): number => intervalData.clientID!);
+        }
+
+        const converted = this._convertAudioIntervalStates(audioIntervalStates);
+        return converted.filter((interval) => jsonLogic.apply(filters[0], interval))
+            .map((interval) => interval.clientID);
     }
 
     public filterSerializedCollection(

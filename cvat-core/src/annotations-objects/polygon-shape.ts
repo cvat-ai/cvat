@@ -16,7 +16,7 @@ export class PolygonShape extends PolyShape {
         checkNumberOfPoints(this.shapeType, this.points);
     }
 
-    static distance(points: number[], x: number, y: number): number {
+    static distance(points: number[], x: number, y: number): number | null {
         function position(x1, y1, x2, y2): number {
             return (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1);
         }

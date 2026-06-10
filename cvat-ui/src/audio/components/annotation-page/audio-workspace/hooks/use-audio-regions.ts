@@ -9,17 +9,24 @@ import type WaveSurfer from 'wavesurfer.js';
 import type RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 
-import { ActiveControl, AudioRegion, ColorBy } from 'reducers';
-import { Label } from 'cvat-core-wrapper';
+import { ActiveControl, ColorBy } from 'reducers';
+import { AudioIntervalState, Job, Label } from 'cvat-core-wrapper';
 
 import { applyAudioControlMode, DragSelectionCleanup } from '../utils/apply-audio-control-mode';
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
-import { createAudioRegion } from '../utils/create-audio-region';
 import { getAudioRegionColor, getRegionItemColor } from '../audio-region-colors';
 import { getPlayOnceRegionId, setPlayOnceRegionId } from '../utils/play-once-region';
 import { attachRegionAutoScroll } from '../utils/region-auto-scroll';
+import {
+    clientIDFromWaveRegionId,
+    intervalEndSeconds,
+    intervalID,
+    intervalStartSeconds,
+    waveRegionId,
+} from '../utils/audio-interval';
 
 const ACTIVE_BORDER_FALLBACK = '#6366F1';
+const HOVER_DELTA_THRESHOLD = 2;
 
 function clampRegionDragToBounds(region: Region): void {
     /* eslint-disable no-underscore-dangle */
@@ -46,15 +53,15 @@ function clampRegionDragToBounds(region: Region): void {
 }
 
 interface Params {
+    jobInstance: Job | null;
     regionsPluginRef: React.MutableRefObject<RegionsPlugin | null>;
     wavesurfer: WaveSurfer | null;
     lastWsTimeRef: React.MutableRefObject<number>;
     phantomRegionIdsRef: React.MutableRefObject<Set<string>>;
     activeControl: ActiveControl;
-    regions: AudioRegion[];
-    visibleRegionIds: Set<string>;
-    activeRegionId: string | null;
-    hoveredRegionId: string | null;
+    intervals: AudioIntervalState[];
+    activeIntervalID: number | null;
+    hoveredIntervalID: number | null;
     labels: Label[];
     activeLabelId: number | null;
     colorBy: ColorBy;
@@ -64,10 +71,10 @@ interface Params {
     onSwitchPlay(playing: boolean): void;
     onSetCurrentTime(time: number): void;
     onSetDuration(duration: number): void;
-    onSetRegions(regions: AudioRegion[]): void;
-    onSetActiveRegion(regionId: string | null): void;
-    onSetHoveredRegion(regionId: string | null): void;
-    onUpdateActiveControl(activeControl: ActiveControl): void;
+    onCreateInterval(start: number, stop: number, labelID: number | null): void;
+    onUpdateIntervalPosition(clientID: number, start: number, stop: number): void;
+    onSetActiveInterval(clientID: number | null): void;
+    onSetHoveredInterval(clientID: number | null): void;
     onWaveformReady(ready: boolean): void;
     onWavesurferReady(ws: WaveSurfer): void;
 }
@@ -80,47 +87,57 @@ interface Result {
 
 export function useAudioRegions(params: Params): Result {
     const {
+        jobInstance,
         regionsPluginRef, wavesurfer, lastWsTimeRef, phantomRegionIdsRef,
-        activeControl, regions, visibleRegionIds, activeRegionId, hoveredRegionId,
+        activeControl, intervals, activeIntervalID, hoveredIntervalID,
         labels, activeLabelId, colorBy, opacity, selectedOpacity, loop,
         onSwitchPlay, onSetCurrentTime, onSetDuration,
-        onSetRegions, onSetActiveRegion, onSetHoveredRegion,
-        onUpdateActiveControl, onWaveformReady, onWavesurferReady,
+        onCreateInterval, onUpdateIntervalPosition, onSetActiveInterval, onSetHoveredInterval,
+        onWaveformReady, onWavesurferReady,
     } = params;
 
     const dragSelectionCleanupRef = useRef<DragSelectionCleanup>(null);
     const regionsHandlersInitializedRef = useRef(false);
     const silentRemoveIdsRef = useRef<Set<string>>(new Set());
-    const wiredRegionIdsRef = useRef<Set<string>>(new Set());
+    const silentUpdateIdsRef = useRef<Set<string>>(new Set());
+
+    const intervalSelectionDisabled = (
+        activeControl === ActiveControl.AUDIO_REGION_CREATE ||
+        activeControl === ActiveControl.AUDIO_REGION_RECORD
+    );
 
     const activeControlRef = useRef(activeControl);
-    const regionsRef = useRef(regions);
-    const activeRegionIdRef = useRef(activeRegionId);
+    const intervalsRef = useRef(intervals);
+    const activeIntervalIDRef = useRef(activeIntervalID);
+    const hoveredIntervalIDRef = useRef(hoveredIntervalID);
     const activeLabelIdRef = useRef(activeLabelId);
-    const labelsRef = useRef(labels);
     const loopRef = useRef(loop);
     const wavesurferRef = useRef<WaveSurfer | null>(wavesurfer);
-    const onSetRegionsRef = useRef(onSetRegions);
-    const onSetActiveRegionRef = useRef(onSetActiveRegion);
-    const onSetHoveredRegionRef = useRef(onSetHoveredRegion);
-    const onUpdateActiveControlRef = useRef(onUpdateActiveControl);
+    const jobInstanceRef = useRef<Job | null>(jobInstance);
+    const lastHoverPointRef = useRef<{ x: number; y: number } | null>(null);
+    const hoverSelectTokenRef = useRef(0);
+    const onCreateIntervalRef = useRef(onCreateInterval);
+    const onUpdateIntervalPositionRef = useRef(onUpdateIntervalPosition);
+    const onSetActiveIntervalRef = useRef(onSetActiveInterval);
+    const onSetHoveredIntervalRef = useRef(onSetHoveredInterval);
 
     useEffect(() => { activeControlRef.current = activeControl; }, [activeControl]);
-    useEffect(() => { regionsRef.current = regions; }, [regions]);
+    useEffect(() => { intervalsRef.current = intervals; }, [intervals]);
     useEffect(() => {
-        if (getPlayOnceRegionId() && getPlayOnceRegionId() !== activeRegionId) {
+        if (getPlayOnceRegionId() && Number(getPlayOnceRegionId()) !== activeIntervalID) {
             setPlayOnceRegionId(null);
         }
-        activeRegionIdRef.current = activeRegionId;
-    }, [activeRegionId]);
+        activeIntervalIDRef.current = activeIntervalID;
+    }, [activeIntervalID]);
+    useEffect(() => { hoveredIntervalIDRef.current = hoveredIntervalID; }, [hoveredIntervalID]);
     useEffect(() => { activeLabelIdRef.current = activeLabelId; }, [activeLabelId]);
-    useEffect(() => { labelsRef.current = labels; }, [labels]);
     useEffect(() => { loopRef.current = loop; }, [loop]);
     useEffect(() => { wavesurferRef.current = wavesurfer; }, [wavesurfer]);
-    useEffect(() => { onSetRegionsRef.current = onSetRegions; }, [onSetRegions]);
-    useEffect(() => { onSetActiveRegionRef.current = onSetActiveRegion; }, [onSetActiveRegion]);
-    useEffect(() => { onSetHoveredRegionRef.current = onSetHoveredRegion; }, [onSetHoveredRegion]);
-    useEffect(() => { onUpdateActiveControlRef.current = onUpdateActiveControl; }, [onUpdateActiveControl]);
+    useEffect(() => { jobInstanceRef.current = jobInstance; }, [jobInstance]);
+    useEffect(() => { onCreateIntervalRef.current = onCreateInterval; }, [onCreateInterval]);
+    useEffect(() => { onUpdateIntervalPositionRef.current = onUpdateIntervalPosition; }, [onUpdateIntervalPosition]);
+    useEffect(() => { onSetActiveIntervalRef.current = onSetActiveInterval; }, [onSetActiveInterval]);
+    useEffect(() => { onSetHoveredIntervalRef.current = onSetHoveredInterval; }, [onSetHoveredInterval]);
 
     const computeClickTime = useCallback((e: MouseEvent): number | null => {
         const ws = wavesurferRef.current;
@@ -138,11 +155,11 @@ export function useAudioRegions(params: Params): Result {
         return (clamped / totalWidth) * duration;
     }, []);
 
-    const centerViewportOnRegion = useCallback((regionId: string): void => {
+    const centerViewportOnInterval = useCallback((clientID: number): void => {
         const ws = wavesurferRef.current;
         if (!ws) return;
-        const region = regionsRef.current.find((r) => r.id === regionId);
-        if (!region) return;
+        const interval = intervalsRef.current.find((_interval) => _interval.clientID === clientID);
+        if (!interval) return;
         const duration = ws.getDuration();
         if (!duration) return;
         const scrollContainer = ws.getWrapper()?.parentElement;
@@ -151,8 +168,8 @@ export function useAudioRegions(params: Params): Result {
         const visibleWidth = ws.getWidth();
         if (totalWidth <= visibleWidth) return;
 
-        const startPx = (region.start / duration) * totalWidth;
-        const endPx = (region.end / duration) * totalWidth;
+        const startPx = (intervalStartSeconds(interval) / duration) * totalWidth;
+        const endPx = (intervalEndSeconds(interval) / duration) * totalWidth;
         const midPx = (startPx + endPx) / 2;
         const targetScroll = Math.max(
             0,
@@ -161,13 +178,14 @@ export function useAudioRegions(params: Params): Result {
         ws.setScroll(targetScroll);
     }, []);
 
-    const wireRegionHoverEvents = useCallback((region: Region): void => {
-        if (wiredRegionIdsRef.current.has(region.id)) return;
-        wiredRegionIdsRef.current.add(region.id);
-        region.on('over', () => onSetHoveredRegionRef.current(region.id));
-        region.on('leave', () => {
-            if (onSetHoveredRegionRef.current) onSetHoveredRegionRef.current(null);
-        });
+    const pickIntervalAtPosition = useCallback(async (positionMs: number): Promise<number | null> => {
+        const job = jobInstanceRef.current;
+        if (!job) {
+            return null;
+        }
+
+        const { state } = await job.annotations.selectInterval(intervalsRef.current, positionMs);
+        return state?.clientID ?? null;
     }, []);
 
     const registerRegionHandlers = useCallback((plugin: RegionsPlugin): void => {
@@ -177,48 +195,52 @@ export function useAudioRegions(params: Params): Result {
             if (phantomRegionIdsRef.current.has(region.id)) {
                 return;
             }
-            wireRegionHoverEvents(region);
             clampRegionDragToBounds(region);
-            const prev = regionsRef.current;
-            const exists = prev.find((r) => r.id === region.id);
 
+            const clientID = clientIDFromWaveRegionId(region.id);
+            const exists = clientID !== null && intervalsRef.current.some((interval) => interval.clientID === clientID);
             if (exists) {
-                if (exists.start === region.start && exists.end === region.end) {
-                    return;
-                }
-                onSetRegionsRef.current(prev.map((r) => (r.id === region.id ? {
-                    ...r,
-                    start: region.start,
-                    end: region.end,
-                } : r)));
-            } else {
-                const base = createAudioRegion(region, labelsRef.current, activeLabelIdRef.current, prev);
-                onSetRegionsRef.current([...prev, base]);
+                return;
             }
 
-            onSetActiveRegionRef.current(region.id);
+            const start = Math.max(0, region.start);
+            const stop = Math.max(start, region.end);
+            if (stop - start <= 0.001) {
+                silentRemoveIdsRef.current.add(region.id);
+                region.remove();
+                return;
+            }
+
+            silentRemoveIdsRef.current.add(region.id);
+            region.remove();
+            onCreateIntervalRef.current(start, stop, activeLabelIdRef.current);
         });
 
         plugin.on('region-updated', (region: Region) => {
-            onSetRegionsRef.current(
-                regionsRef.current.map((r) => (
-                    r.id === region.id ? { ...r, start: region.start, end: region.end } : r
-                )),
-            );
+            if (silentUpdateIdsRef.current.delete(region.id)) return;
+            const clientID = clientIDFromWaveRegionId(region.id);
+            if (clientID === null) return;
+            const interval = intervalsRef.current.find((_interval) => _interval.clientID === clientID);
+            if (!interval) return;
+            if (
+                Math.abs(intervalStartSeconds(interval) - region.start) < 0.001 &&
+                Math.abs(intervalEndSeconds(interval) - region.end) < 0.001
+            ) {
+                return;
+            }
+
+            onUpdateIntervalPositionRef.current(clientID, region.start, region.end);
         });
 
         plugin.on('region-removed', (region: Region) => {
-            wiredRegionIdsRef.current.delete(region.id);
             if (silentRemoveIdsRef.current.delete(region.id)) return;
-            if (!regionsRef.current.find((r) => r.id === region.id)) return;
-
-            onSetRegionsRef.current(regionsRef.current.filter((r) => r.id !== region.id));
-            if (activeRegionIdRef.current === region.id) {
-                onSetActiveRegionRef.current(null);
+            const clientID = clientIDFromWaveRegionId(region.id);
+            if (clientID !== null && activeIntervalIDRef.current === clientID) {
+                onSetActiveIntervalRef.current(null);
             }
         });
 
-        plugin.on('region-clicked', (region: Region, e?: MouseEvent) => {
+        plugin.on('region-clicked', async (region: Region, e?: MouseEvent) => {
             if (e) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -227,33 +249,26 @@ export function useAudioRegions(params: Params): Result {
             const isCursor = activeControlRef.current === ActiveControl.CURSOR;
             const isDoubleClick = !!(e && e.detail >= 2);
             const clickTime = e ? computeClickTime(e) : null;
+            let pickedClientID = clientIDFromWaveRegionId(region.id);
+
+            if (isCursor && clickTime !== null) {
+                pickedClientID = await pickIntervalAtPosition(clickTime * 1000) ?? pickedClientID;
+            }
 
             if (isCursor) {
-                let pickedId = region.id;
-                if (clickTime !== null) {
-                    const overlapping = regionsRef.current.filter((r) => (
-                        !r.hidden && r.start <= clickTime && r.end >= clickTime
-                    ));
-                    if (overlapping.length > 1) {
-                        const distance = (r: { start: number; end: number }): number => (
-                            Math.min(Math.abs(clickTime - r.start), Math.abs(clickTime - r.end))
-                        );
-                        pickedId = overlapping.reduce((best, r) => (
-                            distance(r) < distance(best) ? r : best
-                        )).id;
-                    }
-                }
-                onSetActiveRegionRef.current(pickedId);
+                onSetActiveIntervalRef.current(pickedClientID);
             }
 
             if (isDoubleClick) {
                 const safeStart = Math.max(0, region.start || 0);
-                setPlayOnceRegionId(region.id);
+                if (pickedClientID !== null) {
+                    setPlayOnceRegionId(String(pickedClientID));
+                    centerViewportOnInterval(pickedClientID);
+                }
                 onSetCurrentTime(safeStart);
                 const ws = wavesurferRef.current;
                 if (ws) ws.setTime(safeStart);
                 onSwitchPlay(true);
-                centerViewportOnRegion(region.id);
                 return;
             }
 
@@ -265,7 +280,10 @@ export function useAudioRegions(params: Params): Result {
         });
 
         regionsHandlersInitializedRef.current = true;
-    }, [wireRegionHoverEvents, onSetCurrentTime, onSwitchPlay, computeClickTime, centerViewportOnRegion]);
+    }, [
+        computeClickTime, pickIntervalAtPosition,
+        centerViewportOnInterval, onSetCurrentTime, onSwitchPlay,
+    ]);
 
     const handleReady = useCallback((ws: WaveSurfer): void => {
         onSetDuration(ws.getDuration());
@@ -276,16 +294,18 @@ export function useAudioRegions(params: Params): Result {
 
         const plugin = regionsPluginRef.current;
         if (plugin) {
-            applyAudioControlMode(activeControl, plugin, dragSelectionCleanupRef, regionsRef.current);
+            applyAudioControlMode(activeControl, plugin, dragSelectionCleanupRef, intervalsRef.current);
             registerRegionHandlers(plugin);
         }
     }, [activeControl, onSetDuration, onWaveformReady, onWavesurferReady, regionsPluginRef, registerRegionHandlers]);
 
     const handleFinish = useCallback((): void => {
-        if (loopRef.current && activeRegionIdRef.current && wavesurfer) {
-            const activeRegion = regionsRef.current.find((r) => r.id === activeRegionIdRef.current);
-            if (activeRegion) {
-                wavesurfer.setTime(Math.max(0, activeRegion.start));
+        if (loopRef.current && activeIntervalIDRef.current !== null && wavesurfer) {
+            const activeInterval = intervalsRef.current.find(
+                (interval) => interval.clientID === activeIntervalIDRef.current,
+            );
+            if (activeInterval) {
+                wavesurfer.setTime(Math.max(0, intervalStartSeconds(activeInterval)));
                 wavesurfer.play();
                 return;
             }
@@ -299,18 +319,18 @@ export function useAudioRegions(params: Params): Result {
         lastWsTimeRef.current = time;
         onSetCurrentTime(time);
 
-        const activeId = activeRegionIdRef.current;
-        if (!activeId) return;
-        const activeRegion = regionsRef.current.find((r) => r.id === activeId);
-        if (!activeRegion) return;
-        if (time < activeRegion.end) return;
+        const activeID = activeIntervalIDRef.current;
+        if (activeID === null) return;
+        const activeInterval = intervalsRef.current.find((interval) => interval.clientID === activeID);
+        if (!activeInterval) return;
+        if (time < intervalEndSeconds(activeInterval)) return;
 
         if (loopRef.current) {
-            ws.setTime(Math.max(0, activeRegion.start));
+            ws.setTime(Math.max(0, intervalStartSeconds(activeInterval)));
             return;
         }
 
-        if (getPlayOnceRegionId() === activeId) {
+        if (getPlayOnceRegionId() === String(activeID)) {
             ws.pause();
             onSwitchPlay(false);
             setPlayOnceRegionId(null);
@@ -318,8 +338,8 @@ export function useAudioRegions(params: Params): Result {
     }, [lastWsTimeRef, onSetCurrentTime, onSwitchPlay]);
 
     useEffect(() => {
-        applyAudioControlMode(activeControl, regionsPluginRef.current, dragSelectionCleanupRef, regions);
-    }, [activeControl, regions, regionsPluginRef]);
+        applyAudioControlMode(activeControl, regionsPluginRef.current, dragSelectionCleanupRef, intervals);
+    }, [activeControl, intervals, regionsPluginRef]);
 
     useEffect(() => {
         const plugin = regionsPluginRef.current;
@@ -328,53 +348,92 @@ export function useAudioRegions(params: Params): Result {
     }, [wavesurfer, regionsPluginRef]);
 
     useEffect(() => {
+        if (!wavesurfer) return undefined;
+
+        const scrollContainer = wavesurfer.getWrapper()?.parentElement;
+        if (!scrollContainer) return undefined;
+
+        const selectHoveredInterval = async (event: MouseEvent): Promise<void> => {
+            if (activeControlRef.current !== ActiveControl.CURSOR) {
+                return;
+            }
+
+            const lastPoint = lastHoverPointRef.current;
+            if (lastPoint) {
+                const dx = event.clientX - lastPoint.x;
+                const dy = event.clientY - lastPoint.y;
+                const delta = Math.sqrt(dx ** 2 + dy ** 2);
+                if (delta <= HOVER_DELTA_THRESHOLD) return;
+            }
+            lastHoverPointRef.current = { x: event.clientX, y: event.clientY };
+
+            const clickTime = computeClickTime(event);
+            if (clickTime === null) return;
+
+            const token = hoverSelectTokenRef.current + 1;
+            hoverSelectTokenRef.current = token;
+            const clientID = await pickIntervalAtPosition(clickTime * 1000);
+            if (!Object.is(token, hoverSelectTokenRef.current)) return;
+            if (clientID !== hoveredIntervalIDRef.current) {
+                onSetHoveredIntervalRef.current(clientID);
+            }
+        };
+
+        const onMouseMove = (event: MouseEvent): void => {
+            selectHoveredInterval(event).catch(() => {});
+        };
+        const onMouseLeave = (): void => {
+            lastHoverPointRef.current = null;
+            hoverSelectTokenRef.current += 1;
+            if (hoveredIntervalIDRef.current !== null) {
+                onSetHoveredIntervalRef.current(null);
+            }
+        };
+
+        scrollContainer.addEventListener('mousemove', onMouseMove);
+        scrollContainer.addEventListener('mouseleave', onMouseLeave);
+
+        return () => {
+            scrollContainer.removeEventListener('mousemove', onMouseMove);
+            scrollContainer.removeEventListener('mouseleave', onMouseLeave);
+        };
+    }, [wavesurfer, computeClickTime, pickIntervalAtPosition]);
+
+    useEffect(() => {
         const plugin = regionsPluginRef.current;
         if (!plugin) return;
 
         const wsRegions = plugin.getRegions();
-        const reduxById = new Map(regions.map((r) => [r.id, r]));
+        const intervalsById = new Map(intervals.map((interval) => [waveRegionId(interval), interval]));
 
         wsRegions.forEach((wsRegion: Region) => {
             if (phantomRegionIdsRef.current.has(wsRegion.id)) return;
-            const reduxRegion = reduxById.get(wsRegion.id);
-            if (reduxRegion?.hidden || (reduxRegion && !visibleRegionIds.has(reduxRegion.id))) {
+            const interval = intervalsById.get(wsRegion.id);
+            const id = interval ? intervalID(interval) : null;
+            if (interval?.hidden) {
                 silentRemoveIdsRef.current.add(wsRegion.id);
                 wsRegion.remove();
                 return;
             }
-            const isActive = wsRegion.id === activeRegionId;
-            const color = reduxRegion ?
-                getAudioRegionColor(reduxRegion, labels, colorBy, opacity, selectedOpacity, isActive) :
-                getAudioRegionColor(
-                    {
-                        id: wsRegion.id, start: 0, end: 0, labelId: null, attributes: {},
-                    },
-                    labels,
-                    colorBy,
-                    opacity,
-                    selectedOpacity,
-                    isActive,
-                );
-            const isLocked = reduxRegion?.locked;
+            const isActive = id === activeIntervalID;
+            const color = interval ?
+                getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive) :
+                ACTIVE_BORDER_FALLBACK;
             const isEdit = activeControl === ActiveControl.AUDIO_REGION_EDIT;
             wsRegion.setOptions({
                 color,
-                drag: isEdit && !isLocked,
-                resize: isEdit && !isLocked,
+                drag: isEdit && !interval?.lock,
+                resize: isEdit && !interval?.lock,
             });
             const { element } = wsRegion;
             if (element) {
-                const isHovered = wsRegion.id === hoveredRegionId;
-
-                const borderColor = reduxRegion ?
-                    getRegionItemColor(reduxRegion, labels, colorBy) : ACTIVE_BORDER_FALLBACK;
-
-                element.style.border = isActive || isHovered ?
-                    `2px solid ${borderColor}` : '';
+                const isHovered = id === hoveredIntervalID;
+                const borderColor = interval ? getRegionItemColor(interval, labels, colorBy) : ACTIVE_BORDER_FALLBACK;
+                element.style.border = isActive || isHovered ? `2px solid ${borderColor}` : '';
             }
         });
     }, [
-        activeRegionId, hoveredRegionId, regions, visibleRegionIds, colorBy, opacity, selectedOpacity,
+        activeIntervalID, hoveredIntervalID, intervals, colorBy, opacity, selectedOpacity,
         labels, activeControl, regionsPluginRef,
     ]);
 
@@ -384,40 +443,47 @@ export function useAudioRegions(params: Params): Result {
 
         const wsRegions = plugin.getRegions();
 
-        regions.forEach((region) => {
-            if (region.hidden || !visibleRegionIds.has(region.id)) return;
-            const wsRegion = wsRegions.find((r: Region) => r.id === region.id);
+        intervals.forEach((interval) => {
+            const id = intervalID(interval);
+            if (interval.hidden) return;
+            const regionId = waveRegionId(interval);
+            const wsRegion = wsRegions.find((region: Region) => region.id === regionId);
+            const start = intervalStartSeconds(interval);
+            const end = intervalEndSeconds(interval);
             if (!wsRegion) {
                 const isEdit = activeControl === ActiveControl.AUDIO_REGION_EDIT;
-                const isActive = region.id === activeRegionId;
-                const isLocked = region.locked;
+                const isActive = id === activeIntervalID;
                 const added = plugin.addRegion({
-                    id: region.id,
-                    start: region.start,
-                    end: region.end,
-                    color: getAudioRegionColor(region, labels, colorBy, opacity, selectedOpacity, isActive),
-                    drag: isEdit && !isLocked,
-                    resize: isEdit && !isLocked,
+                    id: regionId,
+                    start,
+                    end,
+                    color: getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive),
+                    drag: isEdit && !interval.lock,
+                    resize: isEdit && !interval.lock,
                 });
-                wireRegionHoverEvents(added);
-            } else if (wsRegion.start !== region.start || wsRegion.end !== region.end) {
-                wsRegion.setOptions({ start: region.start, end: region.end });
+                if (added.element && intervalSelectionDisabled) {
+                    added.element.style.pointerEvents = 'none';
+                }
+            } else if (Math.abs(wsRegion.start - start) >= 0.001 || Math.abs(wsRegion.end - end) >= 0.001) {
+                silentUpdateIdsRef.current.add(wsRegion.id);
+                wsRegion.setOptions({ start, end });
             }
         });
 
-        const reduxIds = new Set(
-            regions.filter((r) => !r.hidden && visibleRegionIds.has(r.id)).map((r) => r.id),
+        const intervalIds = new Set(
+            intervals.filter((interval) => !interval.hidden)
+                .map((interval) => waveRegionId(interval)),
         );
         wsRegions.forEach((wsRegion: Region) => {
             if (phantomRegionIdsRef.current.has(wsRegion.id)) return;
-            if (!reduxIds.has(wsRegion.id)) {
+            if (!intervalIds.has(wsRegion.id)) {
                 silentRemoveIdsRef.current.add(wsRegion.id);
                 wsRegion.remove();
             }
         });
     }, [
-        regions, visibleRegionIds, wavesurfer, activeControl, colorBy, opacity, selectedOpacity,
-        labels, activeRegionId, wireRegionHoverEvents, regionsPluginRef,
+        intervals, wavesurfer, activeControl, colorBy, opacity, selectedOpacity,
+        labels, activeIntervalID, intervalSelectionDisabled, regionsPluginRef,
     ]);
 
     return { handleReady, handleFinish, handleTimeupdate };

@@ -13,10 +13,14 @@ interface Params {
     zoom: number;
     volume: number;
     playbackRate: number;
+    zoomAnchorRef: React.MutableRefObject<{
+        time: number;
+        x: number;
+    } | null>;
 }
 
 export function useAudioPlaybackSync({
-    wavesurfer, isPlaying, currentTime, duration, zoom, volume, playbackRate,
+    wavesurfer, isPlaying, currentTime, duration, zoom, volume, playbackRate, zoomAnchorRef,
 }: Params): { lastWsTimeRef: React.MutableRefObject<number> } {
     const lastWsTimeRef = useRef(0);
 
@@ -34,7 +38,7 @@ export function useAudioPlaybackSync({
 
     useEffect(() => {
         if (!wavesurfer || !duration) return;
-        if (Math.abs(currentTime - lastWsTimeRef.current) < 0.05) return;
+        if (Math.abs(currentTime - lastWsTimeRef.current) < Number.EPSILON) return;
         const clampedTime = Math.max(0, Math.min(duration, currentTime));
         wavesurfer.setTime(clampedTime);
     }, [currentTime, duration, wavesurfer]);
@@ -55,7 +59,23 @@ export function useAudioPlaybackSync({
         const scrollContainer = wavesurfer.getWrapper()?.parentElement as HTMLElement | null;
 
         let targetScrollLeft = 0;
-        if (scrollContainer && isDrop) {
+        const anchorRef = zoomAnchorRef;
+        const zoomAnchor = anchorRef.current;
+        anchorRef.current = null;
+
+        if (scrollContainer && zoomAnchor) {
+            const { clientWidth } = scrollContainer;
+            const dur = durationRef.current;
+            if (dur > 0) {
+                const newTotalWidth = Math.max(clientWidth, dur * zoom);
+                const newMaxScroll = Math.max(0, newTotalWidth - clientWidth);
+                targetScrollLeft = Math.max(
+                    0,
+                    Math.min(newMaxScroll, zoomAnchor.time * zoom - zoomAnchor.x),
+                );
+            }
+            scrollContainer.scrollLeft = targetScrollLeft;
+        } else if (scrollContainer && isDrop) {
             const { clientWidth } = scrollContainer;
             const dur = durationRef.current;
             if (dur > 0) {
@@ -71,7 +91,7 @@ export function useAudioPlaybackSync({
 
         wavesurfer.zoom(zoom);
 
-        if (!scrollContainer || !isDrop) return undefined;
+        if (!scrollContainer || (!isDrop && !zoomAnchor)) return undefined;
 
         const pin = (): void => {
             if (Math.abs(scrollContainer.scrollLeft - targetScrollLeft) > 1) {

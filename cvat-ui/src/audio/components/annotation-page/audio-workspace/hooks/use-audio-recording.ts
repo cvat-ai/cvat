@@ -7,11 +7,10 @@ import type WaveSurfer from 'wavesurfer.js';
 import type RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 
-import { ActiveControl, AudioRegion, ColorBy } from 'reducers';
-import { Attribute, Label } from 'cvat-core-wrapper';
+import { ActiveControl, ColorBy } from 'reducers';
+import { AudioIntervalState, Label, Source } from 'cvat-core-wrapper';
 
 import { getAudioRegionColor } from '../audio-region-colors';
-import { pickInstanceColor } from '../utils/create-audio-region';
 
 const MIN_RECORDING_DURATION = 0.05;
 
@@ -25,24 +24,24 @@ interface Params {
     wavesurfer: WaveSurfer | null;
     activeControl: ActiveControl;
     isPlaying: boolean;
-    regions: AudioRegion[];
+    intervals: AudioIntervalState[];
     labels: Label[];
     activeLabelId: number | null;
     colorBy: ColorBy;
     opacity: number;
     selectedOpacity: number;
     phantomRegionIdsRef: React.MutableRefObject<Set<string>>;
-    onSetRegions(regions: AudioRegion[]): void;
-    onSetActiveRegion(regionId: string | null): void;
+    onCreateInterval(start: number, stop: number, labelID: number | null): void;
+    onSetActiveInterval(clientID: number | null): void;
     onUpdateActiveControl(activeControl: ActiveControl): void;
 }
 
 export function useAudioRecording(params: Params): void {
     const {
         regionsPluginRef, wavesurfer, activeControl, isPlaying,
-        regions, labels, activeLabelId, colorBy, opacity, selectedOpacity,
+        intervals, labels, activeLabelId, colorBy, opacity, selectedOpacity,
         phantomRegionIdsRef,
-        onSetRegions, onSetActiveRegion, onUpdateActiveControl,
+        onCreateInterval, onSetActiveInterval, onUpdateActiveControl,
     } = params;
 
     const recordingIdRef = useRef<string | null>(null);
@@ -50,24 +49,22 @@ export function useAudioRecording(params: Params): void {
     const recordingLabelIdRef = useRef<number | null>(null);
     const cancelledRef = useRef<boolean>(false);
 
-    const regionsRef = useRef(regions);
     const labelsRef = useRef(labels);
     const activeLabelIdRef = useRef(activeLabelId);
     const colorByRef = useRef(colorBy);
     const opacityRef = useRef(opacity);
     const selectedOpacityRef = useRef(selectedOpacity);
-    const onSetRegionsRef = useRef(onSetRegions);
-    const onSetActiveRegionRef = useRef(onSetActiveRegion);
+    const onCreateIntervalRef = useRef(onCreateInterval);
+    const onSetActiveIntervalRef = useRef(onSetActiveInterval);
     const onUpdateActiveControlRef = useRef(onUpdateActiveControl);
 
-    useEffect(() => { regionsRef.current = regions; }, [regions]);
     useEffect(() => { labelsRef.current = labels; }, [labels]);
     useEffect(() => { activeLabelIdRef.current = activeLabelId; }, [activeLabelId]);
     useEffect(() => { colorByRef.current = colorBy; }, [colorBy]);
     useEffect(() => { opacityRef.current = opacity; }, [opacity]);
     useEffect(() => { selectedOpacityRef.current = selectedOpacity; }, [selectedOpacity]);
-    useEffect(() => { onSetRegionsRef.current = onSetRegions; }, [onSetRegions]);
-    useEffect(() => { onSetActiveRegionRef.current = onSetActiveRegion; }, [onSetActiveRegion]);
+    useEffect(() => { onCreateIntervalRef.current = onCreateInterval; }, [onCreateInterval]);
+    useEffect(() => { onSetActiveIntervalRef.current = onSetActiveInterval; }, [onSetActiveInterval]);
     useEffect(() => { onUpdateActiveControlRef.current = onUpdateActiveControl; }, [onUpdateActiveControl]);
 
     const finalizeRecording = useCallback((): void => {
@@ -89,7 +86,7 @@ export function useAudioRecording(params: Params): void {
         recordingLabelIdRef.current = null;
 
         if (plugin) {
-            const wsRegion = plugin.getRegions().find((r: Region) => r.id === id);
+            const wsRegion = plugin.getRegions().find((region: Region) => region.id === id);
             if (wsRegion) wsRegion.remove();
             phantomRegionIdsRef.current.delete(id);
         }
@@ -101,26 +98,8 @@ export function useAudioRecording(params: Params): void {
 
         if (end - start < MIN_RECORDING_DURATION) return;
 
-        const currentRegions = regionsRef.current;
-        const currentLabels = labelsRef.current;
-        const label = labelId != null ? currentLabels.find((l) => l.id === labelId) : null;
-        const defaultAttrs: Record<number, string> = {};
-        if (label) {
-            label.attributes.forEach((attr: Attribute) => {
-                if (attr.id !== undefined) defaultAttrs[attr.id] = attr.defaultValue;
-            });
-        }
-        const newRegion: AudioRegion = {
-            id: `audio-region-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            start,
-            end,
-            labelId,
-            attributes: defaultAttrs,
-            source: 'manual',
-            color: pickInstanceColor(currentRegions),
-        };
-        onSetRegionsRef.current([...currentRegions, newRegion]);
-        onSetActiveRegionRef.current(newRegion.id);
+        onSetActiveIntervalRef.current(null);
+        onCreateIntervalRef.current(start, end, labelId);
     }, [wavesurfer, regionsPluginRef, phantomRegionIdsRef]);
 
     useEffect(() => {
@@ -140,15 +119,17 @@ export function useAudioRecording(params: Params): void {
             recordingStartRef.current = start;
             recordingLabelIdRef.current = activeLabelIdRef.current;
 
-            const colorRegion: AudioRegion = {
-                id: phantomId,
-                start,
-                end: start,
-                labelId: activeLabelIdRef.current,
-                attributes: {},
-            };
+            const label = activeLabelIdRef.current !== null ?
+                labelsRef.current.find((_label) => _label.id === activeLabelIdRef.current) : null;
+            const previewLabel = label ?? labelsRef.current[0];
+            if (!previewLabel) return;
             const color = getAudioRegionColor(
-                colorRegion,
+                AudioIntervalState.create({
+                    label: previewLabel,
+                    start: Math.round(start * 1000),
+                    stop: Math.round(start * 1000),
+                    source: Source.MANUAL,
+                }),
                 labelsRef.current,
                 colorByRef.current,
                 opacityRef.current,
@@ -169,7 +150,7 @@ export function useAudioRecording(params: Params): void {
         } else if (!isRecord && wasRecording) {
             finalizeRecording();
         }
-    }, [activeControl, wavesurfer, regionsPluginRef, phantomRegionIdsRef, finalizeRecording]);
+    }, [activeControl, wavesurfer, regionsPluginRef, phantomRegionIdsRef, finalizeRecording, intervals]);
 
     useEffect(() => {
         if (!isPlaying && recordingIdRef.current !== null) {
@@ -194,7 +175,7 @@ export function useAudioRecording(params: Params): void {
             if (!id) return;
             const plugin = regionsPluginRef.current;
             if (!plugin) return;
-            const wsRegion = plugin.getRegions().find((r: Region) => r.id === id);
+            const wsRegion = plugin.getRegions().find((region: Region) => region.id === id);
             if (!wsRegion) return;
             const time = wavesurfer.getCurrentTime();
             const start = recordingStartRef.current;

@@ -12,14 +12,13 @@ import Input from 'antd/lib/input';
 import Popover from 'antd/lib/popover';
 import { EditOutlined } from '@ant-design/icons';
 
-import { AudioRegion } from 'reducers';
-import { Label, Attribute } from 'cvat-core-wrapper';
+import { AudioIntervalState, Label, Attribute } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 import { formatTimeShort } from 'audio/utils/format-audio-time';
 
 interface AudioRegionDetailsProps {
-    region: AudioRegion;
-    regionIndex: number;
+    interval: AudioIntervalState;
+    intervalIndex: number;
     labels: Label[];
     onChangeLabel(labelId: number): void;
     onChangeAttribute(attrID: number, value: string): void;
@@ -189,18 +188,20 @@ function LabelSelectorTrigger({
 
 function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
     const {
-        region,
-        regionIndex,
+        interval,
+        intervalIndex,
         labels,
         onChangeLabel,
         onChangeAttribute,
     } = props;
 
-    const activeLabel = region.labelId != null ?
-        labels.find((l) => l.id === region.labelId) : null;
+    const activeLabel = interval.label.id != null ?
+        labels.find((l) => l.id === interval.label.id) : null;
 
-    const isReadonly = !!region.locked;
-    const duration = Math.max(0, region.end - region.start);
+    const isReadonly = !!interval.lock;
+    const start = interval.start / 1000;
+    const end = (interval.stop ?? interval.start) / 1000;
+    const duration = Math.max(0, end - start);
 
     const handleChangeAttribute = useCallback((attrID: number, value: string) => {
         onChangeAttribute(attrID, value);
@@ -209,18 +210,20 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
     const attributes: Attribute[] = activeLabel?.attributes ?? [];
 
     const [expandedByRegion, setExpandedByRegion] = useState<Record<string, string[]>>({});
-    const expandedKeys = expandedByRegion[region.id] ?? [];
+    const expandedKey = String(interval.clientID);
+    const attributeKeys = attributes.map((attribute) => `attr-${attribute.id}`);
+    const expandedKeys = expandedByRegion[expandedKey] ?? attributeKeys;
 
     const handleCollapseChange = useCallback((next: string | string[]) => {
         const arr = Array.isArray(next) ? next : [next];
-        setExpandedByRegion((prev) => ({ ...prev, [region.id]: arr }));
-    }, [region.id]);
+        setExpandedByRegion((prev) => ({ ...prev, [expandedKey]: arr }));
+    }, [expandedKey]);
 
     return (
         <div className='cvat-audio-region-details'>
             <div className='cvat-audio-region-details-header'>
                 <span className='cvat-audio-region-details-index'>
-                    {regionIndex + 1}
+                    {intervalIndex + 1}
                 </span>
                 {labels.length > 0 && (
                     <LabelSelectorTrigger
@@ -230,16 +233,16 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
                         onChangeLabel={onChangeLabel}
                     />
                 )}
-                {region.source && (
+                {interval.source && (
                     <span
                         className='cvat-audio-region-details-source'
-                        title={`Source: ${region.source}`}
+                        title={`Source: ${interval.source}`}
                     >
-                        {region.source}
+                        {interval.source}
                     </span>
                 )}
                 <span className='cvat-audio-region-details-time-range'>
-                    {`${formatTimeShort(region.start)} \u2013 ${formatTimeShort(region.end)}`}
+                    {`${formatTimeShort(start)} \u2013 ${formatTimeShort(end)}`}
                 </span>
                 <span className='cvat-audio-region-details-duration'>
                     {`(${formatDuration(duration)})`}
@@ -264,7 +267,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
                             children: (
                                 <AttributeInput
                                     attribute={attribute}
-                                    value={region.attributes[attribute.id!] ?? attribute.defaultValue}
+                                    value={interval.attributes[attribute.id!] ?? attribute.defaultValue}
                                     disabled={isReadonly}
                                     onChange={handleChangeAttribute}
                                 />

@@ -8,6 +8,7 @@ import _cvat from 'cvat-core/src/api';
 import config from 'config';
 
 import ObjectState from 'cvat-core/src/object-state';
+import { AudioIntervalState } from 'cvat-core/src/annotations-objects/audio-interval-state';
 import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
 import CloudStorage from 'cvat-core/src/cloud-storage';
@@ -78,6 +79,7 @@ type ProjectOrTaskOrJob = Project | Task | Job;
 export {
     getCore,
     ObjectState,
+    AudioIntervalState,
     Label,
     Job,
     Task,
