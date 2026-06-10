@@ -42,6 +42,10 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
     }
 
     @staticmethod
+    def _default_requirement_name(annotation_type: str) -> str:
+        return f"Default {annotation_type.replace('_', ' ')}"
+
+    @staticmethod
     def _build_requirement_payload(
         name: str,
         *,
@@ -477,7 +481,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         rectangle_root_id = next(
             requirement["id"]
             for requirement in settings["requirements"]
-            if requirement["name"] == "default:rectangle"
+            if requirement["name"] == self._default_requirement_name("rectangle")
         )
 
         def assert_attribute_comparison_state(
@@ -493,7 +497,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
 
         root_requirement, response = self._retrieve_requirement(admin_user, rectangle_root_id)
         assert response.status_code == HTTPStatus.OK
-        assert root_requirement["name"] == "default:rectangle"
+        assert root_requirement["name"] == self._default_requirement_name("rectangle")
         assert_attribute_comparison_state(
             root_requirement,
             stored=None,
@@ -643,7 +647,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             for requirement in patched_settings["requirements"]
             if requirement["is_default"]
         } == {
-            f"default:{annotation_type}"
+            self._default_requirement_name(annotation_type)
             for annotation_type in self._default_standalone_annotation_types
         }
 
@@ -952,7 +956,7 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
             requirement["annotation_type"] for requirement in requirements
         } == self._default_standalone_annotation_types
         assert {requirement["name"] for requirement in requirements} == {
-            f"default:{annotation_type}"
+            self._default_requirement_name(annotation_type)
             for annotation_type in self._default_standalone_annotation_types
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
@@ -981,7 +985,7 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
             requirement["annotation_type"] for requirement in requirements
         } == self._default_standalone_annotation_types
         assert {requirement["name"] for requirement in requirements} == {
-            f"default:{annotation_type}"
+            self._default_requirement_name(annotation_type)
             for annotation_type in self._default_standalone_annotation_types
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
@@ -1021,7 +1025,7 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
             requirement["annotation_type"] for requirement in requirements
         } == self._default_standalone_annotation_types
         assert {requirement["name"] for requirement in requirements} == {
-            f"default:{annotation_type}"
+            self._default_requirement_name(annotation_type)
             for annotation_type in self._default_standalone_annotation_types
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
@@ -1404,7 +1408,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         rectangle_root = next(
             requirement
             for requirement in settings["requirements"]
-            if requirement["name"] == "default:rectangle"
+            if requirement["name"] == self._default_requirement_name("rectangle")
         )
 
         first_leaf_name = f"first-car-leaf-{task_id}"
@@ -1485,7 +1489,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         rectangle_root = next(
             requirement
             for requirement in settings["requirements"]
-            if requirement["name"] == "default:rectangle"
+            if requirement["name"] == self._default_requirement_name("rectangle")
         )
 
         parent_requirement_name = f"cars-parent-{task_id}"
