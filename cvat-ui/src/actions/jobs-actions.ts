@@ -109,10 +109,7 @@ export const getJobPreviewAsync = (job: Job): ThunkAction => async (dispatch) =>
 };
 
 export const createJobAsync = (data: JobData): ThunkAction<Promise<Job>> => async (dispatch) => {
-    const initialData = {
-        type: data.type,
-        task_id: data.taskID,
-    };
+    const initialData = { type: data.type, task_id: data.taskID };
     const jobInstance = new cvat.classes.Job(initialData);
     try {
         const extras = {

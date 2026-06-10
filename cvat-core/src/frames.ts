@@ -888,9 +888,11 @@ export async function resolvePreviewResponse(
     if (response === PREVIEW_DEFAULT) {
         return (mediaType && config.previewPlaceholders[mediaType]) || '';
     }
+
     if (response) {
         return decodePreview(response);
     }
+
     return '';
 }
 
