@@ -13,7 +13,7 @@ class AccessTokenAdmin(APIKeyAdmin):
         "id",
         "owner",
         *APIKeyAdmin.list_display,
-        "_is_stale",
+        "is_stale",
         "read_only",
         "updated_date",
         "last_used_date",

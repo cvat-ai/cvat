@@ -1,0 +1,36 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-audio-region-item-menu {
+    .ant-dropdown-menu-item {
+        padding: 0;
+    }
+
+    .ant-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        text-align: left;
+        color: #303030;
+        font-size: 13px;
+        padding: 5px 12px;
+        height: auto;
+        border: none;
+        box-shadow: none;
+
+        &:hover {
+            background-color: #f5f5f5;
+            color: #303030;
+        }
+
+        &:disabled {
+            color: #d1d5db;
+        }
+
+        .anticon {
+            font-size: 14px;
+        }
+    }
+}

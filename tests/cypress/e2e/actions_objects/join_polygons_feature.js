@@ -6,13 +6,9 @@
 
 import { taskName, labelName } from '../../support/const';
 import { getShapeCoord } from '../../support/utils.cy';
+import { translatePoint } from '../../support/utils';
 
 context('Join polygons feature', { scrollBehavior: false }, () => {
-    function translatePoint(vector, point) {
-        const dx = point.x + vector.a;
-        const dy = point.y + vector.b;
-        return { x: dx, y: dy };
-    }
     /**
      * Joins multiple polygon shapes together
      * @param {{id: string, position?: Cypress.PositionType}[]} shapes

@@ -53,7 +53,7 @@ function InvitationModal(props: Props): JSX.Element {
                 </Paragraph>
                 <Paragraph>
                     <Text type='secondary'>
-                            If the email address is registered on CVAT, the user will be added to the organization
+                        If the email address is registered on CVAT, the user will be added to the organization
                     </Text>
                 </Paragraph>
                 <Form.List name='users'>
@@ -99,7 +99,7 @@ function InvitationModal(props: Props): JSX.Element {
                             ))}
                             <Form.Item>
                                 <Button className='cvat-invite-more-org-members-button' icon={<PlusCircleOutlined />} onClick={() => add()}>
-                                        Invite more
+                                    Invite more
                                 </Button>
                             </Form.Item>
                         </>

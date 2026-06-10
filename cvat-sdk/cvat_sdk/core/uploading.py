@@ -225,18 +225,21 @@ class AnnotationUploader(Uploader):
         format_name: str,
         *,
         conv_mask_to_poly: bool | None = None,
+        import_mode: str | None = None,
         url_params: dict[str, Any] | None = None,
         pbar: ProgressReporter | None = None,
         status_check_period: int | None = None,
     ):
         url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
+        if conv_mask_to_poly is not None:
+            params["conv_mask_to_poly"] = "true" if conv_mask_to_poly else "false"
+        if import_mode is not None:
+            params["import_mode"] = import_mode
+
         response = self.upload_file(
             url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
         )
-
-        if conv_mask_to_poly is not None:
-            params["conv_mask_to_poly"] = "true" if conv_mask_to_poly else "false"
 
         rq_id = json.loads(response.data).get("rq_id")
         assert rq_id, "The rq_id was not found in the response"

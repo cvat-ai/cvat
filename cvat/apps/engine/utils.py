@@ -30,12 +30,10 @@ from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
-from django.utils.http import urlencode
 from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
 from PIL import Image
 from redis.lock import Lock
-from rest_framework.reverse import reverse as _reverse
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.types import ExtendedRequest
@@ -198,28 +196,6 @@ def get_rq_lock_for_job(
         timeout=timeout,
         blocking_timeout=blocking_timeout,
     )
-
-
-def reverse(
-    viewname,
-    *,
-    args=None,
-    kwargs=None,
-    query_params: dict[str, str] | None = None,
-    request: ExtendedRequest | None = None,
-) -> str:
-    """
-    The same as rest_framework's reverse(), but adds custom query params support.
-    The original request can be passed in the 'request' parameter to
-    return absolute URLs.
-    """
-
-    url = _reverse(viewname, args, kwargs, request)
-
-    if query_params:
-        return f"{url}?{urlencode(query_params)}"
-
-    return url
 
 
 def build_field_filter_params(field: str, value: Any) -> dict[str, str]:

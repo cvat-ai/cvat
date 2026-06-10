@@ -157,7 +157,7 @@ class _TrackingStateContainer:
             raise _BadArError(f"Tracking state {state_id!r} is not for task #{task_id}")
 
         if image_dims != ext_state.original_image_dims:
-            raise _BadArError(f"Image sizes of the start frame and the current frame are different")
+            raise _BadArError("Image sizes of the start frame and the current frame are different")
 
         ext_state.last_accessed_at = datetime.now(tz=timezone.utc)
         self._id_to_ext_state.move_to_end(state_id)
@@ -263,64 +263,41 @@ class _NewReconnectionDelay:
 class _TaskCacheLimiter:
     """
     This class deletes least-recently used tasks from the dataset cache,
-    so that at any time the cache contains at most _MAX_TASKS_WITH_CHUNKS
-    tasks with downloaded chunks, and at most _MAX_TASKS_WITHOUT_CHUNKS without.
+    so that at any time the cache contains at most _MAX_CACHED_TASKS tasks.
 
     This helps manage disk usage, since agents may run indefinitely, and
     we don't want the dataset cache to keep growing.
     """
 
-    _MAX_TASKS_WITH_CHUNKS = 1
-    _MAX_TASKS_WITHOUT_CHUNKS = 10
+    _MAX_CACHED_TASKS = 10
 
     def __init__(self, client: Client) -> None:
         self._client = client
         self._cache_manager = make_cache_manager(client, cvatds.UpdatePolicy.IF_MISSING_OR_STALE)
 
-        self._cached_with_chunks_task_ids = []
-        self._cached_without_chunks_task_ids = []
+        self._cached_task_ids = []
 
         self._task_ids_in_use = set()
 
     @contextlib.contextmanager
-    def using_cache_for_task(
-        self, task_id: int, *, with_chunks: bool
-    ) -> Generator[None, None, None]:
+    def using_cache_for_task(self, task_id: int) -> Generator[None, None, None]:
         if task_id in self._task_ids_in_use:
-            # If with_chunks is True, we would have to ensure that task_id is returned to the
-            # "with chunks" list after it leaves _task_ids_in_use, regardless of the value of
-            # with_chunks in the call that initially put it in. That would be tricky to implement,
-            # and we don't have a use case for it, so just ban it.
-            assert not with_chunks
             yield
             return
 
-        if task_id in self._cached_with_chunks_task_ids:
-            # If the task already had cached chunks, we have to return it back to
-            # _cached_with_chunks_task_ids in the end.
-            with_chunks = True
-
-            self._cached_with_chunks_task_ids.remove(task_id)
-        elif task_id in self._cached_without_chunks_task_ids:
-            self._cached_without_chunks_task_ids.remove(task_id)
+        if task_id in self._cached_task_ids:
+            self._cached_task_ids.remove(task_id)
 
         self._task_ids_in_use.add(task_id)
 
-        if with_chunks:
-            cached_task_ids = self._cached_with_chunks_task_ids
-            max_cached_tasks = self._MAX_TASKS_WITH_CHUNKS
-        else:
-            cached_task_ids = self._cached_without_chunks_task_ids
-            max_cached_tasks = self._MAX_TASKS_WITHOUT_CHUNKS
-
-        if len(cached_task_ids) + len(self._task_ids_in_use) > max_cached_tasks:
-            self._delete_task_cache(cached_task_ids.pop(0))
+        if len(self._cached_task_ids) + len(self._task_ids_in_use) > self._MAX_CACHED_TASKS:
+            self._delete_task_cache(self._cached_task_ids.pop(0))
 
         try:
             yield
         finally:
             self._task_ids_in_use.remove(task_id)
-            cached_task_ids.append(task_id)
+            self._cached_task_ids.append(task_id)
 
     def _delete_task_cache(self, task_id: int) -> None:
         self._client.logger.info("Deleting task %d from the cache to make room...", task_id)
@@ -809,12 +786,10 @@ class _Agent:
 
     def _calculate_result_for_detection_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         if ar_params["type"] == "annotate_task":
-            with self._task_cache_limiter.using_cache_for_task(ar_params["task"], with_chunks=True):
+            with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
                 return self._calculate_result_for_annotate_task_ar(ar_id, ar_params)
         elif ar_params["type"] == "annotate_frame":
-            with self._task_cache_limiter.using_cache_for_task(
-                ar_params["task"], with_chunks=False
-            ):
+            with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
                 return self._calculate_result_for_annotate_frame_ar(ar_id, ar_params)
         else:
             raise _BadArError(f"unsupported type: {ar_params['type']!r}")
@@ -848,7 +823,12 @@ class _Agent:
         )
 
     def _calculate_result_for_annotate_task_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
-        ds = cvatds.TaskDataset(self._client, ar_params["task"], load_annotations=False)
+        ds = cvatds.TaskDataset(
+            self._client,
+            ar_params["task"],
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        )
 
         # Fetching the dataset might take a while, so do a progress update to let the server
         # know we're still alive.
@@ -859,25 +839,26 @@ class _Agent:
 
         all_annotations = models.PatchedLabeledDataRequest(tags=[], shapes=[])
 
-        for sample_index, sample in enumerate(ds.samples):
-            context = self._create_detection_function_context(ar_params, sample.frame_name)
-            annotations = self._executor.result(
-                self._executor.submit(_worker_job_detect, context, sample.media.load_image())
-            )
+        with ds.iter_samples(temporary_chunks=True) as samples:
+            for sample_index, sample in enumerate(samples):
+                context = self._create_detection_function_context(ar_params, sample.frame_name)
+                annotations = self._executor.result(
+                    self._executor.submit(_worker_job_detect, context, sample.media.load_image())
+                )
 
-            tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
-            all_annotations.tags.extend(tags)
-            all_annotations.shapes.extend(shapes)
+                tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
+                all_annotations.tags.extend(tags)
+                all_annotations.shapes.extend(shapes)
 
-            current_timestamp = datetime.now(tz=timezone.utc)
+                current_timestamp = datetime.now(tz=timezone.utc)
 
-            if current_timestamp >= last_update_timestamp + _UPDATE_INTERVAL:
-                self._update_ar(ar_id, (sample_index + 1) / len(ds.samples))
-                last_update_timestamp = current_timestamp
+                if current_timestamp >= last_update_timestamp + _UPDATE_INTERVAL:
+                    self._update_ar(ar_id, (sample_index + 1) / len(ds.samples))
+                    last_update_timestamp = current_timestamp
 
-            # Interactive requests are time sensitive, so if there are any,
-            # we have to put the current AR on hold and process them ASAP.
-            self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
+                # Interactive requests are time sensitive, so if there are any,
+                # we have to put the current AR on hold and process them ASAP.
+                self._process_available_ars(REQUEST_CATEGORY_INTERACTIVE)
 
         return {"annotations": all_annotations}
 
@@ -897,14 +878,10 @@ class _Agent:
 
     def _calculate_result_for_tracking_ar(self, ar_id: str, ar_params) -> dict[str, Any]:
         if ar_params["type"] == "init_tracking":
-            with self._task_cache_limiter.using_cache_for_task(
-                ar_params["task"], with_chunks=False
-            ):
+            with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
                 return self._calculate_result_for_init_tracking_ar(ar_id, ar_params)
         elif ar_params["type"] == "track":
-            with self._task_cache_limiter.using_cache_for_task(
-                ar_params["task"], with_chunks=False
-            ):
+            with self._task_cache_limiter.using_cache_for_task(ar_params["task"]):
                 return self._calculate_result_for_track_ar(ar_id, ar_params)
         else:
             raise _BadArError(f"unsupported type: {ar_params['type']!r}")

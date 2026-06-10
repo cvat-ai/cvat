@@ -63,7 +63,7 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
         cy.get('.cvat-modal-content-load-task-annotation')
             .should('be.visible')
             .within(() => {
-                cy.contains('button', 'Update').click();
+                cy.contains('button', 'Replace annotations').click();
             });
         cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
         cy.closeNotification('.cvat-notification-notice-import-annotation-start');

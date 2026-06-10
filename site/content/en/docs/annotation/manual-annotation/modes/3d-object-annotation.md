@@ -151,7 +151,7 @@ orientation of the cuboid.
 
 The size input feature allows users to manually specify the dimensions of a cuboid in the 3D space.
 This feature is accessible through the objects sidebar - details panel, where you can input precise
-values for the width, height, and length (X - width, Y - height, Z - length) of the cuboid.
+values for the length, width, and height (X - length, Y - width, Z - height) of the cuboid.
 By entering these values, the cuboid's size is adjusted accordingly to its orientation, providing
 greater control and accuracy when annotating objects in 3D tasks.
 

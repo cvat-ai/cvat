@@ -167,7 +167,10 @@ interface State {
     portals: React.ReactPortal[];
 }
 
-type DetectorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { version: number }>;
+type DetectorResults = Extract<
+    Awaited<ReturnType<typeof core.lambda.call>>,
+    { tags: unknown[]; shapes: unknown[]; tracks: unknown[] }
+>;
 
 function trackedRectangleMapper(shape: MinimalShape): MinimalShape {
     return {
@@ -912,7 +915,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             duration: 0,
                             className: 'cvat-tracking-notice',
                         });
-                        // eslint-disable-next-line no-await-in-loop
+
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             type: 'track',
                             frame,
@@ -1320,7 +1323,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         this.setState({ mode: 'detection', fetching: true });
 
                         // The function call endpoint doesn't support the cleanup parameter.
-                        const { cleanup, ...restOfBody } = body;
+                        const restOfBody = lodash.omit(body, 'cleanup');
 
                         const result = await core.lambda.call(jobInstance.taskId, model, {
                             ...restOfBody, type: 'annotate_frame', frame, job: jobInstance.id,

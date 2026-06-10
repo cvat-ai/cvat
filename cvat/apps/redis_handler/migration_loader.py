@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Any, ClassVar
@@ -83,12 +84,21 @@ class MigrationLoader:
             and (Path(app_config.path) / cls.REDIS_MIGRATIONS_DIR_NAME).exists()
         ]
 
+    @classmethod
+    def iter_migration_files(cls) -> Iterator[tuple[AppConfig, Path]]:
+        for app_config in cls._find_app_configs():
+            migrations_dir = Path(app_config.path) / cls.REDIS_MIGRATIONS_DIR_NAME
+            for migration_file in sorted(migrations_dir.glob("*.py")):
+                if migration_file.stem[0] in "_~":
+                    continue
+
+                yield app_config, migration_file
+
     def _load_from_disk(self):
-        for app_label, app_config in self._app_config_mapping.items():
-            migrations_dir = Path(app_config.path) / self.REDIS_MIGRATIONS_DIR_NAME
-            for migration_file in sorted(migrations_dir.glob("[0-9]*.py")):
-                migration_name = migration_file.stem
-                (self._disk_migrations_per_app.setdefault(app_label, [])).append(migration_name)
+        for app_config, migration_file in self.iter_migration_files():
+            self._disk_migrations_per_app.setdefault(app_config.label, []).append(
+                migration_file.stem
+            )
 
     def _init_applied_migrations(self):
         applied_migration_keys: list[str] = [

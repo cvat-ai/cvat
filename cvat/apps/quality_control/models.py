@@ -121,7 +121,7 @@ class QualityReport(models.Model):
         constraints = [
             models.CheckConstraint(
                 name="quality_report_job_or_task_or_project",
-                check=(
+                condition=(
                     models.Q(job_id__isnull=False, task_id__isnull=True, project_id__isnull=True)
                     | models.Q(job_id__isnull=True, task_id__isnull=False, project_id__isnull=True)
                     | models.Q(job_id__isnull=True, task_id__isnull=True, project_id__isnull=False)
@@ -315,7 +315,7 @@ class QualitySettings(TimestampedModel):
         constraints = [
             models.CheckConstraint(
                 name="quality_settings_task_or_project",
-                check=(
+                condition=(
                     models.Q(task_id__isnull=False, project_id__isnull=True)
                     | models.Q(task_id__isnull=True, project_id__isnull=False)
                 ),

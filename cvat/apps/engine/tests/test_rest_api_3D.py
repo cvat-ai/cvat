@@ -55,20 +55,23 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
 
     def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/tasks/%s/annotations" % tid, data=data, format="json")
+            response = self.client.put(f"/api/tasks/{tid}/annotations", data=data, format="json")
 
         return response
 
     def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/jobs/%s/annotations" % jid, data=data, format="json")
+            response = self.client.put(f"/api/jobs/{jid}/annotations", data=data, format="json")
 
         return response
 
     def _patch_api_v2_task_id_annotations(self, tid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/tasks/{}/annotations?action={}".format(tid, action), data=data, format="json"
+                f"/api/tasks/{tid}/annotations",
+                query_params={"action": action},
+                data=data,
+                format="json",
             )
 
         return response
@@ -76,7 +79,10 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _patch_api_v2_job_id_annotations(self, jid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/jobs/{}/annotations?action={}".format(jid, action), data=data, format="json"
+                f"/api/jobs/{jid}/annotations",
+                query_params={"action": action},
+                data=data,
+                format="json",
             )
 
         return response
@@ -87,7 +93,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
 
@@ -95,12 +101,14 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
             assert response.status_code == status.HTTP_200_OK, response.status_code
             assert response.json()["status"] == "finished", response.json().get("status")
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/tasks/{tid}")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -146,7 +154,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
-                lambda page: self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+                lambda page: self.client.get(
+                    "/api/jobs", query_params={"task_id": task_id, "page": page}
+                )
             )
         return values
 
@@ -156,7 +166,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
         return response
 
     def _delete_task(self, tid):
-        response = self._delete_request("/api/tasks/{}".format(tid), self.admin)
+        response = self._delete_request(f"/api/tasks/{tid}", self.admin)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
