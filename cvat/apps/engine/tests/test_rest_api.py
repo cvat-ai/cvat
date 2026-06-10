@@ -7811,10 +7811,51 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["shapes"]), 1)
 
+    def _generate_coco_keypoints_anno(self, *, include_iscrowd=True):
+        annotation = {
+            "category_id": 1,
+            "id": 1,
+            "image_id": 0,
+            "segmentation": [],
+            "area": 17702.0,
+            "bbox": [574.0, 407.0, 167.0, 106.0],
+            "num_keypoints": 3,
+            "keypoints": [600.0, 420.0, 2, 650.0, 430.0, 2, 700.0, 440.0, 2],
+        }
+        if include_iscrowd:
+            annotation["iscrowd"] = 0
+
+        return json.dumps(
+            {
+                "categories": [
+                    {
+                        "id": 1,
+                        "name": "person",
+                        "supercategory": "",
+                        "keypoints": ["nose", "left_eye", "right_eye"],
+                        "skeleton": [[1, 2], [1, 3]],
+                    },
+                ],
+                "images": [
+                    {
+                        "coco_url": "",
+                        "date_captured": "",
+                        "flickr_url": "",
+                        "license": 0,
+                        "id": 0,
+                        "file_name": "test_1.jpg",
+                        "height": 720,
+                        "width": 1280,
+                    }
+                ],
+                "annotations": [annotation],
+            }
+        ).encode()
+
     def test_api_v2_tasks_id_annotations_upload_coco_keypoints_without_iscrowd(self):
         task, _ = self._create_task(self.user, self.user)
 
-        content = io.BytesIO(self._generate_coco_anno(include_iscrowd=False))
+        content = io.BytesIO(self._generate_coco_keypoints_anno(include_iscrowd=False))
         content.seek(0)
 
         self._import_task_annotations(

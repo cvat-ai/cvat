@@ -1083,7 +1083,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             zip_path = osp.join(temp_dir, "annotations.zip")
             with zipfile.ZipFile(zip_path, "w") as zf:
                 zf.writestr(
-                    "annotations/default.json",
+                    "annotations/instances_default.json",
                     json.dumps(self._make_coco_annotation_without_iscrowd()),
                 )
 
