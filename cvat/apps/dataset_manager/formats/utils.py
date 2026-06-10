@@ -4,23 +4,27 @@
 
 import inspect
 import itertools
+import logging
 import operator
 import os.path as osp
 from hashlib import blake2s
 
 from datumaro.components.dataset import StreamDataset
-from datumaro.components.errors import DatasetImportError
 from datumaro.plugins.data_formats.coco.base import _CocoBase
 from datumaro.util.os_util import make_file_name
 
+logger = logging.getLogger(__name__)
+
 
 def import_coco_dataset(path: str, format_name: str, *, env, default_iscrowd: int):
-    if not "default_iscrowd" in inspect.signature(_CocoBase.__init__).parameters:
-        raise DatasetImportError(
-            "Importing COCO annotations without the 'iscrowd' field requires a newer "
-            "version of datumaro that supports the 'default_iscrowd' parameter. "
-            "Please upgrade datumaro."
+    if "default_iscrowd" not in inspect.signature(_CocoBase.__init__).parameters:
+        logger.warning(
+            "The installed Datumaro version does not support the 'default_iscrowd' "
+            "COCO import option. COCO annotations without the 'iscrowd' field will "
+            "fail until Datumaro is upgraded."
         )
+        return StreamDataset.import_from(path, format_name, env=env)
+
     return StreamDataset.import_from(path, format_name, env=env, default_iscrowd=default_iscrowd)
 
 
