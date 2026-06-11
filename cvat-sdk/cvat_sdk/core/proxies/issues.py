@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from cvat_sdk.api_client import apis, models
+from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.model_proxy import (
     ModelCreateMixin,
     ModelDeleteMixin,
@@ -12,7 +13,6 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
-    get_paginated_collection_with_organization,
 )
 
 _CommentEntityBase, _CommentRepoBase = build_model_bases(
@@ -58,8 +58,7 @@ class Issue(
         # test_org_maintainer_can_get_issue_comments_without_explicit_org_context.
         return [
             Comment(self._client, m)
-            for m in get_paginated_collection_with_organization(
-                self._client,
+            for m in get_paginated_collection(
                 self._client.api_client.comments_api.list_endpoint,
                 organization_id=self._client.jobs.retrieve(self.job).organization,
                 issue_id=self.id,

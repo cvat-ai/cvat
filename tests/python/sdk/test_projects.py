@@ -20,7 +20,7 @@ from shared.fixtures.data import CloudStorageAssets
 from shared.utils.config import IMPORT_EXPORT_BUCKET_ID, make_sdk_client
 
 from .common import TestDatasetExport
-from .util import create_org_resource_hierarchy, make_pbar
+from .util import make_pbar
 
 
 class TestProjectUsecases(TestDatasetExport):
@@ -354,10 +354,10 @@ def test_can_get_personal_project_resources_while_client_is_scoped_to_org(
 
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_org_maintainer_can_get_project_resources_without_explicit_org_context(
-    fxt_image_file: Path,
+    fxt_org_resource_hierarchy,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    resources = create_org_resource_hierarchy(fxt_image_file)
+    resources = fxt_org_resource_hierarchy()
 
     with make_sdk_client(resources.maintainer_username) as maintainer_client:
         monkeypatch.setattr(

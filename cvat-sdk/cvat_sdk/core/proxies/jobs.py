@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from PIL import Image
 
 from cvat_sdk.api_client import apis, models
+from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.issues import Issue
@@ -22,7 +23,6 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelRetrieveMixin,
     ModelUpdateMixin,
     build_model_bases,
-    get_paginated_collection_with_organization,
 )
 from cvat_sdk.core.uploading import AnnotationUploader
 
@@ -130,8 +130,7 @@ class Job(
         return meta
 
     def get_labels(self) -> list[models.ILabel]:
-        return get_paginated_collection_with_organization(
-            self._client,
+        return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint,
             organization_id=self.organization,
             job_id=self.id,
@@ -151,8 +150,7 @@ class Job(
     def get_issues(self) -> list[Issue]:
         return [
             Issue(self._client, m)
-            for m in get_paginated_collection_with_organization(
-                self._client,
+            for m in get_paginated_collection(
                 self._client.api_client.issues_api.list_endpoint,
                 organization_id=self.organization,
                 job_id=self.id,

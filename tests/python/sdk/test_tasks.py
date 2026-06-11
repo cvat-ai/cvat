@@ -23,7 +23,7 @@ from shared.utils.config import make_sdk_client
 from shared.utils.helpers import generate_image_files
 
 from .common import TestDatasetExport
-from .util import create_org_resource_hierarchy, make_pbar
+from .util import make_pbar
 
 
 class TestTaskUsecases(TestDatasetExport):
@@ -593,9 +593,9 @@ class TestTaskUsecases(TestDatasetExport):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_org_maintainer_can_get_task_resources_without_explicit_org_context(
-    fxt_image_file: Path,
+    fxt_org_resource_hierarchy,
 ):
-    resources = create_org_resource_hierarchy(fxt_image_file)
+    resources = fxt_org_resource_hierarchy()
 
     with make_sdk_client(resources.maintainer_username) as maintainer_client:
         task = maintainer_client.tasks.retrieve(resources.task_id)

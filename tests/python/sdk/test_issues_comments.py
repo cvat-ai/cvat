@@ -13,7 +13,6 @@ from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
 from shared.utils.config import make_sdk_client
 
-from .util import create_org_resource_hierarchy
 
 
 class TestIssuesUsecases:
@@ -236,9 +235,9 @@ class TestCommentsUsecases:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_org_maintainer_can_get_issue_comments_without_explicit_org_context(
-    fxt_image_file: Path,
+    fxt_org_resource_hierarchy,
 ):
-    resources = create_org_resource_hierarchy(fxt_image_file, include_comment=True)
+    resources = fxt_org_resource_hierarchy(include_comment=True)
 
     with make_sdk_client(resources.maintainer_username) as maintainer_client:
         issue = maintainer_client.issues.retrieve(resources.issue_id)

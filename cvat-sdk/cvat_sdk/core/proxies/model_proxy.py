@@ -87,29 +87,6 @@ class Repo(ModelProxy[ModelType, ApiType]):
     _entity_type: type[Entity[ModelType, ApiType]]
 
 
-def get_paginated_collection_with_organization(
-    _client: Client,
-    endpoint: Endpoint,
-    *,
-    organization_id: int | None,
-    return_json: bool = False,
-    **kwargs,
-):
-    params = {"x_organization": None}
-
-    if organization_id is None:
-        # Empty org slug is the SDK/server convention for the personal workspace.
-        params["org"] = ""
-    else:
-        params["org_id"] = organization_id
-
-    return get_paginated_collection(
-        endpoint,
-        return_json=return_json,
-        **kwargs,
-        **params,
-    )
-
 
 ### Utilities
 

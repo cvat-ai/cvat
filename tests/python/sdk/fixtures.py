@@ -3,17 +3,20 @@
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
+from typing import Callable
 from zipfile import ZipFile
 
 import pytest
 from cvat_sdk import Client
+from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.types import Location
 from PIL import Image
 
-from shared.utils.config import BASE_URL, IMPORT_EXPORT_BUCKET_ID, USER_PASS
+from rest_api.utils import register_new_user
+from shared.utils.config import BASE_URL, IMPORT_EXPORT_BUCKET_ID, USER_PASS, make_sdk_client
 from shared.utils.helpers import generate_image_file
 
-from .util import generate_coco_json
+from .util import OrgResourceHierarchy, generate_coco_json
 
 
 @pytest.fixture
@@ -138,3 +141,72 @@ def fxt_new_task_with_target_storage(fxt_image_file: Path, fxt_login: tuple[Clie
     )
 
     yield task
+
+
+@pytest.fixture
+def fxt_org_resource_hierarchy(
+    fxt_image_file: Path,
+) -> Callable[..., OrgResourceHierarchy]:
+    def create(
+        *, include_issue: bool = False, include_comment: bool = False
+    ) -> OrgResourceHierarchy:
+        owner = register_new_user("sdkowner")
+        maintainer = register_new_user("sdkmaintainer")
+
+        with make_sdk_client(owner["username"]) as owner_client:
+            org = owner_client.organizations.create(
+                models.OrganizationWriteRequest(slug="sdkorg")
+            )
+            owner_client.organization_slug = org.slug
+            owner_client.api_client.invitations_api.create(
+                models.InvitationWriteRequest(
+                    role="maintainer",
+                    email=maintainer["email"],
+                ),
+            )
+
+            project = owner_client.projects.create(
+                spec=models.ProjectWriteRequest(
+                    name="org project",
+                    labels=[models.PatchedLabelRequest(name="car")],
+                )
+            )
+            task = owner_client.tasks.create_from_data(
+                spec=models.TaskWriteRequest(name="org task", project_id=project.id),
+                resources=[fxt_image_file],
+                data_params={"image_quality": 80},
+            )
+            job = task.get_jobs()[0]
+
+            issue_id = None
+            comment_id = None
+
+            if include_issue or include_comment:
+                issue = owner_client.issues.create(
+                    models.IssueWriteRequest(
+                        frame=0,
+                        position=[2.0, 4.0],
+                        job=job.id,
+                        message="hello",
+                    )
+                )
+                issue_id = issue.id
+
+                if include_comment:
+                    comment = owner_client.comments.create(
+                        models.CommentWriteRequest(issue.id, message="hi!")
+                    )
+                    comment_id = comment.id
+
+        return OrgResourceHierarchy(
+            owner_username=owner["username"],
+            maintainer_username=maintainer["username"],
+            org_slug=org.slug,
+            project_id=project.id,
+            task_id=task.id,
+            job_id=job.id,
+            issue_id=issue_id,
+            comment_id=comment_id,
+        )
+
+    return create

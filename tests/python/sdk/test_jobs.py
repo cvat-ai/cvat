@@ -18,7 +18,7 @@ from shared.fixtures.data import CloudStorageAssets
 from shared.utils.config import make_sdk_client
 
 from .common import TestDatasetExport
-from .util import create_org_resource_hierarchy, make_pbar
+from .util import make_pbar
 
 
 class TestJobUsecases(TestDatasetExport):
@@ -358,9 +358,9 @@ class TestJobUsecases(TestDatasetExport):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_org_maintainer_can_get_job_resources_without_explicit_org_context(
-    fxt_image_file: Path,
+    fxt_org_resource_hierarchy,
 ):
-    resources = create_org_resource_hierarchy(fxt_image_file, include_issue=True)
+    resources = fxt_org_resource_hierarchy(include_issue=True)
 
     with make_sdk_client(resources.maintainer_username) as maintainer_client:
         job = maintainer_client.jobs.retrieve(resources.job_id)
