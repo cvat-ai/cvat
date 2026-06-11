@@ -11,6 +11,7 @@ from io import BytesIO
 
 import datumaro
 import numpy as np
+import pytest
 from datumaro.components.annotation import Mask
 from datumaro.components.dataset import Dataset, DatasetItem
 from django.contrib.auth.models import Group, User
@@ -1056,53 +1057,59 @@ class TaskAnnotationsImportTest(_DbTestBase):
             dm.task.import_task_annotations(dataset_path, task["id"], format_name, True)
             self._test_can_import_annotations(task, format_name)
 
-    def _make_coco_annotation_without_iscrowd(self):
+    def _make_coco_annotation_without_iscrowd(self, format_name="COCO 1.0"):
+        annotation = {
+            "id": 1,
+            "image_id": 1,
+            "category_id": 1,
+            "segmentation": [[10.0, 10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 20.0]],
+            "bbox": [10.0, 10.0, 10.0, 10.0],
+            "area": 100.0,
+            # No "iscrowd" field — simulates Azure-sourced annotations
+        }
+        category = {"id": 1, "name": "car", "supercategory": ""}
+        if format_name == "COCO Keypoints 1.0":
+            annotation.update(
+                {
+                    "segmentation": [],
+                    "keypoints": [15, 15, 2],
+                    "num_keypoints": 1,
+                }
+            )
+            category.update({"keypoints": ["kp1"], "skeleton": []})
         return {
             "info": {},
             "licenses": [],
             "images": [{"id": 1, "file_name": "image_0.jpg", "height": 100, "width": 100}],
-            "annotations": [
-                {
-                    "id": 1,
-                    "image_id": 1,
-                    "category_id": 1,
-                    "segmentation": [[10.0, 10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 20.0]],
-                    "bbox": [10.0, 10.0, 10.0, 10.0],
-                    "area": 100.0,
-                    # No "iscrowd" field — simulates Azure-sourced annotations
-                }
-            ],
-            "categories": [{"id": 1, "name": "car", "supercategory": ""}],
+            "annotations": [annotation],
+            "categories": [category],
         }
 
-    def test_can_import_coco_instances_without_iscrowd_zip(self):
+    @pytest.mark.parametrize(
+        "use_zip,format_name,zip_annotation_filename",
+        [
+            (True, "COCO 1.0", "annotations/instances_default.json"),
+            (False, "COCO 1.0", None),
+            (True, "COCO Keypoints 1.0", "annotations/person_keypoints_default.json"),
+            (False, "COCO Keypoints 1.0", None),
+        ],
+    )
+    def test_can_import_coco_without_iscrowd(self, use_zip, format_name, zip_annotation_filename):
         images = self._generate_task_images(1)
-        task = self._generate_task(images, "COCO 1.0")
+        task = self._generate_task(images, format_name)
+        annotation_data = self._make_coco_annotation_without_iscrowd(format_name)
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            zip_path = osp.join(temp_dir, "annotations.zip")
-            with zipfile.ZipFile(zip_path, "w") as zf:
-                zf.writestr(
-                    "annotations/instances_default.json",
-                    json.dumps(self._make_coco_annotation_without_iscrowd()),
-                )
+            if use_zip:
+                file_path = osp.join(temp_dir, "annotations.zip")
+                with zipfile.ZipFile(file_path, "w") as zf:
+                    zf.writestr(zip_annotation_filename, json.dumps(annotation_data))
+            else:
+                file_path = osp.join(temp_dir, "annotations.json")
+                with open(file_path, "w") as f:
+                    json.dump(annotation_data, f)
 
-            dm.task.import_task_annotations(zip_path, task["id"], "COCO 1.0", True)
-
-            task_ann = TaskAnnotation(task["id"])
-            task_ann.init_from_db()
-            self.assertEqual(1, len(task_ann.ir_data.shapes))
-
-    def test_can_import_coco_instances_without_iscrowd_json(self):
-        images = self._generate_task_images(1)
-        task = self._generate_task(images, "COCO 1.0")
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            json_path = osp.join(temp_dir, "annotations.json")
-            with open(json_path, "w") as f:
-                json.dump(self._make_coco_annotation_without_iscrowd(), f)
-
-            dm.task.import_task_annotations(json_path, task["id"], "COCO 1.0", True)
+            dm.task.import_task_annotations(file_path, task["id"], format_name, True)
 
             task_ann = TaskAnnotation(task["id"])
             task_ann.init_from_db()
