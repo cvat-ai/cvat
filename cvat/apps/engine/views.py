@@ -2495,6 +2495,15 @@ class JobViewSet(
     )
     def annotations(self, request: ExtendedRequest, pk: int):
         self._object: models.Job = self.get_object()  # force call of check_object_permissions()
+
+        if request.method in ["POST", "PUT"] and self._object.state == models.StateChoice.NEW:
+            raise ValidationError(
+            "It is not possible to upload annotations to a job in the '{}' state. "
+            "Please, change the job state to '{}' and try again.".format(
+            models.StateChoice.NEW, models.StateChoice.IN_PROGRESS
+            )
+        )
+
         if request.method == "GET":
 
             if {
