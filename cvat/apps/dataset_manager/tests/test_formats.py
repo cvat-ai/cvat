@@ -1057,26 +1057,24 @@ class TaskAnnotationsImportTest(_DbTestBase):
             dm.task.import_task_annotations(dataset_path, task["id"], format_name, True)
             self._test_can_import_annotations(task, format_name)
 
-    def _make_coco_annotation_without_iscrowd(self, format_name="COCO 1.0"):
+    def _make_coco_annotation_without_iscrowd(self, format_name="COCO 1.0", has_segmentation=True):
         annotation = {
             "id": 1,
             "image_id": 1,
             "category_id": 1,
-            "segmentation": [[10.0, 10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 20.0]],
             "bbox": [10.0, 10.0, 10.0, 10.0],
             "area": 100.0,
             # No "iscrowd" field — simulates Azure-sourced annotations
         }
         category = {"id": 1, "name": "car", "supercategory": ""}
         if format_name == "COCO Keypoints 1.0":
-            annotation.update(
-                {
-                    "segmentation": [],
-                    "keypoints": [15, 15, 2],
-                    "num_keypoints": 1,
-                }
-            )
+            if has_segmentation:
+                annotation["segmentation"] = []
+            annotation.update({"keypoints": [15, 15, 2], "num_keypoints": 1})
             category.update({"keypoints": ["kp1"], "skeleton": []})
+        else:
+            if has_segmentation:
+                annotation["segmentation"] = [[10.0, 10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 20.0]]
         return {
             "info": {},
             "licenses": [],
@@ -1085,6 +1083,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             "categories": [category],
         }
 
+    @pytest.mark.parametrize("has_segmentation", [True, False])
     @pytest.mark.parametrize(
         "use_zip,format_name,zip_annotation_filename",
         [
@@ -1094,10 +1093,12 @@ class TaskAnnotationsImportTest(_DbTestBase):
             (False, "COCO Keypoints 1.0", None),
         ],
     )
-    def test_can_import_coco_without_iscrowd(self, use_zip, format_name, zip_annotation_filename):
+    def test_can_import_coco_without_iscrowd(
+        self, use_zip, format_name, zip_annotation_filename, has_segmentation
+    ):
         images = self._generate_task_images(1)
         task = self._generate_task(images, format_name)
-        annotation_data = self._make_coco_annotation_without_iscrowd(format_name)
+        annotation_data = self._make_coco_annotation_without_iscrowd(format_name, has_segmentation)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             if use_zip:
