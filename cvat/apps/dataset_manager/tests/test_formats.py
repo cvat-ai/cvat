@@ -760,6 +760,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     "name": "car",
                     "type": "skeleton",
                     "attributes": [],
+                    "svg": '<circle r="5" stroke="black" fill="blue" cx="50" cy="50" data-type="node" data-element-id="0" data-node-id="0" data-label-name="kp1"></circle>',
                     "sublabels": [
                         {"name": "kp1", "type": "points", "attributes": []},
                     ],
