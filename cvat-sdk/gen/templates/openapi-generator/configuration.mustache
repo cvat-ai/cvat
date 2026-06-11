@@ -5,9 +5,11 @@ import logging
 {{^asyncio}}
 import multiprocessing
 {{/asyncio}}
+import socket
 import sys
 import typing
 import urllib3
+import urllib3.connection
 import urllib3.util
 
 from http import client as http_client
@@ -330,11 +332,28 @@ class Configuration:
         )
         """Adding retries to override urllib3 default value 3"""
 
+        self.timeout = urllib3.Timeout(connect=60.0, read=120.0)
+        """Default timeout for HTTP requests. A finite read timeout ensures a
+           request blocked on a silently-dropped (e.g. by a load balancer or
+           NAT) keep-alive connection eventually fails - and is retried for
+           idempotent methods - instead of hanging forever. Can be overridden
+           per request via the `_request_timeout` argument.
+        """
+
         # Enable client side validation
         self.client_side_validation = True
 
-        # Options to pass down to the underlying urllib3 socket
-        self.socket_options = None
+        # Enable TCP keepalive so that connections broken while idle (e.g. closed
+        # by a load balancer or NAT) are eventually detected and evicted from
+        # urllib3's connection pool instead of being reused and blocking on a
+        # dead socket. urllib3 reuses pooled connections but does not enable
+        # keepalive by default. Keepalive timing is left at the OS defaults to
+        # avoid platform-specific tuning (TCP_KEEPIDLE etc.); the request read
+        # timeout above is the primary, portable fast-fail guard.
+        # https://urllib3.readthedocs.io/en/stable/reference/urllib3.connection.html#urllib3.connection.HTTPConnection.default_socket_options
+        self.socket_options = list(
+            urllib3.connection.HTTPConnection.default_socket_options
+        ) + [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)]
 
     def __deepcopy__(self, memo):
         cls = self.__class__

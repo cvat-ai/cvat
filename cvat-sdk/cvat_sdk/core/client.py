@@ -11,7 +11,7 @@ from abc import ABCMeta
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from time import sleep
+from time import monotonic, sleep
 from typing import Any, TypeVar
 from urllib.parse import urlsplit
 
@@ -49,6 +49,11 @@ class Config:
 
     status_check_period: float = 5
     """Operation status check period, in seconds"""
+
+    request_timeout: float | tuple[float, float] | None = None
+    """Timeout for individual HTTP requests, in seconds. A single value sets the
+    total timeout; a (connect, read) tuple sets them separately. If None, the
+    default of (60, 120) is used."""
 
     allow_unsupported_server: bool = True
     """Allow to use SDK with an unsupported server version. If disabled, raise an exception"""
@@ -120,9 +125,15 @@ class Client:
         self.api_map = CVAT_API_V2(url)
         """Handles server API URL interaction logic"""
 
-        self.api_client = ApiClient(
-            Configuration(host=self.api_map.host, verify_ssl=self.config.verify_ssl)
-        )
+        configuration = Configuration(host=self.api_map.host, verify_ssl=self.config.verify_ssl)
+        if self.config.request_timeout is not None:
+            if isinstance(self.config.request_timeout, tuple):
+                connect, read = self.config.request_timeout
+                configuration.timeout = urllib3.Timeout(connect=connect, read=read)
+            else:
+                configuration.timeout = urllib3.Timeout(total=self.config.request_timeout)
+
+        self.api_client = ApiClient(configuration)
         """Provides low-level access to the CVAT server"""
 
         if check_server_version:
@@ -277,10 +288,13 @@ class Client:
         rq_id: str,
         *,
         status_check_period: int | None = None,
+        timeout: float | None = None,
         log_prefix: str | None = None,
     ) -> tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
+
+        deadline = None if timeout is None else monotonic() + timeout
 
         while True:
             request, response = self.api_client.requests_api.retrieve(rq_id)
@@ -297,6 +311,12 @@ class Client:
                 break
             elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
                 raise BackgroundRequestException(message)
+
+            if deadline is not None and monotonic() + status_check_period >= deadline:
+                raise TimeoutError(
+                    f"{log_prefix} did not finish within {timeout}s "
+                    f"(last status: {status.value})"
+                )
 
             sleep(status_check_period)
 

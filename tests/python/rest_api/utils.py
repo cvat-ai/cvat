@@ -22,10 +22,9 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from urllib3 import HTTPResponse
 
-from shared.utils.config import USER_PASS, make_api_client, post_method
+from shared.utils.config import DEFAULT_INTERVAL, USER_PASS, make_api_client, post_method
 
 DEFAULT_RETRIES = 50
-DEFAULT_INTERVAL = 0.1
 
 
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:

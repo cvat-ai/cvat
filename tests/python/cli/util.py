@@ -16,8 +16,9 @@ from typing import Any
 import pytest
 import requests
 from cvat_sdk import make_client
+from cvat_sdk.core.client import Config
 
-from shared.utils.config import BASE_URL, USER_PASS
+from shared.utils.config import BASE_URL, DEFAULT_INTERVAL, TEST_REQUEST_TIMEOUT, USER_PASS
 from shared.utils.helpers import generate_image_file
 
 
@@ -103,16 +104,28 @@ class TestCliBase:
         fxt_stdout: io.StringIO,
         tmp_path: Path,
         admin_user: str,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         self.tmp_path = tmp_path
         self.stdout = fxt_stdout
         self.host, self.port = BASE_URL.rsplit(":", maxsplit=1)
         self.user = admin_user
         self.password = USER_PASS
+
+        # The CLI builds its own Client (inside build_client), so inject a short
+        # HTTP request timeout via the Config it constructs. This makes a request
+        # blocked on a dead connection fail fast instead of stalling until the
+        # pytest-timeout fires with an opaque error.
+        def config_with_test_timeout(**kwargs):
+            kwargs.setdefault("request_timeout", TEST_REQUEST_TIMEOUT)
+            return Config(**kwargs)
+
+        monkeypatch.setattr("cvat_cli._internal.common.Config", config_with_test_timeout)
+
         self.client = make_client(
             host=self.host, port=self.port, credentials=(self.user, self.password)
         )
-        self.client.config.status_check_period = 0.01
+        self.client.config.status_check_period = DEFAULT_INTERVAL
 
         yield
 
