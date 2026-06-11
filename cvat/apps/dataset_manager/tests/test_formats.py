@@ -1108,9 +1108,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                         if use_zip:
                             file_path = osp.join(temp_dir, "annotations.zip")
                             with zipfile.ZipFile(file_path, "w") as zf:
-                                zf.writestr(
-                                    zip_annotation_filename, json.dumps(annotation_data)
-                                )
+                                zf.writestr(zip_annotation_filename, json.dumps(annotation_data))
                         else:
                             file_path = osp.join(temp_dir, "annotations.json")
                             with open(file_path, "w") as f:
