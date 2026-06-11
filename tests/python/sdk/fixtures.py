@@ -154,9 +154,7 @@ def fxt_org_resource_hierarchy(
         maintainer = register_new_user("sdkmaintainer")
 
         with make_sdk_client(owner["username"]) as owner_client:
-            org = owner_client.organizations.create(
-                models.OrganizationWriteRequest(slug="sdkorg")
-            )
+            org = owner_client.organizations.create(models.OrganizationWriteRequest(slug="sdkorg"))
             owner_client.organization_slug = org.slug
             owner_client.api_client.invitations_api.create(
                 models.InvitationWriteRequest(

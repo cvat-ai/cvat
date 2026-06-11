@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 from typing_extensions import Self
 
 from cvat_sdk.api_client import exceptions
-from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -85,7 +84,6 @@ class Repo(ModelProxy[ModelType, ApiType]):
     """
 
     _entity_type: type[Entity[ModelType, ApiType]]
-
 
 
 ### Utilities

@@ -17,7 +17,6 @@ from cvat_sdk import exceptions
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.progress import BaseProgressReporter, ProgressReporter
 
-
 # Sentinel distinguishing "not passed" from None, which means personal workspace.
 _UNSET = object()
 

@@ -14,7 +14,6 @@ from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from shared.utils.config import make_sdk_client
 
 
-
 class TestIssuesUsecases:
     @pytest.fixture(autouse=True)
     def setup(
