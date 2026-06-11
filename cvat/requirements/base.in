@@ -15,7 +15,7 @@ dj-pagination==2.5.0
 dj-rest-auth[with_social]==5.0.2
 django-allauth[saml]==0.57.2
 
-django-auth-ldap==2.2.0
+django-auth-ldap==5.3.0
 django-cors-headers==3.5.0
 django-crum==0.7.9
 django-filter>=25.1
