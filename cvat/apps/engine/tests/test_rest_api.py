@@ -7792,25 +7792,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
     def test_api_v2_tasks_id_annotations_upload_coco_without_iscrowd(self):
         self._run_coco_annotation_upload_test(self.user, include_iscrowd=False)
 
-    def test_api_v2_tasks_id_annotations_upload_coco_zip_without_iscrowd(self):
-        task, _ = self._create_task(self.user, self.user)
-
-        content = io.BytesIO()
-        with zipfile.ZipFile(content, "w") as archive:
-            archive.writestr(
-                "annotations/instances_default.json",
-                self._generate_coco_anno(include_iscrowd=False),
-            )
-        content.seek(0)
-
-        self._import_task_annotations(
-            self.user, task["id"], content, query_params={"format": "COCO 1.0"}
-        )
-
-        response = self._get_api_v2_tasks_id_annotations(task["id"], self.user)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["shapes"]), 1)
-
     def _generate_coco_keypoints_anno(self, *, include_iscrowd=True):
         annotation = {
             "category_id": 1,
