@@ -11,7 +11,6 @@ from io import BytesIO
 
 import datumaro
 import numpy as np
-import pytest
 from datumaro.components.annotation import Mask
 from datumaro.components.dataset import Dataset, DatasetItem
 from django.contrib.auth.models import Group, User
@@ -1057,8 +1056,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
             dm.task.import_task_annotations(dataset_path, task["id"], format_name, True)
             self._test_can_import_annotations(task, format_name)
 
-    def _make_coco_annotation_without_iscrowd(self, format_name="COCO 1.0", has_segmentation=True):
-        annotation = {
+    def _make_coco_annotation_without_iscrowd(
+        self, format_name: str = "COCO 1.0", has_segmentation: bool = True
+    ) -> dict:
+        annotation: dict = {
             "id": 1,
             "image_id": 1,
             "category_id": 1,
@@ -1066,7 +1067,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             "area": 100.0,
             # No "iscrowd" field — simulates Azure-sourced annotations
         }
-        category = {"id": 1, "name": "car", "supercategory": ""}
+        category: dict = {"id": 1, "name": "car", "supercategory": ""}
         if format_name == "COCO Keypoints 1.0":
             if has_segmentation:
                 annotation["segmentation"] = []
@@ -1083,35 +1084,40 @@ class TaskAnnotationsImportTest(_DbTestBase):
             "categories": [category],
         }
 
-    @pytest.mark.parametrize("has_segmentation", [True, False])
-    @pytest.mark.parametrize(
-        "use_zip,format_name,zip_annotation_filename",
-        [
+    def test_can_import_coco_without_iscrowd(self) -> None:
+        cases: list[tuple[bool, str, str | None]] = [
             (True, "COCO 1.0", "annotations/instances_default.json"),
             (False, "COCO 1.0", None),
             (True, "COCO Keypoints 1.0", "annotations/person_keypoints_default.json"),
             (False, "COCO Keypoints 1.0", None),
-        ],
-    )
-    def test_can_import_coco_without_iscrowd(
-        self, use_zip, format_name, zip_annotation_filename, has_segmentation
-    ):
-        images = self._generate_task_images(1)
-        task = self._generate_task(images, format_name)
-        annotation_data = self._make_coco_annotation_without_iscrowd(format_name, has_segmentation)
+        ]
+        for use_zip, format_name, zip_annotation_filename in cases:
+            for has_segmentation in (True, False):
+                with self.subTest(
+                    use_zip=use_zip,
+                    format_name=format_name,
+                    has_segmentation=has_segmentation,
+                ):
+                    images = self._generate_task_images(1)
+                    task = self._generate_task(images, format_name)
+                    annotation_data = self._make_coco_annotation_without_iscrowd(
+                        format_name, has_segmentation
+                    )
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            if use_zip:
-                file_path = osp.join(temp_dir, "annotations.zip")
-                with zipfile.ZipFile(file_path, "w") as zf:
-                    zf.writestr(zip_annotation_filename, json.dumps(annotation_data))
-            else:
-                file_path = osp.join(temp_dir, "annotations.json")
-                with open(file_path, "w") as f:
-                    json.dump(annotation_data, f)
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        if use_zip:
+                            file_path = osp.join(temp_dir, "annotations.zip")
+                            with zipfile.ZipFile(file_path, "w") as zf:
+                                zf.writestr(
+                                    zip_annotation_filename, json.dumps(annotation_data)
+                                )
+                        else:
+                            file_path = osp.join(temp_dir, "annotations.json")
+                            with open(file_path, "w") as f:
+                                json.dump(annotation_data, f)
 
-            dm.task.import_task_annotations(file_path, task["id"], format_name, True)
+                        dm.task.import_task_annotations(file_path, task["id"], format_name, True)
 
-            task_ann = TaskAnnotation(task["id"])
-            task_ann.init_from_db()
-            self.assertEqual(1, len(task_ann.ir_data.shapes))
+                        task_ann = TaskAnnotation(task["id"])
+                        task_ann.init_from_db()
+                        self.assertEqual(1, len(task_ann.ir_data.shapes))
