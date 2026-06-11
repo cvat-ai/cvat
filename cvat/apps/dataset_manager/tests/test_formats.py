@@ -1059,23 +1059,40 @@ class TaskAnnotationsImportTest(_DbTestBase):
     def _make_coco_annotation_without_iscrowd(
         self, format_name: str = "COCO 1.0", has_segmentation: bool = True
     ) -> dict:
-        annotation: dict = {
-            "id": 1,
-            "image_id": 1,
-            "category_id": 1,
-            "bbox": [10.0, 10.0, 10.0, 10.0],
-            "area": 100.0,
-            # No "iscrowd" field — simulates Azure-sourced annotations
-        }
-        category: dict = {"id": 1, "name": "car", "supercategory": ""}
         if format_name == "COCO Keypoints 1.0":
-            if has_segmentation:
-                annotation["segmentation"] = []
-            annotation.update({"keypoints": [15, 15, 2], "num_keypoints": 1})
-            category.update({"keypoints": ["kp1"], "skeleton": []})
+            annotation = {
+                "id": 1,
+                "image_id": 1,
+                "category_id": 1,
+                "bbox": [10.0, 10.0, 10.0, 10.0],
+                "area": 100.0,
+                "keypoints": [15, 15, 2],
+                "num_keypoints": 1,
+                **({"segmentation": []} if has_segmentation else {}),
+                # No "iscrowd" field — simulates Azure-sourced annotations
+            }
+            category = {
+                "id": 1,
+                "name": "car",
+                "supercategory": "",
+                "keypoints": ["kp1"],
+                "skeleton": [],
+            }
         else:
-            if has_segmentation:
-                annotation["segmentation"] = [[10.0, 10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 20.0]]
+            annotation = {
+                "id": 1,
+                "image_id": 1,
+                "category_id": 1,
+                "bbox": [10.0, 10.0, 10.0, 10.0],
+                "area": 100.0,
+                **(
+                    {"segmentation": [[10.0, 10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 20.0]]}
+                    if has_segmentation
+                    else {}
+                ),
+                # No "iscrowd" field — simulates Azure-sourced annotations
+            }
+            category = {"id": 1, "name": "car", "supercategory": ""}
         return {
             "info": {},
             "licenses": [],
