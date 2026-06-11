@@ -213,6 +213,40 @@ The name of the service account to use for backend pods
 {{- end }}
 {{- end }}
 
+
+{{- define "cvat.backend.worker.command" -}}
+{{- $spec := . -}}
+- run
+{{- if eq $spec.type "worker-pool" }}
+- worker-pool
+{{- range $spec.queues }}
+- {{ . }}
+{{- end }}
+- --num-workers
+- {{ required "args.numWorkers is required for type \"worker-pool\"" $spec.numWorkers | quote }}
+{{- else if eq $spec.type "worker" }}
+- worker
+{{- range $spec.queues }}
+- {{ . }}
+{{- end }}
+{{- if $spec.withScheduler }}
+- --with-scheduler
+{{- end }}
+{{- else }}
+{{- fail (printf "cvat.backend.worker.command: unknown type %q (want \"worker\" or \"worker-pool\")" $spec.type) }}
+{{- end }}
+{{- end -}}
+
+{{- define "cvat.backend.worker.podNumWorkers" -}}
+{{- if eq .args.type "worker-pool" -}}
+{{- mul .numProcs (required "args.numWorkers is required for type \"worker-pool\"" .args.numWorkers) -}}
+{{- else if eq .args.type "worker" -}}
+{{- .numProcs -}}
+{{- else -}}
+{{- fail (printf "cvat.backend.worker.podNumWorkers: unknown type %q (want \"worker\" or \"worker-pool\")" .args.type) -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "cvat.backend.worker.livenessProbe" -}}
 {{- if .livenessProbe.enabled }}
 livenessProbe:

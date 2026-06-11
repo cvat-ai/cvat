@@ -39,13 +39,17 @@ cvat:
         - mountPath: /home/django/share
           name: cvat-backend-data
           subPath: share
-        extraArgs:
-        - "annotation"
-        - "chunks"
-        - "consensus"
-        - "export"
-        - "import"
-        - "quality_reports"
+        args:
+          type: worker
+          queues:
+          - notifications
+          - cleaning
+          - annotation
+          - chunks
+          - consensus
+          - export
+          - import
+          - quality_reports
 
     # Images are already present in the node
     imagePullPolicy: Never
