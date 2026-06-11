@@ -46,7 +46,7 @@ psutil==5.9.4
 psycopg2-binary~=2.9
 python-ldap==3.4.3
 python-logstash-async==2.5.0
-pyunpack==0.2.1
+pyunpack==0.3
 python-rapidjson>=1.20
 redis==4.6.0
 requests~=2.26
