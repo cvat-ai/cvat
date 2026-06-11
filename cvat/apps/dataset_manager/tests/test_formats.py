@@ -754,6 +754,17 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     ],
                 }
             ]
+        elif annotation_format == "COCO Keypoints 1.0":
+            labels = [
+                {
+                    "name": "car",
+                    "type": "skeleton",
+                    "attributes": [],
+                    "sublabels": [
+                        {"name": "kp1", "type": "points", "attributes": []},
+                    ],
+                }
+            ]
         elif annotation_format == "Market-1501 1.0":
             labels = [
                 {
