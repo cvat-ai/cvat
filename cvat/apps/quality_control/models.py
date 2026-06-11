@@ -434,7 +434,7 @@ _DEFAULT_REQUIREMENT_ANNOTATION_TYPES = (
 
 
 def get_default_requirement_name(annotation_type: str) -> str:
-    return f"default:{annotation_type}"
+    return f"Default {str(annotation_type).replace('_', ' ')}"
 
 
 def ensure_default_quality_requirements(quality_settings: QualitySettings) -> bool:
