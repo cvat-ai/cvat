@@ -899,6 +899,32 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     "occluded": False,
                 }
             ]
+        elif annotation_format == "COCO Keypoints 1.0":
+            shapes = [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [],
+                    "type": "skeleton",
+                    "occluded": False,
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "label_id": task["labels"][0]["sublabels"][0]["id"],
+                            "group": 0,
+                            "source": "manual",
+                            "attributes": [],
+                            "points": [1.0, 2.0],
+                            "type": "points",
+                            "occluded": False,
+                            "outside": False,
+                        }
+                    ],
+                }
+            ]
         else:
             rectangle_shape_wo_attrs = {
                 "frame": 1,
