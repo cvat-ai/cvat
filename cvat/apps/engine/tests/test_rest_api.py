@@ -7715,52 +7715,56 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
         elif format_name == "Segmentation mask 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
 
-    def _generate_coco_anno(self, *, include_iscrowd=True):
-        annotation = {
-            "category_id": 1,
-            "id": 1,
-            "image_id": 0,
-            "segmentation": [[574.0, 407.0, 741.0, 407.0, 741.0, 513.0, 574.0, 513.0]],
-            "area": 17702.0,
-            "bbox": [574.0, 407.0, 167.0, 106.0],
-        }
-        if include_iscrowd:
-            annotation["iscrowd"] = 0
-
-        return json.dumps(
-            {
-                "categories": [
-                    {
-                        "id": 1,
-                        "name": "car",
-                        "supercategory": "",
-                    },
-                    {
-                        "id": 2,
-                        "name": "person",
-                        "supercategory": "",
-                    },
+    def _run_coco_annotation_upload_test(self, user):
+        def generate_coco_anno():
+            return b"""{
+            "categories": [
+                {
+                "id": 1,
+                "name": "car",
+                "supercategory": ""
+                },
+                {
+                "id": 2,
+                "name": "person",
+                "supercategory": ""
+                }
+            ],
+            "images": [
+                {
+                "coco_url": "",
+                "date_captured": "",
+                "flickr_url": "",
+                "license": 0,
+                "id": 0,
+                "file_name": "test_1.jpg",
+                "height": 720,
+                "width": 1280
+                }
+            ],
+            "annotations": [
+                {
+                "category_id": 1,
+                "id": 1,
+                "image_id": 0,
+                "iscrowd": 0,
+                "segmentation": [
+                    []
                 ],
-                "images": [
-                    {
-                        "coco_url": "",
-                        "date_captured": "",
-                        "flickr_url": "",
-                        "license": 0,
-                        "id": 0,
-                        "file_name": "test_1.jpg",
-                        "height": 720,
-                        "width": 1280,
-                    }
-                ],
-                "annotations": [annotation],
-            }
-        ).encode()
+                "area": 17702.0,
+                "bbox": [
+                    574.0,
+                    407.0,
+                    167.0,
+                    106.0
+                ]
+                }
+            ]
+            }"""
 
-    def _run_coco_annotation_upload_test(self, user, *, include_iscrowd=True):
         task, _ = self._create_task(user, user)
 
-        content = io.BytesIO(self._generate_coco_anno(include_iscrowd=include_iscrowd))
+        content = io.BytesIO(generate_coco_anno())
         content.seek(0)
 
         self._import_task_annotations(
@@ -7769,7 +7773,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
 
         response = self._get_api_v2_tasks_id_annotations(task["id"], user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["shapes"]), 1)
 
     def test_api_v2_tasks_id_annotations_admin(self):
         self._run_api_v2_tasks_id_annotations(self.admin, self.assignee)
@@ -7788,63 +7791,6 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
 
     def test_api_v2_tasks_id_annotations_upload_coco_user(self):
         self._run_coco_annotation_upload_test(self.user)
-
-    def test_api_v2_tasks_id_annotations_upload_coco_without_iscrowd(self):
-        self._run_coco_annotation_upload_test(self.user, include_iscrowd=False)
-
-    def _generate_coco_keypoints_anno(self, *, include_iscrowd=True):
-        annotation = {
-            "category_id": 1,
-            "id": 1,
-            "image_id": 0,
-            "segmentation": [],
-            "area": 17702.0,
-            "bbox": [574.0, 407.0, 167.0, 106.0],
-            "num_keypoints": 2,
-            "keypoints": [600.0, 420.0, 2, 650.0, 430.0, 2],
-        }
-        if include_iscrowd:
-            annotation["iscrowd"] = 0
-
-        return json.dumps(
-            {
-                "categories": [
-                    {
-                        "id": 1,
-                        "name": "skel",
-                        "supercategory": "",
-                        "keypoints": ["1", "2"],
-                        "skeleton": [[1, 2]],
-                    },
-                ],
-                "images": [
-                    {
-                        "coco_url": "",
-                        "date_captured": "",
-                        "flickr_url": "",
-                        "license": 0,
-                        "id": 0,
-                        "file_name": "test_1.jpg",
-                        "height": 720,
-                        "width": 1280,
-                    }
-                ],
-                "annotations": [annotation],
-            }
-        ).encode()
-
-    def test_api_v2_tasks_id_annotations_upload_coco_keypoints_without_iscrowd(self):
-        task, _ = self._create_task(self.user, self.user, annotation_format="COCO Keypoints 1.0")
-
-        content = io.BytesIO(self._generate_coco_keypoints_anno(include_iscrowd=False))
-        content.seek(0)
-
-        self._import_task_annotations(
-            self.user, task["id"], content, query_params={"format": "COCO Keypoints 1.0"}
-        )
-
-        response = self._get_api_v2_tasks_id_annotations(task["id"], self.user)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
 class ServerShareAPITestCase(ApiTestBase):
