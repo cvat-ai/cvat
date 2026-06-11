@@ -13,6 +13,7 @@ context('Quality requirements UI', () => {
     const childRequirementName = 'E2E rectangle accuracy';
     const grandchildRequirementName = 'E2E precise rectangle accuracy';
     const copiedRequirementName = `Copy of ${childRequirementName}`;
+    const defaultRectangleRequirementName = 'Default rectangle';
     const validationParams = {
         frameCount: 2,
         mode: 'gt',
@@ -98,7 +99,7 @@ context('Quality requirements UI', () => {
     it('Default requirement row is read-only and disabled by default', () => {
         openSettingsTab();
 
-        requirementRow('default:rectangle').within(() => {
+        requirementRow(defaultRectangleRequirementName).within(() => {
             cy.contains('Rectangle').should('exist');
             cy.contains('Accuracy').should('exist');
             // Default requirements may not be copied or deleted.
@@ -114,19 +115,19 @@ context('Quality requirements UI', () => {
     it('Enables the default requirement from the table switch and persists it', () => {
         openSettingsTab();
 
-        requirementRow('default:rectangle').find('.ant-switch').click();
-        requirementRow('default:rectangle').find('.ant-switch').should('have.class', 'ant-switch-checked');
+        requirementRow(defaultRectangleRequirementName).find('.ant-switch').click();
+        requirementRow(defaultRectangleRequirementName).find('.ant-switch').should('have.class', 'ant-switch-checked');
 
         // The toggle is persisted on the server, so it survives a reload.
         cy.reload();
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
-        requirementRow('default:rectangle').find('.ant-switch').should('have.class', 'ant-switch-checked');
+        requirementRow(defaultRectangleRequirementName).find('.ant-switch').should('have.class', 'ant-switch-checked');
     });
 
     it('Creates a child requirement through the form', () => {
         openSettingsTab();
 
-        clickRowAction('default:rectangle', 'plus');
+        clickRowAction(defaultRectangleRequirementName, 'plus');
 
         cy.get('.cvat-quality-requirement-form').should('be.visible');
         cy.contains('Create requirement').should('exist');
@@ -142,7 +143,7 @@ context('Quality requirements UI', () => {
 
         // Back in the list, the new child appears under the default requirement with inherited type/metric.
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
-        ensureRowExpanded('default:rectangle');
+        ensureRowExpanded(defaultRectangleRequirementName);
         requirementRow(childRequirementName).within(() => {
             cy.contains('Rectangle').should('exist');
             cy.contains('Accuracy').should('exist');
@@ -157,7 +158,7 @@ context('Quality requirements UI', () => {
     it('Creates a grandchild requirement that inherits parent values', () => {
         openSettingsTab();
 
-        ensureRowExpanded('default:rectangle');
+        ensureRowExpanded(defaultRectangleRequirementName);
         clickRowAction(childRequirementName, 'plus');
 
         cy.get('.cvat-quality-requirement-form').should('be.visible');
@@ -168,7 +169,7 @@ context('Quality requirements UI', () => {
         expectNotification('Requirement has been created');
 
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
-        ensureRowExpanded('default:rectangle');
+        ensureRowExpanded(defaultRectangleRequirementName);
         ensureRowExpanded(childRequirementName);
         requirementRow(grandchildRequirementName).within(() => {
             cy.contains('Rectangle').should('exist');
@@ -180,7 +181,7 @@ context('Quality requirements UI', () => {
     it('Validates the requirement form', () => {
         openSettingsTab();
 
-        clickRowAction('default:rectangle', 'plus');
+        clickRowAction(defaultRectangleRequirementName, 'plus');
         cy.get('.cvat-quality-requirement-form').should('be.visible');
 
         // Empty name is rejected.
@@ -212,7 +213,7 @@ context('Quality requirements UI', () => {
     it('Edits a requirement threshold and propagates it to inheritors', () => {
         openSettingsTab();
 
-        ensureRowExpanded('default:rectangle');
+        ensureRowExpanded(defaultRectangleRequirementName);
         clickRowAction(childRequirementName, 'edit');
 
         cy.get('.cvat-quality-requirement-form').should('be.visible');
@@ -223,7 +224,7 @@ context('Quality requirements UI', () => {
         expectNotification('Requirement has been updated');
 
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
-        ensureRowExpanded('default:rectangle');
+        ensureRowExpanded(defaultRectangleRequirementName);
         requirementRow(childRequirementName).contains('90%').should('exist');
 
         // The grandchild inherits the new threshold.
@@ -234,7 +235,7 @@ context('Quality requirements UI', () => {
     it('Copies a requirement from an existing one', () => {
         openSettingsTab();
 
-        ensureRowExpanded('default:rectangle');
+        ensureRowExpanded(defaultRectangleRequirementName);
         clickRowAction(childRequirementName, 'copy');
 
         cy.get('.cvat-quality-requirement-form').should('be.visible');
@@ -247,7 +248,7 @@ context('Quality requirements UI', () => {
         expectNotification('Requirement has been created');
 
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
-        ensureRowExpanded('default:rectangle');
+        ensureRowExpanded(defaultRectangleRequirementName);
         requirementRow(copiedRequirementName).within(() => {
             cy.contains('Rectangle').should('exist');
             cy.contains('90%').should('exist');
@@ -257,7 +258,7 @@ context('Quality requirements UI', () => {
     it('Deletes a requirement with confirmation', () => {
         openSettingsTab();
 
-        ensureRowExpanded('default:rectangle');
+        ensureRowExpanded(defaultRectangleRequirementName);
         clickRowAction(copiedRequirementName, 'delete');
 
         cy.get('.ant-modal-confirm').should('be.visible');
@@ -271,7 +272,7 @@ context('Quality requirements UI', () => {
     it('Persists expanded rows across reloads', () => {
         openSettingsTab();
 
-        ensureRowExpanded('default:rectangle');
+        ensureRowExpanded(defaultRectangleRequirementName);
         ensureRowExpanded(childRequirementName);
         requirementRow(childRequirementName).should('be.visible');
         requirementRow(grandchildRequirementName).should('be.visible');
