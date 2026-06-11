@@ -253,7 +253,7 @@ export function showAttribute(
     attrValue: string,
     showPrivateAttributes: boolean,
 ): boolean {
-    const isAutomaticValue = attrValue === 'auto';
+    const isAutomaticValue = ['auto', 'automatic'].includes(attrValue);
     const isPrivateAttribute = attrName.startsWith('_');
     return (!isPrivateAttribute && !isAutomaticValue) || showPrivateAttributes;
 }
