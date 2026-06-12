@@ -339,7 +339,7 @@ RQ_QUEUES = {
     },
     CVAT_QUEUES.WEBHOOKS.value: {
         **REDIS_INMEM_SETTINGS,
-        "DEFAULT_TIMEOUT": "1h",
+        "DEFAULT_TIMEOUT": "25s",
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
         **REDIS_INMEM_SETTINGS,

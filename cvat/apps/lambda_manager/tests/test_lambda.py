@@ -188,17 +188,17 @@ class _LambdaTestCaseBase(ApiTestBase):
         with ForceLogin(owner or self.admin, self.client):
             response = self.client.post(
                 "/api/tasks",
+                query_params={"org_id": org_id} if org_id is not None else None,
                 data=task_spec,
                 format="json",
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else None,
             )
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
             response = self.client.post(
-                "/api/tasks/%s/data" % tid,
+                f"/api/tasks/{tid}/data",
+                query_params={"org_id": org_id} if org_id is not None else None,
                 data=data,
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else None,
             )
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
@@ -208,17 +208,15 @@ class _LambdaTestCaseBase(ApiTestBase):
             assert response.json()["status"] == "finished", response.json().get("status")
 
             response = self.client.get(
-                "/api/tasks/%s" % tid,
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else None,
+                f"/api/tasks/{tid}",
+                query_params={"org_id": org_id} if org_id is not None else None,
             )
             task = response.data
 
         return task
 
     def _generate_task_images(self, count):  # pylint: disable=no-self-use
-        images = {
-            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i) for i in range(count)
-        }
+        images = {f"client_files[{i}]": generate_image_file(f"image_{i}.jpg") for i in range(count)}
         images["image_quality"] = 75
         return images
 

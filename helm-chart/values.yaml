@@ -105,6 +105,7 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        terminationGracePeriodSeconds: 30
       qualityreports:
         replicas: 1
         labels: {}

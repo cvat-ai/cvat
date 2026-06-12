@@ -5,6 +5,19 @@
 
 @import 'base';
 
+.cvat-label-selector-option {
+    display: inline-flex;
+    align-items: baseline;
+}
+
+.cvat-label-color-dot {
+    display: inline-block;
+    width: $grid-unit-size;
+    height: $grid-unit-size;
+    border-radius: 50%;
+    margin-right: $grid-unit-size;
+}
+
 .cvat-annotation-page.ant-layout {
     height: 100%;
     overflow: hidden;

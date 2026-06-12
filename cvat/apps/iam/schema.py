@@ -7,7 +7,7 @@ import re
 import textwrap
 
 from drf_spectacular.authentication import BasicScheme, SessionScheme, TokenScheme
-from drf_spectacular.extensions import OpenApiAuthenticationExtension
+from drf_spectacular.extensions import OpenApiAuthenticationExtension, OpenApiFilterExtension
 from drf_spectacular.openapi import AutoSchema
 from rest_framework import serializers
 
@@ -86,6 +86,23 @@ class SessionAuthenticationScheme(SessionScheme):
             "description": csrf_token_description,
         }
         return [sessionid_schema, csrftoken_cookie_schema, csrftoken_header_schema]
+
+
+class SimpleFilterExtension(OpenApiFilterExtension):
+    """
+    Preserve CVAT's existing OpenAPI schema for SimpleFilter backends.
+
+    drf-spectacular's DjangoFilterExtension matches DjangoFilterBackend subclasses since
+    tfranzel/drf-spectacular@d4d16ac.
+    Increase the priority to select this extension over DjangoFilterExtension.
+    """
+
+    target_class = "cvat.apps.engine.filters.SimpleFilter"
+    match_subclasses = True
+    priority = 1
+
+    def get_schema_operation_parameters(self, auto_schema, *args, **kwargs):
+        return self.target.get_schema_operation_parameters(auto_schema.view)
 
 
 class CustomAutoSchema(AutoSchema):

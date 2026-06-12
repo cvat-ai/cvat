@@ -16,6 +16,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.68.0'></a>
+## \[2.68.0\] - 2026-06-10
+
+### Added
+
+- It's now possible to change the minimum user role needed to create
+  organizations by setting the `CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE`
+  environment variable
+  (<https://github.com/cvat-ai/cvat/pull/10688>)
+
+- Added `attempt` and `request_duration` fields to webhook deliveries
+  (<https://github.com/cvat-ai/cvat/pull/10693>)
+
+- Added an audio annotation workspace with waveform controls, interval regions, and audio task creation
+  (<https://github.com/cvat-ai/cvat/pull/10708>)
+
+### Changed
+
+- \[CLI\] Simplified native function agent task cache limiting to keep the last 10 task caches
+  after task annotation stopped persisting shared chunk caches.
+  (<https://github.com/cvat-ai/cvat/pull/10714>)
+
+- \[CLI\] Native function agents now download and process task image chunks incrementally
+  for task annotation requests, reducing temporary disk usage and allowing progress
+  updates to start sooner.
+  (<https://github.com/cvat-ai/cvat/pull/10675>)
+
+### Fixed
+
+- Preserve annotation source in GT jobs during edit/undo/redo so annotations in GT jobs no longer displayed as GT.
+  (<https://github.com/cvat-ai/cvat/pull/10659>)
+
+- Restricted organization workers assigned to resources from exporting datasets, annotations, or backups
+  unless they own the resource or relevant parent resource
+  (<https://github.com/cvat-ai/cvat/pull/10685>)
+
+- Bug which retained organization name in the list even when its deleted (<https://github.com/cvat-ai/cvat/pull/10690>)
+
+- Fixed stale unsaved-change prompts after saving audio interval annotations
+  (<https://github.com/cvat-ai/cvat/pull/10708>)
+
+<a id='changelog-2.67.0'></a>
+## \[2.67.0\] - 2026-06-02
+
+### Added
+
+- \[Server API\] The project/task/job `preview` endpoints accept
+  the `Prefer: handling=empty` header (RFC 7240). When set, entities without a
+  media-derived preview (e.g. point cloud tasks) return `204 No Content`
+  instead of the default placeholder.
+  (<https://github.com/cvat-ai/cvat/pull/10611>)
+
+### Fixed
+
+- \[SDK\] Fixed a PyTorch `UserWarning` about non-writable tensors when converting
+  polygon masks to tensors in `ExtractInstanceMasks`.
+  (<https://github.com/cvat-ai/cvat/pull/10680>)
+
+- Memory growth during schema generation
+  (<https://github.com/cvat-ai/cvat/pull/10679>)
+
+### Security
+
+- Fixed an XSS vulnerability in annotation guide asset handling
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-w6mx-95ff-72cv>)
+
 <a id='changelog-2.66.0'></a>
 ## \[2.66.0\] - 2026-05-26
 

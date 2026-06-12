@@ -351,7 +351,7 @@ class AccessTokenPluginPermission(AccessTokenPluginPermissionBase):
 
     def get_opa_auth_payload(self):
         value = self.original_permission.get_opa_auth_payload()
-        value["auth"]["token"] = (
+        value["token"] = (
             {
                 "id": self.access_token.id,
                 "read_only": self.access_token.read_only,

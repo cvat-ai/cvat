@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.66.1
+  version: 2.68.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2909,6 +2909,13 @@ paths:
       operationId: jobs_retrieve_preview
       summary: Get a preview image for a job
       parameters:
+      - in: header
+        name: Prefer
+        schema:
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -2927,6 +2934,10 @@ paths:
       responses:
         '200':
           description: Job image preview
+        '204':
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
   /api/jobs/{id}/validation_layout:
     get:
       operationId: jobs_retrieve_validation_layout
@@ -4195,6 +4206,13 @@ paths:
       operationId: projects_retrieve_preview
       summary: Get a preview image for a project
       parameters:
+      - in: header
+        name: Prefer
+        schema:
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -4213,6 +4231,10 @@ paths:
       responses:
         '200':
           description: Project image preview
+        '204':
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
         '404':
           description: Project image preview not found
   /api/projects/backup/:
@@ -6113,6 +6135,13 @@ paths:
       operationId: tasks_retrieve_preview
       summary: Get a preview image for a task
       parameters:
+      - in: header
+        name: Prefer
+        schema:
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -6131,6 +6160,10 @@ paths:
       responses:
         '200':
           description: Task image preview
+        '204':
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
         '404':
           description: Task image preview not found
   /api/tasks/{id}/status:
@@ -9192,7 +9225,6 @@ components:
           format: date-time
           readOnly: true
         contact:
-          type: object
           readOnly: true
         owner:
           allOf:
@@ -9213,8 +9245,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
       required:
       - slug
     PaginatedAccessTokenReadList:
@@ -9965,8 +9996,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -11837,6 +11867,14 @@ components:
         redelivery:
           type: boolean
           readOnly: true
+        attempt:
+          type: integer
+          readOnly: true
+          nullable: true
+        request_duration:
+          type: integer
+          readOnly: true
+          nullable: true
         created_date:
           type: string
           format: date-time
@@ -11849,10 +11887,8 @@ components:
           type: string
           readOnly: true
         request:
-          type: object
           readOnly: true
         response:
-          type: object
           readOnly: true
     WebhookRead:
       type: object
