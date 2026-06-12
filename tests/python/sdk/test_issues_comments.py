@@ -11,6 +11,8 @@ from cvat_sdk import Client
 from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
+from shared.utils.config import make_sdk_client
+
 
 class TestIssuesUsecases:
     @pytest.fixture(autouse=True)
@@ -228,3 +230,18 @@ class TestCommentsUsecases:
         with pytest.raises(exceptions.NotFoundException):
             comment.fetch()
         assert self.stdout.getvalue() == ""
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_org_maintainer_can_get_issue_comments_without_explicit_org_context(
+    fxt_org_resource_hierarchy,
+):
+    resources = fxt_org_resource_hierarchy(include_comment=True)
+
+    with make_sdk_client(resources.maintainer_username) as maintainer_client:
+        issue = maintainer_client.issues.retrieve(resources.issue_id)
+        comments = issue.get_comments()
+
+        assert maintainer_client.organization_slug is None
+        assert len(comments) == 2
+        assert resources.comment_id in {comment.id for comment in comments}

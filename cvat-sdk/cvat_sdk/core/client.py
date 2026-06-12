@@ -37,6 +37,7 @@ from cvat_sdk.core.proxies.users import UsersRepo
 from cvat_sdk.version import VERSION
 
 _DEFAULT_CACHE_DIR = platformdirs.user_cache_path("cvat-sdk", "CVAT.ai")
+_ORG_SLUG_HEADER = "X-Organization"
 
 _RepoType = TypeVar("_RepoType", bound=Repo)
 
@@ -131,8 +132,6 @@ class Client:
         self._repos: dict[str, Repo] = {}
         """A cache for created Repository instances"""
 
-    _ORG_SLUG_HEADER = "X-Organization"
-
     @property
     def organization_slug(self) -> str | None:
         """
@@ -144,14 +143,14 @@ class Client:
 
         If set to None (the default), no organization context will be used.
         """
-        return self.api_client.default_headers.get(self._ORG_SLUG_HEADER)
+        return self.api_client.default_headers.get(_ORG_SLUG_HEADER)
 
     @organization_slug.setter
     def organization_slug(self, org_slug: str | None):
         if org_slug is None:
-            self.api_client.default_headers.pop(self._ORG_SLUG_HEADER, None)
+            self.api_client.default_headers.pop(_ORG_SLUG_HEADER, None)
         else:
-            self.api_client.default_headers[self._ORG_SLUG_HEADER] = org_slug
+            self.api_client.default_headers[_ORG_SLUG_HEADER] = org_slug
 
     @contextmanager
     def organization_context(self, slug: str) -> Generator[None, None, None]:

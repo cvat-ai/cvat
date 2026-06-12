@@ -52,10 +52,16 @@ class Issue(
     _model_partial_update_arg = "patched_issue_write_request"
 
     def get_comments(self) -> list[Comment]:
+        # IssueRead does not expose `organization`, so we have to look it up
+        # via the parent job. Without an explicit org context the comments
+        # endpoint returns an empty list rather than raising — see
+        # test_org_maintainer_can_get_issue_comments_without_explicit_org_context.
         return [
             Comment(self._client, m)
             for m in get_paginated_collection(
-                self._client.api_client.comments_api.list_endpoint, issue_id=self.id
+                self._client.api_client.comments_api.list_endpoint,
+                organization_id=self._client.jobs.retrieve(self.job).organization,
+                issue_id=self.id,
             )
         ]
 
