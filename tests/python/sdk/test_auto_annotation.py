@@ -290,7 +290,7 @@ class TestTaskAutoAnnotation:
 
         for i, shape in enumerate(shapes):
             assert shape.frame == i
-            assert shape.type.value == "rectangle"
+            assert shape.type == "rectangle"
             assert self.task_labels_by_id[shape.label_id].name == "person"
             assert shape.points[3] in {301, 302}
 
@@ -380,7 +380,7 @@ class TestTaskAutoAnnotation:
 
         for i, shape in enumerate(shapes):
             assert shape.frame == i
-            assert shape.type.value == "skeleton"
+            assert shape.type == "skeleton"
             assert self.task_labels_by_id[shape.label_id].name == "cat"
             assert len(shape.elements) == 2
 
@@ -390,7 +390,7 @@ class TestTaskAutoAnnotation:
 
             for element in elements:
                 assert element.frame == i
-                assert element.type.value == "points"
+                assert element.type == "points"
 
             assert self.cat_sublabels_by_id[elements[0].label_id].name == "head"
             assert elements[0].points == [10, 10]
@@ -1306,7 +1306,7 @@ class TestAutoAnnotationFunctions:
 
         assert len(annotations.shapes) == 1
         assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "car"
-        assert annotations.shapes[0].type.value == "rectangle"
+        assert annotations.shapes[0].type == "rectangle"
         assert annotations.shapes[0].points == [1, 2, 3, 4]
 
     def test_torchvision_instance_segmentation(self, monkeypatch: pytest.MonkeyPatch):
@@ -1334,7 +1334,7 @@ class TestAutoAnnotationFunctions:
         expected_bitmap[17:33, 17:33] = True
         expected_bitmap[20:30, 20:30] = False
 
-        assert annotations.shapes[0].type.value == "mask"
+        assert annotations.shapes[0].type == "mask"
         assert annotations.shapes[0].points == encode_mask(expected_bitmap, [16, 16, 34, 34])
 
         cvataa.annotate_task(
@@ -1351,7 +1351,7 @@ class TestAutoAnnotationFunctions:
 
         assert len(annotations.shapes) == 1
         assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "car"
-        assert annotations.shapes[0].type.value == "polygon"
+        assert annotations.shapes[0].type == "polygon"
 
         # We shouldn't rely on the exact result of polygon conversion,
         # since it depends on a 3rd-party library. Instead, we'll just
@@ -1393,7 +1393,7 @@ class TestAutoAnnotationFunctions:
 
         assert len(annotations.shapes) == 1
         assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "person"
-        assert annotations.shapes[0].type.value == "skeleton"
+        assert annotations.shapes[0].type == "skeleton"
         assert len(annotations.shapes[0].elements) == 2
 
         elements = sorted(

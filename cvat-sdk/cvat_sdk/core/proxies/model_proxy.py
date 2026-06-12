@@ -256,7 +256,7 @@ class _ExportMixin(Generic[_EntityT]):
         local_downloading = (
             location == Location.LOCAL
             or not location
-            and (not self.target_storage or self.target_storage.location.value == Location.LOCAL)
+            and (not self.target_storage or self.target_storage.location == Location.LOCAL)
         )
 
         if not local_downloading:
@@ -280,11 +280,11 @@ class _ExportMixin(Generic[_EntityT]):
         ):
             raise exceptions.ServiceException(500, "Server handled export parameters incorrectly")
         elif not location and (
-            (not self.target_storage or self.target_storage.location.value == Location.LOCAL)
+            (not self.target_storage or self.target_storage.location == Location.LOCAL)
             and not result_url
             or (
                 self.target_storage
-                and self.target_storage.location.value == Location.CLOUD_STORAGE
+                and self.target_storage.location == Location.CLOUD_STORAGE
                 and result_url
             )
         ):
