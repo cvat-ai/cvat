@@ -93,6 +93,13 @@ def make_api_client(
 
 @contextmanager
 def make_sdk_client(user: str, *, password: str = None) -> Generator[Client, None, None]:
-    with Client(BASE_URL, config=Config(status_check_period=0.01)) as client:
+    # `check_server_version=True` (default) issues an anonymous GET /server/about
+    # in the constructor — runs *before* `client.login(...)`. Across a session
+    # the anonymous hits trip the 100/minute throttle and add ~15s of
+    # urllib3 Retry-After sleep across the suite. Tests don't need the version
+    # check on every Client construction; skip it.
+    with Client(
+        BASE_URL, config=Config(status_check_period=0.01), check_server_version=False
+    ) as client:
         client.login((user, password or USER_PASS))
         yield client

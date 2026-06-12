@@ -120,3 +120,43 @@ if DEFAULT_BACKING_CS_ID:
     DEFAULT_BACKING_CS_ID = int(DEFAULT_BACKING_CS_ID)
 else:
     DEFAULT_BACKING_CS_ID = None
+
+CLOUD_STORAGE_INSTANCE_CACHE_SIZE = int(os.getenv("CVAT_CLOUD_STORAGE_INSTANCE_CACHE_SIZE", 2))
+"""
+Number of cloud storage client instances kept in the per-process TTL cache.
+Constructing boto3/Azure/GCS clients is expensive (~100ms each), so reusing
+them across calls is a significant win — but each cached instance keeps a
+session and HTTP connection pool resident in memory.
+
+Measured RSS overhead vs. an idle Django worker (boto3 S3, anonymous, single
+NUMPROC). The first instance includes the one-time ~12 MB shared botocore
+service-model load; each subsequent slot adds ~1.1 MB:
+  -   1 cached:   +12 MB
+  -   2 cached:   +13 MB  (1 +  1 * 1.1)
+  -   8 cached:   +20 MB  (1 +  7 * 1.1)
+  -  16 cached:   +29 MB  (1 + 15 * 1.1)
+  -  32 cached:   +45 MB  (measured)
+  - 128 cached:  +152 MB  (measured)
+
+Recommended per-role overrides via `CVAT_CLOUD_STORAGE_INSTANCE_CACHE_SIZE`:
+  - default (e.g. import/export/quality workers):  2  — one-off jobs, rare
+    repeats; keep RSS small.
+  - server (UI/API):                               8  — task-creation dialog
+    navigation makes repeat hits on the same CS within a session.
+  - chunk worker:                                 16  — batches of chunks
+    against the same CS / backing CS are the hottest reuse path.
+"""
+
+CLOUD_STORAGE_INSTANCE_CACHE_TTL = int(os.getenv("CVAT_CLOUD_STORAGE_INSTANCE_CACHE_TTL", 300))
+"""
+Time-to-live (seconds) for cached cloud storage client instances.
+
+On expiry the entry is evicted, the boto3 Session is GC'd, and its kept-alive
+HTTP connection pool is closed. This bounds how long an idle client (with
+potentially stale TCP connections, DNS records, or STS session tokens) can
+linger in the cache. After eviction the next request rebuilds the client
+(~27 ms with the shared botocore loader) and re-establishes connections.
+
+Lower values trade build-time CPU for fresher state; higher values trade RSS
+for fewer cold rebuilds. Default 300 s (5 min).
+"""

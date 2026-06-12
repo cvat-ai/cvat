@@ -1942,11 +1942,19 @@ class _CloudStorageTestBase(ApiTestBase):
         cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.S3CloudStorage", MockS3)
         cls._aws_patch.start()
 
+        from cvat.apps.engine import cloud_provider
+
+        cloud_provider._build_storage_instance_cached.cache_clear()  # avoid using cached clients
+
         return MockS3
 
     @classmethod
     def _stop_aws_patch(cls):
         cls._aws_patch.stop()
+
+        from cvat.apps.engine import cloud_provider
+
+        cloud_provider._build_storage_instance_cached.cache_clear()  # avoid caching mocked client
 
     @classmethod
     def _create_cloud_storage(cls):

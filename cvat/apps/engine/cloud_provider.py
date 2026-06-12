@@ -8,6 +8,7 @@ from __future__ import annotations
 import functools
 import json
 import os
+import threading
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -19,10 +20,15 @@ from queue import Queue
 from typing import Any, BinaryIO, Concatenate, ParamSpec, TypeVar
 
 import boto3
+import botocore.hooks
+import botocore.loaders
+import botocore.session
+import cachetools
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
+from botocore import UNSIGNED
 from botocore.client import Config
 from botocore.exceptions import (
     ClientError,
@@ -30,7 +36,6 @@ from botocore.exceptions import (
     EndpointConnectionError,
     ReadTimeoutError,
 )
-from botocore.handlers import disable_signing
 from django.conf import settings
 from google.api_core.exceptions import RetryError
 from google.cloud import storage
@@ -48,7 +53,7 @@ from cvat.apps.engine.models import (
     DimensionType,
 )
 from cvat.apps.engine.rq import ExportRQMeta
-from cvat.apps.engine.utils import get_cpu_number, take_by
+from cvat.apps.engine.utils import get_cpu_number, parse_specific_attributes, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest.utils import (
     InvalidPcdError,
@@ -588,6 +593,133 @@ def get_cloud_storage_instance(
     return instance
 
 
+def _botocore_load_file_plaindict(self, full_path, open_method):
+    # Drop-in replacement for botocore.loaders.JSONFileLoader._load_file that
+    # parses with stdlib json into plain dicts instead of OrderedDicts.
+    #
+    # botocore's loader parses large service-model JSON (e.g. service-2.json,
+    # endpoint-rule-sets) and historically built them as OrderedDicts via
+    # `object_pairs_hook=OrderedDict`. On Python 3.7+ regular dicts already
+    # preserve insertion order, and OrderedDict carries a doubly-linked list
+    # per item — measured RSS overhead is ~3x compared to plain dicts for these
+    # models (e.g. 1 S3CloudStorage: 29 MB -> 11 MB).
+    # No code in botocore relies on OrderedDict-specific methods on loaded
+    # service-model data (verified by grep for move_to_end / popitem(last=...)).
+    if not os.path.isfile(full_path):
+        return
+    with open_method(full_path, "rb") as fp:
+        payload = fp.read().decode("utf-8")
+    return json.loads(payload)
+
+
+botocore.loaders.JSONFileLoader._load_file = _botocore_load_file_plaindict
+
+
+# Shared across all S3 sessions in this process. botocore caches the parsed
+# service-2.json and endpoint-rule-set JSON on the Loader, so a single Loader
+# instance lets every session reuse them — drops ~7MB per cached S3CloudStorage
+# and removes ~80ms of JSON parsing per build. Loader is injected into each
+# Session via the "data_loader" component override, see:
+#   https://botocore.amazonaws.com/v1/documentation/api/latest/reference/loaders.html
+#
+# Build it exactly as botocore does, so
+# custom/overriding service and endpoint models keep working.
+_SHARED_BOTOCORE_LOADER = botocore.loaders.create_loader(
+    botocore.session.Session().get_config_variable("data_path")
+)
+
+
+class _FrozenEventEmitter:
+    """Wraps a HierarchicalEmitter and forbids registration/unregistration.
+
+    Cached S3 sessions hand their `events` to every client built from them. If
+    arbitrary code later calls `session.events.register(...)` it would mutate
+    shared state behind the back of any caller already holding a reference, and
+    affect every future client built on the same session. Freezing the emitter
+    after construction makes such mutations fail loudly instead of silently
+    introducing cross-instance coupling.
+    """
+
+    __slots__ = ("_wrapped",)
+
+    def __init__(self, wrapped: botocore.hooks.HierarchicalEmitter):
+        object.__setattr__(self, "_wrapped", wrapped)
+
+    def __getattr__(self, name):
+        return getattr(self._wrapped, name)
+
+    def emit(self, *args, **kwargs):
+        return self._wrapped.emit(*args, **kwargs)
+
+    def emit_until_response(self, *args, **kwargs):
+        return self._wrapped.emit_until_response(*args, **kwargs)
+
+    def copy(self):
+        # Per-client event emitters are copies of the session-level one and
+        # remain mutable: clients legitimately register handlers after build
+        # (e.g. retry/signing). Only the shared session-level emitter is frozen.
+        return self._wrapped.copy()
+
+    def register(self, *args, **kwargs):
+        raise RuntimeError(
+            "Refusing to register an event handler on a cached S3 session emitter: "
+            "session-level events are shared across every client built from this "
+            "session. Register on a specific client's `meta.events` instead."
+        )
+
+    register_first = register
+    register_last = register
+    unregister = register
+
+
+# Serializes the first calls to session.client("s3"): they reach into the
+# process-shared botocore Loader to read+cache s3/service-2.json and the
+# endpoint rule set. The Loader does a read-modify-write on its internal
+# cache dict on first miss; concurrent first-builds would race on it. After
+# the loader is primed, subsequent builds are dict reads and the lock is
+# not contended.
+# A unit test (test_lock_protects_shared_loader_load_service_model) confirms
+# the loader is actually exercised by these calls — if a future boto3 change
+# bypassed the shared Loader, the lock would be guarding nothing.
+_S3_BUILD_LOCK = threading.Lock()
+
+
+def _make_boto3_session(
+    *,
+    access_key_id: str | None,
+    secret_key: str | None,
+    session_token: str | None,
+    region: str | None,
+) -> boto3.Session:
+    """Build a Session using the process-shared botocore Loader.
+
+    CloudStorage credentials must come from the DB row: signed CS rows pass
+    them via the `boto3.Session(...)` kwargs (boto3 stores them via
+    `botocore_session.set_credentials(...)` so subsequent `get_credentials()`
+    returns them directly, bypassing the resolver chain); anonymous CS rows
+    must use `Config(signature_version=UNSIGNED)` on the resulting clients
+    so botocore short-circuits credential resolution entirely (see
+    `botocore.session.create_client`).
+    """
+    kwargs = {}
+    for key, arg_v in (
+        ("aws_access_key_id", access_key_id),
+        ("aws_secret_access_key", secret_key),
+        ("aws_session_token", session_token),
+        ("region_name", region),
+    ):
+        if arg_v:
+            kwargs[key] = arg_v
+
+    session = boto3.Session(**kwargs)
+
+    # Inject the process-shared loader so every Session reuses the parsed
+    # service-2.json + endpoint-ruleset instead of re-parsing.
+    session._session.register_component("data_loader", _SHARED_BOTOCORE_LOADER)
+
+    return session
+
+
 class S3CloudStorage(AbstractCloudStorage):
     transfer_config = {
         "max_io_queue": 10,
@@ -612,66 +744,86 @@ class S3CloudStorage(AbstractCloudStorage):
         if sum(1 for credential in (access_key_id, secret_key, session_token) if credential) == 1:
             raise Exception("Insufficient data for authentication")
 
-        kwargs = dict()
-        for key, arg_v in zip(
-            (
-                "aws_access_key_id",
-                "aws_secret_access_key",
-                "aws_session_token",
-                "region_name",
-            ),
-            (access_key_id, secret_key, session_token, region),
-        ):
-            if arg_v:
-                kwargs[key] = arg_v
+        is_anonymous = not any([access_key_id, secret_key, session_token])
 
-        session = boto3.Session(**kwargs)
-        # Status checks are part of the control plane, not the data-transfer path, so
-        # Bucket status probes should fail fast when the endpoint is unreachable or
-        # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
-        # the regular resource/client retain their standard retry behavior for normal
-        # storage operations.
-        self._s3 = session.resource(
-            "s3",
-            endpoint_url=endpoint_url,
-            config=Config(
-                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
-                max_pool_connections=(
-                    # AWS can throttle the requests if there are too many of them,
-                    # the SDK handles it with the retry policy:
-                    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
-                    # 10 is the default value
-                    max(10, CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU)
-                ),
-            ),
-        )
-        self._status_client = session.client(
-            "s3",
-            endpoint_url=endpoint_url,
-            config=Config(
-                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
-                connect_timeout=2,
-                read_timeout=5,
-                retries={"total_max_attempts": 1, "mode": "standard"},
-            ),
+        session = _make_boto3_session(
+            access_key_id=access_key_id,
+            secret_key=secret_key,
+            session_token=session_token,
+            region=region,
         )
 
-        # anonymous access
-        if not any([access_key_id, secret_key, session_token]):
-            self._s3.meta.client.meta.events.register("choose-signer.s3.*", disable_signing)
-            self._status_client.meta.events.register("choose-signer.s3.*", disable_signing)
+        resource_config_kwargs = dict(
+            proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+            max_pool_connections=(
+                # AWS can throttle the requests if there are too many of them,
+                # the SDK handles it with the retry policy:
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
+                # 10 is the default value
+                max(10, CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU)
+            ),
+            # Enable SO_KEEPALIVE so the OS detects dead peer connections
+            # while the client is parked in the LRU cache between requests.
+            # Complements the TTL on the cache; together they bound how stale
+            # a kept-alive socket can get.
+            tcp_keepalive=True,
+        )
+        status_config_kwargs = dict(
+            proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+            connect_timeout=2,
+            read_timeout=5,
+            tcp_keepalive=True,
+            retries={"total_max_attempts": 1, "mode": "standard"},
+        )
+        if is_anonymous:
+            # UNSIGNED also skips the credential resolver entirely, so there
+            # is no need to register `choose-signer` handlers on the client.
+            resource_config_kwargs["signature_version"] = UNSIGNED
+            status_config_kwargs["signature_version"] = UNSIGNED
 
-        self._client = self._s3.meta.client
-        self._bucket = self._s3.Bucket(bucket)
+        # Lock only the session.client() calls — they touch the process-shared
+        # botocore Loader's service-model cache on first miss (see
+        # _S3_BUILD_LOCK definition above). Everything else — Session, Config,
+        # post-build attribute assignment — is per-instance and safe to run
+        # concurrently.
+        with _S3_BUILD_LOCK:
+            # We cache only the low-level Clients (documented as thread-safe to
+            # share once built). boto3 resources (`session.resource("s3")`,
+            # `Bucket`, etc.) are not cached: their methods can mutate
+            # `meta.data` via lazy load()/reload() and sub-resource
+            # construction shares identifier state. The bucket name is passed
+            # explicitly into every Client call instead.
+            # Status checks are part of the control plane, not the data-transfer path, so
+            # bucket status probes should fail fast when the endpoint is unreachable or
+            # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
+            # the regular client retains standard retry behavior for normal
+            # storage operations.
+            self._client = session.client(
+                "s3",
+                endpoint_url=endpoint_url,
+                config=Config(**resource_config_kwargs),
+            )
+            self._status_client = session.client(
+                "s3",
+                endpoint_url=endpoint_url,
+                config=Config(**status_config_kwargs),
+            )
+
+            # Freeze the session-level emitter after both clients have copied
+            # it into their own per-client emitters. Any further attempt to
+            # register/unregister at the session level will raise; per-client
+            # emitters (`client.meta.events`) remain mutable.
+            session._session.register_component(
+                "event_emitter",
+                _FrozenEventEmitter(session._session.get_component("event_emitter")),
+            )
+
+        self._bucket_name: str = bucket
         self.region = region
 
     @property
-    def bucket(self):
-        return self._bucket
-
-    @property
     def name(self):
-        return self._bucket.name
+        return self._bucket_name
 
     def _head(self):
         # Bucket status checks use the dedicated fast-fail client.
@@ -729,8 +881,9 @@ class S3CloudStorage(AbstractCloudStorage):
 
     @validate_bucket_status
     def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
-        self._bucket.upload_fileobj(
+        self._client.upload_fileobj(
             Fileobj=file_obj,
+            Bucket=self._bucket_name,
             Key=key,
             Config=TransferConfig(max_io_queue=self.transfer_config["max_io_queue"]),
         )
@@ -738,9 +891,10 @@ class S3CloudStorage(AbstractCloudStorage):
     @validate_bucket_status
     def upload_file(self, file_path: Path, key: str | None = None, /):
         try:
-            self._bucket.upload_file(
-                os.fspath(file_path),
-                key or file_path.name,
+            self._client.upload_file(
+                Filename=os.fspath(file_path),
+                Bucket=self._bucket_name,
+                Key=key or file_path.name,
                 Config=TransferConfig(max_io_queue=self.transfer_config["max_io_queue"]),
             )
         except ClientError as ex:
@@ -779,7 +933,8 @@ class S3CloudStorage(AbstractCloudStorage):
         }
 
     def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
-        self.bucket.download_fileobj(
+        self._client.download_fileobj(
+            Bucket=self._bucket_name,
             Key=key,
             Fileobj=stream,
             Config=TransferConfig(max_io_queue=self.transfer_config["max_io_queue"]),
@@ -788,7 +943,7 @@ class S3CloudStorage(AbstractCloudStorage):
     def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
         try:
             return self._client.get_object(
-                Bucket=self.bucket.name, Key=key, Range=f"bytes={start_byte}-{stop_byte}"
+                Bucket=self._bucket_name, Key=key, Range=f"bytes={start_byte}-{stop_byte}"
             )["Body"].read()
         except ClientError as ex:
             if "InvalidRange" in str(ex):
@@ -812,7 +967,7 @@ class S3CloudStorage(AbstractCloudStorage):
     def supported_actions(self):
         allowed_actions = set()
         try:
-            bucket_policy = self._bucket.Policy().policy
+            bucket_policy = self._client.get_bucket_policy(Bucket=self._bucket_name)["Policy"]
         except ClientError as ex:
             if "NoSuchBucketPolicy" in str(ex):
                 return Permissions.all()
@@ -1270,20 +1425,65 @@ class Credentials:
         ]
 
 
-def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
+def _build_storage_instance(
+    cloud_provider: str,
+    resource: str,
+    credentials_type: str,
+    credentials_value: str,
+    specific_attributes_str: str,
+) -> AbstractCloudStorage:
     credentials = Credentials()
-    credentials.convert_from_db(
-        {
-            "type": db_storage.credentials_type,
-            "value": db_storage.credentials,
-        }
+    credentials.convert_from_db({"type": credentials_type, "value": credentials_value})
+    return get_cloud_storage_instance(
+        cloud_provider=cloud_provider,
+        resource=resource,
+        credentials=credentials,
+        specific_attributes=parse_specific_attributes(specific_attributes_str),
     )
-    details = {
-        "resource": db_storage.resource,
-        "credentials": credentials,
-        "specific_attributes": db_storage.get_specific_attributes(),
-    }
-    return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+
+
+@functools.cache
+def _build_storage_instance_cached():
+    # Wrapped lazily so the size/ttl settings are read after Django app config
+    # has applied engine defaults (apps.py:EngineConfig.ready), not at module
+    # import time. TTL bounds how long an idle client (and its kept-alive HTTP
+    # connection pool) can stay parked; on expiry the entry is evicted, the
+    # boto3 Session is GC'd, and its socket pool closes. STS session-token
+    # rotations and DNS staleness are bounded by the same window.
+    return cachetools.cached(
+        cache=cachetools.TTLCache(
+            maxsize=settings.CLOUD_STORAGE_INSTANCE_CACHE_SIZE,
+            ttl=settings.CLOUD_STORAGE_INSTANCE_CACHE_TTL,
+        ),
+        lock=threading.Lock(),
+    )(_build_storage_instance)
+
+
+def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
+    # Here we cache the clients created, as they can be expensive to build -
+    # e.g. for S3 clients, building takes ~25-150 ms each.
+    #
+    # Two guard tests anchor this:
+    # `test_cloud_storage_field_set_is_stable` (catches new model fields) and
+    # `test_build_storage_instance_signature_is_stable` (catches new kwargs);
+    # both fail loudly so a reviewer classifies the change.
+    #
+    # Currently, only S3 is cached: S3CloudStorage is adapted to cache only
+    # boto3 low-level Clients, which boto3 documents as thread-safe to share.
+    # Azure and GCS clients are not checked for caching safety, so they are not cached.
+    # TODO: implement caching for Azure and GCS too, if they show significant load.
+    build = (
+        _build_storage_instance_cached()
+        if db_storage.provider_type == CloudProviderChoice.AMAZON_S3
+        else _build_storage_instance
+    )
+    return build(
+        cloud_provider=db_storage.provider_type,
+        resource=db_storage.resource,
+        credentials_type=db_storage.credentials_type,
+        credentials_value=db_storage.credentials,
+        specific_attributes_str=db_storage.specific_attributes,
+    )
 
 
 P = ParamSpec("P")

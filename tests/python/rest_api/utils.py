@@ -8,7 +8,7 @@ from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
-from time import sleep
+from time import perf_counter, sleep
 from typing import Any, TypeAlias, TypeVar
 
 import requests
@@ -409,13 +409,19 @@ def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> list[str]:
     return exclude_expr_parts
 
 
-def wait_until_task_is_created(api: apis.RequestsApi, rq_id: str) -> models.Request:
-    for _ in range(100):
+def wait_until_task_is_created(
+    api: apis.RequestsApi,
+    rq_id: str,
+    *,
+    sleep_interval: float = DEFAULT_INTERVAL,
+    max_wait: float = 100.0,
+) -> models.Request:
+    deadline = perf_counter() + max_wait
+    while perf_counter() < deadline:
         request_details, _ = api.retrieve(rq_id)
-
         if request_details.status.value in ("finished", "failed"):
             return request_details
-        sleep(1)
+        sleep(sleep_interval)
     raise Exception("Cannot create task")
 
 
