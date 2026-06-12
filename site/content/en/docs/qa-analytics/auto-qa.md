@@ -102,6 +102,7 @@ A _configured_ Ground Truth job is required for all quality computations in CVAT
 {{% /tab %}}
 
 {{%tab header="In an existing task" %}}
+
 {{% alert title="Note" color="primary" %}}
 For already existing tasks only the Ground Truth validation mode is available. If you want
 to use Honeypots for your task, you will need to recreate the task.
