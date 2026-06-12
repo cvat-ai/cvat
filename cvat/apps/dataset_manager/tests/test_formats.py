@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import os.path as osp
 import tempfile
 import zipfile
@@ -753,6 +754,18 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     ],
                 }
             ]
+        elif annotation_format == "COCO Keypoints 1.0":
+            labels = [
+                {
+                    "name": "car",
+                    "type": "skeleton",
+                    "attributes": [],
+                    "svg": '<circle r="5" stroke="black" fill="blue" cx="50" cy="50" data-type="node" data-element-id="0" data-node-id="0" data-label-name="kp1"></circle>',
+                    "sublabels": [
+                        {"name": "kp1", "type": "points", "attributes": []},
+                    ],
+                }
+            ]
         elif annotation_format == "Market-1501 1.0":
             labels = [
                 {
@@ -885,6 +898,32 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     "points": [1.0, 2.1, 10.6, 53.22],
                     "type": "rectangle",
                     "occluded": False,
+                }
+            ]
+        elif annotation_format == "COCO Keypoints 1.0":
+            shapes = [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": 0,
+                    "source": "manual",
+                    "attributes": [],
+                    "points": [],
+                    "type": "skeleton",
+                    "occluded": False,
+                    "elements": [
+                        {
+                            "frame": 0,
+                            "label_id": task["labels"][0]["sublabels"][0]["id"],
+                            "group": 0,
+                            "source": "manual",
+                            "attributes": [],
+                            "points": [1.0, 2.0],
+                            "type": "points",
+                            "occluded": False,
+                            "outside": False,
+                        }
+                    ],
                 }
             ]
         else:
@@ -1054,3 +1093,84 @@ class TaskAnnotationsImportTest(_DbTestBase):
 
             dm.task.import_task_annotations(dataset_path, task["id"], format_name, True)
             self._test_can_import_annotations(task, format_name)
+
+    def _make_coco_annotation_without_iscrowd(
+        self, format_name: str = "COCO 1.0", has_segmentation: bool = True
+    ) -> dict:
+        if format_name == "COCO Keypoints 1.0":
+            annotation = {
+                "id": 1,
+                "image_id": 1,
+                "category_id": 1,
+                "bbox": [10.0, 10.0, 10.0, 10.0],
+                "area": 100.0,
+                "keypoints": [15, 15, 2],
+                "num_keypoints": 1,
+                **({"segmentation": []} if has_segmentation else {}),
+                # No "iscrowd" field — simulates Azure-sourced annotations
+            }
+            category = {
+                "id": 1,
+                "name": "car",
+                "supercategory": "",
+                "keypoints": ["kp1"],
+                "skeleton": [],
+            }
+        else:
+            annotation = {
+                "id": 1,
+                "image_id": 1,
+                "category_id": 1,
+                "bbox": [10.0, 10.0, 10.0, 10.0],
+                "area": 100.0,
+                **(
+                    {"segmentation": [[10.0, 10.0, 20.0, 10.0, 20.0, 20.0, 10.0, 20.0]]}
+                    if has_segmentation
+                    else {}
+                ),
+                # No "iscrowd" field — simulates Azure-sourced annotations
+            }
+            category = {"id": 1, "name": "car", "supercategory": ""}
+        return {
+            "info": {},
+            "licenses": [],
+            "images": [{"id": 1, "file_name": "image_0.jpg", "height": 100, "width": 100}],
+            "annotations": [annotation],
+            "categories": [category],
+        }
+
+    def test_can_import_coco_without_iscrowd(self) -> None:
+        cases: list[tuple[bool, str, str | None]] = [
+            (True, "COCO 1.0", "annotations/instances_default.json"),
+            (False, "COCO 1.0", None),
+            (True, "COCO Keypoints 1.0", "annotations/person_keypoints_default.json"),
+            (False, "COCO Keypoints 1.0", None),
+        ]
+        for use_zip, format_name, zip_annotation_filename in cases:
+            for has_segmentation in (True, False):
+                with self.subTest(
+                    use_zip=use_zip,
+                    format_name=format_name,
+                    has_segmentation=has_segmentation,
+                ):
+                    images = self._generate_task_images(1)
+                    task = self._generate_task(images, format_name)
+                    annotation_data = self._make_coco_annotation_without_iscrowd(
+                        format_name, has_segmentation
+                    )
+
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        if use_zip:
+                            file_path = osp.join(temp_dir, "annotations.zip")
+                            with zipfile.ZipFile(file_path, "w") as zf:
+                                zf.writestr(zip_annotation_filename, json.dumps(annotation_data))
+                        else:
+                            file_path = osp.join(temp_dir, "annotations.json")
+                            with open(file_path, "w") as f:
+                                json.dump(annotation_data, f)
+
+                        dm.task.import_task_annotations(file_path, task["id"], format_name, True)
+
+                        task_ann = TaskAnnotation(task["id"])
+                        task_ann.init_from_db()
+                        self.assertEqual(1, len(task_ann.ir_data.shapes))
