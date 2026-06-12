@@ -28,6 +28,9 @@
         .cvat-guide-page-editor-wrapper {
             flex: 1;
             height: calc(100% - $grid-unit-size * 16);
+            .w-md-editor-text {
+                height: 100%;
+            }
         }
 
         .cvat-guide-page-bottom {
