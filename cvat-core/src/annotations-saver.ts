@@ -302,62 +302,79 @@ export default class AnnotationsSaver {
                 }) || null;
             };
 
-            const retryIf504Status = async (
+            const isRetriableProxyError = (requestError: unknown): boolean => (
+                requestError instanceof ServerError && [0, 502, 503, 504].includes(requestError.code)
+            );
+
+            const reconcileFromServer = async (
+                requestBody: SerializedCollection,
+                action: 'update' | 'delete' | 'create',
+            ): Promise<SerializedCollection> => {
+                switch (action) {
+                    case 'update': {
+                        return this._update(requestBody);
+                    }
+                    case 'delete': {
+                        return this._delete(requestBody);
+                    }
+                    case 'create': {
+                        const serverCollection = await serverProxy.annotations
+                            .getAnnotations(this.sessionType, this.id);
+                        const foundPairs: SerializedCollection = {
+                            shapes: [],
+                            tracks: [],
+                            tags: [],
+                            version: serverCollection.version,
+                        };
+                        for (const type of COLLECTION_KEYS) {
+                            for (const obj of requestBody[type]) {
+                                const pair = findPair(type, obj, serverCollection);
+                                if (pair === null) {
+                                    throw new Error('Pair not found this iteration');
+                                }
+                                foundPairs[type].push(pair as any);
+                            }
+                        }
+
+                        return foundPairs;
+                    }
+                    default:
+                        throw new Error('Unknown action');
+                }
+            };
+
+            const retryAfterProxyTimeout = async (
                 error: unknown,
                 requestBody: SerializedCollection,
                 action: 'update' | 'delete' | 'create',
             ): Promise<SerializedCollection> => {
-                if (error instanceof ServerError && error.code === 504) {
-                    setTimeout(() => {
-                        // just for logging
-                        throw new Error(
-                            `Code 504 received from the server when ${action} objects, running workaround`,
-                        );
-                    });
+                if (!isRetriableProxyError(error)) {
+                    throw error;
+                }
 
-                    const RETRY_PERIOD = 10000;
-                    let retryCount = 10;
-                    while (retryCount) {
-                        try {
-                            await sleep(RETRY_PERIOD);
-                            switch (action) {
-                                case 'update': {
-                                    return await this._update(requestBody);
-                                }
-                                case 'delete': {
-                                    return await this._delete(requestBody);
-                                }
-                                case 'create': {
-                                    const serverCollection = await serverProxy.annotations
-                                        .getAnnotations(this.sessionType, this.id);
-                                    const foundPairs: SerializedCollection = {
-                                        shapes: [],
-                                        tracks: [],
-                                        tags: [],
-                                        version: serverCollection.version,
-                                    };
-                                    for (const type of COLLECTION_KEYS) {
-                                        for (const obj of requestBody[type]) {
-                                            const pair = findPair(type, obj, serverCollection);
-                                            if (pair === null) {
-                                                throw new Error('Pair not found this iteration');
-                                            }
-                                            foundPairs[type].push(pair as any);
-                                        }
-                                    }
+                setTimeout(() => {
+                    // just for logging
+                    throw new Error(
+                        `Proxy timeout received when ${action} objects, running reconciliation workaround`,
+                    );
+                });
 
-                                    return foundPairs;
-                                }
-                                default:
-                                    throw new Error('Unknown action');
-                            }
-                        } catch (_: unknown) {
-                            retryCount--;
-                        }
+                const RETRY_PERIOD = 10000;
+                let retryCount = 20;
+                while (retryCount) {
+                    try {
+                        await sleep(RETRY_PERIOD);
+                        return await reconcileFromServer(requestBody, action);
+                    } catch (_: unknown) {
+                        retryCount--;
                     }
                 }
 
-                throw error;
+                try {
+                    return await reconcileFromServer(requestBody, action);
+                } catch (_: unknown) {
+                    throw error;
+                }
             };
 
             const { created, updated, deleted } = this._split(exported);
@@ -370,7 +387,7 @@ export default class AnnotationsSaver {
                 try {
                     updatedData = await this._update(requestBody);
                 } catch (error: unknown) {
-                    updatedData = await retryIf504Status(error, requestBody, 'update');
+                    updatedData = await retryAfterProxyTimeout(error, requestBody, 'update');
                 }
 
                 this.version = updatedData.version;
@@ -390,7 +407,7 @@ export default class AnnotationsSaver {
                 try {
                     deletedData = await this._delete(requestBody);
                 } catch (error: unknown) {
-                    deletedData = await retryIf504Status(error, requestBody, 'delete');
+                    deletedData = await retryAfterProxyTimeout(error, requestBody, 'delete');
                 }
 
                 this.version = deletedData.version;
@@ -409,7 +426,7 @@ export default class AnnotationsSaver {
                 try {
                     createdData = await this._create(requestBody);
                 } catch (error: unknown) {
-                    createdData = await retryIf504Status(error, requestBody, 'create');
+                    createdData = await retryAfterProxyTimeout(error, requestBody, 'create');
                 }
 
                 this.version = createdData.version;

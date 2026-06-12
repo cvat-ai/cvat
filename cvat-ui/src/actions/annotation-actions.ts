@@ -1146,16 +1146,28 @@ export function saveAnnotationsAsync(): ThunkAction {
 
         try {
             const saveJobEvent = await jobInstance.logger.log(EventScope.saveJob, {}, true);
+            let saveError: unknown = null;
 
             try {
                 await jobInstance.frames.save();
                 await jobInstance.annotations.save();
+            } catch (error) {
+                saveError = error;
+                try {
+                    // fetchAnnotationsAsync() reads the in-memory collection only;
+                    // reload from the server when save fails to pick up persisted IDs
+                    await jobInstance.annotations.clear({ reload: true });
+                } catch (_reconcileError) {
+                    // keep going to refresh UI state below
+                }
             } finally {
-                // Reconciliation steps must always run to avoid duplicate shapes
-                // if the save pipeline fails after the server persists changes
                 await saveJobEvent.close();
                 dispatch(saveLogsAsync());
-                dispatch(fetchAnnotationsAsync());
+                await dispatch(fetchAnnotationsAsync());
+            }
+
+            if (saveError) {
+                throw saveError;
             }
 
             if (jobInstance instanceof cvat.classes.Job && jobInstance.state === cvat.enums.JobState.NEW) {
