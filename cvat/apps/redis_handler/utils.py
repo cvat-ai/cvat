@@ -6,12 +6,17 @@ import importlib
 from pathlib import Path
 
 import rq
+from rq.job import Job as RQJob
 
 
 def get_class_from_module(module_path: str | Path, class_name: str) -> type | None:
     module = importlib.import_module(module_path)
     klass = getattr(module, class_name, None)
     return klass
+
+
+def rq_job_will_be_retried(rq_job: RQJob) -> bool:
+    return bool(rq_job.retries_left and rq_job.retries_left > 0)
 
 
 def get_current_job_attempt() -> int:

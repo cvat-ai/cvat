@@ -9,10 +9,13 @@ from http import HTTPStatus
 
 import requests
 
+from cvat.apps.engine.models import RequestSubresource
+from cvat.apps.engine.rq import ExportRequestId
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.events.handlers import get_request, get_user
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 
+from .event_type import event_name
 from .models import Webhook
 
 _WEBHOOK_TIMEOUT = 10
@@ -25,6 +28,40 @@ def get_sender(instance) -> dict:
         return user
 
     return BasicUserSerializer(user, context={"request": get_request(instance)}).data
+
+
+def get_event_name_and_webhook_payload_from_export_request(
+    request: ExportRequestId,
+    status: str,
+    message: str,
+) -> tuple[str, dict]:
+    match request.subresource:
+        case RequestSubresource.DATASET | RequestSubresource.ANNOTATIONS:
+            _event_name = event_name(action="create", resource="export")
+            subresource_data = {"format": request.format}
+        case RequestSubresource.BACKUP:
+            _event_name = event_name(action="create", resource="backup")
+            # NOTE @sosov: RequestId omits falsey fields, but webhook payloads should
+            # preserve the default regular-backup value as false.
+            subresource_data = {
+                "lightweight": (request.lightweight if request.lightweight is not None else False)
+            }
+        case _:
+            raise NotImplementedError(
+                f"Webhook for subresource {request.subresource} is not implemented"
+            )
+
+    webhook_payload = {
+        "event": _event_name,
+        "status": status,
+        "target": request.target,
+        "target_id": request.target_id,
+        "rq_id": request.render(),
+        "message": message,
+        **subresource_data,
+    }
+
+    return _event_name, webhook_payload
 
 
 def perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]:

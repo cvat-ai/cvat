@@ -21,7 +21,7 @@ from contextlib import contextmanager, nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import cv2 as cv
 from attr.converters import to_bool
@@ -30,6 +30,7 @@ from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
+from django.db.models import Model
 from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
 from PIL import Image
@@ -37,8 +38,114 @@ from redis.lock import Lock
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.redis_handler.utils import rq_job_will_be_retried
+
+if TYPE_CHECKING:
+    from cvat.apps.engine.models import RequestTarget
 
 Import = namedtuple("Import", ["module", "name", "alias"])
+log = logging.getLogger(__name__)
+
+
+def _get_request_target_django_model_by_enum(target: "RequestTarget") -> type[Model]:
+    from cvat.apps.engine.models import Job, Project, RequestTarget, Task
+
+    request_target_to_model: dict[RequestTarget, type[Model]] = {
+        RequestTarget.PROJECT: Project,
+        RequestTarget.TASK: Task,
+        RequestTarget.JOB: Job,
+    }
+    return request_target_to_model[target]
+
+
+def _enqueue_send_webhooks_for_request_completion(
+    request_id: str,
+    status: str,
+    message: str,
+) -> None:
+    from cvat.apps.engine.models import RequestTarget
+    from cvat.apps.engine.rq import ExportRequestId, RequestId
+    from cvat.apps.events.handlers import organization_id, project_id
+    from cvat.apps.webhooks import services as webhook_services
+    from cvat.apps.webhooks import utils as webhook_utils
+    from cvat.apps.webhooks.dispatch import batch_add_to_queue
+
+    request, _queue = RequestId.parse(request_id, try_legacy_format=True)
+
+    match request:
+        case ExportRequestId():
+            try:
+                event_name, webhook_payload = (
+                    webhook_utils.get_event_name_and_webhook_payload_from_export_request(
+                        request=request,
+                        status=status,
+                        message=message,
+                    )
+                )
+            # NOTE @sosov: Request completion webhooks are only implemented for
+            # export of dataset / annotations and backup
+            except NotImplementedError:
+                return
+        case _:
+            # NOTE @sosov: Request completion webhooks are only implemented for
+            # export of dataset / annotations and backup
+            return
+
+    target_cls = _get_request_target_django_model_by_enum(target=RequestTarget(request.target))
+    target = target_cls.objects.get(id=request.target_id)
+
+    webhooks = webhook_services.select_webhooks(
+        event=event_name,
+        organization_id=organization_id(target),
+        project_id=project_id(target),
+    )
+
+    if not webhooks:
+        return
+
+    batch_add_to_queue(
+        webhooks=webhooks,
+        data=webhook_payload,
+    )
+
+
+def enqueue_send_webhooks_for_successful_request(
+    rq_job: RQJob,
+    _connection: Any,
+    _result: Any,
+) -> None:
+    request_id = rq_job.id
+    try:
+        _enqueue_send_webhooks_for_request_completion(
+            request_id=request_id,
+            status="completed",
+            message="",
+        )
+    except Exception:
+        log.exception("Could not enqueue webhook deliveries for finished request %s", request_id)
+
+
+def enqueue_send_webhooks_for_failed_request(
+    rq_job: RQJob,
+    _connection: Any,
+    exc_type: type[BaseException],
+    exc_value: BaseException,
+    _exc_traceback: Any,
+) -> None:
+    if rq_job_will_be_retried(rq_job=rq_job):
+        return
+
+    request_id = rq_job.id
+    try:
+        _enqueue_send_webhooks_for_request_completion(
+            request_id=request_id,
+            status="failed",
+            message=parse_exception_message(
+                "".join(traceback.format_exception_only(exc_type, exc_value))
+            ),
+        )
+    except Exception:
+        log.exception("Could not enqueue webhook deliveries for finished request %s", request_id)
 
 
 def parse_imports(source_code: str):
