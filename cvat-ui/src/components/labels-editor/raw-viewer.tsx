@@ -37,7 +37,7 @@ function transformSkeletonSVG(value: string): string {
                 idNameMapping[sublabel.id] = sublabel.name;
             }
         }
-    } catch (error: any) {
+    } catch (_error: any) {
         // unsuccessful parsing, return value as is
         return value;
     }
@@ -85,19 +85,52 @@ interface Props {
     onSubmit: (labels: LabelOptColor[]) => void;
 }
 
+interface AttributeWithLabelPath {
+    attribute: SerializedAttribute;
+    labelPath: string;
+}
+
+function convertLabel(label: LabelOptColor): LabelOptColor {
+    return {
+        ...label,
+        id: (label.id as number) < 0 ? undefined : label.id,
+        attributes: label.attributes.map(
+            (attribute: any): SerializedAttribute => ({
+                ...attribute,
+                id: attribute.id < 0 ? undefined : attribute.id,
+            }),
+        ),
+        sublabels: label.sublabels?.map(convertLabel),
+    };
+}
+
 function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
     return labels.map(
-        (label: LabelOptColor): LabelOptColor => ({
-            ...label,
-            id: (label.id as number) < 0 ? undefined : label.id,
-            attributes: label.attributes.map(
-                (attribute: any): SerializedAttribute => ({
-                    ...attribute,
-                    id: attribute.id < 0 ? undefined : attribute.id,
-                }),
-            ),
-        }),
+        (label: LabelOptColor): LabelOptColor => convertLabel(label),
     );
+}
+
+function collectAttributeIDs(labels: SerializedLabel[]): number[] {
+    return labels.flatMap((label: SerializedLabel): number[] => [
+        ...label.attributes
+            .map((attr: SerializedAttribute): number | undefined => attr.id)
+            .filter((id: number | undefined): id is number => typeof id !== 'undefined' && id >= 0),
+        ...collectAttributeIDs(label.sublabels || []),
+    ]);
+}
+
+function collectAttributes(labels: SerializedLabel[], parentPath = ''): AttributeWithLabelPath[] {
+    return labels.flatMap((label: SerializedLabel): AttributeWithLabelPath[] => {
+        const labelPath = parentPath ? `${parentPath} / ${label.name}` : label.name;
+
+        return [
+            ...label.attributes.map((attribute: SerializedAttribute): AttributeWithLabelPath => ({
+                attribute,
+                labelPath,
+            })),
+            ...collectAttributes(label.sublabels || [], labelPath),
+        ];
+    });
 }
 
 export default class RawViewer extends React.PureComponent<Props> {
@@ -124,17 +157,13 @@ export default class RawViewer extends React.PureComponent<Props> {
         ) as SerializedLabel[];
 
         const labelIds: number[] = [];
-        const attrIds: number[] = [];
         for (const label of parsed) {
             label.id = label.id || idGenerator();
             if (label.id >= 0) {
                 labelIds.push(label.id);
             }
-            for (const attr of label.attributes) {
+            for (const { attribute: attr } of collectAttributes([label])) {
                 attr.id = attr.id || idGenerator();
-                if (attr.id >= 0) {
-                    attrIds.push(attr.id);
-                }
             }
         }
 
@@ -144,11 +173,11 @@ export default class RawViewer extends React.PureComponent<Props> {
                 return labelId >= 0 && !labelIds.includes(labelId);
             });
 
-        const deletedAttributes = labels
-            .reduce((acc: SerializedAttribute[], _label) => [...acc, ..._label.attributes], [])
-            .filter((_attr: SerializedAttribute) => {
-                const attrId = _attr.id as number;
-                return attrId >= 0 && !attrIds.includes(attrId);
+        const parsedAttrIds = collectAttributeIDs(parsed);
+        const deletedAttributes = collectAttributes(labels)
+            .filter(({ attribute }: AttributeWithLabelPath) => {
+                const attrId = attribute.id as number;
+                return attrId >= 0 && !parsedAttrIds.includes(attrId);
             });
 
         if (deletedLabels.length || deletedAttributes.length) {
@@ -173,8 +202,8 @@ export default class RawViewer extends React.PureComponent<Props> {
                             <Paragraph>
                                 Following attributes are going to be removed:
                                 <div className='cvat-modal-confirm-content-remove-existing-attributes'>
-                                    {deletedAttributes.map((_attr: SerializedAttribute) => (
-                                        <Tag key={_attr.id as number}>{_attr.name}</Tag>
+                                    {deletedAttributes.map(({ attribute, labelPath }: AttributeWithLabelPath) => (
+                                        <Tag key={attribute.id as number}>{`${labelPath}: ${attribute.name}`}</Tag>
                                     ))}
                                 </div>
                             </Paragraph>

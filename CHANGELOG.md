@@ -16,6 +16,288 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.68.0'></a>
+## \[2.68.0\] - 2026-06-10
+
+### Added
+
+- It's now possible to change the minimum user role needed to create
+  organizations by setting the `CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE`
+  environment variable
+  (<https://github.com/cvat-ai/cvat/pull/10688>)
+
+- Added `attempt` and `request_duration` fields to webhook deliveries
+  (<https://github.com/cvat-ai/cvat/pull/10693>)
+
+- Added an audio annotation workspace with waveform controls, interval regions, and audio task creation
+  (<https://github.com/cvat-ai/cvat/pull/10708>)
+
+### Changed
+
+- \[CLI\] Simplified native function agent task cache limiting to keep the last 10 task caches
+  after task annotation stopped persisting shared chunk caches.
+  (<https://github.com/cvat-ai/cvat/pull/10714>)
+
+- \[CLI\] Native function agents now download and process task image chunks incrementally
+  for task annotation requests, reducing temporary disk usage and allowing progress
+  updates to start sooner.
+  (<https://github.com/cvat-ai/cvat/pull/10675>)
+
+### Fixed
+
+- Preserve annotation source in GT jobs during edit/undo/redo so annotations in GT jobs no longer displayed as GT.
+  (<https://github.com/cvat-ai/cvat/pull/10659>)
+
+- Restricted organization workers assigned to resources from exporting datasets, annotations, or backups
+  unless they own the resource or relevant parent resource
+  (<https://github.com/cvat-ai/cvat/pull/10685>)
+
+- Bug which retained organization name in the list even when its deleted (<https://github.com/cvat-ai/cvat/pull/10690>)
+
+- Fixed stale unsaved-change prompts after saving audio interval annotations
+  (<https://github.com/cvat-ai/cvat/pull/10708>)
+
+<a id='changelog-2.67.0'></a>
+## \[2.67.0\] - 2026-06-02
+
+### Added
+
+- \[Server API\] The project/task/job `preview` endpoints accept
+  the `Prefer: handling=empty` header (RFC 7240). When set, entities without a
+  media-derived preview (e.g. point cloud tasks) return `204 No Content`
+  instead of the default placeholder.
+  (<https://github.com/cvat-ai/cvat/pull/10611>)
+
+### Fixed
+
+- \[SDK\] Fixed a PyTorch `UserWarning` about non-writable tensors when converting
+  polygon masks to tensors in `ExtractInstanceMasks`.
+  (<https://github.com/cvat-ai/cvat/pull/10680>)
+
+- Memory growth during schema generation
+  (<https://github.com/cvat-ai/cvat/pull/10679>)
+
+### Security
+
+- Fixed an XSS vulnerability in annotation guide asset handling
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-w6mx-95ff-72cv>)
+
+<a id='changelog-2.66.0'></a>
+## \[2.66.0\] - 2026-05-26
+
+### Added
+
+- \[Server API\] Interval annotations: new annotation type with `start`/`stop` boundaries
+  (<https://github.com/cvat-ai/cvat/pull/10583>)
+- \[Server API\] Backup export and import for audio tasks
+  (<https://github.com/cvat-ai/cvat/pull/10583>)
+- \[Server API\] Generic TSV dataset format for importing and exporting interval annotations
+  (<https://github.com/cvat-ai/cvat/pull/10583>)
+
+- Added client IP address tracking to event logs
+  (<https://github.com/cvat-ai/cvat/pull/10545>)
+
+- Added the ability to move objects between layers when z-order sorting is enabled in the object sidebar
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added the ability to move an object to a specific layer from the object item menu
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added the ability to move and merge existing layers by drag and drop
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added layer compaction for minimizing annotation z-order layers and re-enumerating them
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added z-order filtering for annotations
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Added layer display support in canvas object details
+  (<https://github.com/cvat-ai/cvat/pull/10613>)
+
+- Chunk download retries in case of network errors
+  (<https://github.com/cvat-ai/cvat/pull/10651>)
+
+- \[CLI\] Added `backup` and `create-from-backup` commands for projects
+  (<https://github.com/cvat-ai/cvat/pull/10618>)
+
+- \[CLI\] Added `export-dataset` and `import-dataset` commands for projects in `cvat-cli`
+  (<https://github.com/cvat-ai/cvat/pull/10639>)
+
+- \[SDK\] Added an `ExtractInstanceMasks` PyTorch target transform for torchvision
+  instance segmentation models.
+  (<https://github.com/cvat-ai/cvat/pull/10654>)
+
+- Added CI to trigger build of agent images in cvat-models repo, moved code from ai-models/ to cvat-models repo
+  (<https://github.com/cvat-ai/cvat/pull/10629>)
+
+### Changed
+
+- \[SDK\] `ExtractBoundingBoxes` now returns an empty `boxes` tensor with shape
+  `[0, 4]` instead of `[0]`.
+  (<https://github.com/cvat-ai/cvat/pull/10654>)
+
+### Fixed
+
+- Return a validation error when swapping label attribute names instead of failing with an integrity error
+  (<https://github.com/cvat-ai/cvat/pull/10625>)
+
+- Return a validation error when renaming a label attribute to an existing attribute name
+  instead of failing with an integrity error
+  (<https://github.com/cvat-ai/cvat/pull/10625>)
+
+- Fixed severe truncation of label names in the annotation page Labels sidebar
+  (<https://github.com/cvat-ai/cvat/pull/10641>)
+
+- Fixed a crash when backing up a task with no manifest that's been migrated
+  to backing cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10668>)
+
+<a id='changelog-2.65.0'></a>
+## \[2.65.0\] - 2026-05-19
+
+### Added
+
+- Support filtering by skeleton sub-label and sub-label attributes in the Filters modal
+  (<https://github.com/cvat-ai/cvat/pull/10195>)
+
+- \[Server API\] The `media_type` field for tasks and jobs
+  (<https://github.com/cvat-ai/cvat/pull/10538>)
+
+- \[Server API\] An option to create audio-based tasks
+  (<https://github.com/cvat-ai/cvat/pull/10560>)
+
+- An option to import annotations without removing the existing ones
+  in task and job annotation uploads.
+  (<https://github.com/cvat-ai/cvat/pull/10573>)
+
+- \[Server API\] New filter parameters: `read_only` on `/api/access_tokens`; `user_id` and
+  `accepted` on `/api/invitations`; `org_id` on `/api/requests`. The `accepted` field is now
+  also returned by `/api/invitations`, and `operation.org_id` by `/api/requests`
+  (<https://github.com/cvat-ai/cvat/pull/10569>)
+
+- Webhook deliveries are now retried automatically on 5xx, connection errors,
+  and timeouts, with backoff 5s → 5min → 30min → 3h → 24h × 4
+  (<https://github.com/cvat-ai/cvat/pull/10578>)
+
+- \[Server API\] Ground truth jobs can now be created in audio tasks
+  (<https://github.com/cvat-ai/cvat/pull/10582>)
+
+- \[Server API\] Webhook events `create:export` and `create:backup` that
+  fire when a dataset export or a project/task backup finishes (success
+  or failure), so subscribers no longer need to poll `/api/requests` for
+  the outcome
+  (<https://github.com/cvat-ai/cvat/pull/10585>)
+
+- Username updates are now available from the profile page
+  (<https://github.com/cvat-ai/cvat/pull/10595>)
+
+- Added support for deleting label attributes from the label editor and REST API
+  (<https://github.com/cvat-ai/cvat/pull/10596>)
+
+- Added support for adding, editing, and deleting skeleton element attributes after task or project creation
+  (<https://github.com/cvat-ai/cvat/pull/10596>)
+
+- Added raw label editor warnings when removing saved attributes, including skeleton element attributes
+  (<https://github.com/cvat-ai/cvat/pull/10596>)
+
+- Added cancellation support for export requests that are already in progress
+  (<https://github.com/cvat-ai/cvat/pull/10600>)
+
+- A shortcut to show or hide the bitmap layer on 2D annotation view.
+  (<https://github.com/cvat-ai/cvat/pull/10603>)
+
+### Changed
+
+- \[Server API\] Annotations now use `0` as the default value for groups instead of `null`.
+  It worked this way already, but wasn't reflected in the server API. No behavior or logic changes.
+  (<https://github.com/cvat-ai/cvat/pull/10522>)
+
+- Change case of 'Checkbox' var names in label editor to lower case
+  (<https://github.com/cvat-ai/cvat/pull/10535>)
+
+-\[Server API\] The `dimension` field of tasks without data will now be empty instead of `2d`
+  (<https://github.com/cvat-ai/cvat/pull/10538>)
+
+- \[Server API\] Tasks without data will not report their chunk types or chunk size
+  (<https://github.com/cvat-ai/cvat/pull/10551>)
+
+- \[Server API\] The minimum accepted value of `image_quality` in
+  `/api/tasks/<id>/data` is now 1 (was 0); `0` was never a usable JPEG quality
+  (<https://github.com/cvat-ai/cvat/pull/10551>)
+
+- \[Server API\] Enum-like fields (e.g. `status`, `state`, `role`, `type`, `provider_type`) are
+  no longer matched by the `?search=` parameter on list endpoints; use the corresponding
+  exact-match filter instead
+  (<https://github.com/cvat-ai/cvat/pull/10569>)
+
+- Updated Django to 5.2.x
+  (<https://github.com/cvat-ai/cvat/pull/9896>)
+
+- The server Docker image is now based on Ubuntu 24.04
+  (<https://github.com/cvat-ai/cvat/pull/10597>)
+
+- Restricted updates of existing label attributes to fields that do not invalidate annotations
+  (<https://github.com/cvat-ai/cvat/pull/10601>)
+
+- \[Server API\] Made the requirements for inputs representing paths in
+  cloud storage or attached file share more strict in several endpoints;
+  empty, `..` and `.` components are no longer accepted and neither are
+  leading slashes
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-6f87-4g86-p9gw>)
+
+### Deprecated
+
+- \[Server API\] The use of `null` for the `group` field in annotations. Use 0 instead.
+  (<https://github.com/cvat-ai/cvat/pull/10522>)
+
+- \[Server API\] `image_quality` in `/api/tasks[/<id>]` and `/api/{tasks,jobs}/<id>/data/meta`
+  endpoints for 3D tasks
+  (<https://github.com/cvat-ai/cvat/pull/10551>)
+
+### Fixed
+
+- Backend chunk job failures now preserve more meaningful exception details
+  (<https://github.com/cvat-ai/cvat/pull/10495>)
+- S3 cloud-storage status probes now fail fast on unreachable or misconfigured
+  endpoints
+  (<https://github.com/cvat-ai/cvat/pull/10495>)
+
+- Helm deployments now support multiple releases in one namespace by rendering
+  OPA, Redis, and Kvrocks wiring with release-scoped service and secret names
+  (<https://github.com/cvat-ai/cvat/pull/10496>)
+
+- Updated `psycopg2-binary` to avoid local macOS test startup failures caused
+  by older bundled libpq versions, including `SCRAM authentication requires
+  libpq version 10 or above` when connecting to PostgreSQL
+  (<https://github.com/cvat-ai/cvat/pull/10497>)
+
+- Task creation with `remote_files` now returns a readable validation error
+  when a URL is unreachable or uses an unsupported scheme, instead of a 500
+  with a raw traceback
+  (<https://github.com/cvat-ai/cvat/pull/10554>)
+
+- Fixed polygon/polyline auto simplification switch state is shared
+  (<https://github.com/cvat-ai/cvat/pull/10568>)
+
+- \[Server API\] Improved performance of the organization, membership, and invitation endpoints
+  (<https://github.com/cvat-ai/cvat/pull/10576>)
+
+- Show server health-check failures and timeout details when CVAT cannot reach required services
+  (<https://github.com/cvat-ai/cvat/pull/10579>)
+
+- Clarified 3D cuboid size labels in the object details sidebar to use Length, Width, and Height terminology.
+  (<https://github.com/cvat-ai/cvat/pull/10586>)
+
+- Fixed task backup export for tasks with media stored in cloud storage
+  when image database rows are returned out of frame order
+  (<https://github.com/cvat-ai/cvat/pull/10589>)
+
+### Security
+
+- Fixed multiple path traversal vulnerabilities
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-6f87-4g86-p9gw>)
+
 <a id='changelog-2.64.0'></a>
 ## \[2.64.0\] - 2026-04-29
 

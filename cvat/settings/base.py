@@ -122,6 +122,22 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
+
+def parse_num_proxies(value: str | None) -> int | None:
+    if value in (None, ""):
+        return None
+
+    try:
+        num_proxies = int(value)
+    except (TypeError, ValueError):
+        raise ImproperlyConfigured("CVAT_NUM_PROXIES must be an integer")
+
+    if num_proxies < 0:
+        raise ImproperlyConfigured("CVAT_NUM_PROXIES must be a non-negative integer")
+
+    return num_proxies
+
+
 REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
@@ -158,10 +174,14 @@ REST_FRAMEWORK = {
     "URL_FORMAT_OVERRIDE": "scheme",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/minute",
+        # dj-rest-auth views define this scope. Keep them unthrottled by default.
+        "dj_rest_auth": None,
     },
+    "NUM_PROXIES": parse_num_proxies(os.getenv("CVAT_NUM_PROXIES", "0")),
     "DEFAULT_METADATA_CLASS": "rest_framework.metadata.SimpleMetadata",
     "DEFAULT_SCHEMA_CLASS": "cvat.apps.iam.schema.CustomAutoSchema",
     "EXCEPTION_HANDLER": "cvat.apps.events.handlers.handle_viewset_exception",
@@ -233,8 +253,8 @@ IAM_DEFAULT_ROLE = "user"
 IAM_ADMIN_ROLE = "admin"
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, "user", "worker"]
-IAM_OPA_HOST = "http://opa:8181"
-IAM_OPA_DATA_URL = f"{IAM_OPA_HOST}/v1/data"
+IAM_OPA_URL = os.getenv("CVAT_OPA_URL", "http://opa:8181")
+IAM_OPA_DATA_URL = f"{IAM_OPA_URL}/v1/data"
 LOGIN_URL = "rest_login"
 LOGIN_REDIRECT_URL = "/"
 
@@ -319,7 +339,7 @@ RQ_QUEUES = {
     },
     CVAT_QUEUES.WEBHOOKS.value: {
         **REDIS_INMEM_SETTINGS,
-        "DEFAULT_TIMEOUT": "1h",
+        "DEFAULT_TIMEOUT": "25s",
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
         **REDIS_INMEM_SETTINGS,
@@ -604,6 +624,10 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-organization",
 ]
 
+CORS_EXPOSE_HEADERS = [
+    "Content-Range",
+]
+
 TUS_MAX_FILE_SIZE = 26843545600  # 25gb
 
 # This setting makes request secure if X-Forwarded-Proto: 'https' header is specified by our proxy
@@ -669,6 +693,8 @@ SPECTACULAR_SETTINGS = {
         "ShapeType": "cvat.apps.engine.models.ShapeType",
         "OperationStatus": "cvat.apps.engine.models.StateChoice",
         "ChunkType": "cvat.apps.engine.models.DataChoice",
+        "MediaType": "cvat.apps.engine.models.MediaType",
+        "Dimension": "cvat.apps.engine.models.DimensionType",
         "StorageMethod": "cvat.apps.engine.models.StorageMethodChoice",
         "JobStatus": "cvat.apps.engine.models.StatusChoice",
         "JobStage": "cvat.apps.engine.models.StageChoice",
@@ -756,7 +782,7 @@ ASSET_SUPPORTED_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif", "
 ASSET_MAX_IMAGE_SIZE = 1920
 ASSET_MAX_COUNT_PER_GUIDE = 150
 
-SMOKESCREEN_ENABLED = True
+SMOKESCREEN_ENABLED = to_bool(os.getenv("SMOKESCREEN_ENABLED", True))
 
 # By default, email backend is django.core.mail.backends.smtp.EmailBackend
 # But it won't work without additional configuration, so we set it to None

@@ -32,10 +32,6 @@ class DeleteCache:
             return True
         return False
 
-    def clear(self):
-        self._cache.clear()
-        self._cache.update(_default_cache_value())
-
 
 def get_cache():
     from .handlers import request_info
@@ -44,4 +40,6 @@ def get_cache():
 
 
 def clear_cache():
-    get_cache().clear()
+    from .handlers import request_info
+
+    _caches.pop(request_info()["id"], None)

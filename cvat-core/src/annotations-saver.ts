@@ -3,34 +3,35 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import serverProxy, { sleep } from './server-proxy';
 import { Job, Task } from './session';
 import { DataError, ServerError } from './exceptions';
-import {
-    SerializedCollection, SerializedShape,
-    SerializedTag, SerializedTrack,
-} from './server-response-types';
+import { SerializedCollection, SerializedTrack } from './server-response-types';
 
 interface ExtractedIDs {
     shapes: number[];
     tracks: number[];
     tags: number[];
+    intervals: number[];
 }
 
 interface SplittedCollection {
-    created: Omit<SerializedCollection, 'version'>;
-    updated: Omit<SerializedCollection, 'version'>;
-    deleted: Omit<SerializedCollection, 'version'>;
+    created: SerializedCollection;
+    updated: SerializedCollection;
+    deleted: SerializedCollection;
 }
 
-type CollectionObject = SerializedShape | SerializedTrack | SerializedTag;
+type CollectionObject = SerializedCollection[keyof SerializedCollection][number];
 
-const COLLECTION_KEYS: ('shapes' | 'tracks' | 'tags')[] = ['shapes', 'tracks', 'tags'];
+const COLLECTION_KEYS = ['shapes', 'tracks', 'tags', 'intervals'] as const;
 const JSON_SERIALIZER_KEYS = [
     'id',
     'label_id',
     'group',
     'frame',
+    'start',
+    'stop',
     'occluded',
     'z_order',
     'points',
@@ -45,7 +46,154 @@ const JSON_SERIALIZER_KEYS = [
     'outside',
 ];
 
-function removeIDFromObject<T extends SerializedShape | SerializedTag | SerializedTrack>(
+const sortAttributes = (attributes: { spec_id: number }[]): { spec_id: number }[] => (
+    attributes.sort(({ spec_id: specID1 }, { spec_id: specID2 }) => specID1 - specID2)
+);
+
+const sortTrackedShapes = (shapes: SerializedTrack['shapes']): SerializedTrack['shapes'] => (
+    shapes.sort(({ frame: frame1 }, { frame: frame2 }) => frame1 - frame2)
+);
+
+const isTheSameAttributes = (
+    a: { spec_id: number }[],
+    b: { spec_id: number }[],
+): boolean => (
+    JSON.stringify(sortAttributes(a)) === JSON.stringify(sortAttributes(b))
+);
+
+const isTheSamePoints = (
+    a: number[] | undefined,
+    b: number[] | undefined,
+): boolean => (
+    (a === undefined && b === undefined) ||
+    (a.length === b.length && a.every((coord, index) => coord.toFixed(1) === b[index].toFixed(1)))
+);
+
+const isTheSameTrackedShapes = (
+    a: SerializedTrack['shapes'],
+    b: SerializedTrack['shapes'],
+): boolean => {
+    const sortedA = sortTrackedShapes(a);
+    const sortedB = sortTrackedShapes(b);
+
+    return sortedA.length === sortedB.length &&
+        sortedA.every((shape, index) => {
+            // The server can extend tracked shape attributes with defaults or previous mutable values.
+            // During 504 recovery, only attributes sent by the client must be preserved for matching.
+            const receivedAttributes = sortedB[index].attributes.filter((attr) => (
+                shape.attributes.some((sentAttr) => sentAttr.spec_id === attr.spec_id)
+            ));
+
+            return shape.frame === sortedB[index].frame &&
+                shape.type === sortedB[index].type &&
+                shape.occluded === sortedB[index].occluded &&
+                shape.outside === sortedB[index].outside &&
+                shape.z_order === sortedB[index].z_order &&
+                shape.rotation === sortedB[index].rotation &&
+                isTheSamePoints(shape.points, sortedB[index].points) &&
+                isTheSameAttributes(shape.attributes, receivedAttributes);
+        });
+};
+
+const isTheSameTag = (
+    a: SerializedCollection['tags'][number],
+    b: SerializedCollection['tags'][number],
+): boolean => (
+    a.label_id === b.label_id &&
+    a.frame === b.frame &&
+    a.group === b.group &&
+    a.source === b.source &&
+    isTheSameAttributes(a.attributes, b.attributes)
+);
+
+const isTheSameInterval = (
+    a: SerializedCollection['intervals'][number],
+    b: SerializedCollection['intervals'][number],
+): boolean => (
+    a.label_id === b.label_id &&
+    a.start === b.start &&
+    a.stop === b.stop &&
+    a.group === b.group &&
+    a.source === b.source &&
+    isTheSameAttributes(a.attributes, b.attributes)
+);
+
+const isTheSameShape = (
+    a: Omit<SerializedCollection['shapes'][number], 'elements'>,
+    b: Omit<SerializedCollection['shapes'][number], 'elements'>,
+): boolean => {
+    const isSame = a.label_id === b.label_id &&
+        a.frame === b.frame &&
+        a.group === b.group &&
+        a.source === b.source &&
+        a.occluded === b.occluded &&
+        a.z_order === b.z_order &&
+        a.rotation === b.rotation &&
+        a.type === b.type &&
+        isTheSameAttributes(a.attributes, b.attributes) &&
+        isTheSamePoints(a.points, b.points);
+
+    if ('elements' in a && Array.isArray(a.elements) && 'elements' in b && Array.isArray(b.elements)) {
+        return isSame && a.elements.length === b.elements.length &&
+            a.elements.every((element, index) => isTheSameShape(element, b.elements[index]));
+    }
+
+    return isSame;
+};
+
+type SerializedTrackLike = Omit<SerializedTrack, 'elements'> & {
+    elements?: SerializedTrackLike[];
+};
+const isTheSameTrack = (
+    a: SerializedTrackLike,
+    b: SerializedTrackLike,
+): boolean => {
+    const isSame = a.label_id === b.label_id &&
+        a.group === b.group &&
+        a.source === b.source &&
+        isTheSameAttributes(a.attributes, b.attributes) &&
+        isTheSameTrackedShapes(a.shapes, b.shapes);
+
+    if ('elements' in a && Array.isArray(a.elements) && 'elements' in b && Array.isArray(b.elements)) {
+        return isSame && a.elements.length === b.elements.length &&
+            a.elements.every((element, index) => isTheSameTrack(element, b.elements[index]));
+    }
+
+    return isSame;
+};
+
+const isTheSameObject = (
+    type: typeof COLLECTION_KEYS[number],
+    left: CollectionObject,
+    right: CollectionObject,
+): boolean => {
+    switch (type) {
+        case 'shapes':
+            return isTheSameShape(
+                left as SerializedCollection['shapes'][number],
+                right as SerializedCollection['shapes'][number],
+            );
+        case 'tracks':
+            return isTheSameTrack(
+                left as SerializedCollection['tracks'][number],
+                right as SerializedCollection['tracks'][number],
+            );
+        case 'tags':
+            return isTheSameTag(
+                left as SerializedCollection['tags'][number],
+                right as SerializedCollection['tags'][number],
+            );
+        case 'intervals':
+            return isTheSameInterval(
+                left as SerializedCollection['intervals'][number],
+                right as SerializedCollection['intervals'][number],
+            );
+        default:
+            throw new Error(`Unknown collection type: ${type}`);
+    }
+};
+
+function removeIDFromObject<T extends CollectionObject>(
     object: T,
     property: 'id' | 'clientID',
 ): T {
@@ -66,29 +214,33 @@ function removeIDFromObject<T extends SerializedShape | SerializedTag | Serializ
 export default class AnnotationsSaver {
     private sessionType: 'task' | 'job';
     private id: number;
-    private version: number;
     private collection: any;
     private hash: string;
     private initialObjects: {
-        shapes: Record<number, SerializedCollection['shapes'][0]>,
-        tracks: Record<number, SerializedCollection['tracks'][0]>,
-        tags: Record<number, SerializedCollection['tags'][0]>,
+        shapes: Map<number, SerializedCollection['shapes'][0]>,
+        tracks: Map<number, SerializedCollection['tracks'][0]>,
+        tags: Map<number, SerializedCollection['tags'][0]>,
+        intervals: Map<number, SerializedCollection['intervals'][0]>,
     };
 
-    constructor(version: number, collection, session: Task | Job) {
+    constructor(collection, session: Task | Job) {
         this.sessionType = session instanceof Task ? 'task' : 'job';
         this.id = session.id;
-        this.version = version;
         this.collection = collection;
         this.hash = this._getHash();
-        this.initialObjects = { shapes: {}, tracks: {}, tags: {} };
+        this.initialObjects = {
+            shapes: new Map<number, SerializedCollection['shapes'][number]>(),
+            tracks: new Map<number, SerializedCollection['tracks'][number]>(),
+            tags: new Map<number, SerializedCollection['tags'][number]>(),
+            intervals: new Map<number, SerializedCollection['intervals'][number]>(),
+        };
 
         // We need use data from export instead of initialData
         // Otherwise we have differ keys order and JSON comparison code works incorrectly
         const exported = this.collection.export();
         for (const key of COLLECTION_KEYS) {
             for (const object of exported[key]) {
-                this.initialObjects[key][object.id] = object;
+                this.initialObjects[key].set(object.id, object);
             }
         }
     }
@@ -99,8 +251,8 @@ export default class AnnotationsSaver {
     }
 
     async _request(data: SerializedCollection, action: 'put' | 'create' | 'update' | 'delete'): Promise<SerializedCollection> {
-        const result = await serverProxy.annotations.updateAnnotations(this.sessionType, this.id, data, action);
-        return result;
+        const collection = await serverProxy.annotations.updateAnnotations(this.sessionType, this.id, data, action);
+        return collection;
     }
 
     async _put(data: SerializedCollection): Promise<SerializedCollection> {
@@ -129,46 +281,54 @@ export default class AnnotationsSaver {
                 shapes: [],
                 tracks: [],
                 tags: [],
+                intervals: [],
             },
             updated: {
                 shapes: [],
                 tracks: [],
                 tags: [],
+                intervals: [],
             },
             deleted: {
                 shapes: [],
                 tracks: [],
                 tags: [],
+                intervals: [],
             },
         };
 
         // Find created and updated objects
-        for (const type of COLLECTION_KEYS) {
-            for (const object of exported[type]) {
-                if (typeof object.id === 'undefined') {
-                    splitted.created[type].push(object as any);
-                } else if (object.id in this.initialObjects[type]) {
+        for (const objectType of COLLECTION_KEYS) {
+            for (const object of exported[objectType]) {
+                if (Number.isInteger(object.id) && this.initialObjects[objectType].has(object.id)) {
                     const exportedHash = JSON.stringify(object, JSON_SERIALIZER_KEYS);
-                    const initialHash = JSON.stringify(this.initialObjects[type][object.id], JSON_SERIALIZER_KEYS);
+                    const initialHash = JSON.stringify(
+                        this.initialObjects[objectType].get(object.id), JSON_SERIALIZER_KEYS,
+                    );
+
                     if (exportedHash !== initialHash) {
-                        splitted.updated[type].push(object as any);
+                        splitted.updated[objectType].push(object as any);
                     }
+                } else {
+                    removeIDFromObject(object, 'id');
+                    splitted.created[objectType].push(object as any);
                 }
             }
         }
 
         // Now find deleted objects
-        const indexes = {
-            shapes: exported.shapes.map((object) => +object.id),
-            tracks: exported.tracks.map((object) => +object.id),
-            tags: exported.tags.map((object) => +object.id),
+        const exportedServerIds = {
+            shapes: new Set(exported.shapes.map((object) => +object.id)),
+            tracks: new Set(exported.tracks.map((object) => +object.id)),
+            tags: new Set(exported.tags.map((object) => +object.id)),
+            intervals: new Set(exported.intervals.map((object) => +object.id)),
         };
 
         for (const type of COLLECTION_KEYS) {
-            for (const id of Object.keys(this.initialObjects[type])) {
-                if (!indexes[type].includes(+id)) {
-                    const object = this.initialObjects[type][id];
-                    splitted.deleted[type].push(object);
+            for (const id of this.initialObjects[type].keys()) {
+                if (!exportedServerIds[type].has(id)) {
+                    const object = this.initialObjects[type].get(id);
+                    splitted.deleted[type].push(object as any);
                 }
             }
         }
@@ -176,12 +336,13 @@ export default class AnnotationsSaver {
         return splitted;
     }
 
-    _updateCreatedObjects(saved: SerializedCollection, indexes: ExtractedIDs): void {
-        const savedLength = saved.tracks.length + saved.shapes.length + saved.tags.length;
-        const indexesLength = indexes.tracks.length + indexes.shapes.length + indexes.tags.length;
+    _updateSavedObjects(saved: SerializedCollection, indexes: ExtractedIDs): void {
+        const savedLength = COLLECTION_KEYS.reduce((acc, type) => acc + saved[type].length, 0);
+        const indexesLength = COLLECTION_KEYS.reduce((acc, type) => acc + indexes[type].length, 0);
         if (indexesLength !== savedLength) {
             throw new DataError(
-                `Number of indexes is differed by number of saved objects ${indexesLength} vs ${savedLength}`,
+                'Server returned different number of objects than client sent ' +
+                `(${savedLength} vs ${indexesLength}).`,
             );
         }
 
@@ -194,12 +355,13 @@ export default class AnnotationsSaver {
         }
     }
 
-    _extractClientIDs(exported: Omit<SerializedCollection, 'version'>): ExtractedIDs {
+    _extractClientIDs(exported: SerializedCollection): ExtractedIDs {
         // Receive client IDs before saving
         const indexes = {
             tracks: exported.tracks.map((track) => track.clientID),
             shapes: exported.shapes.map((shape) => shape.clientID),
             tags: exported.tags.map((tag) => tag.clientID),
+            intervals: exported.intervals.map((interval) => interval.clientID),
         };
 
         // Remove them from the request body
@@ -213,10 +375,9 @@ export default class AnnotationsSaver {
     }
 
     _updateInitialObjects(responseBody: SerializedCollection): void {
-        this.version = responseBody.version;
         for (const type of COLLECTION_KEYS) {
             for (const object of responseBody[type]) {
-                this.initialObjects[type][object.id] = object;
+                this.initialObjects[type].set(object.id, object as any);
             }
         }
     }
@@ -229,7 +390,7 @@ export default class AnnotationsSaver {
         const exported = this.collection.export();
         const { flush } = this.collection;
         if (flush) {
-            onUpdate('All collection is being saved on the server');
+            onUpdate('Collection is being saved on the server');
             // remove server IDs if there are any, annotations will be rewritten
             const indexes = this._extractClientIDs(exported);
             for (const type of COLLECTION_KEYS) {
@@ -238,16 +399,20 @@ export default class AnnotationsSaver {
                 }
             }
 
-            const savedData = await this._put({ ...exported, version: this.version });
-            this.version = savedData.version;
+            const savedData = await this._put(exported);
             this.collection.flush = false;
 
-            this._updateCreatedObjects(savedData, indexes);
-            this.initialObjects = { shapes: {}, tracks: {}, tags: {} };
+            this._updateSavedObjects(savedData, indexes);
+            this.initialObjects = {
+                shapes: new Map(),
+                tracks: new Map(),
+                tags: new Map(),
+                intervals: new Map(),
+            };
 
             for (const type of COLLECTION_KEYS) {
                 for (const object of savedData[type]) {
-                    this.initialObjects[type][object.id] = object;
+                    this.initialObjects[type].set(object.id, object as any);
                 }
             }
         } else {
@@ -256,50 +421,32 @@ export default class AnnotationsSaver {
             // that is not good that client knows about the server details
             // but we implemented a workaround here
 
-            const mutateForCompare = (
-                object: CollectionObject | SerializedTrack['shapes'][0],
-            ): CollectionObject | SerializedTrack['shapes'][0] => ({
-                ...object,
-                ...('attributes' in object ? {
-                    attributes: object.attributes
-                        .sort(({ spec_id: specID1 }, { spec_id: specID2 }) => specID1 - specID2),
-                } : {}),
-                ...('points' in object && Array.isArray(object.points) ? {
-                    points: object.points.map((coord) => +coord.toFixed(4)),
-                } : {}),
-                ...('elements' in object && Array.isArray(object.elements) ? {
-                    elements: object.elements
-                        .sort(({ label_id: labelID1 }, { label_id: labelID2 }) => labelID1 - labelID2)
-                        .map((element) => mutateForCompare(element)),
-                } : {}),
-                ...('shapes' in object && Array.isArray(object.shapes) ? {
-                    shapes: object.shapes
-                        .map((shape) => mutateForCompare(shape)),
-                } : {}),
-            });
-
             const findPair = (
-                key: typeof COLLECTION_KEYS[0],
+                key: typeof COLLECTION_KEYS[number],
                 objectToSave: CollectionObject,
                 serverCollection: SerializedCollection,
             ): CollectionObject | null => {
-                const collection = serverCollection[key];
-                const existingIDs = Object.keys(this.initialObjects[key]).map((id) => +id);
-                const { frame, label_id: labelID } = objectToSave;
+                const serverObjects = serverCollection[key];
+                const existingIDs = Array.from(this.initialObjects[key].keys());
+                const { label_id: labelID } = objectToSave;
 
                 // optimization to avoid stringifying each object in collection
-                const potentialObjects = collection.filter(
-                    (object) => object.frame === frame &&
-                    object.label_id === labelID &&
-                    !existingIDs.includes(object.id), // exclude objects that client knows
+                const potentialObjects = serverObjects.filter(
+                    (object) => {
+                        const isPotential = object.label_id === labelID && !existingIDs.includes(object.id);
+                        if (key === 'intervals') {
+                            return isPotential && ['start', 'stop'].every((property) => object[property] === objectToSave[property]);
+                        }
+
+                        if (key === 'shapes' || key === 'tags') {
+                            return isPotential && ['frame'].every((property) => object[property] === objectToSave[property]);
+                        }
+
+                        return isPotential;
+                    },
                 );
 
-                const comparedKeys = JSON_SERIALIZER_KEYS.filter((_key) => !['id', 'attributes'].includes(_key));
-                const stringifiedObjectToSave = JSON.stringify(mutateForCompare(objectToSave), comparedKeys);
-                return potentialObjects.find((object) => {
-                    const stringifiedObject = JSON.stringify(mutateForCompare(object), comparedKeys);
-                    return stringifiedObject === stringifiedObjectToSave;
-                }) || null;
+                return potentialObjects.find((object) => isTheSameObject(key, objectToSave, object)) ?? null;
             };
 
             const isRetriableProxyError = (requestError: unknown): boolean => (
@@ -324,7 +471,7 @@ export default class AnnotationsSaver {
                             shapes: [],
                             tracks: [],
                             tags: [],
-                            version: serverCollection.version,
+                            intervals: [],
                         };
                         for (const type of COLLECTION_KEYS) {
                             for (const obj of requestBody[type]) {
@@ -379,61 +526,55 @@ export default class AnnotationsSaver {
 
             const { created, updated, deleted } = this._split(exported);
 
-            if (updated.shapes.length || updated.tags.length || updated.tracks.length) {
+            if (COLLECTION_KEYS.some((type) => updated[type].length)) {
                 onUpdate('Updated objects are being saved on the server');
                 const updatedIndexes = this._extractClientIDs(updated);
-                const requestBody = { ...updated, version: this.version };
                 let updatedData = null;
                 try {
-                    updatedData = await this._update(requestBody);
+                    updatedData = await this._update(updated);
                 } catch (error: unknown) {
-                    updatedData = await retryAfterProxyTimeout(error, requestBody, 'update');
+                    updatedData = await retryAfterProxyTimeout(error, updated, 'update');
                 }
 
-                this.version = updatedData.version;
-                this._updateCreatedObjects(updatedData, updatedIndexes);
+                this._updateSavedObjects(updatedData, updatedIndexes);
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of updatedData[type]) {
-                        this.initialObjects[type][object.id] = object;
+                        this.initialObjects[type].set(object.id, object as any);
                     }
                 }
             }
 
-            if (deleted.shapes.length || deleted.tags.length || deleted.tracks.length) {
+            if (COLLECTION_KEYS.some((type) => deleted[type].length)) {
                 onUpdate('Deleted objects are being deleted from the server');
                 this._extractClientIDs(deleted);
-                const requestBody = { ...deleted, version: this.version };
                 let deletedData = null;
                 try {
-                    deletedData = await this._delete(requestBody);
+                    deletedData = await this._delete(deleted);
                 } catch (error: unknown) {
-                    deletedData = await retryAfterProxyTimeout(error, requestBody, 'delete');
+                    deletedData = await retryAfterProxyTimeout(error, deleted, 'delete');
                 }
 
-                this.version = deletedData.version;
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of deletedData[type]) {
-                        delete this.initialObjects[type][object.id];
+                        this.initialObjects[type].delete(object.id);
                     }
                 }
             }
 
-            if (created.shapes.length || created.tags.length || created.tracks.length) {
+            if (COLLECTION_KEYS.some((type) => created[type].length)) {
                 onUpdate('Created objects are being saved on the server');
                 const createdIndexes = this._extractClientIDs(created);
-                const requestBody = { ...created, version: this.version };
                 let createdData = null;
                 try {
-                    createdData = await this._create(requestBody);
+                    createdData = await this._create(created);
                 } catch (error: unknown) {
-                    createdData = await retryAfterProxyTimeout(error, requestBody, 'create');
+                    createdData = await retryAfterProxyTimeout(error, created, 'create');
                 }
 
-                this.version = createdData.version;
-                this._updateCreatedObjects(createdData, createdIndexes);
+                this._updateSavedObjects(createdData, createdIndexes);
                 for (const type of Object.keys(this.initialObjects)) {
                     for (const object of createdData[type]) {
-                        this.initialObjects[type][object.id] = object;
+                        this.initialObjects[type].set(object.id, object as any);
                     }
                 }
             }

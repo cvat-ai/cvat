@@ -53,6 +53,7 @@ function convertMappingToServer(mapping: FullMapping): ServerMapping {
                 name: taskLabel.name,
                 attributes: attributesMapping.reduce<Record<string, string>>((attrAcc, val) => {
                     if (val[0]?.name && val[1]?.name) {
+                        // eslint-disable-next-line no-param-reassign
                         attrAcc[val[0].name] = val[1].name;
                     }
                     return attrAcc;

@@ -460,6 +460,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 filters.splice(index, 1);
             }
             filters.forEach((imageFilter) => {
+                // eslint-disable-next-line no-param-reassign
                 imageFilter.modifier.currentProcessedImage = null;
             });
             return {
@@ -476,6 +477,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const filters = [...state.imageFilters];
             filters.forEach((imageFilter) => {
+                // eslint-disable-next-line no-param-reassign
                 imageFilter.modifier.currentProcessedImage = null;
             });
 

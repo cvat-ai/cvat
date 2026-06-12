@@ -23,16 +23,16 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('assignJobToUser', (jobID, user) => {
-    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input')
+Cypress.Commands.add('assignJobToUser', (jobId, user) => {
+    cy.get(`.cvat-job-item[data-row-id="${jobId}"]`).find('.cvat-job-assignee-selector input')
         .first() // it could be a nested job
         .click();
-    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').first().clear();
+    cy.get(`.cvat-job-item[data-row-id="${jobId}"]`).find('.cvat-job-assignee-selector input').first().clear();
 
-    cy.intercept('PATCH', `/api/jobs/${jobID}`).as('patchJobAssignee');
+    cy.intercept('PATCH', `/api/jobs/${jobId}`).as('patchJobAssignee');
     if (user) {
         cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
-        cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').first().type(user);
+        cy.get(`.cvat-job-item[data-row-id="${jobId}"]`).find('.cvat-job-assignee-selector input').first().type(user);
         cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
         cy.get('.cvat-user-search-dropdown')
             .should('be.visible')
@@ -72,7 +72,7 @@ Cypress.Commands.add('checkIssueLabel', (issueDescription, status = 'unsolved') 
     });
 });
 
-Cypress.Commands.add('collectIssueRegionIDs', () => {
+Cypress.Commands.add('collectIssueRegionIds', () => {
     const issueRegionIdList = [];
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
@@ -85,16 +85,16 @@ Cypress.Commands.add('collectIssueRegionIDs', () => {
 
 Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
-    cy.collectIssueRegionIDs().then((issueRegionIdList) => {
+    cy.collectIssueRegionIds().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
         cy.get(`${sccSelectorIssueRegionId}${maxId}`).should('be.visible');
     });
 });
 
-Cypress.Commands.add('createIssueFromObject', (clientID, issueType, customIssueDescription) => {
-    cy.get(`#cvat_canvas_shape_${clientID}`).trigger('mouseover');
-    cy.get(`#cvat_canvas_shape_${clientID}`).trigger('mousemove');
-    cy.get(`#cvat_canvas_shape_${clientID}`).rightclick();
+Cypress.Commands.add('createIssueFromObject', (clientId, issueType, customIssueDescription) => {
+    cy.get(`#cvat_canvas_shape_${clientId}`).trigger('mouseover');
+    cy.get(`#cvat_canvas_shape_${clientId}`).trigger('mousemove');
+    cy.get(`#cvat_canvas_shape_${clientId}`).rightclick();
 
     cy.get('.cvat-canvas-context-menu').should('be.visible').within(() => {
         cy.contains('.cvat-context-menu-item', issueType).click();

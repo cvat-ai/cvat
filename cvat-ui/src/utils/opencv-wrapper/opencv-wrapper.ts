@@ -14,11 +14,11 @@ export type IntelligentScissors = ReturnType<OpenCVInterface['segmentation']['in
 
 type OpenCVTrackingWrapper = OpenCVInterface['tracking'] & {
     trackerMIL: {
-        model: () => ReturnType<OpenCVInterface['tracking']['trackerMIL']['model']>,
-        name: string,
-        description: string,
-        kind: string,
-    }
+        model: () => ReturnType<OpenCVInterface['tracking']['trackerMIL']['model']>;
+        name: string;
+        description: string;
+        kind: string;
+    };
 };
 export type OpenCVTracker = OpenCVTrackingWrapper['trackerMIL'];
 
@@ -47,7 +47,7 @@ export class OpenCVWrapper {
         try {
             const CACHE_NAME = 'cached_assets';
             cacheStore = 'caches' in window ? await caches?.open(CACHE_NAME) : null;
-        } catch (_) {
+        } catch {
             // cache not available, do nothing
         }
 
@@ -110,13 +110,13 @@ export class OpenCVWrapper {
                     headers.set('Content-Length', bytes.length.toString());
                     const cachedResponse = new Response(bytes.slice(), { headers });
                     await cacheStore.put(config.OPENCV_PATH, cachedResponse);
-                } catch (_) {
+                } catch {
                     // could not write to cache, but ok, do nothing
                 }
             }
         }
 
-        const decodedScript = new TextDecoder('utf-8').decode(bytes!);
+        const decodedScript = new TextDecoder('utf-8').decode(bytes);
         await new Promise<void>((resolve, reject) => {
             (window as any).Module = {
                 onRuntimeInitialized: () => {
@@ -127,7 +127,7 @@ export class OpenCVWrapper {
 
             try {
                 // Inject OpenCV to DOM
-                // eslint-disable-next-line @typescript-eslint/no-implied-eval
+                // eslint-disable-next-line no-new-func
                 const OpenCVConstructor = new Function(decodedScript);
                 OpenCVConstructor();
             } catch (error: unknown) {
@@ -218,7 +218,7 @@ export class OpenCVWrapper {
         if (!this.isInitialized) {
             try {
                 await this.initialize(() => {});
-            } catch (error: any) {
+            } catch {
                 throw new Error('Could not initialize OpenCV');
             }
         }

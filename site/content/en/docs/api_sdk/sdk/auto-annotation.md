@@ -23,7 +23,7 @@ An AA function may be used in one of the following modes:
   along with the identifier of the task and optional additional parameters.
   This may be done either:
 
-  - programmatically (consult the "Auto-annotation driver" section (TODO)); or
+  - programmatically (consult [Auto-annotation driver](#auto-annotation-driver)); or
 
   - via the CVAT CLI (consult the description of the `task auto-annotate` command
     in {{< ilink "/docs/api_sdk/cli" "the CLI documentation" >}}).

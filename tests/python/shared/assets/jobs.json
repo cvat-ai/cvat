@@ -1,8 +1,88 @@
 {
-  "count": 56,
+  "count": 58,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": null,
+      "consensus_replicas": 0,
+      "created_date": "2026-05-11T17:25:43.568000Z",
+      "data_chunk_size": 6914,
+      "data_compressed_chunk_type": "audio_mp3",
+      "data_original_chunk_type": "audio_mp3",
+      "dimension": "1d",
+      "frame_count": 6914,
+      "guide_id": null,
+      "id": 65,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=65"
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?job_id=65"
+      },
+      "media_type": "audio",
+      "mode": "interpolation",
+      "organization": 2,
+      "parent_job_id": null,
+      "project_id": null,
+      "project_name": null,
+      "replicas_count": 0,
+      "source_storage": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 6913,
+      "target_storage": null,
+      "task_id": 36,
+      "task_name": "task with audio and gt",
+      "type": "ground_truth",
+      "updated_date": "2026-05-11T17:25:43.641000Z",
+      "url": "http://localhost:8080/api/jobs/65"
+    },
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": null,
+      "consensus_replicas": 0,
+      "created_date": "2026-05-11T17:25:43.509000Z",
+      "data_chunk_size": 6914,
+      "data_compressed_chunk_type": "audio_mp3",
+      "data_original_chunk_type": "audio_mp3",
+      "dimension": "1d",
+      "frame_count": 6914,
+      "guide_id": null,
+      "id": 64,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=64"
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?job_id=64"
+      },
+      "media_type": "audio",
+      "mode": "interpolation",
+      "organization": 2,
+      "parent_job_id": null,
+      "project_id": null,
+      "project_name": null,
+      "replicas_count": 0,
+      "source_storage": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 6913,
+      "target_storage": null,
+      "task_id": 36,
+      "task_name": "task with audio and gt",
+      "type": "annotation",
+      "updated_date": "2026-05-11T17:25:43.621000Z",
+      "url": "http://localhost:8080/api/jobs/64"
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,
@@ -23,6 +103,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=63"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -70,6 +151,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=62"
       },
+      "media_type": "image",
       "mode": "interpolation",
       "organization": 2,
       "parent_job_id": null,
@@ -117,6 +199,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=61"
       },
+      "media_type": "image",
       "mode": "interpolation",
       "organization": 2,
       "parent_job_id": null,
@@ -164,6 +247,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=60"
       },
+      "media_type": "image",
       "mode": "interpolation",
       "organization": 2,
       "parent_job_id": null,
@@ -211,6 +295,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=59"
       },
+      "media_type": "image",
       "mode": "interpolation",
       "organization": 2,
       "parent_job_id": null,
@@ -258,6 +343,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=58"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -297,6 +383,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=57"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -336,6 +423,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=56"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -375,6 +463,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=55"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -414,6 +503,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=54"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -453,6 +543,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=53"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": 51,
@@ -500,6 +591,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=52"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": 51,
@@ -547,6 +639,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=51"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -594,6 +687,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=50"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -641,6 +735,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=49"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": 46,
@@ -688,6 +783,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=48"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": 46,
@@ -735,6 +831,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=47"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": 46,
@@ -782,6 +879,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=46"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -829,6 +927,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=45"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": 42,
@@ -876,6 +975,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=44"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": 42,
@@ -923,6 +1023,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=43"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": 42,
@@ -970,6 +1071,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=42"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1017,6 +1119,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=41"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1056,6 +1159,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=40"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1095,6 +1199,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=39"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1134,6 +1239,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=38"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1173,6 +1279,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=37"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1220,6 +1327,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=36"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1267,6 +1375,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=35"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1314,6 +1423,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=34"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1361,6 +1471,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=33"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1408,6 +1519,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=32"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1447,6 +1559,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=31"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1486,6 +1599,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=30"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1525,6 +1639,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=29"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1564,6 +1679,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=28"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1603,6 +1719,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=27"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1642,6 +1759,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=26"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1689,6 +1807,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=25"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1736,6 +1855,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=24"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1783,6 +1903,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=23"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -1830,6 +1951,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=22"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1877,6 +1999,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=21"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -1916,6 +2039,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=19"
       },
+      "media_type": "image",
       "mode": "interpolation",
       "organization": null,
       "parent_job_id": null,
@@ -1963,6 +2087,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=18"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -2010,6 +2135,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=17"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -2055,6 +2181,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=16"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -2102,6 +2229,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=14"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -2141,6 +2269,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=13"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -2180,6 +2309,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=12"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -2225,6 +2355,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=11"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -2270,6 +2401,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=10"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -2309,6 +2441,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=9"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 2,
       "parent_job_id": null,
@@ -2348,6 +2481,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=8"
       },
+      "media_type": "point_cloud",
       "mode": "annotation",
       "organization": null,
       "parent_job_id": null,
@@ -2393,6 +2527,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=7"
       },
+      "media_type": "image",
       "mode": "interpolation",
       "organization": null,
       "parent_job_id": null,
@@ -2438,6 +2573,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=2"
       },
+      "media_type": "image",
       "mode": "annotation",
       "organization": 1,
       "parent_job_id": null,

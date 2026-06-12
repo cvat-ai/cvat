@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-/* eslint-disable cypress/no-unnecessary-waiting */
-
 /// <reference types="cypress" />
+
+/* eslint-disable cypress/no-unnecessary-waiting */
 
 import { taskName } from '../../support/const_canvas3d';
 

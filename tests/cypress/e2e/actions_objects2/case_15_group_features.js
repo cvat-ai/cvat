@@ -5,8 +5,6 @@
 
 /// <reference types="cypress" />
 
-/* eslint-disable no-loop-func */
-
 import { taskName, labelName } from '../../support/const';
 
 context('Group features', () => {
@@ -94,7 +92,7 @@ context('Group features', () => {
     }
 
     function testShapesFillEquality(equal) {
-        for (const groupedShape of shapeArray) {
+        shapeArray.forEach((groupedShape) => {
             cy.get(groupedShape)
                 .should('have.css', 'fill')
                 .then(($shapesGroupColor) => {
@@ -105,11 +103,11 @@ context('Group features', () => {
                         shapesGroupColor = $shapesGroupColor;
                     }
                 });
-        }
+        });
     }
 
     function testSidebarItemsBackgroundColorEquality() {
-        for (const objectSideBarShape of shapeSidebarItemArray) {
+        shapeSidebarItemArray.forEach((objectSideBarShape) => {
             cy.get(objectSideBarShape)
                 .should('have.css', 'background-color')
                 .then(($bColorobjectSideBarShape) => {
@@ -120,7 +118,7 @@ context('Group features', () => {
                     // [ 250, 50, 83, index: 4, input: 'rgb(250, 50, 83)', groups: undefined ]
                     expect($bColorobjectSideBarShape).to.be.contain(shapesGroupColor.match(/\d+, \d+, \d+/));
                 });
-        }
+        });
     }
 
     describe(`Testing case "${caseId}"`, () => {
@@ -133,25 +131,21 @@ context('Group features', () => {
 
         it('Set option "Color by" to "Group".', () => {
             cy.changeAppearance('Group');
-            cy.get('.cvat_canvas_shape').then(($listCanvasShapes) => {
-                for (let i = 0; i < $listCanvasShapes.length; i++) {
-                    cy.get($listCanvasShapes[i])
-                        .should('have.css', 'fill')
-                        .then(($fill) => {
-                            defaultGroupColorRgb = $fill;
-                        });
-                }
+            cy.get('.cvat_canvas_shape').each(($canvasShape) => {
+                cy.wrap($canvasShape)
+                    .should('have.css', 'fill')
+                    .then(($fill) => {
+                        defaultGroupColorRgb = $fill;
+                    });
             });
-            cy.get('.cvat-objects-sidebar-state-item').then(($listObjectsSidebarStateItem) => {
-                for (let i = 0; i < $listObjectsSidebarStateItem.length; i++) {
-                    cy.get($listObjectsSidebarStateItem[i])
-                        .should('have.css', 'background-color')
-                        .then(($bColorObjectsSidebarStateItem) => {
-                            // expected rgba(224, 224, 224, 0.533) to include
-                            // [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
-                            expect($bColorObjectsSidebarStateItem).contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
-                        });
-                }
+            cy.get('.cvat-objects-sidebar-state-item').each(($objectsSidebarStateItem) => {
+                cy.wrap($objectsSidebarStateItem)
+                    .should('have.css', 'background-color')
+                    .then(($bColorObjectsSidebarStateItem) => {
+                        // expected rgba(224, 224, 224, 0.533) to include
+                        // [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
+                        expect($bColorObjectsSidebarStateItem).contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
+                    });
             });
         });
 
@@ -174,7 +168,7 @@ context('Group features', () => {
 
         it('With group button unite two track. They have corresponding colors.', () => {
             testGroupObjects(trackArray);
-            for (const groupedTrack of trackArray) {
+            trackArray.forEach((groupedTrack) => {
                 cy.get(groupedTrack)
                     .should('have.css', 'fill')
                     .then(($tracksGroupColor) => {
@@ -182,8 +176,8 @@ context('Group features', () => {
                         expect($tracksGroupColor).to.not.equal(defaultGroupColorRgb);
                         tracksGroupColor = $tracksGroupColor;
                     });
-            }
-            for (const objectSideBarTrack of trackSidebarItemArray) {
+            });
+            trackSidebarItemArray.forEach((objectSideBarTrack) => {
                 cy.get(objectSideBarTrack)
                     .should('have.css', 'background-color')
                     .then(($bColorobjectSideBarTrack) => {
@@ -194,7 +188,7 @@ context('Group features', () => {
                         // [ 52, 209, 183, index: 4, input: 'rgb(52, 209, 183)', groups: undefined ]
                         expect($bColorobjectSideBarTrack).to.be.contain(tracksGroupColor.match(/\d+, \d+, \d+/));
                     });
-            }
+            });
         });
     });
 
@@ -214,14 +208,12 @@ context('Group features', () => {
 
         it('Set option "Color by" to "Group". With group button unite two shapes. They have corresponding colors.', () => {
             cy.changeAppearance('Group');
-            cy.get('.cvat_canvas_shape').then(($listCanvasShapes) => {
-                for (let i = 0; i < $listCanvasShapes.length; i++) {
-                    cy.get($listCanvasShapes[i])
-                        .should('have.attr', 'fill')
-                        .then(($fill) => {
-                            defaultGroupColorHex = $fill;
-                        });
-                }
+            cy.get('.cvat_canvas_shape').each(($canvasShape) => {
+                cy.wrap($canvasShape)
+                    .should('have.attr', 'fill')
+                    .then(($fill) => {
+                        defaultGroupColorHex = $fill;
+                    });
             });
             testGroupObjects(shapeArray);
         });

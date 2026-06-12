@@ -164,6 +164,7 @@ export class CuboidModel {
     public setOrientationVisibility(orientationVisibility: OrientationVisibility): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
+                // eslint-disable-next-line no-param-reassign
                 arrow.visible = orientationVisibility[axis];
             });
         });
