@@ -3453,11 +3453,25 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         response = super().to_representation(instance)
 
-        task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
-        task_dimension = next(
-            (task.dimension for task in instance.tasks.all() if task.dimension),
-            None,  # backward compatibility; TODO: migrate to "" for consistency with tasks
-        )
+        if "tasks" in getattr(instance, "_prefetched_objects_cache", {}):
+            tasks = instance.tasks.all()  # served from the prefetch cache
+            task_subsets = {task.subset for task in tasks if task.subset}
+            task_dimension = next(
+                (task.dimension for task in tasks if task.dimension),
+                None,  # backward compatibility; TODO: migrate to "" for consistency with tasks
+            )
+        else:
+            # Avoid loading every task of the project just to compute the summary:
+            # with thousands of tasks in a project, the previous implementation
+            # fetched all task objects twice per serialized project (e.g. once per
+            # project in each project list response and in each project event).
+            task_subsets = set(
+                instance.tasks.exclude(subset="").values_list("subset", flat=True).distinct()
+            )
+            task_dimension = (
+                # backward compatibility; TODO: migrate to "" for consistency with tasks
+                instance.tasks.exclude(dimension="").values_list("dimension", flat=True).first()
+            )
         response["task_subsets"] = list(task_subsets)
         response["dimension"] = task_dimension
         return response
