@@ -23,7 +23,7 @@ jobs:
       - name: Update yarn.lock file
         run: yarn
 
-      - uses: stefanzweifel/git-auto-commit-action@v4.15.2
+      - uses: stefanzweifel/git-auto-commit-action@v7.1.0
         with:
           commit_message: Update yarn.lock file
           file_pattern: yarn.lock
