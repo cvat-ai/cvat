@@ -55,8 +55,8 @@ aliases:
 |![Merge shapes icon](/images/image172.jpg)|`Merge Shapes`(`M`) - starts/stops the merging shapes mode. |{{< ilink "/docs/annotation/manual-annotation/shapes/track-mode-basics" "Track mode (basics)" >}}|
 |![Group shapes icon](/images/image173.jpg)|`Group Shapes` (`G`) - starts/stops the grouping shapes mode.|{{< ilink "/docs/annotation/manual-annotation/shapes/shape-grouping" "Shape grouping" >}}|
 |![Split icon](/images/image174.jpg)|`Split` - splits a track. |{{< ilink "/docs/annotation/manual-annotation/shapes/track-mode-basics" "Track mode (advanced)" >}}|
-|![Join labels icon](/images/join-masks-icon.jpg)|Joins multiple labels into one |{{< ilink "/docs/annotation/manual-annotation/utilities/slice-and-join#joining-cvat-labels" "**Joining mask tool**" >}}|
-|![Slice label icon](/images/slicing-tool-icon.jpg)|Slices one label into several.|{{< ilink "/docs/annotation/manual-annotation/utilities/slice-and-join#slicing-cvat-labels" "**Slice mask/polygon**" >}}|
+|![Join labels icon](/images/join-masks-icon.jpg)|Joins multiple polygon or mask labels into one or more resulting shapes.|{{< ilink "/docs/annotation/manual-annotation/utilities/slice-and-join#joining-polygons-and-masks" "**Join tool**" >}}|
+|![Slice label icon](/images/slicing-tool-icon.jpg)|Slices one label into several.|{{< ilink "/docs/annotation/manual-annotation/utilities/slice-and-join#slicing-polygons-and-masks" "**Slice mask/polygon**" >}}|
 
 ---
 

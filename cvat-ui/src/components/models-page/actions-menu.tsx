@@ -9,7 +9,8 @@ import { MLModel } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { MenuProps } from 'antd/lib/menu';
-import { shallowEqual, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 
 interface ModelActionsProps {
     model: MLModel;
@@ -51,7 +52,9 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
     );
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
     menuItems.push(...menuPlugins
-        .map(({ component, weight }): typeof menuItems[0] => [component({
+        .map(({ component, weight }): typeof menuItems[0] => [(
+            component as (pluginProps?: any) => NonNullable<MenuProps['items']>[0]
+        )({
             targetProps: props, targetState: { allModels, selectedIds },
         }), weight]),
     );

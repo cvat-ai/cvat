@@ -39,19 +39,19 @@ jobs:
         run: ./dev/check_changelog_fragments.py
 
       - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
       - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Create artifact directories
         run: |
@@ -112,6 +112,11 @@ jobs:
         run: |
           docker run --rm "cvat/server:${CVAT_VERSION}" bash \
             -c 'python manage.py makemigrations --check'
+
+      - name: Verify redis migration filenames
+        run: |
+          docker run --rm "cvat/server:${CVAT_VERSION}" bash \
+            -c 'python manage.py checkredismigrations'
 
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v4
@@ -304,7 +309,8 @@ jobs:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
                 'actions_objects', 'actions_objects2', 'actions_users',
                 'actions_projects_models', 'canvas3d_functionality',
-                'issues_prs', 'issues_prs2', 'features', 'features2']
+                'issues_prs', 'issues_prs2', 'features', 'features2',
+                'audio_workspace']
     steps:
       - uses: actions/checkout@v4
 
@@ -375,6 +381,12 @@ jobs:
               --browser chrome \
               --config-file cypress_canvas3d.config.js \
               --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+          elif [[ ${{ matrix.specs }} == audio_* ]]; then
+            npx cypress run \
+              --headed \
+              --browser chrome \
+              --config-file cypress_audio.config.js \
+              --spec 'cypress/e2e/setup/setup_audio.js,cypress/e2e/audio_workspace/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
@@ -504,7 +516,7 @@ jobs:
         run: |
           kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
           kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
-          pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-cli-level DEBUG
+          pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-level INFO
 
       - name: Creating a log file from "cvat" container logs
         if: failure()

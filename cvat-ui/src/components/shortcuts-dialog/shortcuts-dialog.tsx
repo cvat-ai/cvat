@@ -45,7 +45,6 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
 
     const splitToRows = (data: string[]): JSX.Element[] => data.map(
         (item: string, id: number): JSX.Element => (
-            // eslint-disable-next-line react/no-array-index-key
             <span key={id}>
                 {item}
                 <br />

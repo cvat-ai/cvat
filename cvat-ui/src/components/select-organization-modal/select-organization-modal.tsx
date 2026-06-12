@@ -5,7 +5,8 @@
 import React from 'react';
 import Modal from 'antd/lib/modal';
 
-import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { CombinedState } from 'reducers';
 
 import { Organization } from 'cvat-core-wrapper';

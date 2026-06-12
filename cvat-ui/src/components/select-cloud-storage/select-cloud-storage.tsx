@@ -8,17 +8,16 @@ import notification from 'antd/lib/notification';
 import AutoComplete from 'antd/lib/auto-complete';
 import Input from 'antd/lib/input';
 import { debounce } from 'lodash';
-import { CloudStorage } from 'reducers';
 import { AzureProvider, GoogleCloudProvider, S3Provider } from 'icons';
 import { ProviderType } from 'utils/enums';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, CloudStorage } from 'cvat-core-wrapper';
 
 export interface Props {
     searchPhrase: string;
     cloudStorage: CloudStorage | null;
     name?: string[];
     setSearchPhrase: (searchPhrase: string) => void;
-    onSelectCloudStorage: (cloudStorageId: number | null) => void;
+    onSelectCloudStorage: (cloudStorage: CloudStorage | null) => void;
     label?: JSX.Element;
 }
 
@@ -86,7 +85,6 @@ function SelectCloudStorage(props: Props): JSX.Element {
             if (potentialStorages.length === 1 && potentialStorages[0].id !== cloudStorage?.id) {
                 const potentialStorage = potentialStorages[0];
                 setSearchPhrase(potentialStorage.displayName);
-                // eslint-disable-next-line prefer-destructuring
                 potentialStorage.manifestPath = (potentialStorage.manifests?.length) ? potentialStorage.manifests[0] : '';
                 onSelectCloudStorage(potentialStorage);
             }
@@ -128,7 +126,6 @@ function SelectCloudStorage(props: Props): JSX.Element {
                 onSelect={(value: string) => {
                     const selectedCloudStorage = list
                         .filter((_cloudStorage: CloudStorage) => _cloudStorage.id === +value)[0] || null;
-                    // eslint-disable-next-line prefer-destructuring
                     if (selectedCloudStorage.id !== cloudStorage?.id) {
                         if (selectedCloudStorage.manifests?.length) {
                             [selectedCloudStorage.manifestPath] = selectedCloudStorage.manifests;

@@ -36,10 +36,7 @@ class TestIssuesUsecases:
     @pytest.fixture
     def fxt_new_task(self, fxt_image_file: Path):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task"},
             resource_type=ResourceType.LOCAL,
             resources=[fxt_image_file],
             data_params={"image_quality": 80},
@@ -157,10 +154,7 @@ class TestCommentsUsecases:
     @pytest.fixture
     def fxt_new_task(self, fxt_image_file: Path):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task"},
             resource_type=ResourceType.LOCAL,
             resources=[fxt_image_file],
             data_params={"image_quality": 80},

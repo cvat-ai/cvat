@@ -5,7 +5,8 @@
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 
 import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
 

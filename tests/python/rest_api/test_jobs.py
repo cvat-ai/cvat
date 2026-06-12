@@ -837,7 +837,6 @@ class TestGetGtJobData:
             admin_user,
             spec={
                 "name": "test complex frame setup",
-                "labels": [{"name": "cat"}],
             },
             data={
                 "image_quality": 75,
@@ -1081,12 +1080,17 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
         "field",
         (
             "assignee",
-            "state",
-            "stage",
-            "task_id",
-            "project_id",
-            "type",
+            "dimension",
+            "media_type",
+            "mode",
             "parent_job_id",
+            "project_id",
+            "project_name",
+            "stage",
+            "state",
+            "task_id",
+            "task_name",
+            "type",
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):

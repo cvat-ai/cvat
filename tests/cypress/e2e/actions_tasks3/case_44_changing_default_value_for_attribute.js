@@ -6,6 +6,7 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
+import { fullMatch } from '../../support/utils';
 
 context('Changing a default value for an attribute.', () => {
     const caseId = '44';
@@ -13,7 +14,7 @@ context('Changing a default value for an attribute.', () => {
     const additionalAttrsLabel = [
         { name: 'type', values: '', type: 'Text' },
         { name: 'count', values: '0;5;1', type: 'Number' }, // Check issue 2968
-        { name: 'shape', values: 'False', type: 'Checkbox' },
+        { name: 'shape', values: 'false', type: 'Checkbox' },
     ];
     const rectangleShape2Points = {
         points: 'By 2 Points',
@@ -25,7 +26,7 @@ context('Changing a default value for an attribute.', () => {
         secondY: 200,
     };
     const newTextValue = `${additionalLabel} text`;
-    const newCheckboxValue = 'True';
+    const newCheckboxValue = 'true';
     const wrapperId = [];
 
     before(() => {
@@ -44,8 +45,7 @@ context('Changing a default value for an attribute.', () => {
         it('Open label editor. Change default values for text & checkbox attributes, press Done.', () => {
             cy.intercept('PATCH', '/api/labels/**').as('patchLabel');
             cy.get('.cvat-constructor-viewer').within(() => {
-                // eslint-disable-next-line security/detect-non-literal-regexp
-                cy.contains(new RegExp(`^${additionalLabel}$`))
+                cy.contains(fullMatch(additionalLabel))
                     .parents('.cvat-constructor-viewer-item')
                     .should('be.visible')
                     .find('[aria-label="edit"]')
@@ -64,10 +64,8 @@ context('Changing a default value for an attribute.', () => {
                     cy.get(`[cvat-attribute-id="${maxId}"]`).find('.cvat-attribute-values-input').click();
                 });
             });
-            cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
-                // eslint-disable-next-line security/detect-non-literal-regexp
-                cy.contains(new RegExp(`^${newCheckboxValue}$`)).click();
-            });
+            cy.get('.cvat-attribute-values-input.ant-select-open').should('exist');
+            cy.contains('.ant-select-item', fullMatch(newCheckboxValue)).should('exist').and('be.visible').click();
             cy.contains('[type="submit"]', 'Done').click();
             cy.wait('@patchLabel').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-constructor-viewer').should('exist').and('be.visible');
@@ -82,8 +80,7 @@ context('Changing a default value for an attribute.', () => {
                 [additionalAttrsLabel[1].name, additionalAttrsLabel[1].values.split(';')[0]],
                 [additionalAttrsLabel[2].name, newCheckboxValue.toLowerCase()],
             ].forEach(([attrName, attrValue]) => {
-                // eslint-disable-next-line security/detect-non-literal-regexp
-                cy.contains(new RegExp(`^${attrName}: ${attrValue}$`)).should('be.visible');
+                cy.contains(fullMatch(`${attrName}: ${attrValue}`));
             });
         });
     });

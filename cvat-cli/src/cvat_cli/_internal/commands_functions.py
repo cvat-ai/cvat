@@ -11,12 +11,9 @@ from typing import Any
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
 
-from .agent import (
-    FUNCTION_KIND_DETECTOR,
-    FUNCTION_KIND_TRACKER,
-    FUNCTION_PROVIDER_NATIVE,
-    run_agent,
-)
+from .agent import FUNCTION_PROVIDER_NATIVE, run_agent
+from .agent_driver_detection import AgentDetectionFunctionDriver
+from .agent_driver_tracking import AgentTrackingFunctionDriver
 from .command_base import CommandGroup
 from .common import FunctionLoader, configure_function_implementation_arguments
 
@@ -33,6 +30,12 @@ class FunctionCreateNative:
         parser.add_argument(
             "name",
             help="a human-readable name for the function",
+        )
+        parser.add_argument(
+            "--visibility",
+            choices=("private", "public"),
+            default="private",
+            help="visibility setting for the function",
         )
 
         configure_function_implementation_arguments(parser)
@@ -65,6 +68,7 @@ class FunctionCreateNative:
         client: Client,
         *,
         name: str,
+        visibility: str,
         function_loader: FunctionLoader,
     ) -> None:
         function = function_loader.load()
@@ -72,12 +76,13 @@ class FunctionCreateNative:
         remote_function: dict[str, Any] = {
             "provider": FUNCTION_PROVIDER_NATIVE,
             "name": name,
+            "visibility": visibility,
         }
 
         spec = function.spec
 
         if isinstance(spec, cvataa.DetectionFunctionSpec):
-            remote_function["kind"] = FUNCTION_KIND_DETECTOR
+            remote_function["kind"] = AgentDetectionFunctionDriver.FUNCTION_KIND
             remote_function["labels_v2"] = []
 
             for label_spec in spec.labels:
@@ -88,7 +93,7 @@ class FunctionCreateNative:
                         self._dump_sublabel_spec(sublabel) for sublabel in sublabels
                     ]
         elif isinstance(spec, cvataa.TrackingFunctionSpec):
-            remote_function["kind"] = FUNCTION_KIND_TRACKER
+            remote_function["kind"] = AgentTrackingFunctionDriver.FUNCTION_KIND
             remote_function["supported_shape_types"] = sorted(spec.supported_shape_types)
         else:
             raise cvataa.BadFunctionError(f"Unsupported function spec type: {type(spec).__name__}")

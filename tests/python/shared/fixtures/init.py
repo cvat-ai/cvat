@@ -4,6 +4,7 @@
 
 import logging
 import os
+import sys
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -82,6 +83,18 @@ def pytest_addoption(parser):
         "--dumpdb",
         action="store_true",
         help="Update data.json without running tests. (default: %(default)s)",
+    )
+    group._addoption(
+        "--keep-data",
+        action="store_true",
+        help="Do not reset volumes and database. (default: %(default)s)",
+    )
+
+    group._addoption(
+        "--no-services",
+        action="store_true",
+        help=("""Don't start, stop, or seed any containers — assume the user runs
+            the test stack externally"""),
     )
 
     group._addoption(
@@ -290,18 +303,18 @@ def running_containers():
 def dump_db():
     if "test_cvat_server_1" not in running_containers():
         pytest.exit("CVAT is not running")
-    with open(CVAT_DB_DIR / "data.json", "w") as f:
-        try:
-            run(  # nosec
-                "docker exec test_cvat_server_1 \
-                    python manage.py dumpdata \
-                    --indent 2 --natural-foreign \
-                    --exclude=auth.permission --exclude=contenttypes".split(),
-                stdout=f,
-                check=True,
-            )
-        except CalledProcessError:
-            pytest.exit("Database dump failed.\n")
+    try:
+        run(  # nosec
+            [
+                sys.executable,
+                str(Path(__file__).resolve().parents[1] / "utils" / "dump_test_db.py"),
+                "--output",
+                str(CVAT_DB_DIR / "data.json"),
+            ],
+            check=True,
+        )
+    except CalledProcessError:
+        pytest.exit("Database dump failed.\n")
 
 
 def create_compose_files(container_name_files):
@@ -418,6 +431,7 @@ def session_start(
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
     rebuild = session.config.getoption("--rebuild")
+    keep_data = session.config.getoption("--keep-data")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
 
@@ -426,6 +440,12 @@ def session_start(
             raise Exception("""--collect-only is not compatible with any of the other options:
                 --stop-services --start-services --rebuild --cleanup --dumpdb""")
         return  # don't need to start the services to collect tests
+
+    if session.config.getoption("--no-services"):
+        # User manages the stack and the server externally — pytest does
+        # nothing on session start. Per-test restore fixtures still docker-exec
+        # into the user's containers (which must be named test_<service>_1).
+        return
 
     platform = session.config.getoption("--platform")
 
@@ -440,6 +460,7 @@ def session_start(
             dumpdb,
             cleanup,
             rebuild,
+            keep_data,
             cvat_root_dir,
             cvat_db_dir,
             extra_dc_files,
@@ -447,11 +468,20 @@ def session_start(
         )
 
     elif platform == "kube":
-        kube_start(cvat_db_dir)
+        kube_start(cvat_db_dir, keep_data)
 
 
 def local_start(
-    start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files, waiting_time
+    start,
+    stop,
+    dumpdb,
+    cleanup,
+    rebuild,
+    keep_data,
+    cvat_root_dir,
+    cvat_db_dir,
+    extra_dc_files,
+    waiting_time,
 ):
     if start and stop:
         raise Exception("--start-services and --stop-services are incompatible")
@@ -480,24 +510,33 @@ def local_start(
 
     start_services(dc_files, rebuild, cvat_root_dir)
 
-    docker_restore_data_volumes()
-    docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
-    docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
+    if not keep_data:
+        docker_restore_data_volumes()
+        docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
+        docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
 
-    wait_for_services(waiting_time)
+        wait_for_services(waiting_time)
 
-    docker_exec_cvat(
-        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
-    )
-    docker_exec(
-        Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
-    )
+        docker_exec_cvat(
+            [
+                "sh",
+                "-c",
+                "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json",
+            ]
+        )
+        docker_exec(
+            Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
+        )
 
     if start:
         pytest.exit("All necessary containers have been created and started.", returncode=0)
 
 
-def kube_start(cvat_db_dir):
+def kube_start(cvat_db_dir, keep_data):
+    if keep_data:
+        wait_for_services()
+        return
+
     kube_restore_data_volumes()
     server_pod_name = _kube_get_server_pod_name()
     db_pod_name = _kube_get_db_pod_name()
@@ -507,7 +546,7 @@ def kube_start(cvat_db_dir):
     wait_for_services()
 
     kube_exec_cvat(
-        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json"]
     )
 
     kube_exec_cvat_db(

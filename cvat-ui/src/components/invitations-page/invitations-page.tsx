@@ -5,7 +5,8 @@
 import './styles.scss';
 import React, { useEffect } from 'react';
 import { useHistory } from 'react-router';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Spin from 'antd/lib/spin';
 import { CombinedState, InvitationsQuery } from 'reducers';
 import { useIsMounted, useResourceQuery } from 'utils/hooks';

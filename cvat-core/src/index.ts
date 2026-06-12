@@ -14,7 +14,8 @@ import logger from './logger';
 import * as enums from './enums';
 import config from './config';
 import { mask2Rle, rle2Mask } from './rle-utils';
-import { propagateShapes, validateAttributeValue } from './object-utils';
+import { getVisibleSkeletonElements, propagateShapes, validateAttributeValue } from './object-utils';
+import { createOpenCVInterface } from './opencv/opencv-interface';
 import User from './user';
 import Project from './project';
 import { Job, Task } from './session';
@@ -67,7 +68,9 @@ export default interface CVATCore {
     };
     server: {
         about: () => Promise<AboutData>;
-        share: (dir: string) => Promise<{
+        share: (
+            ...args: Parameters<typeof serverProxy.server.share>
+        ) => Promise<{
             mimeType: string;
             name: string;
             type: enums.ShareFileType;
@@ -76,7 +79,7 @@ export default interface CVATCore {
         userAgreements: typeof serverProxy.server.userAgreements,
         register: (
             ...args: Parameters<typeof serverProxy.server.register>
-        ) => Promise<User>;
+        ) => ReturnType<typeof serverProxy.server.register>;
         login: typeof serverProxy.server.login;
         logout: typeof serverProxy.server.logout;
         changePassword: typeof serverProxy.server.changePassword;
@@ -198,6 +201,7 @@ export default interface CVATCore {
         backendAPI: typeof config.backendAPI;
         origin: typeof config.origin;
         uploadChunkSize: typeof config.uploadChunkSize;
+        opencvPath: typeof config.opencvPath;
         removeUnderlyingMaskPixels: {
             enabled: boolean;
             onEmptyMaskOccurrence: () => void | null;
@@ -206,6 +210,7 @@ export default interface CVATCore {
         globalObjectsCounter: typeof config.globalObjectsCounter;
         requestsStatusDelay: typeof config.requestsStatusDelay;
         jobMetaDataReloadPeriod: typeof config.jobMetaDataReloadPeriod;
+        previewPlaceholders: typeof config.previewPlaceholders;
     },
     enums,
     exceptions: {
@@ -249,5 +254,10 @@ export default interface CVATCore {
         rle2Mask: typeof rle2Mask;
         propagateShapes: typeof propagateShapes;
         validateAttributeValue: typeof validateAttributeValue;
+        getVisibleSkeletonElements: typeof getVisibleSkeletonElements;
     };
+    opencv: {
+        createOpenCVInterface: typeof createOpenCVInterface;
+    };
+// eslint-disable-next-line semi
 }

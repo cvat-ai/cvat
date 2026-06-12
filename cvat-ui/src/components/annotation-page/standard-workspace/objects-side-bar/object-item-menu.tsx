@@ -8,12 +8,12 @@ import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
-    FunctionOutlined,
+    FunctionOutlined, VerticalAlignBottomOutlined,
 } from '@ant-design/icons';
 
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
-    OneLayerBackwardIcon, OneLayerForwardIcon,
+    OneLayerBackwardIcon, OneLayerForwardIcon, SimplifyIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ColorBy } from 'reducers';
@@ -40,6 +40,7 @@ interface Props {
     toOneLayerForwardShortcut: string;
     removeShortcut: string;
     runAnnotationsActionShortcut: string;
+    closeMenu(): void;
     changeColor(value: string): void;
     copy(): void;
     remove(): void;
@@ -51,9 +52,11 @@ interface Props {
     toOneLayerBackward(): void;
     toOneLayerForward(): void;
     resetCuboidPerspective(): void;
+    setLayerPopoverVisible(visible: boolean): void;
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
+    simplify(): void;
     runAnnotationAction(): void;
     jobInstance: Job;
 }
@@ -124,6 +127,23 @@ function SliceItem(props: ItemProps): JSX.Element {
                 className='cvat-object-item-menu-slice-object'
             >
                 Slice
+            </Button>
+        </CVATTooltip>
+    );
+}
+
+function SimplifyItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { simplify } = toolProps;
+    return (
+        <CVATTooltip title='Reduce the number of polygon points'>
+            <Button
+                type='link'
+                icon={<Icon component={SimplifyIcon} />}
+                onClick={simplify}
+                className='cvat-object-item-menu-simplify-object'
+            >
+                Simplify
             </Button>
         </CVATTooltip>
     );
@@ -244,6 +264,25 @@ function ToOneLayerForwardItem(props: Readonly<ItemProps>): JSX.Element {
     );
 }
 
+function ToLayerItem(props: Readonly<ItemProps>): JSX.Element {
+    const { toolProps } = props;
+    const { closeMenu, setLayerPopoverVisible } = toolProps;
+
+    return (
+        <Button
+            type='link'
+            icon={<VerticalAlignBottomOutlined />}
+            onClick={(): void => {
+                setLayerPopoverVisible(true);
+                closeMenu();
+            }}
+            className='cvat-object-item-menu-move-to-layer'
+        >
+            Move to layer ...
+        </Button>
+    );
+}
+
 function SwitchColorItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
     const { changeColorShortcut, colorBy, setColorPickerVisible } = toolProps;
@@ -307,16 +346,18 @@ export default function ItemMenu(props: Props): MenuProps {
         TO_FOREGROUND = 'to_foreground',
         TO_ONE_LAYER_BACKWARD = 'to_one_layer_backward',
         TO_ONE_LAYER_FORWARD = 'to_one_layer_forward',
+        MOVE_TO_LAYER = 'move_to_layer',
         SWITCH_COLOR = 'switch_color',
         REMOVE_ITEM = 'remove_item',
         EDIT_MASK = 'edit_mask',
         SLICE_ITEM = 'slice_item',
+        SIMPLIFY_ITEM = 'simplify_item',
         RUN_ANNOTATION_ACTION = 'run_annotation_action',
     }
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
 
-    const items = [{
+    const items: MenuProps['items'] = [{
         key: MenuKeys.CREATE_URL,
         label: <CreateURLItem toolProps={props} />,
     }];
@@ -342,6 +383,16 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.SLICE_ITEM,
             label: <SliceItem key={MenuKeys.SLICE_ITEM} toolProps={props} />,
+        });
+    }
+
+    if (
+        !locked && objectType === ObjectType.SHAPE &&
+        [ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType)
+    ) {
+        items.push({
+            key: MenuKeys.SIMPLIFY_ITEM,
+            label: <SimplifyItem key={MenuKeys.SIMPLIFY_ITEM} toolProps={props} />,
         });
     }
 
@@ -384,6 +435,11 @@ export default function ItemMenu(props: Props): MenuProps {
             key: MenuKeys.TO_ONE_LAYER_FORWARD,
             label: <ToOneLayerForwardItem toolProps={props} />,
         });
+
+        items.push({
+            key: MenuKeys.MOVE_TO_LAYER,
+            label: <ToLayerItem toolProps={props} />,
+        });
     }
 
     if (!locked && [ColorBy.INSTANCE, ColorBy.GROUP].includes(colorBy)) {
@@ -405,6 +461,9 @@ export default function ItemMenu(props: Props): MenuProps {
 
     return {
         items,
+        onClick: (event): void => {
+            event.domEvent.stopPropagation();
+        },
         selectable: false,
         className: 'cvat-object-item-menu',
     };

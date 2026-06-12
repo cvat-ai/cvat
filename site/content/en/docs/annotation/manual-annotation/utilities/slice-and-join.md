@@ -15,32 +15,46 @@ This document provides guidance on how to perform these operations effectively.
 
 See:
 
-- [Joining masks](#joining-masks)
+- [Joining polygons and masks](#joining-polygons-and-masks)
 - [Slicing polygons and masks](#slicing-polygons-and-masks)
 
-## Joining masks
+## Joining polygons and masks
 
-The **Join masks** tool (![Join masks tool icon](/images/join-masks-icon.jpg)),
-is specifically designed to work with mask annotations.
+The **Join tool** (![Join masks tool icon](/images/join-masks-icon.jpg))
+works with both polygon and mask annotations.
 
 This tool is useful in scenarios where a single object
 in an image is annotated with multiple shapes,
 and there is a need to merge these shapes into a single one.
+For polygons, you can join overlapping polygons or polygons that share at least one edge.
 
-![Join masks](/images/joining-tool-01.jpg)
+![Join tool](/images/joining-tool-01.jpg)
 
-To join masks, do the following:
+To join polygons or masks, do the following:
 
 1. From the {{< ilink "/docs/annotation/annotation-editor/controls-sidebar#edit" "**Edit**" >}} block,
-   select **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg).
-2. Click on the canvas area, to select masks that you want to join.
-3. (Optional) To remove the selection click the mask one more time.
-4. Click again on **Join masks**![Join masks tool icon](/images/join-masks-icon.jpg)
-   (**J**) to execute the join operation.
+   select **Join tool** ![Join masks tool icon](/images/join-masks-icon.jpg).
+2. Click the shapes on the canvas that you want to join.
+3. (Optional) To remove the selection, click the shape one more time.
+4. Press **J** or click **Join tool** again to execute the join operation.
 
-Upon completion, the selected masks will be joined into a single mask.
+Upon completion, the selected shapes will be merged.
 
-![Join masks gif](/images/joining-tool-02.gif)
+![Join tool gif](/images/joining-tool-02.gif)
+
+Notes about polygon merging:
+
+- For the merge operation to be successful, polygons must overlap or share at least one edge.
+- Disjoint polygons are kept as separate polygons.
+- Merge is not supported if the resulting polygon would create an enclosed empty region.
+- Self-intersecting polygons are excluded from the join operation.
+
+{{% alert title="Tip" %}}
+The {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons/snap-tools" "**Snap tools**" >}}
+can help the join operation work best by making polygon borders and vertices align more precisely.
+{{% /alert %}}
+
+![Join tool gif](/images/joining-tool-03.gif)
 
 ## Slicing polygons and masks
 

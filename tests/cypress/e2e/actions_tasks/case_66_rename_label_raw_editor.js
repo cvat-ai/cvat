@@ -30,7 +30,9 @@ context('Rename a label via raw editor.', () => {
         const labels = JSON.parse(rawLabelsTextarea.text());
         labels.forEach((label) => {
             if (label.name === labelName) {
+                // eslint-disable-next-line no-param-reassign
                 label.name = newlabelName;
+                // eslint-disable-next-line no-param-reassign
                 label.color = newlabelColor;
             }
         });

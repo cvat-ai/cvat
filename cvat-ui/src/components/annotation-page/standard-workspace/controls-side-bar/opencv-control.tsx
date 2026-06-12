@@ -24,7 +24,6 @@ import {
     getCore, Job, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
-import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
     CombinedState, ActiveControl, ToolsBlockerState,
 } from 'reducers';
@@ -34,10 +33,7 @@ import {
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import ApproximationAccuracy, {
-    thresholdFromAccuracy,
-} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
-import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
+import ApproximationAccuracy from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { enableImageFilter as enableImageFilterAction, disableImageFilter as disableImageFilterAction } from 'actions/settings-actions';
 import { ImageFilter, ImageFilterAlias, hasFilter } from 'utils/image-processing';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
@@ -59,11 +55,14 @@ interface Props {
 }
 
 interface DispatchToProps {
-    createAnnotations: (states: ObjectState[]) => Promise<void>;
+    createAnnotations: (states: ObjectState[]) => void;
     onInteractionStart: typeof interactWithCanvas;
     enableImageFilter: typeof enableImageFilterAction;
     disableImageFilter: typeof disableImageFilterAction;
 }
+
+type IntelligentScissors = ReturnType<typeof openCVWrapper.segmentation.intelligentScissorsFactory>;
+type OpenCVTracker = (typeof openCVWrapper.tracking)['trackerMIL'];
 
 interface State {
     libraryInitialized: boolean;
@@ -183,7 +182,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             if (isActivated) {
                 const approx = openCVWrapper.contours.approxPoly(
                     this.latestPoints,
-                    thresholdFromAccuracy(approxPolyAccuracy),
+                    openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
                 );
 
                 canvasInstance.interact({
@@ -240,7 +239,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         source: core.enums.Source.SEMI_AUTO,
                         label: labels.filter((label: any) => label.id === activeLabelID)[0],
                         points: openCVWrapper.contours
-                            .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
+                            .approxPoly(
+                                finalPoints,
+                                openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
+                            )
                             .flat(),
                         occluded: false,
                         zOrder: curZOrder,
@@ -255,14 +257,14 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     const [x, y] = this.latestPoints.pop()!;
                     points = openCVWrapper.contours.approxPoly(
                         this.latestPoints,
-                        thresholdFromAccuracy(approxPolyAccuracy),
+                        openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
                         false,
                     );
                     points.push([x, y]);
                 } else {
                     points = openCVWrapper.contours.approxPoly(
                         this.latestPoints,
-                        thresholdFromAccuracy(approxPolyAccuracy),
+                        openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
                         false,
                     );
                 }

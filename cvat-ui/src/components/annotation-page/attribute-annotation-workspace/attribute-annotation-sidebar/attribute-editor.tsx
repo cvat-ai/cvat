@@ -18,8 +18,9 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { isEqual } from 'lodash';
 import { CombinedState } from 'reducers';
-import { shallowEqual, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useResetShortcutsOnUnmount } from 'utils/hooks';
+import { shallowEqual } from 'utils/redux';
 
 interface InputElementParameters {
     clientID: number;

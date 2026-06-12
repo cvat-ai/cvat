@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import type { Key } from 'react';
 
 import { Col, Row } from 'antd/lib/grid';

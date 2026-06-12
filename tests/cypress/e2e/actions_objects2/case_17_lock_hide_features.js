@@ -6,6 +6,7 @@
 /// <reference types="cypress" />
 
 import { labelName, taskName } from '../../support/const';
+import { fullMatch } from '../../support/utils';
 
 context('Lock/hide features.', () => {
     const caseId = '17';
@@ -246,7 +247,7 @@ context('Lock/hide features.', () => {
             // Objects that have a label different from the "Main task" should not be blocked.
             cy.get('.cvat-objects-sidebar-state-item').then((objectSidebarList) => {
                 for (let i = 0; i < objectSidebarList.length; i++) {
-                    if (!objectSidebarList[i].textContent.match(new RegExp(`${labelName}`, 'g'))) {
+                    if (!objectSidebarList[i].textContent.match(fullMatch(labelName))) {
                         cy.get(objectSidebarList[i]).within(() => {
                             cy.get('.ant-select-selection-item').click({ force: true });
                         });

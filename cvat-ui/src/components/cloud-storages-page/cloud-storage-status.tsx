@@ -6,12 +6,13 @@ import React, { useEffect } from 'react';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
 import { useDispatch, useSelector } from 'react-redux';
+
 import { getCloudStorageStatusAsync } from 'actions/cloud-storage-actions';
-import { CombinedState, CloudStorage } from 'reducers';
+import { CombinedState } from 'reducers';
 import { StorageStatuses } from '../../utils/enums';
 
 interface Props {
-    cloudStorage: CloudStorage;
+    cloudStorage: CombinedState['cloudStorages']['current'][number];
 }
 
 export default function Status({ cloudStorage }: Props): JSX.Element {
