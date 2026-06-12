@@ -6,15 +6,18 @@
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import {
-    ModelKind, RQStatus, ShapeType, Source,
-} from './enums';
-import { SerializedCollection, SerializedShape, SerializedFunctionRequest } from './server-response-types';
+import { ModelKind, RQStatus, ShapeType } from './enums';
+import { SerializedCollection, SerializedFunctionRequest } from './server-response-types';
 import { mask2Rle } from './rle-utils';
 
-type InteractorShape = Pick<SerializedShape, 'group' | 'source' | 'attributes' | 'occluded' | 'rotation' | 'type'> & {
-    points: Int32Array;
-};
+export interface MinimalShape {
+    type: ShapeType;
+    points: number[];
+}
+
+interface InteractorShape extends MinimalShape {
+    attributes?: { spec_id: number; value: string }[]
+}
 
 // This type is compatible with our SerializedCollection, however the client only supports it partly
 // The idea behind is to let us extend it in the future by necessary
@@ -23,11 +26,6 @@ type InteractorShape = Pick<SerializedShape, 'group' | 'source' | 'attributes' |
 export type InteractorResults = {
     shapes: InteractorShape[];
 };
-
-export interface MinimalShape {
-    type: ShapeType;
-    points: number[];
-}
 
 export interface TrackerResults {
     states: any[];
@@ -102,39 +100,20 @@ class LambdaManager {
                 } else {
                     rle.push(0, 0, maskWidth - 1, maskHeight - 1);
                 }
-                return {
-                    shapes: [{
-                        points: Int32Array.from(rle),
-                        group: 0,
-                        source: Source.SEMI_AUTO,
-                        attributes: [],
-                        occluded: false,
-                        rotation: 0,
-                        type: ShapeType.MASK,
-                    }],
-                };
+                return { shapes: [{ points: rle, type: ShapeType.MASK }] };
             }
 
             if (Array.isArray(result.shapes)) {
-                // perhaps already returned object according to the new interface
-                // in this case we just skip shapes which are not supported on client
                 return {
                     shapes: (result as InteractorResults).shapes.map((item) => ({
-                        points: Int32Array.from(item.points),
-                        group: typeof item.group === 'number' ? item.group : 0,
-                        source: Source.SEMI_AUTO,
-                        attributes: Array.isArray(item.attributes) && item.attributes.every((attr) => {
-                            if (typeof attr !== 'object') {
-                                return false;
-                            }
-                            return typeof attr === 'object' &&
+                        points: item.points,
+                        attributes: Array.isArray(item.attributes) && item.attributes.every(
+                            (attr) => typeof attr === 'object' &&
                                 typeof attr.spec_id === 'number' &&
-                                typeof attr.value === 'string';
-                        }) ? item.attributes : [],
-                        occluded: typeof item.occluded === 'boolean' ? item.occluded : false,
-                        rotation: typeof item.rotation === 'number' ? item.rotation : 0,
+                                typeof attr.value === 'string',
+                        ) ? item.attributes : undefined,
                         type: item.type ?? ShapeType.MASK,
-                    })).filter((item) => item.type === ShapeType.MASK),
+                    })),
                 };
             }
         }
