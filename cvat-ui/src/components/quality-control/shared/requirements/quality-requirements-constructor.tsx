@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { Config } from '@react-awesome-query-builder/antd';
 import Button from 'antd/lib/button';
+import { FormInstance } from 'antd/lib/form';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Space from 'antd/lib/space';
@@ -22,6 +23,7 @@ import {
 import {
     ANNOTATION_TYPE_LABELS,
     METRIC_LABELS,
+    QUALITY_REQUIREMENTS_ENABLED_FIELD,
     buildRequirementsById,
     formatAnnotationType,
     formatMetric,
@@ -84,6 +86,7 @@ interface RequirementRow {
 }
 
 interface Props {
+    form: FormInstance;
     settings: QualitySettings;
     disabled: boolean;
     onReload: () => Promise<void>;
@@ -203,6 +206,7 @@ function saveExpandedRowKeys(storageKey: string, expandedRowKeys: React.Key[]): 
 
 export default function QualityRequirementsConstructor(props: Readonly<Props>): JSX.Element {
     const {
+        form,
         settings,
         disabled,
         onReload,
@@ -216,11 +220,23 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
     const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>(
         () => readExpandedRowKeys(expandedRowsStorageKey),
     );
+    const [enabledValues, setEnabledValues] = useState<Record<string, boolean>>({});
     const data = useMemo(() => buildRequirementTree(settings.requirements), [settings.requirements]);
 
     useEffect(() => {
         setExpandedRowKeys(readExpandedRowKeys(expandedRowsStorageKey));
     }, [expandedRowsStorageKey]);
+
+    useEffect(() => {
+        const nextEnabledValues = settings.requirements.reduce<Record<string, boolean>>((acc, requirement) => {
+            if (typeof requirement.id === 'number') {
+                acc[requirement.id] = requirement.enabled;
+            }
+            return acc;
+        }, {});
+        setEnabledValues(nextEnabledValues);
+        form.setFieldsValue({ [QUALITY_REQUIREMENTS_ENABLED_FIELD]: nextEnabledValues });
+    }, [form, settings.requirements]);
 
     const updateRequirement = async (
         requirement: QualityRequirement,
@@ -246,12 +262,20 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
         }
     };
 
-    const onEnabledChange = async (requirement: QualityRequirement, enabled: boolean): Promise<void> => {
-        await updateRequirement(
-            requirement,
-            () => requirement.save({ enabled }).then(() => undefined),
-            'Could not update requirement',
-        );
+    const onEnabledChange = (requirement: QualityRequirement, enabled: boolean): void => {
+        if (typeof requirement.id !== 'number') {
+            return;
+        }
+
+        const nextEnabledValues = {
+            ...enabledValues,
+            [requirement.id]: enabled,
+        };
+
+        setEnabledValues(nextEnabledValues);
+        form.setFieldsValue({
+            [QUALITY_REQUIREMENTS_ENABLED_FIELD]: nextEnabledValues,
+        });
     };
 
     const onDeleteRequirement = (requirement: QualityRequirement): void => {
@@ -270,6 +294,13 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
         });
     };
 
+    const isRequirementEnabled = (requirement: QualityRequirement): boolean => (
+        typeof requirement.id === 'number' &&
+        typeof enabledValues[requirement.id] === 'boolean' ?
+            enabledValues[requirement.id] :
+            requirement.enabled
+    );
+
     return (
         <CVATTable
             tableTitle='Requirements configuration'
@@ -282,16 +313,14 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
             }}
             csvExport={{ filename: `quality-requirements-settings-${settings.id}.csv` }}
             rowClassName={(record: RequirementRow) => (
-                record.requirement.isDefault ? 'cvat-quality-requirements-default-row' : ''
+                isRequirementEnabled(record.requirement) ? '' : 'cvat-quality-requirements-disabled-row'
             )}
             columns={[{
                 title: 'Name',
                 dataIndex: 'name',
                 sorter: (first: RequirementRow, second: RequirementRow) => first.name.localeCompare(second.name),
                 render: (_: string, record: RequirementRow): JSX.Element => (
-                    <Text type={record.requirement.isDefault ? 'secondary' : undefined}>
-                        {record.name}
-                    </Text>
+                    <Text>{record.name}</Text>
                 ),
             }, {
                 title: 'Annotation type',
@@ -300,18 +329,14 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
                     first.annotationType.localeCompare(second.annotationType)
                 ),
                 render: (_: string, record: RequirementRow): JSX.Element => (
-                    <Text type={record.requirement.isDefault ? 'secondary' : undefined}>
-                        {record.annotationType}
-                    </Text>
+                    <Text>{record.annotationType}</Text>
                 ),
             }, {
                 title: 'Metric',
                 dataIndex: 'metric',
                 sorter: (first: RequirementRow, second: RequirementRow) => first.metric.localeCompare(second.metric),
                 render: (_: string, record: RequirementRow): JSX.Element => (
-                    <Text type={record.requirement.isDefault ? 'secondary' : undefined}>
-                        {record.metric}
-                    </Text>
+                    <Text>{record.metric}</Text>
                 ),
             }, {
                 title: 'Threshold',
@@ -320,9 +345,7 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
                     first.threshold.localeCompare(second.threshold)
                 ),
                 render: (_: string, record: RequirementRow): JSX.Element => (
-                    <Text type={record.requirement.isDefault ? 'secondary' : undefined}>
-                        {record.threshold}
-                    </Text>
+                    <Text>{record.threshold}</Text>
                 ),
             }, {
                 title: 'Enabled',
@@ -332,9 +355,8 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
                 ),
                 render: (_: boolean, record: RequirementRow): JSX.Element => (
                     <Switch
-                        checked={record.requirement.enabled}
+                        checked={isRequirementEnabled(record.requirement)}
                         disabled={disabled || pendingRequirementId !== null}
-                        loading={pendingRequirementId === record.requirement.id}
                         onChange={(enabled: boolean) => onEnabledChange(record.requirement, enabled)}
                     />
                 ),

@@ -213,6 +213,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 </CVATTooltip>
             </Row>
             <QualityRequirementsEditor
+                form={form}
                 settings={settings}
                 disabled={disabled}
                 onReload={onReload}

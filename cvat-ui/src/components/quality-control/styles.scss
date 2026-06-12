@@ -86,12 +86,14 @@
     .cvat-quality-requirements-raw-viewer {
         font-family: monospace;
         min-height: $grid-unit-size * 62;
+        display: block;
     }
 
     .cvat-quality-requirements-raw-actions {
         display: flex;
         gap: $grid-unit-size * 2;
-        margin-top: -$grid-unit-size;
+        margin-top: $grid-unit-size * 2;
+        padding-bottom: $grid-unit-size * 4;
 
         .ant-btn {
             min-width: $grid-unit-size * 11;
@@ -233,8 +235,12 @@
             padding: calc($grid-unit-size / 2) $grid-unit-size !important;
         }
 
-        .cvat-quality-requirements-default-row {
-            color: $text-color-secondary;
+        .cvat-quality-requirements-disabled-row {
+            .ant-table-cell,
+            .ant-typography,
+            .cvat-quality-requirements-action-button {
+                color: $text-color-secondary;
+            }
         }
     }
 }

@@ -62,6 +62,10 @@ context('Quality requirements UI', () => {
         cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Save').click();
     }
 
+    function saveSettings() {
+        cy.get('.cvat-quality-settings-save-btn').contains('button', 'Save').click();
+    }
+
     function expectNotification(message) {
         cy.contains('.ant-notification-notice-message', message).should('be.visible');
         cy.closeNotification('.ant-notification-notice');
@@ -110,18 +114,30 @@ context('Quality requirements UI', () => {
             cy.get('[aria-label="edit"]').should('exist');
             cy.get('.ant-switch').should('not.have.class', 'ant-switch-checked');
         });
+        requirementRow(defaultRectangleRequirementName).should('have.class', 'cvat-quality-requirements-disabled-row');
     });
 
-    it('Enables the default requirement from the table switch and persists it', () => {
+    it('Saves requirement enabled changes from the main settings form', () => {
         openSettingsTab();
 
         requirementRow(defaultRectangleRequirementName).find('.ant-switch').click();
         requirementRow(defaultRectangleRequirementName).find('.ant-switch').should('have.class', 'ant-switch-checked');
+        requirementRow(defaultRectangleRequirementName).should('not.have.class', 'cvat-quality-requirements-disabled-row');
 
-        // The toggle is persisted on the server, so it survives a reload.
+        // The constructor switch is a draft until the main settings form is saved.
+        cy.reload();
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
+        requirementRow(defaultRectangleRequirementName).find('.ant-switch').should('not.have.class', 'ant-switch-checked');
+        requirementRow(defaultRectangleRequirementName).should('have.class', 'cvat-quality-requirements-disabled-row');
+
+        requirementRow(defaultRectangleRequirementName).find('.ant-switch').click();
+        saveSettings();
+        expectNotification('Settings have been updated');
+
         cy.reload();
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
         requirementRow(defaultRectangleRequirementName).find('.ant-switch').should('have.class', 'ant-switch-checked');
+        requirementRow(defaultRectangleRequirementName).should('not.have.class', 'cvat-quality-requirements-disabled-row');
     });
 
     it('Creates a child requirement through the form', () => {
@@ -291,6 +307,19 @@ context('Quality requirements UI', () => {
             cy.contains('.ant-tabs-tab', 'Raw').click();
         });
         cy.get('.cvat-quality-requirements-raw-viewer').should('be.visible');
+        cy.get('.cvat-quality-requirements-raw-actions').within(() => {
+            cy.contains('button', 'Apply').should('not.exist');
+            cy.contains('button', 'Cancel').should('exist');
+        });
+
+        cy.get('.cvat-quality-requirements-raw-viewer').then(($textarea) => {
+            const initialValue = $textarea.val();
+
+            cy.wrap($textarea).clear();
+            cy.get('.cvat-quality-requirements-raw-viewer').type('[]', { parseSpecialCharSequences: false });
+            cy.contains('.cvat-quality-requirements-raw-actions button', 'Cancel').click();
+            cy.get('.cvat-quality-requirements-raw-viewer').should('have.value', initialValue);
+        });
 
         cy.get('.cvat-quality-requirements-editor').within(() => {
             cy.contains('.ant-tabs-tab', 'Constructor').click();

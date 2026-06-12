@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { BuildOutlined, EditOutlined } from '@ant-design/icons';
+import { FormInstance } from 'antd/lib/form';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
 import { QualityRequirement, QualitySettings } from 'cvat-core-wrapper';
@@ -11,6 +12,7 @@ import QualityRequirementsConstructor from './quality-requirements-constructor';
 import QualityRequirementsRaw from './quality-requirements-raw';
 
 interface Props {
+    form: FormInstance;
     settings: QualitySettings;
     disabled: boolean;
     onReload: () => Promise<void>;
@@ -21,6 +23,7 @@ interface Props {
 
 export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.Element {
     const {
+        form,
         settings,
         disabled,
         onReload,
@@ -44,9 +47,9 @@ export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.E
                 ),
                 children: (
                     <QualityRequirementsRaw
+                        form={form}
                         settings={settings}
                         disabled={disabled}
-                        onReload={onReload}
                     />
                 ),
             }, {
@@ -59,6 +62,7 @@ export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.E
                 ),
                 children: (
                     <QualityRequirementsConstructor
+                        form={form}
                         settings={settings}
                         disabled={disabled}
                         onReload={onReload}

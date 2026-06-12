@@ -28,6 +28,8 @@ export const METRIC_LABELS: Record<string, string> = {
 
 export const ANNOTATION_TYPES = Object.keys(ANNOTATION_TYPE_LABELS);
 export const METRICS = Object.keys(METRIC_LABELS);
+export const QUALITY_REQUIREMENTS_RAW_FIELD = 'requirementsRaw';
+export const QUALITY_REQUIREMENTS_ENABLED_FIELD = 'requirementsEnabled';
 
 export type RequirementRawData = SerializedQualityRequirementData;
 
@@ -192,4 +194,79 @@ export function rawToSaveFields(rawRequirement: RequirementRawData): SerializedQ
 
 export function requirementToSaveFields(requirement: QualityRequirement): SerializedQualityRequirementData {
     return rawToSaveFields(requirementToRaw(requirement));
+}
+
+function replaceTrailingCommas(value: string): string {
+    return value.replace(/,{1}[\s]*}/g, '}').replace(/,{1}[\s]*]/g, ']');
+}
+
+export function parseRawRequirements(value: string): RequirementRawData[] {
+    const parsed = JSON.parse(replaceTrailingCommas(value));
+    if (!Array.isArray(parsed)) {
+        throw new Error('Field is expected to be a JSON array');
+    }
+
+    return parsed;
+}
+
+export function validateRequirementNames(requirements: RequirementRawData[]): void {
+    const names = requirements.map((requirement: RequirementRawData): string => (
+        typeof requirement.name === 'string' ? requirement.name.trim() : ''
+    ));
+
+    if (names.some((name: string): boolean => !name)) {
+        throw new Error('Requirement name is required');
+    }
+
+    if (new Set(names).size !== names.length) {
+        throw new Error('Requirement name must be unique');
+    }
+}
+
+export function validateKnownRequirementValues(requirements: RequirementRawData[]): void {
+    for (const requirement of requirements) {
+        if (requirement.annotation_type && !ANNOTATION_TYPES.includes(requirement.annotation_type)) {
+            throw new Error(`Unknown annotation type "${requirement.annotation_type}"`);
+        }
+
+        if (requirement.metric && !METRICS.includes(requirement.metric)) {
+            throw new Error(`Unknown metric "${requirement.metric}"`);
+        }
+
+        if (
+            requirement.required_score !== null &&
+            typeof requirement.required_score !== 'undefined' &&
+            (typeof requirement.required_score !== 'number' ||
+                requirement.required_score < 0 ||
+                requirement.required_score > 1)
+        ) {
+            throw new Error('Required score must be a number from 0 to 1');
+        }
+    }
+}
+
+export function validateDefaultRequirementsArePresent(
+    currentRequirements: QualityRequirement[],
+    parsedRequirements: RequirementRawData[],
+): void {
+    const parsedIds = new Set(parsedRequirements
+        .map((requirement: RequirementRawData): number | undefined => requirement.id)
+        .filter((id: number | undefined): id is number => typeof id === 'number'));
+
+    const removedDefault = currentRequirements.find((requirement: QualityRequirement): boolean => (
+        requirement.isDefault && typeof requirement.id === 'number' && !parsedIds.has(requirement.id)
+    ));
+
+    if (removedDefault) {
+        throw new Error(`Default requirement "${removedDefault.name}" cannot be removed`);
+    }
+}
+
+export function validateRawRequirements(
+    currentRequirements: QualityRequirement[],
+    parsedRequirements: RequirementRawData[],
+): void {
+    validateRequirementNames(parsedRequirements);
+    validateKnownRequirementValues(parsedRequirements);
+    validateDefaultRequirementsArePresent(currentRequirements, parsedRequirements);
 }

@@ -17,6 +17,14 @@ import {
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import QualitySettingsForm from './shared/settings/quality-settings-form';
+import {
+    QUALITY_REQUIREMENTS_ENABLED_FIELD,
+    QUALITY_REQUIREMENTS_RAW_FIELD,
+    parseRawRequirements,
+    requirementToRaw,
+    rawToSaveFields,
+    validateRawRequirements,
+} from './shared/requirements/quality-requirements-utils';
 
 export type UpdateSettingsData = Record<number, { settings: QualitySettings, fields: QualitySettingsSaveFields }>;
 
@@ -71,6 +79,38 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 panopticComparison: values.panopticComparison ?? settings.panopticComparison,
                 jobFilter: values.jobFilter ?? '',
             };
+
+            const enabledValues = form.getFieldValue(QUALITY_REQUIREMENTS_ENABLED_FIELD) as
+                Record<string, boolean> | undefined;
+            const hasEnabledChanges = !!enabledValues && settings.requirements.some((requirement) => (
+                typeof requirement.id === 'number' &&
+                typeof enabledValues[requirement.id] === 'boolean' &&
+                enabledValues[requirement.id] !== requirement.enabled
+            ));
+            const parsedRequirements = typeof values[QUALITY_REQUIREMENTS_RAW_FIELD] === 'string' ?
+                parseRawRequirements(values[QUALITY_REQUIREMENTS_RAW_FIELD]) :
+                settings.requirements.map(requirementToRaw);
+
+            if (typeof values[QUALITY_REQUIREMENTS_RAW_FIELD] === 'string' || hasEnabledChanges) {
+                const nextRequirements = parsedRequirements.map((requirement) => {
+                    if (
+                        typeof requirement.id === 'number' &&
+                        enabledValues &&
+                        typeof enabledValues[requirement.id] === 'boolean'
+                    ) {
+                        return { ...requirement, enabled: enabledValues[requirement.id] };
+                    }
+
+                    return requirement;
+                });
+
+                validateRawRequirements(settings.requirements, nextRequirements);
+                fields.requirements = nextRequirements.map((requirement) => ({
+                    id: requirement.id,
+                    ...rawToSaveFields(requirement),
+                })) as QualitySettingsSaveFields['requirements'];
+            }
+
             setQualitySettings({ [settings.id]: { settings, fields } });
         }
     }, [form, settings, setQualitySettings]);
