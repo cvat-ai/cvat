@@ -5,6 +5,12 @@ weight: 2
 description: 'Installing a development environment for different operating systems.'
 ---
 
+{{% alert title="Docker-based option" color="primary" %}}
+If you want to develop CVAT without installing Python, Node.js, Yarn, and CVAT
+service dependencies on the host, use the
+{{< ilink "/docs/contributing/docker-based-development-environment" "Docker-based development environment guide" >}}.
+{{% /alert %}}
+
 ### Setup the dependencies:
 
 - Install necessary dependencies:
@@ -295,4 +301,3 @@ In addition, you can completely disable analytics if you don't need it by deleti
 
 Analytics on GitHub:
 [Analytics Components](https://github.com/cvat-ai/cvat/tree/develop/components/analytics)
-

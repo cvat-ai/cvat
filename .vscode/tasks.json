@@ -33,6 +33,42 @@
                   "endsPattern": "compiled"
                 }
             }
+        },
+        {
+            "label": "docker: up workers",
+            "type": "shell",
+            "command": "./dev/cvat-local.sh up-workers",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: up ui",
+            "type": "shell",
+            "command": "./dev/cvat-local.sh up-ui",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: up full",
+            "type": "shell",
+            "command": "./dev/cvat-local.sh up-full",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: restart server",
+            "type": "shell",
+            "command": "./dev/cvat-local.sh restart server",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
         }
     ]
 }
