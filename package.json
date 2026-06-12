@@ -131,7 +131,7 @@
   "dependencies": {
     "@types/fabric": "^4.5.7",
     "@types/lodash": "^4.14.191",
-    "fabric": "^5.2.1",
+    "fabric": "^7.4.0",
     "lodash": "^4.18.1",
     "lru-cache": "^11.2.7"
   },
