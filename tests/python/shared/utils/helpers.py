@@ -15,7 +15,11 @@ import librosa
 import numpy as np
 from PIL import Image
 
-from shared.fixtures.init import get_server_image_tag
+
+def get_server_image_tag() -> str:
+    import os
+
+    return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
 
 
 def generate_image_file(filename="image.png", size=(100, 50), color=(0, 0, 0)):

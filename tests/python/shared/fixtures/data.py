@@ -11,7 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from shared.utils.config import ASSETS_DIR, SHARE_DIR
+from shared.utils.config import ASSETS_DIR, SHARE_DIR, normalize_asset_urls
+
+
+def _load_asset_json(name: str):
+    with open(ASSETS_DIR / name) as f:
+        return normalize_asset_urls(json.load(f))
 
 
 class Container:
@@ -41,26 +46,22 @@ class Container:
 
 @pytest.fixture(scope="session")
 def users():
-    with open(ASSETS_DIR / "users.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("users.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def organizations():
-    with open(ASSETS_DIR / "organizations.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("organizations.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def memberships():
-    with open(ASSETS_DIR / "memberships.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("memberships.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def tasks():
-    with open(ASSETS_DIR / "tasks.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("tasks.json")["results"])
 
 
 def filter_assets(resources: Iterable, **kwargs):
@@ -142,8 +143,7 @@ def tasks_wlc(labels, tasks):  # tasks with labels count
 
 @pytest.fixture(scope="session")
 def projects():
-    with open(ASSETS_DIR / "projects.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("projects.json")["results"])
 
 
 @pytest.fixture(scope="session")
@@ -162,8 +162,7 @@ def projects_wlc(projects, labels):  # projects with labels count
 
 @pytest.fixture(scope="session")
 def jobs():
-    with open(ASSETS_DIR / "jobs.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("jobs.json")["results"])
 
 
 @pytest.fixture(scope="session")
@@ -177,14 +176,12 @@ def jobs_wlc(jobs, tasks_wlc):  # jobs with labels count
 
 @pytest.fixture(scope="session")
 def invitations():
-    with open(ASSETS_DIR / "invitations.json") as f:
-        return Container(json.load(f)["results"], key="key")
+    return Container(_load_asset_json("invitations.json")["results"], key="key")
 
 
 @pytest.fixture(scope="session")
 def annotations():
-    with open(ASSETS_DIR / "annotations.json") as f:
-        return json.load(f)
+    return _load_asset_json("annotations.json")
 
 
 CloudStorageAssets = Container
@@ -192,56 +189,47 @@ CloudStorageAssets = Container
 
 @pytest.fixture(scope="session")
 def cloud_storages() -> CloudStorageAssets:
-    with open(ASSETS_DIR / "cloudstorages.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("cloudstorages.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def issues():
-    with open(ASSETS_DIR / "issues.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("issues.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def comments():
-    with open(ASSETS_DIR / "comments.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("comments.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def webhooks():
-    with open(ASSETS_DIR / "webhooks.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("webhooks.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def labels():
-    with open(ASSETS_DIR / "labels.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("labels.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def quality_reports():
-    with open(ASSETS_DIR / "quality_reports.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("quality_reports.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def quality_conflicts():
-    with open(ASSETS_DIR / "quality_conflicts.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("quality_conflicts.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def quality_settings():
-    with open(ASSETS_DIR / "quality_settings.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("quality_settings.json")["results"])
 
 
 @pytest.fixture(scope="session")
 def consensus_settings():
-    with open(ASSETS_DIR / "consensus_settings.json") as f:
-        return Container(json.load(f)["results"])
+    return Container(_load_asset_json("consensus_settings.json")["results"])
 
 
 @pytest.fixture(scope="session")
@@ -591,8 +579,7 @@ def access_tokens(access_tokens_by_username):
 
 @pytest.fixture(scope="session")
 def raw_access_tokens_by_username():
-    with open(ASSETS_DIR / "access_tokens.json") as f:
-        return json.load(f)["user"]
+    return _load_asset_json("access_tokens.json")["user"]
 
 
 @pytest.fixture(scope="session")

@@ -8,9 +8,9 @@ from time import sleep, time
 
 import pytest
 from deepdiff import DeepDiff
+from infra.config import RuntimeConfig
 
 from shared.fixtures.data import Container
-from shared.fixtures.init import CVAT_ROOT_DIR
 from shared.utils.config import delete_method, get_method, patch_method, post_method
 
 from .utils import export_task_backup, export_task_dataset
@@ -29,7 +29,7 @@ pytestmark = [pytest.mark.with_external_services]
 
 def _read_receiver_env():
     env_data = {}
-    with open(CVAT_ROOT_DIR / "tests/python/webhook_receiver/.env", "r") as f:
+    with open(RuntimeConfig.get_cvat_root_dir() / "tests/python/webhook_receiver/.env", "r") as f:
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value

@@ -2,8 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+# Generic test request helpers intentionally rely on the timeout configured in pytest.ini.
+# pylint: disable=missing-timeout
+
 from collections.abc import Generator
 from contextlib import contextmanager
+from copy import deepcopy
 from pathlib import Path
 
 import requests
@@ -15,8 +19,11 @@ ASSETS_DIR = (ROOT_DIR / "assets").resolve()
 SHARE_DIR = (ROOT_DIR.parents[1] / "mounted_file_share").resolve()
 # Suppress the warning from Bandit about hardcoded passwords
 USER_PASS = "!Q@W#E$R"  # nosec
+ADMIN_USER = "admin1"
+ADMIN_PASS = USER_PASS
 BASE_URL = "http://localhost:8080"
 API_URL = BASE_URL + "/api/"
+_DEFAULT_BASE_URL = BASE_URL
 
 # MiniIO settings
 MINIO_KEY = "minio_access_key"
@@ -35,6 +42,24 @@ def get_server_url(endpoint, **kwargs):
 
 def get_api_url(endpoint, **kwargs):
     return API_URL + endpoint + "?" + _to_query_params(**kwargs)
+
+
+def normalize_asset_urls(data):
+    data = deepcopy(data)
+    if BASE_URL == _DEFAULT_BASE_URL:
+        return data
+
+    return _replace_base_url(data)
+
+
+def _replace_base_url(value):
+    if isinstance(value, dict):
+        return {key: _replace_base_url(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_replace_base_url(item) for item in value]
+    if isinstance(value, str):
+        return value.replace(_DEFAULT_BASE_URL, BASE_URL)
+    return value
 
 
 def get_method(username, endpoint, **kwargs):
