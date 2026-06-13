@@ -14,9 +14,9 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rq.job import JobStatus as RqJobStatus
 
@@ -34,18 +34,24 @@ from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
     QualityReportTarget,
+    QualityRequirement,
     QualitySettings,
 )
 from cvat.apps.quality_control.permissions import (
     AnnotationConflictPermission,
     QualityReportPermission,
+    QualityRequirementPermission,
     QualitySettingPermission,
     get_iam_context,
 )
+from cvat.apps.quality_control.queue_manager import QualityReportQueueManager
 from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
+    QualityReportConfusionMatrixSerializer,
     QualityReportCreateSerializer,
     QualityReportSerializer,
+    QualityRequirementListSerializer,
+    QualityRequirementSerializer,
     QualitySettingsParentType,
     QualitySettingsSerializer,
 )
@@ -332,7 +338,7 @@ class QualityReportViewSet(
             else:
                 assert False
 
-            manager = qc.QualityReportRQJobManager(request=request, db_instance=target)
+            manager = QualityReportQueueManager(request=request, db_instance=target)
             return manager.enqueue_job()
 
         else:
@@ -340,7 +346,7 @@ class QualityReportViewSet(
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
-            rq_job = qc.QualityReportRQJobManager(request=request).get_job_by_id(rq_id)
+            rq_job = QualityReportQueueManager(request=request).get_job_by_id(rq_id)
 
             # FUTURE-TODO: move into permissions
             # and allow not only rq job owner to check the status
@@ -434,6 +440,104 @@ class QualityReportViewSet(
         )
         return HttpResponse(report_data, content_type=content_type)
 
+    @extend_schema(
+        operation_id="quality_retrieve_report_confusion",
+        summary="Download quality report confusion matrices",
+        responses={
+            "200": OpenApiResponse(
+                response=OpenApiTypes.BINARY,
+                description="ZIP archive with the overall and per-requirement confusion matrices",
+            )
+        },
+    )
+    @action(detail=True, methods=["GET"], url_path="confusion", serializer_class=None)
+    def confusion(self, request, pk):
+        report = self.get_object()  # check permissions
+        archive = qc.prepare_confusion_matrices_archive_for_downloading(report)
+        response = HttpResponse(archive, content_type="application/zip")
+        response["Content-Disposition"] = (
+            f'attachment; filename="quality-report-{report.id}-confusion.zip"'
+        )
+        return response
+
+    @extend_schema(
+        operation_id="quality_retrieve_report_requirement_confusion",
+        summary="Get a quality report requirement confusion matrix",
+        parameters=[
+            OpenApiParameter(
+                "requirement",
+                type=OpenApiTypes.INT,
+                required=True,
+                description="Quality requirement id in the report",
+            ),
+            OpenApiParameter(
+                "format",
+                type=OpenApiTypes.STR,
+                enum=QualityReportExportFormat.values,
+                default=QualityReportExportFormat.JSON.value,
+            ),
+        ],
+        responses={
+            (200, "application/json"): OpenApiResponse(
+                response=QualityReportConfusionMatrixSerializer,
+                description="JSON confusion matrix for the requested quality requirement",
+            ),
+            (200, "text/csv"): OpenApiResponse(
+                response=OpenApiTypes.BINARY,
+                description="CSV confusion matrix for the requested quality requirement",
+            ),
+            "404": OpenApiResponse(description="Requirement confusion matrix was not found"),
+        },
+    )
+    @action(detail=True, methods=["GET"], url_path="confusion/matrix", serializer_class=None)
+    def confusion_matrix(self, request, pk):
+        report = self.get_object()  # check permissions
+        requirement = request.query_params.get("requirement")
+        if not requirement:
+            raise ValidationError({"requirement": "This query parameter is required."})
+        try:
+            requirement_id = int(requirement)
+        except ValueError as ex:
+            raise ValidationError({"requirement": "A valid integer is required."}) from ex
+
+        try:
+            format_name = QualityReportExportFormat(
+                request.query_params.get("format", default=QualityReportExportFormat.JSON.value)
+            )
+        except ValueError as ex:
+            raise ValidationError(
+                {"format": f"Expected one of: {', '.join(QualityReportExportFormat.values)}."}
+            ) from ex
+
+        if format_name == QualityReportExportFormat.JSON:
+            matrix_json = qc.prepare_requirement_confusion_matrix_json(
+                report,
+                requirement_id=requirement_id,
+            )
+            if matrix_json is None:
+                raise NotFound(
+                    f"Confusion matrix for quality requirement '{requirement_id}' was not found"
+                )
+
+            return Response(matrix_json)
+
+        matrix_csv = qc.prepare_requirement_confusion_matrix_for_downloading(
+            report,
+            requirement_id=requirement_id,
+        )
+        if matrix_csv is None:
+            raise NotFound(
+                f"Confusion matrix for quality requirement '{requirement_id}' was not found"
+            )
+
+        filename_requirement = f"requirement-{requirement_id}"
+        response = HttpResponse(matrix_csv, content_type="text/csv")
+        response["Content-Disposition"] = (
+            f'attachment; filename="quality-report-{report.id}-'
+            f'{filename_requirement}-confusion.csv"'
+        )
+        return response
+
 
 SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
 
@@ -494,14 +598,30 @@ SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
             "200": QualitySettingsSerializer,
         },
     ),
+    update=extend_schema(
+        summary="Replace a quality settings instance",
+        parameters=[
+            OpenApiParameter(
+                "id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="An id of a quality settings instance",
+            )
+        ],
+        request=QualitySettingsSerializer,
+        responses={
+            "200": QualitySettingsSerializer,
+        },
+    ),
 )
 class QualitySettingsViewSet(
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = QualitySettings.objects
+    queryset = QualitySettings.objects.prefetch_related("requirements", "requirements__parent")
 
     iam_supports_organization_params = True
     iam_permission_class = QualitySettingPermission
@@ -556,3 +676,136 @@ class QualitySettingsViewSet(
             queryset = permissions.filter(queryset)
 
         return queryset
+
+
+@extend_schema(tags=["quality"])
+@extend_schema_view(
+    list=extend_schema(
+        summary="List quality requirements",
+        parameters=[
+            OpenApiParameter("task_id", type=OpenApiTypes.INT, description="Task id filter"),
+            OpenApiParameter("project_id", type=OpenApiTypes.INT, description="Project id filter"),
+            OpenApiParameter(
+                "settings_id", type=OpenApiTypes.INT, description="Settings id filter"
+            ),
+        ],
+        responses={"200": QualityRequirementListSerializer(many=True)},
+    ),
+    create=extend_schema(
+        summary="Create a quality requirement",
+        request=QualityRequirementSerializer,
+        responses={"201": QualityRequirementSerializer},
+    ),
+    retrieve=extend_schema(
+        summary="Get quality requirement details",
+        responses={"200": QualityRequirementSerializer},
+    ),
+    partial_update=extend_schema(
+        summary="Update a quality requirement",
+        request=QualityRequirementSerializer(partial=True),
+        responses={"200": QualityRequirementSerializer},
+    ),
+    update=extend_schema(
+        summary="Replace a quality requirement",
+        request=QualityRequirementSerializer,
+        responses={"200": QualityRequirementSerializer},
+    ),
+    destroy=extend_schema(
+        summary="Delete a quality requirement",
+        responses={"204": OpenApiResponse(description="Requirement deleted")},
+    ),
+)
+class QualityRequirementViewSet(
+    viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    PartialUpdateModelMixin,
+    mixins.DestroyModelMixin,
+):
+    queryset = QualityRequirement.objects.select_related(
+        "settings",
+        "settings__task",
+        "settings__task__project",
+        "settings__project",
+        "parent",
+    )
+
+    iam_supports_organization_params = True
+    iam_organization_field = ["settings__task__organization", "settings__project__organization"]
+    iam_permission_class = QualityRequirementPermission
+
+    search_fields = []
+    filter_fields = [
+        "id",
+        "settings_id",
+        "task_id",
+        "project_id",
+        "annotation_type",
+        "enabled",
+        "created_date",
+        "updated_date",
+    ]
+    simple_filters = ["settings_id", "annotation_type", "enabled"]
+    ordering_fields = filter_fields + ["name", "sort_order"]
+    ordering = "id"
+
+    serializer_class = QualityRequirementSerializer
+
+    def get_serializer_class(self) -> type[serializers.BaseSerializer]:
+        if self.action == "list":
+            return QualityRequirementListSerializer
+
+        return super().get_serializer_class()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.action == "list":
+            iam_context = None
+            settings_queryset = QualitySettings.objects.all()
+
+            if settings_id := self.request.query_params.get("settings_id", None):
+                settings = get_or_404(QualitySettings, settings_id)
+                self.check_object_permissions(self.request, settings)
+                iam_context = get_iam_context(self.request, settings)
+                settings_queryset = settings_queryset.filter(id=settings_id)
+            elif task_id := self.request.query_params.get("task_id", None):
+                task = get_or_404(Task, task_id)
+                self.check_object_permissions(self.request, task)
+                iam_context = get_iam_context(self.request, task)
+                settings_queryset = settings_queryset.filter(task_id=task_id)
+            elif project_id := self.request.query_params.get("project_id", None):
+                project = get_or_404(Project, project_id)
+                self.check_object_permissions(self.request, project)
+                iam_context = get_iam_context(self.request, project)
+                settings_queryset = settings_queryset.filter(
+                    Q(project__id=project_id) | Q(task__project__id=project_id)
+                )
+
+            permissions = QualitySettingPermission.create_scope_list(
+                self.request, iam_context=iam_context
+            )
+            allowed_settings = permissions.filter(settings_queryset).values_list("id", flat=True)
+            queryset = queryset.filter(settings_id__in=allowed_settings)
+            queryset = QualityRequirementPermission.add_org_filter_proof(queryset)
+
+        return queryset
+
+    def perform_destroy(self, instance):
+        if instance.is_default:
+            raise ValidationError("Default quality requirements cannot be deleted.")
+
+        if instance.settings.requirements.count() <= 1:
+            raise ValidationError("The last quality requirement cannot be deleted.")
+
+        if instance.children.exists():
+            raise ValidationError(
+                "A quality requirement with child requirements cannot be deleted."
+            )
+
+        settings = instance.settings
+        result = super().perform_destroy(instance)
+        settings.save()
+        return result

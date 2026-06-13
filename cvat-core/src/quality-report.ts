@@ -22,7 +22,6 @@ export interface QualitySummary {
         extraAnnotations: number;
         missingAnnotations: number;
         mismatchingLabel: number;
-        lowOverlap: number;
         mismatchingDirection: number;
         mismatchingAttributes: number;
         mismatchingGroups: number;
@@ -41,11 +40,24 @@ export interface QualitySummary {
         excluded: number;
         included: number;
     } | null;
+    requirements: {
+        total: number;
+        enabled: number;
+        completed: number;
+        items: {
+            requirementId: number | null;
+            name: string;
+            metric: string;
+            score: number | null;
+            threshold: number;
+        }[];
+    } | null;
 }
 
 export default class QualityReport {
     #id: number;
     #parentID: number;
+    #projectId: number;
     #taskID: number;
     #jobID: number;
     #target: string;
@@ -57,6 +69,7 @@ export default class QualityReport {
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
         this.#parentID = initialData.parent_id;
+        this.#projectId = initialData.project_id;
         this.#taskID = initialData.task_id;
         this.#jobID = initialData.job_id;
         this.#target = initialData.target;
@@ -77,6 +90,10 @@ export default class QualityReport {
 
     get parentID(): number {
         return this.#parentID;
+    }
+
+    get projectId(): number {
+        return this.#projectId;
     }
 
     get taskID(): number {
@@ -119,7 +136,6 @@ export default class QualityReport {
                 extraAnnotations: this.#summary.conflicts_by_type?.extra_annotation,
                 missingAnnotations: this.#summary.conflicts_by_type?.missing_annotation,
                 mismatchingLabel: this.#summary.conflicts_by_type?.mismatching_label,
-                lowOverlap: this.#summary.conflicts_by_type?.low_overlap,
                 mismatchingDirection: this.#summary.conflicts_by_type?.mismatching_direction,
                 mismatchingAttributes: this.#summary.conflicts_by_type?.mismatching_attributes,
                 mismatchingGroups: this.#summary.conflicts_by_type?.mismatching_groups,
@@ -139,6 +155,18 @@ export default class QualityReport {
                 notCheckable: this.#summary.jobs.not_checkable,
                 excluded: this.#summary.jobs.excluded,
                 included: this.#summary.jobs.included,
+            } : null,
+            requirements: this.#summary.requirements ? {
+                total: this.#summary.requirements.total,
+                enabled: this.#summary.requirements.enabled,
+                completed: this.#summary.requirements.completed,
+                items: this.#summary.requirements.items.map((item) => ({
+                    requirementId: item.requirement_id,
+                    name: item.name,
+                    metric: item.metric,
+                    score: item.score,
+                    threshold: item.threshold,
+                })),
             } : null,
         };
     }

@@ -19,7 +19,7 @@ import {
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, APIAnalyticsEventsFilter, APIConsensusSettingsFilter,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
-    SerializedApiToken, APIApiTokensFilter,
+    SerializedApiToken, APIApiTokensFilter, APIQualityRequirementsFilter, SerializedQualityRequirementData,
 } from './server-response-types';
 import { APIApiTokenModifiableFields } from './server-request-types';
 import { PaginatedResource, SerializedModel, UpdateStatusData } from './core-types';
@@ -2476,6 +2476,86 @@ async function updateQualitySettings(
     }
 }
 
+async function getQualityRequirements(
+    filter: APIQualityRequirementsFilter,
+    aggregate?: boolean,
+): Promise<PaginatedResource<SerializedQualityRequirementData>> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        if (aggregate) {
+            response = {
+                data: await fetchAll<SerializedQualityRequirementData & { id: number }>(
+                    `${backendAPI}/quality/settings/requirements`, {
+                        ...filter,
+                        ...enableOrganization(),
+                    },
+                ),
+            };
+        } else {
+            response = await Axios.get(`${backendAPI}/quality/settings/requirements`, {
+                params: {
+                    ...filter,
+                },
+            });
+        }
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    response.data.results.count = response.data.count;
+    return response.data.results;
+}
+
+async function createQualityRequirement(
+    requirementData: SerializedQualityRequirementData,
+): Promise<SerializedQualityRequirementData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/quality/settings/requirements`, requirementData, {
+            params,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateQualityRequirement(
+    requirementID: number,
+    requirementData: SerializedQualityRequirementData,
+): Promise<SerializedQualityRequirementData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(
+            `${backendAPI}/quality/settings/requirements/${requirementID}`,
+            requirementData,
+            { params },
+        );
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function deleteQualityRequirement(requirementID: number): Promise<void> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/quality/settings/requirements/${requirementID}`, { params });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function getConsensusSettings(
     filter: APIConsensusSettingsFilter,
 ): Promise<SerializedConsensusSettingsData> {
@@ -2730,6 +2810,12 @@ export default Object.freeze({
             settings: Object.freeze({
                 get: getQualitySettings,
                 update: updateQualitySettings,
+            }),
+            requirements: Object.freeze({
+                get: getQualityRequirements,
+                create: createQualityRequirement,
+                update: updateQualityRequirement,
+                delete: deleteQualityRequirement,
             }),
         }),
     }),

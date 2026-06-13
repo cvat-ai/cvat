@@ -34,11 +34,11 @@ const defaultState: PluginsState = {
         },
         qualityControlPage: {
             task: {
-                overviewTab: [],
+                requirementsTab: [],
                 allocationTable: [],
             },
             project: {
-                overviewTab: [],
+                requirementsTab: [],
             },
         },
         analyticsReportPage: {
@@ -46,6 +46,11 @@ const defaultState: PluginsState = {
         },
     },
     components: {
+        qualityControlPage: {
+            tabs: {
+                items: [],
+            },
+        },
         header: {
             userMenu: {
                 items: [],
