@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import Form from 'antd/lib/form';
@@ -13,10 +13,18 @@ import Alert from 'antd/lib/alert';
 import { ExclamationCircleFilled } from '@ant-design/icons/lib/icons';
 import Modal from 'antd/lib/modal';
 import {
-    Project, QualitySettings, QualitySettingsSaveFields, Task,
+    Label, Project, QualitySettings, QualitySettingsSaveFields, Task,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import QualitySettingsForm from './task-quality/quality-settings-form';
+import QualitySettingsForm from './shared/settings/quality-settings-form';
+import {
+    QUALITY_REQUIREMENTS_ENABLED_FIELD,
+    QUALITY_REQUIREMENTS_RAW_FIELD,
+    parseRawRequirements,
+    requirementToRaw,
+    rawToSaveFields,
+    validateRawRequirements,
+} from './shared/requirements/quality-requirements-utils';
 
 export type UpdateSettingsData = Record<number, { settings: QualitySettings, fields: QualitySettingsSaveFields }>;
 
@@ -27,7 +35,9 @@ interface Props {
         settings: QualitySettings | null;
         childrenSettings: QualitySettings[] | null;
     };
+    labels: Label[];
     setQualitySettings: (updatedSettingsData: UpdateSettingsData) => void;
+    refreshQualitySettings: () => Promise<void>;
 }
 
 function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
@@ -35,34 +45,72 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         instance,
         fetching,
         qualitySettings: { settings, childrenSettings },
+        labels,
         setQualitySettings,
+        refreshQualitySettings,
     } = props;
 
     const [form] = Form.useForm();
+    const [requirementFormVisible, setRequirementFormVisible] = useState(false);
 
     const onSave = useCallback(async () => {
         if (settings) {
             const values = await form.validateFields();
             const fields: QualitySettingsSaveFields = {
-                targetMetric: values.targetMetric,
-                targetMetricThreshold: values.targetMetricThreshold / 100,
-                maxValidationsPerJob: values.maxValidationsPerJob,
-                lowOverlapThreshold: values.lowOverlapThreshold / 100,
-                iouThreshold: values.iouThreshold / 100,
-                compareAttributes: values.compareAttributes,
-                emptyIsAnnotated: values.emptyIsAnnotated,
-                oksSigma: values.oksSigma / 100,
-                pointSizeBase: values.pointSizeBase,
-                lineThickness: values.lineThickness / 100,
-                lineOrientationThreshold: values.lineOrientationThreshold / 100,
-                compareLineOrientation: values.compareLineOrientation,
-                compareGroups: values.compareGroups,
-                groupMatchThreshold: values.groupMatchThreshold / 100,
-                checkCoveredAnnotations: values.checkCoveredAnnotations,
-                objectVisibilityThreshold: values.objectVisibilityThreshold / 100,
-                panopticComparison: values.panopticComparison,
+                targetMetric: values.targetMetric ?? settings.targetMetric,
+                targetMetricThreshold: (values.targetMetricThreshold ?? settings.targetMetricThreshold * 100) / 100,
+                maxValidationsPerJob: values.maxValidationsPerJob ?? settings.maxValidationsPerJob,
+                iouThreshold: (values.iouThreshold ?? settings.iouThreshold * 100) / 100,
+                compareAttributes: values.compareAttributes ?? settings.compareAttributes,
+                emptyIsAnnotated: values.emptyIsAnnotated ?? settings.emptyIsAnnotated,
+                oksSigma: (values.oksSigma ?? settings.oksSigma * 100) / 100,
+                pointSizeBase: values.pointSizeBase ?? settings.pointSizeBase,
+                lineThickness: (values.lineThickness ?? settings.lineThickness * 100) / 100,
+                lineOrientationThreshold: (
+                    values.lineOrientationThreshold ?? settings.lineOrientationThreshold * 100
+                ) / 100,
+                compareLineOrientation: values.compareLineOrientation ?? settings.compareLineOrientation,
+                compareGroups: values.compareGroups ?? settings.compareGroups,
+                groupMatchThreshold: (values.groupMatchThreshold ?? settings.groupMatchThreshold * 100) / 100,
+                checkCoveredAnnotations: values.checkCoveredAnnotations ?? settings.checkCoveredAnnotations,
+                objectVisibilityThreshold: (
+                    values.objectVisibilityThreshold ?? settings.objectVisibilityThreshold * 100
+                ) / 100,
+                panopticComparison: values.panopticComparison ?? settings.panopticComparison,
                 jobFilter: values.jobFilter ?? '',
             };
+
+            const enabledValues = form.getFieldValue(QUALITY_REQUIREMENTS_ENABLED_FIELD) as
+                Record<string, boolean> | undefined;
+            const hasEnabledChanges = !!enabledValues && settings.requirements.some((requirement) => (
+                typeof requirement.id === 'number' &&
+                typeof enabledValues[requirement.id] === 'boolean' &&
+                enabledValues[requirement.id] !== requirement.enabled
+            ));
+            const parsedRequirements = typeof values[QUALITY_REQUIREMENTS_RAW_FIELD] === 'string' ?
+                parseRawRequirements(values[QUALITY_REQUIREMENTS_RAW_FIELD]) :
+                settings.requirements.map(requirementToRaw);
+
+            if (typeof values[QUALITY_REQUIREMENTS_RAW_FIELD] === 'string' || hasEnabledChanges) {
+                const nextRequirements = parsedRequirements.map((requirement) => {
+                    if (
+                        typeof requirement.id === 'number' &&
+                        enabledValues &&
+                        typeof enabledValues[requirement.id] === 'boolean'
+                    ) {
+                        return { ...requirement, enabled: enabledValues[requirement.id] };
+                    }
+
+                    return requirement;
+                });
+
+                validateRawRequirements(settings.requirements, nextRequirements);
+                fields.requirements = nextRequirements.map((requirement) => ({
+                    id: requirement.id,
+                    ...rawToSaveFields(requirement),
+                })) as QualitySettingsSaveFields['requirements'];
+            }
+
             setQualitySettings({ [settings.id]: { settings, fields } });
         }
     }, [form, settings, setQualitySettings]);
@@ -141,18 +189,23 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     if (settings) {
         return (
             <div className='cvat-quality-control-settings-tab'>
-                <Row justify='end' className='cvat-quality-settings-save-btn'>
-                    <Col>
-                        <Button onClick={onSave} type='primary'>
-                            Save
-                        </Button>
-                    </Col>
-                </Row>
-                {header}
+                {!requirementFormVisible && (
+                    <Row justify='end' className='cvat-quality-settings-save-btn'>
+                        <Col>
+                            <Button onClick={onSave} type='primary'>
+                                Save
+                            </Button>
+                        </Col>
+                    </Row>
+                )}
+                {!requirementFormVisible && header}
                 <QualitySettingsForm
                     form={form}
                     settings={settings}
+                    labels={labels}
                     onSave={onSave}
+                    onReload={refreshQualitySettings}
+                    onRequirementFormVisibilityChange={setRequirementFormVisible}
                     disabled={settings.inherit && instance instanceof Task && instance.projectId !== null}
                 />
             </div>

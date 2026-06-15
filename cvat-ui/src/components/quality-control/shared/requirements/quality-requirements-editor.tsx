@@ -1,0 +1,77 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import React from 'react';
+import { BuildOutlined, EditOutlined } from '@ant-design/icons';
+import { FormInstance } from 'antd/lib/form';
+import Tabs from 'antd/lib/tabs';
+import Text from 'antd/lib/typography/Text';
+import { QualityRequirement, QualitySettings } from 'cvat-core-wrapper';
+import QualityRequirementsConstructor from './quality-requirements-constructor';
+import QualityRequirementsRaw from './quality-requirements-raw';
+
+interface Props {
+    form: FormInstance;
+    settings: QualitySettings;
+    disabled: boolean;
+    onReload: () => Promise<void>;
+    onCreateRequirement: (parentRequirement: QualityRequirement) => void;
+    onEditRequirement: (requirement: QualityRequirement) => void;
+    onCopyRequirement: (requirement: QualityRequirement) => void;
+}
+
+export default function QualityRequirementsEditor(props: Readonly<Props>): JSX.Element {
+    const {
+        form,
+        settings,
+        disabled,
+        onReload,
+        onCreateRequirement,
+        onEditRequirement,
+        onCopyRequirement,
+    } = props;
+
+    return (
+        <Tabs
+            className='cvat-quality-requirements-editor'
+            defaultActiveKey='constructor'
+            type='card'
+            items={[{
+                key: 'raw',
+                label: (
+                    <span>
+                        <EditOutlined />
+                        <Text>Raw</Text>
+                    </span>
+                ),
+                children: (
+                    <QualityRequirementsRaw
+                        form={form}
+                        settings={settings}
+                        disabled={disabled}
+                    />
+                ),
+            }, {
+                key: 'constructor',
+                label: (
+                    <span>
+                        <BuildOutlined />
+                        <Text>Constructor</Text>
+                    </span>
+                ),
+                children: (
+                    <QualityRequirementsConstructor
+                        form={form}
+                        settings={settings}
+                        disabled={disabled}
+                        onReload={onReload}
+                        onCreateRequirement={onCreateRequirement}
+                        onEditRequirement={onEditRequirement}
+                        onCopyRequirement={onCopyRequirement}
+                    />
+                ),
+            }]}
+        />
+    );
+}

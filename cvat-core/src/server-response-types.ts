@@ -4,7 +4,7 @@
 
 import {
     ChunkType,
-    DimensionType, JobStage, JobState, JobType, ProjectStatus,
+    DimensionType, JobStage, JobState, JobType, MediaType, ProjectStatus,
     ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
@@ -110,7 +110,8 @@ export interface SerializedTask {
     data_compressed_chunk_type: ChunkType
     data_original_chunk_type: ChunkType;
     data_cloud_storage_id: number | null;
-    dimension: DimensionType;
+    dimension?: DimensionType;
+    media_type?: MediaType;
     id: number;
     image_quality: number;
     jobs: {
@@ -120,7 +121,7 @@ export interface SerializedTask {
         validation: number;
     };
     labels: { count: number; url: string; };
-    mode: TaskMode | '';
+    mode?: TaskMode;
     name: string;
     organization_id: number | null;
     overlap: number | null;
@@ -145,6 +146,7 @@ export interface SerializedJob {
     data_chunk_size: number | null;
     data_compressed_chunk_type: ChunkType
     dimension: DimensionType;
+    media_type: MediaType;
     id: number;
     issues: { count: number; url: string };
     labels: { count: number; url: string };
@@ -265,6 +267,159 @@ export interface APIQualitySettingsFilter extends APICommonFilterParams {
 
 export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
 
+export type QualityRequirementAnnotationType =
+    'tag' |
+    'rectangle' |
+    'skeleton' |
+    'skeleton_keypoint' |
+    'points' |
+    'polyline' |
+    'mask' |
+    'polygon' |
+    'ellipse';
+
+export type QualityRequirementMetric = 'accuracy' | 'precision' | 'recall';
+
+export type QualityRequirementPointSizeBase = 'image_size' | 'group_bbox_size';
+
+export type QualityRequirementAttributeComparator = 'exact' | 'levenshtein';
+
+export type QualityRequirementJsonLogicFilter = string;
+
+export interface SerializedQualityRequirementAttributeRule {
+    spec_id: number;
+    enabled?: boolean | null;
+    comparator?: QualityRequirementAttributeComparator | null;
+    threshold?: number | null;
+}
+
+export interface SerializedQualityRequirementAttributeComparison {
+    enabled?: boolean | null;
+    default?: {
+        enabled?: boolean | null;
+        comparator?: QualityRequirementAttributeComparator | null;
+        threshold?: number | null;
+    } | null;
+    rules?: SerializedQualityRequirementAttributeRule[];
+}
+
+export interface SerializedEffectiveQualityRequirementData {
+    name?: string;
+    filter?: QualityRequirementJsonLogicFilter;
+    enabled?: boolean;
+    annotation_type?: QualityRequirementAnnotationType;
+    metric?: QualityRequirementMetric;
+    required_score?: number;
+    iou_threshold?: number;
+    point_size?: number;
+    point_size_base?: QualityRequirementPointSizeBase;
+    line_thickness?: number;
+    match_orientation?: boolean;
+    line_orientation_threshold?: number;
+    match_groups?: boolean;
+    group_match_threshold?: number;
+    check_covered_annotations?: boolean;
+    object_visibility_threshold?: number;
+    panoptic_comparison?: boolean;
+    attribute_comparison?: SerializedQualityRequirementAttributeComparison | null;
+    empty_is_annotated?: boolean;
+}
+
+export interface SerializedQualityRequirementFilters {
+    inherited?: QualityRequirementJsonLogicFilter | null;
+    current?: QualityRequirementJsonLogicFilter | null;
+    effective?: QualityRequirementJsonLogicFilter | null;
+}
+
+export interface SerializedQualityRequirementData {
+    id?: number;
+    settings_id?: number;
+    task_id?: number | null;
+    project_id?: number | null;
+    name?: string;
+    is_default?: boolean;
+    sort_order?: number;
+    filter?: QualityRequirementJsonLogicFilter;
+    enabled?: boolean;
+    annotation_type?: QualityRequirementAnnotationType | null;
+    metric?: QualityRequirementMetric | null;
+    required_score?: number | null;
+    parent_requirement?: number | null;
+    effective?: SerializedEffectiveQualityRequirementData;
+    iou_threshold?: number | null;
+    point_size?: number | null;
+    point_size_base?: QualityRequirementPointSizeBase | null;
+    line_thickness?: number | null;
+    match_orientation?: boolean | null;
+    line_orientation_threshold?: number | null;
+    match_groups?: boolean | null;
+    group_match_threshold?: number | null;
+    check_covered_annotations?: boolean | null;
+    object_visibility_threshold?: number | null;
+    panoptic_comparison?: boolean | null;
+    attribute_comparison?: SerializedQualityRequirementAttributeComparison | null;
+    empty_is_annotated?: boolean | null;
+    created_date?: string;
+    updated_date?: string;
+}
+
+export interface SerializedInheritedQualityRequirementData {
+    requirement: SerializedQualityRequirementData;
+    parent_requirement?: SerializedQualityRequirementData | null;
+    filters?: SerializedQualityRequirementFilters;
+    effective?: SerializedEffectiveQualityRequirementData;
+}
+
+export interface APIQualityRequirementsFilter extends APICommonFilterParams {
+    id?: number;
+    settings_id?: number;
+    task_id?: number;
+    project_id?: number;
+    annotation_type?: QualityRequirementAnnotationType;
+    enabled?: boolean;
+    created_date?: string;
+    updated_date?: string;
+}
+
+export type QualityRequirementsFilter = CamelizedV2<APIQualityRequirementsFilter>;
+
+export interface SerializedQualityRequirementReportSummaryItem {
+    requirement_id: number | null;
+    name: string;
+    metric: QualityRequirementMetric;
+    score: number | null;
+    threshold: number;
+}
+
+export interface SerializedQualityRequirementsReportSummary {
+    total: number;
+    enabled: number;
+    completed: number;
+    items: SerializedQualityRequirementReportSummaryItem[];
+}
+
+export type SerializedQualityRequirementScore = SerializedQualityRequirementReportSummaryItem;
+
+export interface SerializedQualityRequirementScores {
+    total: number;
+    completed: number;
+    items: SerializedQualityRequirementScore[];
+}
+
+export interface SerializedQualityConfusionMatrixCell {
+    actual: string;
+    expected: string;
+    count: number;
+}
+
+export interface SerializedQualityConfusionMatrixData {
+    requirement: string;
+    labels: string[];
+    cells: SerializedQualityConfusionMatrixCell[];
+    precision?: Record<string, number | null>;
+    recall?: Record<string, number | null>;
+}
+
 export interface APIConsensusSettingsFilter extends APICommonFilterParams {
     task_id?: number;
 }
@@ -274,6 +429,7 @@ export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 export interface SerializedQualitySettingsData {
     id?: number;
     task_id?: number;
+    project_id?: number;
     target_metric?: string;
     target_metric_threshold?: number;
     max_validations_per_job?: number;
@@ -281,7 +437,6 @@ export interface SerializedQualitySettingsData {
     oks_sigma?: number;
     point_size_base?: string;
     line_thickness?: number;
-    low_overlap_threshold?: number;
     compare_line_orientation?: boolean;
     line_orientation_threshold?: number;
     compare_groups?: boolean;
@@ -292,8 +447,10 @@ export interface SerializedQualitySettingsData {
     compare_attributes?: boolean;
     empty_is_annotated?: boolean;
     descriptions?: Record<string, string>;
+    requirement_descriptions?: Record<string, string>;
     inherit?: boolean;
     job_filter?: string;
+    requirements?: SerializedQualityRequirementData[];
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {
@@ -312,7 +469,7 @@ export interface SerializedAnnotationConflictData {
 
 export interface SerializedQualityConflictData {
     id?: number;
-    frame?: number;
+    frame?: number | null;
     type?: string;
     annotation_ids?: SerializedAnnotationConflictData[];
     data?: string;
@@ -323,6 +480,7 @@ export interface SerializedQualityConflictData {
 export interface APIQualityReportsFilter extends APICommonFilterParams {
     parent_id?: number;
     peoject_id?: number;
+    project_id?: number;
     task_id?: number;
     job_id?: number;
     target?: string;
@@ -332,6 +490,7 @@ export type QualityReportsFilter = Camelized<APIQualityReportsFilter>;
 export interface SerializedQualityReportData {
     id?: number;
     parent_id?: number;
+    project_id?: number;
     task_id?: number;
     job_id?: number;
     target: string;
@@ -356,7 +515,6 @@ export interface SerializedQualityReportData {
             extra_annotation: number;
             missing_annotation: number;
             mismatching_label: number;
-            low_overlap: number;
             mismatching_direction: number;
             mismatching_attributes: number;
             mismatching_groups: number;
@@ -375,6 +533,7 @@ export interface SerializedQualityReportData {
             not_checkable: number;
             included: number;
         }
+        requirements?: SerializedQualityRequirementsReportSummary;
     };
 }
 
@@ -419,6 +578,8 @@ export interface SerializedApiToken {
     value?: string;
 }
 
+export type SerializedAttributes = { spec_id: number; value: string }[];
+
 export interface SerializedShape {
     id?: number;
     clientID?: number;
@@ -427,7 +588,7 @@ export interface SerializedShape {
     frame: number;
     source: Source;
     score?: number;
-    attributes: { spec_id: number; value: string }[];
+    attributes: SerializedAttributes;
     elements: Omit<SerializedShape, 'elements'>[];
     occluded: boolean;
     outside: boolean;
@@ -444,7 +605,7 @@ export interface SerializedTrack {
     group: number;
     frame: number;
     source: Source;
-    attributes: { spec_id: number; value: string }[];
+    attributes: SerializedAttributes;
     shapes: {
         attributes: SerializedTrack['attributes'];
         id?: number;
@@ -466,14 +627,26 @@ export interface SerializedTag {
     frame: number;
     group: number;
     source: Source;
-    attributes: { spec_id: number; value: string }[];
+    attributes: SerializedAttributes;
+}
+
+export interface SerializedInterval {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    start: number;
+    stop: number | null;
+    group: number;
+    source: Source;
+    score?: number;
+    attributes: SerializedAttributes;
 }
 
 export interface SerializedCollection {
     tags: SerializedTag[];
     shapes: SerializedShape[];
     tracks: SerializedTrack[];
-    version: number;
+    intervals: SerializedInterval[];
 }
 
 export interface SerializedCloudStorage {
@@ -516,8 +689,8 @@ export interface SerializedFramesMetaData {
     frame_filter: string;
     chunks_updated_date: string;
     frames: {
-        width: number;
-        height: number;
+        width?: number;
+        height?: number;
         name: string;
         related_files: number;
     }[];

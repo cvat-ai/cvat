@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
 import { SerializedQualitySettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
-import { fieldsToSnakeCase } from './common';
+import { fieldsToCamelCase, fieldsToSnakeCase } from './common';
 import { Camelized } from './type-utils';
+import QualityRequirement from './quality-requirement';
 
 export enum TargetMetric {
     ACCURACY = 'accuracy',
@@ -22,8 +22,19 @@ export enum PointSizeBase {
 }
 
 export type QualitySettingsSaveFields = Partial<Camelized<
-    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions'>
+    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'project_id' | 'descriptions' | 'requirement_descriptions'>
 >>;
+
+export async function getQualitySettingsSchemaDescriptions(): Promise<{
+    descriptions: Record<string, string>;
+    requirementDescriptions: Record<string, string>;
+}> {
+    const schema = await getServerAPISchema();
+    return {
+        descriptions: convertDescriptions(schema.components.schemas.QualitySettings.properties),
+        requirementDescriptions: convertDescriptions(schema.components.schemas.QualityRequirement.properties),
+    };
+}
 
 export default class QualitySettings {
     #id: number;
@@ -31,11 +42,11 @@ export default class QualitySettings {
     #targetMetricThreshold: number;
     #maxValidationsPerJob: number;
     #taskId: number;
+    #projectId: number;
     #iouThreshold: number;
     #oksSigma: number;
     #pointSizeBase: PointSizeBase;
     #lineThickness: number;
-    #lowOverlapThreshold: number;
     #compareLineOrientation: boolean;
     #lineOrientationThreshold: number;
     #compareGroups: boolean;
@@ -47,11 +58,14 @@ export default class QualitySettings {
     #emptyIsAnnotated: boolean;
     #jobFilter: string;
     #inherit: boolean;
+    #requirements: QualityRequirement[];
     #descriptions: Record<string, string>;
+    #requirementDescriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
         this.#taskId = initialData.task_id;
+        this.#projectId = initialData.project_id;
         this.#targetMetric = initialData.target_metric as TargetMetric;
         this.#targetMetricThreshold = initialData.target_metric_threshold;
         this.#maxValidationsPerJob = initialData.max_validations_per_job;
@@ -59,7 +73,6 @@ export default class QualitySettings {
         this.#oksSigma = initialData.oks_sigma;
         this.#pointSizeBase = initialData.point_size_base as PointSizeBase;
         this.#lineThickness = initialData.line_thickness;
-        this.#lowOverlapThreshold = initialData.low_overlap_threshold;
         this.#compareLineOrientation = initialData.compare_line_orientation;
         this.#lineOrientationThreshold = initialData.line_orientation_threshold;
         this.#compareGroups = initialData.compare_groups;
@@ -71,7 +84,11 @@ export default class QualitySettings {
         this.#emptyIsAnnotated = initialData.empty_is_annotated;
         this.#jobFilter = initialData.job_filter || '';
         this.#inherit = initialData.inherit;
-        this.#descriptions = initialData.descriptions;
+        this.#requirements = (initialData.requirements || []).map((requirement) => (
+            new QualityRequirement(requirement)
+        ));
+        this.#descriptions = initialData.descriptions || {};
+        this.#requirementDescriptions = initialData.requirement_descriptions || {};
     }
 
     get id(): number {
@@ -80,6 +97,10 @@ export default class QualitySettings {
 
     get taskId(): number {
         return this.#taskId;
+    }
+
+    get projectId(): number {
+        return this.#projectId;
     }
 
     get iouThreshold(): number {
@@ -96,10 +117,6 @@ export default class QualitySettings {
 
     get lineThickness(): number {
         return this.#lineThickness;
-    }
-
-    get lowOverlapThreshold(): number {
-        return this.#lowOverlapThreshold;
     }
 
     get compareLineOrientation(): boolean {
@@ -158,14 +175,16 @@ export default class QualitySettings {
         return this.#inherit;
     }
 
-    get descriptions(): Record<string, string> {
-        const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
-            const camelCaseKey = _.camelCase(key);
-            acc[camelCaseKey] = this.#descriptions[key];
-            return acc;
-        }, {});
+    get requirements(): QualityRequirement[] {
+        return this.#requirements;
+    }
 
-        return descriptions;
+    get descriptions(): Record<string, string> {
+        return fieldsToCamelCase(this.#descriptions);
+    }
+
+    get requirementDescriptions(): Record<string, string> {
+        return fieldsToCamelCase(this.#requirementDescriptions);
     }
 
     public async save(fields: QualitySettingsSaveFields = {}): Promise<QualitySettings> {
@@ -186,9 +205,12 @@ Object.defineProperties(QualitySettings.prototype.save, {
             const result = await serverProxy.analytics.quality.settings.update(
                 this.id, data,
             );
-            const schema = await getServerAPISchema();
-            const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
-            return new QualitySettings({ ...result, descriptions });
+            const { descriptions, requirementDescriptions } = await getQualitySettingsSchemaDescriptions();
+            return new QualitySettings({
+                ...result,
+                descriptions,
+                requirement_descriptions: requirementDescriptions,
+            });
         },
     },
 });

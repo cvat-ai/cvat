@@ -174,9 +174,12 @@ REST_FRAMEWORK = {
     "URL_FORMAT_OVERRIDE": "scheme",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/minute",
+        # dj-rest-auth views define this scope. Keep them unthrottled by default.
+        "dj_rest_auth": None,
     },
     "NUM_PROXIES": parse_num_proxies(os.getenv("CVAT_NUM_PROXIES", "0")),
     "DEFAULT_METADATA_CLASS": "rest_framework.metadata.SimpleMetadata",
@@ -336,7 +339,7 @@ RQ_QUEUES = {
     },
     CVAT_QUEUES.WEBHOOKS.value: {
         **REDIS_INMEM_SETTINGS,
-        "DEFAULT_TIMEOUT": "1h",
+        "DEFAULT_TIMEOUT": "25s",
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
         **REDIS_INMEM_SETTINGS,

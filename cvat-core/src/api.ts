@@ -27,6 +27,7 @@ import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
+import QualityRequirement from './quality-requirement';
 import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
@@ -339,6 +340,12 @@ function build(): CVATCore {
             set jobMetaDataReloadPeriod(value) {
                 config.jobMetaDataReloadPeriod = value;
             },
+            get previewPlaceholders() {
+                return config.previewPlaceholders;
+            },
+            set previewPlaceholders(value: Record<string, string>) {
+                config.previewPlaceholders = value;
+            },
         },
         enums,
         exceptions: {
@@ -426,6 +433,23 @@ function build(): CVATCore {
                         return result;
                     },
                 },
+                requirements: {
+                    async get(filter = {}, aggregate = false) {
+                        const result = await PluginRegistry.apiWrapper(
+                            cvat.analytics.quality.requirements.get,
+                            filter,
+                            aggregate,
+                        );
+                        return result;
+                    },
+                    async create(data = {}) {
+                        const result = await PluginRegistry.apiWrapper(
+                            cvat.analytics.quality.requirements.create,
+                            data,
+                        );
+                        return result;
+                    },
+                },
             },
         },
         requests: {
@@ -469,6 +493,7 @@ function build(): CVATCore {
             BaseShapesAction,
             BaseCollectionAction,
             QualitySettings,
+            QualityRequirement,
             QualityConflict,
             QualityReport,
             ApiToken,

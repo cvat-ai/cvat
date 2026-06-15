@@ -393,6 +393,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobId) => {
             shapes: objects.filter((object) => object.objectType === 'shape').map(convertShape(job)),
             tracks: objects.filter((object) => object.objectType === 'track').map(convertTrack(job)),
             tags: objects.filter((object) => object.objectType === 'tag').map(convertTag(job)),
+            intervals: [],
         }, $win);
 
         await job.annotations.import(data);
@@ -1828,7 +1829,6 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
 });
 
 Cypress.Commands.add('hideTooltips', () => {
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500); // FIXME: wait while tooltips are opened
 
     cy.document().then((doc) => {

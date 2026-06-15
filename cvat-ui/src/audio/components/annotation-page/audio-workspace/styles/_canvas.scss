@@ -1,0 +1,105 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-audio-canvas-wrapper {
+    flex: 1 1 0%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden auto;
+    background-color: #fff;
+    padding: 8px;
+}
+
+.cvat-audio-file-upload {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.cvat-audio-file-upload-button {
+    padding: 10px 20px;
+    background-color: #4f46e5;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+
+    &:hover {
+        background-color: #4338ca;
+    }
+}
+
+.cvat-audio-file-reset-button {
+    padding: 10px 20px;
+    background-color: #ef4444;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+
+    &:hover {
+        background-color: #dc2626;
+    }
+}
+
+.cvat-audio-waveform-wrapper {
+    background-color: white;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 10%);
+    overflow: hidden;
+    min-width: 0;
+    width: 100%;
+
+    > div:first-child {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        overflow: hidden;
+
+        *::part(wrapper) {
+            overflow: hidden;
+        }
+    }
+
+    .cvat-audio-minimap-section {
+        background-color: #f3f4f6;
+        border-top: 1px solid #e5e7eb;
+        padding: 0;
+
+        #minimap {
+            min-height: 50px;
+            width: 100%;
+        }
+    }
+}
+
+.cvat-audio-timeline-wrapper {
+    border-top: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.cvat-audio-placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 10%);
+}
+
+.cvat-audio-placeholder-text {
+    font-size: 1.1rem;
+    color: #6b7280;
+    margin: 0 0 10px;
+}
+
+.cvat-audio-placeholder-subtext {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin: 0;
+}
