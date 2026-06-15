@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
 import os.path as osp
 import zipfile
 from logging import Logger
@@ -209,6 +210,33 @@ class TestTaskUsecases(TestDatasetExport):
 
         assert any(t.id == task_id for t in tasks)
         assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_simple_filter(self, fxt_new_task: Task):
+        task_name = f"test_task_filter_{fxt_new_task.id}"
+        fxt_new_task.update(models.PatchedTaskWriteRequest(name=task_name))
+
+        tasks = self.client.tasks.list(name=task_name)
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_json_logic_filter(self, fxt_new_task: Task):
+        tasks = self.client.tasks.list(filter={"==": [{"var": "id"}, fxt_new_task.id]})
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_json_logic_filter_string(self, fxt_new_task: Task):
+        filter_value = json.dumps({"==": [{"var": "id"}, fxt_new_task.id]})
+
+        tasks = self.client.tasks.list(filter=filter_value)
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_list_tasks_rejects_unknown_filter_parameter(self):
+        with pytest.raises(exceptions.ApiTypeError):
+            self.client.tasks.list(unknown_filter=True)
 
     def test_can_update_task(self, fxt_new_task: Task):
         fxt_new_task.update(models.PatchedTaskWriteRequest(name="foo"))

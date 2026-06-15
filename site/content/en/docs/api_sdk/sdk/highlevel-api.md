@@ -266,6 +266,14 @@ tasks = client.tasks.list()
 ```
 
 After calling these functions, we obtain local objects representing their server counterparts.
+The `list()` method accepts the same filtering, search, and ordering query parameters supported
+by the corresponding server endpoint:
+
+```python
+completed_project_tasks = client.tasks.list(project_id=123, status="completed")
+demo_projects = client.projects.list(search="demo", sort="-updated_date")
+jobs = client.jobs.list(filter={"in": [{"var": "project_id"}, [1, 2, 3]]})
+```
 
 Object fields can be updated with the `update()` method. Note that the set of fields that can be
 modified can be different from what is available for reading.

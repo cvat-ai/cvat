@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
@@ -110,6 +110,7 @@ def build_model_bases(
 ### CRUD mixins
 
 _EntityT = TypeVar("_EntityT", bound=Entity)
+JsonLogicFilter = Mapping[str, Any]
 
 #### Repo mixins
 
@@ -136,17 +137,40 @@ class ModelRetrieveMixin(Generic[_EntityT]):
 
 class ModelListMixin(Generic[_EntityT]):
     @overload
-    def list(self: Repo, *, return_json: Literal[False] = False) -> list[_EntityT]: ...
+    def list(
+        self: Repo,
+        *,
+        return_json: Literal[False] = False,
+        filter: str | JsonLogicFilter | None = None,
+        **kwargs: Any,
+    ) -> list[_EntityT]: ...
 
     @overload
-    def list(self: Repo, *, return_json: Literal[True] = False) -> list[Any]: ...
+    def list(
+        self: Repo,
+        *,
+        return_json: Literal[True] = False,
+        filter: str | JsonLogicFilter | None = None,
+        **kwargs: Any,
+    ) -> list[Any]: ...
 
-    def list(self: Repo, *, return_json: bool = False) -> list[_EntityT | Any]:
+    def list(
+        self: Repo,
+        *,
+        return_json: bool = False,
+        filter: str | JsonLogicFilter | None = None,
+        **kwargs: Any,
+    ) -> list[_EntityT | Any]:
         """
-        Retrieves all objects from the server and returns them in basic or JSON format.
+        Retrieves objects from the server and returns them in basic or JSON format.
         """
 
-        results = get_paginated_collection(endpoint=self.api.list_endpoint, return_json=return_json)
+        if filter is not None:
+            kwargs["filter"] = json.dumps(filter) if isinstance(filter, Mapping) else filter
+
+        results = get_paginated_collection(
+            endpoint=self.api.list_endpoint, return_json=return_json, **kwargs
+        )
 
         if return_json:
             return json.dumps(results)
