@@ -1153,24 +1153,24 @@ class TaskAnnotationsImportTest(_DbTestBase):
                 use_zip=use_zip,
                 has_segmentation=has_segmentation,
             ):
-                    images = self._generate_task_images(1)
-                    task = self._generate_task(images, format_name)
-                    annotation_data = self._make_coco_annotation_without_iscrowd(
-                        format_name, has_segmentation
-                    )
+                images = self._generate_task_images(1)
+                task = self._generate_task(images, format_name)
+                annotation_data = self._make_coco_annotation_without_iscrowd(
+                    format_name, has_segmentation
+                )
 
-                    with tempfile.TemporaryDirectory() as temp_dir:
-                        if use_zip:
-                            file_path = osp.join(temp_dir, "annotations.zip")
-                            with zipfile.ZipFile(file_path, "w") as zf:
-                                zf.writestr(zip_annotation_filename, json.dumps(annotation_data))
-                        else:
-                            file_path = osp.join(temp_dir, "annotations.json")
-                            with open(file_path, "w") as f:
-                                json.dump(annotation_data, f)
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    if use_zip:
+                        file_path = osp.join(temp_dir, "annotations.zip")
+                        with zipfile.ZipFile(file_path, "w") as zf:
+                            zf.writestr(zip_annotation_filename, json.dumps(annotation_data))
+                    else:
+                        file_path = osp.join(temp_dir, "annotations.json")
+                        with open(file_path, "w") as f:
+                            json.dump(annotation_data, f)
 
-                        dm.task.import_task_annotations(file_path, task["id"], format_name, True)
+                    dm.task.import_task_annotations(file_path, task["id"], format_name, True)
 
-                        task_ann = TaskAnnotation(task["id"])
-                        task_ann.init_from_db()
-                        self.assertEqual(1, len(task_ann.ir_data.shapes))
+                    task_ann = TaskAnnotation(task["id"])
+                    task_ann.init_from_db()
+                    self.assertEqual(1, len(task_ann.ir_data.shapes))
