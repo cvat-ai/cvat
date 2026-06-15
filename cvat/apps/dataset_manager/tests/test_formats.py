@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import itertools
 import json
 import os.path as osp
 import tempfile
@@ -1140,19 +1141,18 @@ class TaskAnnotationsImportTest(_DbTestBase):
         }
 
     def test_can_import_coco_without_iscrowd(self) -> None:
-        cases: list[tuple[bool, str, str | None]] = [
-            (True, "COCO 1.0", "annotations/instances_default.json"),
-            (False, "COCO 1.0", None),
-            (True, "COCO Keypoints 1.0", "annotations/person_keypoints_default.json"),
-            (False, "COCO Keypoints 1.0", None),
+        format_cases = [
+            ("COCO 1.0", "annotations/instances_default.json"),
+            ("COCO Keypoints 1.0", "annotations/person_keypoints_default.json"),
         ]
-        for use_zip, format_name, zip_annotation_filename in cases:
-            for has_segmentation in (True, False):
-                with self.subTest(
-                    use_zip=use_zip,
-                    format_name=format_name,
-                    has_segmentation=has_segmentation,
-                ):
+        for (format_name, zip_annotation_filename), use_zip, has_segmentation in itertools.product(
+            format_cases, (True, False), (True, False)
+        ):
+            with self.subTest(
+                format_name=format_name,
+                use_zip=use_zip,
+                has_segmentation=has_segmentation,
+            ):
                     images = self._generate_task_images(1)
                     task = self._generate_task(images, format_name)
                     annotation_data = self._make_coco_annotation_without_iscrowd(
