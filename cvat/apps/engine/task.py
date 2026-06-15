@@ -1420,23 +1420,35 @@ def _collect_image_dataset_descriptors(
         manifest.init_index()
 
     images: list[models.Image] = []
+
+    # Build a filename-keyed lookup so manifest order need not match extractor order (#10104)
+    manifest_by_name: dict[str, Any] = {}
+    if manifest:
+        for _i in range(len(manifest)):
+            _entry = manifest[_i]
+            _full_name = f"{_entry['name']}{_entry['extension']}"
+            manifest_by_name[_full_name] = _entry
+
     for frame_id in extractor.frame_range:
         image_path = extractor.get_path(frame_id).relative_to(upload_dir).as_posix()
         image_size = None
 
         if manifest:
-            image_info = manifest[frame_id]
-
-            # check mapping
-            manifest_image_path = f"{image_info['name']}{image_info['extension']}"
-            if image_path != manifest_image_path and not image_path.endswith(
-                "/" + manifest_image_path
-            ):
-                raise ValidationError("Incorrect file mapping to manifest content")
+            # Match by full relative path first, then by bare filename.
+            # This allows the manifest to list files in any order and still validate
+            # correctly, fixing task creation failures when frame order differs.
+            image_info = manifest_by_name.get(image_path) or manifest_by_name.get(
+                image_path.rsplit("/", 1)[-1]
+            )
+            if image_info is None:
+                raise ValidationError(
+                    f"File '{image_path}' was not found in the manifest"
+                )
 
             if image_info.get("width") is not None and image_info.get("height") is not None:
                 image_size = (image_info["width"], image_info["height"])
             elif is_data_in_cloud:
+                manifest_image_path = f"{image_info['name']}{image_info['extension']}"
                 raise ValidationError(
                     "Can't find image '{}' width or height info in the manifest".format(
                         manifest_image_path
