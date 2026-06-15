@@ -33,7 +33,8 @@ def get_paginated_collection(
     """
 
     if org_id is not _UNSET:
-        kwargs["x_organization"] = None
+        if "x_organization" in endpoint.params_map["all"]:
+            kwargs["x_organization"] = None
         if org_id is None:
             kwargs["org"] = ""
         else:

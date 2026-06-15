@@ -234,13 +234,6 @@ with client.organization_context('myorg'):
 # the slug is now reset to its previous value
 ```
 
-Entity methods that retrieve related resources (such as `task.get_jobs()`,
-`task.get_labels()`, `project.get_tasks()`, `project.get_labels()`,
-`job.get_issues()`, `job.get_labels()`, and `issue.get_comments()`)
-automatically apply the correct organization context based on the entity's
-organization. You do not need to set `organization_slug` manually before
-calling these methods.
-
 ## Entities and Repositories
 
 _Entities_ represent objects on the server. They provide read access to object fields
