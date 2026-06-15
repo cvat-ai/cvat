@@ -3,7 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { connect } from 'react-redux';
+import React from 'react';
+import { connect, useSelector } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import {
@@ -15,6 +16,7 @@ import {
     resetAnnotationsGroup,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
+import NCPControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/ncp-controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers';
 import { KeyMap } from 'utils/mousetrap-react';
 
@@ -86,4 +88,19 @@ function dispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-export default connect(mapStateToProps, dispatchToProps)(ControlsSideBarComponent);
+const ConnectedControlsSideBar = connect(mapStateToProps, dispatchToProps)(ControlsSideBarComponent);
+const ConnectedNCPControlsSideBar = connect(mapStateToProps, dispatchToProps)(NCPControlsSideBarComponent);
+
+function ControlsSideBarContainer(): JSX.Element {
+    const showPrivateAttributes = useSelector(
+        (state: CombinedState) => state.settings.workspace.showPrivateAttributes,
+    );
+
+    if (!showPrivateAttributes) {
+        return <ConnectedNCPControlsSideBar />;
+    }
+
+    return <ConnectedControlsSideBar />;
+}
+
+export default ControlsSideBarContainer;
