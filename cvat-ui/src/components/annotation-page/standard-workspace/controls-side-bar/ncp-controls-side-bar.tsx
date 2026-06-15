@@ -46,61 +46,6 @@ interface Props {
 }
 
 const componentShortcuts = {
-    CLOCKWISE_ROTATION_STANDARD_CONTROLS: {
-        name: 'Rotate clockwise',
-        description: 'Change image angle (add 90 degrees)',
-        sequences: ['ctrl+r'],
-        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
-    },
-    ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: {
-        name: 'Rotate anticlockwise',
-        description: 'Change image angle (subtract 90 degrees)',
-        sequences: ['ctrl+shift+r'],
-        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
-    },
-    PASTE_SHAPE: {
-        name: 'Paste shape',
-        description: 'Paste a shape from internal CVAT clipboard',
-        sequences: ['ctrl+v'],
-        scope: ShortcutScope.OBJECTS_SIDEBAR,
-    },
-    SWITCH_DRAW_MODE_STANDARD_CONTROLS: {
-        name: 'Draw mode',
-        description:
-            'Repeat the latest procedure of drawing with the same parameters',
-        sequences: ['n'],
-        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
-    },
-    SWITCH_REDRAW_MODE_STANDARD_CONTROLS: {
-        name: 'Redraw shape',
-        description: 'Remove selected shape and redraw it from scratch',
-        sequences: ['shift+n'],
-        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
-    },
-    SWITCH_GROUP_MODE_STANDARD_CONTROLS: {
-        name: 'Group mode',
-        description: 'Activate or deactivate mode to grouping shapes',
-        sequences: ['g'],
-        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
-    },
-    RESET_GROUP_STANDARD_CONTROLS: {
-        name: 'Reset group',
-        description: 'Reset group for selected shapes (in group mode)',
-        sequences: ['shift+g'],
-        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
-    },
-    SWITCH_MERGE_MODE_STANDARD_CONTROLS: {
-        name: 'Merge mode',
-        description: 'Activate or deactivate mode to merging shapes',
-        sequences: ['m'],
-        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
-    },
-    SWITCH_SPLIT_MODE_STANDARD_CONTROLS: {
-        name: 'Split mode',
-        description: 'Activate or deactivate mode to splitting shapes',
-        sequences: ['alt+m'],
-        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
-    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -206,89 +151,8 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
         return () => {};
     }, []);
 
-    const dynamicMergeIconProps =
-        activeControl === ActiveControl.MERGE ?
-            {
-                className: 'cvat-merge-control cvat-active-canvas-control',
-                onClick: (): void => {
-                    canvasInstance.merge({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
-                },
-            } :
-            {
-                className: 'cvat-merge-control',
-                onClick: (): void => {
-                    canvasInstance.cancel();
-                    canvasInstance.merge({ enabled: true });
-                    updateActiveControl(ActiveControl.MERGE);
-                },
-            };
-
-    const dynamicGroupIconProps =
-        activeControl === ActiveControl.GROUP ?
-            {
-                className: 'cvat-group-control cvat-active-canvas-control',
-                onClick: (): void => {
-                    canvasInstance.group({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
-                },
-            } :
-            {
-                className: 'cvat-group-control',
-                onClick: (): void => {
-                    canvasInstance.cancel();
-                    canvasInstance.group({ enabled: true });
-                    updateActiveControl(ActiveControl.GROUP);
-                },
-            };
-
-    const dynamicTrackIconProps = activeControl === ActiveControl.SPLIT ?
-        {
-            className: 'cvat-split-track-control cvat-active-canvas-control',
-            onClick: (): void => {
-                canvasInstance.split({ enabled: false });
-            },
-        } :
-        {
-            className: 'cvat-split-track-control',
-            onClick: (): void => {
-                canvasInstance.cancel();
-                canvasInstance.split({ enabled: true });
-                updateActiveControl(ActiveControl.SPLIT);
-            },
-        };
 
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
-        CLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
-            event?.preventDefault();
-            rotateFrame(Rotation.CLOCKWISE90);
-        },
-        ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
-            event?.preventDefault();
-            rotateFrame(Rotation.ANTICLOCKWISE90);
-        },
-        SWITCH_GROUP_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
-            event?.preventDefault();
-            dynamicGroupIconProps.onClick();
-        },
-        RESET_GROUP_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
-            event?.preventDefault();
-            const grouping = activeControl === ActiveControl.GROUP;
-            if (!grouping) {
-                return;
-            }
-            resetGroup();
-            canvasInstance.group({ enabled: false });
-            updateActiveControl(ActiveControl.CURSOR);
-        },
-        SWITCH_MERGE_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
-            event?.preventDefault();
-            dynamicMergeIconProps.onClick();
-        },
-        SWITCH_SPLIT_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
-            event?.preventDefault();
-            dynamicTrackIconProps.onClick();
-        },
     };
 
     const handleDrawMode = (event: KeyboardEvent | undefined, action: 'draw' | 'redraw'): void => {
@@ -361,9 +225,6 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
                 <ObservedOpenCVControl />
                 <ObservedRabbitControl />
                 <NCPObservedSetupTagControl disabled={controlsDisabled} />
-
-
-
 
             </Layout.Sider>
         </ContainerHeightContext.Provider>

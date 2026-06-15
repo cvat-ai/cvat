@@ -137,11 +137,24 @@ function getModeGlyph(mode: LabelMode): string {
 // ─── Icon ─────────────────────────────────────────────────────────────────────
 
 const RabbitSVGIcon = (): JSX.Element => (
-    <svg width='1em' height='1em' viewBox='0 0 24 24' fill='currentColor' xmlns='http://www.w3.org/2000/svg'>
-        <ellipse cx='9' cy='5.5' rx='2' ry='4' />
-        <ellipse cx='15' cy='5.5' rx='2' ry='4' />
-        <ellipse cx='12' cy='15' rx='6' ry='6' />
-    </svg>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path
+    d="M9.4 10.2C7.7 6.6 7.1 2.9 8.6 2.2C10 1.5 11.5 5 11.8 8.6C12.9 5 15.1 1.6 16.6 2.4C18.1 3.2 16.7 6.9 14.9 10.2C17.5 11.1 19 13.2 19 15.8C19 19.1 15.9 21.5 12 21.5C8.1 21.5 5 19.1 5 15.8C5 13.2 6.6 11.1 9.4 10.2Z"
+    fill="white"
+    stroke="black"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="9.6" cy="14.6" r="0.9" fill="black"/>
+  <circle cx="14.4" cy="14.6" r="0.9" fill="black"/>
+  <path
+    d="M11.5 17.3C11.8 17.6 12.2 17.6 12.5 17.3"
+    stroke="black"
+    stroke-width="1.3"
+    stroke-linecap="round"
+  />
+</svg>
 );
 
 // ─── Floating confirm panel ───────────────────────────────────────────────────
@@ -323,6 +336,28 @@ function RabbitControl(props: Props): JSX.Element {
         };
     }, [isActive, canvasInstance, selectedLabel, labelMode, requiredPoints,
         frame, curZOrder, dispatch, finishPolygon]);
+
+    // ── Suppress "Draw point prompts" hint while active ──────────────────────
+    //
+    // The canvas fires `canvas.message` with topic='interaction' to show the
+    // "Draw point prompts" / "Draw rectangle prompts" tooltip.  We intercept
+    // it in the CAPTURE phase (runs before the canvas-wrapper's bubble-phase
+    // listener) and call stopImmediatePropagation so the hint is never shown.
+    useEffect(() => {
+        if (!isActive || !canvasInstance) return (): void => {};
+
+        const suppressHint = (e: Event): void => {
+            const { topic } = (e as CustomEvent).detail ?? {};
+            if (topic === 'interaction') {
+                e.stopImmediatePropagation();
+            }
+        };
+
+        canvasInstance.html().addEventListener('canvas.message', suppressHint, { capture: true });
+        return (): void => {
+            canvasInstance.html().removeEventListener('canvas.message', suppressHint, { capture: true });
+        };
+    }, [isActive, canvasInstance]);
 
     // ── Enter key shortcut ───────────────────────────────────────────────────
     useEffect(() => {
