@@ -981,6 +981,13 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     # Extend default permission model
     class Meta:
         default_permissions = ()
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name"],
+                name="unique_task_name",
+                violation_error_message="A task with this name already exists.",
+            )
+        ]
 
     def get_labels(self, prefetch=False):
         project = self.project
