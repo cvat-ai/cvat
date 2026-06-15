@@ -25,19 +25,19 @@ def get_paginated_collection(
     endpoint: Endpoint,
     *,
     return_json: bool = False,
-    organization_id: int | None = _UNSET,
+    org_id: int | None = _UNSET,
     **kwargs,
 ) -> list | list[dict[str, Any]]:
     """
     Accumulates results from all the pages
     """
 
-    if organization_id is not _UNSET:
+    if org_id is not _UNSET:
         kwargs["x_organization"] = None
-        if organization_id is None:
+        if org_id is None:
             kwargs["org"] = ""
         else:
-            kwargs["org_id"] = organization_id
+            kwargs["org_id"] = org_id
 
     results = []
     page = 1

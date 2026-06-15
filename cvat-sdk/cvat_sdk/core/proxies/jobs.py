@@ -132,7 +132,7 @@ class Job(
     def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint,
-            organization_id=self.organization,
+            org_id=self.organization,
             job_id=self.id,
         )
 
@@ -152,7 +152,7 @@ class Job(
             Issue(self._client, m)
             for m in get_paginated_collection(
                 self._client.api_client.issues_api.list_endpoint,
-                organization_id=self.organization,
+                org_id=self.organization,
                 job_id=self.id,
             )
         ]

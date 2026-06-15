@@ -60,7 +60,7 @@ class Issue(
             Comment(self._client, m)
             for m in get_paginated_collection(
                 self._client.api_client.comments_api.list_endpoint,
-                organization_id=self._client.jobs.retrieve(self.job).organization,
+                org_id=self._client.jobs.retrieve(self.job).organization,
                 issue_id=self.id,
             )
         ]

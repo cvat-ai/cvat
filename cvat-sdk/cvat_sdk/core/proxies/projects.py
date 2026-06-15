@@ -80,7 +80,7 @@ class Project(
             Task(self._client, m)
             for m in get_paginated_collection(
                 self._client.api_client.tasks_api.list_endpoint,
-                organization_id=self.organization,
+                org_id=self.organization,
                 project_id=self.id,
             )
         ]
@@ -88,7 +88,7 @@ class Project(
     def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint,
-            organization_id=self.organization,
+            org_id=self.organization,
             project_id=self.id,
         )
 
