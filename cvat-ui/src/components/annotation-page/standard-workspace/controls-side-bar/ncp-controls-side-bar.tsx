@@ -15,7 +15,6 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { LabelType, ObjectType } from 'cvat-core-wrapper';
 
-import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import ControlVisibilityObserver, {
@@ -75,8 +74,6 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
-    const withUnspecifiedType = labels.some((label: any) => label.type === 'any' && !label.hasParent);
-    let tagControlVisible = withUnspecifiedType;
 
 
     // ── First-frame tag check ────────────────────────────────────────────────

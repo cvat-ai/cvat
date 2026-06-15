@@ -5,10 +5,10 @@
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 /** Half-width of the perpendicular buffer around a 2-point line (px, image space). */
-export const LINE_BUFFER_PX = 10;
+export const LINE_BUFFER_PX = 50;
 
 /** Radius of the circular mask created from a single point (px, image space). */
-export const CIRCLE_BUFFER_PX = 10;
+export const CIRCLE_BUFFER_PX = 50;
 
 /** Number of polygon segments used to approximate a circle. */
 const CIRCLE_SEGMENTS = 32;

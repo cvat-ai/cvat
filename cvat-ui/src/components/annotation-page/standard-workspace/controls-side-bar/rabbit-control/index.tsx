@@ -230,6 +230,12 @@ function RabbitControl(props: Props): JSX.Element {
     );
     const [polygonPointsCount, setPolygonPointsCount] = useState(0);
     const latestPointsRef = useRef<[number, number][]>([]);
+    /**
+     * Guards against the canvas firing `canvas.interacted` for every mouse-move
+     * (preview updates).  Once we have decided to finish an interaction we flip
+     * this to `true`; subsequent events are ignored until the next activation.
+     */
+    const interactionDoneRef = useRef(false);
 
     useEffect(() => {
         if (labels.length && selectedLabelID === null) {
@@ -241,6 +247,7 @@ function RabbitControl(props: Props): JSX.Element {
         if (!activeControl || activeControl !== ActiveControl.RABBIT) {
             setPolygonPointsCount(0);
             latestPointsRef.current = [];
+            interactionDoneRef.current = false;
         }
     }, [activeControl]);
 
@@ -258,6 +265,8 @@ function RabbitControl(props: Props): JSX.Element {
 
     // ── Shared finish logic ───────────────────────────────────────────────────
     const finishPolygon = useCallback((): void => {
+        if (interactionDoneRef.current) return; // guard against duplicate calls
+        interactionDoneRef.current = true;
         const points = latestPointsRef.current;
         if (points.length >= 3 && selectedLabel) {
             const maskPoints = buildMaskPoints('polygon', points);
@@ -298,9 +307,11 @@ function RabbitControl(props: Props): JSX.Element {
             const shouldCancelEmpty = finished && !shouldFinish;
 
             if (shouldFinish) {
+                if (interactionDoneRef.current) return; // already handled (e.g. mousemove after click)
                 if (labelMode === 'polygon') {
-                    finishPolygon();
+                    finishPolygon(); // finishPolygon sets the flag itself
                 } else {
+                    interactionDoneRef.current = true;
                     const maskPoints = buildMaskPoints(labelMode, points);
                     if (maskPoints.length >= 6) {
                         const objectState = new core.classes.ObjectState({
@@ -386,6 +397,7 @@ function RabbitControl(props: Props): JSX.Element {
     const handleActivate = useCallback((labelOverride?: any): void => {
         const labelToUse = labelOverride ?? selectedLabel;
         if (!labelToUse) return;
+        interactionDoneRef.current = false; // reset for new interaction
         if (labelOverride && labelOverride.id !== selectedLabelID) {
             setSelectedLabelID(labelOverride.id as number);
         }
