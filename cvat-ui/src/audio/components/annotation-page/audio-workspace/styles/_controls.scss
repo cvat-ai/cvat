@@ -1,0 +1,128 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-audio-slider-popover-overlay {
+    .cvat-audio-slider-popover {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        height: 160px;
+
+        .cvat-audio-slider-popover-slider {
+            flex: 1;
+        }
+
+        .cvat-audio-slider-popover-value {
+            font-size: 11px;
+            color: #595959;
+            min-width: 32px;
+            text-align: center;
+        }
+    }
+}
+
+.cvat-canvas-controls-sidebar {
+    .cvat-audio-zoom-control,
+    .cvat-audio-speed-control,
+    .cvat-audio-volume-control {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 8px 0;
+        font-size: 18px;
+        color: #595959;
+        cursor: pointer;
+        transition: color 0.2s ease, background-color 0.2s ease;
+
+        &:hover {
+            background-color: #f0f0f0;
+            color: #262626;
+        }
+    }
+
+    .cvat-audio-interval-region-control-disabled {
+        color: #d9d9d9;
+        cursor: not-allowed;
+
+        &:hover {
+            background-color: transparent;
+            color: #d9d9d9;
+        }
+    }
+
+    span.cvat-audio-zoom-control,
+    span.cvat-audio-speed-control,
+    span.cvat-audio-volume-control {
+        width: 44px;
+        height: 36px;
+        cursor: pointer;
+
+        &:has(.cvat-audio-slider-value-badge) {
+            flex-direction: column;
+            height: auto;
+            gap: 4px;
+            padding: 6px 0;
+        }
+
+        .cvat-audio-slider-value-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            padding: 1px 6px;
+            font-size: 8px;
+            line-height: 1;
+            color: #595959;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        &:hover .cvat-audio-slider-value-badge {
+            color: #262626;
+            border-color: #bfbfbf;
+        }
+    }
+}
+
+.cvat-audio-interval-region-popover {
+    .cvat-audio-interval-region-popover-content {
+        width: 232px;
+
+        .cvat-audio-interval-popover-label-row {
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
+    }
+}
+
+.cvat-modal-confirm-remove-audio-annotation {
+    .cvat-audio-remove-annotations-time-range {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .cvat-audio-remove-annotations-time-row {
+        display: grid;
+        grid-template-columns: 52px 112px 14px 112px 14px 112px;
+        align-items: center;
+    }
+
+    .cvat-audio-remove-annotations-time-label {
+        justify-self: end;
+        margin-right: 8px;
+    }
+
+    .cvat-audio-remove-annotations-time-separator {
+        justify-self: center;
+    }
+
+    .cvat-audio-remove-annotations-time-input {
+        width: 100%;
+    }
+}

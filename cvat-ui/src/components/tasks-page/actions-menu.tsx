@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
@@ -136,6 +137,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         await dispatch(makeBulkOperationAsync(
             tasksToUpdate,
             async (task) => {
+                // eslint-disable-next-line no-param-reassign
                 task.assignee = assignee;
                 if (onUpdateTask && task.id === taskInstance.id) {
                     onUpdateTask(task);
@@ -189,6 +191,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             dispatch(makeBulkOperationAsync(
                 tasksToUpdate,
                 async (task) => {
+                    // eslint-disable-next-line no-param-reassign
                     task.organizationId = newOrganization?.id ?? null;
                     await dispatch(updateTaskAsync(task, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
                 },

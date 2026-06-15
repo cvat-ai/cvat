@@ -6,7 +6,7 @@ import './brush-toolbox-styles.scss';
 
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
 import Icon, { EyeInvisibleFilled, EyeOutlined, VerticalAlignBottomOutlined } from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
@@ -27,6 +27,7 @@ import { CombinedState } from 'reducers';
 import LabelSelector from 'components/label-selector/label-selector';
 import { changeHideActiveObjectAsync, rememberObject, updateCanvasBrushTools } from 'actions/annotation-actions';
 import { ShortcutScope } from 'utils/enums';
+import { shallowEqual } from 'utils/redux';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';

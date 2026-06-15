@@ -7,7 +7,8 @@ import './styles.scss';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Tag from 'antd/lib/tag';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 
 import {
     removeObject as removeObjectAction,

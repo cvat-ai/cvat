@@ -6,7 +6,7 @@
 import { CloudStorageActions, CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { SelectionActionsTypes, SelectionActions } from 'actions/selection-actions';
-import { CloudStoragesState, CloudStorage, SelectedResourceType } from '.';
+import { CloudStoragesState, SelectedResourceType } from '.';
 
 const defaultState: CloudStoragesState = {
     initialized: false,
@@ -159,7 +159,7 @@ export default (
                     },
                 },
                 current: state.current.map(
-                    (_cloudStorage: CloudStorage): CloudStorage => {
+                    (_cloudStorage) => {
                         if (_cloudStorage.id === cloudStorage.id) {
                             return cloudStorage;
                         }

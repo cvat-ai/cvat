@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
 import InputNumber from 'antd/lib/input-number';
 import Tag from 'antd/lib/tag';
-import Tooltip from 'antd/lib/tooltip';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 import { Source } from 'cvat-core-wrapper';
 import ItemAttribute from './object-item-attribute';
@@ -30,16 +30,43 @@ interface Props {
 }
 
 export enum SizeType {
+    LENGTH = 'length',
     WIDTH = 'width',
     HEIGHT = 'height',
-    LENGTH = 'length',
 }
 
 export interface SizeParams {
+    length: number;
     width: number;
     height: number;
-    length: number;
 }
+
+// Use point-cloud cuboid terminology in the UI while preserving points[6..8] as X/Y/Z scale storage.
+const sizeFields: {
+    key: keyof SizeParams;
+    type: SizeType;
+    label: string;
+    tooltip: string;
+}[] = [
+    {
+        key: 'length',
+        type: SizeType.LENGTH,
+        label: 'L',
+        tooltip: 'Length along X axis',
+    },
+    {
+        key: 'width',
+        type: SizeType.WIDTH,
+        label: 'W',
+        tooltip: 'Width along Y axis',
+    },
+    {
+        key: 'height',
+        type: SizeType.HEIGHT,
+        label: 'H',
+        tooltip: 'Height along Z axis',
+    },
+];
 
 export function attrValuesAreEqual(next: Record<number, string>, prev: Record<number, string>): boolean {
     const prevKeys = Object.keys(prev);
@@ -83,7 +110,7 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
     };
 
     const scoreTag = withScore ? (
-        <Tooltip
+        <CVATTooltip
             title='Consensus score'
             align={{
                 ...baseTooltipAlign,
@@ -93,10 +120,10 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
             <Tag color='#FFB347' className='cvat-object-item-score-tag'>
                 {score.toFixed(2)}
             </Tag>
-        </Tooltip>
+        </CVATTooltip>
     ) : null;
     const votesTag = withVotes ? (
-        <Tooltip
+        <CVATTooltip
             title='Number of votes'
             align={{
                 ...baseTooltipAlign,
@@ -106,7 +133,7 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
             <Tag color='#FFB347' className='cvat-object-item-votes-tag'>
                 {votes}
             </Tag>
-        </Tooltip>
+        </CVATTooltip>
     ) : null;
     const scoreVotesElement = scoreTag || votesTag ? (
         <Row className='cvat-object-item-score-votes-wrapper'>
@@ -139,19 +166,18 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
                     children: [
                         sizeParams && (
                             <Row key='size' justify='space-around' className='cvat-objects-sidebar-size-params'>
-                                {Object.keys(sizeParams).map((key) => (
-                                    <Col key={key}>
-                                        <Text type='secondary'>
-                                            {`${key.charAt(0).toUpperCase()}:`}
-                                        </Text>
+                                {sizeFields.map((field) => (
+                                    <Col key={field.key}>
+                                        <CVATTooltip title={field.tooltip}>
+                                            <Text type='secondary'>
+                                                {`${field.label}:`}
+                                            </Text>
+                                        </CVATTooltip>
                                         <InputNumber
-                                            value={sizeParams[key as keyof SizeParams] || ''}
+                                            value={sizeParams[field.key] || ''}
                                             onChange={(value) => {
                                                 if (typeof value === 'number') {
-                                                    changeSize(
-                                                        SizeType[key.toUpperCase() as keyof typeof SizeType],
-                                                        value,
-                                                    );
+                                                    changeSize(field.type, value);
                                                 }
                                             }}
                                             disabled={readonly}

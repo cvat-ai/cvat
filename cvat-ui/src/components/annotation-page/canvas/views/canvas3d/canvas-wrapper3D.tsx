@@ -4,17 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, {
-    useCallback,
-    useEffect,
-    useRef,
-} from 'react';
-import {
-    connect,
-    shallowEqual,
-    useDispatch,
-    useSelector,
-} from 'react-redux';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { connect, useDispatch, useSelector } from 'react-redux';
 import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
@@ -40,6 +31,7 @@ import {
     ActiveControl,
     ColorBy, CombinedState, ContextMenuType, Workspace,
 } from 'reducers';
+import { shallowEqual } from 'utils/redux';
 import {
     OrientationVisibility, CameraAction, Canvas3d, ViewsDOM,
 } from 'cvat-canvas3d-wrapper';

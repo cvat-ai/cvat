@@ -52,8 +52,8 @@ context('Video chapters', () => {
         use_cache: true,
     };
 
-    let jobID = null;
-    let taskID = null;
+    let jobId = null;
+    let taskId = null;
 
     before(() => {
         cy.visit('/auth/login');
@@ -61,8 +61,8 @@ context('Video chapters', () => {
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
         cy.url().should('contain', '/tasks');
         cy.headlessCreateTask(task, storage).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
         });
     });
 
@@ -72,7 +72,7 @@ context('Video chapters', () => {
 
     describe('Test chapter navigation buttons', () => {
         it('Chapter forward', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-player-buttons').should('exist').and('be.visible');
             checkChapterNavigationButtons('next', '20');
         });

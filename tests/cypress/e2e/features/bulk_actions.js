@@ -35,25 +35,25 @@ context('Bulk actions in UI', () => {
     };
     const projects = [];
     const taskTwoJobs = {
-        ID: null,
-        jobIDs: [],
+        id: null,
+        jobIds: [],
     };
     let projectTwoTasks = null;
     const numberOfObjects = 2;
     const framesPerJob = 1;
-    const stringID = (i, str) => str.concat(`_${i}`);
-    const createTaskInProject = (i, projectID, taskParams) => {
+    const stringId = (i, str) => str.concat(`_${i}`);
+    const createTaskInProject = (i, projectId, taskParams) => {
         const { taskSpec, dataSpec, extras } = defaultTaskSpec({
             ...taskParams,
-            projectID,
-            taskName: stringID(i, taskParams.taskName),
+            projectId,
+            taskName: stringId(i, taskParams.taskName),
         });
         delete taskSpec.labels; // can only have labels or project_id
         return cy.headlessCreateTask(taskSpec, dataSpec, extras);
     };
     const createProject = (i) => cy.headlessCreateProject({
         ...projectSpec,
-        name: stringID(i, projectName),
+        name: stringId(i, projectName),
     });
 
     function assignToAdmin() {
@@ -64,20 +64,20 @@ context('Bulk actions in UI', () => {
         cy.visit('/auth/login');
         cy.headlessLogin();
 
-        createProject(1).then(({ projectID }) => projects.push(projectID)); // empty project
-        createProject(2).then(({ projectID }) => {
-            projects.push(projectID);
-            projectTwoTasks = projectID;
+        createProject(1).then(({ projectId }) => projects.push(projectId)); // empty project
+        createProject(2).then(({ projectId }) => {
+            projects.push(projectId);
+            projectTwoTasks = projectId;
 
             // default task with 1 job
-            createTaskInProject(1, projectID, { taskName, labelName, serverFiles });
+            createTaskInProject(1, projectId, { taskName, labelName, serverFiles });
 
             // default task with 2 jobs
-            createTaskInProject(2, projectID, {
+            createTaskInProject(2, projectId, {
                 taskName, labelName, serverFiles, segmentSize: framesPerJob,
-            }).then(({ taskID, jobIDs }) => {
-                taskTwoJobs.ID = taskID;
-                taskTwoJobs.jobIDs = jobIDs;
+            }).then(({ taskId, jobIds }) => {
+                taskTwoJobs.id = taskId;
+                taskTwoJobs.jobIds = jobIds;
             });
         });
     });
@@ -121,7 +121,7 @@ context('Bulk actions in UI', () => {
                 });
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
 
-                cy.openTaskById(taskTwoJobs.ID);
+                cy.openTaskById(taskTwoJobs.id);
 
                 // Ensure task was assigned to admin
                 cy.get('.cvat-user-search-field').first()
@@ -133,7 +133,7 @@ context('Bulk actions in UI', () => {
 
         context('Task page, change jobs', () => {
             before(() => {
-                cy.openTaskById(taskTwoJobs.ID);
+                cy.openTaskById(taskTwoJobs.id);
             });
 
             it('Bulk-change assignees', () => {
@@ -168,7 +168,7 @@ context('Bulk actions in UI', () => {
 
     describe('Bulk export', () => {
         before(() => {
-            cy.openTaskById(taskTwoJobs.ID);
+            cy.openTaskById(taskTwoJobs.id);
         });
         it('Bulk-export job annotations', () => {
             selectAll();
@@ -183,12 +183,16 @@ context('Bulk actions in UI', () => {
                 .find('.ant-modal-header')
                 .should('have.text', `Export ${numberOfObjects} jobs as datasets`);
             cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
-
-            cy.get('.cvat-notification-notice-export-job-start')
-                .should('be.visible');
-            cy.closeNotification('.cvat-notification-notice-export-job-start');
-
-            cy.closeNotification('.cvat-notification-notice-export-job-finished', numberOfObjects);
+            cy.get('.cvat-header-requests-button').click();
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.get('.cvat-requests-list').should('be.visible');
+            cy.get('.cvat-requests-card')
+                .should('have.length.at.least', numberOfObjects)
+                .then(($cards) => {
+                    cy.wrap($cards.slice(0, numberOfObjects)).each((card) => {
+                        cy.wrap(card).find('.cvat-request-item-progress-success').should('exist');
+                    });
+                });
         });
     });
 
@@ -212,6 +216,9 @@ context('Bulk actions in UI', () => {
             cy.contains('Delete selected')
                 .should('be.visible')
                 .click();
+            // Bulk delete sends one request per selected task. Use the first
+            // response to confirm the delete flow started, then wait for the
+            // second task deletion as well.
             cy.wait('@deleteTask').then(() => {
                 cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
             });

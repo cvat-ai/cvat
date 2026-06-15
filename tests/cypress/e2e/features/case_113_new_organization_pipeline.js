@@ -37,6 +37,13 @@ context('New organization pipeline.', () => {
         },
     };
     const { firstUser, secondUser, thirdUser } = users;
+    const switcherUser = {
+        username: 'SwitcherUser',
+        firstName: 'SwitcherUser firstname',
+        lastName: 'SwitcherUser lastname',
+        email: 'switcheruser@local.local',
+        password: 'Uv5Df3#f55g',
+    };
 
     const organizationParams = {
         shortName: 'TestOrganization',
@@ -45,6 +52,14 @@ context('New organization pipeline.', () => {
         email: 'testorganization@local.local',
         phoneNumber: '+70000000000',
         location: 'Country, State, Address, 000000',
+    };
+    const switcherOrganizationParams = {
+        shortName: 'SwitcherOrg',
+        fullName: 'Switcher organization. Only for test.',
+        description: 'This organization was created to test removing it from the switcher.',
+        email: 'switcherorg@local.local',
+        phoneNumber: '+70000000001',
+        location: 'Country, State, Address, 000001',
     };
     const project = {
         name: `Project case ${caseId}`,
@@ -58,8 +73,8 @@ context('New organization pipeline.', () => {
     const taskName = `New annotation task for ${labelName}`;
     const newTaskName = labelName;
     const serverFiles = ['archive.zip'];
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     const createCuboidShape2Points = {
         points: 'From rectangle',
@@ -77,10 +92,15 @@ context('New organization pipeline.', () => {
     function tearDown() {
         cy.headlessLogout().then(() => {
             cy.task('getAuthHeaders').then((authHeaders) => {
-                cy.deleteUsers(authHeaders, [firstUserName, secondUserName, thirdUserName]);
+                cy.deleteUsers(authHeaders, [
+                    firstUserName, secondUserName, thirdUserName, switcherUser.username,
+                ]);
                 cy.deleteTasks(authHeaders, [newTaskName]);
                 cy.deleteProjects(authHeaders, [project.name]);
-                cy.deleteOrganizations(authHeaders, [organizationParams.shortName]);
+                cy.deleteOrganizations(authHeaders, [
+                    organizationParams.shortName,
+                    switcherOrganizationParams.shortName,
+                ]);
                 cy.headlessLogout();
             });
         });
@@ -188,16 +208,16 @@ context('New organization pipeline.', () => {
                         values: [project.attrValue],
                     }],
                 }],
-            }).then(({ projectID }) => {
+            }).then(({ projectId }) => {
                 const { taskSpec, dataSpec, extras } = defaultTaskSpec({
                     labelName, taskName, serverFiles,
                 });
                 delete taskSpec.labels;
-                taskSpec.project_id = projectID;
+                taskSpec.project_id = projectId;
                 cy.headlessCreateTask(
                     taskSpec, dataSpec, extras,
                 ).then((taskResponse) => {
-                    taskID = taskResponse.taskID;
+                    taskId = taskResponse.taskId;
                 });
             });
             cy.goToProjectsList();
@@ -259,9 +279,9 @@ context('New organization pipeline.', () => {
         it('Open the task, assign one of jobs to the third user. Rename the task.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
-            cy.getJobIDFromIdx(0).then((_jobID) => {
-                jobID = _jobID;
-                cy.assignJobToUser(_jobID, thirdUserName);
+            cy.getJobIdFromIdx(0).then((_jobId) => {
+                jobId = _jobId;
+                cy.assignJobToUser(_jobId, thirdUserName);
             });
             cy.renameTask(taskName, newTaskName);
         });
@@ -274,7 +294,7 @@ context('New organization pipeline.', () => {
         });
 
         it('User can open the job using direct link. Organization is set automatically. Create an object, save annotations.', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat-header-menu-user-dropdown-organization').should('have.text', organizationParams.shortName);
             cy.createCuboid(createCuboidShape2Points);
@@ -312,9 +332,53 @@ context('New organization pipeline.', () => {
             cy.visit('/organization');
             cy.checkOrganizationParams(organizationParams);
             cy.checkOrganizationMembers(1, [thirdUserName]);
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
+        });
+    });
+
+    describe('Organization switcher cleanup.', () => {
+        beforeEach(() => {
+            cy.headlessLogout().then(() => {
+                cy.task('getAuthHeaders').then((authHeaders) => {
+                    cy.deleteOrganizations(authHeaders, [switcherOrganizationParams.shortName]);
+                    cy.deleteUsers(authHeaders, [switcherUser.username]);
+                    cy.headlessLogout();
+                });
+            });
+            cy.headlessCreateUser(switcherUser);
+        });
+
+        it('Deleted organization disappears from the switcher without page reload.', () => {
+            cy.headlessLogin(makeLoginUser(switcherUser));
+            cy.createOrganization(switcherOrganizationParams);
+            cy.get('.cvat-header-menu-user-dropdown').click();
+            cy.get('.cvat-header-menu')
+                .should('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("Organization")')
+                .click();
+            cy.get('.cvat-header-menu-active-organization-item')
+                .should('have.text', switcherOrganizationParams.shortName);
+            cy.get('body').click();
+
+            cy.get('.cvat-organization-page-actions-button').click();
+            cy.get('.cvat-organization-actions-menu')
+                .should('be.visible')
+                .within(() => {
+                    cy.contains('[role="menuitem"]', 'Remove organization').click();
+                });
+            cy.intercept('DELETE', '/api/organizations/*').as('deleteOrganization');
+            cy.get('.cvat-remove-organization-submit').within(() => {
+                cy.get('input').type(switcherOrganizationParams.shortName);
+            });
+            cy.get('.ant-modal-confirm-btns').contains('button', 'Remove').click();
+            cy.wait('@deleteOrganization').then((interception) => {
+                expect(interception.response.statusCode).to.equal(204);
+            });
+            cy.get('.cvat-header-menu-user-dropdown-organization').should('not.exist');
+            cy.checkOrganizationExists(switcherOrganizationParams.shortName, false);
         });
     });
 });

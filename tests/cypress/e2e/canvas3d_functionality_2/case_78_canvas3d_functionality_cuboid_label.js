@@ -25,6 +25,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         cy.openTask(taskName);
         cy.addNewLabel({ name: secondLabel, color: secondLabelColorRed }, secondLabelAdditionalAttrs);
         cy.openJob();
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_all');
         ['topview', 'sideview', 'frontview'].forEach((view) => {
@@ -37,6 +38,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
         it('Activate a cuboid on sidear.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
             cy.get('#cvat-objects-sidebar-state-item-1').should('have.class', 'cvat-objects-sidebar-state-active-item');
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
             cy.wait(1000); // Waiting for cuboid activation
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_activating_cuboid');
             cy.compareImagesAndCheckResult(
@@ -62,6 +64,10 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .type(`${secondLabel}{Enter}`);
+            cy.get('.ant-select-dropdown').should('not.be.visible');
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .find('.cvat-objects-sidebar-state-item-label-selector')
+                .should('contain.text', secondLabel);
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_change_label_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_after_activating_cuboid.png`,

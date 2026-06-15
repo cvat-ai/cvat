@@ -9,6 +9,7 @@ import config from 'config';
 import { Project, QualitySettings, Task } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
+import { shallowEqual } from 'utils/redux';
 
 interface Props {
     instance: Project | Task;
@@ -27,15 +28,21 @@ function QualityOverviewTab(): JSX.Element {
 function QualityOverviewTabWrap(props: Readonly<Props>): JSX.Element {
     const { instance } = props;
 
-    const overrides = useSelector(
-        (state: CombinedState) => (instance instanceof Project ?
-            state.plugins.overridableComponents.qualityControlPage.project.overviewTab :
-            state.plugins.overridableComponents.qualityControlPage.task.overviewTab),
-    );
+    const {
+        taskOverrides, projectOverrides,
+    } = useSelector((state: CombinedState) => ({
+        taskOverrides: state.plugins.overridableComponents.qualityControlPage.task.overviewTab,
+        projectOverrides: state.plugins.overridableComponents.qualityControlPage.project.overviewTab,
+    }), shallowEqual);
 
-    if (overrides.length) {
-        const [Component] = overrides.slice(-1);
-        return <Component {...props} />;
+    if (instance instanceof Task && taskOverrides.length) {
+        const [Component] = taskOverrides.slice(-1);
+        return <Component {...props} instance={instance} />;
+    }
+
+    if (instance instanceof Project && projectOverrides.length) {
+        const [Component] = projectOverrides.slice(-1);
+        return <Component {...props} instance={instance} />;
     }
 
     return <QualityOverviewTab />;

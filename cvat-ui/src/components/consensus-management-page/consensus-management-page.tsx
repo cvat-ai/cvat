@@ -161,7 +161,7 @@ function ConsensusManagementPage(): JSX.Element {
                 }
             }
             return settings;
-        } catch (e) {
+        } catch (_e) {
             return false;
         }
     }, [state.consensusSettings.settings]);

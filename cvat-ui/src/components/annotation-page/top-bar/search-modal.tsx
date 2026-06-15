@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import AutoComplete from 'antd/lib/auto-complete';

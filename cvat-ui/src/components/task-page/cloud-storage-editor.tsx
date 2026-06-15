@@ -5,10 +5,9 @@
 import React, { useState } from 'react';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
-import { CloudStorage } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 import {
-    getCore, FramesMetaData, StorageLocation,
+    getCore, FramesMetaData, StorageLocation, CloudStorage,
 } from 'cvat-core-wrapper';
 
 interface Props {
