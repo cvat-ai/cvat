@@ -10,7 +10,7 @@ import pytest
 
 T = TypeVar("T")
 
-from shared.utils.config import get_method, post_method
+from shared.utils.config import DEFAULT_INTERVAL, get_method, post_method
 
 FILENAME_TEMPLATE = "cvat/{}/{}.zip"
 EXPORT_FORMAT = "CVAT for images 1.1"
@@ -58,7 +58,7 @@ def _wait_request(
     user: str,
     request_id: str,
     *,
-    sleep_interval: float = 0.1,
+    sleep_interval: float = DEFAULT_INTERVAL,
     number_of_checks: int = 100,
 ):
     for _ in range(number_of_checks):

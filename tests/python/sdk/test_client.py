@@ -3,12 +3,15 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import socket
 from contextlib import ExitStack
 from logging import Logger
+from types import SimpleNamespace
 
 import packaging.version as pv
 import pytest
 from cvat_sdk import Client, models
+from cvat_sdk.api_client import Configuration
 from cvat_sdk.core.client import AccessTokenCredentials, Config, PasswordCredentials, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
@@ -326,3 +329,70 @@ def test_organization_context_manager():
         assert client.organization_slug == "def"
 
     assert client.organization_slug == "abc"
+
+
+def _fake_request(status_value: int, *, message: str = "", op_type: str = "import"):
+    return SimpleNamespace(
+        status=SimpleNamespace(value=status_value),
+        message=message,
+        operation=SimpleNamespace(type=op_type),
+    )
+
+
+def test_configuration_enables_keepalive_and_default_timeout():
+    config = Configuration(host=BASE_URL)
+
+    # A finite read timeout keeps a request blocked on a dead connection from
+    # hanging forever; TCP keepalive lets the OS eventually evict dead idle
+    # connections from the pool.
+    assert config.timeout.connect_timeout == 60.0
+    assert config.timeout.read_timeout == 120.0
+    assert (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1) in config.socket_options
+
+
+@pytest.mark.parametrize(
+    "request_timeout, expected_connect_read",
+    [
+        (None, (60.0, 120.0)),  # falls back to the api_client default
+        ((5.0, 10.0), (5.0, 10.0)),
+    ],
+)
+def test_config_request_timeout_is_applied(request_timeout, expected_connect_read):
+    config = Config(request_timeout=request_timeout)
+    client = Client(BASE_URL, config=config, check_server_version=False)
+
+    timeout = client.api_client.configuration.timeout
+    assert (timeout.connect_timeout, timeout.read_timeout) == expected_connect_read
+
+
+def test_config_request_timeout_accepts_single_value():
+    client = Client(BASE_URL, config=Config(request_timeout=12.0), check_server_version=False)
+
+    assert client.api_client.configuration.timeout.total == 12.0
+
+
+def test_wait_for_completion_times_out(monkeypatch):
+    client = Client(BASE_URL, check_server_version=False)
+    monkeypatch.setattr(
+        client.api_client.requests_api,
+        "retrieve",
+        lambda rq_id: (_fake_request("started"), None),
+    )
+
+    with pytest.raises(TimeoutError):
+        client.wait_for_completion("test", status_check_period=0.01, timeout=0.1)
+
+
+def test_wait_for_completion_returns_when_finished(monkeypatch):
+    finished = models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+    statuses = iter(["started", "started", finished])
+    client = Client(BASE_URL, check_server_version=False)
+    monkeypatch.setattr(
+        client.api_client.requests_api,
+        "retrieve",
+        lambda rq_id: (_fake_request(next(statuses)), "resp"),
+    )
+
+    # No timeout -> unbounded polling preserved; returns the final response.
+    _, response = client.wait_for_completion("test", status_check_period=0.01)
+    assert response == "resp"
