@@ -5,13 +5,15 @@
 
 import React from 'react';
 import Layout from 'antd/lib/layout';
+import notification from 'antd/lib/notification';
+import { useSelector } from 'react-redux';
 
 import {
     ActiveControl, Rotation, CombinedState,
 } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { LabelType } from 'cvat-core-wrapper';
+import { LabelType, ObjectType } from 'cvat-core-wrapper';
 
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -26,6 +28,7 @@ import FitControl, { Props as FitControlProps } from './fit-control';
 import ResizeControl, { Props as ResizeControlProps } from './resize-control';
 import ToolsControl from './tools-control';
 import OpenCVControl from './opencv-control';
+import RabbitControl from './rabbit-control';
 import SnapToolsControl from './snap-tools-control';
 import DrawRectangleControl, { Props as DrawRectangleControlProps } from './draw-rectangle-control';
 import DrawPolygonControl, { Props as DrawPolygonControlProps } from './draw-polygon-control';
@@ -129,6 +132,7 @@ const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl
 const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(ResizeControl, 'ResizeControl');
 const ObservedToolsControl = ControlVisibilityObserver(ToolsControl, 'ToolsControl');
 const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl, 'OpenCVControl');
+const ObservedRabbitControl = ControlVisibilityObserver(RabbitControl, 'RabbitControl');
 const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleControlProps>(DrawRectangleControl, 'DrawRectangleControl');
 const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl, 'DrawPolygonControl');
 const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl, 'DrawPolylineControl');
@@ -182,6 +186,52 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
         tagControlVisible = tagControlVisible || label.type === LabelType.TAG;
     });
 
+    // ── First-frame tag check ────────────────────────────────────────────────
+    const currentFrame = useSelector(
+        (state: CombinedState) => state.annotation.player.frame.number,
+    );
+    const frameNumbers = useSelector(
+        (state: CombinedState) => state.annotation.job.frameNumbers,
+    );
+    const annotationStates = useSelector(
+        (state: CombinedState) => state.annotation.annotations.states,
+    );
+    const annotationsInitialized = useSelector(
+        (state: CombinedState) => state.annotation.annotations.initialized,
+    );
+
+    const FIRST_FRAME_TAG_KEY = 'ncp-no-tag-first-frame';
+
+    React.useEffect(() => {
+        if (!annotationsInitialized || !frameNumbers?.length) return;
+
+        const firstFrame = frameNumbers[0];
+
+        if (currentFrame === firstFrame) {
+            const hasTag = annotationStates.some(
+                (s: any) => s.objectType === ObjectType.TAG,
+            );
+            if (!hasTag) {
+                notification.warning({
+                    message: 'Missing road matter tag on first frame',
+                    description:
+                        'This is the first frame of the job and no tag has been set. ' +
+                        'Please add a tag annotation before continuing.',
+                    duration: 0, // stays open until dismissed
+                    key: FIRST_FRAME_TAG_KEY,
+                });
+            } else {
+                notification.destroy(FIRST_FRAME_TAG_KEY);
+            }
+        } else {
+            notification.destroy(FIRST_FRAME_TAG_KEY);
+        }
+    }, [currentFrame, frameNumbers, annotationStates, annotationsInitialized]);
+
+    // Close notification when the sidebar unmounts
+    React.useEffect(() => () => notification.destroy(FIRST_FRAME_TAG_KEY), []);
+
+    // ── Container height tracking ────────────────────────────────────────────
     const containerRef = React.useRef<HTMLDivElement>(null);
     const containerHeightRef = React.useRef<number>(Number.MAX_SAFE_INTEGER);
     const [containerHeight, setContainerHeight] = React.useState(Number.MAX_SAFE_INTEGER);
@@ -361,42 +411,7 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
 
                 <ObservedToolsControl />
                 <ObservedOpenCVControl />
-                {
-                    rectangleControlVisible && (
-                        <ObservedDrawRectangleControl
-                            canvasInstance={canvasInstance}
-                            isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
-                            disabled={controlsDisabled}
-                        />
-                    )
-                }
-                {
-                    polygonControlVisible && (
-                        <ObservedDrawPolygonControl
-                            canvasInstance={canvasInstance}
-                            isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
-                            disabled={controlsDisabled}
-                        />
-                    )
-                }
-                {
-                    maskControlVisible && (
-                        <ObservedDrawMaskControl
-                            canvasInstance={canvasInstance}
-                            isDrawing={activeControl === ActiveControl.DRAW_MASK}
-                            disabled={controlsDisabled}
-                        />
-                    )
-                }
-                {
-                    skeletonControlVisible && (
-                        <ObservedDrawSkeletonControl
-                            canvasInstance={canvasInstance}
-                            isDrawing={activeControl === ActiveControl.DRAW_SKELETON}
-                            disabled={controlsDisabled}
-                        />
-                    )
-                }
+                <ObservedRabbitControl />
                 {
                     tagControlVisible && (
                         <ObservedSetupTagControl
