@@ -9,7 +9,8 @@
 
 ### Changed
 
-- \[SDK\] Changed requests that explicitly specify an organization by ID being
-  overridden by the client-level `X-Organization` header, causing them to
+- \[SDK\] The `x_organization` parameter passed to individual API calls
+  now takes precedence over the client-level `organization_slug`. Previously,
+  `organization_slug` would silently override it, causing those calls to
   operate in the wrong organization context
   (<https://github.com/cvat-ai/cvat/pull/10665>)
