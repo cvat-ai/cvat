@@ -8,6 +8,11 @@
  *
  * Uses a road icon instead of the generic tag icon to visually distinguish it
  * from the standard tag control.
+ *
+ * `labelSelectorMode` prop (default `'list'`):
+ *   'list'     — flat buttons, one per matching label; clicking immediately
+ *                creates the tag.  Saves one click.
+ *   'dropdown' — classic LabelSelector + "+" button.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -22,7 +27,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { getCore, ObjectState, ObjectType } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState } from 'reducers';
-import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actions';
+import { createAnnotationsAsync, removeObjectAsync, rememberObject } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
@@ -30,10 +35,6 @@ import withVisibilityHandling from './handle-popover-visibility';
 
 // ─── Road icon ────────────────────────────────────────────────────────────────
 
-/**
- * A perspective road viewed from above: a trapezoid that widens toward the
- * bottom with white centre-line dashes receding to a vanishing point.
- */
 const RoadSVGIcon = (): JSX.Element => (
     <svg
         width='1em'
@@ -41,9 +42,7 @@ const RoadSVGIcon = (): JSX.Element => (
         viewBox='0 0 24 24'
         xmlns='http://www.w3.org/2000/svg'
     >
-        {/* Road body (trapezoid) */}
         <path d='M3 22 L9.5 2 L14.5 2 L21 22 Z' fill='currentColor' />
-        {/* Centre-line dashes (white, receding with perspective) */}
         <line x1='12' y1='19.5' x2='12' y2='17' stroke='white' strokeWidth='1.5' strokeLinecap='round' />
         <line x1='12' y1='14.5' x2='12' y2='12.5' stroke='white' strokeWidth='1.2' strokeLinecap='round' />
         <line x1='12' y1='10.5' x2='12' y2='9' stroke='white' strokeWidth='1' strokeLinecap='round' />
@@ -60,6 +59,14 @@ export interface Props {
      * popover.  Defaults to `"Material --"`.
      */
     labelPrefix?: string;
+    /**
+     * Controls how labels are presented inside the popover.
+     *
+     * - `'list'`     (default) → flat list of one-click label buttons; clicking
+     *                            a label creates the tag immediately.
+     * - `'dropdown'` → classic LabelSelector + "+" button.
+     */
+    labelSelectorMode?: 'list' | 'dropdown';
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -68,7 +75,11 @@ const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'ncp-setup-tag');
 
 function NCPSetupTagControl(props: Props): JSX.Element {
-    const { disabled = false, labelPrefix = 'Material --' } = props;
+    const {
+        disabled = false,
+        labelPrefix = 'Material --',
+        labelSelectorMode = 'list',
+    } = props;
     const dispatch = useDispatch();
 
     // ── Redux ────────────────────────────────────────────────────────────────
@@ -98,7 +109,6 @@ function NCPSetupTagControl(props: Props): JSX.Element {
         satisfiedLabels.length ? (satisfiedLabels[0].id as number) : null,
     );
 
-    // Resync default when filtered list changes (e.g. labels loaded async)
     useEffect(() => {
         if (satisfiedLabels.length && selectedLabelID === null) {
             setSelectedLabelID(satisfiedLabels[0].id as number);
@@ -109,11 +119,47 @@ function NCPSetupTagControl(props: Props): JSX.Element {
     const frameTags = annotationStates.filter(
         (s: any) => s.objectType === ObjectType.TAG,
     );
-    const canAddSelectedTag = frameTags.every(
-        (s: any) => s.label.id !== selectedLabelID,
+
+    const canAddTag = useCallback(
+        (labelID: number | null) => labelID !== null && frameTags.every(
+            (s: any) => s.label.id !== labelID,
+        ),
+        [frameTags],
     );
 
+    // ── Core create helper ───────────────────────────────────────────────────
+    /**
+     * Creates a tag for `labelID`, after first removing any existing tag whose
+     * label name starts with `labelPrefix` (enforces the one-material-tag rule).
+     */
+    const createTag = useCallback((labelID: number): void => {
+        canvasInstance.cancel();
+
+        // Remove the previous Material-- tag on this frame (if any)
+        const existingPrefixTags = frameTags.filter(
+            (s: any) => s.label.name.startsWith(labelPrefix),
+        );
+        for (const tagState of existingPrefixTags) {
+            dispatch(removeObjectAsync(tagState, true));
+        }
+
+        dispatch(rememberObject({
+            activeObjectType: ObjectType.TAG,
+            activeLabelID: labelID,
+            activeShapeType: undefined,
+        }));
+        const label = allLabels.find((l: any) => l.id === labelID);
+        if (!label) return;
+        const objectState = new core.classes.ObjectState({
+            objectType: ObjectType.TAG,
+            label,
+            frame,
+        });
+        dispatch(createAnnotationsAsync([objectState]));
+    }, [canvasInstance, allLabels, frame, dispatch, frameTags, labelPrefix]);
+
     // ── Handlers ─────────────────────────────────────────────────────────────
+    /** Dropdown mode: label changed in selector. */
     const onChangeLabel = useCallback((value: any): void => {
         if (!value) return;
         setSelectedLabelID(value.id as number);
@@ -124,23 +170,18 @@ function NCPSetupTagControl(props: Props): JSX.Element {
         }));
     }, [dispatch]);
 
+    /** Dropdown mode: "+" button clicked. */
     const onSetup = useCallback((): void => {
-        if (selectedLabelID === null || !canAddSelectedTag) return;
-        canvasInstance.cancel();
-        dispatch(rememberObject({
-            activeObjectType: ObjectType.TAG,
-            activeLabelID: selectedLabelID,
-            activeShapeType: undefined,
-        }));
-        const label = allLabels.find((l: any) => l.id === selectedLabelID);
-        if (!label) return;
-        const objectState = new core.classes.ObjectState({
-            objectType: ObjectType.TAG,
-            label,
-            frame,
-        });
-        dispatch(createAnnotationsAsync([objectState]));
-    }, [selectedLabelID, canAddSelectedTag, canvasInstance, allLabels, frame, dispatch]);
+        if (!canAddTag(selectedLabelID)) return;
+        createTag(selectedLabelID!);
+    }, [selectedLabelID, canAddTag, createTag]);
+
+    /** List mode: label button clicked. */
+    const onSetupLabel = useCallback((label: any): void => {
+        if (!canAddTag(label.id)) return;
+        setSelectedLabelID(label.id as number);
+        createTag(label.id as number);
+    }, [canAddTag, createTag]);
 
     // ── Disabled state ───────────────────────────────────────────────────────
     const effectivelyDisabled = disabled || satisfiedLabels.length === 0;
@@ -157,13 +198,49 @@ function NCPSetupTagControl(props: Props): JSX.Element {
     // ── Popover ───────────────────────────────────────────────────────────────
     const repeatShortcut = normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS ?? 'N';
 
-    const popoverContent = (
+    const listModeContent = (
+        <div className='cvat-ncp-setup-tag-popover-content'>
+            <Row justify='start' style={{ marginBottom: 6 }}>
+                <Col>
+                    <Text className='cvat-text-color' strong>Material tag</Text>
+                </Col>
+            </Row>
+            {satisfiedLabels.map((label: any) => {
+                // A label is "active" when it is the current Material-- tag on
+                // this frame.  Active labels are shown as disabled (already set)
+                // but with a ✓ indicator — clicking a different label will swap.
+                const isActive = !canAddTag(label.id as number);
+                return (
+                    <Row key={label.id} style={{ marginTop: 2 }}>
+                        <Col span={24}>
+                            <Button
+                                block
+                                disabled={isActive}
+                                style={{ textAlign: 'left' }}
+                                onClick={() => onSetupLabel(label)}
+                            >
+                                {isActive && (
+                                    <Text
+                                        type='success'
+                                        style={{ marginRight: 6, fontSize: 11 }}
+                                    >
+                                        ✓
+                                    </Text>
+                                )}
+                                {label.name}
+                            </Button>
+                        </Col>
+                    </Row>
+                );
+            })}
+        </div>
+    );
+
+    const dropdownModeContent = (
         <div className='cvat-ncp-setup-tag-popover-content'>
             <Row justify='start'>
                 <Col>
-                    <Text className='cvat-text-color' strong>
-                        Material tag
-                    </Text>
+                    <Text className='cvat-text-color' strong>Material tag</Text>
                 </Col>
             </Row>
             <Row justify='start'>
@@ -183,7 +260,7 @@ function NCPSetupTagControl(props: Props): JSX.Element {
                         <Button
                             type='primary'
                             className='cvat-add-tag-button'
-                            disabled={!canAddSelectedTag}
+                            disabled={!canAddTag(selectedLabelID)}
                             onClick={onSetup}
                             icon={<PlusOutlined />}
                         />
@@ -192,6 +269,8 @@ function NCPSetupTagControl(props: Props): JSX.Element {
             </Row>
         </div>
     );
+
+    const popoverContent = labelSelectorMode === 'list' ? listModeContent : dropdownModeContent;
 
     return (
         <CustomPopover placement='right' content={popoverContent}>
