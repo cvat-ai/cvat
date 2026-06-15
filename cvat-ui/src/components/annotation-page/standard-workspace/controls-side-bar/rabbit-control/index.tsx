@@ -3,16 +3,22 @@
 // SPDX-License-Identifier: MIT
 
 /**
- * Rabbit tool – quick mask annotation driven by label-name conventions:
+ * Rabbit tool – quick mask annotation driven by the project's `_geom` tag label.
  *
- *   • Label starts with  C / c  → polygon mask
- *     Click ≥ 3 points then press Enter, click "Confirm", or double-click to finish.
+ * The `_geom` label carries two attributes whose `values[]` map class names to
+ * geometry modes:
  *
- *   • Label starts with  L / l  → line + buffer mask  (LINE_BUFFER_PX)
- *     Auto-completes after exactly 2 clicks.
+ *   `_line`   → label names listed here produce a line + buffer mask
+ *               (LINE_BUFFER_PX wide).  Auto-completes after 2 clicks.
  *
- *   • Anything else             → circular mask  (CIRCLE_BUFFER_PX)
- *     Auto-completes after exactly 1 click.
+ *   `_circle` → label names listed here produce a circular mask
+ *               (CIRCLE_BUFFER_PX radius).  Auto-completes after 1 click.
+ *
+ *   Any other label (not listed in either attribute) → polygon mask.
+ *   Click ≥ 3 points then press Enter, click "Confirm", or double-click.
+ *
+ * If no `_geom` label exists in the project, falls back to the first-letter
+ * heuristic: C → polygon, L → line, else → circle.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -49,7 +55,35 @@ type LabelMode = 'polygon' | 'line' | 'circle';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getLabelMode(labelName: string): LabelMode {
+/**
+ * Resolves the geometry mode for `labelName` using the project's `_geom` tag
+ * label when present.
+ *
+ * Algorithm:
+ *  1. Find the label named `_geom` in `allLabels`.
+ *  2. Check its attributes:
+ *       - `_line`   attribute → values[] lists the label names that map to 'line'
+ *       - `_circle` attribute → values[] lists the label names that map to 'circle'
+ *  3. Match: if labelName in _line.values → 'line'
+ *            if labelName in _circle.values → 'circle'
+ *            otherwise → 'polygon'
+ *  4. If no `_geom` label exists fall back to first-letter heuristic.
+ */
+function getLabelMode(labelName: string, allLabels: any[]): LabelMode {
+    const geomLabel = allLabels.find((l: any) => l.name === '_geom');
+    if (geomLabel) {
+        const attrs: any[] = geomLabel.attributes ?? [];
+
+        const lineAttr = attrs.find((a: any) => a.name === '_line');
+        if (lineAttr?.values?.includes(labelName)) return 'line';
+
+        const circleAttr = attrs.find((a: any) => a.name === '_circle');
+        if (circleAttr?.values?.includes(labelName)) return 'circle';
+
+        return 'polygon'; // _geom exists but label is not in _line or _circle
+    }
+
+    // Fallback: first-letter heuristic
     const first = labelName[0]?.toUpperCase();
     if (first === 'C') return 'polygon';
     if (first === 'L') return 'line';
@@ -207,7 +241,7 @@ function RabbitControl(): JSX.Element {
     const isActive = activeControl === ActiveControl.RABBIT;
     const controlsDisabled = !labels.length || frameData.deleted;
     const selectedLabel = labels.find((l: any) => l.id === selectedLabelID) ?? null;
-    const labelMode: LabelMode = selectedLabel ? getLabelMode(selectedLabel.name) : 'circle';
+    const labelMode: LabelMode = selectedLabel ? getLabelMode(selectedLabel.name, labels) : 'circle';
     const requiredPoints = getRequiredPointCount(labelMode);
 
     // ── Shared finish logic (used by canvas event, Enter key, and button) ────

@@ -29,6 +29,7 @@ import ResizeControl, { Props as ResizeControlProps } from './resize-control';
 import ToolsControl from './tools-control';
 import OpenCVControl from './opencv-control';
 import RabbitControl from './rabbit-control';
+import NCPSetupTagControl from './ncp-setup-tag-control';
 import SnapToolsControl from './snap-tools-control';
 import DrawRectangleControl, { Props as DrawRectangleControlProps } from './draw-rectangle-control';
 import DrawPolygonControl, { Props as DrawPolygonControlProps } from './draw-polygon-control';
@@ -133,6 +134,7 @@ const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(Resi
 const ObservedToolsControl = ControlVisibilityObserver(ToolsControl, 'ToolsControl');
 const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl, 'OpenCVControl');
 const ObservedRabbitControl = ControlVisibilityObserver(RabbitControl, 'RabbitControl');
+const NCPObservedSetupTagControl = ControlVisibilityObserver(NCPSetupTagControl, 'NCPSetupTagControl');
 const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleControlProps>(DrawRectangleControl, 'DrawRectangleControl');
 const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl, 'DrawPolygonControl');
 const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl, 'DrawPolylineControl');
@@ -166,25 +168,8 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
 
     const controlsDisabled = !labels.length || frameData.deleted;
     const withUnspecifiedType = labels.some((label: any) => label.type === 'any' && !label.hasParent);
-    let rectangleControlVisible = withUnspecifiedType;
-    let polygonControlVisible = withUnspecifiedType;
-    let polylineControlVisible = withUnspecifiedType;
-    let pointsControlVisible = withUnspecifiedType;
-    let ellipseControlVisible = withUnspecifiedType;
-    let cuboidControlVisible = withUnspecifiedType;
-    let maskControlVisible = withUnspecifiedType;
     let tagControlVisible = withUnspecifiedType;
-    const skeletonControlVisible = labels.some((label: Label) => label.type === 'skeleton');
-    labels.forEach((label: Label) => {
-        rectangleControlVisible = rectangleControlVisible || label.type === LabelType.RECTANGLE;
-        polygonControlVisible = polygonControlVisible || label.type === LabelType.POLYGON;
-        polylineControlVisible = polylineControlVisible || label.type === LabelType.POLYLINE;
-        pointsControlVisible = pointsControlVisible || label.type === LabelType.POINTS;
-        ellipseControlVisible = ellipseControlVisible || label.type === LabelType.ELLIPSE;
-        cuboidControlVisible = cuboidControlVisible || label.type === LabelType.CUBOID;
-        maskControlVisible = maskControlVisible || label.type === LabelType.MASK;
-        tagControlVisible = tagControlVisible || label.type === LabelType.TAG;
-    });
+
 
     // ── First-frame tag check ────────────────────────────────────────────────
     const currentFrame = useSelector(
@@ -412,14 +397,7 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
                 <ObservedToolsControl />
                 <ObservedOpenCVControl />
                 <ObservedRabbitControl />
-                {
-                    tagControlVisible && (
-                        <ObservedSetupTagControl
-                            canvasInstance={canvasInstance}
-                            disabled={controlsDisabled}
-                        />
-                    )
-                }
+                <NCPObservedSetupTagControl disabled={controlsDisabled} />
 
 
 

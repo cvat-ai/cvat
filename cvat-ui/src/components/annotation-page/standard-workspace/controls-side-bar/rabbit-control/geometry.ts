@@ -13,80 +13,133 @@ export const CIRCLE_BUFFER_PX = 10;
 /** Number of polygon segments used to approximate a circle. */
 const CIRCLE_SEGMENTS = 32;
 
-// ─── Internal RLE helper ──────────────────────────────────────────────────────
+// ─── Core RLE builder ────────────────────────────────────────────────────────
 
 /**
- * Converts an RGBA Uint8ClampedArray to CVAT-style Run-Length Encoding.
+ * Converts a polygon (given as a list of [x, y] vertices) directly to a
+ * CVAT mask-points array  `[...rle, left, top, right, bottom]`  using a
+ * pure-JS scanline fill.
  *
- * The RLE is a flat array of alternating run-counts, starting with the count
- * of *background* (alpha = 0) pixels.  If the very first pixel is foreground
- * the first value is 0.
+ * **Why this is faster than the canvas approach:**
+ * The previous implementation drew the polygon onto an OffscreenCanvas and
+ * then called `ctx.getImageData()`.  That call forces a GPU→CPU readback that
+ * costs O(bbox_width × bbox_height × 4 bytes) — for a 2000×1000 annotation
+ * that is ~8 MB of pixel data copied synchronously on the main thread.
  *
- * This is a faithful re-implementation of the private helper found in
- * cvat-canvas/src/typescript/shared.ts (imageDataToRLE).
- */
-function imageDataToRLE(imageData: Uint8ClampedArray): number[] {
-    const rle: number[] = [];
-    let prev = 0; // 0 = background, starts with background
-    let summ = 0;
-
-    for (let i = 3; i < imageData.length; i += 4) {
-        const alpha = imageData[i] > 0 ? 1 : 0;
-        if (prev !== alpha) {
-            rle.push(summ);
-            prev = alpha;
-            summ = 1;
-        } else {
-            summ++;
-        }
-    }
-    rle.push(summ);
-    return rle;
-}
-
-// ─── Public helpers ───────────────────────────────────────────────────────────
-
-/**
- * Rasterises `vertices` onto an off-screen canvas and returns CVAT mask points:
- *   `[...rle, left, top, right, bottom]`
+ * This implementation has no GPU round-trip: for each scan line it solves the
+ * N edge equations once (O(N) per row, where N is the vertex count) and emits
+ * the RLE run lengths directly.  Memory usage is O(N + H) instead of
+ * O(W × H × 4).
  *
- * Coordinates are in **image space** (same coordinate system used by
- * `canvas.interacted` events).
+ * Coordinates are in **image space** (same system used by `canvas.interacted`
+ * events).
  */
 export function polygonToMaskPoints(vertices: [number, number][]): number[] {
     if (vertices.length < 3) return [];
 
-    const xs = vertices.map(([x]) => x);
-    const ys = vertices.map(([, y]) => y);
-    const left = Math.floor(Math.min(...xs));
-    const right = Math.ceil(Math.max(...xs));
-    const top = Math.floor(Math.min(...ys));
-    const bottom = Math.ceil(Math.max(...ys));
-
+    // ── 1. Integer bounding box ───────────────────────────────────────────────
+    let minX = Infinity; let maxX = -Infinity;
+    let minY = Infinity; let maxY = -Infinity;
+    for (const [x, y] of vertices) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    }
+    const left = Math.floor(minX);
+    const right = Math.ceil(maxX);
+    const top = Math.floor(minY);
+    const bottom = Math.ceil(maxY);
     const width = right - left + 1;
     const height = bottom - top + 1;
     if (width <= 0 || height <= 0) return [];
 
-    const offscreen = document.createElement('canvas');
-    offscreen.width = width;
-    offscreen.height = height;
-    const ctx = offscreen.getContext('2d');
-    if (!ctx) return [];
+    // ── 2. Collect x-intersections per scan line ──────────────────────────────
+    //
+    // Convention (avoids double-counting shared vertices):
+    //   Edge from loY → hiY contributes to integer rows  [ceil(loY), ceil(hiY) − 1].
+    //
+    // This is the standard "top-rule" that prevents a vertex being counted twice
+    // when two edges share a point.
+    const n = vertices.length;
+    const rowXs: number[][] = Array.from({ length: height }, () => []);
 
-    ctx.fillStyle = 'rgba(255,255,255,1)';
-    ctx.beginPath();
-    ctx.moveTo(vertices[0][0] - left, vertices[0][1] - top);
-    for (let i = 1; i < vertices.length; i++) {
-        ctx.lineTo(vertices[i][0] - left, vertices[i][1] - top);
+    for (let i = 0; i < n; i++) {
+        const [ax, ay] = vertices[i];
+        const [bx, by] = vertices[(i + 1) % n];
+        if (ay === by) continue; // horizontal edge — skip
+
+        const [loX, loY, hiX, hiY] = ay < by
+            ? [ax, ay, bx, by]
+            : [bx, by, ax, ay];
+
+        const yStart = Math.ceil(loY);
+        const yEnd = Math.ceil(hiY) - 1;
+        if (yStart > yEnd) continue;
+
+        const dxdy = (hiX - loX) / (hiY - loY);
+
+        for (let y = yStart; y <= yEnd; y++) {
+            const row = y - top;
+            if (row >= 0 && row < height) {
+                rowXs[row].push(loX + (y - loY) * dxdy);
+            }
+        }
     }
-    ctx.closePath();
-    ctx.fill();
 
-    const { data } = ctx.getImageData(0, 0, width, height);
-    const rle = imageDataToRLE(data);
+    // ── 3. Build RLE directly from sorted per-row intersections ───────────────
+    //
+    // CVAT RLE format: flat alternating [bg, fg, bg, fg, …] run-lengths,
+    // starting with a background count (0 if the first pixel is foreground).
+    //
+    // The pixel at column x (in image space) is considered INSIDE the polygon
+    // when x lies in [ceil(xLeft), floor(xRight)] for an intersection pair.
+    const rle: number[] = [];
+    let isFg = false; // current run type; starts with background
+    let run = 0;      // current run length
+
+    for (let row = 0; row < height; row++) {
+        const xs = rowXs[row];
+        xs.sort((a, b) => a - b);
+
+        let col = left; // image-space x of the next un-emitted pixel
+
+        for (let k = 0; k + 1 < xs.length; k += 2) {
+            // Pixel range for this foreground span: [xIn, xOut] inclusive
+            const xIn = Math.max(left, Math.ceil(xs[k]));
+            const xOut = Math.min(right, Math.floor(xs[k + 1]));
+            if (xOut < xIn) continue;
+
+            // Background segment before this span
+            const bgLen = xIn - col;
+            if (bgLen > 0) {
+                if (isFg) { rle.push(run); isFg = false; run = bgLen; }
+                else { run += bgLen; }
+            }
+
+            // Foreground span
+            const fgLen = xOut - xIn + 1;
+            if (!isFg) { rle.push(run); isFg = true; run = fgLen; }
+            else { run += fgLen; }
+
+            col = xOut + 1;
+        }
+
+        // Background tail of this row (merges seamlessly into the next row's
+        // leading background, keeping the RLE flat across rows)
+        const tailLen = right - col + 1;
+        if (tailLen > 0) {
+            if (isFg) { rle.push(run); isFg = false; run = tailLen; }
+            else { run += tailLen; }
+        }
+    }
+
+    rle.push(run); // flush the final run
     rle.push(left, top, right, bottom);
     return rle;
 }
+
+// ─── Shape helpers ────────────────────────────────────────────────────────────
 
 /**
  * Returns the four corner vertices of a rectangle (buffer) centred on the
