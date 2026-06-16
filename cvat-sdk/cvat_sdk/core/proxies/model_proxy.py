@@ -141,7 +141,6 @@ class ModelListMixin(Generic[_EntityT]):
         self: Repo,
         *,
         return_json: Literal[False] = False,
-        filter_: str | JsonLogicFilter | None = None,
         **kwargs: Any,
     ) -> list[_EntityT]: ...
 
@@ -150,7 +149,6 @@ class ModelListMixin(Generic[_EntityT]):
         self: Repo,
         *,
         return_json: Literal[True] = False,
-        filter_: str | JsonLogicFilter | None = None,
         **kwargs: Any,
     ) -> list[Any]: ...
 
@@ -158,15 +156,15 @@ class ModelListMixin(Generic[_EntityT]):
         self: Repo,
         *,
         return_json: bool = False,
-        filter_: str | JsonLogicFilter | None = None,
         **kwargs: Any,
     ) -> list[_EntityT | Any]:
         """
         Retrieves objects from the server and returns them in basic or JSON format.
         """
 
-        if filter_ is not None:
-            kwargs["filter"] = json.dumps(filter_) if isinstance(filter_, Mapping) else filter_
+        filter_value = kwargs.get("filter")
+        if isinstance(filter_value, Mapping):
+            kwargs["filter"] = json.dumps(filter_value)
 
         results = get_paginated_collection(
             endpoint=self.api.list_endpoint, return_json=return_json, **kwargs
