@@ -100,7 +100,7 @@ class UserRegisterAPITestCase(ApiTestBase):
         )
 
     @override_settings(
-        ACCOUNT_EMAIL_REQUIRED=True,
+        ACCOUNT_SIGNUP_FIELDS=["email*", "username*", "password1*", "password2*"],
         ACCOUNT_EMAIL_VERIFICATION="mandatory",
         EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
         ROOT_URLCONF=__name__,
@@ -123,7 +123,7 @@ class UserRegisterAPITestCase(ApiTestBase):
         )
 
     @override_settings(
-        ACCOUNT_EMAIL_REQUIRED=True,
+        ACCOUNT_SIGNUP_FIELDS=["email*", "username*", "password1*", "password2*"],
         ACCOUNT_EMAIL_VERIFICATION="mandatory",
         EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
         ROOT_URLCONF=__name__,
@@ -184,7 +184,7 @@ class UserRegisterAPITestCase(ApiTestBase):
         )
 
     @override_settings(
-        ACCOUNT_EMAIL_REQUIRED=True,
+        ACCOUNT_SIGNUP_FIELDS=["email*", "username*", "password1*", "password2*"],
         ACCOUNT_EMAIL_VERIFICATION="mandatory",
         EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
         ROOT_URLCONF=__name__,
