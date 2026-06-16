@@ -5,7 +5,9 @@ weight: 1
 description: 'Learn how to migrate datasets and annotations from Azure Machine Learning Data Labeling to CVAT.'
 ---
 
-This guide explains how to migrate datasets and annotations from Azure Machine Learning (ML) Data Labeling to CVAT.
+This guide explains how to migrate datasets and annotations from
+Azure Machine Learning (ML) Data Labeling component to CVAT.
+
 It covers projects created for Object Identification (Bounding Box) and Instance Segmentation (Polygon) tasks,
 including Azure Blob Storage integration, dataset preparation, annotation export from Azure ML, task creation in CVAT,
  and annotation import.
@@ -407,9 +409,7 @@ The migration workflow from Azure ML Data Labeling to CVAT consists of the follo
 4. Create a task in CVAT.
 5. Configure labels to match the Azure ML project structure.
 6. Add the dataset using either Azure Blob Storage or local file upload.
-7. Modify the exported COCO annotation file:
-   - Add `"iscrowd": 0` to all annotation objects.
-   - Ensure image paths match the paths used in CVAT.
+7. Modify the exported COCO annotation file and ensure image paths match the paths used in CVAT.
 8. Import the annotations using the **COCO 1.0** format.
 9. Verify that the annotations are displayed correctly in the task.
 
