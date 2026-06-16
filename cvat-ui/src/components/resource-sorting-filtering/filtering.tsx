@@ -199,22 +199,37 @@ export default function ResourceFilterHOC(
             }
 
             if (appliedFilter.predefined?.length) {
-                onApplyFilter(unite(appliedFilter.predefined));
+                const predefinedFilterToApply = unite(appliedFilter.predefined)
+                if (value === predefinedFilterToApply) {
+                    return;
+                }
+
+                onApplyFilter(predefinedFilterToApply);
             } else if (appliedFilter.recent) {
+                if (value === appliedFilter.recent) {
+                    return;
+                }
+
                 onApplyFilter(appliedFilter.recent);
                 const tree = QbUtils.loadFromJsonLogic(JSON.parse(appliedFilter.recent), config);
                 if (tree && isValidTree(tree)) {
                     setState(tree);
                 }
             } else if (appliedFilter.built) {
-                if (value !== appliedFilter.built) {
-                    onApplyFilter(appliedFilter.built);
+                if (value === appliedFilter.built) {
+                    return;
                 }
+
+                onApplyFilter(appliedFilter.built);
             } else {
+                if (value === null) {
+                    return;
+                }
+
                 onApplyFilter(null);
                 setState(defaultTree);
             }
-        }, [appliedFilter]);
+        }, [appliedFilter, value]);
 
         const renderBuilder = (builderProps: any): JSX.Element => (
             <div className='query-builder-container'>

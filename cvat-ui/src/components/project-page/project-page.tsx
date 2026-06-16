@@ -62,6 +62,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const history = useHistory();
     const [projectInstance, setProjectInstance] = useState<Project | null>(null);
     const [fechingProject, setFetchingProject] = useState(true);
+    const [isMounted, setIsMounted] = useState(false);
     const mounted = useRef(false);
 
     const {
@@ -98,6 +99,7 @@ export default function ProjectPageComponent(): JSX.Element {
                     if (project && mounted.current) {
                         dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
                         setProjectInstance(project);
+                        setIsMounted(true);
                     }
                 }).catch((error: Error) => {
                     if (mounted.current) {
@@ -126,9 +128,11 @@ export default function ProjectPageComponent(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(tasksQuery),
-        });
+        if (isMounted) {
+            history.replace({
+                search: updateHistoryFromQuery(tasksQuery),
+            });
+        }
     }, [tasksQuery]);
 
     useEffect(() => {
