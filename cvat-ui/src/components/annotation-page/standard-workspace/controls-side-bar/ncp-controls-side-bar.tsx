@@ -51,7 +51,6 @@ registerComponentShortcuts(componentShortcuts);
 
 // We use the observer to see if these controls are in the scopeport
 // They automatically put to extra if not
-const ObservedToolsControl = ControlVisibilityObserver(ToolsControl, 'ToolsControl');
 const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl, 'OpenCVControl');
 const ObservedRabbitControl = ControlVisibilityObserver(RabbitControl, 'RabbitControl');
 const NCPObservedSetupTagControl = ControlVisibilityObserver(NCPSetupTagControl, 'NCPSetupTagControl');
@@ -217,8 +216,6 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
         <ContainerHeightContext.Provider value={containerHeight}>
             <Layout.Sider ref={containerRef} className='cvat-canvas-controls-sidebar' theme='light' width={44}>
                 <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
-
-                <ObservedToolsControl />
                 <ObservedOpenCVControl />
                 <ObservedRabbitControl />
                 <NCPObservedSetupTagControl disabled={controlsDisabled} />
