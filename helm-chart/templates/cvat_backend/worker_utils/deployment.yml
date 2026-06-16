@@ -52,10 +52,8 @@ spec:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           args:
-          - "run"
-          - "worker"
-          - "notifications"
-          - "cleaning"
+          {{- toYaml $localValues.args | nindent 10 }}
+          {{- /* Extra args required for test.values.yaml override */ -}}
           {{- with $localValues.extraArgs }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -64,7 +62,10 @@ spec:
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- $probeArgs := list "notifications" "cleaning" -}}
+          - name: NUMPROCS
+            value: {{ $localValues.numProcs | quote }}
+          {{- $expectedWorkers := include "cvat.backend.worker.livenessProbe.workers" $localValues -}}
+          {{- $probeArgs := list "notifications" "cleaning" "--expected-num-workers" $expectedWorkers -}}
           {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
           {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
           volumeMounts:

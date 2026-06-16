@@ -67,6 +67,11 @@ cvat:
         timeoutSeconds: 10
       export:
         replicas: 2
+        numProcs: 1
+        args:
+          - "run"
+          - "worker"
+          - "export"
         labels: {}
         annotations: {}
         resources: {}
@@ -77,6 +82,11 @@ cvat:
         additionalVolumeMounts: []
       import:
         replicas: 2
+        numProcs: 1
+        args:
+          - "run"
+          - "worker"
+          - "import"
         labels: {}
         annotations: {}
         resources: {}
@@ -87,6 +97,11 @@ cvat:
         additionalVolumeMounts: []
       annotation:
         replicas: 1
+        numProcs: 1
+        args:
+          - "run"
+          - "worker"
+          - "annotation"
         labels: {}
         annotations: {}
         resources: {}
@@ -97,6 +112,12 @@ cvat:
         additionalVolumeMounts: []
       webhooks:
         replicas: 1
+        numProcs: 1
+        args:
+          - "run"
+          - "worker"
+          - "webhooks"
+          - "--with-scheduler"
         labels: {}
         annotations: {}
         resources: {}
@@ -108,6 +129,11 @@ cvat:
         terminationGracePeriodSeconds: 30
       qualityreports:
         replicas: 1
+        numProcs: 1
+        args:
+          - "run"
+          - "worker"
+          - "quality_reports"
         labels: {}
         annotations: {}
         resources: {}
@@ -118,6 +144,11 @@ cvat:
         additionalVolumeMounts: []
       chunks:
         replicas: 2
+        numProcs: 1
+        args:
+          - "run"
+          - "worker"
+          - "chunks"
         labels: {}
         annotations: {}
         resources: {}
@@ -128,6 +159,11 @@ cvat:
         additionalVolumeMounts: []
       consensus:
         replicas: 1
+        numProcs: 1
+        args:
+          - "run"
+          - "worker"
+          - "consensus"
         labels: {}
         annotations: {}
         resources: {}
@@ -138,6 +174,12 @@ cvat:
         additionalVolumeMounts: []
       utils:
         replicas: 1
+        numProcs: 1
+        args:
+          - "run"
+          - "worker"
+          - "notifications"
+          - "cleaning"
         labels: {}
         annotations: {}
         resources: {}
@@ -146,7 +188,6 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        extraArgs: []
     replicas: 1
     image: cvat/server
     tag: dev
