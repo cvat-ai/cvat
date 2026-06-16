@@ -113,6 +113,11 @@ const UploadFileErrorMessages = {
     multi: 'Wrong list of files. You can upload one or more videos. ',
 };
 
+const UploadFileHints = {
+    one: 'You can upload an archive with images, a video, or multiple images',
+    multi: 'You can upload one or more videos',
+};
+
 function receiveExtensions(files: RemoteFile[]): string[] {
     const fileTypes = files.filter((file: RemoteFile) => file.name.includes('.'))
         .map((file: RemoteFile) => `.${file.name.split('.').pop()}`);
@@ -602,7 +607,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const promises = Array(queueSize)
             .fill(undefined)
             .map(async (): Promise<void> => {
-                // eslint-disable-next-line no-constant-condition
                 while (true) {
                     index++; // preliminary increase is needed to avoid using the same index when queueSize > 1
                     if (index > length) break;
@@ -868,7 +872,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Text type='danger'>* </Text>
                     <Text className='cvat-text-color'>Select files</Text>
                     <FileManagerComponent
-                        many={many}
+                        localFilesHint={many ? UploadFileHints.multi : UploadFileHints.one}
                         onChangeActiveKey={this.changeFileManagerTab}
                         onUploadLocalFiles={this.handleUploadLocalFiles}
                         onUploadRemoteFiles={this.handleUploadRemoteFiles}

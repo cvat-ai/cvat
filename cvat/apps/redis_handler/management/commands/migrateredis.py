@@ -7,6 +7,7 @@ import traceback
 from argparse import ArgumentParser
 
 from django.conf import settings
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from redis import Redis
 
@@ -24,6 +25,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options) -> None:
+        call_command("checkredismigrations", stdout=self.stdout, stderr=self.stderr)
+
         conn = Redis(
             host=settings.REDIS_INMEM_SETTINGS["HOST"],
             port=settings.REDIS_INMEM_SETTINGS["PORT"],

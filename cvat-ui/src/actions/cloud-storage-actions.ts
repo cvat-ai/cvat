@@ -6,8 +6,10 @@
 import {
     ActionUnion, createAction, ThunkAction, ThunkDispatch,
 } from 'utils/redux';
-import { getCore, Project, Task } from 'cvat-core-wrapper';
-import { CloudStoragesQuery, CloudStorage } from 'reducers';
+import {
+    getCore, Project, Task, CloudStorage,
+} from 'cvat-core-wrapper';
+import { CloudStoragesQuery } from 'reducers';
 import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();

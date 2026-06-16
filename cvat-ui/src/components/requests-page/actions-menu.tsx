@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Dropdown from 'antd/lib/dropdown';
 import { MenuProps } from 'antd/lib/menu';
 import { Request, RQStatus } from 'cvat-core-wrapper';
@@ -38,7 +39,17 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
     const isCardMenu = !dropdownTrigger;
 
     const downloadable = (_request: Request): boolean => !!_request.url && !cancelled[_request.id];
-    const cancelable = (_request: Request): boolean => _request.status === RQStatus.QUEUED && !cancelled[_request.id];
+    const cancelable = (_request: Request): boolean => {
+        const {
+            status,
+            operation: { type },
+        } = _request;
+
+        return (
+            !cancelled[_request.id] &&
+            (status === RQStatus.QUEUED || (status === RQStatus.STARTED && type.startsWith('export:')))
+        );
+    };
 
     let requestsToAct: Request[];
     if (isCardMenu && !downloadable(requestInstance) && !cancelable(requestInstance)) {

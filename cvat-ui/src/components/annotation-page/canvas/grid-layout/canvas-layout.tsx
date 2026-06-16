@@ -6,7 +6,7 @@ import './styles.scss';
 import 'react-grid-layout/css/styles.css';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { shallowEqual, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import RGL, { WidthProvider } from 'react-grid-layout';
 import PropTypes from 'prop-types';
 import { isEqual } from 'lodash';
@@ -35,6 +35,7 @@ import CanvasWrapper3DComponent, {
 import ContextImage from 'components/annotation-page/canvas/views/context-image/context-image';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { useUpdateEffect } from 'utils/hooks';
+import { shallowEqual } from 'utils/redux';
 import defaultLayout, { ItemLayout, ViewType } from './canvas-layout.conf';
 
 const ReactGridLayout = WidthProvider(RGL);
@@ -248,9 +249,9 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                             setLayoutConfig(transformedLayout);
                         }
                     }}
-                    resizeHandle={(_: any, ref: React.MutableRefObject<HTMLDivElement>) => (
+                    resizeHandle={((_: unknown, ref: React.MutableRefObject<HTMLDivElement>) => (
                         <div ref={ref} className='cvat-grid-item-resize-handler react-resizable-handle' />
-                    )}
+                    )) as any}
                     draggableHandle='.cvat-grid-item-drag-handler'
                 >
                     { children.map((child: JSX.Element, idx: number): JSX.Element => {

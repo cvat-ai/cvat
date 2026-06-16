@@ -119,7 +119,10 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
                     <Row>
                         <Col span={24} className='cvat-task-item-progress-wrapper'>
                             <div>
-                                <StatusMessage status={importingState.state} message={importingState.message} />
+                                <StatusMessage
+                                    status={importingState.state}
+                                    message={importingState.message}
+                                />
                             </div>
                             {importingState.state !== RQStatus.FAILED && (
                                 <Progress

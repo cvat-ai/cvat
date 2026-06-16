@@ -4,6 +4,7 @@
 
 import logging
 import os
+import sys
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -87,6 +88,13 @@ def pytest_addoption(parser):
         "--keep-data",
         action="store_true",
         help="Do not reset volumes and database. (default: %(default)s)",
+    )
+
+    group._addoption(
+        "--no-services",
+        action="store_true",
+        help=("""Don't start, stop, or seed any containers — assume the user runs
+            the test stack externally"""),
     )
 
     group._addoption(
@@ -295,18 +303,18 @@ def running_containers():
 def dump_db():
     if "test_cvat_server_1" not in running_containers():
         pytest.exit("CVAT is not running")
-    with open(CVAT_DB_DIR / "data.json", "w") as f:
-        try:
-            run(  # nosec
-                "docker exec test_cvat_server_1 \
-                    python manage.py dumpdata \
-                    --indent 2 --natural-foreign \
-                    --exclude=auth.permission --exclude=contenttypes".split(),
-                stdout=f,
-                check=True,
-            )
-        except CalledProcessError:
-            pytest.exit("Database dump failed.\n")
+    try:
+        run(  # nosec
+            [
+                sys.executable,
+                str(Path(__file__).resolve().parents[1] / "utils" / "dump_test_db.py"),
+                "--output",
+                str(CVAT_DB_DIR / "data.json"),
+            ],
+            check=True,
+        )
+    except CalledProcessError:
+        pytest.exit("Database dump failed.\n")
 
 
 def create_compose_files(container_name_files):
@@ -433,6 +441,12 @@ def session_start(
                 --stop-services --start-services --rebuild --cleanup --dumpdb""")
         return  # don't need to start the services to collect tests
 
+    if session.config.getoption("--no-services"):
+        # User manages the stack and the server externally — pytest does
+        # nothing on session start. Per-test restore fixtures still docker-exec
+        # into the user's containers (which must be named test_<service>_1).
+        return
+
     platform = session.config.getoption("--platform")
 
     if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb)):
@@ -504,7 +518,11 @@ def local_start(
         wait_for_services(waiting_time)
 
         docker_exec_cvat(
-            ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+            [
+                "sh",
+                "-c",
+                "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json",
+            ]
         )
         docker_exec(
             Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
@@ -528,7 +546,7 @@ def kube_start(cvat_db_dir, keep_data):
     wait_for_services()
 
     kube_exec_cvat(
-        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json"]
     )
 
     kube_exec_cvat_db(

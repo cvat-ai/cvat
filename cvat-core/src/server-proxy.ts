@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import FormData from 'form-data';
-import Axios, { AxiosError, AxiosResponse } from 'axios';
+import Axios, { AxiosError, AxiosHeaders, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
@@ -38,7 +38,10 @@ type Params = {
     filename?: string,
     action?: string,
     save_images?: boolean,
+    import_mode?: 'replace' | 'append',
 };
+
+type HealthCheckResponse = Record<string, string>;
 
 tus.defaultOptions.storeFingerprintForResuming = false;
 
@@ -166,30 +169,54 @@ function filterPythonTraceback(data: string): string {
     return data;
 }
 
+function generateHealthCheckError(errorData: AxiosError<unknown>): ServerError | null {
+    const { response } = errorData;
+    if (!response || response.data === null || Array.isArray(response.data) || typeof response.data !== 'object') {
+        return null;
+    }
+
+    const checks = Object.entries(response.data);
+    if (!checks.every(([, checkStatus]) => typeof checkStatus === 'string')) {
+        return null;
+    }
+
+    const failedChecks = checks.filter(([, checkStatus]) => checkStatus !== 'working');
+    if (!failedChecks.length) {
+        return null;
+    }
+
+    const message = [
+        'Server health check failed. CVAT cannot start while required services report errors:',
+        ...failedChecks.map(([checkName, checkStatus]) => `${checkName} - ${checkStatus}`),
+    ].join('\n');
+
+    return new ServerError(message, response.status, response.statusText || errorData.code);
+}
+
 function generateError(errorData: AxiosError): ServerError {
     if (errorData.response) {
+        const serverError = (message: string): ServerError => new ServerError(
+            message,
+            errorData.response.status,
+            // Axios may provide either HTTP status text or only its own text code.
+            errorData.response.statusText || errorData.code,
+        );
+
         if (errorData.response.status >= 500 && typeof errorData.response.data === 'string') {
-            return new ServerError(
-                filterPythonTraceback(errorData.response.data),
-                errorData.response.status,
-            );
+            return serverError(filterPythonTraceback(errorData.response.data));
         }
 
         if (errorData.response.status >= 400 && errorData.response.data) {
             // serializer.ValidationError
 
             if (Array.isArray(errorData.response.data)) {
-                return new ServerError(
-                    errorData.response.data.join('\n\n'),
-                    errorData.response.status,
-                );
+                return serverError(errorData.response.data.join('\n\n'));
             }
 
             if (typeof errorData.response.data === 'object') {
                 if ('rq_id' in errorData.response.data) {
-                    return new ServerError(
+                    return serverError(
                         `A request with this identifier is already being processed (${errorData.response.data.rq_id})`,
-                        errorData.response.status,
                     );
                 }
 
@@ -201,10 +228,7 @@ function generateError(errorData: AxiosError): ServerError {
                 for (const field of generalFields) {
                     if (field in errorData.response.data) {
                         const message = errorData.response.data[field].toString();
-                        return new ServerError(
-                            generalFieldsHelpers[message] || message,
-                            errorData.response.status,
-                        );
+                        return serverError(generalFieldsHelpers[message] || message);
                     }
                 }
 
@@ -212,25 +236,27 @@ function generateError(errorData: AxiosError): ServerError {
                 const message = Object.keys(errorData.response.data).map((key) => (
                     `**${key}**: ${errorData.response.data[key].toString()}`
                 )).join('\n\n');
-                return new ServerError(message, errorData.response.status);
+                return serverError(message);
             }
 
             // errors with string data
             if (typeof errorData.response.data === 'string') {
-                return new ServerError(errorData.response.data, errorData.response.status);
+                return serverError(errorData.response.data);
             }
         }
 
         // default handling
-        return new ServerError(
-            errorData.response.statusText || errorData.message,
-            errorData.response.status,
-        );
+        return serverError(errorData.response.statusText || errorData.message);
+    }
+
+    if (errorData.code === 'ECONNABORTED' || errorData.message.toLowerCase().includes('timeout')) {
+        return new ServerError('The request timed out. The CVAT server did not respond in time.', 0, errorData.code);
     }
 
     // Server is unavailable (no any response)
-    const message = `${errorData.message}.`; // usually is "Error Network"
-    return new ServerError(message, 0);
+    const message = errorData.message === 'Network Error' ?
+        'Network error. The CVAT server is not reachable.' : `${errorData.message}.`;
+    return new ServerError(message, 0, errorData.code);
 }
 
 function prepareData(details) {
@@ -241,7 +267,7 @@ function prepareData(details) {
                 data.append(`${key}[${idx}]`, element);
             });
         } else {
-            data.set(key, value);
+            (data as any).set(key, value);
         }
     }
     return data;
@@ -253,13 +279,45 @@ class WorkerWrappedAxios {
         const requests = {};
         let requestId = 0;
 
+        function getAxiosErrorCode(status: number): string {
+            if (status >= 400 && status < 500) {
+                return AxiosError.ERR_BAD_REQUEST;
+            }
+
+            if (status >= 500 && status < 600) {
+                return AxiosError.ERR_BAD_RESPONSE;
+            }
+
+            return AxiosError.ERR_NETWORK;
+        }
+
         worker.onmessage = (e) => {
             if (e.data.id in requests) {
                 try {
                     if (e.data.isSuccess) {
                         requests[e.data.id].resolve({ data: e.data.responseData, headers: e.data.headers });
                     } else {
-                        requests[e.data.id].reject(new AxiosError(e.data.message, e.data.code));
+                        let response: AxiosResponse | undefined;
+                        let code: AxiosError['code'];
+                        if (typeof e.data.code === 'number') {
+                            code = getAxiosErrorCode(e.data.code);
+
+                            if (e.data.code > 0) {
+                                response = {
+                                    data: e.data.message,
+                                    status: e.data.code,
+                                    statusText: code,
+                                    headers: new AxiosHeaders(),
+                                    config: {
+                                        headers: new AxiosHeaders(),
+                                    },
+                                };
+                            }
+                        }
+
+                        requests[e.data.id].reject(
+                            new AxiosError(e.data.message, code, undefined, undefined, response),
+                        );
                     }
                 } finally {
                     delete requests[e.data.id];
@@ -330,6 +388,7 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    // eslint-disable-next-line no-param-reassign
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
 });
@@ -424,7 +483,7 @@ async function register(
     lastName: string,
     email: string,
     password: string,
-    confirmations: Record<string, string>,
+    confirmations: { name: string; value: boolean; }[],
 ): Promise<SerializedRegister> {
     let response = null;
     try {
@@ -552,7 +611,7 @@ async function authenticated(): Promise<boolean> {
     return true;
 }
 
-async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedRequest>> {
+async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedApiToken>> {
     const { backendAPI } = config;
 
     let response = null;
@@ -614,7 +673,7 @@ async function healthCheck(
     checkPeriod: number,
     requestTimeout: number,
     progressCallback?: (status: string) => void,
-): Promise<void> {
+): Promise<HealthCheckResponse> {
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health/?format=json`;
 
@@ -622,14 +681,14 @@ async function healthCheck(
     const adjustedCheckPeriod = Math.max(100, checkPeriod);
     const adjustedRequestTimeout = Math.max(500, requestTimeout);
 
-    let lastError: AxiosError = null;
+    let lastError: AxiosError<unknown> = null;
     for (let attempt = 1; attempt <= adjustedMaxRetries; attempt++) {
         if (progressCallback) {
             progressCallback(`${attempt}/${adjustedMaxRetries}`);
         }
 
         try {
-            const response = await Axios.get(url, { timeout: adjustedRequestTimeout });
+            const response = await Axios.get<HealthCheckResponse>(url, { timeout: adjustedRequestTimeout });
             return response.data;
         } catch (error) {
             lastError = error;
@@ -639,7 +698,7 @@ async function healthCheck(
         }
     }
 
-    throw generateError(lastError);
+    throw generateHealthCheckError(lastError) || generateError(lastError);
 }
 
 export interface ServerRequestConfig {
@@ -768,7 +827,7 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
     return response.data.results;
 }
 
-async function saveProject(id: number, projectData: Partial<SerializedProject>): Promise<SerializedProject> {
+async function saveProject(id: number, projectData: Record<string, unknown>): Promise<SerializedProject> {
     const { backendAPI } = config;
 
     let response = null;
@@ -802,6 +861,17 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
     }
 }
 
+function normaliseTask(task: SerializedTask): SerializedTask {
+    // Server returns '' for media_type/mode/dimension on tasks without uploaded data;
+    // collapse to undefined so downstream consumers see a clean optional value.
+    return {
+        ...task,
+        media_type: (task.media_type as unknown) === '' ? undefined : task.media_type,
+        mode: (task.mode as unknown) === '' ? undefined : task.mode,
+        dimension: (task.dimension as unknown) === '' ? undefined : task.dimension,
+    };
+}
+
 async function getTasks(
     filter: TasksFilter = {},
     aggregate?: boolean,
@@ -818,7 +888,7 @@ async function getTasks(
             };
         } else if ('id' in filter) {
             response = await Axios.get(`${backendAPI}/tasks/${filter.id}`);
-            const results = [response.data];
+            const results = [normaliseTask(response.data)];
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
@@ -836,11 +906,12 @@ async function getTasks(
         throw generateError(errorData);
     }
 
-    response.data.results.count = response.data.count;
-    return response.data.results;
+    const results = response.data.results.map(normaliseTask) as PaginatedResource<SerializedTask>;
+    results.count = response.data.count;
+    return results;
 }
 
-async function saveTask(id: number, taskData: Partial<SerializedTask>): Promise<SerializedTask> {
+async function saveTask(id: number, taskData: Record<string, unknown>): Promise<SerializedTask> {
     const { backendAPI } = config;
 
     let response = null;
@@ -850,7 +921,7 @@ async function saveTask(id: number, taskData: Partial<SerializedTask>): Promise<
         throw generateError(errorData);
     }
 
-    return response.data;
+    return normaliseTask(response.data);
 }
 
 async function deleteTask(id: number, organizationID: string | null = null): Promise<void> {
@@ -881,7 +952,11 @@ async function mergeConsensusJobs(id: number, instanceType: string): Promise<str
                 if (status === 202) {
                     resolve(rqID);
                 } else {
-                    reject(generateError(response));
+                    reject(new ServerError(
+                        response.statusText || 'Unexpected response while merging consensus jobs',
+                        response.status,
+                        AxiosError.ERR_BAD_RESPONSE,
+                    ));
                 }
             } catch (errorData) {
                 reject(generateError(errorData));
@@ -1156,7 +1231,7 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
 
     try {
         if (isCloudStorage) {
-            params.filename = file;
+            params.filename = file as string;
             response = await Axios.post(url,
                 new FormData(),
                 {
@@ -1212,6 +1287,7 @@ async function createTask(
         }
         totalSize += file.size;
     }
+    // eslint-disable-next-line no-param-reassign
     delete taskDataSpec.client_files;
 
     const taskData = new FormData();
@@ -1221,7 +1297,7 @@ async function createTask(
                 taskData.append(`${key}[${idx}]`, element);
             });
         } else if (typeof value !== 'object') {
-            taskData.set(key, value);
+            (taskData as any).set(key, value);
         }
     }
 
@@ -1275,7 +1351,7 @@ async function createTask(
                 headers: { 'Upload-Multiple': true },
             });
             for (let i = 0; i < fileBulks[currentChunkNumber].files.length; i++) {
-                taskData.delete(`client_files[${i}]`);
+                (taskData as any).delete(`client_files[${i}]`);
             }
             totalSentSize += fileBulks[currentChunkNumber].size;
             currentChunkNumber++;
@@ -1382,14 +1458,14 @@ async function getIssues(filter) {
                 ...organization,
             });
 
-            const issuesById = response.results.reduce((acc, val: { id: number }) => {
+            const issuesById = response.results.reduce((acc, val) => {
                 acc[val.id] = val;
                 return acc;
             }, {});
 
             const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
-                acc[val.issue] = acc[val.issue] || [];
-                acc[val.issue].push(val);
+                acc[(val as any).issue] = acc[(val as any).issue] ?? [];
+                acc[(val as any).issue].push(val);
                 return acc;
             }, {});
 
@@ -1464,7 +1540,8 @@ async function deleteIssue(issueID: number): Promise<void> {
     }
 }
 
-async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+type JobWritePayload = Partial<Omit<SerializedJob, 'assignee'> & { assignee: number | null }>;
+async function saveJob(id: number, jobData: JobWritePayload): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1477,7 +1554,7 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
     return response.data;
 }
 
-async function createJob(jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+async function createJob(jobData: JobWritePayload): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1522,7 +1599,7 @@ const validationLayout = (instance: 'tasks' | 'jobs') => async (
     }
 };
 
-async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]> {
+async function getUsers(filter: Record<string, unknown> = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1552,16 +1629,23 @@ async function updateUser(id: number, userData: Partial<SerializedUser>): Promis
     return response.data;
 }
 
+export const PREVIEW_DEFAULT = Symbol('preview-default');
+export type PreviewResponse = Blob | typeof PREVIEW_DEFAULT | null;
+
 function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
-    return async function (id: number | string): Promise<Blob | null> {
+    return async function (id: number | string): Promise<PreviewResponse> {
         const { backendAPI } = config;
 
-        let response = null;
         try {
             const url = `${backendAPI}/${instance}/${id}/preview`;
-            response = await Axios.get(url, {
+            const response = await Axios.get(url, {
                 responseType: 'blob',
+                headers: { Prefer: 'handling=empty' },
             });
+
+            if (response.status === 204) {
+                return PREVIEW_DEFAULT;
+            }
 
             return response.data;
         } catch (errorData) {
@@ -1569,7 +1653,12 @@ function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 
             if (code === 404) {
                 return null;
             }
-            throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
+
+            throw new ServerError(
+                `Could not get preview for "${instance}/${id}"`,
+                code,
+                errorData.response?.statusText || errorData.code,
+            );
         }
     };
 }
@@ -1593,7 +1682,7 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
     }
 }
 
-async function getData(jid: number, chunk: number, quality: ChunkQuality, retry = 0): Promise<ArrayBuffer> {
+async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
     try {
@@ -1607,29 +1696,37 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
             responseType: 'arraybuffer',
         });
 
-        const contentLength = +(response.headers || {})['content-length'];
-        if (Number.isInteger(contentLength) && response.data.byteLength < +contentLength) {
-            if (retry < 10) {
-                // corrupted zip tmp workaround
-                // if content length more than received byteLength, request the chunk again
-                // and log this error
-                setTimeout(() => {
-                    throw new Error(
-                        `Truncated chunk, try: ${retry}. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
-                        `Body size: ${response.data.byteLength}`,
-                    );
-                });
-                return await getData(jid, chunk, quality, retry + 1);
-            }
-
-            // not to try anymore, throw explicit error
-            throw new Error(
-                `Truncated chunk. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
-                `Body size: ${response.data.byteLength}`,
-            );
-        }
-
         return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+interface AudioChunkResponse {
+    data: ArrayBuffer;
+    contentOffset: number;
+}
+
+async function getAudioChunk(
+    jid: number,
+    chunk: number,
+    quality: ChunkQuality,
+): Promise<AudioChunkResponse> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/jobs/${jid}/data`, {
+            params: {
+                ...enableOrganization(),
+                quality,
+                type: 'chunk',
+                index: chunk,
+            },
+            responseType: 'arraybuffer',
+        });
+
+        const contentOffset = parseInt(response.headers['x-media-offset'] || '0', 10);
+        return { data: response.data, contentOffset };
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1700,7 +1797,8 @@ async function updateAnnotations(
 
     let response = null;
     try {
-        response = await Axios(url, { method, data, params });
+        // Annotation version is unused by the server now, but older API schema still accepts it.
+        response = await Axios(url, { method, data: { ...data, version: 0 }, params });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1715,7 +1813,7 @@ async function uploadAnnotations(
     useDefaultLocation: boolean,
     sourceStorage: Storage,
     file: File | string,
-    options: { convMaskToPoly: boolean },
+    options: { convMaskToPoly: boolean, importMode: 'replace' | 'append' },
 ): Promise<string> {
     const { backendAPI, origin } = config;
     const params: Params & { conv_mask_to_poly: boolean } = {
@@ -1724,6 +1822,7 @@ async function uploadAnnotations(
         format,
         filename: typeof file === 'string' ? file : file.name,
         conv_mask_to_poly: options.convMaskToPoly,
+        import_mode: options.importMode,
     };
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
@@ -1964,7 +2063,7 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
     }
 }
 
-async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
+async function getCloudStorageContent(id: number, path?: string, nextToken?: string, manifestPath?: string):
 Promise<{ content: SerializedRemoteFile[], next: string | null }> {
     const { backendAPI } = config;
 
@@ -2542,6 +2641,7 @@ export default Object.freeze({
 
     frames: Object.freeze({
         getData,
+        getAudioChunk,
         getMeta,
         saveMeta,
         getPreview,

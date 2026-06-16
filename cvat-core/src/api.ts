@@ -30,6 +30,7 @@ import QualitySettings from './quality-settings';
 import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
+import { createOpenCVInterface } from './opencv/opencv-interface';
 
 import * as enums from './enums';
 
@@ -37,7 +38,7 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
-import { propagateShapes, validateAttributeValue } from './object-utils';
+import { getVisibleSkeletonElements, propagateShapes, validateAttributeValue } from './object-utils';
 import { mask2Rle, rle2Mask } from './rle-utils';
 import User from './user';
 import config from './config';
@@ -209,7 +210,7 @@ function build(): CVATCore {
                 actionsParameters: Record<string, string>,
                 frameFrom: number,
                 frameTo: number,
-                filters: string[],
+                filters: object[],
                 onProgress: (
                     message: string,
                     progress: number,
@@ -300,6 +301,12 @@ function build(): CVATCore {
             set uploadChunkSize(value) {
                 config.uploadChunkSize = value;
             },
+            get opencvPath() {
+                return config.opencvPath;
+            },
+            set opencvPath(value) {
+                config.opencvPath = value;
+            },
             removeUnderlyingMaskPixels: {
                 get enabled() {
                     return config.removeUnderlyingMaskPixels.enabled;
@@ -331,6 +338,12 @@ function build(): CVATCore {
             },
             set jobMetaDataReloadPeriod(value) {
                 config.jobMetaDataReloadPeriod = value;
+            },
+            get previewPlaceholders() {
+                return config.previewPlaceholders;
+            },
+            set previewPlaceholders(value: Record<string, string>) {
+                config.previewPlaceholders = value;
             },
         },
         enums,
@@ -475,6 +488,10 @@ function build(): CVATCore {
             rle2Mask,
             propagateShapes,
             validateAttributeValue,
+            getVisibleSkeletonElements,
+        },
+        opencv: {
+            createOpenCVInterface,
         },
     };
 

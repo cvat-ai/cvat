@@ -6,7 +6,7 @@
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    connect, shallowEqual, useDispatch, useSelector,
+    connect, useDispatch, useSelector,
 } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
@@ -22,6 +22,7 @@ import Tooltip from 'antd/lib/tooltip';
 import TargetStorageField from 'components/storage/target-storage-field';
 import CVATMarkdown from 'components/common/cvat-markdown';
 import NameTemplateTooltip from 'components/common/cvat-name-template-tooltip';
+import { shallowEqual } from 'utils/redux';
 import { CombinedState } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
@@ -49,11 +50,30 @@ const initialValues: FormValues = {
     useProjectTargetStorage: true,
 };
 
+const DEFAULT_EXPORT_EXTENSION = '.zip';
+
+function normalizeExportExtension(extension: string | undefined): string {
+    if (!extension) return DEFAULT_EXPORT_EXTENSION;
+    const normalized = extension.trim().toLowerCase();
+    if (!normalized) return DEFAULT_EXPORT_EXTENSION;
+    return normalized.startsWith('.') ? normalized : `.${normalized}`;
+}
+
+function getExportExtension(dumpers: Dumper[], selectedFormat: string | undefined): string {
+    const selectedDumper = dumpers.find((dumper: Dumper) => dumper.name === selectedFormat);
+    return normalizeExportExtension(selectedDumper?.format);
+}
+
+function appendExportExtension(name: string, extension: string): string {
+    return name.toLowerCase().endsWith(extension.toLowerCase()) ? name : `${name}${extension}`;
+}
+
 function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const { dumpers, instance } = props;
 
     const [instanceType, setInstanceType] = useState('');
     const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
+    const [selectedFormat, setSelectedFormat] = useState<string>();
     const [form] = Form.useForm();
     const [targetStorage, setTargetStorage] = useState<StorageData>({
         location: StorageLocation.LOCAL,
@@ -118,6 +138,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
 
     useEffect(() => {
         let newInstanceType = '';
+        let initialSelectedFormat: string | undefined;
         if (instance instanceof Project) {
             newInstanceType = 'project';
         } else if (instance instanceof Task || instance instanceof Job) {
@@ -127,11 +148,13 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                 newInstanceType = 'job';
             }
             if (instance.mode === 'interpolation' && instance.dimension === '2d') {
-                form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
+                initialSelectedFormat = 'CVAT for video 1.1';
             } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
-                form.setFieldsValue({ selectedFormat: 'CVAT for images 1.1' });
+                initialSelectedFormat = 'CVAT for images 1.1';
             }
         }
+        form.setFieldsValue({ selectedFormat: initialSelectedFormat });
+        setSelectedFormat(initialSelectedFormat);
         setNameTemplate(`dataset_${newInstanceType}_{{id}}`);
         setInstanceType(newInstanceType);
     }, [instance]);
@@ -152,6 +175,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
     const closeModal = (): void => {
         setUseDefaultTargetStorage(true);
         setTargetStorage({ location: StorageLocation.LOCAL });
+        setSelectedFormat(undefined);
         form.resetFields();
         if (instance) {
             dispatch(exportActions.closeExportDatasetModal(instance));
@@ -160,6 +184,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
 
     const handleExport = useCallback(
         (values: FormValues): void => {
+            const exportExtension = getExportExtension(dumpers, values.selectedFormat);
             if (isBulkMode) {
                 dispatch(makeBulkOperationAsync<ProjectOrTaskOrJob>(
                     selectedInstances,
@@ -168,7 +193,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                             .replaceAll('{{id}}', String(inst.id))
                             .replaceAll('{{name}}', ('name' in inst ? inst.name : '') ?? '')
                             .replaceAll('{{index}}', String(idx + 1));
-                        if (!exportName.endsWith('.zip')) exportName += '.zip';
+                        exportName = appendExportExtension(exportName, exportExtension);
                         dispatch(
                             exportDatasetAsync(
                                 inst,
@@ -212,7 +237,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                         location: defaultStorageLocation,
                         cloudStorageId: defaultStorageCloudId,
                     }) : new Storage(targetStorage),
-                    values.customName ? `${values.customName}.zip` : undefined,
+                    values.customName ? appendExportExtension(values.customName, exportExtension) : undefined,
                 ),
             );
             closeModal();
@@ -237,10 +262,12 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
             isBulkMode,
             selectedInstances,
             nameTemplate,
+            dumpers,
         ],
     );
 
-    let exampleName = `dataset_${instanceType}_1.zip`;
+    const exportExtension = getExportExtension(dumpers, selectedFormat);
+    let exampleName = appendExportExtension(`dataset_${instanceType}_1`, exportExtension);
     if (isBulkMode && selectedInstances.length > 0 && selectedInstances[0]) {
         const first = selectedInstances[0];
         const firstName = 'name' in first ? first.name : '';
@@ -248,6 +275,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
             .replaceAll('{{id}}', String(first.id))
             .replaceAll('{{name}}', firstName ?? '')
             .replaceAll('{{index}}', '1');
+        exampleName = appendExportExtension(exampleName, exportExtension);
     }
 
     const sortedDumpers = dumpers.slice();
@@ -276,6 +304,11 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                 layout='vertical'
                 initialValues={initialValues}
                 onFinish={handleExport}
+                onValuesChange={(changedValues: Partial<FormValues>) => {
+                    if ('selectedFormat' in changedValues) {
+                        setSelectedFormat(changedValues.selectedFormat);
+                    }
+                }}
             >
                 <Form.Item
                     name='selectedFormat'
@@ -318,7 +351,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                             value={nameTemplate}
                             onChange={(e) => setNameTemplate(e.target.value)}
                             placeholder='dataset_{{id}}'
-                            suffix='.zip'
+                            suffix={exportExtension}
                             className='cvat-modal-export-filename-input'
                         />
                         <Text type='secondary'>
@@ -339,7 +372,7 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                     <Form.Item label={<Text strong>Custom name</Text>} name='customName'>
                         <Input
                             placeholder='Custom name for a dataset'
-                            suffix='.zip'
+                            suffix={exportExtension}
                             className='cvat-modal-export-filename-input'
                         />
                     </Form.Item>

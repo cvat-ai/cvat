@@ -21,7 +21,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
 
     function confirmUpdate(modalWindowClassName) {
         cy.get(modalWindowClassName).should('be.visible').within(() => {
-            cy.contains('button', 'Update').click();
+            cy.contains('button', 'Replace annotations').click();
         });
     }
 

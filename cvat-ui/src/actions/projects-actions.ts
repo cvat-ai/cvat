@@ -136,8 +136,8 @@ export function getProjectsAsync(
     };
 }
 
-export function createProjectAsync(data: any): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+export function createProjectAsync(data: any): ThunkAction<Promise<Project>> {
+    return async (dispatch: ThunkDispatch): Promise<Project> => {
         const projectInstance = new cvat.classes.Project(data);
 
         dispatch(projectActions.createProject());
@@ -176,12 +176,13 @@ export const getProjectsPreviewAsync = (project: any): ThunkAction => async (dis
 
 export function updateProjectAsync(
     projectInstance: Project,
+    fields?: Parameters<Project['save']>[0],
     updateType?: ResourceUpdateTypes,
 ): ThunkAction<Promise<Project>> {
     return async (dispatch: ThunkDispatch): Promise<Project> => {
         dispatch(projectActions.updateProject(projectInstance.id));
         try {
-            const updatedProject = await projectInstance.save();
+            const updatedProject = await projectInstance.save(fields);
             dispatch(projectActions.updateProjectSuccess(updatedProject));
             return updatedProject;
         } catch (error) {

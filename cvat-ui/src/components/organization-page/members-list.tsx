@@ -7,7 +7,8 @@ import React from 'react';
 import Pagination from 'antd/lib/pagination';
 import Spin from 'antd/lib/spin';
 
-import { useSelector, shallowEqual } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { CombinedState, SelectedResourceType } from 'reducers';
 import { Membership } from 'cvat-core-wrapper';
 import BulkWrapper from 'components/bulk-wrapper';
