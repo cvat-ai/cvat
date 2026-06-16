@@ -199,7 +199,7 @@ export default function ResourceFilterHOC(
             }
 
             if (appliedFilter.predefined?.length) {
-                const predefinedFilterToApply = unite(appliedFilter.predefined)
+                const predefinedFilterToApply = unite(appliedFilter.predefined);
                 if (value === predefinedFilterToApply) {
                     return;
                 }
@@ -229,7 +229,7 @@ export default function ResourceFilterHOC(
                 onApplyFilter(null);
                 setState(defaultTree);
             }
-        }, [appliedFilter, value]);
+        }, [appliedFilter, value, isMounted]);
 
         const renderBuilder = (builderProps: any): JSX.Element => (
             <div className='query-builder-container'>
