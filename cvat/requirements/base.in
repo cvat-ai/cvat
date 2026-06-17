@@ -35,7 +35,7 @@ opencv-python-headless~=4.8
 # Partial json reading
 json-stream>=2.0,<3
 
-# The package is used by pyunpack as a command line tool to support multiple
+# The package is used as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool~=4.0
 
@@ -46,7 +46,6 @@ psutil==5.9.4
 psycopg2-binary~=2.9
 python-ldap==3.4.3
 python-logstash-async==2.5.0
-pyunpack==0.2.1
 python-rapidjson>=1.20
 redis~=8.0
 requests~=2.26

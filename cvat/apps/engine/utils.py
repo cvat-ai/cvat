@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import ast
 import hashlib
 import importlib
@@ -13,6 +15,7 @@ import re
 import stat
 import subprocess
 import sys
+import sysconfig
 import traceback
 import urllib.parse
 from collections import defaultdict, namedtuple
@@ -42,6 +45,8 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.utils import rq_job_will_be_retried
 
 if TYPE_CHECKING:
+    from _typeshed import StrPath
+
     from cvat.apps.engine.models import RequestTarget
 
 Import = namedtuple("Import", ["module", "name", "alias"])
@@ -527,3 +532,24 @@ def transaction_with_repeatable_read():
             connection.cursor().execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
             connection.cursor().execute("SET TRANSACTION READ ONLY;")
         yield
+
+
+def extract_with_patool(archive_path: StrPath, out_dir: StrPath) -> None:
+    try:
+        subprocess.run(  # nosec: B603
+            [
+                os.path.join(sysconfig.get_path("scripts"), "patool"),
+                "--non-interactive",
+                "extract",
+                f"--outdir={out_dir}",
+                "--",
+                archive_path,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            errors="replace",
+        )
+    except subprocess.CalledProcessError as ex:
+        raise RuntimeError("unable to extract archive:\n" + ex.stderr) from ex

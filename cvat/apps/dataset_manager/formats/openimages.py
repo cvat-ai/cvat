@@ -5,11 +5,11 @@
 
 import glob
 import os.path as osp
+import shutil
 
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.plugins.data_formats.open_images import OpenImagesPath
 from datumaro.util.image import DEFAULT_IMAGE_META_FILE_NAME
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
@@ -58,7 +58,7 @@ def _export(dst_file, temp_dir, task_data, save_images=False):
 
 @importer(name="Open Images V6", ext="ZIP", version="1.0")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
-    Archive(src_file.name).extractall(temp_dir)
+    shutil.unpack_archive(src_file.name, temp_dir, "zip")
 
     image_meta_path = osp.join(
         temp_dir, OpenImagesPath.ANNOTATIONS_DIR, DEFAULT_IMAGE_META_FILE_NAME
