@@ -37,7 +37,7 @@ json-stream>=2.0,<3
 
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
-patool==4.0.5
+patool~=4.0
 
 pdf2image==1.14.0
 Pillow>=10.3.0
