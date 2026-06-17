@@ -146,14 +146,8 @@ cmd_run() {
 
         queues=()
         extra_flags=()
-        seen_flag=false
-
         for arg in "${@:2}"; do
             if [[ "$arg" == --* ]]; then
-                seen_flag=true
-            fi
-
-            if $seen_flag; then
                 extra_flags+=("$arg")
             else
                 queues+=("$arg")
@@ -193,7 +187,6 @@ if [ $# -eq 0 ]; then
     echo >&2 "    run server [additional components]"
     echo >&2 "    run nginx"
     echo >&2 "    run worker <list of queues>"
-    echo >&2 "    run worker-pool <list of queues> [rqworker-pool args...]"
     exit 1
 fi
 
