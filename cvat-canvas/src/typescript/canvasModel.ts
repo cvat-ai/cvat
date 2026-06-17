@@ -146,6 +146,12 @@ export interface InteractionData {
         removalStrategy?: 'any' | 'last'; // default is any
         appendCursorPositionAsPoint?: boolean; // default is false
         hint?: string;
+        regionOfInterest?: {
+            xtl: number;
+            ytl: number;
+            xbr: number;
+            ybr: number;
+        };
     };
 }
 

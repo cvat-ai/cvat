@@ -122,3 +122,15 @@
         max-width: $grid-unit-size * 9;
     }
 }
+
+.cvat-automatic-annotation-region-of-interest-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+
+.cvat-automatic-annotation-region-of-interest-overlay-block {
+    position: absolute;
+    background: rgba(0, 0, 0, 50%);
+}
