@@ -44,7 +44,7 @@ import {
 import DetectorRunner, {
     AnnotateTaskRequestBody,
 } from 'components/model-runner-modal/detector-runner';
-import RegionOfInterestInputComponent from 'components/model-runner-modal/roi-input';
+import RegionOfInterestInputComponent from 'components/model-runner-modal/region-of-interest-input';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';

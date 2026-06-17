@@ -23,7 +23,7 @@ import {
 import { Canvas } from 'cvat-canvas-wrapper';
 
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
-import RegionOfInterestInputComponent from './roi-input';
+import RegionOfInterestInputComponent from './region-of-interest-input';
 
 interface Props {
     withCleanup: boolean;

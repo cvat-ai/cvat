@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, {
+    useEffect, useState, useCallback, useRef,
+} from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
@@ -65,6 +67,8 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
         setInput({ ...normalized });
         if (isValidRegionOfInterest(normalized)) {
             onSubmit(normalized as RegionOfInterest);
+        } else {
+            onSubmit(null);
         }
     }, [onSubmit]);
 
