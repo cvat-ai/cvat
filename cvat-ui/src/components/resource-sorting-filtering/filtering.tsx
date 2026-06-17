@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Builder, Config, AntdConfig, ImmutableTree, Query, Utils as QbUtils,
 } from '@react-awesome-query-builder/antd';
@@ -138,40 +138,41 @@ export default function ResourceFilterHOC(
         } = props;
 
         const user = useSelector((state: CombinedState) => state.auth.user);
-        const [isMounted, setIsMounted] = useState<boolean>(false);
         const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
-        const [appliedFilter, setAppliedFilter] = useState(defaultAppliedFilter);
-        const [state, setState] = useState<ImmutableTree>(defaultTree);
+        const [searchTree, setSearchTree] = useState<ImmutableTree>(defaultTree);
 
         const predefinedFilters = getPredefinedFilters(user);
 
         useEffect(() => {
             setRecentFilters(receiveRecentFilters());
-            setIsMounted(true);
+        }, []);
+
+        const appliedFilter = useMemo(() => {
+            const innerAppliedFilter = { ...defaultAppliedFilter };
+
+            if (!value || value === '{}') {
+                setSearchTree(defaultTree);
+                return innerAppliedFilter;
+            }
 
             try {
-                if (value && value !== '{}') {
-                    const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
-                    if (tree && isValidTree(tree)) {
-                        setAppliedFilter({
-                            ...appliedFilter,
-                            predefined: splitFilterIntoPredefined(Object.values(predefinedFilters), value),
-                            built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
-                        });
-                        setState(tree);
-                    }
-                } else {
-                    setState(defaultTree);
-                    setAppliedFilter({
-                        ...appliedFilter,
-                        predefined: null,
-                        built: null,
-                    });
+                const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
+
+                if (!tree || !isValidTree(tree)) {
+                    return innerAppliedFilter;
                 }
-            } catch (_: any) {
-                // nothing to do
+
+                setSearchTree(tree);
+                return {
+                    recent: recentFilters[value] ?? null,
+                    predefined: splitFilterIntoPredefined(Object.values(predefinedFilters), value),
+                    built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
+                };
+            } catch {
+                // leave default for broken input value
+                return innerAppliedFilter;
             }
-        }, [value]);
+        }, [value, recentFilters]);
 
         useEffect(() => {
             const listener = (event: MouseEvent): void => {
@@ -198,7 +199,7 @@ export default function ResourceFilterHOC(
         };
 
         const handleRecentFilterChange = (recentFilter: string): void => {
-            onApplyFilter(appliedFilter.recent);
+            onApplyFilter(recentFilter);
             const tree = QbUtils.loadFromJsonLogic(JSON.parse(recentFilter), config);
             if (tree && isValidTree(tree)) {
                 setSearchTree(tree);
@@ -213,40 +214,6 @@ export default function ResourceFilterHOC(
             onApplyFilter(null);
             setSearchTree(defaultTree);
         };
-
-        useEffect(() => {
-            if (!isMounted) {
-                // do not request resources until on mount hook is done
-                return;
-            }
-
-            if (appliedFilter.predefined?.length) {
-                // TODO: should be removed in next step
-                const predefinedFilterToApply = unite(predefinedFilter);
-                if (value === predefinedFilterToApply) {
-                    return;
-                }
-
-                handlePredefinedFilterChange(appliedFilter.predefined);
-            } else if (appliedFilter.recent) {
-                if (value === appliedFilter.recent) {
-                    return;
-                }
-                handleRecentFilterChange(appliedFilter.recent);
-            } else if (appliedFilter.built) {
-                if (value === appliedFilter.built) {
-                    return;
-                }
-
-                handleApplyFilter(appliedFilter.built);
-            } else {
-                if (value === null) {
-                    return;
-                }
-
-                handleClearFilter();
-            }
-        }, [appliedFilter, value]);
 
         const renderBuilder = (builderProps: any): JSX.Element => (
             <div className='query-builder-container'>
@@ -271,7 +238,7 @@ export default function ResourceFilterHOC(
                                         <Checkbox
                                             checked={appliedFilter.predefined?.includes(predefinedFilters[key])}
                                             onChange={(event: CheckboxChangeEvent) => {
-                                                let updatedValue: string[] | null = appliedFilter.predefined || [];
+                                                let updatedValue: string[] = appliedFilter.predefined || [];
                                                 if (event.target.checked) {
                                                     updatedValue.push(predefinedFilters[key]);
                                                 } else {
@@ -281,20 +248,18 @@ export default function ResourceFilterHOC(
                                                         ));
                                                 }
 
-                                                if (!updatedValue.length) {
-                                                    updatedValue = null;
+                                                if (updatedValue.length === 0) {
+                                                    handleClearFilter();
+                                                    return;
                                                 }
 
-                                                setAppliedFilter({
-                                                    ...defaultAppliedFilter,
-                                                    predefined: updatedValue,
-                                                });
+                                                handlePredefinedFilterChange(updatedValue);
                                             }}
                                             key={key}
                                         >
                                             {key}
                                         </Checkbox>
-                                    )) }
+                                    ))}
                                 </div>
                             )}
                         >
@@ -339,12 +304,9 @@ export default function ResourceFilterHOC(
                                                             key={key}
                                                             onClick={() => {
                                                                 if (appliedFilter.recent === key) {
-                                                                    setAppliedFilter(defaultAppliedFilter);
+                                                                    handleClearFilter();
                                                                 } else {
-                                                                    setAppliedFilter({
-                                                                        ...defaultAppliedFilter,
-                                                                        recent: key,
-                                                                    });
+                                                                    handleRecentFilterChange(key);
                                                                 }
                                                             }}
                                                         >
@@ -373,23 +335,18 @@ export default function ResourceFilterHOC(
                             <Query
                                 {...config}
                                 onChange={(tree: ImmutableTree) => {
-                                    setState(tree);
+                                    setSearchTree(tree);
                                 }}
-                                value={state}
+                                value={searchTree}
                                 renderBuilder={renderBuilder}
                             />
                             <Space className='cvat-resource-page-filters-space'>
                                 <Button
                                     className='cvat-reset-filters-button'
-                                    disabled={!QbUtils.queryString(state, config)}
+                                    disabled={!QbUtils.queryString(searchTree, config)}
                                     size='small'
                                     onClick={() => {
-                                        setState(defaultTree);
-                                        setAppliedFilter({
-                                            ...appliedFilter,
-                                            recent: null,
-                                            built: null,
-                                        });
+                                        setSearchTree(defaultTree);
                                     }}
                                 >
                                     Reset
@@ -399,16 +356,18 @@ export default function ResourceFilterHOC(
                                     size='small'
                                     type='primary'
                                     onClick={() => {
-                                        const filter = QbUtils.jsonLogicFormat(state, config).logic;
+                                        const filter = QbUtils.jsonLogicFormat(searchTree, config).logic;
                                         const stringified = JSON.stringify(filter);
                                         keepFilterInLocalStorage(stringified);
                                         setRecentFilters(receiveRecentFilters());
                                         onBuilderVisibleChange(false);
-                                        setAppliedFilter({
-                                            predefined: null,
-                                            recent: null,
-                                            built: stringified,
-                                        });
+
+                                        if (!stringified || stringified === '{}') {
+                                            handleClearFilter();
+                                            return;
+                                        }
+
+                                        handleApplyFilter(stringified);
                                     }}
                                 >
                                     Apply
@@ -434,7 +393,7 @@ export default function ResourceFilterHOC(
                     disabled={!(appliedFilter.built || appliedFilter.predefined || appliedFilter.recent) || disabled}
                     size='small'
                     type='link'
-                    onClick={() => { setAppliedFilter({ ...defaultAppliedFilter }); }}
+                    onClick={handleClearFilter}
                 >
                     Clear filters
                 </Button>
