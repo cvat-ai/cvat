@@ -90,8 +90,6 @@
     }
 }
 
-
-
 .cvat-run-model-content > div:not(first-child) {
     margin-top: $grid-unit-size;
 }
@@ -106,14 +104,21 @@
 
 .cvat-detector-runner-clean-previous-annotations-wrapper,
 .cvat-detector-runner-convert-masks-to-polygons-wrapper,
-.cvat-detector-runner-threshold-wrapper {
-    .ant-typography {
+
+.cvat-detector-runner-threshold-wrapper, .cvat-automatic-annotation-region-of-interest-container {
+    .cvat-info-circle-icon {
         margin-left: $grid-unit-size;
     }
 }
 
-.cvat-detector-runner-threshold-wrapper {
-    .cvat-info-circle-icon {
-        margin-left: $grid-unit-size;
+.cvat-automatic-annotation-region-of-interest-container {
+    > div:nth-child(1) {
+        // title and tooltip
+        display: flex;
+        vertical-align: baseline;
+    }
+
+    input {
+        max-width: $grid-unit-size * 9;
     }
 }

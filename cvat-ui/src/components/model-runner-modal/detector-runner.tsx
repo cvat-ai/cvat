@@ -20,14 +20,19 @@ import { clamp } from 'utils/math';
 import {
     MLModel, ModelKind, DimensionType, Label, LabelType,
 } from 'cvat-core-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
+import RegionOfInterestInputComponent from './roi-input';
 
 interface Props {
     withCleanup: boolean;
     models: MLModel[];
     labels: Label[];
     dimension: DimensionType;
+    frameWidth?: number;
+    frameHeight?: number;
+    canvasInstance?: Canvas;
     runInference(model: MLModel, body: object): void;
 }
 
@@ -43,6 +48,7 @@ export interface AnnotateTaskRequestBody {
     cleanup: boolean;
     conv_mask_to_poly: boolean;
     threshold?: number;
+    roi?: { xtl: number; ytl: number; xbr: number; ybr: number; };
 }
 
 function convertMappingToServer(mapping: FullMapping): ServerMapping {
@@ -67,6 +73,7 @@ function convertMappingToServer(mapping: FullMapping): ServerMapping {
 function DetectorRunner(props: Props): JSX.Element {
     const {
         models, withCleanup, labels, dimension, runInference,
+        frameWidth, frameHeight, canvasInstance,
     } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
@@ -78,10 +85,12 @@ function DetectorRunner(props: Props): JSX.Element {
     const [detectorThreshold, setDetectorThreshold] = useState<number | null>(null);
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
+    const [regionOfInterest, setRegionOfInterest] = useState<AnnotateTaskRequestBody['roi'] | null>(null);
 
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
     const isReId = model?.kind === ModelKind.REID;
+    const showROI = isDetector && !isReId && dimension === DimensionType.DIMENSION_2D;
     const convertMasks2PolygonVisible = isDetector &&
         [LabelType.ANY, LabelType.MASK].includes(model.returnType);
 
@@ -119,6 +128,12 @@ function DetectorRunner(props: Props): JSX.Element {
             setModelLabels([]);
         }
     }, [labels, model]);
+
+    useEffect(() => {
+        if (!showROI) {
+            setRegionOfInterest(null);
+        }
+    }, [showROI]);
 
     return (
         <div className='cvat-run-model-content'>
@@ -185,6 +200,12 @@ function DetectorRunner(props: Props): JSX.Element {
             )}
             {isDetector && (
                 <div className='cvat-detector-runner-threshold-wrapper'>
+                    <div>
+                        <Text>Threshold</Text>
+                        <CVATTooltip title='Minimum confidence threshold for detections. Leave empty to use the default value specified in the model settings'>
+                            <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                        </CVATTooltip>
+                    </div>
                     <Row align='middle' justify='start'>
                         <Col>
                             <InputNumber
@@ -197,14 +218,16 @@ function DetectorRunner(props: Props): JSX.Element {
                                 }}
                             />
                         </Col>
-                        <Col>
-                            <Text>Threshold</Text>
-                            <CVATTooltip title='Minimum confidence threshold for detections. Leave empty to use the default value specified in the model settings'>
-                                <QuestionCircleOutlined className='cvat-info-circle-icon' />
-                            </CVATTooltip>
-                        </Col>
                     </Row>
                 </div>
+            )}
+            {showROI && (
+                <RegionOfInterestInputComponent
+                    frameWidth={frameWidth}
+                    frameHeight={frameHeight}
+                    canvasInstance={canvasInstance}
+                    onSubmit={setRegionOfInterest}
+                />
             )}
             {isReId ? (
                 <div>
@@ -265,6 +288,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                     cleanup,
                                     conv_mask_to_poly: convertMasksToPolygons,
                                     ...(detectorThreshold !== null ? { threshold: detectorThreshold } : {}),
+                                    ...(regionOfInterest ? { roi: regionOfInterest } : {}),
                                 };
 
                                 runInference(model, body);

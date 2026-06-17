@@ -23,7 +23,6 @@ export interface InteractionHandler {
     cancel(): void;
 }
 
-type InteractorSettings = Required<InteractionData['settings']>;
 type SupportedShapes = SVG.Rect | SVG.Circle;
 
 const DELETE_BUTTON_OFFSET = 8;
@@ -52,7 +51,7 @@ function deleteButtonPath(r: number): string {
 }
 
 export class InteractionHandlerImpl implements InteractionHandler {
-    private settings: InteractorSettings;
+    private settings: Omit<Required<InteractionData['settings']>, 'hint'>;
     private enabled: boolean;
     private command: 'draw_box' | 'draw_points' | 'put_shapes' | 'refine' | 'idle';
     private currentRectangle: SVG.Rect | null;
@@ -167,7 +166,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         return imageX >= 0 && imageX < width && imageY >= 0 && imageY < height;
     }
 
-    private drawBox(): void {
+    private drawBox(hint?: string): void {
         if (this.command === 'draw_box') {
             return;
         }
@@ -217,7 +216,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.onMessage([{
             type: 'text',
             icon: 'info',
-            content: 'Draw rectangle prompts',
+            content: hint ?? 'Draw rectangle prompts',
         }, {
             type: 'list',
             content: [
@@ -229,7 +228,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         initNewDrawingBox();
     }
 
-    private drawPoints(): void {
+    private drawPoints(hint?: string): void {
         const { points_type: pointsType } = this.settings;
 
         this.command = 'draw_points';
@@ -244,7 +243,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.onMessage([{
             type: 'text',
             icon: 'info',
-            content: 'Draw point prompts',
+            content: hint ?? 'Draw point prompts',
         }, {
             type: 'list',
             content: [
@@ -538,7 +537,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     public interact(interactData: InteractionData): void {
-        if (Object.prototype.hasOwnProperty.call(interactData, 'settings')) {
+        if (Object.hasOwn(interactData, 'settings')) {
             this.settings = {
                 ...this.settings,
                 ...interactData.settings,
@@ -578,10 +577,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
             const { command } = interactData;
             if (['draw_box', 'draw_points'].includes(command)) {
                 if (command === 'draw_box') {
-                    this.drawBox();
+                    this.drawBox(interactData.settings?.hint);
                 } else {
                     this.clearCurrentRectangle();
-                    this.drawPoints();
+                    this.drawPoints(interactData.settings?.hint);
                 }
             } else if (command === 'put_shapes') {
                 this.putShapes(interactData.payload.shapes);

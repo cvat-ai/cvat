@@ -28,7 +28,7 @@ import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor, InteractionResult } from 'cvat-canvas-wrapper';
 import {
     getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
-    MinimalShape, InteractorResults, TrackerResults,
+    MinimalShape, InteractorResults, TrackerResults, DimensionType,
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -41,7 +41,10 @@ import {
     updateAnnotationsAsync,
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
-import DetectorRunner, { AnnotateTaskRequestBody } from 'components/model-runner-modal/detector-runner';
+import DetectorRunner, {
+    AnnotateTaskRequestBody,
+} from 'components/model-runner-modal/detector-runner';
+import RegionOfInterestInputComponent from 'components/model-runner-modal/roi-input';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
@@ -66,7 +69,7 @@ interface StateToProps {
     curZOrder: number;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
-    frameIsDeleted: boolean;
+    frameData: { width: number; height: number; deleted?: boolean };
     interactorExtras: PluginComponent[];
 }
 
@@ -90,7 +93,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance, labels },
             canvas: { instance: canvasInstance, activeControl },
             player: {
-                frame: { number: frame, data: { deleted: frameIsDeleted } },
+                frame: { number: frame, data: frameData },
             },
             annotations: {
                 zLayer: { cur: curZOrder },
@@ -129,7 +132,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         curZOrder,
         defaultApproxPolyAccuracy,
         toolsBlockerState,
-        frameIsDeleted,
+        frameData,
         interactorExtras,
     };
 }
@@ -165,6 +168,8 @@ interface State {
     thresholdValue: number;
     mode: 'detection' | 'interaction' | 'tracking';
     portals: React.ReactPortal[];
+    allowROI: boolean;
+    regionOfInterest: AnnotateTaskRequestBody['roi'] | null;
 }
 
 type DetectorResults = Extract<
@@ -270,6 +275,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             showConfidenceControl: false,
             mode: 'interaction',
             portals: [],
+            allowROI: props.jobInstance.dimension === DimensionType.DIMENSION_2D,
+            regionOfInterest: null,
         };
 
         this.interaction = {
@@ -299,7 +306,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
-            isActivated, defaultApproxPolyAccuracy, states, toolsBlockerState,
+            isActivated, defaultApproxPolyAccuracy, states, toolsBlockerState, jobInstance,
         } = this.props;
         const {
             approxPolyAccuracy, mode, activeTracker, thresholdValue,
@@ -308,6 +315,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         if (prevProps.states !== states || prevState.activeTracker !== activeTracker) {
             this.setState({
                 portals: this.collectTrackerPortals(),
+            });
+        }
+
+        if (prevProps.jobInstance.dimension !== jobInstance.dimension) {
+            this.setState({
+                allowROI: jobInstance.dimension === DimensionType.DIMENSION_2D,
+                regionOfInterest: null,
             });
         }
 
@@ -379,6 +393,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private getSupportedTrackers(): MLModel[] {
         const { trackers } = this.props;
         return trackers.filter((tracker: MLModel) => tracker.supportedShapeTypes!.includes(ShapeType.RECTANGLE));
+    }
+
+    private renderROIControls(): JSX.Element | null {
+        const { canvasInstance, frameData } = this.props;
+
+        return (
+            <RegionOfInterestInputComponent
+                frameWidth={frameData.width}
+                frameHeight={frameData.height}
+                canvasInstance={canvasInstance}
+                onSubmit={(regionOfInterest) => this.setState({ regionOfInterest })}
+            />
+        );
     }
 
     private contextmenuDisabler = (e: MouseEvent): void => {
@@ -485,7 +512,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private onInteraction = (e: Event): void => {
         const { frame, isActivated } = this.props;
-        const { activeInteractor } = this.state;
+        const { activeInteractor, regionOfInterest } = this.state;
 
         if (!isActivated) {
             return;
@@ -500,6 +527,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const boxes = convertShapesForInteractor(shapes, 'rectangle', 'positive');
         const posPoints = convertShapesForInteractor(shapes, 'points', 'positive');
         const negPoints = convertShapesForInteractor(shapes, 'points', 'negative');
+
         this.interaction.latestRequest = {
             interactor,
             data: {
@@ -507,6 +535,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 obj_bbox: boxes,
                 pos_points: posPoints,
                 neg_points: negPoints,
+                ...(regionOfInterest ? { roi: regionOfInterest } : {}),
             },
         };
 
@@ -576,7 +605,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { toolsBlockerState, isActivated, canvasInstance } = this.props;
         const { activeInteractor, mode } = this.state;
 
-        if (!isActivated || !activeInteractor) {
+        if (!isActivated) {
+            return;
+        }
+
+        if (!activeInteractor) {
             return;
         }
 
@@ -1156,7 +1189,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, canvasInstance, labels, onInteractionStart, interactorExtras,
         } = this.props;
         const {
-            activeInteractor, activeLabelID, fetching, startInteractingWithBox, convertMasksToPolygons,
+            activeInteractor, activeLabelID, fetching, allowROI,
+            startInteractingWithBox, convertMasksToPolygons,
         } = this.state;
 
         if (!interactors.length) {
@@ -1250,6 +1284,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <div className='cvat-tools-interactor-extras'>
                     {renderedInteractorExtras}
                 </div>
+                {allowROI && this.renderROIControls()}
                 <Row align='middle' justify='end'>
                     <Col>
                         <Button
@@ -1291,7 +1326,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderDetectorBlock(): JSX.Element {
         const {
-            jobInstance, detectors, curZOrder, frame, labels, createAnnotations,
+            jobInstance, detectors, curZOrder, frame, labels, frameData,
+            createAnnotations,
         } = this.props;
 
         if (!detectors.length) {
@@ -1312,6 +1348,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 models={detectors}
                 labels={labels}
                 dimension={jobInstance.dimension}
+                frameWidth={frameData.width}
+                frameHeight={frameData.height}
+                canvasInstance={this.props.canvasInstance}
                 runInference={async (model: MLModel, body: AnnotateTaskRequestBody) => {
                     function loadAttributes(
                         attributes: { spec_id: number; value: string }[],
@@ -1435,7 +1474,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         const {
             interactors, detectors, trackers, isActivated,
-            canvasInstance, labels, frameIsDeleted,
+            canvasInstance, labels, frameData,
         } = this.props;
         const {
             fetching, approxPolyAccuracy, interactorResponseReceived, thresholdValue,
@@ -1463,7 +1502,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 className: 'cvat-tools-control',
             };
 
-        const showAnyContent = labels.length && !frameIsDeleted;
+        const showAnyContent = labels.length && !frameData.deleted;
         const showInteractionContent = isActivated && mode === 'interaction' && interactorResponseReceived;
         const showDetectionContent = fetching && mode === 'detection';
 
