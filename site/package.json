@@ -9,7 +9,7 @@
   "devDependencies": {
     "autoprefixer": "^10.2.5",
     "postcss-cli": "^8.3.1",
-    "postcss": "^8.4.31"
+    "postcss": "^8.5.13"
   },
   "repository": {
     "type": "git",
