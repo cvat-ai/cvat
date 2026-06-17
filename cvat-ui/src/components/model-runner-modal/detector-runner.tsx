@@ -25,6 +25,8 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
 import RegionOfInterestInputComponent from './region-of-interest-input';
 
+export type RegionOfInterest = AnnotateTaskRequestBody['roi'] | null;
+
 interface Props {
     withCleanup: boolean;
     models: MLModel[];
@@ -33,6 +35,7 @@ interface Props {
     frameWidth?: number;
     frameHeight?: number;
     canvasInstance?: Canvas;
+    onRegionOfInterestChange?: (regionOfInterest: RegionOfInterest) => void;
     runInference(model: MLModel, body: object): void;
 }
 
@@ -73,7 +76,7 @@ function convertMappingToServer(mapping: FullMapping): ServerMapping {
 function DetectorRunner(props: Props): JSX.Element {
     const {
         models, withCleanup, labels, dimension, runInference,
-        frameWidth, frameHeight, canvasInstance,
+        frameWidth, frameHeight, canvasInstance, onRegionOfInterestChange,
     } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
@@ -85,7 +88,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const [detectorThreshold, setDetectorThreshold] = useState<number | null>(null);
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
-    const [regionOfInterest, setRegionOfInterest] = useState<AnnotateTaskRequestBody['roi'] | null>(null);
+    const [regionOfInterest, setRegionOfInterest] = useState<RegionOfInterest>(null);
 
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
@@ -134,6 +137,12 @@ function DetectorRunner(props: Props): JSX.Element {
             setRegionOfInterest(null);
         }
     }, [showROI]);
+
+    useEffect(() => {
+        if (onRegionOfInterestChange) {
+            onRegionOfInterestChange(regionOfInterest);
+        }
+    }, [regionOfInterest, onRegionOfInterestChange]);
 
     return (
         <div className='cvat-run-model-content'>

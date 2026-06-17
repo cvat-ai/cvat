@@ -24,6 +24,13 @@ interface RegionOfInterest {
     ybr: number;
 }
 
+interface RegionOfInterestInput {
+    xtl: number;
+    ytl: number;
+    width: number;
+    height: number;
+}
+
 interface Props {
     canvasInstance?: Canvas;
     frameWidth?: number;
@@ -32,13 +39,29 @@ interface Props {
 }
 
 const MIN_ROI_SIZE = 128;
-const FIELDS: (keyof RegionOfInterest)[] = ['xtl', 'ytl', 'xbr', 'ybr'];
 
-function isValidRegionOfInterest(input: Partial<RegionOfInterest>): boolean {
+function isValidRegionOfInterestInput(input: Partial<RegionOfInterestInput>): boolean {
     return Number.isInteger(input.xtl) && Number.isInteger(input.ytl) &&
-        Number.isInteger(input.xbr) && Number.isInteger(input.ybr) &&
-        input.xbr! > input.xtl! && input.ybr! > input.ytl! &&
-        (input.xbr! - input.xtl! >= MIN_ROI_SIZE) && (input.ybr! - input.ytl! >= MIN_ROI_SIZE);
+        Number.isInteger(input.width) && Number.isInteger(input.height) &&
+        input.width! >= MIN_ROI_SIZE && input.height! >= MIN_ROI_SIZE;
+}
+
+function getRegionOfInterest(input: Partial<RegionOfInterestInput>): RegionOfInterest | null {
+    return isValidRegionOfInterestInput(input) ? {
+        xtl: input.xtl!,
+        ytl: input.ytl!,
+        xbr: input.xtl! + input.width!,
+        ybr: input.ytl! + input.height!,
+    } : null;
+}
+
+function getInputFromRegionOfInterest(regionOfInterest: RegionOfInterest): RegionOfInterestInput {
+    return {
+        xtl: regionOfInterest.xtl,
+        ytl: regionOfInterest.ytl,
+        width: regionOfInterest.xbr - regionOfInterest.xtl,
+        height: regionOfInterest.ybr - regionOfInterest.ytl,
+    };
 }
 
 function RegionOfInterestInputComponent(props: Props): JSX.Element {
@@ -48,7 +71,7 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
 
     const frameSizeRef = useRef<{ width: number; height: number } | null>(null);
     const [drawing, setDrawing] = useState(false);
-    const [input, setInput] = useState<Partial<RegionOfInterest>>({});
+    const [input, setInput] = useState<Partial<RegionOfInterestInput>>({});
 
     if (Number.isInteger(frameWidth) && Number.isInteger(frameHeight)) {
         frameSizeRef.current = { width: frameWidth!, height: frameHeight! };
@@ -56,17 +79,31 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
         frameSizeRef.current = { width: Infinity, height: Infinity };
     }
 
-    const updateInputComponent = useCallback((updated: Partial<RegionOfInterest>): void => {
-        const { width, height } = frameSizeRef.current!;
+    const emulateClick = (): void => {
+        // Hide the tools popover while drawing a region of interest,
+        // then restore it after drawing is finished.
+        window.document.getElementsByClassName(
+            'cvat-tools-control',
+        )[0]?.dispatchEvent(new Event('click', { bubbles: true }));
+    };
+
+    const updateInputComponent = useCallback((updated: Partial<RegionOfInterestInput>): void => {
+        const { width: frameWidthValue, height: frameHeightValue } = frameSizeRef.current!;
+        const normalizeValue = (value: number | null | undefined, min: number, max: number): number | undefined => (
+            typeof value === 'number' ? clamp(Math.floor(value), min, max) : undefined
+        );
+        const xtl = normalizeValue(updated.xtl, 0, frameWidthValue);
+        const ytl = normalizeValue(updated.ytl, 0, frameHeightValue);
         const normalized = {
-            xtl: updated.xtl !== undefined ? clamp(Math.floor(updated.xtl), 0, width) : undefined,
-            ytl: updated.ytl !== undefined ? clamp(Math.floor(updated.ytl), 0, height) : undefined,
-            xbr: updated.xbr !== undefined ? clamp(Math.floor(updated.xbr), 0, width) : undefined,
-            ybr: updated.ybr !== undefined ? clamp(Math.floor(updated.ybr), 0, height) : undefined,
+            xtl,
+            ytl,
+            width: normalizeValue(updated.width, 0, frameWidthValue - (xtl ?? 0)),
+            height: normalizeValue(updated.height, 0, frameHeightValue - (ytl ?? 0)),
         };
         setInput({ ...normalized });
-        if (isValidRegionOfInterest(normalized)) {
-            onSubmit(normalized as RegionOfInterest);
+        const regionOfInterest = getRegionOfInterest(normalized);
+        if (regionOfInterest) {
+            onSubmit(regionOfInterest);
         } else {
             onSubmit(null);
         }
@@ -75,7 +112,7 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
     const updateInput = useCallback((updated: RegionOfInterest | null): void => {
         // accepts ready-to-use and valid RegionOfInterest
         if (updated) {
-            setInput({ ...updated });
+            setInput(getInputFromRegionOfInterest(updated));
             onSubmit(updated);
         } else {
             setInput({});
@@ -89,6 +126,7 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
         }
 
         canvasInstance.cancel();
+        emulateClick();
         setDrawing(true);
         canvasInstance.interact({
             enabled: true,
@@ -119,12 +157,14 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
                     ybr: clamp(Math.floor(drawnYbr), 0, height),
                 };
 
-                if (!isValidRegionOfInterest(clamped)) {
+                const drawnInput = getInputFromRegionOfInterest(clamped);
+                if (!isValidRegionOfInterestInput(drawnInput)) {
                     notification.error({
                         message: `Minimal size of region of interest is ${MIN_ROI_SIZE}x${MIN_ROI_SIZE} pixels`,
                     });
                 } else {
                     updateInput(clamped);
+                    emulateClick();
                 }
             }
 
@@ -142,6 +182,26 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
         };
     }, [canvasInstance, drawing]);
 
+    const isXtlInvalid = Object.keys(input).length > 0 && (
+        !Number.isInteger(input.xtl) || input.xtl! < 0 ||
+        input.xtl! > frameSizeRef.current!.width - MIN_ROI_SIZE
+    );
+
+    const isYtlInvalid = Object.keys(input).length > 0 && (
+        !Number.isInteger(input.ytl) || input.ytl! < 0 ||
+        input.ytl! > frameSizeRef.current!.height - MIN_ROI_SIZE
+    );
+
+    const isWidthInvalid = Object.keys(input).length > 0 && (
+        !Number.isInteger(input.width) || input.width! < MIN_ROI_SIZE ||
+        input.xtl! + input.width! > frameSizeRef.current!.width
+    );
+
+    const isHeightInvalid = Object.keys(input).length > 0 && (
+        !Number.isInteger(input.height) || input.height! < MIN_ROI_SIZE ||
+        input.ytl! + input.height! > frameSizeRef.current!.height
+    );
+
     return (
         <div className='cvat-automatic-annotation-region-of-interest-container'>
             <div>
@@ -151,16 +211,54 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
                 </CVATTooltip>
             </div>
             <Row align='middle' gutter={[8, 8]}>
-                {FIELDS.map((key) => (
-                    <Col key={key}>
-                        <InputNumber
-                            placeholder={key}
-                            precision={0}
-                            value={input[key]}
-                            onChange={(value: number | null) => updateInputComponent({ ...input, [key]: value })}
-                        />
-                    </Col>
-                ))}
+                <Col>
+                    <InputNumber
+                        name='xtl'
+                        placeholder='x'
+                        precision={0}
+                        value={input.xtl}
+                        className={isXtlInvalid ? 'cvat-errored-region-of-interest-value' : ''}
+                        onChange={(value: number | null) => updateInputComponent({
+                            ...input, xtl: value ?? undefined,
+                        })}
+                    />
+                </Col>
+                <Col>
+                    <InputNumber
+                        name='ytl'
+                        placeholder='y'
+                        precision={0}
+                        value={input.ytl}
+                        className={isYtlInvalid ? 'cvat-errored-region-of-interest-value' : ''}
+                        onChange={(value: number | null) => updateInputComponent({
+                            ...input, ytl: value ?? undefined,
+                        })}
+                    />
+                </Col>
+                <Col>
+                    <InputNumber
+                        name='width'
+                        placeholder='width'
+                        precision={0}
+                        value={input.width}
+                        className={isWidthInvalid ? 'cvat-errored-region-of-interest-value' : ''}
+                        onChange={(value: number | null) => updateInputComponent({
+                            ...input, width: value ?? undefined,
+                        })}
+                    />
+                </Col>
+                <Col>
+                    <InputNumber
+                        name='height'
+                        placeholder='height'
+                        precision={0}
+                        value={input.height}
+                        className={isHeightInvalid ? 'cvat-errored-region-of-interest-value' : ''}
+                        onChange={(value: number | null) => updateInputComponent({
+                            ...input, height: value ?? undefined,
+                        })}
+                    />
+                </Col>
                 {canvasInstance && (
                     <Col>
                         <CVATTooltip title='Draw a region of interest'>

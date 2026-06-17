@@ -43,6 +43,7 @@ import {
 } from 'actions/annotation-actions';
 import DetectorRunner, {
     AnnotateTaskRequestBody,
+    type RegionOfInterest,
 } from 'components/model-runner-modal/detector-runner';
 import RegionOfInterestInputComponent from 'components/model-runner-modal/region-of-interest-input';
 import LabelSelector from 'components/label-selector/label-selector';
@@ -166,10 +167,13 @@ interface State {
     showConfidenceControl: boolean;
     approxPolyAccuracy: number;
     thresholdValue: number;
+    activeTab: 'detectors' | 'interactors' | 'trackers';
     mode: 'detection' | 'interaction' | 'tracking';
     portals: React.ReactPortal[];
     allowROI: boolean;
-    regionOfInterest: AnnotateTaskRequestBody['roi'] | null;
+    interactorRegionOfInterest: RegionOfInterest;
+    detectorRegionOfInterest: RegionOfInterest;
+    toolsPopoverVisible: boolean;
 }
 
 type DetectorResults = Extract<
@@ -274,9 +278,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactorResponseReceived: false,
             showConfidenceControl: false,
             mode: 'interaction',
+            activeTab: 'interactors',
             portals: [],
             allowROI: props.jobInstance.dimension === DimensionType.DIMENSION_2D,
-            regionOfInterest: null,
+            interactorRegionOfInterest: null,
+            detectorRegionOfInterest: null,
+            toolsPopoverVisible: false,
         };
 
         this.interaction = {
@@ -321,7 +328,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         if (prevProps.jobInstance.dimension !== jobInstance.dimension) {
             this.setState({
                 allowROI: jobInstance.dimension === DimensionType.DIMENSION_2D,
-                regionOfInterest: null,
+                interactorRegionOfInterest: null,
+                detectorRegionOfInterest: null,
             });
         }
 
@@ -403,8 +411,73 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 frameWidth={frameData.width}
                 frameHeight={frameData.height}
                 canvasInstance={canvasInstance}
-                onSubmit={(regionOfInterest) => this.setState({ regionOfInterest })}
+                onSubmit={(interactorRegionOfInterest) => this.setState({ interactorRegionOfInterest })}
             />
+        );
+    }
+
+    private renderRegionOfInterestOverlay(): ReactPortal | null {
+        const {
+            canvasInstance,
+            frameData: { width: frameWidth, height: frameHeight },
+            isActivated,
+        } = this.props;
+        const {
+            interactorRegionOfInterest, detectorRegionOfInterest, toolsPopoverVisible, mode, activeTab,
+        } = this.state;
+        const attachmentBoard = window.document.getElementById('cvat_canvas_attachment_board');
+        let regionOfInterest = null;
+        if ((activeTab === 'interactors' && toolsPopoverVisible) || (isActivated && mode === 'interaction')) {
+            regionOfInterest = interactorRegionOfInterest;
+        } else if (activeTab === 'detectors' && toolsPopoverVisible) {
+            regionOfInterest = detectorRegionOfInterest;
+        }
+
+        if (
+            !attachmentBoard ||
+            !Number.isInteger(frameWidth) ||
+            !Number.isInteger(frameHeight) ||
+            !regionOfInterest
+        ) {
+            return null;
+        }
+
+        const { offset } = canvasInstance.geometry;
+        const overlayWidth = frameWidth + offset * 2;
+        const overlayHeight = frameHeight + offset * 2;
+        const overlayROI = {
+            xtl: regionOfInterest.xtl + offset,
+            ytl: regionOfInterest.ytl + offset,
+            xbr: regionOfInterest.xbr + offset,
+            ybr: regionOfInterest.ybr + offset,
+        };
+
+        const clipPath = `
+            polygon(
+                evenodd,
+                0 0,
+                ${overlayWidth}px 0,
+                ${overlayWidth}px ${overlayHeight}px,
+                0 ${overlayHeight}px,
+                0 0,
+                ${overlayROI.xtl}px ${overlayROI.ytl}px,
+                ${overlayROI.xbr}px ${overlayROI.ytl}px,
+                ${overlayROI.xbr}px ${overlayROI.ybr}px,
+                ${overlayROI.xtl}px ${overlayROI.ybr}px,
+                ${overlayROI.xtl}px ${overlayROI.ytl}px
+            )
+        `;
+
+        return ReactDOM.createPortal(
+            <div
+                className='cvat-automatic-annotation-region-of-interest-overlay'
+                style={{
+                    width: overlayWidth,
+                    height: overlayHeight,
+                    clipPath,
+                }}
+            />,
+            attachmentBoard,
         );
     }
 
@@ -512,7 +585,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private onInteraction = (e: Event): void => {
         const { frame, isActivated } = this.props;
-        const { activeInteractor, regionOfInterest } = this.state;
+        const { activeInteractor, interactorRegionOfInterest } = this.state;
 
         if (!isActivated) {
             return;
@@ -535,7 +608,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 obj_bbox: boxes,
                 pos_points: posPoints,
                 neg_points: negPoints,
-                ...(regionOfInterest ? { roi: regionOfInterest } : {}),
+                ...(interactorRegionOfInterest ? { roi: interactorRegionOfInterest } : {}),
             },
         };
 
@@ -603,7 +676,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private interactionListener = async (e: Event): Promise<void> => {
         const { toolsBlockerState, isActivated, canvasInstance } = this.props;
-        const { activeInteractor, mode } = this.state;
+        const { activeInteractor, mode, interactorRegionOfInterest } = this.state;
 
         if (!isActivated) {
             return;
@@ -637,7 +710,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     canvasInstance.interact({
                         enabled: true,
                         command: 'draw_box',
-                        settings: { crosshair: true },
+                        settings: {
+                            crosshair: true,
+                            ...(interactorRegionOfInterest ? { regionOfInterest: interactorRegionOfInterest } : {}),
+                        },
                     });
                     return;
                 }
@@ -646,7 +722,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 canvasInstance.interact({
                     enabled: true,
                     command: 'draw_points',
-                    settings: { crosshair: false },
+                    settings: {
+                        crosshair: false,
+                        ...(interactorRegionOfInterest ? { regionOfInterest: interactorRegionOfInterest } : {}),
+                    },
                 });
 
                 if (posPoints.length < minPosPoints || negPoints.length < minNegPoints) {
@@ -1309,6 +1388,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             removalStrategy: 'any' as const,
                                             points_type: 'any' as const,
                                             crosshair: startWithBox,
+                                            ...(this.state.interactorRegionOfInterest ? {
+                                                regionOfInterest: this.state.interactorRegionOfInterest,
+                                            } : {}),
                                         },
                                     };
                                     canvasInstance.interact({ enabled: true, ...parameters });
@@ -1351,6 +1433,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 frameWidth={frameData.width}
                 frameHeight={frameData.height}
                 canvasInstance={this.props.canvasInstance}
+                onRegionOfInterestChange={(detectorRegionOfInterest) => (
+                    this.setState({ detectorRegionOfInterest })
+                )}
                 runInference={async (model: MLModel, body: AnnotateTaskRequestBody) => {
                     function loadAttributes(
                         attributes: { spec_id: number; value: string }[],
@@ -1443,6 +1528,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <Tabs
                     type='card'
                     tabBarGutter={8}
+                    activeKey={this.state.activeTab}
+                    onChange={(key) => this.setState({ activeTab: key as 'interactors' | 'detectors' | 'trackers' })}
                     items={[{
                         key: 'interactors',
                         label: 'Interactors',
@@ -1543,7 +1630,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         return showAnyContent ? (
             <>
-                <CustomPopover {...dynamicPopoverProps} placement='right' content={this.renderPopoverContent()}>
+                {this.renderRegionOfInterestOverlay()}
+                <CustomPopover
+                    {...dynamicPopoverProps}
+                    placement='right'
+                    content={this.renderPopoverContent()}
+                    onVisibleChange={(visible: boolean) => this.setState({ toolsPopoverVisible: visible })}
+                >
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>
                 {interactionContent}

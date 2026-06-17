@@ -106,31 +106,26 @@
 .cvat-detector-runner-convert-masks-to-polygons-wrapper,
 
 .cvat-detector-runner-threshold-wrapper, .cvat-automatic-annotation-region-of-interest-container {
+    > div:nth-child(1) {
+        // title and tooltip
+        margin-bottom: $grid-unit-size;
+        display: flex;
+        vertical-align: baseline;
+    }
+
     .cvat-info-circle-icon {
         margin-left: $grid-unit-size;
     }
 }
 
 .cvat-automatic-annotation-region-of-interest-container {
-    > div:nth-child(1) {
-        // title and tooltip
-        display: flex;
-        vertical-align: baseline;
+    .cvat-errored-region-of-interest-value {
+        border-width: 1px;
+        border-style: solid;
+        border-color: $danger-icon-color;
     }
 
     input {
-        max-width: $grid-unit-size * 9;
+        max-width: $grid-unit-size * 8;
     }
-}
-
-.cvat-automatic-annotation-region-of-interest-overlay {
-    position: absolute;
-    left: 0;
-    top: 0;
-    pointer-events: none;
-}
-
-.cvat-automatic-annotation-region-of-interest-overlay-block {
-    position: absolute;
-    background: rgba(0, 0, 0, 50%);
 }
