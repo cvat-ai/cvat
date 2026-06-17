@@ -1337,6 +1337,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     </Col>
                 </Row>
                 <div className='cvat-tools-interactor-setups'>
+                    {allowROI && this.renderROIControls()}
                     <div>
                         <Switch
                             checked={convertMasksToPolygons}
@@ -1363,7 +1364,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <div className='cvat-tools-interactor-extras'>
                     {renderedInteractorExtras}
                 </div>
-                {allowROI && this.renderROIControls()}
                 <Row align='middle' justify='end'>
                     <Col>
                         <Button

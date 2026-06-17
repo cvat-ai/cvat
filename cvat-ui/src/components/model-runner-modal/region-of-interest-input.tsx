@@ -69,15 +69,13 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
         frameWidth, frameHeight, canvasInstance, onSubmit,
     } = props;
 
-    const frameSizeRef = useRef<{ width: number; height: number } | null>(null);
+    const frameSizeRef = useRef<{ width: number; height: number }>({
+        width: frameWidth ?? Infinity,
+        height: frameHeight ?? Infinity,
+    });
+
     const [drawing, setDrawing] = useState(false);
     const [input, setInput] = useState<Partial<RegionOfInterestInput>>({});
-
-    if (Number.isInteger(frameWidth) && Number.isInteger(frameHeight)) {
-        frameSizeRef.current = { width: frameWidth!, height: frameHeight! };
-    } else {
-        frameSizeRef.current = { width: Infinity, height: Infinity };
-    }
 
     const emulateClick = (): void => {
         // Hide the tools popover while drawing a region of interest,
@@ -137,6 +135,13 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
             },
         });
     }, [canvasInstance]);
+
+    useEffect(() => {
+        if (frameWidth !== frameSizeRef.current!.width || frameHeight !== frameSizeRef.current!.height) {
+            frameSizeRef.current = { width: frameWidth ?? Infinity, height: frameHeight ?? Infinity };
+            updateInput(null);
+        }
+    }, [frameWidth, frameHeight]);
 
     useEffect(() => {
         if (!canvasInstance || !drawing) {
@@ -206,7 +211,7 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
         <div className='cvat-automatic-annotation-region-of-interest-container'>
             <div>
                 <Text>Region of interest</Text>
-                <CVATTooltip title='Defines area of the frame to be automatically annotated'>
+                <CVATTooltip title='Defines area of the image where the model will be applied'>
                     <QuestionCircleOutlined className='cvat-info-circle-icon' />
                 </CVATTooltip>
             </div>

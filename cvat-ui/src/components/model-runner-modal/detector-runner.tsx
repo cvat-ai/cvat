@@ -11,9 +11,8 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
-import Tag from 'antd/lib/tag';
 import notification from 'antd/lib/notification';
-import { ArrowRightOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
@@ -170,14 +169,10 @@ function DetectorRunner(props: Props): JSX.Element {
             {isDetector && (
                 <div>
                     <div className='cvat-detector-runner-mapping-header'>
-                        <div>
-                            <Text strong>Setup mapping between labels and attributes</Text>
-                        </div>
-                        <div>
-                            <Tag>Model Spec</Tag>
-                            <ArrowRightOutlined />
-                            <Tag>CVAT Spec</Tag>
-                        </div>
+                        <Text>Setup mapping between labels and attributes</Text>
+                        <CVATTooltip title='Each class, or attribute that model may predict, may be mapped to a label or attribute of the current specification'>
+                            <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                        </CVATTooltip>
                     </div>
                     <LabelsMapperComponent
                         key={modelID} // rerender when model switched
@@ -185,26 +180,6 @@ function DetectorRunner(props: Props): JSX.Element {
                         modelLabels={modelLabels}
                         taskLabels={taskLabels}
                     />
-                </div>
-            )}
-            {convertMasks2PolygonVisible && (
-                <div className='cvat-detector-runner-convert-masks-to-polygons-wrapper'>
-                    <Switch
-                        checked={convertMasksToPolygons}
-                        onChange={(checked: boolean) => {
-                            setConvertMasksToPolygons(checked);
-                        }}
-                    />
-                    <Text>Convert masks to polygons</Text>
-                </div>
-            )}
-            {isDetector && withCleanup && (
-                <div className='cvat-detector-runner-clean-previous-annotations-wrapper'>
-                    <Switch
-                        checked={cleanup}
-                        onChange={(checked: boolean): void => setCleanup(checked)}
-                    />
-                    <Text>Clean previous annotations</Text>
                 </div>
             )}
             {isDetector && (
@@ -237,6 +212,26 @@ function DetectorRunner(props: Props): JSX.Element {
                     canvasInstance={canvasInstance}
                     onSubmit={setRegionOfInterest}
                 />
+            )}
+            {convertMasks2PolygonVisible && (
+                <div className='cvat-detector-runner-convert-masks-to-polygons-wrapper'>
+                    <Switch
+                        checked={convertMasksToPolygons}
+                        onChange={(checked: boolean) => {
+                            setConvertMasksToPolygons(checked);
+                        }}
+                    />
+                    <Text>Convert masks to polygons</Text>
+                </div>
+            )}
+            {isDetector && withCleanup && (
+                <div className='cvat-detector-runner-clean-previous-annotations-wrapper'>
+                    <Switch
+                        checked={cleanup}
+                        onChange={(checked: boolean): void => setCleanup(checked)}
+                    />
+                    <Text>Clean previous annotations</Text>
+                </div>
             )}
             {isReId ? (
                 <div>

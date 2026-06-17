@@ -5,17 +5,6 @@
 
 @import '../../base';
 
-.cvat-detector-runner-mapping-header {
-    text-align: center;
-    width: 100%;
-    margin-top: $grid-unit-size;
-    margin-bottom: $grid-unit-size * 3;
-
-    .anticon {
-        margin-right: $grid-unit-size;
-    }
-}
-
 .cvat-runner-label-mapping-row {
     margin-bottom: $grid-unit-size;
     align-items: baseline;
@@ -105,16 +94,20 @@
 .cvat-detector-runner-clean-previous-annotations-wrapper,
 .cvat-detector-runner-convert-masks-to-polygons-wrapper,
 
-.cvat-detector-runner-threshold-wrapper, .cvat-automatic-annotation-region-of-interest-container {
-    > div:nth-child(1) {
-        // title and tooltip
-        margin-bottom: $grid-unit-size;
-        display: flex;
-        vertical-align: baseline;
-    }
+.cvat-detector-runner-mapping-header {
+    margin-bottom: $grid-unit-size;
+    display: flex;
+    vertical-align: baseline;
 
     .cvat-info-circle-icon {
         margin-left: $grid-unit-size;
+    }
+}
+
+
+.cvat-detector-runner-threshold-wrapper, .cvat-automatic-annotation-region-of-interest-container {
+    > div:nth-child(1) {
+        @extend .cvat-detector-runner-mapping-header;
     }
 }
 
