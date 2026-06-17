@@ -192,6 +192,28 @@ export default function ResourceFilterHOC(
             return () => window.removeEventListener('click', listener);
         }, [builderVisible, predefinedVisible]);
 
+        const handlePredefinedFilterChange = (predefinedFilter: string[]): void => {
+            const predefinedFilterToApply = unite(predefinedFilter);
+            onApplyFilter(predefinedFilterToApply);
+        };
+
+        const handleRecentFilterChange = (recentFilter: string): void => {
+            onApplyFilter(appliedFilter.recent);
+            const tree = QbUtils.loadFromJsonLogic(JSON.parse(recentFilter), config);
+            if (tree && isValidTree(tree)) {
+                setSearchTree(tree);
+            }
+        };
+
+        const handleApplyFilter = (filter: string): void => {
+            onApplyFilter(filter);
+        };
+
+        const handleClearFilter = (): void => {
+            onApplyFilter(null);
+            setSearchTree(defaultTree);
+        };
+
         useEffect(() => {
             if (!isMounted) {
                 // do not request resources until on mount hook is done
@@ -199,37 +221,32 @@ export default function ResourceFilterHOC(
             }
 
             if (appliedFilter.predefined?.length) {
-                const predefinedFilterToApply = unite(appliedFilter.predefined);
+                // TODO: should be removed in next step
+                const predefinedFilterToApply = unite(predefinedFilter);
                 if (value === predefinedFilterToApply) {
                     return;
                 }
 
-                onApplyFilter(predefinedFilterToApply);
+                handlePredefinedFilterChange(appliedFilter.predefined);
             } else if (appliedFilter.recent) {
                 if (value === appliedFilter.recent) {
                     return;
                 }
-
-                onApplyFilter(appliedFilter.recent);
-                const tree = QbUtils.loadFromJsonLogic(JSON.parse(appliedFilter.recent), config);
-                if (tree && isValidTree(tree)) {
-                    setState(tree);
-                }
+                handleRecentFilterChange(appliedFilter.recent);
             } else if (appliedFilter.built) {
                 if (value === appliedFilter.built) {
                     return;
                 }
 
-                onApplyFilter(appliedFilter.built);
+                handleApplyFilter(appliedFilter.built);
             } else {
                 if (value === null) {
                     return;
                 }
 
-                onApplyFilter(null);
-                setState(defaultTree);
+                handleClearFilter();
             }
-        }, [appliedFilter, value, isMounted]);
+        }, [appliedFilter, value]);
 
         const renderBuilder = (builderProps: any): JSX.Element => (
             <div className='query-builder-container'>
