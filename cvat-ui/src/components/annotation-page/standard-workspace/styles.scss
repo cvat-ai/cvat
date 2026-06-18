@@ -245,8 +245,11 @@
     position: absolute;
     left: 0;
     top: 0;
-    pointer-events: none;
     background: rgba(0, 0, 0, 80%);
+    background-color: rgba(128, 128, 128, 60%);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 18%) 25%, transparent 25%), linear-gradient(-45deg, rgba(255, 255, 255, 18%) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 18%) 75%), linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 18%) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
 }
 
 .cvat-opencv-initialization-button {
