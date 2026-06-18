@@ -51,3 +51,48 @@ def test_not_wraps():
 def test_all_empty_raises():
     with pytest.raises(ValueError):
         all_()
+
+
+from cvat_sdk.core.filters import F, Field
+
+
+def test_field_eq():
+    assert (F.status == "completed").to_json_logic() == {"==": [{"var": "status"}, "completed"]}
+
+
+def test_field_ne_uses_not_eq():
+    assert (F.id != 5).to_json_logic() == {"!": {"==": [{"var": "id"}, 5]}}
+
+
+def test_field_ordering_operators():
+    assert (F.id < 5).to_json_logic() == {"<": [{"var": "id"}, 5]}
+    assert (F.id <= 5).to_json_logic() == {"<=": [{"var": "id"}, 5]}
+    assert (F.id > 5).to_json_logic() == {">": [{"var": "id"}, 5]}
+    assert (F.id >= 5).to_json_logic() == {">=": [{"var": "id"}, 5]}
+
+
+def test_field_one_of():
+    assert F.project_id.one_of([1, 2, 3]).to_json_logic() == {"in": [{"var": "project_id"}, [1, 2, 3]]}
+
+
+def test_field_contains():
+    assert F.name.contains("demo").to_json_logic() == {"in": ["demo", {"var": "name"}]}
+
+
+def test_field_between():
+    assert F.id.between(10, 20).to_json_logic() == {"<=": [10, {"var": "id"}, 20]}
+
+
+def test_field_is_set():
+    assert F.assignee.is_set().to_json_logic() == {"var": "assignee"}
+
+
+def test_field_getitem():
+    assert (F["weird-name"] == 1).to_json_logic() == {"==": [{"var": "weird-name"}, 1]}
+
+
+def test_dsl_composition_example():
+    f = (F.status == "completed") & F.project_id.one_of([1, 2, 3])
+    assert f.to_json_logic() == {
+        "and": [{"==": [{"var": "status"}, "completed"]}, {"in": [{"var": "project_id"}, [1, 2, 3]]}]
+    }
