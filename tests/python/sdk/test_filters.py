@@ -96,3 +96,79 @@ def test_dsl_composition_example():
     assert f.to_json_logic() == {
         "and": [{"==": [{"var": "status"}, "completed"]}, {"in": [{"var": "project_id"}, [1, 2, 3]]}]
     }
+
+
+import json as _json
+
+from cvat_sdk.core.filters import build_filter_param, pop_lookup_conditions
+
+
+def test_pop_lookup_in():
+    kwargs = {"project_id__in": [1, 2, 3]}
+    conditions = pop_lookup_conditions(kwargs)
+    assert kwargs == {}
+    assert conditions == [{"in": [{"var": "project_id"}, [1, 2, 3]]}]
+
+
+def test_pop_lookup_all_operators():
+    kwargs = {
+        "name__contains": "demo",
+        "id__lt": 5,
+        "id__lte": 5,
+        "id__gt": 5,
+        "id__gte": 5,
+        "status__ne": "completed",
+        "id__between": (10, 20),
+        "assignee__isset": True,
+    }
+    conditions = pop_lookup_conditions(kwargs)
+    assert kwargs == {}
+    assert conditions == [
+        {"in": ["demo", {"var": "name"}]},
+        {"<": [{"var": "id"}, 5]},
+        {"<=": [{"var": "id"}, 5]},
+        {">": [{"var": "id"}, 5]},
+        {">=": [{"var": "id"}, 5]},
+        {"!": {"==": [{"var": "status"}, "completed"]}},
+        {"<=": [10, {"var": "id"}, 20]},
+        {"var": "assignee"},
+    ]
+
+
+def test_pop_lookup_isset_false():
+    kwargs = {"assignee__isset": False}
+    assert pop_lookup_conditions(kwargs) == [{"!": {"var": "assignee"}}]
+
+
+def test_pop_lookup_leaves_plain_and_unknown_kwargs():
+    kwargs = {"status": "completed", "page_size": 50, "unknown_filter": True}
+    assert pop_lookup_conditions(kwargs) == []
+    assert kwargs == {"status": "completed", "page_size": 50, "unknown_filter": True}
+
+
+def test_build_filter_param_none():
+    assert build_filter_param(None, []) is None
+
+
+def test_build_filter_param_single_lookup_unwrapped():
+    out = build_filter_param(None, [{"var": "x"}])
+    assert _json.loads(out) == {"var": "x"}
+
+
+def test_build_filter_param_merges_lookups_and_filter_with_and():
+    out = build_filter_param(
+        F.name.contains("v2"), [{"==": [{"var": "status"}, "completed"]}]
+    )
+    assert _json.loads(out) == {
+        "and": [{"==": [{"var": "status"}, "completed"]}, {"in": ["v2", {"var": "name"}]}]
+    }
+
+
+def test_build_filter_param_dict_passthrough_serialized():
+    out = build_filter_param({"==": [{"var": "id"}, 1]}, [])
+    assert _json.loads(out) == {"==": [{"var": "id"}, 1]}
+
+
+def test_build_filter_param_string_passthrough_verbatim():
+    raw = _json.dumps({"==": [{"var": "id"}, 1]})
+    assert build_filter_param(raw, []) == raw

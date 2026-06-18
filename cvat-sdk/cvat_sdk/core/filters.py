@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 
@@ -137,3 +137,46 @@ class _FieldFactory:
 
 
 F = _FieldFactory()
+
+
+LOOKUPS: dict[str, Callable[[dict[str, str], Any], Any]] = {
+    "in": lambda var, value: {"in": [var, list(value)]},
+    "contains": lambda var, value: {"in": [value, var]},
+    "lt": lambda var, value: {"<": [var, value]},
+    "lte": lambda var, value: {"<=": [var, value]},
+    "gt": lambda var, value: {">": [var, value]},
+    "gte": lambda var, value: {">=": [var, value]},
+    "ne": lambda var, value: {"!": {"==": [var, value]}},
+    "between": lambda var, value: {"<=": [value[0], var, value[1]]},
+    "isset": lambda var, value: var if value else {"!": var},
+}
+
+
+def pop_lookup_conditions(kwargs: dict[str, Any]) -> list[Any]:
+    """Extract and remove ``field__op`` lookup kwargs, returning JSON Logic conditions."""
+    conditions: list[Any] = []
+    for key in list(kwargs):
+        field, sep, op = key.rpartition("__")
+        if sep and field and op in LOOKUPS:
+            conditions.append(LOOKUPS[op]({"var": field}, kwargs.pop(key)))
+    return conditions
+
+
+def build_filter_param(
+    filter_value: Filter | Mapping | str | None,
+    lookup_conditions: list[Any],
+) -> str | None:
+    """Assemble the ``filter`` query-string value from a filter expression and lookups."""
+    if filter_value is None and not lookup_conditions:
+        return None
+
+    # A lone JSON string with nothing to merge is sent verbatim.
+    if isinstance(filter_value, str) and not lookup_conditions:
+        return filter_value
+
+    nodes: list[Any] = list(lookup_conditions)
+    if filter_value is not None:
+        nodes.append(_as_expr(filter_value))
+
+    combined = nodes[0] if len(nodes) == 1 else {"and": nodes}
+    return json.dumps(combined)
