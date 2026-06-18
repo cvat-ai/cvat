@@ -5,7 +5,9 @@
 
 import io
 import json
+import logging
 import os
+import struct
 from abc import ABC, abstractmethod
 from bisect import bisect_left, insort
 from collections.abc import Iterable, Iterator, Sequence
@@ -33,6 +35,8 @@ from .utils import (
     rotate_image,
     sort,
 )
+
+logger = logging.getLogger(__name__)
 
 # how many frames to check after seeking to validate key frame
 SEEK_MISMATCH_UPPER_BOUND = 200
@@ -248,6 +252,114 @@ class VideoStreamReader:
                     )
 
 
+def _strip_exif_from_jpeg(data: bytes) -> bytes:
+    """
+    Return JPEG bytes with all APP1 (EXIF) segments removed.
+
+    Some cameras / anonymisation tools write APP1 segments whose declared
+    length exceeds the actual file content, producing a truncated EXIF block.
+    Pillow raises ``OSError: Truncated File Read`` while parsing the JPEG
+    header in that case, even though the pixel data is perfectly intact.
+
+    Stripping every APP1 (marker 0xFF 0xE1) segment before opening with
+    Pillow lets the decoder reach the image data without touching the broken
+    metadata. Orientation defaults to 1 (no rotation) when EXIF is absent,
+    which is a safe fallback for the manifest dimension check.
+
+    The function is a no-op for non-JPEG data (no SOI marker).
+    If the APP1 declared length overshoots the end of the data buffer (corrupt
+    length field), the segment is skipped to EOF and the remainder is returned
+    as-is; the caller should then fall back to ``_extract_jpeg_dimensions``.
+    """
+    _JPEG_SOI = b"\xff\xd8"
+    _JPEG_EOI_MARKER = 0xD9
+    _JPEG_APP1_MARKER = 0xE1
+    # Standalone markers (no length field): RST0-RST7, SOI, EOI, TEM
+    _NO_LENGTH_MARKERS = frozenset([0xD8, 0xD9, 0x01] + list(range(0xD0, 0xD8)))
+
+    if len(data) < 2 or data[:2] != _JPEG_SOI:
+        return data  # not a JPEG – return unchanged
+
+    out = bytearray(_JPEG_SOI)
+    pos = 2
+
+    while pos + 1 < len(data):
+        if data[pos] != 0xFF:
+            # Unexpected byte – copy the rest verbatim and stop parsing
+            out += data[pos:]
+            break
+
+        marker = data[pos + 1]
+        pos += 2
+
+        if marker == _JPEG_EOI_MARKER:
+            out += b"\xff\xd9"
+            break
+
+        if marker in _NO_LENGTH_MARKERS:
+            out += bytes([0xFF, marker])
+            continue
+
+        # All other markers carry a 2-byte big-endian segment length
+        # (length includes the 2 length bytes themselves).
+        if pos + 2 > len(data):
+            break
+        seg_len = struct.unpack(">H", data[pos : pos + 2])[0]
+        end = pos + seg_len
+
+        if marker == _JPEG_APP1_MARKER:
+            # Skip the APP1 / EXIF segment entirely.
+            # If the declared length overshoots the actual data, clamp to EOF
+            # so the caller receives an incomplete (but non-empty) buffer and
+            # can attempt the SOF brute-force fallback.
+            pos = min(end, len(data))
+            continue
+
+        out += bytes([0xFF, marker]) + data[pos:end]
+        pos = end
+
+    return bytes(out)
+
+
+def _extract_jpeg_dimensions(data: bytes) -> tuple[int, int] | None:
+    """
+    Locate a JPEG SOF (Start Of Frame) marker by scanning raw bytes and
+    extract the encoded image dimensions.
+
+    This is a last-resort fallback used when Pillow cannot open the file even
+    after EXIF stripping (e.g. the APP1 declared length overshoots the file,
+    consuming the quantisation / frame markers that Pillow needs).  A
+    byte-by-byte scan finds the SOF regardless of corrupt segment lengths.
+
+    When multiple SOF markers are present (e.g. an EXIF thumbnail plus the
+    main image), the one with the largest pixel area is returned – thumbnails
+    are always smaller than the main image.
+
+    Returns ``(width, height)`` or ``None`` if no valid SOF is found.
+    """
+    # SOF0-SOF3, SOF5-SOF7, SOF9-SOF11, SOF13-SOF15
+    # Excludes DHT (0xC4), JPG (0xC8), DAC (0xCC) which share the 0xCx range
+    _SOF_MARKERS = (
+        frozenset(range(0xC0, 0xC4))
+        | frozenset(range(0xC5, 0xC8))
+        | frozenset(range(0xC9, 0xCC))
+        | frozenset(range(0xCD, 0xD0))
+    )
+
+    best: tuple[int, int] | None = None
+    i = 0
+    while i < len(data) - 8:
+        if data[i] == 0xFF and data[i + 1] in _SOF_MARKERS:
+            # SOF layout: FF Cx | length(2) | precision(1) | height(2) | width(2)
+            height = struct.unpack(">H", data[i + 5 : i + 7])[0]
+            width = struct.unpack(">H", data[i + 7 : i + 9])[0]
+            if 0 < width <= 65535 and 0 < height <= 65535:
+                if best is None or (width * height) > (best[0] * best[1]):
+                    best = (width, height)
+        i += 1
+    return best
+
+
 class DatasetImagesReader:
     def __init__(
         self,
@@ -321,7 +433,60 @@ class DatasetImagesReader:
 
                 if self._use_image_hash:
                     image_properties["checksum"] = md5_hash(img)
-        except (OSError, Image.UnidentifiedImageError) as e:
+        except OSError:
+            # The image header could not be parsed (e.g. truncated or
+            # oversized EXIF APP1 segment written by some anonymisation
+            # tools). We attempt two fallback strategies in order:
+            #
+            # 1. Strip all APP1 blocks from the raw bytes (using the
+            #    declared segment length) and let Pillow open the cleaned
+            #    buffer. This handles the common case where the stream was
+            #    truncated mid-APP1 but the declared length is within the
+            #    file size.
+            #
+            # 2. If Pillow still cannot open the stripped bytes (e.g. the
+            #    APP1 declared length overshoots the file, consuming the
+            #    DQT/SOF markers), fall back to a brute-force byte scan for
+            #    the JPEG SOF marker that encodes width and height directly.
+            #    Orientation defaults to 1 (upright) and no hash is computed
+            #    in this path – both are acceptable for the manifest dimension
+            #    check.
+            logger.warning(
+                "Failed to open '%s' with EXIF intact; retrying after stripping EXIF metadata.",
+                img_name,
+            )
+            try:
+                with image.open("rb") as f:
+                    raw = f.read()
+
+                # ── Strategy 1: strip APP1 then let Pillow parse ──────────
+                try:
+                    stripped = _strip_exif_from_jpeg(raw)
+                    with Image.open(io.BytesIO(stripped), mode="r") as img:
+                        image_properties["width"] = img.width
+                        image_properties["height"] = img.height
+                        if self._use_image_hash:
+                            image_properties["checksum"] = md5_hash(img)
+                except (OSError, Image.UnidentifiedImageError):
+                    # ── Strategy 2: brute-force SOF marker scan ───────────
+                    logger.warning(
+                        "EXIF-stripped bytes still unreadable for '%s'; "
+                        "falling back to raw SOF scan (orientation/hash unavailable).",
+                        img_name,
+                    )
+                    dims = _extract_jpeg_dimensions(raw)
+                    if dims is None:
+                        raise InvalidImageError(
+                            f"failed to parse image file '{img_name}': "
+                            "no valid SOF marker found in raw bytes"
+                        )
+                    image_properties["width"], image_properties["height"] = dims
+
+            except InvalidImageError:
+                raise
+            except (OSError, Image.UnidentifiedImageError) as e:
+                raise InvalidImageError(f"failed to parse image file '{img_name}'") from e
+        except Image.UnidentifiedImageError as e:
             raise InvalidImageError(f"failed to parse image file '{img_name}'") from e
 
         if self._meta and img_name in self._meta:
