@@ -165,7 +165,7 @@ export default function ResourceFilterHOC(
                 setSearchTree(tree);
                 return {
                     recent: recentFilters[value] ?? null,
-                    predefined: splitFilterIntoPredefined(Object.values(predefinedFilters), value),
+                    predefined: splitFilterIntoPredefined(Object.values(predefinedFilters ?? {}), value),
                     built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
                 };
             } catch {
