@@ -60,7 +60,7 @@ jobs:
           mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           build-args: |
               "COVERAGE_PROCESS_START=.coveragerc"
@@ -77,7 +77,7 @@ jobs:
           yarn run coverage
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
