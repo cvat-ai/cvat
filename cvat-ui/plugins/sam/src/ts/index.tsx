@@ -77,11 +77,7 @@ function buildROISignature(roi?: ROI): string {
 }
 
 function optTranslatePrompts(points: number[][], roi?: ROI): number[][] {
-    if (!roi) {
-        return points;
-    }
-
-    return points.map((point) => [point[0] - roi[0], point[1] - roi[1]]);
+    return roi ? points.map((point) => [point[0] - roi[0], point[1] - roi[1]]) : points;
 }
 
 function getModelScale(w: number, h: number): number {
@@ -148,12 +144,11 @@ const samPlugin: SAMPlugin = {
                         function resolvePromise(): void {
                             const key = `${taskID}_${frame}`;
 
-                            const signature = buildROISignature(roi);
-                            if (plugin.data.lastROIs[key] !== signature) {
+                            if (plugin.data.lastROIs[key] !== buildROISignature(roi)) {
                                 plugin.data.embeddings.delete(key);
                                 plugin.data.lowResMasks.delete(key);
                                 plugin.data.lastClicks = [];
-                                plugin.data.lastROIs[key] = signature;
+                                delete plugin.data.lastROIs[key];
                             }
 
                             if (plugin.data.embeddings.has(key)) {
@@ -247,6 +242,8 @@ const samPlugin: SAMPlugin = {
                                     for (let i = 0; i < bin.length; i++) {
                                         bytes[i] = bin.charCodeAt(i);
                                     }
+
+                                    plugin.data.lastROIs[key] = buildROISignature(roi);
                                     plugin.data.embeddings.set(key, new Float32Array(bytes.buffer));
                                 }
 
