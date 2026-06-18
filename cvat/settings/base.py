@@ -39,6 +39,9 @@ INTERNAL_IPS = ["127.0.0.1"]
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 
 
+print("hello world")
+
+
 def generate_secret_key():
     """
     Creates secret_key.py in such a way that multiple processes calling
