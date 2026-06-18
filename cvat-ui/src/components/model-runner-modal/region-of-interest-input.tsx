@@ -12,7 +12,7 @@ import Text from 'antd/lib/typography/Text';
 import Icon, { QuestionCircleOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 
-import { Canvas, convertShapesForInteractor, InteractionResult } from 'cvat-canvas-wrapper';
+import { type Canvas, convertShapesForInteractor, InteractionResult } from 'cvat-canvas-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { RectangleIcon } from 'icons';
 import { clamp } from 'utils/math';
@@ -82,9 +82,10 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
 
     const updateInputComponent = useCallback((updated: Partial<RegionOfInterestInput>): void => {
         const { width: frameWidthValue, height: frameHeightValue } = frameSizeRef.current!;
-        const normalizeValue = (value: number | null | undefined, min: number, max: number): number | undefined => (
+        const normalizeValue = (value: number | undefined, min: number, max: number): number | undefined => (
             typeof value === 'number' ? clamp(Math.floor(value), min, max) : undefined
         );
+
         const xtl = normalizeValue(updated.xtl, 0, frameWidthValue);
         const ytl = normalizeValue(updated.ytl, 0, frameHeightValue);
         const normalized = {
@@ -179,25 +180,30 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
         };
     }, [canvasInstance, drawing]);
 
+    const { width, height } = frameSizeRef.current!;
     const isXtlInvalid = Object.keys(input).length > 0 && (
         !Number.isInteger(input.xtl) || input.xtl! < 0 ||
-        input.xtl! > frameSizeRef.current!.width - MIN_ROI_SIZE
+        input.xtl! > width - MIN_ROI_SIZE
     );
 
     const isYtlInvalid = Object.keys(input).length > 0 && (
         !Number.isInteger(input.ytl) || input.ytl! < 0 ||
-        input.ytl! > frameSizeRef.current!.height - MIN_ROI_SIZE
+        input.ytl! > height - MIN_ROI_SIZE
     );
 
     const isWidthInvalid = Object.keys(input).length > 0 && (
         !Number.isInteger(input.width) || input.width! < MIN_ROI_SIZE ||
-        input.xtl! + input.width! > frameSizeRef.current!.width
+        (Number.isInteger(input.xtl) && input.xtl! + input.width! > width)
     );
 
     const isHeightInvalid = Object.keys(input).length > 0 && (
         !Number.isInteger(input.height) || input.height! < MIN_ROI_SIZE ||
-        input.ytl! + input.height! > frameSizeRef.current!.height
+        (Number.isInteger(input.ytl) && input.ytl! + input.height! > height)
     );
+
+    const allIsValid = Object.keys(input).length > 0 &&
+        !isXtlInvalid && !isYtlInvalid && !isWidthInvalid && !isHeightInvalid;
+    const defauleClassList = allIsValid ? 'cvat-correct-region-of-interest-value' : '';
 
     return (
         <div className='cvat-automatic-annotation-region-of-interest-container'>
@@ -214,7 +220,7 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
                         placeholder='x'
                         precision={0}
                         value={input.xtl}
-                        className={isXtlInvalid ? 'cvat-errored-region-of-interest-value' : ''}
+                        className={isXtlInvalid ? 'cvat-errored-region-of-interest-value' : defauleClassList}
                         onChange={(value: number | null) => updateInputComponent({
                             ...input, xtl: value ?? undefined,
                         })}
@@ -226,7 +232,7 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
                         placeholder='y'
                         precision={0}
                         value={input.ytl}
-                        className={isYtlInvalid ? 'cvat-errored-region-of-interest-value' : ''}
+                        className={isYtlInvalid ? 'cvat-errored-region-of-interest-value' : defauleClassList}
                         onChange={(value: number | null) => updateInputComponent({
                             ...input, ytl: value ?? undefined,
                         })}
@@ -238,7 +244,7 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
                         placeholder='width'
                         precision={0}
                         value={input.width}
-                        className={isWidthInvalid ? 'cvat-errored-region-of-interest-value' : ''}
+                        className={isWidthInvalid ? 'cvat-errored-region-of-interest-value' : defauleClassList}
                         onChange={(value: number | null) => updateInputComponent({
                             ...input, width: value ?? undefined,
                         })}
@@ -250,7 +256,7 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
                         placeholder='height'
                         precision={0}
                         value={input.height}
-                        className={isHeightInvalid ? 'cvat-errored-region-of-interest-value' : ''}
+                        className={isHeightInvalid ? 'cvat-errored-region-of-interest-value' : defauleClassList}
                         onChange={(value: number | null) => updateInputComponent({
                             ...input, height: value ?? undefined,
                         })}

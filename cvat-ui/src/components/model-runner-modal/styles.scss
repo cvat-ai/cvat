@@ -118,10 +118,19 @@
 }
 
 .cvat-automatic-annotation-region-of-interest-container {
+    .cvat-correct-region-of-interest-value,
     .cvat-errored-region-of-interest-value {
+        border-radius: $border-radius-base;
         border-width: 1px;
         border-style: solid;
+    }
+
+    .cvat-errored-region-of-interest-value {
         border-color: $danger-icon-color;
+    }
+
+    .cvat-correct-region-of-interest-value {
+        border-color: $ok-icon-color;
     }
 
     input {
