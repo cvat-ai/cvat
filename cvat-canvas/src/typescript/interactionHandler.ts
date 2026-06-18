@@ -10,6 +10,7 @@ import Crosshair from './crosshair';
 import {
     stringifyPoints, translateToCanvas, RLEToImageData,
     imageDataToDataURL, translateFromCanvas, translateToSVG,
+    clamp,
 } from './shared';
 import {
     InteractionData, InteractionResult, Geometry,
@@ -52,7 +53,7 @@ function deleteButtonPath(r: number): string {
 }
 
 export class InteractionHandlerImpl implements InteractionHandler {
-    private settings: Omit<InteractionData['settings'], 'hint' | 'regionOfInterest'>;
+    private settings: Omit<Required<InteractionData['settings']>, 'hint' | 'regionOfInterest'>;
     private enabled: boolean;
     private command: 'draw_box' | 'draw_points' | 'put_shapes' | 'refine' | 'idle';
     private currentRectangle: SVG.Rect | null;
@@ -203,14 +204,14 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 const bottom = offset + imHeight;
 
                 const { regionOfInterest } = this;
-                const roiLeft = regionOfInterest ? offset + regionOfInterest[0] : offset;
-                const roiTop = regionOfInterest ? offset + regionOfInterest[1] : offset;
-                const roiRight = regionOfInterest ? offset + regionOfInterest[2] : right;
-                const roiBottom = regionOfInterest ? offset + regionOfInterest[3] : bottom;
-                const xtl = Math.max(x, roiLeft);
-                const ytl = Math.max(y, roiTop);
-                const xbr = Math.min(x + width, roiRight);
-                const ybr = Math.min(y + height, roiBottom);
+                const minX = regionOfInterest ? offset + regionOfInterest[0] : offset;
+                const minY = regionOfInterest ? offset + regionOfInterest[1] : offset;
+                const maxX = regionOfInterest ? offset + regionOfInterest[2] : right;
+                const maxY = regionOfInterest ? offset + regionOfInterest[3] : bottom;
+                const xtl = clamp(x, minX, maxX);
+                const ytl = clamp(y, minY, maxY);
+                const xbr = clamp(x + width, minX, maxX);
+                const ybr = clamp(y + height, minY, maxY);
 
                 if (xbr - xtl < 1 || ybr - ytl < 1) {
                     rectangle.remove();
@@ -596,7 +597,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             const { command } = interactData;
             if (['draw_box', 'draw_points'].includes(command)) {
                 const regionOfInterest = interactData.settings?.regionOfInterest;
-                this.regionOfInterest = regionOfInterest ? { ...regionOfInterest } : null;
+                this.regionOfInterest = regionOfInterest ? [...regionOfInterest] : null;
                 if (command === 'draw_box') {
                     this.drawBox(interactData.settings?.hint);
                 } else {
