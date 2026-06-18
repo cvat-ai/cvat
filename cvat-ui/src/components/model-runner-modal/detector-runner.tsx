@@ -19,7 +19,7 @@ import { clamp } from 'utils/math';
 import {
     MLModel, ModelKind, DimensionType, Label, LabelType,
 } from 'cvat-core-wrapper';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { type Canvas } from 'cvat-canvas-wrapper';
 
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
 import RegionOfInterestInputComponent from './region-of-interest-input';
@@ -92,7 +92,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
     const isReId = model?.kind === ModelKind.REID;
-    const showROI = isDetector && !isReId && dimension === DimensionType.DIMENSION_2D;
+    const showROI = isDetector && dimension === DimensionType.DIMENSION_2D;
     const convertMasks2PolygonVisible = isDetector &&
         [LabelType.ANY, LabelType.MASK].includes(model.returnType);
 
@@ -141,7 +141,7 @@ function DetectorRunner(props: Props): JSX.Element {
         if (onRegionOfInterestChange) {
             onRegionOfInterestChange(regionOfInterest);
         }
-    }, [regionOfInterest, onRegionOfInterestChange]);
+    }, [regionOfInterest]);
 
     return (
         <div className='cvat-run-model-content'>
