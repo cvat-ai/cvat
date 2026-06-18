@@ -4,8 +4,12 @@
 
 import { LRUCache } from 'lru-cache';
 import {
-    CVATCore, MLModel, Job, InteractorResults,
-    Source, ShapeType,
+    type CVATCore,
+    type MLModel,
+    type Job,
+    type InteractorResults,
+    Source,
+    ShapeType,
 } from 'cvat-core-wrapper';
 import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
 import {
@@ -52,6 +56,7 @@ interface SAMPlugin {
         modelURL: string;
         embeddings: LRUCache<string, Float32Array>;
         lowResMasks: LRUCache<string, Float32Array>;
+        lastROIs: Record<string, string>;
         lastClicks: ClickType[];
     };
     callbacks: {
@@ -63,6 +68,25 @@ interface ClickType {
     clickType: 0 | 1 | 2 | 3;
     x: number;
     y: number;
+}
+
+interface ROI {
+    xtl: number;
+    ytl: number;
+    xbr: number;
+    ybr: number;
+}
+
+function buildROISignature(roi?: ROI): string {
+    return roi ? `${roi.xtl}_${roi.ytl}_${roi.xbr}_${roi.ybr}` : 'full';
+}
+
+function optTranslatePrompts(points: number[][], roi?: ROI): number[][] {
+    if (!roi) {
+        return points;
+    }
+
+    return points.map((point) => [point[0] - roi.xtl, point[1] - roi.ytl]);
 }
 
 function getModelScale(w: number, h: number): number {
@@ -123,11 +147,20 @@ const samPlugin: SAMPlugin = {
                 async enter(
                     plugin: SAMPlugin,
                     taskID: number,
-                    model: MLModel, { frame }: { frame: number; },
+                    model: MLModel, { frame, roi }: { frame: number; roi?: ROI },
                 ): Promise<null | APIWrapperEnterOptions> {
                     return new Promise((resolve, reject) => {
                         function resolvePromise(): void {
                             const key = `${taskID}_${frame}`;
+
+                            const signature = buildROISignature(roi);
+                            if (plugin.data.lastROIs[key] !== signature) {
+                                plugin.data.embeddings.delete(key);
+                                plugin.data.lowResMasks.delete(key);
+                                plugin.data.lastClicks = [];
+                                plugin.data.lastROIs[key] = signature;
+                            }
+
                             if (plugin.data.embeddings.has(key)) {
                                 resolve({ preventMethodCall: true });
                             } else {
@@ -173,12 +206,13 @@ const samPlugin: SAMPlugin = {
                     taskID: number,
                     model: MLModel,
                     {
-                        frame, pos_points, neg_points, obj_bbox,
+                        frame, pos_points, neg_points, obj_bbox, roi,
                     }: {
                         frame: number;
                         pos_points: number[][];
                         neg_points: number[][];
                         obj_bbox: number[][];
+                        roi?: ROI;
                     },
                 ): Promise<{
                     mask: number[][];
@@ -206,6 +240,11 @@ const samPlugin: SAMPlugin = {
                         job.frames.get(frame)
                             .then(({ height: imHeight, width: imWidth }: { height: number; width: number }) => {
                                 const key = `${taskID}_${frame}`;
+                                const inputWidth = roi ? roi.xbr - roi.xtl : imWidth;
+                                const inputHeight = roi ? roi.ybr - roi.ytl : imHeight;
+                                const inputPosPoints = optTranslatePrompts(pos_points, roi);
+                                const inputNegPoints = optTranslatePrompts(neg_points, roi);
+                                const inputObjBbox = optTranslatePrompts(obj_bbox, roi);
 
                                 if (result) {
                                     const bin = window.atob((result as { blob: string }).blob);
@@ -217,16 +256,16 @@ const samPlugin: SAMPlugin = {
                                 }
 
                                 const clicks: ClickType[] = [];
-                                if (obj_bbox.length) {
-                                    clicks.push({ clickType: 2, x: obj_bbox[0][0], y: obj_bbox[0][1] });
-                                    clicks.push({ clickType: 3, x: obj_bbox[1][0], y: obj_bbox[1][1] });
+                                if (inputObjBbox.length) {
+                                    clicks.push({ clickType: 2, x: inputObjBbox[0][0], y: inputObjBbox[0][1] });
+                                    clicks.push({ clickType: 3, x: inputObjBbox[1][0], y: inputObjBbox[1][1] });
                                 }
 
-                                pos_points.forEach((point) => {
+                                inputPosPoints.forEach((point) => {
                                     clicks.push({ clickType: 1, x: point[0], y: point[1] });
                                 });
 
-                                neg_points.forEach((point) => {
+                                inputNegPoints.forEach((point) => {
                                     clicks.push({ clickType: 0, x: point[0], y: point[1] });
                                 });
 
@@ -240,9 +279,9 @@ const samPlugin: SAMPlugin = {
                                         lowResMask: isLowResMaskRelevant ?
                                             plugin.data.lowResMasks.get(key) ?? null : null,
                                         modelScale: {
-                                            width: imWidth,
-                                            height: imHeight,
-                                            scale: getModelScale(imWidth, imHeight),
+                                            width: inputWidth,
+                                            height: inputHeight,
+                                            scale: getModelScale(inputWidth, inputHeight),
                                         },
                                         clicks,
                                     }),
@@ -266,6 +305,12 @@ const samPlugin: SAMPlugin = {
                                                 if (rle.length < 2) {
                                                     rle = [0, 0, 0, 0, 0];
                                                 } else {
+                                                    if (roi) {
+                                                        bounds[0] += roi.xtl;
+                                                        bounds[1] += roi.ytl;
+                                                        bounds[2] += roi.xtl;
+                                                        bounds[3] += roi.ytl;
+                                                    }
                                                     rle.push(...bounds);
                                                 }
 
@@ -314,6 +359,7 @@ const samPlugin: SAMPlugin = {
             updateAgeOnGet: true,
             updateAgeOnHas: true,
         }),
+        lastROIs: {},
         lastClicks: [],
     },
     callbacks: {
@@ -333,6 +379,7 @@ const builder: ComponentBuilder = ({ core }) => {
             samPlugin.data.lowResMasks.clear();
             samPlugin.data.worker.terminate();
             samPlugin.data.lastClicks = [];
+            samPlugin.data.lastROIs = {};
             samPlugin.data.jobs = {};
             samPlugin.data.core = null;
             samPlugin.data.initialized = false;
