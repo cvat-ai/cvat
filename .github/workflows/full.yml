@@ -105,19 +105,19 @@ jobs:
           python-version: '3.10'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
 
       - name: Download CVAT SDK package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
@@ -192,7 +192,7 @@ jobs:
           ref: ${{ inputs.ref }}
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_server
           path: /tmp/cvat_server/
@@ -260,13 +260,13 @@ jobs:
             node-version: '22.x'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
