@@ -446,10 +446,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const overlayWidth = frameWidth + offset * 2;
         const overlayHeight = frameHeight + offset * 2;
         const overlayROI = {
-            xtl: regionOfInterest.xtl + offset,
-            ytl: regionOfInterest.ytl + offset,
-            xbr: regionOfInterest.xbr + offset,
-            ybr: regionOfInterest.ybr + offset,
+            xtl: regionOfInterest[0] + offset,
+            ytl: regionOfInterest[1] + offset,
+            xbr: regionOfInterest[2] + offset,
+            ybr: regionOfInterest[3] + offset,
         };
 
         const clipPath = `

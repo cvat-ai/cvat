@@ -24,7 +24,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
 import RegionOfInterestInputComponent from './region-of-interest-input';
 
-export type RegionOfInterest = AnnotateTaskRequestBody['roi'] | null;
+export type RegionOfInterest = NonNullable<AnnotateTaskRequestBody['roi']> | null;
 
 interface Props {
     withCleanup: boolean;
@@ -50,7 +50,7 @@ export interface AnnotateTaskRequestBody {
     cleanup: boolean;
     conv_mask_to_poly: boolean;
     threshold?: number;
-    roi?: { xtl: number; ytl: number; xbr: number; ybr: number; };
+    roi?: [number, number, number, number];
 }
 
 function convertMappingToServer(mapping: FullMapping): ServerMapping {

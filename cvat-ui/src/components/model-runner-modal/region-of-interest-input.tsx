@@ -17,12 +17,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { RectangleIcon } from 'icons';
 import { clamp } from 'utils/math';
 
-interface RegionOfInterest {
-    xtl: number;
-    ytl: number;
-    xbr: number;
-    ybr: number;
-}
+type RegionOfInterest = [number, number, number, number];
 
 interface RegionOfInterestInput {
     xtl: number;
@@ -47,20 +42,20 @@ function isValidRegionOfInterestInput(input: Partial<RegionOfInterestInput>): bo
 }
 
 function getRegionOfInterest(input: Partial<RegionOfInterestInput>): RegionOfInterest | null {
-    return isValidRegionOfInterestInput(input) ? {
-        xtl: input.xtl!,
-        ytl: input.ytl!,
-        xbr: input.xtl! + input.width!,
-        ybr: input.ytl! + input.height!,
-    } : null;
+    return isValidRegionOfInterestInput(input) ? [
+        input.xtl!,
+        input.ytl!,
+        input.xtl! + input.width!,
+        input.ytl! + input.height!,
+    ] : null;
 }
 
-function getInputFromRegionOfInterest(regionOfInterest: RegionOfInterest): RegionOfInterestInput {
+function getInputFromRegionOfInterest(regionOfInterest: Readonly<RegionOfInterest>): RegionOfInterestInput {
     return {
-        xtl: regionOfInterest.xtl,
-        ytl: regionOfInterest.ytl,
-        width: regionOfInterest.xbr - regionOfInterest.xtl,
-        height: regionOfInterest.ybr - regionOfInterest.ytl,
+        xtl: regionOfInterest[0],
+        ytl: regionOfInterest[1],
+        width: regionOfInterest[2] - regionOfInterest[0],
+        height: regionOfInterest[3] - regionOfInterest[1],
     };
 }
 
@@ -98,20 +93,17 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
             width: normalizeValue(updated.width, 0, frameWidthValue - (xtl ?? 0)),
             height: normalizeValue(updated.height, 0, frameHeightValue - (ytl ?? 0)),
         };
-        setInput({ ...normalized });
+
         const regionOfInterest = getRegionOfInterest(normalized);
-        if (regionOfInterest) {
-            onSubmit(regionOfInterest);
-        } else {
-            onSubmit(null);
-        }
+        setInput({ ...normalized });
+        onSubmit(regionOfInterest);
     }, [onSubmit]);
 
-    const updateInput = useCallback((updated: RegionOfInterest | null): void => {
+    const updateInput = useCallback((updated: Readonly<RegionOfInterest> | null): void => {
         // accepts ready-to-use and valid RegionOfInterest
         if (updated) {
             setInput(getInputFromRegionOfInterest(updated));
-            onSubmit(updated);
+            onSubmit([...updated]);
         } else {
             setInput({});
             onSubmit(null);
@@ -155,12 +147,12 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
             if (box.length >= 2) {
                 const { width, height } = frameSizeRef.current!;
                 const [[drawnXtl, drawnYtl], [drawnXbr, drawnYbr]] = box;
-                const clamped = {
-                    xtl: clamp(Math.floor(drawnXtl), 0, width),
-                    ytl: clamp(Math.floor(drawnYtl), 0, height),
-                    xbr: clamp(Math.floor(drawnXbr), 0, width),
-                    ybr: clamp(Math.floor(drawnYbr), 0, height),
-                };
+                const clamped = [
+                    clamp(Math.floor(drawnXtl), 0, width),
+                    clamp(Math.floor(drawnYtl), 0, height),
+                    clamp(Math.floor(drawnXbr), 0, width),
+                    clamp(Math.floor(drawnYbr), 0, height),
+                ] as const;
 
                 const drawnInput = getInputFromRegionOfInterest(clamped);
                 if (!isValidRegionOfInterestInput(drawnInput)) {

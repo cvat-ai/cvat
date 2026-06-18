@@ -92,8 +92,14 @@
 }
 
 .cvat-detector-runner-clean-previous-annotations-wrapper,
-.cvat-detector-runner-convert-masks-to-polygons-wrapper,
+.cvat-detector-runner-convert-masks-to-polygons-wrapper {
+    span {
+        margin-left: $grid-unit-size;
+    }
+}
 
+.cvat-detector-runner-clean-previous-annotations-wrapper,
+.cvat-detector-runner-convert-masks-to-polygons-wrapper,
 .cvat-detector-runner-mapping-header {
     margin-bottom: $grid-unit-size;
     display: flex;

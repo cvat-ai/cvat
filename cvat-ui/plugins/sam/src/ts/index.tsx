@@ -70,15 +70,10 @@ interface ClickType {
     y: number;
 }
 
-interface ROI {
-    xtl: number;
-    ytl: number;
-    xbr: number;
-    ybr: number;
-}
+type ROI = [number, number, number, number]; // [xtl, ytl, xbr, ybr]
 
 function buildROISignature(roi?: ROI): string {
-    return roi ? `${roi.xtl}_${roi.ytl}_${roi.xbr}_${roi.ybr}` : 'full';
+    return roi ? `${roi[0]}_${roi[1]}_${roi[2]}_${roi[3]}` : 'full';
 }
 
 function optTranslatePrompts(points: number[][], roi?: ROI): number[][] {
@@ -86,7 +81,7 @@ function optTranslatePrompts(points: number[][], roi?: ROI): number[][] {
         return points;
     }
 
-    return points.map((point) => [point[0] - roi.xtl, point[1] - roi.ytl]);
+    return points.map((point) => [point[0] - roi[0], point[1] - roi[1]]);
 }
 
 function getModelScale(w: number, h: number): number {
@@ -240,8 +235,8 @@ const samPlugin: SAMPlugin = {
                         job.frames.get(frame)
                             .then(({ height: imHeight, width: imWidth }: { height: number; width: number }) => {
                                 const key = `${taskID}_${frame}`;
-                                const inputWidth = roi ? roi.xbr - roi.xtl : imWidth;
-                                const inputHeight = roi ? roi.ybr - roi.ytl : imHeight;
+                                const inputWidth = roi ? roi[2] - roi[0] : imWidth;
+                                const inputHeight = roi ? roi[3] - roi[1] : imHeight;
                                 const inputPosPoints = optTranslatePrompts(pos_points, roi);
                                 const inputNegPoints = optTranslatePrompts(neg_points, roi);
                                 const inputObjBbox = optTranslatePrompts(obj_bbox, roi);
@@ -306,10 +301,10 @@ const samPlugin: SAMPlugin = {
                                                     rle = [0, 0, 0, 0, 0];
                                                 } else {
                                                     if (roi) {
-                                                        bounds[0] += roi.xtl;
-                                                        bounds[1] += roi.ytl;
-                                                        bounds[2] += roi.xtl;
-                                                        bounds[3] += roi.ytl;
+                                                        bounds[0] += roi[0];
+                                                        bounds[1] += roi[1];
+                                                        bounds[2] += roi[0];
+                                                        bounds[3] += roi[1];
                                                     }
                                                     rle.push(...bounds);
                                                 }

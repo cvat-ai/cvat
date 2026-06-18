@@ -170,10 +170,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
         if (regionOfInterest) {
             return (
-                imageX >= regionOfInterest.xtl &&
-                imageX <= regionOfInterest.xbr &&
-                imageY >= regionOfInterest.ytl &&
-                imageY <= regionOfInterest.ybr
+                imageX >= regionOfInterest[0] &&
+                imageX <= regionOfInterest[2] &&
+                imageY >= regionOfInterest[1] &&
+                imageY <= regionOfInterest[3]
             );
         }
 
@@ -203,10 +203,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 const bottom = offset + imHeight;
 
                 const { regionOfInterest } = this;
-                const roiLeft = regionOfInterest ? offset + regionOfInterest.xtl : offset;
-                const roiTop = regionOfInterest ? offset + regionOfInterest.ytl : offset;
-                const roiRight = regionOfInterest ? offset + regionOfInterest.xbr : right;
-                const roiBottom = regionOfInterest ? offset + regionOfInterest.ybr : bottom;
+                const roiLeft = regionOfInterest ? offset + regionOfInterest[0] : offset;
+                const roiTop = regionOfInterest ? offset + regionOfInterest[1] : offset;
+                const roiRight = regionOfInterest ? offset + regionOfInterest[2] : right;
+                const roiBottom = regionOfInterest ? offset + regionOfInterest[3] : bottom;
                 const xtl = Math.max(x, roiLeft);
                 const ytl = Math.max(y, roiTop);
                 const xbr = Math.min(x + width, roiRight);
