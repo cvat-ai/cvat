@@ -20,8 +20,6 @@ class ROIHelper:
     spaces.
     """
 
-    MIN_ROI_SIZE = 128
-
     @classmethod
     def parse_roi(cls, roi: list | None) -> dict | None:
         """
@@ -51,11 +49,8 @@ class ROIHelper:
                 "ROI coordinates must be non-negative", code=status.HTTP_400_BAD_REQUEST
             )
 
-        if xbr - xtl < cls.MIN_ROI_SIZE or ybr - ytl < cls.MIN_ROI_SIZE:
-            raise ValidationError(
-                f"ROI size must be at least {cls.MIN_ROI_SIZE}x{cls.MIN_ROI_SIZE}px",
-                code=status.HTTP_400_BAD_REQUEST,
-            )
+        if xbr <= xtl or ybr <= ytl:
+            raise ValidationError("ROI size must be positive", code=status.HTTP_400_BAD_REQUEST)
 
         return {"xtl": xtl, "ytl": ytl, "xbr": xbr, "ybr": ybr}
 

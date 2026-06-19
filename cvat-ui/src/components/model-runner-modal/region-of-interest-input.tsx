@@ -33,12 +33,10 @@ interface Props {
     onSubmit: (result: RegionOfInterest | null) => void;
 }
 
-const MIN_ROI_SIZE = 128;
-
 function isValidRegionOfInterestInput(input: Partial<RegionOfInterestInput>): boolean {
     return Number.isInteger(input.xtl) && Number.isInteger(input.ytl) &&
         Number.isInteger(input.width) && Number.isInteger(input.height) &&
-        input.width! >= MIN_ROI_SIZE && input.height! >= MIN_ROI_SIZE;
+        input.width! > 0 && input.height! > 0;
 }
 
 function getRegionOfInterest(input: Partial<RegionOfInterestInput>): RegionOfInterest | null {
@@ -158,7 +156,7 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
                 const drawnInput = getInputFromRegionOfInterest(clamped);
                 if (!isValidRegionOfInterestInput(drawnInput)) {
                     notification.error({
-                        message: `Minimal size of region of interest is ${MIN_ROI_SIZE}x${MIN_ROI_SIZE} pixels`,
+                        message: 'Region of interest must have positive width and height',
                     });
                 } else {
                     updateInput(clamped);
@@ -182,22 +180,20 @@ function RegionOfInterestInputComponent(props: Props): JSX.Element {
 
     const { width, height } = frameSizeRef.current!;
     const isXtlInvalid = Object.keys(input).length > 0 && (
-        !Number.isInteger(input.xtl) || input.xtl! < 0 ||
-        input.xtl! > width - MIN_ROI_SIZE
+        !Number.isInteger(input.xtl) || input.xtl! < 0 || input.xtl! >= width
     );
 
     const isYtlInvalid = Object.keys(input).length > 0 && (
-        !Number.isInteger(input.ytl) || input.ytl! < 0 ||
-        input.ytl! > height - MIN_ROI_SIZE
+        !Number.isInteger(input.ytl) || input.ytl! < 0 || input.ytl! >= height
     );
 
     const isWidthInvalid = Object.keys(input).length > 0 && (
-        !Number.isInteger(input.width) || input.width! < MIN_ROI_SIZE ||
+        !Number.isInteger(input.width) || input.width! <= 0 ||
         (Number.isInteger(input.xtl) && input.xtl! + input.width! > width)
     );
 
     const isHeightInvalid = Object.keys(input).length > 0 && (
-        !Number.isInteger(input.height) || input.height! < MIN_ROI_SIZE ||
+        !Number.isInteger(input.height) || input.height! <= 0 ||
         (Number.isInteger(input.ytl) && input.ytl! + input.height! > height)
     );
 
