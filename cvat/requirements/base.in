@@ -40,7 +40,7 @@ json-stream>=2.0,<3
 patool~=4.0
 
 pdf2image==1.14.0
-Pillow>=10.3.0
+Pillow>=12.2.0
 pottery~=3.0
 psutil==5.9.4
 psycopg2-binary~=2.9
