@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import numpy as np
-from django.core.exceptions import ValidationError
 from PIL import Image
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 
 
 class ROIHelper:
@@ -17,35 +17,35 @@ class ROIHelper:
     Public API requests pass ROI as image coordinates: [xtl, ytl, xbr, ybr].
     Lambda functions still receive only an image, so the server crops the image
     before invocation and then maps prompts/results between these coordinate
-    spaces:
+    spaces.
     """
 
     MIN_ROI_SIZE = 128
 
     @classmethod
-    def parse_roi(cls, image_width: int, image_height: int, roi: list | None) -> dict | None:
+    def parse_roi(cls, roi: list | None) -> dict | None:
         """
-        Validate request ROI and normalize it to a named internal structure.
-
-        The returned dict intentionally carries named keys even though the
-        request payload is a four-item list. That keeps the crop and translation
-        code explicit at call sites and avoids relying on positional indexes
-        after validation.
+        Validate request ROI and normalize it to a dict with explicit coordinate keys.
         """
         if roi is None:
             return None
 
-        try:
-            assert isinstance(roi, list) and len(roi) == 4
-            xtl, ytl, xbr, ybr = (int(coordinate) for coordinate in roi)
-        except (TypeError, ValueError, AssertionError) as ex:
+        if not isinstance(roi, list) or len(roi) != 4:
             raise ValidationError(
                 "ROI must contain four integer coordinates: [xtl, ytl, xbr, ybr]",
                 code=status.HTTP_400_BAD_REQUEST,
-            ) from ex
+            )
 
-        if xtl < 0 or ytl < 0 or xbr > image_width or ybr > image_height:
-            raise ValidationError("ROI is outside the image", code=status.HTTP_400_BAD_REQUEST)
+        if not all(isinstance(coordinate, int) and not isinstance(coordinate, bool) for coordinate in roi):
+            raise ValidationError(
+                "ROI must contain four integer coordinates: [xtl, ytl, xbr, ybr]",
+                code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        xtl, ytl, xbr, ybr = roi
+
+        if xtl < 0 or ytl < 0 or xbr < 0 or ybr < 0:
+            raise ValidationError("ROI coordinates must be non-negative", code=status.HTTP_400_BAD_REQUEST)
 
         if xbr - xtl < cls.MIN_ROI_SIZE or ybr - ytl < cls.MIN_ROI_SIZE:
             raise ValidationError(
@@ -59,16 +59,64 @@ class ROIHelper:
     def crop_image(image: Image.Image, roi: dict | None) -> Image.Image:
         """
         Return an ROI crop when ROI is specified, otherwise return the source image.
-
-        The caller is responsible for parsing and validating ROI against the
-        image dimensions before calling this method.
         """
         if roi is None:
             return image
 
+        if roi["xbr"] > image.width or roi["ybr"] > image.height:
+            raise ValidationError("ROI is outside the image", code=status.HTTP_400_BAD_REQUEST)
+
         cropped_image = image.crop((roi["xtl"], roi["ytl"], roi["xbr"], roi["ybr"]))
         cropped_image.format = image.format
         return cropped_image
+
+    @classmethod
+    def validate_task_roi(cls, task_id: int, roi: list | None) -> dict | None:
+        """
+        Validate task-level ROI using stored frame dimensions, without decoding frame images.
+        """
+        parsed_roi = cls.parse_roi(roi)
+        if parsed_roi is None:
+            return None
+
+        from cvat.apps.engine.models import MediaType, TaskMode
+        from cvat.apps.engine.models import Task
+
+        db_task = Task.objects.prefetch_related("data__images").select_related(
+            "data", "data__video"
+        ).get(pk=task_id)
+        db_data = db_task.data
+        frames = [frame for frame in range(db_data.size) if frame not in db_data.deleted_frames]
+        if not frames:
+            return parsed_roi
+
+        if db_task.media_type == MediaType.VIDEO:
+            db_video = db_data.video
+            sizes = {(db_video.width, db_video.height)}
+        elif db_task.media_type == MediaType.IMAGE:
+            sizes = set(
+                db_data.images.filter(is_placeholder=False)
+                .exclude(frame__in=db_data.deleted_frames)
+                .values_list("width", "height")
+                .distinct()
+            )
+        else:
+            raise ValidationError(
+                "ROI is supported only for image and video tasks",
+                code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(sizes) != 1:
+            raise ValidationError(
+                "ROI can be used for task annotation only when all processed frames have the same resolution",
+                code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        image_width, image_height = next(iter(sizes))
+        if parsed_roi["xbr"] > image_width or parsed_roi["ybr"] > image_height:
+            raise ValidationError("ROI is outside the image", code=status.HTTP_400_BAD_REQUEST)
+
+        return parsed_roi
 
     @staticmethod
     def _translate_anno_points(points, *, dx: int, dy: int):

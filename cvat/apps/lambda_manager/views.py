@@ -700,7 +700,7 @@ class LambdaFunction:
         image_bytes = frame_data.data.getvalue()
 
         with Image.open(io.BytesIO(image_bytes)) as image:
-            parsed_roi = ROIHelper.parse_roi(image.width, image.height, roi)
+            parsed_roi = ROIHelper.parse_roi(roi)
             parsed_roi.update({"image_width": image.width, "image_height": image.height})
             cropped_image = ROIHelper.crop_image(image, parsed_roi)
 
@@ -1500,6 +1500,9 @@ class RequestViewSet(viewsets.ViewSet):
                 f"ROI is not supported for {lambda_func.kind} functions",
                 code=status.HTTP_400_BAD_REQUEST,
             )
+        if roi is not None and lambda_func.kind == FunctionKind.DETECTOR:
+            ROIHelper.validate_task_roi(task, roi)
+
         rq_job = queue.enqueue(
             lambda_func,
             threshold,
