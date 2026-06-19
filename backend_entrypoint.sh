@@ -109,7 +109,7 @@ cmd_run() {
     _load_component_config
 
     case "$component" in
-        server|worker|nginx) ;;
+        server|worker|worker-pool|nginx) ;;
         *) fail "Unexpected run component: $component" ;;
     esac
 
@@ -139,7 +139,7 @@ cmd_run() {
     postgres_app_name="cvat:$component"
     if [ "$component" = "server" ]; then
         supervisord_includes="$(_get_includes "server")$(_get_reusable_includes "${@:2}")"
-    elif [ "$component" = "worker"  ]; then
+    elif [ "$component" = "worker" ] || [ "$component" = "worker-pool" ]; then
         if [ "$#" -eq 1 ]; then
             fail "run worker: expected at least 1 queue name"
         fi

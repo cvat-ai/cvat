@@ -30,7 +30,7 @@ jobs:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Verify version consistency
         run: ./dev/update_version.py --verify-current
@@ -60,7 +60,7 @@ jobs:
           mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           build-args: |
               "COVERAGE_PROCESS_START=.coveragerc"
@@ -77,7 +77,7 @@ jobs:
           yarn run coverage
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
@@ -153,20 +153,20 @@ jobs:
             allow_cache: 'true'
     name: rest_api_testing [${{ matrix.pattern }}, cache-${{ matrix.allow_cache }}]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -242,10 +242,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_server
           path: /tmp/cvat_server/
@@ -312,7 +312,7 @@ jobs:
                 'issues_prs', 'issues_prs2', 'features', 'features2',
                 'audio_workspace']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -321,13 +321,13 @@ jobs:
             # https://nodejs.org/docs/v22.18.0/api/corepack.html#corepack
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -440,7 +440,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Start minikube
         uses: medyagh/setup-minikube@latest
@@ -452,13 +452,13 @@ jobs:
         run: kubectl get pods -A
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -541,16 +541,16 @@ jobs:
     needs: [rest_api_testing, unit_testing, e2e_testing]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Download CVAT server images
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -592,7 +592,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit_testing, e2e_testing, rest_api_testing]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Merge coverage artifacts
         uses: actions/upload-artifact/merge@v7
@@ -602,11 +602,11 @@ jobs:
           delete-merged: true
 
       - name: Downloading coverage results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage_results
 
       - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -15,6 +15,7 @@ from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
 from shared.fixtures.data import CloudStorageAssets
+from shared.utils.config import make_sdk_client
 
 from .common import TestDatasetExport
 from .util import make_pbar
@@ -362,3 +363,19 @@ class TestJobUsecases(TestDatasetExport):
         assert len(anns.tracks) == 1
         assert len(anns.tags) == 1
         assert self.stdout.getvalue() == ""
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_org_maintainer_can_get_job_resources_without_explicit_org_context(
+    fxt_org_resource_hierarchy,
+):
+    resources = fxt_org_resource_hierarchy(include_issue=True)
+
+    with make_sdk_client(resources.maintainer_username) as maintainer_client:
+        job = maintainer_client.jobs.retrieve(resources.job_id)
+        labels = job.get_labels()
+        issues = job.get_issues()
+
+        assert maintainer_client.organization_slug is None
+        assert {label.name for label in labels} == {"car"}
+        assert [issue.id for issue in issues] == [resources.issue_id]
