@@ -30,7 +30,7 @@ jobs:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Verify version consistency
         run: ./dev/update_version.py --verify-current
@@ -153,7 +153,7 @@ jobs:
             allow_cache: 'true'
     name: rest_api_testing [${{ matrix.pattern }}, cache-${{ matrix.allow_cache }}]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -242,7 +242,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v8
@@ -312,7 +312,7 @@ jobs:
                 'issues_prs', 'issues_prs2', 'features', 'features2',
                 'audio_workspace']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -440,7 +440,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Start minikube
         uses: medyagh/setup-minikube@latest
@@ -541,7 +541,7 @@ jobs:
     needs: [rest_api_testing, unit_testing, e2e_testing]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Download CVAT server images
         uses: actions/download-artifact@v8
@@ -592,7 +592,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit_testing, e2e_testing, rest_api_testing]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Merge coverage artifacts
         uses: actions/upload-artifact/merge@v7
