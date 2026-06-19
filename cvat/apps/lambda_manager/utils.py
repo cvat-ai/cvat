@@ -97,32 +97,38 @@ class ROIHelper:
             raise ValidationError("Interactor prompt points must contain point pairs") from ex
 
     @classmethod
-    def translate_detector_item(cls, annotation, *, dx: int, dy: int):
+    def translate_detector_shapes(cls, shapes, *, dx: int, dy: int):
         """
-        Translate a detector result item in-place and return it.
+        Translate detector result shapes in-place and return them.
 
         Detector outputs and SAM plugin outputs can contain nested elements and
         masks. All coordinate-bearing fields must move from ROI-local space back
         to full-image space before CVAT stores or renders them.
         """
 
-        anno_type = annotation.get("type")
-        if anno_type == "tag":
+        def translate_shape(annotation):
+            anno_type = annotation.get("type")
+            if anno_type == "tag":
+                return annotation
+
+            if anno_type != "mask" and "points" in annotation:
+                annotation["points"] = cls._translate_anno_points(annotation["points"], dx=dx, dy=dy)
+
+            if anno_type == "mask" and "points" in annotation:
+                annotation["points"] = [
+                    *annotation["points"][:-4],
+                    *cls._translate_anno_points(annotation["points"][-4:], dx=dx, dy=dy),
+                ]
+
+            for element in annotation.get("elements", []):
+                translate_shape(element)
+
             return annotation
 
-        if anno_type != "mask" and "points" in annotation:
-            annotation["points"] = cls._translate_anno_points(annotation["points"], dx=dx, dy=dy)
+        for shape in shapes:
+            translate_shape(shape)
 
-        if anno_type == "mask" and "points" in annotation:
-            annotation["points"] = [
-                *annotation["points"][:-4],
-                *cls._translate_anno_points(annotation["points"][-4:], dx=dx, dy=dy),
-            ]
-
-        for element in annotation.get("elements", []):
-            cls.translate_detector_item(element, dx=dx, dy=dy)
-
-        return annotation
+        return shapes
 
     @classmethod
     def translate_interactor_response(
@@ -142,7 +148,6 @@ class ROIHelper:
             response["mask"] = full_mask.tolist()
 
         if "shapes" in response and isinstance(response["shapes"], list):
-            for shape in response["shapes"]:
-                cls.translate_detector_item(shape, dx=roi["xtl"], dy=roi["ytl"])
+            cls.translate_detector_shapes(response["shapes"], dx=roi["xtl"], dy=roi["ytl"])
 
         return response
