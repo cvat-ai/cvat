@@ -6,10 +6,16 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, Union
+
+__all__ = ["F", "Field", "Filter", "all_", "any_", "not_"]
+
+# Anything that can stand in for a filter condition: a composed ``Filter``, a raw
+# JSON Logic mapping, or a JSON string.
+Condition = Union["Filter", Mapping[str, Any], str]
 
 
-def _as_expr(value: Filter | Mapping | str) -> Any:
+def _as_expr(value: Condition) -> Any:
     """Normalize a condition into a JSON Logic value."""
     if isinstance(value, Filter):
         return value.to_json_logic()
@@ -21,6 +27,7 @@ def _as_expr(value: Filter | Mapping | str) -> Any:
 
 
 def _merge(op: str, left: Any, right: Any) -> dict[str, Any]:
+    """Combine two expressions under ``op``, flattening operands that share it."""
     args: list[Any] = []
     for node in (left, right):
         if isinstance(node, Mapping) and list(node) == [op]:
@@ -41,10 +48,10 @@ class Filter:
     def to_json_logic(self) -> Any:
         return self._expr
 
-    def __and__(self, other: Filter | Mapping | str) -> Filter:
+    def __and__(self, other: Condition) -> Filter:
         return Filter(_merge("and", self._expr, _as_expr(other)))
 
-    def __or__(self, other: Filter | Mapping | str) -> Filter:
+    def __or__(self, other: Condition) -> Filter:
         return Filter(_merge("or", self._expr, _as_expr(other)))
 
     def __invert__(self) -> Filter:
@@ -54,23 +61,25 @@ class Filter:
         return f"Filter({self._expr!r})"
 
 
-def all_(*conditions: Filter | Mapping | str) -> Filter:
+def _combine(op: str, conditions: tuple[Condition, ...], func_name: str) -> Filter:
+    """AND/OR of all conditions; a single condition is returned unwrapped."""
+    if not conditions:
+        raise ValueError(f"{func_name}() requires at least one condition")
+    exprs = [_as_expr(c) for c in conditions]
+    return Filter(exprs[0] if len(exprs) == 1 else {op: exprs})
+
+
+def all_(*conditions: Condition) -> Filter:
     """AND of all conditions. A single condition is returned unwrapped."""
-    if not conditions:
-        raise ValueError("all_() requires at least one condition")
-    exprs = [_as_expr(c) for c in conditions]
-    return Filter(exprs[0] if len(exprs) == 1 else {"and": exprs})
+    return _combine("and", conditions, "all_")
 
 
-def any_(*conditions: Filter | Mapping | str) -> Filter:
+def any_(*conditions: Condition) -> Filter:
     """OR of all conditions. A single condition is returned unwrapped."""
-    if not conditions:
-        raise ValueError("any_() requires at least one condition")
-    exprs = [_as_expr(c) for c in conditions]
-    return Filter(exprs[0] if len(exprs) == 1 else {"or": exprs})
+    return _combine("or", conditions, "any_")
 
 
-def not_(condition: Filter | Mapping | str) -> Filter:
+def not_(condition: Condition) -> Filter:
     """Negate a condition."""
     return Filter({"!": _as_expr(condition)})
 
@@ -139,16 +148,18 @@ class _FieldFactory:
 F = _FieldFactory()
 
 
-LOOKUPS: dict[str, Callable[[dict[str, str], Any], Any]] = {
-    "in": lambda var, value: {"in": [var, list(value)]},
-    "contains": lambda var, value: {"in": [value, var]},
-    "lt": lambda var, value: {"<": [var, value]},
-    "lte": lambda var, value: {"<=": [var, value]},
-    "gt": lambda var, value: {">": [var, value]},
-    "gte": lambda var, value: {">=": [var, value]},
-    "ne": lambda var, value: {"!": {"==": [var, value]}},
-    "between": lambda var, value: {"<=": [value[0], var, value[1]]},
-    "isset": lambda var, value: var if value else {"!": var},
+# Keyword-lookup suffixes (``field__<op>``) map to the same field-DSL builders the
+# ``F`` object exposes, so the two front-ends stay a single source of truth.
+LOOKUPS: dict[str, Callable[[Field, Any], Filter]] = {
+    "in": lambda field, value: field.one_of(value),
+    "contains": lambda field, value: field.contains(value),
+    "lt": lambda field, value: field < value,
+    "lte": lambda field, value: field <= value,
+    "gt": lambda field, value: field > value,
+    "gte": lambda field, value: field >= value,
+    "ne": lambda field, value: field != value,
+    "between": lambda field, value: field.between(*value),
+    "isset": lambda field, value: field.is_set() if value else not_(field.is_set()),
 }
 
 
@@ -156,14 +167,14 @@ def pop_lookup_conditions(kwargs: dict[str, Any]) -> list[Any]:
     """Extract and remove ``field__op`` lookup kwargs, returning JSON Logic conditions."""
     conditions: list[Any] = []
     for key in list(kwargs):
-        field, sep, op = key.rpartition("__")
-        if sep and field and op in LOOKUPS:
-            conditions.append(LOOKUPS[op]({"var": field}, kwargs.pop(key)))
+        field_name, sep, op = key.rpartition("__")
+        if sep and field_name and op in LOOKUPS:
+            conditions.append(LOOKUPS[op](Field(field_name), kwargs.pop(key)).to_json_logic())
     return conditions
 
 
 def build_filter_param(
-    filter_value: Filter | Mapping | str | None,
+    filter_value: Condition | None,
     lookup_conditions: list[Any],
 ) -> str | None:
     """Assemble the ``filter`` query-string value from a filter expression and lookups."""
