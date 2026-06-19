@@ -662,8 +662,6 @@ class LambdaFunction:
                             sublabels[element_label]["attributes"],
                             db_label.attributespec_set.values(),
                         )
-                if roi:
-                    ROIHelper.translate_detector_item(item, dx=roi["xtl"], dy=roi["ytl"])
                 response_filtered.append(item)
 
             response = converter.convert(
@@ -671,6 +669,10 @@ class LambdaFunction:
                 frame=mandatory_arg("frame"),
                 annotations=response_filtered,
             )
+
+            if roi:
+                for shape in response["shapes"]:
+                    ROIHelper.translate_detector_item(shape, dx=roi["xtl"], dy=roi["ytl"])
         elif self.kind == FunctionKind.TRACKER:
             if "shapes" in response and not self.supported_shape_types:
                 response["shapes"] = [
