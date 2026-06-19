@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import numpy as np
 from django.core.exceptions import ValidationError
+from PIL import Image
 from rest_framework import status
 
 
@@ -53,6 +54,21 @@ class ROIHelper:
             )
 
         return {"xtl": xtl, "ytl": ytl, "xbr": xbr, "ybr": ybr}
+
+    @staticmethod
+    def crop_image(image: Image.Image, roi: dict | None) -> Image.Image:
+        """
+        Return an ROI crop when ROI is specified, otherwise return the source image.
+
+        The caller is responsible for parsing and validating ROI against the
+        image dimensions before calling this method.
+        """
+        if roi is None:
+            return image
+
+        cropped_image = image.crop((roi["xtl"], roi["ytl"], roi["xbr"], roi["ybr"]))
+        cropped_image.format = image.format
+        return cropped_image
 
     @staticmethod
     def _translate_anno_points(points, *, dx: int, dy: int):

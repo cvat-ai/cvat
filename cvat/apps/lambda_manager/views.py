@@ -481,10 +481,18 @@ class LambdaFunction:
             )
 
         if self.kind == FunctionKind.DETECTOR:
-            image, roi = self._get_image(db_task, mandatory_arg("frame"), requested_roi)
+            frame = mandatory_arg("frame")
+            if requested_roi is not None:
+                image, roi = self._get_roi(db_task, frame, requested_roi)
+            else:
+                image = self._get_image(db_task, frame)
             payload.update({"image": image})
         elif self.kind == FunctionKind.INTERACTOR:
-            image, roi = self._get_image(db_task, mandatory_arg("frame"), requested_roi)
+            frame = mandatory_arg("frame")
+            if requested_roi is not None:
+                image, roi = self._get_roi(db_task, frame, requested_roi)
+            else:
+                image = self._get_image(db_task, frame)
             point_dx = -roi["xtl"] if roi else 0
             point_dy = -roi["ytl"] if roi else 0
             payload.update(
@@ -507,12 +515,10 @@ class LambdaFunction:
             if text_prompts:
                 payload["text_prompts"] = text_prompts
         elif self.kind == FunctionKind.REID:
-            image0, _ = self._get_image(db_task, mandatory_arg("frame0"))
-            image1, _ = self._get_image(db_task, mandatory_arg("frame1"))
             payload.update(
                 {
-                    "image0": image0,
-                    "image1": image1,
+                    "image0": self._get_image(db_task, mandatory_arg("frame0")),
+                    "image1": self._get_image(db_task, mandatory_arg("frame1")),
                     "boxes0": mandatory_arg("boxes0"),
                     "boxes1": mandatory_arg("boxes1"),
                 }
@@ -564,7 +570,7 @@ class LambdaFunction:
 
                 payload.update(
                     {
-                        "image": self._get_image(db_task, mandatory_arg("frame"))[0],
+                        "image": self._get_image(db_task, mandatory_arg("frame")),
                         "shapes": list(map(prepare_shape, shapes)),
                         "states": [
                             (
@@ -684,29 +690,25 @@ class LambdaFunction:
 
         return response
 
-    def _get_image(self, db_task, frame, roi=None):
+    def _get_roi(self, db_task, frame, roi: list) -> tuple[str, dict]:
         frame_provider = TaskFrameProvider(db_task)
         frame_data = frame_provider.get_frame(frame)
         image_bytes = frame_data.data.getvalue()
-        parsed_roi = None
 
-        if roi is not None:
-            with Image.open(io.BytesIO(image_bytes)) as image:
-                parsed_roi = ROIHelper.parse_roi(image.width, image.height, roi)
-                parsed_roi.update({"image_width": image.width, "image_height": image.height})
-                cropped_image = image.crop(
-                    (
-                        parsed_roi["xtl"],
-                        parsed_roi["ytl"],
-                        parsed_roi["xbr"],
-                        parsed_roi["ybr"],
-                    )
-                )
-                with io.BytesIO() as output:
-                    cropped_image.save(output, format=image.format or "PNG")
-                    image_bytes = output.getvalue()
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            parsed_roi = ROIHelper.parse_roi(image.width, image.height, roi)
+            parsed_roi.update({"image_width": image.width, "image_height": image.height})
+            cropped_image = ROIHelper.crop_image(image, parsed_roi)
 
-        return base64.b64encode(image_bytes).decode("utf-8"), parsed_roi
+            with io.BytesIO() as output:
+                cropped_image.save(output, format=cropped_image.format or "PNG")
+                return base64.b64encode(output.getvalue()).decode("utf-8"), parsed_roi
+
+    def _get_image(self, db_task, frame):
+        frame_provider = TaskFrameProvider(db_task)
+        image = frame_provider.get_frame(frame)
+
+        return base64.b64encode(image.data.getvalue()).decode("utf-8")
 
 
 class LambdaQueue:
