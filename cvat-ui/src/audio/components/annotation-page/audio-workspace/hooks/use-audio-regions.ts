@@ -15,7 +15,7 @@ import { AudioIntervalState, Job, Label } from 'cvat-core-wrapper';
 import { applyAudioControlMode, DragSelectionCleanup } from '../utils/apply-audio-control-mode';
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
 import { getAudioRegionColor, getRegionItemColor } from '../audio-region-colors';
-import { getPlayOnceRegionId, setPlayOnceRegionId } from '../utils/play-once-region';
+import { getPlayOnceRegionId, setPlayOnceRegionId, setPlayInterval } from '../utils/play-once-region';
 import { attachRegionAutoScroll } from '../utils/region-auto-scroll';
 import {
     clientIDFromWaveRegionId,
@@ -261,13 +261,20 @@ export function useAudioRegions(params: Params): Result {
 
             if (isDoubleClick) {
                 const safeStart = Math.max(0, region.start || 0);
+                const safeEnd = Math.max(safeStart, region.end || safeStart);
                 if (pickedClientID !== null) {
                     setPlayOnceRegionId(String(pickedClientID));
                     centerViewportOnInterval(pickedClientID);
                 }
                 onSetCurrentTime(safeStart);
+                setPlayInterval(loopRef.current ? null : { start: safeStart, end: safeEnd });
                 const ws = wavesurferRef.current;
-                if (ws) ws.setTime(safeStart);
+                if (ws) {
+                    ws.setTime(safeStart);
+                    if (ws.isPlaying()) {
+                        if (loopRef.current) ws.play(); else ws.play(safeStart, safeEnd);
+                    }
+                }
                 onSwitchPlay(true);
                 return;
             }
@@ -327,15 +334,8 @@ export function useAudioRegions(params: Params): Result {
 
         if (loopRef.current) {
             ws.setTime(Math.max(0, intervalStartSeconds(activeInterval)));
-            return;
         }
-
-        if (getPlayOnceRegionId() === String(activeID)) {
-            ws.pause();
-            onSwitchPlay(false);
-            setPlayOnceRegionId(null);
-        }
-    }, [lastWsTimeRef, onSetCurrentTime, onSwitchPlay]);
+    }, [lastWsTimeRef, onSetCurrentTime]);
 
     useEffect(() => {
         applyAudioControlMode(activeControl, regionsPluginRef.current, dragSelectionCleanupRef, intervals);

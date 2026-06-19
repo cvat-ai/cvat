@@ -30,6 +30,7 @@ import { useAudioPlaybackSync } from './hooks/use-audio-playback-sync';
 import { useAudioRegions } from './hooks/use-audio-regions';
 import { useAudioRecording } from './hooks/use-audio-recording';
 import { ZOOM_MAX, ZOOM_MIN, computeWaveformZoom } from './utils/zoom-bounds';
+import { getPlayInterval, setPlayInterval, setPlayOnceRegionId } from './utils/play-once-region';
 
 const ZOOM_BASIC_COEF = 6 / 5;
 const ZOOM_ADJUST_COEF = 1 / 10;
@@ -99,9 +100,24 @@ function AudioCanvasWrapper(): JSX.Element {
     const visibleIntervals = useMemo(() => (
         intervals.filter((interval) => !interval.hidden)
     ), [intervals]);
+    // Tracks the latest redux play state for handlePause. Declared before useAudioPlaybackSync so
+    // this effect runs first: on a user pause, isPlayingRef is false by the time wavesurfer pauses.
+    const isPlayingRef = useRef(isPlaying);
+    useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
     const onSwitchPlay = useCallback((playing: boolean): void => {
         dispatch(audioActions.switchAudioPlay(playing));
     }, [dispatch]);
+    const handlePause = useCallback((): void => {
+        const iv = getPlayInterval();
+        if (iv && wavesurfer) {
+            if (isPlayingRef.current) {
+                dispatch(audioActions.setAudioCurrentTime(iv.end));
+            }
+            setPlayInterval(null);
+            setPlayOnceRegionId(null);
+        }
+        dispatch(audioActions.switchAudioPlay(false));
+    }, [dispatch, wavesurfer]);
     const onSetCurrentTime = useCallback((time: number): void => {
         dispatch(audioActions.setAudioCurrentTime(time));
     }, [dispatch]);
@@ -387,6 +403,7 @@ function AudioCanvasWrapper(): JSX.Element {
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', overflow: 'hidden' }}>
                     <WavesurferPlayer
                         key={audioUrl}
+                        backend='WebAudio'
                         onReady={handleReady}
                         url={audioUrl}
                         height={140}
@@ -397,6 +414,7 @@ function AudioCanvasWrapper(): JSX.Element {
                         barRadius={3}
                         cursorWidth={2}
                         onTimeupdate={handleTimeupdate}
+                        onPause={handlePause}
                         onFinish={handleFinish}
                         plugins={plugins}
                     />

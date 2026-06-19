@@ -5,6 +5,8 @@
 import { useEffect, useRef } from 'react';
 import type WaveSurfer from 'wavesurfer.js';
 
+import { getPlayInterval } from '../utils/play-once-region';
+
 interface Params {
     wavesurfer: WaveSurfer | null;
     isPlaying: boolean;
@@ -27,9 +29,12 @@ export function useAudioPlaybackSync({
     useEffect(() => {
         if (!wavesurfer) return;
         if (isPlaying) {
-            const result = wavesurfer.play();
-            if (result && typeof (result as Promise<void>).catch === 'function') {
-                (result as Promise<void>).catch(() => {});
+            if (!wavesurfer.isPlaying()) {
+                const iv = getPlayInterval();
+                const result = iv ? wavesurfer.play(iv.start, iv.end) : wavesurfer.play();
+                if (result && typeof (result as Promise<void>).catch === 'function') {
+                    (result as Promise<void>).catch(() => {});
+                }
             }
         } else {
             wavesurfer.pause();
