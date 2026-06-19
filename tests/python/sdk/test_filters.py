@@ -172,3 +172,48 @@ def test_build_filter_param_dict_passthrough_serialized():
 def test_build_filter_param_string_passthrough_verbatim():
     raw = _json.dumps({"==": [{"var": "id"}, 1]})
     assert build_filter_param(raw, []) == raw
+
+
+from unittest import mock
+
+
+def _make_fake_repo():
+    from cvat_sdk.core.proxies import model_proxy
+
+    class FakeRepo(model_proxy.ModelListMixin):
+        def __init__(self):
+            self.api = mock.Mock()
+            self._client = mock.Mock()
+            self._entity_type = lambda client, model: model
+
+    return model_proxy, FakeRepo()
+
+
+def test_list_merges_dsl_and_lookups_into_filter_kwarg():
+    model_proxy, repo = _make_fake_repo()
+
+    with mock.patch.object(model_proxy, "get_paginated_collection", return_value=[]) as gpc:
+        repo.list(status="completed", project_id__in=[1, 2, 3], filter=F.name.contains("v2"))
+
+    forwarded = gpc.call_args.kwargs
+    # plain kwarg passes through untouched
+    assert forwarded["status"] == "completed"
+    # project_id__in was consumed into the filter, not forwarded as a raw kwarg
+    assert "project_id__in" not in forwarded
+    assert _json.loads(forwarded["filter"]) == {
+        "and": [
+            {"in": [{"var": "project_id"}, [1, 2, 3]]},
+            {"in": ["v2", {"var": "name"}]},
+        ]
+    }
+
+
+def test_list_without_filter_args_sends_no_filter_kwarg():
+    model_proxy, repo = _make_fake_repo()
+
+    with mock.patch.object(model_proxy, "get_paginated_collection", return_value=[]) as gpc:
+        repo.list(page_size=50)
+
+    forwarded = gpc.call_args.kwargs
+    assert "filter" not in forwarded
+    assert forwarded["page_size"] == 50

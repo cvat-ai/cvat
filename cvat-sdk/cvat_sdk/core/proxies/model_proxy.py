@@ -16,6 +16,7 @@ from typing_extensions import Self
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.filters import build_filter_param, pop_lookup_conditions
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.types import Location
@@ -162,9 +163,11 @@ class ModelListMixin(Generic[_EntityT]):
         Retrieves objects from the server and returns them in basic or JSON format.
         """
 
-        filter_value = kwargs.get("filter")
-        if isinstance(filter_value, Mapping):
-            kwargs["filter"] = json.dumps(filter_value)
+        filter_param = build_filter_param(
+            kwargs.pop("filter", None), pop_lookup_conditions(kwargs)
+        )
+        if filter_param is not None:
+            kwargs["filter"] = filter_param
 
         results = get_paginated_collection(
             endpoint=self.api.list_endpoint, return_json=return_json, **kwargs
