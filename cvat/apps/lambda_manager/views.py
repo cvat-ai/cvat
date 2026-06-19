@@ -480,19 +480,16 @@ class LambdaFunction:
                 code=status.HTTP_400_BAD_REQUEST,
             )
 
-        if self.kind == FunctionKind.DETECTOR:
+        if self.kind in {FunctionKind.DETECTOR, FunctionKind.INTERACTOR}:
             frame = mandatory_arg("frame")
             if requested_roi is not None:
                 image, roi = self._get_roi(db_task, frame, requested_roi)
             else:
                 image = self._get_image(db_task, frame)
+
+        if self.kind == FunctionKind.DETECTOR:
             payload.update({"image": image})
         elif self.kind == FunctionKind.INTERACTOR:
-            frame = mandatory_arg("frame")
-            if requested_roi is not None:
-                image, roi = self._get_roi(db_task, frame, requested_roi)
-            else:
-                image = self._get_image(db_task, frame)
             point_dx = -roi["xtl"] if roi else 0
             point_dy = -roi["ytl"] if roi else 0
             payload.update(
