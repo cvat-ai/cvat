@@ -93,3 +93,20 @@ class AgentFunctionDriver:
             raise BadArError(f"Frame with index {frame_index} does not exist in the task")
 
         return sample, ds.labels
+
+    def _load_image_for_ar(self, sample, ar_params):
+        image = sample.media.load_image()
+
+        if roi := ar_params.get("roi"):
+            xtl, ytl, xbr, ybr = roi
+            width, height = image.size
+
+            if (
+                xtl < 0 or ytl < 0 or xbr > width or ybr > height or
+                xbr - xtl < 128 or ybr - ytl < 128
+            ):
+                raise BadArError("Invalid ROI")
+
+            return image.crop((xtl, ytl, xbr, ybr))
+
+        return image
