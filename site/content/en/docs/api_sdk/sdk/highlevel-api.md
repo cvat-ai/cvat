@@ -79,6 +79,34 @@ with make_client("http://localhost", credentials=('user', 'password')) as client
     task2.remove()
 ```
 
+### Creating a task from cloud storage
+
+```python
+from pathlib import PurePosixPath
+from cvat_sdk.core.proxies.tasks import ResourceType
+
+storage_media_path = PurePosixPath("audio.mp3")
+
+task = client.tasks.create_from_data(
+    spec={
+        "name": "cloud-storage-task",
+    },
+    resources=[storage_media_path],
+    resource_type=ResourceType.SHARE,
+    data_params={
+        "cloud_storage_id": 1,
+        "use_cache": True,
+    },
+)
+```
+
+When using cloud storage:
+
+- Set `resource_type=ResourceType.SHARE`
+- Pass `cloud_storage_id` in `data_params`
+- The resource path must exist in the configured cloud storage
+
+
 ## Client
 
 The `cvat_sdk.core.client.Client` class provides session management, implements
