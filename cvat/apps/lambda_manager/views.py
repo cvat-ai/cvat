@@ -1370,8 +1370,6 @@ class FunctionViewSet(viewsets.ViewSet):
         if db_task.media_type == MediaType.AUDIO:
             raise serializers.ValidationError("Auto-annotation is not available in audio tasks")
 
-        request_serializer = FunctionCallRequestSerializer(data=request.data)
-        request_serializer.is_valid(raise_exception=True)
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 

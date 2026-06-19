@@ -105,16 +105,18 @@ class ROIHelper:
         masks. All coordinate-bearing fields must move from ROI-local space back
         to full-image space before CVAT stores or renders them.
         """
-        if annotation.get("type") == "tag":
+
+        anno_type = annotation.get("type")
+        if anno_type == "tag":
             return annotation
 
-        if "points" in annotation:
+        if anno_type != "mask" and "points" in annotation:
             annotation["points"] = cls._translate_anno_points(annotation["points"], dx=dx, dy=dy)
 
-        if "mask" in annotation:
-            annotation["mask"] = [
-                *annotation["mask"][:-4],
-                *cls._translate_anno_points(annotation["mask"][-4:], dx=dx, dy=dy),
+        if anno_type == "mask" and "points" in annotation:
+            annotation["points"] = [
+                *annotation["points"][:-4],
+                *cls._translate_anno_points(annotation["points"][-4:], dx=dx, dy=dy),
             ]
 
         for element in annotation.get("elements", []):
@@ -139,10 +141,7 @@ class ROIHelper:
             full_mask[roi["ytl"] : roi["ybr"], roi["xtl"] : roi["xbr"]] = crop_mask
             response["mask"] = full_mask.tolist()
 
-        if "shapes" in response and not isinstance(response["shapes"], list):
-            raise ValidationError("Interactor response shapes must be a list")
-
-        if "shapes" in response:
+        if "shapes" in response and isinstance(response["shapes"], list):
             for shape in response["shapes"]:
                 cls.translate_detector_item(shape, dx=roi["xtl"], dy=roi["ytl"])
 
