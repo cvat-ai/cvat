@@ -78,10 +78,7 @@ class ROIHelper:
         This format is used by ordinary CVAT annotation shapes and mask bounds,
         not by interactor prompts.
         """
-        return [
-            coordinate + (dx if idx % 2 == 0 else dy)
-            for idx, coordinate in enumerate(points)
-        ]
+        return [coordinate + (dx if idx % 2 == 0 else dy) for idx, coordinate in enumerate(points)]
 
     @staticmethod
     def translate_prompt_points(points, *, dx: int, dy: int):
@@ -139,7 +136,7 @@ class ROIHelper:
         if "mask" in response:
             crop_mask = np.array(response["mask"])
             full_mask = np.zeros((image_height, image_width), dtype=crop_mask.dtype)
-            full_mask[roi["ytl"]:roi["ybr"], roi["xtl"]:roi["xbr"]] = crop_mask
+            full_mask[roi["ytl"] : roi["ybr"], roi["xtl"] : roi["xbr"]] = crop_mask
             response["mask"] = full_mask.tolist()
 
         if "shapes" in response and not isinstance(response["shapes"], list):

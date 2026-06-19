@@ -20,7 +20,6 @@ import django_rq
 import numpy as np
 import requests
 import rq
-from PIL import Image
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.signing import BadSignature, TimestampSigner
@@ -32,6 +31,7 @@ from drf_spectacular.utils import (
     extend_schema_view,
     inline_serializer,
 )
+from PIL import Image
 from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
 
@@ -499,10 +499,14 @@ class LambdaFunction:
                 {
                     "image": image,
                     "pos_points": ROIHelper.translate_prompt_points(
-                        mandatory_arg("pos_points"), dx=point_dx, dy=point_dy,
+                        mandatory_arg("pos_points"),
+                        dx=point_dx,
+                        dy=point_dy,
                     ),
                     "neg_points": ROIHelper.translate_prompt_points(
-                        mandatory_arg("neg_points"), dx=point_dx, dy=point_dy,
+                        mandatory_arg("neg_points"),
+                        dx=point_dx,
+                        dy=point_dy,
                     ),
                     "obj_bbox": ROIHelper.translate_prompt_points(
                         data.get("obj_bbox", None),
