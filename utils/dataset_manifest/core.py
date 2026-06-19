@@ -39,6 +39,85 @@ from .utils import (
 # how many frames to check after seeking to validate key frame
 SEEK_MISMATCH_UPPER_BOUND = 200
 
+# JPEG SOFn markers that carry frame dimensions (exclude DHT=C4, JPG=C8, DAC=CC)
+_JPEG_SOF_MARKERS = frozenset(
+    {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
+)
+
+
+def _jpeg_size_from_header(data: bytes) -> tuple[int, int] | None:
+    """Return (width, height) read from the JPEG SOF marker, or None.
+
+    Walks the marker structure without decoding pixels, so it tolerates the
+    malformed EXIF/APP segments that make PIL (and even OpenCV) fail. If a
+    segment's declared length does not land on the next marker -- a corrupt or
+    oversized length -- we resync by scanning forward for the next 0xFF marker
+    rather than trusting the length and skipping past the SOF.
+    """
+    n = len(data)
+    if n < 4 or data[0] != 0xFF or data[1] != 0xD8:  # SOI
+        return None
+    i = 2
+    while i + 1 < n:
+        if data[i] != 0xFF:
+            i += 1  # not at a marker; resync
+            continue
+        marker = data[i + 1]
+        if marker == 0xFF:
+            i += 1  # fill byte
+            continue
+        if marker == 0x00 or 0xD0 <= marker <= 0xD7:
+            i += 2  # stuffed byte or RSTn: no length payload
+            continue
+        if marker in (0xD8, 0xD9):  # SOI/EOI
+            i += 2
+            continue
+        if marker == 0xDA:  # SOS: entropy-coded data follows, no SOF beyond
+            break
+        if i + 4 > n:
+            break
+        seg_len = (data[i + 2] << 8) | data[i + 3]
+        if marker in _JPEG_SOF_MARKERS:
+            if i + 9 <= n:
+                height = (data[i + 5] << 8) | data[i + 6]
+                width = (data[i + 7] << 8) | data[i + 8]
+                if width and height:
+                    return width, height
+            i += 2  # malformed SOF; keep resyncing
+            continue
+        if seg_len < 2:
+            i += 2
+            continue
+        nxt = i + 2 + seg_len
+        # Trust the declared length only if it lands on another marker inside
+        # the file; otherwise it is corrupt -> resync one byte at a time.
+        if nxt + 1 < n and data[nxt] == 0xFF:
+            i = nxt
+        else:
+            i += 2
+    return None
+
+
+def _read_image_size(data: bytes) -> tuple[int, int]:
+    """Best-effort (width, height) for an image PIL could not open.
+
+    Tries a metadata-free JPEG header parse first, then OpenCV for other
+    formats. Returns dimensions as stored (no EXIF-orientation swap, since the
+    metadata that would carry orientation is exactly what is broken here).
+    """
+    size = _jpeg_size_from_header(data)
+    if size is not None:
+        return size
+
+    img = cv2.imdecode(
+        np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR
+    )
+    if img is not None:
+        height, width = img.shape[:2]
+        return width, height
+
+    raise InvalidImageError("could not determine image dimensions")
+
 
 class VideoStreamReader:
     def __init__(self, source_path: NamedOpenable, *, chunk_size: int, force: bool) -> None:
@@ -326,10 +405,20 @@ class DatasetImagesReader:
         except (OSError, Image.UnidentifiedImageError) as pil_error:
             # PIL refuses some images whose pixel data is fine but whose
             # metadata is malformed (e.g. a broken EXIF/APP marker raises
-            # "Truncated File Read"). OpenCV ignores metadata and decodes only
-            # the pixels, so fall back to it before giving up.
+            # "Truncated File Read"). All we need here is width/height, so read
+            # them straight from the file header without decoding pixels.
             try:
-                self._read_img_properties_with_opencv(image, image_properties)
+                with image.open("rb") as f:
+                    data = f.read()
+                width, height = _read_image_size(data)
+                image_properties["width"] = width
+                image_properties["height"] = height
+                if self._use_image_hash:
+                    # The image is undecodable by PIL, so we cannot reproduce
+                    # the decoded-pixel hash used above. Hash the raw bytes
+                    # instead -- this is what cloud-download validation already
+                    # compares against (see engine.cache).
+                    image_properties["checksum"] = md5_hash(data)
             except Exception:
                 raise InvalidImageError(
                     f"failed to parse image file '{img_name}'"
@@ -339,28 +428,6 @@ class DatasetImagesReader:
             image_properties["meta"] = self._meta[img_name]
 
         return image_properties
-
-    def _read_img_properties_with_opencv(
-        self, image: NamedOpenable, image_properties: dict[str, Any]
-    ) -> None:
-        # Fallback decoder for images PIL cannot open. cv2.imdecode applies EXIF
-        # orientation (like the PIL branch, which reports display dimensions) but
-        # tolerates the malformed metadata that made PIL fail.
-        with image.open("rb") as f:
-            buffer = np.frombuffer(f.read(), dtype=np.uint8)
-        img = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
-        if img is None:
-            raise InvalidImageError("OpenCV could not decode the image")
-
-        height, width = img.shape[:2]
-        image_properties["width"] = width
-        image_properties["height"] = height
-
-        if self._use_image_hash:
-            # Match the PIL branch's hashing convention (decoded RGB pixels).
-            image_properties["checksum"] = md5_hash(
-                Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-            )
 
     def __iter__(self):
         sources = iter(self._sources)
