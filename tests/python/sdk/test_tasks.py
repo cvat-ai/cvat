@@ -237,7 +237,7 @@ class TestTaskUsecases(TestDatasetExport):
         assert self.stdout.getvalue() == ""
 
     def test_can_list_tasks_with_dsl_filter(self, fxt_new_task: Task):
-        tasks = self.client.tasks.list(filter=(F.id == fxt_new_task.id))
+        tasks = self.client.tasks.list(filter=F.id == fxt_new_task.id)
 
         assert [t.id for t in tasks] == [fxt_new_task.id]
         assert self.stdout.getvalue() == ""
@@ -249,7 +249,7 @@ class TestTaskUsecases(TestDatasetExport):
         assert self.stdout.getvalue() == ""
 
     def test_dsl_filter_matches_raw_filter(self, fxt_new_task: Task):
-        dsl = self.client.tasks.list(filter=(F.id == fxt_new_task.id))
+        dsl = self.client.tasks.list(filter=F.id == fxt_new_task.id)
         raw = self.client.tasks.list(filter={"==": [{"var": "id"}, fxt_new_task.id]})
 
         assert [t.id for t in dsl] == [t.id for t in raw] == [fxt_new_task.id]
@@ -259,7 +259,7 @@ class TestTaskUsecases(TestDatasetExport):
         task_name = f"test_combined_filter_{fxt_new_task.id}"
         fxt_new_task.update(models.PatchedTaskWriteRequest(name=task_name))
 
-        tasks = self.client.tasks.list(id__in=[fxt_new_task.id], filter=(F.name == task_name))
+        tasks = self.client.tasks.list(id__in=[fxt_new_task.id], filter=F.name == task_name)
 
         assert [t.id for t in tasks] == [fxt_new_task.id]
         assert self.stdout.getvalue() == ""

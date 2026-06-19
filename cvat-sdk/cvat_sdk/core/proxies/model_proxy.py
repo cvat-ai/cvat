@@ -163,9 +163,7 @@ class ModelListMixin(Generic[_EntityT]):
         Retrieves objects from the server and returns them in basic or JSON format.
         """
 
-        filter_param = build_filter_param(
-            kwargs.pop("filter", None), pop_lookup_conditions(kwargs)
-        )
+        filter_param = build_filter_param(kwargs.pop("filter", None), pop_lookup_conditions(kwargs))
         if filter_param is not None:
             kwargs["filter"] = filter_param
 

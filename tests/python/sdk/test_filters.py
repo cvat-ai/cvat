@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
-
 from cvat_sdk.core.filters import Filter, all_, any_, not_
 
 
@@ -13,7 +12,11 @@ def test_and_combines_two_filters():
 
 
 def test_and_flattens_same_operator():
-    f = Filter({"==": [{"var": "a"}, 1]}) & Filter({"==": [{"var": "b"}, 2]}) & Filter({"==": [{"var": "c"}, 3]})
+    f = (
+        Filter({"==": [{"var": "a"}, 1]})
+        & Filter({"==": [{"var": "b"}, 2]})
+        & Filter({"==": [{"var": "c"}, 3]})
+    )
     assert f.to_json_logic() == {
         "and": [{"==": [{"var": "a"}, 1]}, {"==": [{"var": "b"}, 2]}, {"==": [{"var": "c"}, 3]}]
     }
@@ -53,7 +56,7 @@ def test_all_empty_raises():
         all_()
 
 
-from cvat_sdk.core.filters import F, Field
+from cvat_sdk.core.filters import F
 
 
 def test_field_eq():
@@ -72,7 +75,9 @@ def test_field_ordering_operators():
 
 
 def test_field_one_of():
-    assert F.project_id.one_of([1, 2, 3]).to_json_logic() == {"in": [{"var": "project_id"}, [1, 2, 3]]}
+    assert F.project_id.one_of([1, 2, 3]).to_json_logic() == {
+        "in": [{"var": "project_id"}, [1, 2, 3]]
+    }
 
 
 def test_field_contains():
@@ -94,7 +99,10 @@ def test_field_getitem():
 def test_dsl_composition_example():
     f = (F.status == "completed") & F.project_id.one_of([1, 2, 3])
     assert f.to_json_logic() == {
-        "and": [{"==": [{"var": "status"}, "completed"]}, {"in": [{"var": "project_id"}, [1, 2, 3]]}]
+        "and": [
+            {"==": [{"var": "status"}, "completed"]},
+            {"in": [{"var": "project_id"}, [1, 2, 3]]},
+        ]
     }
 
 
@@ -156,9 +164,7 @@ def test_build_filter_param_single_lookup_unwrapped():
 
 
 def test_build_filter_param_merges_lookups_and_filter_with_and():
-    out = build_filter_param(
-        F.name.contains("v2"), [{"==": [{"var": "status"}, "completed"]}]
-    )
+    out = build_filter_param(F.name.contains("v2"), [{"==": [{"var": "status"}, "completed"]}])
     assert _json.loads(out) == {
         "and": [{"==": [{"var": "status"}, "completed"]}, {"in": ["v2", {"var": "name"}]}]
     }
