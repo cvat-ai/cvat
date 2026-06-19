@@ -16,7 +16,7 @@ export interface MinimalShape {
 }
 
 interface InteractorShape extends MinimalShape {
-    attributes?: { spec_id: number; value: string }[]
+    attributes: { spec_id: number; value: string }[]
 }
 
 // This type is compatible with our SerializedCollection, however the client only supports it partly
@@ -100,7 +100,7 @@ class LambdaManager {
                 } else {
                     rle.push(0, 0, maskWidth - 1, maskHeight - 1);
                 }
-                return { shapes: [{ points: rle, type: ShapeType.MASK }] };
+                return { shapes: [{ points: rle, type: ShapeType.MASK, attributes: [] }] };
             }
 
             if (Array.isArray(result.shapes)) {
@@ -111,7 +111,7 @@ class LambdaManager {
                             (attr) => typeof attr === 'object' &&
                                 typeof attr.spec_id === 'number' &&
                                 typeof attr.value === 'string',
-                        ) ? item.attributes : undefined,
+                        ) ? item.attributes : [],
                         type: item.type ?? ShapeType.MASK,
                     })),
                 };

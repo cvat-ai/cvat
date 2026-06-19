@@ -447,7 +447,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     }
 
                     const approximated = this.approximateResponsePoints(polygonPoints!);
-                    const confidenceAttr = item.attributes?.find((attr) => attr.spec_id === 0);
+                    const confidenceAttr = item.attributes.find((attr) => attr.spec_id === 0);
                     const confidence = confidenceAttr ? +confidenceAttr.value : 1;
                     showConfidenceControl = showConfidenceControl || !!confidenceAttr;
                     latestResponse.push({
