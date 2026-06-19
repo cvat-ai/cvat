@@ -198,7 +198,7 @@ class QualityReport(models.Model):
 
 class AnnotationConflict(models.Model):
     report = models.ForeignKey(QualityReport, on_delete=models.CASCADE, related_name="conflicts")
-    frame = models.PositiveIntegerField()
+    frame = models.PositiveIntegerField(null=True)
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
 
@@ -213,6 +213,7 @@ class AnnotationType(str, Enum):
     TAG = "tag"
     SHAPE = "shape"
     TRACK = "track"
+    INTERVAL = "interval"
 
     def __str__(self) -> str:
         return self.value
@@ -238,7 +239,7 @@ class AnnotationId(models.Model):
         if self.type in [AnnotationType.SHAPE, AnnotationType.TRACK]:
             if not self.shape_type:
                 raise ValidationError("Annotation kind must be specified")
-        elif self.type == AnnotationType.TAG:
+        elif self.type in [AnnotationType.TAG, AnnotationType.INTERVAL]:
             if self.shape_type:
                 raise ValidationError("Annotation kind must be empty")
         else:
@@ -281,6 +282,8 @@ class QualitySettings(TimestampedModel):
     line_thickness = models.FloatField()
 
     low_overlap_threshold = models.FloatField()
+
+    interval_boundary_tolerance = models.FloatField()
 
     point_size_base = models.CharField(
         max_length=32, choices=PointSizeBase.choices(), default=PointSizeBase.GROUP_BBOX_SIZE

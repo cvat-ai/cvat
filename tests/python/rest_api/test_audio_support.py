@@ -4,13 +4,14 @@
 
 import io
 import math
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from itertools import product
 from pathlib import Path, PurePosixPath
 
 import pytest
 from cvat_sdk import exceptions, models
 from cvat_sdk.core.exceptions import BackgroundRequestException
+from cvat_sdk.core.proxies.jobs import Job
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
@@ -23,6 +24,26 @@ from shared.utils.config import (
 from shared.utils.helpers import read_audio_pcm
 
 from ._test_base import TestTasksBase
+
+
+def _expected_substitutions_hash(substitutions: list[dict]) -> str:
+    """Mirror of models.compute_substitutions_hash for test assertions."""
+    import hashlib
+    import json
+
+    if not substitutions:
+        return ""
+
+    canonical = [
+        {
+            "pattern": e.get("pattern", ""),
+            "replacement": e.get("replacement", ""),
+            "anchored": bool(e.get("anchored", False)),
+        }
+        for e in substitutions
+    ]
+    payload = json.dumps(canonical, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.md5(payload.encode("utf-8"), usedforsecurity=False).hexdigest()
 
 
 @fixture(scope="session")
@@ -393,3 +414,310 @@ class TestAudioAnnotations:
             instance.set_annotations(payload)
 
         assert "cannot be outside" in str(capture.value)
+
+
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_cvat_data_per_class")
+class TestAudioQuality:
+    @pytest.fixture(autouse=True)
+    def setup(
+        self,
+        restore_redis_inmem_per_function,
+        tmp_path: Path,
+        admin_user: str,
+    ):
+        self.tmp_dir = tmp_path
+
+        self.user = admin_user
+
+        with make_sdk_client(self.user) as client:
+            self.client = client
+            yield
+
+    @fixture(scope="class")
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")], scope="session")
+    def fxt_audio_task_with_gt_job(
+        cls, request: pytest.FixtureRequest, admin_user, source_filename: Path
+    ):
+        with make_sdk_client(admin_user) as client:
+            task = client.tasks.create_from_data(
+                spec={
+                    "name": f"{request.node.name}[{request.fixturename}]",
+                    "labels": [
+                        {
+                            "name": "speaker1",
+                        },
+                        {
+                            "name": "speaker2",
+                        },
+                    ],
+                },
+                resources=[source_filename],
+                data_params={"validation_params": {"mode": "gt"}},
+            )
+
+            gt_job = next(j for j in task.get_jobs() if j.type == "ground_truth")
+
+            yield (task, gt_job)
+
+    def compute_report(self, task_id: int) -> dict:
+        response = self.client.api_client.quality_api.create_report(
+            quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+            _parse_response=False,
+        )[1]
+        rq_id = response.json()["rq_id"]
+
+        response = self.client.wait_for_completion(rq_id, status_check_period=0.1)[1]
+
+        report_id = response.json()["result_id"]
+        return self.client.api_client.quality_api.retrieve_report_data(report_id)[1].json()
+
+    def compute_report_and_summary(self, task_id: int) -> tuple[dict, dict]:
+        """Compute a report and return (full blob, curated API summary)."""
+
+        response = self.client.api_client.quality_api.create_report(
+            quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+            _parse_response=False,
+        )[1]
+        rq_id = response.json()["rq_id"]
+        response = self.client.wait_for_completion(rq_id, status_check_period=0.1)[1]
+        report_id = response.json()["result_id"]
+        blob = self.client.api_client.quality_api.retrieve_report_data(report_id)[1].json()
+        summary = self.client.api_client.quality_api.retrieve_report(
+            report_id, _parse_response=False
+        )[1].json()["summary"]
+        return blob, summary
+
+    def _make_transcription_task(
+        self, name: str, source_filename: Path, *, attr_names: Sequence[str] = ("transcription",)
+    ):
+        """Audio task with one label carrying the given text attributes.
+
+        Returns (task, gt_job, label, attrs) where `attrs` maps attribute name
+        → spec object."""
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": name,
+                "labels": [
+                    {
+                        "name": "speaker1",
+                        "attributes": [
+                            {"name": n, "input_type": "text", "values": [], "mutable": True}
+                            for n in attr_names
+                        ],
+                    },
+                ],
+            },
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
+        gt_job = next(j for j in task.get_jobs() if j.type == "ground_truth")
+        label = task.get_labels()[0]
+        attrs = {a.name: a for a in label.attributes}
+        return task, gt_job, label, attrs
+
+    def _set_transcription_requirement(self, task: Task, **requirement_kwargs):
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+        return self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                transcription_requirements=[
+                    models.PatchedTranscriptionRequirementRequest(**requirement_kwargs)
+                ]
+            ),
+        )
+
+    @staticmethod
+    def _interval(label, start: int, stop: int, attr_text: dict | None = None):
+        """`attr_text` maps attribute spec id → text value."""
+        return models.LabeledIntervalRequest(
+            label_id=label.id,
+            start=start,
+            stop=stop,
+            attributes=[
+                models.AttributeValRequest(spec_id=spec_id, value=value)
+                for spec_id, value in (attr_text or {}).items()
+            ],
+        )
+
+    def _set_gt_ds(self, task: Task, gt_job: Job, gt_intervals, ds_intervals):
+        task.set_annotations(models.LabeledDataRequest(intervals=ds_intervals))
+        gt_job.set_annotations(models.LabeledDataRequest(intervals=gt_intervals))
+        gt_job.update(dict(stage="acceptance", state="completed"))
+
+    @staticmethod
+    def _transcription_summary(report: dict) -> dict:
+        return next(
+            a
+            for a in report["comparison_summary"]["annotation_components"]["attribute"]
+            if a["comparator"] == "transcription"
+        )
+
+    def _score_single_pair(
+        self,
+        fxt_test_name: str,
+        source_filename: Path,
+        *,
+        gt_text: str,
+        ds_text: str,
+        **requirement_kwargs,
+    ) -> dict:
+        """End-to-end: one interval per side over the same span, scored under a
+        single transcription requirement. Returns the report dict."""
+        task, gt_job, label, attrs = self._make_transcription_task(fxt_test_name, source_filename)
+        attr = attrs["transcription"]
+        self._set_transcription_requirement(task, attribute_id=attr.id, **requirement_kwargs)
+        self._set_gt_ds(
+            task,
+            gt_job,
+            [self._interval(label, 0, 1000, {attr.id: gt_text})],
+            [self._interval(label, 0, 1000, {attr.id: ds_text})],
+        )
+        return self.compute_report(task.id)
+
+    @parametrize("task, gt_job", [fixture_ref(fxt_audio_task_with_gt_job)])
+    def test_simple_matching(self, task: Task, gt_job: Job):
+        label0, label1 = task.get_labels()
+
+        gt_annotations = models.LabeledDataRequest(
+            intervals=[
+                models.LabeledIntervalRequest(
+                    label_id=label0.id,
+                    start=0,
+                    stop=1000,
+                ),
+                models.LabeledIntervalRequest(
+                    label_id=label0.id,
+                    start=1000,
+                    stop=2000,
+                ),
+                models.LabeledIntervalRequest(
+                    label_id=label0.id,
+                    start=2000,
+                    stop=2500,
+                ),
+            ]
+        )
+
+        ds_annotations = models.LabeledDataRequest(
+            intervals=[
+                # matches GT annotation 1
+                models.LabeledIntervalRequest(
+                    label_id=label0.id,
+                    start=200,
+                    stop=900,
+                ),
+                # matches GT annotation 2
+                models.LabeledIntervalRequest(
+                    label_id=label0.id,
+                    start=900,
+                    stop=1800,
+                ),
+                # label mismatch
+                models.LabeledIntervalRequest(
+                    label_id=label1.id,
+                    start=2100,
+                    stop=2400,
+                ),
+            ]
+        )
+
+        task.set_annotations(ds_annotations)
+
+        gt_job.set_annotations(gt_annotations)
+        gt_job.update(dict(stage="acceptance", state="completed"))
+
+        report = self.compute_report(task.id)
+
+        assert report["comparison_summary"]["annotations"]["valid_count"] == 2
+        assert report["comparison_summary"]["annotations"]["total_count"] == 3
+        assert report["comparison_summary"]["annotations"]["gt_count"] == 3
+        assert report["comparison_summary"]["annotations"]["ds_count"] == 3
+        assert report["comparison_summary"]["annotation_components"]["shape"]["valid_count"] == 3
+        assert report["comparison_summary"]["annotation_components"]["label"]["valid_count"] == 2
+
+    @parametrize("task, gt_job", [fixture_ref(fxt_audio_task_with_gt_job)])
+    def test_label_first_matching(self, task: Task, gt_job: Job):
+        label0, label1 = task.get_labels()
+
+        gt_annotations = models.LabeledDataRequest(
+            intervals=[
+                models.LabeledIntervalRequest(
+                    label_id=label0.id,
+                    start=0,
+                    stop=1000,
+                ),
+                models.LabeledIntervalRequest(
+                    label_id=label1.id,
+                    start=1000,
+                    stop=1500,
+                ),
+            ]
+        )
+
+        ds_annotations = models.LabeledDataRequest(
+            intervals=[
+                # should match GT annotation 1
+                models.LabeledIntervalRequest(
+                    label_id=label0.id,
+                    start=250,
+                    stop=1250,
+                ),
+                # has better overlap with GT annotation 1 than DS annotation 1
+                models.LabeledIntervalRequest(
+                    label_id=label1.id,
+                    start=0,
+                    stop=1250,
+                ),
+            ]
+        )
+
+        task.set_annotations(ds_annotations)
+
+        gt_job.set_annotations(gt_annotations)
+        gt_job.update(dict(stage="acceptance", state="completed"))
+
+        settings = self.client.api_client.quality_api.list_settings(task_id=task.id)[0].results[0]
+        self.client.api_client.quality_api.partial_update_settings(
+            settings.id,
+            patched_quality_settings_request=models.PatchedQualitySettingsRequest(
+                iou_threshold=0.1,
+            ),
+        )
+
+        report = self.compute_report(task.id)
+
+        assert report["comparison_summary"]["conflicts_by_type"] == {"low_overlap": 2}
+        assert report["comparison_summary"]["annotations"]["valid_count"] == 2
+        assert report["comparison_summary"]["annotations"]["total_count"] == 2
+
+    def _make_task_with_transcription_attr(self, fxt_test_name: str, source_filename: Path) -> dict:
+        """Spin up a minimal audio task with a single text attribute named
+        ``transcription``. Returns the attribute spec dict plus its parent
+        task id; used by the validation-error tests below."""
+
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": fxt_test_name,
+                "labels": [
+                    {
+                        "name": "speaker1",
+                        "attributes": [
+                            {
+                                "name": "transcription",
+                                "input_type": "text",
+                                "values": [],
+                                "mutable": True,
+                            },
+                        ],
+                    },
+                ],
+            },
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
+        label = task.get_labels()[0]
+        attr = next(a for a in label.attributes if a.name == "transcription")
+        return {"id": attr.id, "task_id": task.id}

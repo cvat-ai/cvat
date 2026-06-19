@@ -7070,6 +7070,7 @@ components:
         frame:
           type: integer
           readOnly: true
+          nullable: true
         type:
           allOf:
           - $ref: '#/components/schemas/AnnotationConflictType'
@@ -7092,11 +7093,13 @@ components:
       - tag
       - shape
       - track
+      - interval
       type: string
       description: |-
         * `tag` - TAG
         * `shape` - SHAPE
         * `track` - TRACK
+        * `interval` - INTERVAL
     AnnotationConflictSeverity:
       enum:
       - warning
@@ -9225,6 +9228,7 @@ components:
           format: date-time
           readOnly: true
         contact:
+          type: object
           readOnly: true
         owner:
           allOf:
@@ -9245,7 +9249,8 @@ components:
           maxLength: 64
         description:
           type: string
-        contact: {}
+        contact:
+          type: object
       required:
       - slug
     PaginatedAccessTokenReadList:
@@ -9996,7 +10001,8 @@ components:
           maxLength: 64
         description:
           type: string
-        contact: {}
+        contact:
+          type: object
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -10127,6 +10133,15 @@ components:
           default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
+        interval_boundary_tolerance:
+          type: number
+          format: double
+          minimum: 0
+          default: 100.0
+          description: |
+            Timestamp tolerance (milliseconds) for the audio interval boundary F1 metric
+            and for alignment. Onset / offset differences within this tolerance count
+            as a boundary hit.
         compare_line_orientation:
           type: boolean
           default: true
@@ -10745,6 +10760,15 @@ components:
           default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
+        interval_boundary_tolerance:
+          type: number
+          format: double
+          minimum: 0
+          default: 100.0
+          description: |
+            Timestamp tolerance (milliseconds) for the audio interval boundary F1 metric
+            and for alignment. Onset / offset differences within this tolerance count
+            as a boundary hit.
         compare_line_orientation:
           type: boolean
           default: true
@@ -11887,8 +11911,10 @@ components:
           type: string
           readOnly: true
         request:
+          type: object
           readOnly: true
         response:
+          type: object
           readOnly: true
     WebhookRead:
       type: object
