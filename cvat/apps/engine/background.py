@@ -2,22 +2,31 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os.path as osp
 from abc import abstractmethod
 from dataclasses import asdict as dataclass_asdict
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from urllib.parse import quote
 from uuid import uuid4
 
 from attrs.converters import to_bool
 from django.conf import settings
 from django.db.models import Model
-from rest_framework import serializers
+from django.http.response import HttpResponseBadRequest
+from django.utils import timezone
+from django_rq.queues import DjangoRQ
+from rest_framework import serializers, status
 from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rq import Callback
+from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.util import TmpDirManager
+from cvat.apps.dataset_manager.util import TmpDirManager, get_export_cache_lock
 from cvat.apps.dataset_manager.views import get_export_callback
 from cvat.apps.engine.backup import (
     ProjectExporter,
@@ -26,13 +35,20 @@ from cvat.apps.engine.backup import (
     import_project,
     import_task,
 )
-from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
-from cvat.apps.engine.location import LocationConfig, StorageType, get_location_configuration
+from cvat.apps.engine.cloud_provider import (
+    export_resource_to_cloud_storage,
+    import_resource_from_cloud_storage,
+)
+from cvat.apps.engine.location import (
+    Location,
+    LocationConfig,
+    StorageType,
+    get_location_configuration,
+)
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
     Data,
     Job,
-    Location,
     Project,
     RequestAction,
     RequestSubresource,
@@ -41,7 +57,11 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
+from cvat.apps.engine.rq import (
+    ExportRequestId,
+    ExportRQMeta,
+    ImportRequestId,
+)
 from cvat.apps.engine.serializers import (
     AnnotationFileSerializer,
     DatasetFileSerializer,
@@ -54,11 +74,13 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
+    get_rq_lock_for_job,
     import_resource_with_clean_up_after,
     is_dataset_export,
+    sendfile,
 )
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
-from cvat.apps.redis_handler.background import AbstractExporter, AbstractRequestManager
+from cvat.apps.redis_handler.background import AbstractRequestManager
 
 slogger = ServerLogManager(__name__)
 
@@ -68,11 +90,194 @@ LOCK_TTL = REQUEST_TIMEOUT - 5
 LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
 
-class DatasetExporter(AbstractExporter):
+class BaseResourceExporter(AbstractRequestManager):
+    class Downloader:
+        def __init__(
+            self,
+            *,
+            request: ExtendedRequest,
+            queue: DjangoRQ,
+            request_id: str,
+        ):
+            self.request = request
+            self.queue = queue
+            self.request_id = request_id
+
+        def validate_request(self):
+            # prevent architecture bugs
+            assert self.request.method in (
+                "GET",
+                "HEAD",
+            ), "Only GET/HEAD requests can be used to download a file"
+
+        def download_file(self) -> Response:
+            self.validate_request()
+
+            # ensure that there is no race condition when processing parallel requests
+            with get_rq_lock_for_job(self.queue, self.request_id):
+                job = self.queue.fetch_job(self.request_id)
+
+                if not job:
+                    return HttpResponseBadRequest("Unknown export request id")
+
+                # define status once to avoid refreshing it on each check
+                # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
+                job_status = job.get_status(refresh=False)
+
+                if job_status != RQJobStatus.FINISHED:
+                    return HttpResponseBadRequest("The export process is not finished")
+
+                job_meta = ExportRQMeta.for_job(job)
+                file_path = job.return_value()
+
+                if not file_path:
+                    return (
+                        Response(
+                            "A result for exporting job was not found for finished RQ job",
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        )
+                        if job_meta.result_url
+                        # user tries to download a final file locally while the export is made to cloud storage
+                        else HttpResponseBadRequest(
+                            "The export process has no result file to be downloaded locally"
+                        )
+                    )
+
+                with get_export_cache_lock(
+                    file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+                ):
+                    if not osp.exists(file_path):
+                        return Response(
+                            "The exported file has expired, please retry exporting",
+                            status=status.HTTP_404_NOT_FOUND,
+                        )
+
+                    return sendfile(
+                        self.request,
+                        file_path,
+                        attachment=True,
+                        attachment_filename=job_meta.result_filename,
+                    )
+
+    @dataclass
+    class ExportArgs:
+        filename: str | None
+        location_config: LocationConfig
+
+        def to_dict(self):
+            return dataclass_asdict(self)
+
+    QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
+
+    export_args: ExportArgs | None
+
+    @property
+    def job_result_ttl(self):
+        from cvat.apps.dataset_manager.views import get_export_cache_ttl
+
+        return int(get_export_cache_ttl(self.db_instance).total_seconds())
+
+    @property
+    def job_failed_ttl(self):
+        return self.job_result_ttl
+
+    @abstractmethod
+    def get_result_filename(self) -> str: ...
+
+    @abstractmethod
+    def get_result_endpoint_url(self) -> str: ...
+
+    def make_result_url(self, *, request_id: str) -> str:
+        return self.get_result_endpoint_url() + f"?{self.REQUEST_ID_KEY}={quote(request_id)}"
+
+    def get_file_timestamp(self) -> str:
+        # use only updated_date for the related resource, don't check children objects
+        # because every child update should touch the updated_date of the parent resource
+        date = self.db_instance.updated_date if self.db_instance else timezone.now()
+        return datetime.strftime(date, "%Y_%m_%d_%H_%M_%S")
+
+    def init_request_args(self) -> None:
+        try:
+            location_config = get_location_configuration(
+                db_instance=self.db_instance,
+                query_params=self.request.query_params,
+                field_name=StorageType.TARGET,
+            )
+        except ValueError as ex:
+            raise serializers.ValidationError(str(ex)) from ex
+
+        self.export_args = BaseResourceExporter.ExportArgs(
+            location_config=location_config, filename=self.request.query_params.get("filename")
+        )
+
+    @abstractmethod
+    def _init_callback_with_params(self):
+        """
+        Private method that should initialize callback function with its args/kwargs
+        like the init_callback_with_params method in the parent class.
+        """
+
+    def init_callback_with_params(self):
+        """
+        Method should not be overridden, override
+        `_init_callback_with_params()` instead
+        """
+        self._init_callback_with_params()
+
+        if self.export_args.location_config.location == Location.CLOUD_STORAGE:
+            storage_id = self.export_args.location_config.cloud_storage_id
+            db_storage = get_cloud_storage_for_import_or_export(
+                storage_id=storage_id,
+                request=self.request,
+                is_default=self.export_args.location_config.is_default,
+            )
+
+            self.callback_args = (db_storage, self.callback) + self.callback_args
+            self.callback = export_resource_to_cloud_storage
+
+    def init_job_callbacks(self) -> None:
+        from cvat.apps.engine import utils
+
+        self.job_on_success_callback = Callback(
+            utils.send_request_succeeded_signal,
+            timeout=60,
+        )
+        self.job_on_failure_callback = Callback(
+            utils.send_request_failed_signal,
+            timeout=60,
+        )
+
+    def build_meta(self, *, request_id):
+        return ExportRQMeta.build_for(
+            request=self.request,
+            db_obj=self.db_instance,
+            result_url=(
+                self.make_result_url(request_id=request_id)
+                if self.export_args.location_config.location != Location.CLOUD_STORAGE
+                else None
+            ),
+            result_filename=self.get_result_filename(),
+        )
+
+    def get_downloader(self):
+        request_id = self.request.query_params.get(self.REQUEST_ID_KEY)
+
+        if not request_id:
+            raise serializers.ValidationError("Missing request id in the query parameters")
+
+        try:
+            self.validate_request_id(request_id)
+        except ValueError:
+            raise serializers.ValidationError("Invalid export request id")
+
+        return self.Downloader(request=self.request, queue=self.get_queue(), request_id=request_id)
+
+
+class DatasetExporter(BaseResourceExporter):
     SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
 
     @dataclass
-    class ExportArgs(AbstractExporter.ExportArgs):
+    class ExportArgs(BaseResourceExporter.ExportArgs):
         format: str
         save_images: bool
 
@@ -171,11 +376,11 @@ class DatasetExporter(AbstractExporter):
         )
 
 
-class BackupExporter(AbstractExporter):
+class BackupExporter(BaseResourceExporter):
     SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK}
 
     @dataclass
-    class ExportArgs(AbstractExporter.ExportArgs):
+    class ExportArgs(BaseResourceExporter.ExportArgs):
         lightweight: bool
 
     def is_lightweight_possible(self):
@@ -278,7 +483,7 @@ class BackupExporter(AbstractExporter):
         pass
 
 
-class ResourceImporter(AbstractRequestManager):
+class BaseResourceImporter(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
 
     @dataclass
@@ -313,7 +518,7 @@ class ResourceImporter(AbstractRequestManager):
         except ValueError as ex:
             raise serializers.ValidationError(str(ex)) from ex
 
-        self.import_args = ResourceImporter.ImportArgs(
+        self.import_args = BaseResourceImporter.ImportArgs(
             location_config=location_config,
             filename=self.request.query_params.get("filename"),
         )
@@ -394,11 +599,11 @@ class ResourceImporter(AbstractRequestManager):
         self.callback = import_resource_with_clean_up_after
 
 
-class DatasetImporter(ResourceImporter):
+class DatasetImporter(BaseResourceImporter):
     SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
 
     @dataclass
-    class ImportArgs(ResourceImporter.ImportArgs):
+    class ImportArgs(BaseResourceImporter.ImportArgs):
         format: str
         conv_mask_to_poly: bool
         import_mode: str | None
@@ -511,11 +716,11 @@ class DatasetImporter(ResourceImporter):
         )
 
 
-class BackupImporter(ResourceImporter):
+class BackupImporter(BaseResourceImporter):
     SUPPORTED_TARGETS = {RequestTarget.PROJECT, RequestTarget.TASK}
 
     @dataclass
-    class ImportArgs(ResourceImporter.ImportArgs):
+    class ImportArgs(BaseResourceImporter.ImportArgs):
         org_id: int | None
 
     def __init__(

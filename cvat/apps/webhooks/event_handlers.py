@@ -2,79 +2,65 @@
 #
 # SPDX-License-Identifier: MIT
 
+
 from typing import Any
 
-import rq
 from django.dispatch import receiver
 
-from cvat.apps.dataset_manager.signals import ExportStatus, export_finished
-from cvat.apps.engine.backup_signals import BackupStatus, backup_finished
-from cvat.apps.engine.models import Job, Project, Task
-from cvat.apps.events.handlers import organization_id as resolve_organization_id
-from cvat.apps.events.handlers import project_id as resolve_project_id
-
-from .dispatch import batch_add_to_queue
-from .event_type import event_name
-from .services import select_webhooks
+from cvat.apps.engine import utils as engine_utils
+from cvat.apps.engine.models import RequestTarget
+from cvat.apps.engine.rq import ExportRequestId, RequestId
+from cvat.apps.engine.signals import request_failed, request_succeeded
+from cvat.apps.events.handlers import organization_id, project_id
+from cvat.apps.webhooks import services, utils
+from cvat.apps.webhooks.dispatch import batch_add_to_queue
 
 
-@receiver(export_finished)
-def handle_export_finished(
+@receiver(request_succeeded)
+@receiver(request_failed)
+def request_completed_event_handler(
     sender: Any,
-    target: Project | Task | Job,
-    dst_format: str,
-    status: ExportStatus,
-    message: str = "",
-    **kwargs: Any,
+    request_id: str,
+    status: engine_utils.RequestStatusEnum,
+    message: str | None,
+    **kwargs,
 ) -> None:
-    event = event_name(action="create", resource="export")
-    webhooks = select_webhooks(
-        event=event,
-        organization_id=resolve_organization_id(target),
-        project_id=resolve_project_id(target),
+    request, _queue = RequestId.parse(request_id, try_legacy_format=True)
+
+    match request:
+        case ExportRequestId():
+            try:
+                event_name, webhook_payload = (
+                    utils.get_event_name_and_webhook_payload_from_export_request(
+                        request=request,
+                        status=status,
+                        message=message,
+                    )
+                )
+            # NOTE @sosov: Request completion webhooks are only implemented for
+            # export of dataset / annotations and backup
+            except NotImplementedError:
+                return
+        case _:
+            # NOTE @sosov: Request completion webhooks are only implemented for
+            # export of dataset / annotations and backup
+            return
+
+    target_cls = engine_utils.get_request_target_django_model_by_enum(
+        target=RequestTarget(request.target)
     )
+    target = target_cls.objects.get(id=request.target_id)
+
+    webhooks = services.select_webhooks(
+        event=event_name,
+        organization_id=organization_id(target),
+        project_id=project_id(target),
+    )
+
     if not webhooks:
         return
 
-    rq_job = rq.get_current_job()
-    payload = {
-        "event": event,
-        "status": status.value,
-        "target": target.__class__.__name__.lower(),
-        "target_id": target.id,
-        "format": dst_format,
-        "rq_id": rq_job.id if rq_job else None,
-        "message": message,
-    }
-    batch_add_to_queue(webhooks=webhooks, data=payload)
-
-
-@receiver(backup_finished)
-def handle_backup_finished(
-    sender: Any,
-    target: Project | Task,
-    lightweight: bool | None,
-    status: BackupStatus,
-    message: str = "",
-    **kwargs: Any,
-) -> None:
-    event = event_name(action="create", resource="backup")
-    webhooks = select_webhooks(
-        event=event,
-        organization_id=resolve_organization_id(target),
-        project_id=resolve_project_id(target),
+    batch_add_to_queue(
+        webhooks=webhooks,
+        data=webhook_payload,
     )
-    if not webhooks:
-        return
-
-    rq_job = rq.get_current_job()
-    payload = {
-        "event": event,
-        "status": status.value,
-        "target": target.__class__.__name__.lower(),
-        "target_id": target.id,
-        "lightweight": lightweight,
-        "rq_id": rq_job.id if rq_job else None,
-        "message": message,
-    }
-    batch_add_to_queue(webhooks=webhooks, data=payload)

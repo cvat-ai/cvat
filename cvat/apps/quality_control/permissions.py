@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import StrEnum
 from typing import cast
 
 from django.conf import settings
@@ -10,7 +11,7 @@ from django.conf import settings
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.permissions import JobPermission, ProjectPermission, TaskPermission
 from cvat.apps.engine.view_utils import get_or_404
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission, get_iam_context
 
 from .models import AnnotationConflict, QualityReport, QualitySettings
 from .serializers import QualityReportCreateSerializer
