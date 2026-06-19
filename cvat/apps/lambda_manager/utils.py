@@ -36,7 +36,9 @@ class ROIHelper:
                 code=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not all(isinstance(coordinate, int) and not isinstance(coordinate, bool) for coordinate in roi):
+        if not all(
+            isinstance(coordinate, int) and not isinstance(coordinate, bool) for coordinate in roi
+        ):
             raise ValidationError(
                 "ROI must contain four integer coordinates: [xtl, ytl, xbr, ybr]",
                 code=status.HTTP_400_BAD_REQUEST,
@@ -45,7 +47,9 @@ class ROIHelper:
         xtl, ytl, xbr, ybr = roi
 
         if xtl < 0 or ytl < 0 or xbr < 0 or ybr < 0:
-            raise ValidationError("ROI coordinates must be non-negative", code=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(
+                "ROI coordinates must be non-negative", code=status.HTTP_400_BAD_REQUEST
+            )
 
         if xbr - xtl < cls.MIN_ROI_SIZE or ybr - ytl < cls.MIN_ROI_SIZE:
             raise ValidationError(
@@ -79,12 +83,14 @@ class ROIHelper:
         if parsed_roi is None:
             return None
 
-        from cvat.apps.engine.models import MediaType, TaskMode
-        from cvat.apps.engine.models import Task
+        from cvat.apps.engine.models import MediaType, Task
 
-        db_task = Task.objects.prefetch_related("data__images").select_related(
-            "data", "data__video"
-        ).get(pk=task_id)
+        db_task = (
+            Task.objects.prefetch_related("data__images")
+            .select_related("data", "data__video")
+            .get(pk=task_id)
+        )
+
         db_data = db_task.data
         frames = [frame for frame in range(db_data.size) if frame not in db_data.deleted_frames]
         if not frames:
