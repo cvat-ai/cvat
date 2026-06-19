@@ -101,10 +101,7 @@ class AgentFunctionDriver:
             xtl, ytl, xbr, ybr = roi
             width, height = image.size
 
-            if (
-                xtl < 0 or ytl < 0 or xbr > width or ybr > height or
-                xbr - xtl < 128 or ybr - ytl < 128
-            ):
+            if xbr > width or ybr > height:
                 raise BadArError("Invalid ROI")
 
             return image.crop((xtl, ytl, xbr, ybr))
