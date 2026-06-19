@@ -267,13 +267,41 @@ tasks = client.tasks.list()
 
 After calling these functions, we obtain local objects representing their server counterparts.
 The `list()` method accepts the same filtering, search, and ordering query parameters supported
-by the corresponding server endpoint:
+by the corresponding server endpoint. Simple equality filters can be passed directly:
 
 ```python
 completed_project_tasks = client.tasks.list(project_id=123, status="completed")
 demo_projects = client.projects.list(search="demo", sort="-updated_date")
-jobs = client.jobs.list(filter={"in": [{"var": "project_id"}, [1, 2, 3]]})
 ```
+
+For richer conditions, compose filters with the `cvat_sdk.core.filters` helpers instead of
+hand-writing JSON Logic. The `F` object builds field expressions that combine with
+`&` (and), `|` (or) and `~` (not) — wrap each comparison in parentheses, because Python
+binds `&`/`|` tighter than comparisons:
+
+```python
+from cvat_sdk.core.filters import F
+
+# completed tasks in projects 1, 2, or 3
+tasks = client.tasks.list(filter=(F.status == "completed") & F.project_id.one_of([1, 2, 3]))
+
+# tasks named like "demo" OR with no assignee
+tasks = client.tasks.list(filter=F.name.contains("demo") | ~F.assignee.is_set())
+```
+
+Field helpers: `==`, `!=`, `<`, `<=`, `>`, `>=`, `.one_of([...])`, `.contains(substring)`,
+`.between(low, high)`, `.is_set()`.
+
+For simple AND-only filters you can also use keyword lookups, where the operator is a
+suffix on the keyword name (`__in`, `__contains`, `__lt`, `__lte`, `__gt`, `__gte`, `__ne`,
+`__between`, `__isset`):
+
+```python
+tasks = client.tasks.list(project_id__in=[1, 2, 3], name__contains="demo", id__gte=10)
+```
+
+Keyword lookups and a `filter=` expression in the same call are combined with `and`. The raw
+form — `filter={...}` (a dict) or a JSON string — is still accepted.
 
 Object fields can be updated with the `update()` method. Note that the set of fields that can be
 modified can be different from what is available for reading.

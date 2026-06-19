@@ -14,6 +14,7 @@ from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.rest import RESTClientObject
 from cvat_sdk.core.exceptions import BackgroundRequestException
+from cvat_sdk.core.filters import F
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.proxies.types import Location
 from PIL import Image
@@ -230,6 +231,34 @@ class TestTaskUsecases(TestDatasetExport):
         filter_value = json.dumps({"==": [{"var": "id"}, fxt_new_task.id]})
 
         tasks = self.client.tasks.list(filter=filter_value)
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_dsl_filter(self, fxt_new_task: Task):
+        tasks = self.client.tasks.list(filter=(F.id == fxt_new_task.id))
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_keyword_lookup(self, fxt_new_task: Task):
+        tasks = self.client.tasks.list(id__in=[fxt_new_task.id])
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_dsl_filter_matches_raw_filter(self, fxt_new_task: Task):
+        dsl = self.client.tasks.list(filter=(F.id == fxt_new_task.id))
+        raw = self.client.tasks.list(filter={"==": [{"var": "id"}, fxt_new_task.id]})
+
+        assert [t.id for t in dsl] == [t.id for t in raw] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_combine_keyword_lookup_and_dsl_filter(self, fxt_new_task: Task):
+        task_name = f"test_combined_filter_{fxt_new_task.id}"
+        fxt_new_task.update(models.PatchedTaskWriteRequest(name=task_name))
+
+        tasks = self.client.tasks.list(id__in=[fxt_new_task.id], filter=(F.name == task_name))
 
         assert [t.id for t in tasks] == [fxt_new_task.id]
         assert self.stdout.getvalue() == ""
