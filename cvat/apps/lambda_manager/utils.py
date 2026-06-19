@@ -112,7 +112,9 @@ class ROIHelper:
                 return annotation
 
             if anno_type != "mask" and "points" in annotation:
-                annotation["points"] = cls._translate_anno_points(annotation["points"], dx=dx, dy=dy)
+                annotation["points"] = cls._translate_anno_points(
+                    annotation["points"], dx=dx, dy=dy
+                )
 
             if anno_type == "mask" and "points" in annotation:
                 annotation["points"] = [

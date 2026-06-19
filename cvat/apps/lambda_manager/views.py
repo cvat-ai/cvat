@@ -668,7 +668,9 @@ class LambdaFunction:
             )
 
             if roi:
-                ROIHelper.translate_detector_shapes(response["shapes"], dx=roi["xtl"], dy=roi["ytl"])
+                ROIHelper.translate_detector_shapes(
+                    response["shapes"], dx=roi["xtl"], dy=roi["ytl"]
+                )
         elif self.kind == FunctionKind.TRACKER:
             if "shapes" in response and not self.supported_shape_types:
                 response["shapes"] = [
