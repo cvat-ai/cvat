@@ -80,11 +80,7 @@ class ROIHelper:
 
         from cvat.apps.engine.models import MediaType, Task
 
-        db_task = (
-            Task.objects.prefetch_related("data__images")
-            .select_related("data", "data__video")
-            .get(pk=task_id)
-        )
+        db_task = Task.objects.select_related("data", "data__video").get(pk=task_id)
 
         db_data = db_task.data
         frames = [frame for frame in range(db_data.size) if frame not in db_data.deleted_frames]
