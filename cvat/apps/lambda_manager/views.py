@@ -496,8 +496,10 @@ class LambdaFunction:
                     "neg_points": ROIHelper.translate_prompt_points(
                         mandatory_arg("neg_points"), dx=point_dx, dy=point_dy,
                     ),
-                    "obj_bbox": ROIHelper.translate_prompt_bbox(
-                        data.get("obj_bbox", None), dx=point_dx, dy=point_dy,
+                    "obj_bbox": ROIHelper.translate_prompt_points(
+                        data.get("obj_bbox", None),
+                        dx=point_dx,
+                        dy=point_dy,
                     ),
                 }
             )
@@ -651,7 +653,7 @@ class LambdaFunction:
                             db_label.attributespec_set.values(),
                         )
                 if roi:
-                    ROIHelper.translate_annotation(item, dx=roi["xtl"], dy=roi["ytl"])
+                    ROIHelper.translate_detector_item(item, dx=roi["xtl"], dy=roi["ytl"])
                 response_filtered.append(item)
 
             response = converter.convert(
