@@ -18,7 +18,9 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.progress import BaseProgressReporter, ProgressReporter
 
 # Sentinel distinguishing "not passed" from None, which means personal workspace.
+# Use 0 to request results from all organizations explicitly.
 _UNSET = object()
+ORGANIZATION_ALL_ID = 0
 
 
 def get_paginated_collection(
@@ -35,7 +37,9 @@ def get_paginated_collection(
     if org_id is not _UNSET:
         if "x_organization" in endpoint.params_map["all"]:
             kwargs["x_organization"] = None
-        if org_id is None:
+        if org_id == ORGANIZATION_ALL_ID:
+            kwargs["org_id"] = ORGANIZATION_ALL_ID
+        elif org_id is None:
             kwargs["org"] = ""
         else:
             kwargs["org_id"] = org_id

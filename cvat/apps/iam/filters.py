@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from cvat.apps.iam.middleware import ORGANIZATION_ALL_ID
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework.filters import BaseFilterBackend
 
@@ -11,21 +12,34 @@ ORGANIZATION_OPEN_API_PARAMETERS = [
         type=str,
         required=False,
         location=OpenApiParameter.QUERY,
-        description="Organization unique slug",
+        description=(
+            "Organization unique slug. "
+            "If omitted, results from all organizations available to the user are returned. "
+            'An empty value ("") selects the personal sandbox workspace only.'
+        ),
     ),
     OpenApiParameter(
         name="org_id",
         type=int,
         required=False,
         location=OpenApiParameter.QUERY,
-        description="Organization identifier",
+        description=(
+            "Organization identifier. "
+            "If omitted, results from all organizations available to the user are returned. "
+            f'Use {ORGANIZATION_ALL_ID} to request all organizations explicitly. '
+            'An empty value ("") selects the personal sandbox workspace only.'
+        ),
     ),
     OpenApiParameter(
         name="X-Organization",
         type=str,
         required=False,
         location=OpenApiParameter.HEADER,
-        description="Organization unique slug",
+        description=(
+            "Organization unique slug. "
+            "If omitted, results from all organizations available to the user are returned. "
+            'An empty value ("") selects the personal sandbox workspace only.'
+        ),
     ),
 ]
 

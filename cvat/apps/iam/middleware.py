@@ -16,6 +16,47 @@ class WithIAMContext(Protocol):
     iam_context: dict[str, Any]
 
 
+ORGANIZATION_ALL_ID = 0
+
+
+def infer_organization_from_resource_filters(request: HttpRequest):
+    """
+    Infer organization from resource-specific list filters.
+
+    This allows list requests in the sandbox context (org="") to access resources
+    that belong to an organization when the caller specifies a resource filter
+    such as job_id, task_id or project_id.
+    """
+    from cvat.apps.engine import models as engine_models
+    from cvat.apps.organizations.models import Organization
+
+    organization_id = None
+
+    if job_id := request.GET.get("job_id"):
+        organization_id = (
+            engine_models.Job.objects.filter(pk=job_id)
+            .values_list("segment__task__organization_id", flat=True)
+            .first()
+        )
+    elif task_id := request.GET.get("task_id"):
+        organization_id = (
+            engine_models.Task.objects.filter(pk=task_id)
+            .values_list("organization_id", flat=True)
+            .first()
+        )
+    elif project_id := request.GET.get("project_id"):
+        organization_id = (
+            engine_models.Project.objects.filter(pk=project_id)
+            .values_list("organization_id", flat=True)
+            .first()
+        )
+
+    if organization_id is None:
+        return None
+
+    return Organization.objects.select_related("owner").get(id=organization_id)
+
+
 def get_organization(request: HttpRequest):
     from cvat.apps.organizations.models import Organization
 
@@ -46,13 +87,30 @@ def get_organization(request: HttpRequest):
 
         org_slug = org_slug if org_slug is not None else org_header
 
-        if org_slug is not None or org_id is not None:
+        if org_id is not None:
+            if org_id == "":
+                organization_specified = True
+            else:
+                parsed_org_id = int(org_id)
+                if parsed_org_id == ORGANIZATION_ALL_ID:
+                    # Explicit request to return results from all organizations
+                    organization_specified = False
+                else:
+                    organization_specified = True
+                    organization = Organization.objects.select_related("owner").get(
+                        id=parsed_org_id
+                    )
+        elif org_slug is not None:
             organization_specified = True
+            if org_slug:
+                organization = Organization.objects.select_related("owner").get(slug=org_slug)
 
-        if org_slug:
-            organization = Organization.objects.select_related("owner").get(slug=org_slug)
-        elif org_id:
-            organization = Organization.objects.select_related("owner").get(id=int(org_id))
+        if (
+            organization_specified
+            and organization is None
+            and (inferred_org := infer_organization_from_resource_filters(request))
+        ):
+            organization = inferred_org
     except Organization.DoesNotExist:
         raise NotFound(f"{org_slug or org_id} organization does not exist.")
 
