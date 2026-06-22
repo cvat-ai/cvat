@@ -87,15 +87,16 @@ class ROIHelper:
         if not frames:
             return parsed_roi
 
-        if db_video := getattr(db_data, "video", None):
-            sizes = {(db_video.width, db_video.height)}
-        elif db_task.media_type == MediaType.IMAGE:
-            sizes = set(
-                db_data.images.filter(is_placeholder=False)
-                .exclude(frame__in=db_data.deleted_frames)
-                .values_list("width", "height")
-                .distinct()
-            )
+        if db_task.media_type == MediaType.IMAGE:
+            if db_video := getattr(db_data, "video", None):
+                sizes = {(db_video.width, db_video.height)}
+            else:
+                sizes = set(
+                    db_data.images.filter(is_placeholder=False)
+                    .exclude(frame__in=db_data.deleted_frames)
+                    .values_list("width", "height")
+                    .distinct()
+                )
         else:
             raise ValidationError(
                 "ROI is supported only for image and video tasks",
