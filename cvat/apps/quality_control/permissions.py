@@ -42,7 +42,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
             report = get_or_404(QualityReport, report)
 
         if not iam_context and request:
-            iam_context = get_iam_context(request, None)
+            iam_context = get_iam_context(request, report)
 
         return cls(**iam_context, scope=cls.Scopes.VIEW, obj=report)
 
@@ -54,6 +54,8 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         for scope in cls.get_scopes(request, view, obj):
             if scope == Scopes.VIEW:
                 permissions.append(cls.create_scope_view(request, obj, iam_context=iam_context))
+            elif scope == Scopes.LIST and isinstance(obj, QualityReport):
+                permissions.append(QualityReportPermission.create_scope_view(request, obj))
             elif scope == Scopes.LIST and isinstance(obj, Job):
                 permissions.append(JobPermission.create_scope_view(request, obj))
             elif scope == Scopes.LIST and isinstance(obj, Task):
