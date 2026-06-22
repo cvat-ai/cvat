@@ -87,8 +87,7 @@ class ROIHelper:
         if not frames:
             return parsed_roi
 
-        if db_task.media_type == MediaType.VIDEO:
-            db_video = db_data.video
+        if db_video:= getattr(db_data, 'video', None):
             sizes = {(db_video.width, db_video.height)}
         elif db_task.media_type == MediaType.IMAGE:
             sizes = set(
