@@ -2,8 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json as _json
+from unittest import mock
+
 import pytest
-from cvat_sdk.core.filters import Filter, all_, any_, not_
+from cvat_sdk.core.filters import (
+    F,
+    Filter,
+    all_,
+    any_,
+    build_filter_param,
+    not_,
+    pop_lookup_conditions,
+)
 
 
 def test_and_combines_two_filters():
@@ -56,9 +67,6 @@ def test_all_empty_raises():
         all_()
 
 
-from cvat_sdk.core.filters import F
-
-
 def test_field_eq():
     assert (F.status == "completed").to_json_logic() == {"==": [{"var": "status"}, "completed"]}
 
@@ -104,11 +112,6 @@ def test_dsl_composition_example():
             {"in": [{"var": "project_id"}, [1, 2, 3]]},
         ]
     }
-
-
-import json as _json
-
-from cvat_sdk.core.filters import build_filter_param, pop_lookup_conditions
 
 
 def test_pop_lookup_in():
@@ -178,9 +181,6 @@ def test_build_filter_param_dict_passthrough_serialized():
 def test_build_filter_param_string_passthrough_verbatim():
     raw = _json.dumps({"==": [{"var": "id"}, 1]})
     assert build_filter_param(raw, []) == raw
-
-
-from unittest import mock
 
 
 def _make_fake_repo():

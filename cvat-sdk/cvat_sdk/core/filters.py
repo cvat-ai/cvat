@@ -6,13 +6,13 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping
-from typing import Any, Union
+from typing import Any, TypeAlias
 
 __all__ = ["F", "Field", "Filter", "all_", "any_", "not_"]
 
 # Anything that can stand in for a filter condition: a composed ``Filter``, a raw
 # JSON Logic mapping, or a JSON string.
-Condition = Union["Filter", Mapping[str, Any], str]
+Condition: TypeAlias = "Filter | Mapping[str, Any] | str"
 # Keyword-lookup suffixes (``field__<op>``) map to the same field-DSL builders the
 # ``F`` object exposes, so the two front-ends stay a single source of truth.
 LOOKUPS: dict[str, Callable[[Field, Any], Filter]] = {
@@ -146,6 +146,8 @@ def build_filter_param(
     lookup_conditions: list[Any],
 ) -> str | None:
     """Assemble the ``filter`` query-string value from a filter expression and lookups."""
+    if isinstance(filter_value, str) and not filter_value:
+        filter_value = None
     if filter_value is None and not lookup_conditions:
         return None
 

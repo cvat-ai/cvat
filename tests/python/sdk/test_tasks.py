@@ -8,6 +8,7 @@ import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
+from unittest import mock
 
 import pytest
 from cvat_sdk import Client, models
@@ -214,10 +215,21 @@ class TestTaskUsecases(TestDatasetExport):
         assert self.stdout.getvalue() == ""
 
     def test_can_list_tasks_with_simple_filter(self, fxt_new_task: Task):
+        from cvat_sdk.core.proxies import model_proxy
+
         task_name = f"test_task_filter_{fxt_new_task.id}"
         fxt_new_task.update(models.PatchedTaskWriteRequest(name=task_name))
 
-        tasks = self.client.tasks.list(name=task_name)
+        with mock.patch.object(
+            model_proxy,
+            "get_paginated_collection",
+            wraps=model_proxy.get_paginated_collection,
+        ) as spy:
+            tasks = self.client.tasks.list(name=task_name)
+
+        # a plain field lookup is forwarded as-is and must not be turned into a complex `filter`
+        assert spy.call_args.kwargs["name"] == task_name
+        assert "filter" not in spy.call_args.kwargs
 
         assert [t.id for t in tasks] == [fxt_new_task.id]
         assert self.stdout.getvalue() == ""
