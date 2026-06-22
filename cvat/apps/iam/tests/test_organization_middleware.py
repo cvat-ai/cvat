@@ -2,16 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from unittest.mock import patch
-
 from django.contrib.auth.models import Group
 from django.test import RequestFactory, TestCase
 
-from cvat.apps.iam.middleware import (
-    ORGANIZATION_ALL_ID,
-    get_organization,
-    infer_organization_from_resource_filters,
-)
+from cvat.apps.iam.middleware import ORGANIZATION_ALL_ID, get_organization
 from cvat.apps.organizations.models import Organization
 
 
@@ -64,32 +58,8 @@ class OrganizationMiddlewareTestCase(TestCase):
         assert context["organization"] == self.organization
         assert context["organization_specified"] is True
 
-    @patch("cvat.apps.iam.middleware.infer_organization_from_resource_filters")
-    def test_job_id_triggers_organization_inference_in_sandbox_context(self, infer_mock):
-        infer_mock.return_value = self.organization
-
+    def test_sandbox_context_does_not_infer_organization_from_resource_filters(self):
         context = self._get_context("?org=&job_id=1")
 
-        infer_mock.assert_called_once()
-        assert context["organization"] == self.organization
+        assert context["organization"] is None
         assert context["organization_specified"] is True
-
-
-class InferOrganizationFromResourceFiltersTestCase(TestCase):
-    def setUp(self):
-        self.factory = RequestFactory()
-        self.organization = Organization.objects.create(slug="testorg", name="Test Org")
-
-    def test_returns_none_when_no_resource_filter_is_present(self):
-        request = self.factory.get("/api/labels")
-
-        assert infer_organization_from_resource_filters(request) is None
-
-    @patch("cvat.apps.engine.models.Job.objects.filter")
-    def test_returns_organization_for_job_id(self, job_filter):
-        job_filter.return_value.values_list.return_value.first.return_value = self.organization.id
-        request = self.factory.get(f"/api/labels?job_id=1")
-
-        inferred = infer_organization_from_resource_filters(request)
-
-        assert inferred == self.organization
