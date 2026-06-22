@@ -42,7 +42,7 @@ jobs:
         run:
           sudo apt-get install -y pandoc
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: "release-${{ steps.discover.outputs.version }}"
 
