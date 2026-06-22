@@ -4,6 +4,7 @@
 
 import textwrap
 from collections.abc import Container
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -96,3 +97,15 @@ def restrict_api_requests(
         raise RuntimeError("Disallowed!")
 
     monkeypatch.setattr(RESTClientObject, "request", restricted_request)
+
+
+@dataclass(frozen=True)
+class OrgResourceHierarchy:
+    owner_username: str
+    maintainer_username: str
+    org_slug: str
+    project_id: int
+    task_id: int
+    job_id: int
+    issue_id: int | None = None
+    comment_id: int | None = None

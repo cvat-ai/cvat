@@ -3,9 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import StrEnum
+
 from django.conf import settings
 
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission
 
 from .models import Membership
 

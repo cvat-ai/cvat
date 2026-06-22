@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from enum import StrEnum
 from pathlib import Path
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
@@ -20,7 +21,6 @@ from cvat.apps.iam import permissions as iam_permissions
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
     PermissionResult,
-    StrEnum,
     get_iam_context,
 )
 
