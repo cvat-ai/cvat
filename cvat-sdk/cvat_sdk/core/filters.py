@@ -142,7 +142,7 @@ def pop_lookup_conditions(kwargs: dict[str, Any]) -> list[Any]:
 
 
 def build_filter_param(
-    filter_value: Condition | None,
+    filter_value: Condition | str | None,
     lookup_conditions: list[Any],
 ) -> str | None:
     """Assemble the ``filter`` query-string value from a filter expression and lookups."""
