@@ -130,6 +130,16 @@ export default function ResourceFilterHOC(
         return result;
     }
 
+    function getSearchTreeFromFilterValue(filterValue: string | null): ImmutableTree {
+        if (!filterValue || filterValue === '{}') return defaultTree;
+        try {
+            const tree = QbUtils.loadFromJsonLogic(JSON.parse(filterValue), config);
+            return (tree && isValidTree(tree)) ? tree : defaultTree;
+        } catch {
+            return defaultTree;
+        }
+    }
+
     function ResourceFilterComponent(props: ResourceFilterProps): JSX.Element {
         const {
             predefinedVisible, builderVisible, recentVisible, value,
@@ -139,7 +149,8 @@ export default function ResourceFilterHOC(
 
         const user = useSelector((state: CombinedState) => state.auth.user);
         const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
-        const [searchTree, setSearchTree] = useState<ImmutableTree>(defaultTree);
+        const [prevValue, setPrevValue] = useState(value);
+        const [searchTree, setSearchTree] = useState<ImmutableTree>(() => getSearchTreeFromFilterValue(value));
 
         const predefinedFilters = getPredefinedFilters(user);
 
@@ -147,32 +158,27 @@ export default function ResourceFilterHOC(
             setRecentFilters(receiveRecentFilters());
         }, []);
 
-        const appliedFilter = useMemo(() => {
-            const innerAppliedFilter = { ...defaultAppliedFilter };
+        const { appliedFilter, searchTreeFromValue } = useMemo(() => {
+            const tree = getSearchTreeFromFilterValue(value);
 
-            if (!value || value === '{}') {
-                setSearchTree(defaultTree);
-                return innerAppliedFilter;
+            if (tree === defaultTree) {
+                return { appliedFilter: { ...defaultAppliedFilter }, searchTreeFromValue: defaultTree };
             }
 
-            try {
-                const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
-
-                if (!tree || !isValidTree(tree)) {
-                    return innerAppliedFilter;
-                }
-
-                setSearchTree(tree);
-                return {
-                    recent: recentFilters[value] ?? null,
-                    predefined: splitFilterIntoPredefined(Object.values(predefinedFilters ?? {}), value),
+            return {
+                appliedFilter: {
+                    recent: recentFilters[value!] ?? null,
+                    predefined: splitFilterIntoPredefined(Object.values(predefinedFilters ?? {}), value!),
                     built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
-                };
-            } catch {
-                // leave default for broken input value
-                return innerAppliedFilter;
-            }
+                },
+                searchTreeFromValue: tree,
+            };
         }, [value, recentFilters]);
+
+        if (prevValue !== value) {
+            setPrevValue(value);
+            setSearchTree(searchTreeFromValue);
+        }
 
         useEffect(() => {
             const listener = (event: MouseEvent): void => {
@@ -196,14 +202,6 @@ export default function ResourceFilterHOC(
         const handlePredefinedFilterChange = (predefinedFilter: string[]): void => {
             const predefinedFilterToApply = unite(predefinedFilter);
             onApplyFilter(predefinedFilterToApply);
-        };
-
-        const handleRecentFilterChange = (recentFilter: string): void => {
-            onApplyFilter(recentFilter);
-            const tree = QbUtils.loadFromJsonLogic(JSON.parse(recentFilter), config);
-            if (tree && isValidTree(tree)) {
-                setSearchTree(tree);
-            }
         };
 
         const handleApplyFilter = (filter: string): void => {
@@ -306,7 +304,7 @@ export default function ResourceFilterHOC(
                                                                 if (appliedFilter.recent === key) {
                                                                     handleClearFilter();
                                                                 } else {
-                                                                    handleRecentFilterChange(key);
+                                                                    handleApplyFilter(key);
                                                                 }
                                                             }}
                                                         >
@@ -346,7 +344,7 @@ export default function ResourceFilterHOC(
                                     disabled={!QbUtils.queryString(searchTree, config)}
                                     size='small'
                                     onClick={() => {
-                                        setSearchTree(defaultTree);
+                                        handleClearFilter();
                                     }}
                                 >
                                     Reset
@@ -367,7 +365,9 @@ export default function ResourceFilterHOC(
                                             return;
                                         }
 
-                                        handleApplyFilter(stringified);
+                                        if (stringified !== appliedFilter.built) {
+                                            handleApplyFilter(stringified);
+                                        }
                                     }}
                                 >
                                     Apply
