@@ -120,3 +120,67 @@ class AuthStore:
 
         if not self._is_windows():
             os.chmod(self._path, 0o600)
+
+    @staticmethod
+    def _to_entry(raw: dict) -> ProfileEntry:
+        return ProfileEntry(
+            server=raw["server"], token=raw["token"], created_date=raw.get("created_date", "")
+        )
+
+    def list_profiles(self) -> dict[str, ProfileEntry]:
+        doc = self._load()
+        return {name: self._to_entry(raw) for name, raw in doc["profiles"].items()}
+
+    def get_profile(self, name: str) -> ProfileEntry | None:
+        raw = self._load()["profiles"].get(name)
+        return self._to_entry(raw) if raw is not None else None
+
+    def add_profile(self, name: str, entry: ProfileEntry, *, set_default: bool = False) -> None:
+        doc = self._load()
+        doc["profiles"][name] = {
+            "server": entry.server,
+            "token": entry.token,
+            "created_date": entry.created_date,
+        }
+        if set_default or "default_profile" not in doc:
+            doc["default_profile"] = name
+        self._save(doc)
+
+    def remove_profile(self, name: str) -> None:
+        doc = self._load()
+        del doc["profiles"][name]  # raises KeyError if absent
+        if doc.get("default_profile") == name:
+            doc.pop("default_profile", None)
+        self._save(doc)
+
+    def get_default_profile(self) -> tuple[str, ProfileEntry] | None:
+        doc = self._load()
+        name = doc.get("default_profile")
+        if name is None or name not in doc["profiles"]:
+            return None
+        return name, self._to_entry(doc["profiles"][name])
+
+    def set_default_profile(self, name: str) -> None:
+        doc = self._load()
+        if name not in doc["profiles"]:
+            raise KeyError(name)
+        doc["default_profile"] = name
+        self._save(doc)
+
+    def clear_default_profile(self) -> None:
+        doc = self._load()
+        doc.pop("default_profile", None)
+        self._save(doc)
+
+    def get_default_server(self) -> str | None:
+        return self._load().get("default_server")
+
+    def set_default_server(self, server: str) -> None:
+        doc = self._load()
+        doc["default_server"] = server
+        self._save(doc)
+
+    def clear_default_server(self) -> None:
+        doc = self._load()
+        doc.pop("default_server", None)
+        self._save(doc)

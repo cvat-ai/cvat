@@ -91,3 +91,58 @@ def test_load_rejects_corrupt_json(tmp_path):
         os.chmod(path, 0o600)
     with pytest.raises(AuthStoreError):
         _store(tmp_path)._load()
+
+
+def _entry(server="https://app.cvat.ai", token="tok") -> ProfileEntry:
+    return ProfileEntry(server=server, token=token, created_date="2026-01-01T00:00:00+00:00")
+
+
+def test_add_get_list_remove_profile(tmp_path):
+    store = _store(tmp_path)
+    assert store.list_profiles() == {}
+    store.add_profile("mycvat", _entry())
+    assert store.get_profile("mycvat") == _entry()
+    assert set(store.list_profiles()) == {"mycvat"}
+    store.remove_profile("mycvat")
+    assert store.get_profile("mycvat") is None
+
+
+def test_first_profile_becomes_default_when_requested(tmp_path):
+    store = _store(tmp_path)
+    store.add_profile("mycvat", _entry(), set_default=True)
+    name, entry = store.get_default_profile()
+    assert name == "mycvat"
+    assert entry == _entry()
+
+
+def test_first_profile_becomes_default_even_without_flag(tmp_path):
+    store = _store(tmp_path)
+    store.add_profile("mycvat", _entry())
+    assert store.get_default_profile()[0] == "mycvat"
+
+
+def test_set_default_profile_requires_existing(tmp_path):
+    store = _store(tmp_path)
+    with pytest.raises(KeyError):
+        store.set_default_profile("nope")
+
+
+def test_removing_default_profile_clears_default(tmp_path):
+    store = _store(tmp_path)
+    store.add_profile("mycvat", _entry(), set_default=True)
+    store.remove_profile("mycvat")
+    assert store.get_default_profile() is None
+
+
+def test_default_server_set_get_clear(tmp_path):
+    store = _store(tmp_path)
+    assert store.get_default_server() is None
+    store.set_default_server("https://staging.example.com")
+    assert store.get_default_server() == "https://staging.example.com"
+    store.clear_default_server()
+    assert store.get_default_server() is None
+
+
+def test_remove_unknown_profile_raises(tmp_path):
+    with pytest.raises(KeyError):
+        _store(tmp_path).remove_profile("ghost")
