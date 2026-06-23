@@ -22,6 +22,18 @@ def test_and_combines_two_filters():
     assert result == {"and": [{"==": [{"var": "a"}, 1]}, {"==": [{"var": "b"}, 2]}]}
 
 
+def test_filter_constructor_accepts_conditions():
+    assert Filter(Filter({"var": "x"})).to_json_logic() == {"var": "x"}
+    assert Filter('{"var": "x"}').to_json_logic() == {"var": "x"}
+
+
+def test_filter_constructor_rejects_unsupported_conditions():
+    with pytest.raises(TypeError):
+        Filter(1)
+    with pytest.raises(TypeError):
+        Filter("[]")
+
+
 def test_and_flattens_same_operator():
     f = (
         Filter({"==": [{"var": "a"}, 1]})

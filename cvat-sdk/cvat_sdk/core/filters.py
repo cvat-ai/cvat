@@ -8,11 +8,12 @@ import json
 from collections.abc import Callable, Mapping
 from typing import Any, TypeAlias
 
-__all__ = ["F", "Field", "Filter", "all_", "any_", "not_"]
+__all__ = ["Condition", "F", "Field", "Filter", "JsonLogicExpression", "all_", "any_", "not_"]
 
+JsonLogicExpression: TypeAlias = Mapping[str, Any]
 # Anything that can stand in for a filter condition: a composed ``Filter``, a raw
 # JSON Logic mapping, or a JSON string.
-Condition: TypeAlias = "Filter | Mapping[str, Any] | str"
+Condition: TypeAlias = "Filter | JsonLogicExpression | str"
 # Keyword-lookup suffixes (``field__<op>``) map to the same field-DSL builders the
 # ``F`` object exposes, so the two front-ends stay a single source of truth.
 LOOKUPS: dict[str, Callable[[Field, Any], Filter]] = {
@@ -32,11 +33,12 @@ class Filter:
     """A composable JSON Logic filter node."""
 
     __slots__ = ("_expr",)
+    _expr: JsonLogicExpression
 
-    def __init__(self, expr: Any) -> None:
-        self._expr = expr
+    def __init__(self, expr: Condition) -> None:
+        self._expr = _as_expr(expr)
 
-    def to_json_logic(self) -> Any:
+    def to_json_logic(self) -> JsonLogicExpression:
         return self._expr
 
     def __and__(self, other: Condition) -> Filter:
@@ -61,7 +63,7 @@ class Field:
         self._name = name
 
     @property
-    def _var(self) -> dict[str, str]:
+    def _var(self) -> JsonLogicExpression:
         return {"var": self._name}
 
     def __eq__(self, value: Any) -> Filter:  # type: ignore[override]
@@ -131,9 +133,9 @@ def not_(condition: Condition) -> Filter:
     return Filter({"!": _as_expr(condition)})
 
 
-def pop_lookup_conditions(kwargs: dict[str, Any]) -> list[Any]:
+def pop_lookup_conditions(kwargs: dict[str, Any]) -> list[JsonLogicExpression]:
     """Extract and remove ``field__op`` lookup kwargs, returning JSON Logic conditions."""
-    conditions: list[Any] = []
+    conditions: list[JsonLogicExpression] = []
     for key in list(kwargs):
         field_name, sep, op = key.rpartition("__")
         if sep and field_name and op in LOOKUPS:
@@ -142,8 +144,8 @@ def pop_lookup_conditions(kwargs: dict[str, Any]) -> list[Any]:
 
 
 def build_filter_param(
-    filter_value: Condition | str | None,
-    lookup_conditions: list[Any],
+    filter_value: Condition | None,
+    lookup_conditions: list[JsonLogicExpression],
 ) -> str | None:
     """Assemble the ``filter`` query-string value from a filter expression and lookups."""
     if isinstance(filter_value, str) and not filter_value:
@@ -155,7 +157,7 @@ def build_filter_param(
     if isinstance(filter_value, str) and not lookup_conditions:
         return filter_value
 
-    nodes: list[Any] = list(lookup_conditions)
+    nodes: list[JsonLogicExpression] = list(lookup_conditions)
     if filter_value is not None:
         nodes.append(_as_expr(filter_value))
 
@@ -163,20 +165,22 @@ def build_filter_param(
     return json.dumps(combined)
 
 
-def _as_expr(value: Condition) -> Any:
+def _as_expr(value: Condition) -> JsonLogicExpression:
     """Normalize a condition into a JSON Logic value."""
     if isinstance(value, Filter):
         return value.to_json_logic()
     if isinstance(value, Mapping):
         return dict(value)
     if isinstance(value, str):
-        return json.loads(value)
+        expr = json.loads(value)
+        if isinstance(expr, Mapping):
+            return dict(expr)
     raise TypeError(f"Unsupported filter condition: {value!r}")
 
 
-def _merge(op: str, left: Any, right: Any) -> dict[str, Any]:
+def _merge(op: str, left: JsonLogicExpression, right: JsonLogicExpression) -> JsonLogicExpression:
     """Combine two expressions under ``op``, flattening operands that share it."""
-    args: list[Any] = []
+    args: list[JsonLogicExpression] = []
     for node in (left, right):
         if isinstance(node, Mapping) and list(node) == [op]:
             args.extend(node[op])
@@ -189,5 +193,5 @@ def _combine(op: str, conditions: tuple[Condition, ...], func_name: str) -> Filt
     """AND/OR of all conditions; a single condition is returned unwrapped."""
     if not conditions:
         raise ValueError(f"{func_name}() requires at least one condition")
-    exprs = [_as_expr(c) for c in conditions]
+    exprs: list[JsonLogicExpression] = [_as_expr(c) for c in conditions]
     return Filter(exprs[0] if len(exprs) == 1 else {op: exprs})
