@@ -9,7 +9,6 @@ from pathlib import Path
 
 import platformdirs
 import pytest
-
 from cvat_sdk.core.auth import (
     DEFAULT_SERVER,
     AuthStore,
