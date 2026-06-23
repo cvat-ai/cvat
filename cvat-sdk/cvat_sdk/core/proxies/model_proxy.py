@@ -160,6 +160,10 @@ class ModelListMixin(Generic[_EntityT]):
     ) -> list[_EntityT | Any]:
         """
         Retrieves objects from the server and returns them in basic or JSON format.
+
+        Keyword arguments are forwarded as endpoint query parameters, and can be
+        used to specify filters, search, ordering, pagination, or other options
+        supported by the corresponding list endpoint.
         """
 
         filter_param = build_filter_param(kwargs.pop("filter", None), pop_lookup_conditions(kwargs))
