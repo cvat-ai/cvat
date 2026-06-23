@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 import os
 import textwrap
@@ -30,6 +31,7 @@ from drf_spectacular.utils import (
     extend_schema_view,
     inline_serializer,
 )
+from PIL import Image
 from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
 
@@ -61,6 +63,7 @@ from cvat.apps.lambda_manager.serializers import (
     FunctionCallSerializer,
 )
 from cvat.apps.lambda_manager.signals import interactive_function_call_signal
+from cvat.apps.lambda_manager.utils import ROIHelper
 from cvat.utils.http import make_requests_session
 
 slogger = ServerLogManager(__name__)
@@ -327,6 +330,8 @@ class LambdaFunction:
         if threshold:
             payload.update({"threshold": threshold})
         mapping = data.get("mapping", {})
+        requested_roi = data.get("roi")
+        roi = None
 
         model_labels = self.labels
         task_labels = db_task.get_labels(prefetch=True)
@@ -466,15 +471,45 @@ class LambdaFunction:
                         f"The {desc} is outside the job range", code=status.HTTP_400_BAD_REQUEST
                     )
 
+        if requested_roi is not None and self.kind not in {
+            FunctionKind.DETECTOR,
+            FunctionKind.INTERACTOR,
+        }:
+            raise ValidationError(
+                f"ROI is not supported for {self.kind} functions",
+                code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if self.kind in {FunctionKind.DETECTOR, FunctionKind.INTERACTOR}:
+            frame = mandatory_arg("frame")
+            if requested_roi is not None:
+                image, roi = self._get_roi(db_task, frame, requested_roi)
+            else:
+                image = self._get_image(db_task, frame)
+
         if self.kind == FunctionKind.DETECTOR:
-            payload.update({"image": self._get_image(db_task, mandatory_arg("frame"))})
+            payload.update({"image": image})
         elif self.kind == FunctionKind.INTERACTOR:
+            point_dx = -roi["xtl"] if roi else 0
+            point_dy = -roi["ytl"] if roi else 0
             payload.update(
                 {
-                    "image": self._get_image(db_task, mandatory_arg("frame")),
-                    "pos_points": mandatory_arg("pos_points"),
-                    "neg_points": mandatory_arg("neg_points"),
-                    "obj_bbox": data.get("obj_bbox", None),
+                    "image": image,
+                    "pos_points": ROIHelper.translate_prompt_points(
+                        mandatory_arg("pos_points"),
+                        dx=point_dx,
+                        dy=point_dy,
+                    ),
+                    "neg_points": ROIHelper.translate_prompt_points(
+                        mandatory_arg("neg_points"),
+                        dx=point_dx,
+                        dy=point_dy,
+                    ),
+                    "obj_bbox": ROIHelper.translate_prompt_points(
+                        data.get("obj_bbox", None),
+                        dx=point_dx,
+                        dy=point_dy,
+                    ),
                 }
             )
             text_prompts = data.get("text_prompts", None)
@@ -631,6 +666,11 @@ class LambdaFunction:
                 frame=mandatory_arg("frame"),
                 annotations=response_filtered,
             )
+
+            if roi:
+                ROIHelper.translate_detector_shapes(
+                    response["shapes"], dx=roi["xtl"], dy=roi["ytl"]
+                )
         elif self.kind == FunctionKind.TRACKER:
             if "shapes" in response and not self.supported_shape_types:
                 response["shapes"] = [
@@ -644,8 +684,29 @@ class LambdaFunction:
                 signer.sign(json.dumps(state, separators=(",", ":")))
                 for state in response["states"]
             ]
+        elif self.kind == FunctionKind.INTERACTOR and roi:
+            response = ROIHelper.translate_interactor_response(
+                response,
+                roi=roi,
+                image_width=roi["image_width"],
+                image_height=roi["image_height"],
+            )
 
         return response
+
+    def _get_roi(self, db_task, frame, roi: list) -> tuple[str, dict]:
+        frame_provider = TaskFrameProvider(db_task)
+        frame_data = frame_provider.get_frame(frame)
+        image_bytes = frame_data.data.getvalue()
+
+        with Image.open(io.BytesIO(image_bytes)) as image:
+            parsed_roi = ROIHelper.parse_roi(roi)
+            parsed_roi.update({"image_width": image.width, "image_height": image.height})
+            cropped_image = ROIHelper.crop_image(image, parsed_roi)
+
+            with io.BytesIO() as output:
+                cropped_image.save(output, format=cropped_image.format or "PNG")
+                return base64.b64encode(output.getvalue()).decode("utf-8"), parsed_roi
 
     def _get_image(self, db_task, frame):
         frame_provider = TaskFrameProvider(db_task)
@@ -687,6 +748,7 @@ class LambdaQueue:
         request,
         *,
         job: int | None = None,
+        roi: list | None = None,
     ) -> LambdaJob:
         queue = self._get_queue()
         rq_id = RequestId(
@@ -733,6 +795,7 @@ class LambdaQueue:
                         "conv_mask_to_poly": conv_mask_to_poly,
                         "mapping": mapping,
                         "max_distance": max_distance,
+                        "roi": roi,
                     },
                     depends_on=define_dependent_job(queue, user_id),
                     result_ttl=self.RESULT_TTL.total_seconds(),
@@ -990,6 +1053,7 @@ class LambdaJob:
         conv_mask_to_poly: bool,
         *,
         db_job: Job | None = None,
+        roi: list | None = None,
     ):
         collector = DetectionResultCollector(db_task, db_job)
 
@@ -1009,6 +1073,7 @@ class LambdaJob:
                     "mapping": mapping,
                     "threshold": threshold,
                     "conv_mask_to_poly": conv_mask_to_poly,
+                    "roi": roi,
                 },
                 converter=converter,
             )
@@ -1184,6 +1249,7 @@ class LambdaJob:
                 kwargs.get("mapping"),
                 kwargs.get("conv_mask_to_poly"),
                 db_job=db_job,
+                roi=kwargs.get("roi"),
             )
         elif function.kind == FunctionKind.REID:
             cls._call_reid(
@@ -1415,6 +1481,7 @@ class RequestViewSet(viewsets.ViewSet):
             conv_mask_to_poly = request_data.get("conv_mask_to_poly", False)
             mapping = request_data.get("mapping")
             max_distance = request_data.get("max_distance")
+            roi = request_data.get("roi")
         except KeyError as err:
             raise ValidationError(
                 "`{}` lambda function was run ".format(request_data.get("function", "undefined"))
@@ -1428,6 +1495,14 @@ class RequestViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
+        if roi is not None and lambda_func.kind != FunctionKind.DETECTOR:
+            raise ValidationError(
+                f"ROI is not supported for {lambda_func.kind} functions",
+                code=status.HTTP_400_BAD_REQUEST,
+            )
+        if roi is not None and lambda_func.kind == FunctionKind.DETECTOR:
+            ROIHelper.validate_task_roi(task, roi)
+
         rq_job = queue.enqueue(
             lambda_func,
             threshold,
@@ -1438,6 +1513,7 @@ class RequestViewSet(viewsets.ViewSet):
             max_distance,
             request,
             job=job,
+            roi=roi,
         )
 
         handle_function_call(function, job or task, category="batch")
