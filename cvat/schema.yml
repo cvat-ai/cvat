@@ -438,6 +438,10 @@ paths:
   /api/auth/register:
     post:
       operationId: auth_create_register
+      description: |-
+        Registers a new user.
+
+        Accepts the following POST parameters: username, email, password1, password2.
       tags:
       - auth
       requestBody:
