@@ -4,6 +4,11 @@
 
 from __future__ import annotations
 
+import contextlib
+import json
+import os
+import stat
+import tempfile
 from pathlib import Path
 
 import attrs
@@ -33,3 +38,85 @@ class ProfileEntry:
 def get_auth_store_path() -> Path:
     """Return the path to the persistent auth.json store."""
     return platformdirs.user_config_path(_APP_NAME, _APP_AUTHOR) / "auth.json"
+
+
+class AuthStoreError(Exception):
+    """Raised when the auth store cannot be safely read or written."""
+
+
+class AuthStore:
+    """Reads/writes the persistent auth.json, enforcing 0600/0700 permissions."""
+
+    def __init__(self, path: Path | None = None) -> None:
+        self._path = Path(path) if path is not None else get_auth_store_path()
+
+    @property
+    def path(self) -> Path:
+        return self._path
+
+    @staticmethod
+    def _is_windows() -> bool:
+        return os.name == "nt"
+
+    def _check_secure_permissions(self) -> None:
+        if self._is_windows():
+            return
+
+        for p in (self._path.parent, self._path):
+            if not p.exists():
+                continue
+
+            mode = stat.S_IMODE(p.stat().st_mode)
+            if mode & 0o077:
+                raise AuthStoreError(
+                    f"Refusing to use {self._path}: '{p}' has insecure permissions "
+                    f"{oct(mode)} (group/other access). "
+                    f"Run: chmod {'700' if p.is_dir() else '600'} '{p}'"
+                )
+
+    def _load(self) -> dict:
+        if not self._path.exists():
+            return {"version": _STORE_VERSION, "profiles": {}}
+
+        self._check_secure_permissions()
+
+        try:
+            doc = json.loads(self._path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as e:
+            raise AuthStoreError(f"Cannot read auth store {self._path}: {e}") from e
+
+        if not isinstance(doc, dict) or "version" not in doc:
+            raise AuthStoreError(f"Auth store {self._path} is corrupt (missing 'version').")
+        if doc["version"] != _STORE_VERSION:
+            raise AuthStoreError(
+                f"Auth store {self._path} has unsupported version {doc['version']!r}; "
+                f"this client supports version {_STORE_VERSION}. Please upgrade cvat-sdk."
+            )
+
+        doc.setdefault("profiles", {})
+        return doc
+
+    def _save(self, doc: dict) -> None:
+        directory = self._path.parent
+        directory.mkdir(parents=True, exist_ok=True)
+        if not self._is_windows():
+            os.chmod(directory, 0o700)
+
+        self._check_secure_permissions()
+
+        payload = json.dumps(doc, indent=2, sort_keys=True)
+
+        fd, tmp_name = tempfile.mkstemp(dir=directory, prefix=".auth.", suffix=".tmp")
+        try:
+            if not self._is_windows():
+                os.fchmod(fd, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(payload)
+            os.replace(tmp_name, self._path)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_name)
+            raise
+
+        if not self._is_windows():
+            os.chmod(self._path, 0o600)
