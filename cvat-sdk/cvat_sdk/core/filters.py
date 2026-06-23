@@ -12,7 +12,7 @@ __all__ = ["F", "Field", "Filter", "all_", "any_", "not_"]
 
 # Anything that can stand in for a filter condition: a composed ``Filter``, a raw
 # JSON Logic mapping, or a JSON string.
-Condition: TypeAlias = "Filter | Mapping[str, Any] | str"
+Condition: TypeAlias = "Filter" | Mapping[str, Any] | str
 # Keyword-lookup suffixes (``field__<op>``) map to the same field-DSL builders the
 # ``F`` object exposes, so the two front-ends stay a single source of truth.
 LOOKUPS: dict[str, Callable[[Field, Any], Filter]] = {
