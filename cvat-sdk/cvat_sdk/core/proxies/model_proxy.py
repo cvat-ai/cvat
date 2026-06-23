@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Sequence
 from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
@@ -111,7 +111,6 @@ def build_model_bases(
 ### CRUD mixins
 
 _EntityT = TypeVar("_EntityT", bound=Entity)
-JsonLogicFilter = Mapping[str, Any]
 
 #### Repo mixins
 
