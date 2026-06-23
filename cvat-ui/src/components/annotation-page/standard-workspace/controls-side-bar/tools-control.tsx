@@ -430,7 +430,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 const response = await core.lambda.call(
                     jobInstance.taskId,
                     interactor,
-                    { ...data, job: jobInstance.id },
+                    { ...data, type: 'interact', job: jobInstance.id },
                 ) as InteractorResults;
 
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {
@@ -441,7 +441,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 const latestResponse: ToolsControlComponent['interaction']['latestResponse'] = [];
                 let showConfidenceControl = false;
                 for (const item of response.shapes) {
-                    const polygonPoints = this.receivePointsFromMask(item.points);
+                    if (item.type !== ShapeType.MASK) continue;
+
+                    const points = Int32Array.from(item.points);
+                    const polygonPoints = this.receivePointsFromMask(points);
                     if (polygonPoints.length < 3) {
                         continue;
                     }
@@ -451,7 +454,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     const confidence = confidenceAttr ? +confidenceAttr.value : 1;
                     showConfidenceControl = showConfidenceControl || !!confidenceAttr;
                     latestResponse.push({
-                        rle: item.points,
+                        rle: points,
                         points: polygonPoints,
                         approximatedPoints: approximated,
                         confidence,

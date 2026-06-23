@@ -271,7 +271,7 @@ const samPlugin: SAMPlugin = {
 
                                                 plugin.data.lowResMasks.set(key, maskInput);
                                                 return {
-                                                    points: Int32Array.from(rle),
+                                                    points: rle,
                                                     group: 0,
                                                     source: Source.SEMI_AUTO,
                                                     occluded: false,
