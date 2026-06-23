@@ -16,6 +16,7 @@ from rest_framework.reverse import reverse
 
 from cvat.apps.dataset_manager.util import ExportCacheManager
 from cvat.apps.dataset_manager.views import log_exception
+from cvat.apps.engine.background import BaseResourceExporter
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestAction
 from cvat.apps.engine.rq import ExportRequestId, RQMetaWithFailureInfo
@@ -24,7 +25,6 @@ from cvat.apps.engine.utils import sendfile
 from cvat.apps.engine.view_utils import deprecate_response
 from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.events.utils import find_minimal_date_for_filter
-from cvat.apps.redis_handler.background import AbstractExporter
 
 slogger = ServerLogManager(__name__)
 
@@ -84,7 +84,7 @@ def _create_csv(query_params: dict, output_filename: str):
         raise
 
 
-class EventsExporter(AbstractExporter):
+class EventsExporter(BaseResourceExporter):
 
     def __init__(
         self,

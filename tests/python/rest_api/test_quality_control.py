@@ -480,6 +480,41 @@ class TestListQualityReports(_PermissionTestBase):
         else:
             self._test_list_reports_403(**list_kwargs)
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
+    def test_user_list_reports_by_parent_id_in_sandbox(
+        self,
+        is_staff,
+        allow,
+        admin_user,
+        find_sandbox_task_without_gt,
+    ):
+        task, user = find_sandbox_task_without_gt(is_staff)
+        self.create_gt_job(admin_user, task["id"])
+        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        if allow:
+            self._test_list_reports_200(user=user["username"], parent_id=report["id"])
+        else:
+            self._test_list_reports_403(user=user["username"], parent_id=report["id"])
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
+    def test_user_list_reports_by_parent_id_in_org(
+        self,
+        find_org_task_without_gt,
+        org_role,
+        is_staff,
+        allow,
+        admin_user,
+    ):
+        task, user = find_org_task_without_gt(is_staff, org_role)
+        self.create_gt_job(admin_user, task["id"])
+        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        if allow:
+            self._test_list_reports_200(user=user["username"], parent_id=report["id"])
+        else:
+            self._test_list_reports_403(user=user["username"], parent_id=report["id"])
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetQualityReports(_PermissionTestBase):

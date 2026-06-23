@@ -249,7 +249,9 @@ class Task(
         return [
             Job(self._client, model=m)
             for m in get_paginated_collection(
-                self._client.api_client.jobs_api.list_endpoint, task_id=self.id
+                self._client.api_client.jobs_api.list_endpoint,
+                org_id=self.organization,
+                task_id=self.id,
             )
         ]
 
@@ -259,7 +261,9 @@ class Task(
 
     def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
-            self._client.api_client.labels_api.list_endpoint, task_id=self.id
+            self._client.api_client.labels_api.list_endpoint,
+            org_id=self.organization,
+            task_id=self.id,
         )
 
     def get_frames_info(self) -> list[models.IFrameMeta]:

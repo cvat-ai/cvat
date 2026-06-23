@@ -222,6 +222,7 @@ class QualityReportViewSet(
             # NOTE: the parent_id filter requires a different queryset
             if parent_id := self.request.query_params.get("parent_id", None):
                 parent_report = get_or_404(QualityReport, parent_id)
+                self.check_object_permissions(self.request, parent_report)
                 iam_context = get_iam_context(self.request, parent_report)
 
                 # For m2m relations this is actually "in"
