@@ -66,7 +66,7 @@ class AuthStore:
             if not p.exists():
                 continue
 
-            mode = stat.S_IMODE(p.stat().st_mode)
+            mode = stat.S_IMODE(p.stat().st_mode) & 0o777
             if mode != expected_mode:
                 raise AuthStoreError(
                     f"Refusing to use {self._path}: '{p}' has permissions {oct(mode)}; "
