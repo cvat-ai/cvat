@@ -79,8 +79,8 @@ To set the region:
 
 1. In the **Interactors** tab, specify **Region of interest** values:
    `x`, `y`, `width`, and `height`.
-1. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
-1. Click **Interact** and place points or boxes inside the selected region.
+2. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
+3. Click **Interact** and place points or boxes inside the selected region.
 
 <img src="/images/interactors_roi.png" alt="Interactors tab with Region of interest inputs" style="max-width: 400px;">
 
@@ -225,8 +225,8 @@ To set the region:
 
 1. In the **Detectors** tab, specify **Region of interest** values:
    `x`, `y`, `width`, and `height`.
-1. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
-1. Click **Annotate**.
+2. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
+3. Click **Annotate**.
 
 <img src="/images/detectors_roi.png" alt="Detectors tab with Region of interest inputs" style="max-width: 400px;">
 
