@@ -60,9 +60,7 @@ class AuthStore:
 
     def _check_secure_permissions(self) -> None:
         if self._path.exists() and not self._path.is_file():
-            raise AuthStoreError(
-                f"Auth store path {self._path} must be a file."
-            )
+            raise AuthStoreError(f"Auth store path {self._path} must be a file.")
 
         if self._is_windows():
             return
