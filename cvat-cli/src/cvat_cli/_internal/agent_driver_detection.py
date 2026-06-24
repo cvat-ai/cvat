@@ -134,7 +134,9 @@ class AgentDetectionFunctionDriver(AgentFunctionDriver):
             for sample_index, sample in enumerate(samples):
                 context = self._create_detection_function_context(ar_params, sample.frame_name)
                 annotations = self._executor.result(
-                    self._executor.submit(_worker_job_detect, context, sample.media.load_image())
+                    self._executor.submit(
+                        _worker_job_detect, context, self._load_image_for_ar(sample, ar_params)
+                    )
                 )
 
                 tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
@@ -155,7 +157,9 @@ class AgentDetectionFunctionDriver(AgentFunctionDriver):
         context = self._create_detection_function_context(ar_params, sample.frame_name)
 
         annotations = self._executor.result(
-            self._executor.submit(_worker_job_detect, context, sample.media.load_image())
+            self._executor.submit(
+                _worker_job_detect, context, self._load_image_for_ar(sample, ar_params)
+            )
         )
 
         tags, shapes = mapper.validate_and_remap(annotations, sample.frame_index)
