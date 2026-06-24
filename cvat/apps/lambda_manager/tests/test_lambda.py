@@ -12,10 +12,10 @@ from itertools import groupby
 from unittest import mock, skip
 
 import requests
-from PIL import Image
 from django.contrib.auth.models import Group, User
 from django.core.signing import TimestampSigner
 from django.http import HttpResponseNotFound, HttpResponseServerError
+from PIL import Image
 from rest_framework import status
 
 from cvat.apps.engine.tests.utils import (
