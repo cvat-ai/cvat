@@ -71,7 +71,7 @@ to a selected image area.
 To set the region, enter **Region of interest** values:
 `x`, `y`, `width`, and `height`.
 
-![Automatic annotation dialog with Region of interest inputs](/images/auto_annotation_roi.png)
+<img src="/images/auto_annotation_roi.png" alt="Automatic annotation dialog with Region of interest inputs" style="max-width: 400px;">
 
 When a region of interest is set, CVAT sends only that image crop
 to the model. The resulting annotations are added back to the task

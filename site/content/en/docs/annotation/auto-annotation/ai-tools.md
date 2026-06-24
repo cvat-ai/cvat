@@ -82,7 +82,7 @@ To set the region:
 1. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
 1. Click **Interact** and place points or boxes inside the selected region.
 
-![Interactors tab with Region of interest inputs](/images/interactors_roi.png)
+<img src="/images/interactors_roi.png" alt="Interactors tab with Region of interest inputs" style="max-width: 400px;">
 
 When a region of interest is set, CVAT sends only that image crop to the model,
 restricts interactor prompts to the selected area, and adds the resulting shape
@@ -228,7 +228,7 @@ To set the region:
 1. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
 1. Click **Annotate**.
 
-![Detectors tab with Region of interest inputs](/images/detectors_roi.png)
+<img src="/images/detectors_roi.png" alt="Detectors tab with Region of interest inputs" style="max-width: 400px;">
 
 CVAT sends only the selected image crop to the detector and maps the returned
 annotations back to the correct full-frame coordinates.
