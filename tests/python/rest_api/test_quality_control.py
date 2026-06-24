@@ -563,6 +563,14 @@ class TestGetQualityReportData(_PermissionTestBase):
 
         return response
 
+    def test_cannot_get_report_data_as_csv(self, admin_user, quality_reports):
+        report_id = next(iter(quality_reports))["id"]
+
+        response = get_method(admin_user, f"quality/reports/{report_id}/data", format="csv")
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "format" in response.json()
+
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_get_report_data_in_sandbox_task(

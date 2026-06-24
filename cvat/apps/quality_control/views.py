@@ -423,7 +423,7 @@ class QualityReportViewSet(
             OpenApiParameter(
                 "format",
                 type=OpenApiTypes.STR,
-                enum=QualityReportExportFormat.values,
+                enum=[QualityReportExportFormat.JSON.value],
                 default=QualityReportExportFormat.JSON.value,
             ),
         ],
@@ -432,11 +432,16 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
     def data(self, request: ExtendedRequest, pk):
         report = self.get_object()  # check permissions
-        format_name = QualityReportExportFormat(
-            request.query_params.get("format", default=QualityReportExportFormat.JSON.value)
+        format_name = request.query_params.get(
+            "format", default=QualityReportExportFormat.JSON.value
         )
+        if format_name != QualityReportExportFormat.JSON.value:
+            raise ValidationError({"format": "Expected one of: json."})
+
         report_data, content_type = prepare_report_for_downloading(
-            report, host=request.build_absolute_uri("/"), export_format=format_name
+            report,
+            host=request.build_absolute_uri("/"),
+            export_format=QualityReportExportFormat.JSON,
         )
         return HttpResponse(report_data, content_type=content_type)
 
