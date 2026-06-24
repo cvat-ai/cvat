@@ -72,6 +72,8 @@ The name of the service account to use for backend pods
     secretKeyRef:
       name: "{{ tpl (.Values.redis.secret.name) . }}"
       key: password
+- name: CVAT_REDIS_INMEM_SSL
+  value: "{{ .Values.redis.ssl.enabled }}"
 
 {{- if .Values.cvat.kvrocks.enabled }}
 - name: CVAT_REDIS_ONDISK_HOST
