@@ -8225,6 +8225,13 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/LabelMappingEntryRequest'
           description: Label mapping from the model to the task labels
+        roi:
+          type: array
+          items:
+            type: integer
+          description: Region of interest as [xtl, ytl, xbr, ybr]
+          maxItems: 4
+          minItems: 4
       required:
       - function
       - task
