@@ -38,7 +38,7 @@ def test_auth_store_path_matches_platformdirs():
 
 
 def _store(tmp_path) -> AuthStore:
-    return AuthStore(path=tmp_path / "cvat" / "auth.json")
+    return AuthStore(config_file_path=tmp_path / "cvat" / "auth.json")
 
 
 def test_load_returns_empty_doc_when_file_absent(tmp_path):
@@ -69,6 +69,26 @@ def test_load_refuses_world_readable_file(tmp_path):
     os.chmod(path, 0o644)
     with pytest.raises(AuthStoreError, match="permission"):
         store._load()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX permission semantics")
+def test_load_refuses_file_with_special_permission_bits(tmp_path):
+    store = _store(tmp_path)
+    store._save({"version": 1, "profiles": {}})
+    path = tmp_path / "cvat" / "auth.json"
+    os.chmod(path, 0o1600)
+    with pytest.raises(AuthStoreError, match="expected 0o600"):
+        store._load()
+
+
+def test_load_rejects_directory_config_file_path(tmp_path):
+    path = tmp_path / "cvat" / "auth.json"
+    path.mkdir(parents=True)
+    if sys.platform != "win32":
+        os.chmod(path.parent, 0o700)
+        os.chmod(path, 0o700)
+    with pytest.raises(AuthStoreError, match="must be a file"):
+        _store(tmp_path)._load()
 
 
 def test_load_rejects_unknown_version(tmp_path):

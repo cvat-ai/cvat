@@ -14,6 +14,8 @@ from pathlib import Path
 import attrs
 import platformdirs
 
+from cvat_sdk.core.exceptions import AuthStoreError
+
 DEFAULT_SERVER = "https://app.cvat.ai"
 
 _APP_NAME = "cvat-sdk"
@@ -40,15 +42,13 @@ def get_auth_store_path() -> Path:
     return platformdirs.user_config_path(_APP_NAME, _APP_AUTHOR) / "auth.json"
 
 
-class AuthStoreError(Exception):
-    """Raised when the auth store cannot be safely read or written."""
-
-
 class AuthStore:
-    """Reads/writes the persistent auth.json, enforcing 0600/0700 permissions."""
+    """Reads/writes the persistent auth.json config file, enforcing 0600/0700 permissions."""
 
-    def __init__(self, path: Path | None = None) -> None:
-        self._path = Path(path) if path is not None else get_auth_store_path()
+    def __init__(self, config_file_path: Path | None = None) -> None:
+        self._path = (
+            Path(config_file_path) if config_file_path is not None else get_auth_store_path()
+        )
 
     @property
     def path(self) -> Path:
@@ -59,19 +59,23 @@ class AuthStore:
         return os.name == "nt"
 
     def _check_secure_permissions(self) -> None:
+        if self._path.exists() and not self._path.is_file():
+            raise AuthStoreError(
+                f"Auth store path {self._path} must be a file."
+            )
+
         if self._is_windows():
             return
 
-        for p in (self._path.parent, self._path):
+        for p, expected_mode in ((self._path.parent, 0o700), (self._path, 0o600)):
             if not p.exists():
                 continue
 
             mode = stat.S_IMODE(p.stat().st_mode)
-            if mode & 0o077:
+            if mode != expected_mode:
                 raise AuthStoreError(
-                    f"Refusing to use {self._path}: '{p}' has insecure permissions "
-                    f"{oct(mode)} (group/other access). "
-                    f"Run: chmod {'700' if p.is_dir() else '600'} '{p}'"
+                    f"Refusing to use {self._path}: '{p}' has permissions {oct(mode)}; "
+                    f"expected {oct(expected_mode)}. Run: chmod {oct(expected_mode)[2:]} '{p}'"
                 )
 
     def _load(self) -> dict:
