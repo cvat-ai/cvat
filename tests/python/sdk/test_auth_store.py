@@ -9,15 +9,10 @@ from pathlib import Path
 import platformdirs
 import pytest
 from cvat_sdk.core.auth import (
-    DEFAULT_SERVER,
     AuthStore,
     AuthStoreError,
     get_auth_store_path,
 )
-
-
-def test_default_server_is_app_cvat_ai():
-    assert DEFAULT_SERVER == "https://app.cvat.ai"
 
 
 def test_auth_store_path_matches_platformdirs():

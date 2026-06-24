@@ -16,7 +16,7 @@ import platformdirs
 
 from cvat_sdk.core.exceptions import AuthStoreError
 
-DEFAULT_SERVER = "https://app.cvat.ai"
+DEFAULT_SERVER = "http://localhost:8080"
 
 _APP_NAME = "cvat-sdk"
 _APP_AUTHOR = "CVAT.ai"
