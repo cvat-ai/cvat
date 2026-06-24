@@ -21,6 +21,7 @@ See:
 
 - [Interactors](#interactors)
   - [AI tools: annotate with interactors](#ai-tools-annotate-with-interactors)
+  - [Limiting interactor input to a region of interest](#limiting-interactor-input-to-a-region-of-interest)
   - [AI tools: add extra points](#ai-tools-add-extra-points)
   - [AI tools: delete points](#ai-tools-delete-points)
   - [OpenCV: intelligent scissors](#opencv-intelligent-scissors)
@@ -29,6 +30,7 @@ See:
 - [Detectors](#detectors)
   - [Labels matching](#labels-matching)
   - [Annotate with detectors](#annotate-with-detectors)
+  - [Limiting detector input to a region of interest](#limiting-detector-input-to-a-region-of-interest)
   - [Detectors models](#detectors-models)
 - [Trackers](#trackers)
   - [AI tools: annotate with trackers](#ai-tools-annotate-with-trackers)
@@ -67,6 +69,24 @@ To annotate with interactors, do the following:
 6. Use the left click to add positive points and the right click to add negative points.
    <br>Number of points you can add depends on the model.
 7. On the top menu, click **Done** (or **Shift+N**, **N**).
+
+### Limiting interactor input to a region of interest
+
+For image/video jobs, you can restrict an interactor to a selected image area.
+Use this when you want the model to segment only a specific part of the frame.
+
+To set the region:
+
+1. In the **Interactors** tab, specify **Region of interest** values:
+   `x`, `y`, `width`, and `height`.
+1. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
+1. Click **Interact** and place points or boxes inside the selected region.
+
+![Interactors tab with Region of interest inputs](/images/interactors_roi.png)
+
+When a region of interest is set, CVAT sends only that image crop to the model,
+restricts interactor prompts to the selected area, and adds the resulting shape
+back in the correct full-frame position.
 
 ### AI tools: add extra points
 
@@ -195,6 +215,23 @@ To annotate with detectors, do the following:
 This action will automatically annotate one frame.
 For automatic annotation of multiple frames,
 see {{< ilink "/docs/annotation/auto-annotation/automatic-annotation" "Automatic annotation" >}}.
+
+### Limiting detector input to a region of interest
+
+For image/video jobs, you can restrict a detector to a selected image area.
+Use this when only part of the frame should be analyzed.
+
+To set the region:
+
+1. In the **Detectors** tab, specify **Region of interest** values:
+   `x`, `y`, `width`, and `height`.
+1. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
+1. Click **Annotate**.
+
+![Detectors tab with Region of interest inputs](/images/detectors_roi.png)
+
+CVAT sends only the selected image crop to the detector and maps the returned
+annotations back to the correct full-frame coordinates.
 
 ### Detectors models
 
