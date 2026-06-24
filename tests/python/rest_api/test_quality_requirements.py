@@ -111,6 +111,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         )
 
     def _get_task_settings(self, user: str, *, task_id: int, **kwargs) -> dict[str, Any]:
+        kwargs.setdefault("parent_type", "task")
         response = get_method(user, self._settings_endpoint, task_id=task_id, **kwargs)
         assert response.status_code == HTTPStatus.OK
 
@@ -119,14 +120,11 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         return results[0]
 
     def _get_project_settings(self, user: str, *, project_id: int, **kwargs) -> dict[str, Any]:
+        kwargs.setdefault("parent_type", "project")
         response = get_method(user, self._settings_endpoint, project_id=project_id, **kwargs)
         assert response.status_code == HTTPStatus.OK
 
-        results = [
-            settings
-            for settings in response.json()["results"]
-            if settings["project_id"] == project_id and settings["task_id"] is None
-        ]
+        results = response.json()["results"]
         assert len(results) == 1
         return results[0]
 
@@ -991,9 +989,7 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
         assert all(requirement["enabled"] is False for requirement in requirements)
         assert all(requirement["is_default"] is True for requirement in requirements)
 
-    def test_new_project_task_gets_disabled_default_requirements_for_all_supported_types(
-        self, admin_user
-    ):
+    def test_new_project_task_inherits_project_quality_settings_by_default(self, admin_user):
         with make_api_client(admin_user) as api_client:
             project, response = api_client.projects_api.create(
                 {
@@ -1019,17 +1015,10 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
         )
 
         settings = self._get_task_settings(admin_user, task_id=task_id)
-        requirements = settings["requirements"]
 
-        assert {
-            requirement["annotation_type"] for requirement in requirements
-        } == self._default_standalone_annotation_types
-        assert {requirement["name"] for requirement in requirements} == {
-            self._default_requirement_name(annotation_type)
-            for annotation_type in self._default_standalone_annotation_types
-        }
-        assert all(requirement["enabled"] is False for requirement in requirements)
-        assert all(requirement["is_default"] is True for requirement in requirements)
+        assert settings["task_id"] == task_id
+        assert settings["project_id"] is None
+        assert settings["inherit"] is True
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1199,7 +1188,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         )
         assert changed_report["summary"]["gt_count"] > initial_report["summary"]["gt_count"]
 
-    def test_task_report_filter_matches_attribute_name_value_on_same_attribute(self, admin_user):
+    def test_task_report_filter_does_not_match_attribute_name_and_value_from_different_attributes(
+        self, admin_user
+    ):
         (
             task_id,
             settings,
