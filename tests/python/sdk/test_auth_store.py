@@ -65,6 +65,7 @@ def test_load_refuses_file_with_special_permission_bits(tmp_path):
     store = _store(tmp_path)
     store._save({"version": 1, "profiles": {}})
     path = tmp_path / "cvat" / "auth.json"
+    # 0o1600 is 0o600 plus the POSIX sticky bit, so exact 0o600 validation must reject it.
     os.chmod(path, 0o1600)
     with pytest.raises(AuthStoreError, match="expected 0o600"):
         store._load()
