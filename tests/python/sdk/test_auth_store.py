@@ -13,6 +13,7 @@ from cvat_sdk.core.auth import (
     AuthStoreError,
     get_auth_store_path,
 )
+from cvat_sdk.core.utils import is_posix
 
 
 def test_auth_store_path_matches_platformdirs():
@@ -36,7 +37,7 @@ def test_save_then_load_roundtrips(tmp_path):
     assert store._load()["profiles"]["a"]["token"] == "t"
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX permission semantics")
+@pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
 def test_save_creates_0600_file_in_0700_dir(tmp_path):
     store = _store(tmp_path)
     store._save({"version": 1, "profiles": {}})
@@ -45,7 +46,7 @@ def test_save_creates_0600_file_in_0700_dir(tmp_path):
     assert (path.parent.stat().st_mode & 0o777) == 0o700
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX permission semantics")
+@pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
 def test_load_refuses_world_readable_file(tmp_path):
     store = _store(tmp_path)
     store._save({"version": 1, "profiles": {}})
@@ -55,7 +56,7 @@ def test_load_refuses_world_readable_file(tmp_path):
         store._load()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX permission semantics")
+@pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
 def test_load_refuses_file_with_special_permission_bits(tmp_path):
     store = _store(tmp_path)
     store._save({"version": 1, "profiles": {}})
@@ -69,7 +70,7 @@ def test_load_refuses_file_with_special_permission_bits(tmp_path):
 def test_load_rejects_directory_config_file_path(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     path.mkdir(parents=True)
-    if os.name != "nt":
+    if is_posix():
         os.chmod(path.parent, 0o700)
         os.chmod(path, 0o700)
     with pytest.raises(AuthStoreError, match="must be a file"):
@@ -80,7 +81,7 @@ def test_load_rejects_unknown_version(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     path.parent.mkdir(parents=True)
     path.write_text(json.dumps({"version": 999, "profiles": {}}))
-    if os.name != "nt":
+    if is_posix():
         os.chmod(path.parent, 0o700)
         os.chmod(path, 0o600)
     with pytest.raises(AuthStoreError, match="version"):
@@ -91,7 +92,7 @@ def test_load_rejects_corrupt_json(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     path.parent.mkdir(parents=True)
     path.write_text("{not json")
-    if os.name != "nt":
+    if is_posix():
         os.chmod(path.parent, 0o700)
         os.chmod(path, 0o600)
     with pytest.raises(AuthStoreError):

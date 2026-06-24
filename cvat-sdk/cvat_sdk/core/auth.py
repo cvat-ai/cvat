@@ -15,6 +15,7 @@ import attrs
 import platformdirs
 
 from cvat_sdk.core.exceptions import AuthStoreError
+from cvat_sdk.core.utils import is_posix
 
 DEFAULT_SERVER = "http://localhost:8080"
 
@@ -54,15 +55,11 @@ class AuthStore:
     def path(self) -> Path:
         return self._path
 
-    @staticmethod
-    def _is_windows() -> bool:
-        return os.name == "nt"
-
     def _check_secure_permissions(self) -> None:
         if self._path.exists() and not self._path.is_file():
             raise AuthStoreError(f"Auth store path {self._path} must be a file.")
 
-        if self._is_windows():
+        if not is_posix():
             return
 
         for p, expected_mode in ((self._path.parent, 0o700), (self._path, 0o600)):
@@ -101,7 +98,7 @@ class AuthStore:
     def _save(self, doc: dict) -> None:
         directory = self._path.parent
         directory.mkdir(parents=True, exist_ok=True)
-        if not self._is_windows():
+        if is_posix():
             os.chmod(directory, 0o700)
 
         self._check_secure_permissions()
@@ -110,7 +107,7 @@ class AuthStore:
 
         fd, tmp_name = tempfile.mkstemp(dir=directory, prefix=".auth.", suffix=".tmp")
         try:
-            if not self._is_windows():
+            if is_posix():
                 os.fchmod(fd, 0o600)
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write(payload)
@@ -120,5 +117,5 @@ class AuthStore:
                 os.unlink(tmp_name)
             raise
 
-        if not self._is_windows():
+        if is_posix():
             os.chmod(self._path, 0o600)
