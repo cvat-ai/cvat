@@ -3911,17 +3911,25 @@ class AnnotationGuidesViewSet(
     def perform_create(self, serializer):
         super().perform_create(serializer)
         self._update_related_assets(self.request, serializer.instance)
-        serializer.instance.target.touch()
+        with transaction.atomic():
+            db_utils.set_local_lock_timeout()
+            serializer.instance.target.touch()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
         self._update_related_assets(self.request, serializer.instance)
-        serializer.instance.target.touch()
+
+        with transaction.atomic():
+            db_utils.set_local_lock_timeout()
+            serializer.instance.target.touch()
 
     def perform_destroy(self, instance):
         target = instance.target
         super().perform_destroy(instance)
-        target.touch()
+
+        with transaction.atomic():
+            db_utils.set_local_lock_timeout()
+            target.touch()
 
 
 def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
