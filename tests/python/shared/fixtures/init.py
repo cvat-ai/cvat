@@ -578,12 +578,11 @@ def session_finish(session):
 
 
 def collect_code_coverage_from_containers():
-    print(Container.covered())
     for container in Container.covered():
         process_command = "python3"
 
         # find process with code coverage
-        docker_exec(container, "ps aux", capture_output=False)
+        docker_exec(container, "ps aux", capture_output=False), file=sys.stderr
         pid = docker_exec(container, f"pidof {process_command} -o 1")
 
         # stop process with code coverage
