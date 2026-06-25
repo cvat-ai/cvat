@@ -3210,7 +3210,9 @@ class LabelViewSet(
         kwargs["local"] = True
         return super().get_serializer(*args, **kwargs)
 
-    def perform_update(self, serializer):
+    @transaction.atomic
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_update(self, serializer: LabelSerializer) -> None:
         if serializer.instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
@@ -3221,7 +3223,9 @@ class LabelViewSet(
 
         return super().perform_update(serializer)
 
-    def perform_destroy(self, instance: models.Label):
+    @transaction.atomic
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_destroy(self, instance: models.Label) -> None:
         if instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
