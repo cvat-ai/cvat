@@ -16,7 +16,7 @@ from pathlib import Path
 import attrs
 import platformdirs
 
-from cvat_sdk.core.client import AccessTokenCredentials, Credentials, PasswordCredentials
+from cvat_sdk.core.client import AccessTokenCredentials, Client, Credentials, PasswordCredentials
 from cvat_sdk.core.exceptions import AuthStoreError
 from cvat_sdk.core.utils import is_posix
 
@@ -90,6 +90,32 @@ def resolve_server_host(cli_value: str | None, store: AuthStore) -> str:
         return default[1].server
 
     return store.get_default_server() or DEFAULT_SERVER
+
+
+def make_client_from_profile(
+    name: str | None = None, *, store: AuthStore | None = None
+) -> Client:
+    """Build and authenticate a Client from a saved profile."""
+    store = store or AuthStore()
+
+    if name is None:
+        default = store.get_default_profile()
+        if default is None:
+            raise AuthStoreError(
+                "No default profile is set. Run 'cvat-cli profile default <name>' "
+                "or pass an explicit profile name."
+            )
+        name, entry = default
+    else:
+        entry = store.get_profile(name)
+        if entry is None:
+            raise AuthStoreError(
+                f"Unknown profile {name!r}. Run 'cvat-cli profile list' to see saved profiles."
+            )
+
+    client = Client(url=entry.server, check_server_version=False)
+    client.login(AccessTokenCredentials(entry.token))
+    return client
 
 
 class AuthStore:

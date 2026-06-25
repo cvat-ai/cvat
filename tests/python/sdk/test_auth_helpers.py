@@ -2,16 +2,30 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
+
 from cvat_sdk.core.auth import (
     CVAT_ACCESS_TOKEN_ENV_VAR,
     DEFAULT_SERVER,
     AuthStore,
+    AuthStoreError,
     ProfileEntry,
     default_auth_factory,
     get_auth_factory,
+    make_client_from_profile,
     resolve_server_host,
 )
 from cvat_sdk.core.client import AccessTokenCredentials, PasswordCredentials
+
+
+class _FakeClient:
+    def __init__(self, url, **kwargs):
+        self.url = url
+        self.logged_in_with = None
+        self.organization_slug = None
+
+    def login(self, credentials):
+        self.logged_in_with = credentials
 
 
 def test_get_auth_factory_parses_user_pass():
@@ -52,3 +66,50 @@ def test_resolve_server_host_uses_default_profile_server(tmp_path):
         set_default=True,
     )
     assert resolve_server_host(None, store) == "https://prof"
+
+
+def test_make_client_from_profile_uses_named_profile(tmp_path, monkeypatch):
+    from cvat_sdk.core import auth as auth_mod
+
+    store = AuthStore(path=tmp_path / "auth.json")
+    store.add_profile(
+        "mycvat",
+        ProfileEntry(
+            server="https://app.cvat.ai", token="pat-9", created_date="2026-01-01T00:00:00+00:00"
+        ),
+    )
+    monkeypatch.setattr(auth_mod, "Client", _FakeClient)
+
+    client = make_client_from_profile("mycvat", store=store)
+    assert client.url == "https://app.cvat.ai"
+    assert client.logged_in_with.token == "pat-9"
+
+
+def test_make_client_from_profile_uses_default_profile(tmp_path, monkeypatch):
+    from cvat_sdk.core import auth as auth_mod
+
+    store = AuthStore(path=tmp_path / "auth.json")
+    store.add_profile(
+        "mycvat",
+        ProfileEntry(
+            server="https://app.cvat.ai", token="pat-9", created_date="2026-01-01T00:00:00+00:00"
+        ),
+        set_default=True,
+    )
+    monkeypatch.setattr(auth_mod, "Client", _FakeClient)
+
+    client = make_client_from_profile(store=store)
+    assert client.url == "https://app.cvat.ai"
+    assert client.logged_in_with.token == "pat-9"
+
+
+def test_make_client_from_profile_unknown_name_raises(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+    with pytest.raises(AuthStoreError, match="profile"):
+        make_client_from_profile("ghost", store=store)
+
+
+def test_make_client_from_profile_no_default_raises(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+    with pytest.raises(AuthStoreError, match="default profile"):
+        make_client_from_profile(store=store)
