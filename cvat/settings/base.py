@@ -127,6 +127,8 @@ CVAT_POSTGRES_TRANSACTION_LOCK_TIMEOUT_SECONDS = int(
     os.getenv("CVAT_POSTGRES_TRANSACTION_LOCK_TIMEOUT_SECONDS", 30)
 )
 
+DEFAULT_DB_BULK_CREATE_BATCH_SIZE = int(os.getenv("CVAT_DEFAULT_DB_BULK_CREATE_BATCH_SIZE", 5000))
+
 
 def parse_num_proxies(value: str | None) -> int | None:
     if value in (None, ""):

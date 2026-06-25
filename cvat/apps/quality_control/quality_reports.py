@@ -40,7 +40,6 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     DimensionType,
     Image,
@@ -64,6 +63,7 @@ from cvat.apps.quality_control.models import (
 )
 from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.apps.redis_handler.background import AbstractRequestManager
+from cvat.utils.django_database import bulk_create
 
 
 @define(slots=False)

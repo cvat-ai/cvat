@@ -18,10 +18,10 @@ from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
-from cvat.apps.engine.model_utils import _ModelT
 from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.engine.tus import TusFile
 from cvat.apps.engine.types import ExtendedRequest
+from cvat.utils.django_database import _ModelT
 
 
 def make_paginated_response(

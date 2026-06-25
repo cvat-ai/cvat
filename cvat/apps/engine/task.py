@@ -47,10 +47,10 @@ from cvat.apps.engine.media_extractors import (
 )
 from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, take_by
+from cvat.utils.django_database import bulk_create, get_object_by_id_for_share
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import (

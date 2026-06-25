@@ -1,17 +1,36 @@
 import logging
+from collections.abc import Iterable, Sequence
 from functools import wraps
-from typing import Callable, ParamSpec, TypeVar
+from typing import Callable, ParamSpec, TypeAlias, TypeVar
 
 from django.conf import settings
 from django.db import DatabaseError, connection
-from django.db.models import Model
+from django.db.models import Model, QuerySet
 from psycopg2 import Error as PsycopgError
 from psycopg2 import sql
 
 P = ParamSpec("P")
 R = TypeVar("R")
+_T = TypeVar("_T")
 _ModelT = TypeVar("_ModelT", bound=Model)
+_QuerysetT = TypeVar("_QuerysetT", bound=QuerySet)
+_unspecified = object()
 _logger = logging.getLogger(__name__)
+
+
+class Undefined:
+    pass
+
+
+MaybeUndefined: TypeAlias = _T | Undefined
+"""
+Can be used to annotate dynamic class members that may be undefined in the object.
+Such fields should typically be accessed via hasattr() and getattr().
+
+Common use cases:
+- the reverse side of one-to-one relationship
+- extra annotations from a model queryset
+"""
 
 
 def find_psycopg_cause(
@@ -76,6 +95,75 @@ def set_local_lock_timeout_decorator(
         return wrapper
 
     return decorator
+
+
+def bulk_create(
+    db_model: type[_ModelT],
+    objs: Iterable[_ModelT],
+    *,
+    batch_size: int | None = _unspecified,
+    ignore_conflicts: bool = False,
+    update_conflicts: bool | None = False,
+    update_fields: Sequence[str] | None = None,
+    unique_fields: Sequence[str] | None = None,
+) -> list[_ModelT]:
+    """
+    Like Django's Model.objects.bulk_create(), but applies the default batch size configured by
+    the DEFAULT_DB_BULK_CREATE_BATCH_SIZE setting.
+    """
+
+    if batch_size is _unspecified:
+        batch_size = settings.DEFAULT_DB_BULK_CREATE_BATCH_SIZE
+
+    if not objs:
+        return []
+
+    return db_model.objects.bulk_create(
+        objs,
+        batch_size=batch_size,
+        ignore_conflicts=ignore_conflicts,
+        update_conflicts=update_conflicts,
+        update_fields=update_fields,
+        unique_fields=unique_fields,
+    )
+
+
+def is_prefetched(queryset: QuerySet, field: str) -> bool:
+    "Checks if a field is being prefetched in the queryset"
+    return field in queryset._prefetch_related_lookups
+
+
+def is_field_cached(instance: Model, field: str) -> bool:
+    "Checks if a field is cached in the model instance"
+    return field in instance._state.fields_cache
+
+
+def add_prefetch_fields(queryset: _QuerysetT, fields: Sequence[str]) -> _QuerysetT:
+    for field in fields:
+        if not is_prefetched(queryset, field):
+            queryset = queryset.prefetch_related(field)
+
+    return queryset
+
+
+def get_cached(queryset: _QuerysetT, pk: int) -> _ModelT:
+    """
+    Like regular queryset.get(), but checks for the cached values first
+    instead of just making a request.
+    """
+
+    # Read more about caching insights:
+    # https://www.mattduck.com/2021-01-django-orm-result-cache.html
+    # The field is initialized on accessing the query results, eg. on iteration
+    if getattr(queryset, "_result_cache"):
+        result = next((obj for obj in queryset if obj.pk == pk), None)
+    else:
+        result = None
+
+    if result is None:
+        result = queryset.get(id=pk)
+
+    return result
 
 
 def get_object_by_id_for_share(model: type[_ModelT], object_id: int) -> _ModelT:

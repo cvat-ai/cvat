@@ -12,7 +12,7 @@ from django.db.models import functions as db_functions
 from django.utils import timezone
 from rest_framework_api_key.models import AbstractAPIKey, BaseAPIKeyManager
 
-from cvat.apps.engine.model_utils import MaybeUndefined
+from cvat.utils.django_database import MaybeUndefined
 
 
 class AccessTokenManager(BaseAPIKeyManager):

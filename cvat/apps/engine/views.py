@@ -2496,7 +2496,6 @@ class JobViewSet(
     def annotations(self, request: ExtendedRequest, pk: int):
         self._object: models.Job = self.get_object()  # force call of check_object_permissions()
         if request.method == "GET":
-
             if {
                 "format",
                 "filename",
@@ -3709,7 +3708,7 @@ class AssetsViewSet(
             pk=serializer.validated_data["guide_id"]
         )
         if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f"Maximum number of assets per guide reached")
+            raise ValidationError("Maximum number of assets per guide reached")
 
         serializer.save(owner=self.request.user)
         return Response(

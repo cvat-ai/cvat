@@ -31,9 +31,9 @@ from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.lazy_list import LazyList
-from cvat.apps.engine.model_utils import MaybeUndefined
 from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
+from cvat.utils.django_database import MaybeUndefined
 
 if TYPE_CHECKING:
     from cvat.apps.engine.cloud_provider import AbstractCloudStorage
