@@ -3440,10 +3440,20 @@ class CloudStorageViewSet(
             raise ValidationError("Unsupported type of cloud provider")
         return queryset
 
+    @transaction.atomic
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_update(self, serializer: CloudStorageWriteSerializer):
+        return super().perform_update(serializer)
+
     def perform_create(self, serializer):
         serializer.save(
             owner=self.request.user, organization=self.request.iam_context["organization"]
         )
+
+    @transaction.atomic
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_destroy(self, instance: CloudStorage) -> None:
+        return super().perform_destroy(instance)
 
     def create(self, request: ExtendedRequest, *args, **kwargs):
         try:
