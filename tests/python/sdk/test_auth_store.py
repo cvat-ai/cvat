@@ -57,14 +57,13 @@ def test_load_refuses_world_readable_file(tmp_path):
 
 
 @pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
-def test_load_refuses_file_with_special_permission_bits(tmp_path):
+def test_load_allows_file_with_secure_base_permissions_and_special_bits(tmp_path):
     store = _store(tmp_path)
     store._save({"version": 1, "profiles": {}})
     path = tmp_path / "cvat" / "auth.json"
-    # 0o1600 is 0o600 plus the POSIX sticky bit, so exact 0o600 validation must reject it.
+    # 0o1600 is 0o600 plus the POSIX sticky bit; only the base permission bits matter.
     os.chmod(path, 0o1600)
-    with pytest.raises(AuthStoreError, match="expected 0o600"):
-        store._load()
+    assert store._load() == {"version": 1, "profiles": {}}
 
 
 def test_load_rejects_directory_config_file_path(tmp_path):
