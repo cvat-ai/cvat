@@ -11131,6 +11131,8 @@ components:
           type: number
           format: double
           nullable: true
+        score_components:
+          $ref: '#/components/schemas/QualityReportScoreComponents'
         threshold:
           type: number
           format: double
@@ -11139,6 +11141,7 @@ components:
       - name
       - requirement_id
       - score
+      - score_components
       - threshold
     QualityReportRequirementsSummary:
       type: object
@@ -11158,6 +11161,19 @@ components:
       - enabled
       - items
       - total
+    QualityReportScoreComponents:
+      type: object
+      properties:
+        valid_count:
+          type: integer
+        missing_count:
+          type: integer
+        extra_count:
+          type: integer
+      required:
+      - extra_count
+      - missing_count
+      - valid_count
     QualityReportSummary:
       type: object
       properties:

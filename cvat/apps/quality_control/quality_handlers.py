@@ -423,12 +423,14 @@ def build_requirements_summary(
         required_score = _get_requirement_field(
             requirement, "target_metric_threshold", "required_score", default=0
         )
-        actual_score = getattr(group_report.comparison_summary.annotations, metric, None)
+        annotations = group_report.comparison_summary.annotations
+        actual_score = getattr(annotations, metric, None)
         items.append(
             ComparisonReportRequirementSummaryItem(
                 name=group_name,
                 metric=str(metric),
                 score=float(actual_score) if actual_score is not None else None,
+                score_components=annotations.to_score_components(),
                 threshold=float(required_score),
                 requirement_id=_get_requirement_field(
                     requirement, "source_requirement_id", "requirement_id"

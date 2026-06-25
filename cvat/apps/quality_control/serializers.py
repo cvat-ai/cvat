@@ -93,11 +93,18 @@ class QualityReportJobsSummarySerializer(serializers.Serializer):
     )
 
 
+class QualityReportScoreComponentsSerializer(serializers.Serializer):
+    valid_count = serializers.IntegerField()
+    missing_count = serializers.IntegerField()
+    extra_count = serializers.IntegerField()
+
+
 class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
     requirement_id = serializers.IntegerField(allow_null=True)
     name = serializers.CharField()
     metric = serializers.CharField()
     score = serializers.FloatField(allow_null=True)
+    score_components = QualityReportScoreComponentsSerializer()
     threshold = serializers.FloatField()
 
 

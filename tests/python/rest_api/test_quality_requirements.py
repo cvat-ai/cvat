@@ -1543,6 +1543,11 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                     "name": parent_requirement_name,
                     "metric": "accuracy",
                     "score": 1.0,
+                    "score_components": {
+                        "valid_count": 1,
+                        "missing_count": 0,
+                        "extra_count": 0,
+                    },
                     "threshold": 1.0,
                 },
                 {
@@ -1550,6 +1555,11 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                     "name": leaf_requirement_name,
                     "metric": "accuracy",
                     "score": 1.0,
+                    "score_components": {
+                        "valid_count": 1,
+                        "missing_count": 0,
+                        "extra_count": 0,
+                    },
                     "threshold": 1.0,
                 },
             ],
@@ -1662,6 +1672,11 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                     "name": enabled_requirement_name,
                     "metric": "accuracy",
                     "score": 1.0,
+                    "score_components": {
+                        "valid_count": 1,
+                        "missing_count": 0,
+                        "extra_count": 0,
+                    },
                     "threshold": 0.75,
                 }
             ],
@@ -2042,6 +2057,11 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
                     "name": expected_name,
                     "metric": "accuracy",
                     "score": 1.0,
+                    "score_components": {
+                        "valid_count": 1,
+                        "missing_count": 0,
+                        "extra_count": 0,
+                    },
                     "threshold": 1.0,
                 }
             ],

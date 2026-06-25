@@ -470,6 +470,35 @@ class ConfusionMatrix(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
+class ComparisonReportScoreComponents(ReportNode):
+    valid_count: int
+    missing_count: int
+    extra_count: int
+
+    @classmethod
+    def from_counts(
+        cls, *, valid_count: int, missing_count: int, extra_count: int
+    ) -> ComparisonReportScoreComponents:
+        return cls(
+            valid_count=valid_count,
+            missing_count=missing_count,
+            extra_count=extra_count,
+        )
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportScoreComponents:
+        return cls(
+            valid_count=d.get("valid_count", 0),
+            missing_count=d.get("missing_count", 0),
+            extra_count=d.get("extra_count", 0),
+        )
+
+    @classmethod
+    def create_empty(cls) -> ComparisonReportScoreComponents:
+        return cls(valid_count=0, missing_count=0, extra_count=0)
+
+
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportAnnotationsSummary(ReportNode):
     valid_count: int
     missing_count: int
@@ -490,6 +519,13 @@ class ComparisonReportAnnotationsSummary(ReportNode):
     @property
     def recall(self) -> float:
         return self.valid_count / (self.gt_count or 1)
+
+    def to_score_components(self) -> ComparisonReportScoreComponents:
+        return ComparisonReportScoreComponents.from_counts(
+            valid_count=self.valid_count,
+            missing_count=self.missing_count,
+            extra_count=self.extra_count,
+        )
 
     def accumulate(self, other: ComparisonReportAnnotationsSummary, *, weight: float = 1):
         for field in [
@@ -742,6 +778,7 @@ class ComparisonReportRequirementSummaryItem(ReportNode):
     name: str
     metric: str
     score: float | None
+    score_components: ComparisonReportScoreComponents
     threshold: float
     requirement_id: int | None = None
 
@@ -752,6 +789,9 @@ class ComparisonReportRequirementSummaryItem(ReportNode):
             name=d["name"],
             metric=d["metric"],
             score=d.get("score"),
+            score_components=ComparisonReportScoreComponents.from_dict(
+                d.get("score_components", {})
+            ),
             threshold=d["threshold"],
         )
 
