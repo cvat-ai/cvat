@@ -50,6 +50,7 @@ class AuthStore:
         self._path = (
             Path(config_file_path) if config_file_path is not None else get_auth_store_path()
         )
+        self._doc: dict | None = None
 
     @property
     def path(self) -> Path:
@@ -74,8 +75,12 @@ class AuthStore:
                 )
 
     def _load(self) -> dict:
+        if self._doc is not None:
+            return self._doc
+
         if not self._path.exists():
-            return {"version": _STORE_VERSION, "profiles": {}}
+            self._doc = {"version": _STORE_VERSION, "profiles": {}}
+            return self._doc
 
         self._check_secure_permissions()
 
@@ -93,7 +98,8 @@ class AuthStore:
             )
 
         doc.setdefault("profiles", {})
-        return doc
+        self._doc = doc
+        return self._doc
 
     def _save(self, doc: dict) -> None:
         directory = self._path.parent
@@ -119,6 +125,8 @@ class AuthStore:
 
         if is_posix():
             os.chmod(self._path, 0o600)
+
+        self._doc = doc
 
     @staticmethod
     def _to_entry(raw: dict) -> ProfileEntry:

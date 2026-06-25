@@ -54,7 +54,7 @@ def test_load_refuses_world_readable_file(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     os.chmod(path, 0o644)
     with pytest.raises(AuthStoreError, match="permission"):
-        store._load()
+        AuthStore(config_file_path=path)._load()
 
 
 @pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
@@ -64,7 +64,7 @@ def test_load_allows_file_with_secure_base_permissions_and_special_bits(tmp_path
     path = tmp_path / "cvat" / "auth.json"
     # 0o1600 is 0o600 plus the POSIX sticky bit; only the base permission bits matter.
     os.chmod(path, 0o1600)
-    assert store._load() == {"version": 1, "profiles": {}}
+    assert AuthStore(config_file_path=path)._load() == {"version": 1, "profiles": {}}
 
 
 def test_load_rejects_directory_config_file_path(tmp_path):
@@ -111,6 +111,37 @@ def test_add_get_list_remove_profile(tmp_path):
     assert set(store.list_profiles()) == {"mycvat"}
     store.remove_profile("mycvat")
     assert store.get_profile("mycvat") is None
+
+
+def test_auth_store_reuses_loaded_doc(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    store._save(
+        {
+            "version": 1,
+            "profiles": {
+                "mycvat": {
+                    "server": "https://x",
+                    "token": "t",
+                    "created_date": "2026-01-01T00:00:00+00:00",
+                }
+            },
+        }
+    )
+
+    store = _store(tmp_path)
+    read_count = 0
+    original_read_text = Path.read_text
+
+    def read_text(self, *args, **kwargs):
+        nonlocal read_count
+        read_count += 1
+        return original_read_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", read_text)
+
+    assert store.get_profile("mycvat") is not None
+    assert set(store.list_profiles()) == {"mycvat"}
+    assert read_count == 1
 
 
 def test_first_profile_becomes_default_when_requested(tmp_path):
