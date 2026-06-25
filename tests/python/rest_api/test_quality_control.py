@@ -4,7 +4,7 @@
 
 import json
 import math
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Collection, Iterable
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
@@ -13,6 +13,7 @@ from typing import Any
 
 import pytest
 from cvat_sdk.api_client import exceptions, models
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
@@ -21,6 +22,7 @@ from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
+    CollectionSimpleFilterTestBase,
     DEFAULT_RETRIES,
     create_task,
     invite_user_to_org,
@@ -389,6 +391,11 @@ class TestListQualityReports(_PermissionTestBase):
 
             assert response.status == HTTPStatus.FORBIDDEN
 
+    def test_can_list_quality_reports(self, admin_user, quality_reports):
+        reports = sorted(quality_reports, key=lambda r: -r["id"])
+
+        self._test_list_reports_200(admin_user, sort="-id", expected_data=reports)
+
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("target", ["project", "task", "job"])
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
@@ -481,6 +488,62 @@ class TestListQualityReports(_PermissionTestBase):
             self._test_list_reports_403(**list_kwargs)
 
 
+class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, quality_reports, jobs, tasks, projects):
+        self.user = admin_user
+        self.samples = quality_reports
+        self.job_samples = jobs
+        self.task_samples = tasks
+        self.project_samples = projects
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.quality_api.list_reports_endpoint
+
+    def _get_field_samples(self, field: str) -> tuple[Any, list[dict[str, Any]]]:
+        def _get_job_reports(task_ids: Collection[int]) -> list[dict[str, Any]]:
+            job_ids = {j["id"] for j in self.job_samples if j["task_id"] in task_ids}
+            return [
+                r for r in self.samples if self._get_field(r, self._map_field("job_id")) in job_ids
+            ]
+
+        if field == "project_id":
+            project_id, project_reports = super()._get_field_samples(field)
+            return project_id, list(project_reports) + _get_job_reports(
+                [r["task_id"] for r in project_reports]
+            )
+        elif field == "task_id":
+            task_id, task_reports = super()._get_field_samples(field)
+            return task_id, list(task_reports) + _get_job_reports([task_id])
+        elif field == "org_id":
+            org_id = self.task_samples[
+                next(
+                    s
+                    for s in self.samples
+                    if s["task_id"] and self.task_samples[s["task_id"]]["organization"]
+                )["task_id"]
+            ]["organization"]
+            return org_id, [
+                s
+                for s in self.samples
+                if s["job_id"]
+                and self.job_samples[s["job_id"]]["organization"] == org_id
+                or s["task_id"]
+                and self.task_samples[s["task_id"]]["organization"] == org_id
+                or s["project_id"]
+                and self.project_samples[s["project_id"]]["organization"] == org_id
+            ]
+        else:
+            return super()._get_field_samples(field)
+
+    @pytest.mark.parametrize(
+        "field",
+        ("project_id", "task_id", "job_id", "parent_id", "target", "org_id"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super()._test_can_use_simple_filter_for_object_list(field)
+
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetQualityReports(_PermissionTestBase):
     def _test_get_report_200(
@@ -562,6 +625,19 @@ class TestGetQualityReportData(_PermissionTestBase):
             assert response.status == HTTPStatus.FORBIDDEN
 
         return response
+
+    @pytest.mark.parametrize("target", ["project", "task", "job"])
+    def test_can_get_full_report_data(self, admin_user, target, quality_reports):
+        report = next(
+            r for r in quality_reports if r[self.key_field_for_target[target]] is not None
+        )
+        report_id = report["id"]
+        report_data = json.loads(self._test_get_report_data_200(admin_user, report_id).data)
+
+        for key in ["parameters", "comparison_summary"] + (
+            ["frame_results"] if target != "project" else []
+        ):
+            assert key in report_data.keys(), key
 
     def test_cannot_get_report_data_as_csv(self, admin_user, quality_reports):
         report_id = next(iter(quality_reports))["id"]
@@ -1007,6 +1083,126 @@ class TestListQualityConflicts(_PermissionTestBase):
             self._test_list_conflicts_403(user, report["id"])
 
 
+class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
+    @pytest.fixture(autouse=True)
+    def setup(
+        self,
+        restore_db_per_class,
+        admin_user,
+        quality_conflicts,
+        quality_reports,
+        jobs,
+        tasks,
+        projects,
+    ):
+        self.user = admin_user
+        self.samples = quality_conflicts
+        self.report_samples = quality_reports
+        self.job_samples = jobs
+        self.task_samples = tasks
+        self.project_samples = projects
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.quality_api.list_conflicts_endpoint
+
+    def _get_field_samples(self, field: str) -> tuple[Any, list[dict[str, Any]]]:
+        def _get_job_reports(task_ids: Collection[int]) -> list[dict[str, Any]]:
+            job_ids = {j["id"] for j in self.job_samples if j["task_id"] in task_ids}
+            return [
+                r
+                for r in self.report_samples
+                if self._get_field(r, self._map_field("job_id")) in job_ids
+            ]
+
+        if field == "job_id":
+            job_id = self._find_valid_field_value(self.report_samples, field_path=["job_id"])
+            job_reports = {r["id"] for r in self.report_samples if r["job_id"] == job_id}
+            return job_id, [
+                c
+                for c in self.samples
+                if self._get_field(c, self._map_field("report_id")) in job_reports
+            ]
+        elif field == "task_id":
+            task_id = self._find_valid_field_value(self.report_samples, field_path=["task_id"])
+            task_reports = [r for r in self.report_samples if r["task_id"] == task_id]
+            task_report_ids = {r["id"] for r in task_reports}
+            task_report_ids |= {r["id"] for r in _get_job_reports([task_id])}
+            return task_id, [
+                c
+                for c in self.samples
+                if self._get_field(c, self._map_field("report_id")) in task_report_ids
+            ]
+        elif field == "project_id":
+            project_id = self._find_valid_field_value(
+                self.report_samples, field_path=["project_id"]
+            )
+            project_reports = [r for r in self.report_samples if r["project_id"] == project_id]
+            project_report_ids = {r["id"] for r in project_reports}
+            project_report_ids |= {
+                r["id"] for r in _get_job_reports([r["task_id"] for r in project_reports])
+            }
+            return project_id, [
+                c
+                for c in self.samples
+                if self._get_field(c, self._map_field("report_id")) in project_report_ids
+            ]
+        elif field == "org_id":
+            org_id = self.task_samples[
+                next(
+                    s
+                    for s in self.report_samples
+                    if s["task_id"] and self.task_samples[s["task_id"]]["organization"]
+                )["task_id"]
+            ]["organization"]
+            report_ids = {
+                s["id"]
+                for s in self.report_samples
+                if s["job_id"]
+                and self.job_samples[s["job_id"]]["organization"] == org_id
+                or s["task_id"]
+                and self.task_samples[s["task_id"]]["organization"] == org_id
+            }
+            return org_id, [c for c in self.samples if c["report_id"] in report_ids]
+        else:
+            return super()._get_field_samples(field)
+
+    @pytest.mark.parametrize(
+        "field",
+        ("report_id", "severity", "type", "frame", "job_id", "task_id", "project_id", "org_id"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super()._test_can_use_simple_filter_for_object_list(field)
+
+    @pytest.mark.parametrize("filter_name", ["project_id", "task_id", "job_id"])
+    def test_cannot_use_object_id_filters_without_permissions(
+        self, is_project_staff, is_task_staff, is_job_staff, users, filter_name
+    ):
+        non_admin_user = next(
+            u for u in users if not u["is_superuser"] and u["username"] != self.user
+        )
+
+        if filter_name == "project_id":
+            samples = self.project_samples
+            is_staff = is_project_staff
+        elif filter_name == "task_id":
+            samples = self.task_samples
+            is_staff = is_task_staff
+        elif filter_name == "job_id":
+            samples = self.job_samples
+            is_staff = is_job_staff
+        else:
+            assert False
+
+        obj_id = next(obj["id"] for obj in samples if not is_staff(non_admin_user["id"], obj["id"]))
+
+        with make_api_client(non_admin_user["username"]) as api_client:
+            _, response = api_client.quality_api.list_reports(
+                **{filter_name: obj_id}, _parse_response=False, _check_status=False
+            )
+
+        assert response.status == HTTPStatus.FORBIDDEN
+
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListSettings(_PermissionTestBase):
     def _test_list_settings_200(
@@ -1070,6 +1266,110 @@ class TestListSettings(_PermissionTestBase):
             )
         else:
             self._test_list_settings_403(user["username"], task_id=task["id"], org_id=org_id)
+
+
+class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
+    @staticmethod
+    def _strip_volatile_fields(settings: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [
+            {
+                key: value
+                for key, value in settings_item.items()
+                if key not in {"created_date", "updated_date", "requirements"}
+            }
+            for settings_item in settings
+        ]
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, quality_settings, tasks, projects):
+        self.user = admin_user
+        self.samples = quality_settings
+        self.task_samples = tasks
+        self.project_samples = projects
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.quality_api.list_settings_endpoint
+
+    def _compare_results(self, gt_objects, received_objects):
+        diff = DeepDiff(
+            self._strip_volatile_fields(gt_objects),
+            self._strip_volatile_fields(received_objects),
+            ignore_order=True,
+        )
+
+        assert diff == {}, diff
+
+    def _get_field_samples(self, field):
+        if field == "parent_type":
+            parent_type = "project"
+            return parent_type, [s for s in self.samples if s["project_id"]]
+        elif field == "project_id":
+            project_id = self._find_valid_field_value(self.samples, field_path=["project_id"])
+            project_task_ids = {
+                t["id"] for t in self.task_samples if t["project_id"] == project_id
+            }
+            return project_id, [
+                s
+                for s in self.samples
+                if s["project_id"] == project_id or s["task_id"] in project_task_ids
+            ]
+        elif field == "org_id":
+            org_id = self.task_samples[
+                next(
+                    s
+                    for s in self.samples
+                    if s["task_id"] and self.task_samples[s["task_id"]]["organization"]
+                )["task_id"]
+            ]["organization"]
+            return org_id, [
+                s
+                for s in self.samples
+                if s["task_id"]
+                and self.task_samples[s["task_id"]]["organization"] == org_id
+                or s["project_id"]
+                and self.project_samples[s["project_id"]]["organization"] == org_id
+            ]
+        else:
+            return super()._get_field_samples(field)
+
+    @pytest.mark.parametrize(
+        "field",
+        (
+            "task_id",
+            "project_id",
+            "parent_type",
+            "inherit",
+            "org_id",
+        ),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super()._test_can_use_simple_filter_for_object_list(field)
+
+    @pytest.mark.parametrize("filter_name", ["project_id", "task_id"])
+    def test_cannot_use_object_id_filters_without_permissions(
+        self, is_project_staff, is_task_staff, projects, tasks, users, filter_name
+    ):
+        non_admin_user = next(
+            u for u in users if not u["is_superuser"] and u["username"] != self.user
+        )
+
+        if filter_name == "project_id":
+            samples = projects
+            is_staff = is_project_staff
+        elif filter_name == "task_id":
+            samples = tasks
+            is_staff = is_task_staff
+        else:
+            assert False
+
+        obj_id = next(obj["id"] for obj in samples if not is_staff(non_admin_user["id"], obj["id"]))
+
+        with make_api_client(non_admin_user["username"]) as api_client:
+            _, response = api_client.quality_api.list_reports(
+                **{filter_name: obj_id}, _parse_response=False, _check_status=False
+            )
+
+        assert response.status == HTTPStatus.FORBIDDEN
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1714,6 +2014,95 @@ class TestPostProjectQualityReports(_PermissionTestBase):
 
         assert report["project_id"] == project.id
         assert any(child_report["task_id"] == task_id for child_report in child_reports)
+
+    def test_can_reuse_relevant_task_reports_in_project_report(
+        self, admin_user, projects, tasks, labels, quality_settings, quality_reports
+    ):
+        project = next(
+            p
+            for p in projects
+            if any(r["project_id"] == p["id"] for r in quality_reports)
+            if p["tasks"]["count"] >= 2
+            if all(t["size"] > 0 for t in tasks if t["project_id"] == p["id"])
+            if any(l for l in labels if l.get("project_id") == p["id"])
+            if any(t["validation_mode"] for t in tasks if t.get("project_id") == p["id"])
+            if all(
+                s["inherit"]
+                for s in quality_settings
+                if s["task_id"]
+                if tasks[s["task_id"]]["project_id"] == p["id"]
+            )
+        )
+        project_id = project["id"]
+
+        project_tasks = sorted(
+            [t for t in tasks if t.get("project_id") == project_id], key=lambda t: t["id"]
+        )
+
+        latest_project_reports = sorted(
+            [r for r in quality_reports if r["project_id"] == project_id], key=lambda r: -r["id"]
+        )
+        latest_project_report = next(r for r in latest_project_reports if r["target"] == "project")
+        latest_project_reports = [
+            r for r in latest_project_reports if r["parent_id"] == latest_project_report["id"]
+        ]
+        latest_task_reports = {
+            task_id: next(task_reports)
+            for task_id, task_reports in groupby(
+                sorted(latest_project_reports, key=lambda r: (r["task_id"], -r["id"])),
+                key=lambda r: r["task_id"],
+            )
+        }
+
+        new_report_before_task_changes = self.create_quality_report(
+            user=admin_user, project_id=project_id
+        )
+
+        with make_api_client(admin_user) as api_client:
+            task_reports_in_new_report_before_task_changes = {
+                r["id"]
+                for r in get_paginated_collection(
+                    api_client.quality_api.list_reports_endpoint,
+                    parent_id=new_report_before_task_changes["id"],
+                    target="task",
+                    return_json=True,
+                )
+            }
+            assert task_reports_in_new_report_before_task_changes == {
+                r["id"] for r in latest_task_reports.values()
+            }
+
+        with make_api_client(admin_user) as api_client:
+            modified_task_id = project_tasks[0]["id"]
+            api_client.tasks_api.update_annotations(
+                modified_task_id, labeled_data_request={"shapes": []}
+            )
+
+        new_report_after_task_changes = self.create_quality_report(
+            user=admin_user, project_id=project_id
+        )
+
+        with make_api_client(admin_user) as api_client:
+            task_reports_in_new_report_after_task_changes = {
+                (r["id"], r["task_id"])
+                for r in get_paginated_collection(
+                    api_client.quality_api.list_reports_endpoint,
+                    parent_id=new_report_after_task_changes["id"],
+                    target="task",
+                    return_json=True,
+                )
+            }
+            assert {
+                r for r in task_reports_in_new_report_after_task_changes if r[1] != modified_task_id
+            } == {
+                (r["id"], r["task_id"])
+                for task_id, r in latest_task_reports.items()
+                if task_id != modified_task_id
+            }
+            assert (
+                latest_task_reports[modified_task_id]["id"],
+                modified_task_id,
+            ) not in task_reports_in_new_report_after_task_changes
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_create_project_report_in_sandbox(self, is_staff, allow, find_sandbox_project):
