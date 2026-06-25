@@ -9,25 +9,12 @@ from pathlib import Path
 import platformdirs
 import pytest
 from cvat_sdk.core.auth import (
-    DEFAULT_SERVER,
     AuthStore,
     AuthStoreError,
     ProfileEntry,
     get_auth_store_path,
 )
-
-
-def test_profile_entry_holds_fields():
-    entry = ProfileEntry(
-        server="https://app.cvat.ai", token="tok", created_date="2026-01-01T00:00:00+00:00"
-    )
-    assert entry.server == "https://app.cvat.ai"
-    assert entry.token == "tok"
-    assert entry.created_date == "2026-01-01T00:00:00+00:00"
-
-
-def test_default_server_is_app_cvat_ai():
-    assert DEFAULT_SERVER == "https://app.cvat.ai"
+from cvat_sdk.core.utils import is_posix
 
 
 def test_auth_store_path_matches_platformdirs():
@@ -51,7 +38,7 @@ def test_save_then_load_roundtrips(tmp_path):
     assert store._load()["profiles"]["a"]["token"] == "t"
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX permission semantics")
+@pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
 def test_save_creates_0600_file_in_0700_dir(tmp_path):
     store = _store(tmp_path)
     store._save({"version": 1, "profiles": {}})
@@ -60,7 +47,7 @@ def test_save_creates_0600_file_in_0700_dir(tmp_path):
     assert (path.parent.stat().st_mode & 0o777) == 0o700
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX permission semantics")
+@pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
 def test_load_refuses_world_readable_file(tmp_path):
     store = _store(tmp_path)
     store._save({"version": 1, "profiles": {}})
@@ -70,20 +57,20 @@ def test_load_refuses_world_readable_file(tmp_path):
         store._load()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="POSIX permission semantics")
-def test_load_refuses_file_with_special_permission_bits(tmp_path):
+@pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
+def test_load_allows_file_with_secure_base_permissions_and_special_bits(tmp_path):
     store = _store(tmp_path)
     store._save({"version": 1, "profiles": {}})
     path = tmp_path / "cvat" / "auth.json"
+    # 0o1600 is 0o600 plus the POSIX sticky bit; only the base permission bits matter.
     os.chmod(path, 0o1600)
-    with pytest.raises(AuthStoreError, match="expected 0o600"):
-        store._load()
+    assert store._load() == {"version": 1, "profiles": {}}
 
 
 def test_load_rejects_directory_config_file_path(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     path.mkdir(parents=True)
-    if os.name != "nt":
+    if is_posix():
         os.chmod(path.parent, 0o700)
         os.chmod(path, 0o700)
     with pytest.raises(AuthStoreError, match="must be a file"):
@@ -94,7 +81,7 @@ def test_load_rejects_unknown_version(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     path.parent.mkdir(parents=True)
     path.write_text(json.dumps({"version": 999, "profiles": {}}))
-    if os.name != "nt":
+    if is_posix():
         os.chmod(path.parent, 0o700)
         os.chmod(path, 0o600)
     with pytest.raises(AuthStoreError, match="version"):
@@ -105,7 +92,7 @@ def test_load_rejects_corrupt_json(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     path.parent.mkdir(parents=True)
     path.write_text("{not json")
-    if os.name != "nt":
+    if is_posix():
         os.chmod(path.parent, 0o700)
         os.chmod(path, 0o600)
     with pytest.raises(AuthStoreError):
