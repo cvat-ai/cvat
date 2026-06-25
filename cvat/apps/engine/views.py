@@ -1277,8 +1277,9 @@ class TaskViewSet(
     def export_backup(self, request: ExtendedRequest, pk: int):
         return get_410_response_for_export_api("/api/tasks/id/backup/export")
 
-    @transaction.atomic
-    def perform_update(self, serializer):
+    @transaction.atomic()
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_update(self, serializer: TaskWriteSerializer) -> None:
         instance = serializer.instance
 
         super().perform_update(serializer)
@@ -1302,6 +1303,11 @@ class TaskViewSet(
 
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
+
+    @transaction.atomic
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_destroy(self, instance: Task) -> None:
+        return super().perform_destroy(instance)
 
     def _is_data_uploading(self) -> bool:
         return "data" in self.action
@@ -1331,7 +1337,7 @@ class TaskViewSet(
     def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
-        bulk_create(
+        db_utils.bulk_create(
             ClientFile,
             [
                 ClientFile(file=self._prepare_upload_info_entry(cf["file"].name), data=task_data)
@@ -1812,6 +1818,11 @@ class TaskViewSet(
             return Response(data)
 
         elif request.method == "POST" or request.method == "OPTIONS":
+            if not self._object.media_type:
+                raise ValidationError(
+                    "This task data has not been initialized yet. Please try again later"
+                )
+
             return self.upload_data(request, append_url_name="append-annotations-chunk")
 
         elif request.method == "PUT":
@@ -1963,6 +1974,11 @@ class TaskViewSet(
         prefetch()
 
         if request.method == "PATCH":
+            if not db_task.media_type:
+                raise ValidationError(
+                    "This task data has not been initialized yet. Please try again later"
+                )
+
             if db_task.media_type == models.MediaType.AUDIO:
                 # TODO: introduce support for frame deletion when there's more information
                 # on use cases. Should probably work with ranges.
