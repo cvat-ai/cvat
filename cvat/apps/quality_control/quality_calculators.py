@@ -9,7 +9,6 @@ from collections import Counter
 from contextlib import suppress
 from copy import deepcopy
 
-import numpy as np
 from django.db import transaction
 from django.db.models import OuterRef, Subquery, prefetch_related_objects
 

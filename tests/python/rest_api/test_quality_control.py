@@ -1651,7 +1651,7 @@ class TestQualityReportContents(_PermissionTestBase):
         task_id = next(t["id"] for t in tasks if t["validation_mode"] == "gt_pool")
         gt_job = next(j for j in jobs if j["task_id"] == task_id if j["type"] == "ground_truth")
         gt_job_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
-        requirement = self.enable_default_quality_requirement(admin_user, task_id)
+        self.enable_default_quality_requirement(admin_user, task_id)
 
         with make_api_client(admin_user) as api_client:
             gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
