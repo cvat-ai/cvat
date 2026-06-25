@@ -582,7 +582,8 @@ def collect_code_coverage_from_containers():
         process_command = "python3"
 
         # find process with code coverage
-        docker_exec(container, "ps aux", capture_output=False), file=sys.stderr
+        _run(f"echo {container}")
+        docker_exec(container, "ps aux")
         pid = docker_exec(container, f"pidof {process_command} -o 1")
 
         # stop process with code coverage
