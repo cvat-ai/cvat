@@ -45,7 +45,6 @@ from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
 
 import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine import backup
 from cvat.apps.engine.background import BackupImporter, DatasetImporter, TaskCreator
@@ -71,7 +70,6 @@ from cvat.apps.engine.media_io.frame_provider import (
 )
 from cvat.apps.engine.media_io.media_provider import DataWithMeta, PreviewNotAvailable
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     AnnotationGuide,
     Asset,
@@ -158,6 +156,7 @@ from cvat.apps.engine.view_utils import (
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
+from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
@@ -414,6 +413,16 @@ class ProjectViewSet(
                 return perm.filter(queryset)
 
         return queryset
+
+    @transaction.atomic
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_update(self, serializer: ProjectWriteSerializer) -> None:
+        return super().perform_update(serializer)
+
+    @transaction.atomic
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_destroy(self, instance: Project) -> None:
+        return super().perform_destroy(instance)
 
     @transaction.atomic
     def perform_create(self, serializer, **kwargs):
