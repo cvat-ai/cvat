@@ -7,8 +7,11 @@ from typing import Any
 
 import rq
 from crum import get_current_request, get_current_user
+from django.db import DatabaseError
+from psycopg2.errors import LockNotAvailable
 from rest_framework import status
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import ErrorDetail, NotAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
 from cvat.apps.access_tokens.models import AccessToken
@@ -44,6 +47,7 @@ from cvat.apps.organizations.serializers import (
 )
 from cvat.apps.webhooks.models import Webhook
 from cvat.apps.webhooks.serializers import WebhookReadSerializer
+from cvat.utils.django_database import find_psycopg_cause
 
 from .cache import get_cache
 from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
@@ -676,12 +680,26 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     return False
 
 
-def handle_viewset_exception(exc, context):
+def handle_viewset_exception(exc: Exception, context):
+    if isinstance(exc, DatabaseError):
+        if isinstance(find_psycopg_cause(exc=exc), LockNotAvailable):
+            return Response(
+                data={
+                    "detail": ErrorDetail(
+                        "This resource is currently busy with another operation. "
+                        "Please try again in a moment.",
+                        code="database_resource_busy",
+                    ),
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
     response = exception_handler(exc, context)
 
     IGNORED_EXCEPTION_CLASSES = (NotAuthenticated,)
     if isinstance(exc, IGNORED_EXCEPTION_CLASSES):
         return response
+
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
     # exceptions types, any other will cause a 500 error
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR

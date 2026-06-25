@@ -123,6 +123,11 @@ INSTALLED_APPS = [
 SITE_ID = 1
 
 
+CVAT_POSTGRES_TRANSACTION_LOCK_TIMEOUT_SECONDS = int(
+    os.getenv("CVAT_POSTGRES_TRANSACTION_LOCK_TIMEOUT_SECONDS", 30)
+)
+
+
 def parse_num_proxies(value: str | None) -> int | None:
     if value in (None, ""):
         return None
