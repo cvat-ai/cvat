@@ -1562,7 +1562,18 @@ def create_thread(
     is_backup_restore: bool = False,
 ) -> None:
     if isinstance(db_task, int):
-        db_task = models.Task.objects.select_for_update().get(pk=db_task)
+        db_task = (
+            models.Task.objects.exclude(data=None)
+            .select_related("data")
+            .select_for_update(of=("self", "data"))
+            .get(pk=db_task)
+        )
+
+    if db_task.data.cloud_storage_id is not None:
+        db_task.data.cloud_storage = get_object_by_id_for_share(
+            model=models.CloudStorage,
+            object_id=db_task.data.cloud_storage_id,
+        )
 
     slogger.glob.info("create task #{}".format(db_task.id))
 
@@ -1918,7 +1929,7 @@ def create_thread(
 
         # validate the sorting
         for file_path in sorted_media_files:
-            if not file_path in extractor:
+            if file_path not in extractor:
                 raise ValidationError(f"Can't find file '{file_path.name}' in the input files")
 
         media_files = sorted_media_files.copy()

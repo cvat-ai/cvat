@@ -48,7 +48,6 @@ from cvat.apps.engine.cloud_provider import (
 )
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
@@ -67,6 +66,7 @@ from cvat.apps.engine.utils import (
 from cvat.apps.iam.permissions import get_iam_context
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
+from cvat.utils.django_database import bulk_create
 from cvat.utils.paths import problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
@@ -1285,11 +1285,16 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
 
         task_id = validated_data.pop("task_id")
-        task = models.Task.objects.select_for_update().get(pk=task_id)
+        task = models.Task.objects.get(pk=task_id)
 
-        if not task.data:
+        if task.data_id is None:
             raise serializers.ValidationError(
                 "This task has no data attached yet. Please set up task data and try again"
+            )
+
+        if not task.media_type:
+            raise serializers.ValidationError(
+                "This task data has not been initialized yet. Please try again later"
             )
 
         if task.data.validation_mode in (models.ValidationMode.GT_POOL, models.ValidationMode.GT):
@@ -1297,6 +1302,8 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 f'Task with validation mode "{task.data.validation_mode}" '
                 "cannot have more than 1 GT job"
             )
+
+        task = models.Task.objects.select_for_update().get(pk=task_id)
 
         if task.media_type == models.MediaType.AUDIO:
             frames = []

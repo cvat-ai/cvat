@@ -1489,7 +1489,14 @@ class RequestViewSet(viewsets.ViewSet):
                 code=status.HTTP_400_BAD_REQUEST,
             )
 
-        if Task.objects.get(pk=task).media_type == MediaType.AUDIO:
+        db_task = Task.objects.get(pk=task)
+
+        if not db_task.media_type:
+            raise serializers.ValidationError(
+                "This task data has not been initialized yet. Please try again later"
+            )
+
+        if db_task.media_type == MediaType.AUDIO:
             raise serializers.ValidationError("Auto-annotation is not available in audio tasks")
 
         gateway = LambdaGateway()
