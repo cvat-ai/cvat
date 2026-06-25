@@ -470,7 +470,7 @@ jobs:
           docker load --input /tmp/cvat_ui/image.tar
           docker image ls -a
 
-      - uses: azure/setup-helm@v5
+      - uses: azure/setup-helm@v5.0.1
 
       - name: Update Helm chart dependencies
         working-directory: helm-chart
