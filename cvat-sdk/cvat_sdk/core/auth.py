@@ -5,18 +5,22 @@
 from __future__ import annotations
 
 import contextlib
+import getpass
 import json
 import os
 import stat
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 import attrs
 import platformdirs
 
+from cvat_sdk.core.client import AccessTokenCredentials, Credentials, PasswordCredentials
 from cvat_sdk.core.exceptions import AuthStoreError
 from cvat_sdk.core.utils import is_posix
 
+CVAT_ACCESS_TOKEN_ENV_VAR = "CVAT_ACCESS_TOKEN"  # nosec - a variable name declaration
 DEFAULT_SERVER = "http://localhost:8080"
 
 _APP_NAME = "cvat-sdk"
@@ -41,6 +45,39 @@ class ProfileEntry:
 def get_auth_store_path() -> Path:
     """Return the path to the persistent auth.json store."""
     return platformdirs.user_config_path(_APP_NAME, _APP_AUTHOR) / "auth.json"
+
+
+def get_auth_factory(s: str) -> Callable[[str], Credentials]:
+    """
+    Parse a USER[:PASS] string and return a callable that takes the server URL
+    and returns auth credentials for that URL.
+    The callable will prompt the user for the password if none was initially supplied in the
+    input string and in the PASS env variable.
+    """
+
+    user, _, password = s.partition(":")
+    if not password:
+        password = os.environ.get("PASS")
+
+    if password:
+        return lambda _: PasswordCredentials(user, password)
+    else:
+        return lambda url: PasswordCredentials(
+            user, getpass.getpass(f"Password for {user} at {url}: ")
+        )
+
+
+def default_auth_factory() -> Callable[[str], Credentials]:
+    """
+    Try to read the CVAT_ACCESS_TOKEN environment variable for a Personal Access Token (PAT).
+    If there is no value, try using the current user and asking for the password.
+    """
+
+    token = os.getenv(CVAT_ACCESS_TOKEN_ENV_VAR)
+    if token is not None:
+        return lambda _: AccessTokenCredentials(token)
+
+    return get_auth_factory(getpass.getuser())
 
 
 class AuthStore:
