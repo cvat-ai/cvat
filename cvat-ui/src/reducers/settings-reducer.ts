@@ -48,6 +48,7 @@ const defaultState: SettingsState = {
             buttonVisible: false,
         },
         showTagsOnFrame: true,
+        showPrivateAttributes: false,
     },
     player: {
         canvasBackgroundColor: '#ffffff',
@@ -427,6 +428,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     showTagsOnFrame: action.payload.showTagsOnFrame,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SHOWING_PRIVATE_ATTRIBUTES: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    showPrivateAttributes: action.payload.showPrivateAttributes,
                 },
             };
         }

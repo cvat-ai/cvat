@@ -248,6 +248,16 @@ export function clamp(x: number, min: number, max: number): number {
     return Math.min(Math.max(x, min), max);
 }
 
+export function showAttribute(
+    attrName: string,
+    attrValue: string,
+    showPrivateAttributes: boolean,
+): boolean {
+    const isAutomaticValue = ['auto', 'automatic'].includes(attrValue);
+    const isPrivateAttribute = attrName.startsWith('_');
+    return (!isPrivateAttribute && !isAutomaticValue) || showPrivateAttributes;
+}
+
 export function scalarProduct(a: Vector2D, b: Vector2D): number {
     return a.i * b.i + a.j * b.j;
 }

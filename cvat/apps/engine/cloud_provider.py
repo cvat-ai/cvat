@@ -971,7 +971,7 @@ class AzureBlobCloudStorage(AbstractCloudStorage):
         storage_stream_downloader.readinto(stream)
 
     def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
-        return self._client.download_blob(blob=key, offset=start_byte, length=stop_byte).readall()
+        return self._client.download_blob(blob=key, offset=start_byte, length=stop_byte - start_byte + 1).readall()
 
     @property
     def supported_actions(self):

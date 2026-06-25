@@ -18,6 +18,7 @@ import {
     switchTextPosition,
     switchTextContent,
     switchShowingTagsOnFrame,
+    switchShowingPrivateAttributes,
     switchAdaptiveZoom,
 } from 'actions/settings-actions';
 
@@ -39,6 +40,7 @@ interface StateToProps {
     textPosition: 'auto' | 'center';
     textContent: string;
     showTagsOnFrame: boolean;
+    showPrivateAttributes:boolean;
 }
 
 interface DispatchToProps {
@@ -55,6 +57,7 @@ interface DispatchToProps {
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
     onSwitchShowingTagsOnFrame(enabled: boolean): void;
+    onSwitchShowingPrivateAttributes(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -73,6 +76,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textPosition,
         textContent,
         showTagsOnFrame,
+        showPrivateAttributes,
     } = workspace;
 
     return {
@@ -89,6 +93,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textPosition,
         textContent,
         showTagsOnFrame,
+        showPrivateAttributes,
     };
 }
 
@@ -106,6 +111,7 @@ const mapDispatchToProps: DispatchToProps = {
     onChangeTextPosition: switchTextPosition,
     onChangeTextContent: switchTextContent,
     onSwitchShowingTagsOnFrame: switchShowingTagsOnFrame,
+    onSwitchShowingPrivateAttributes:switchShowingPrivateAttributes,
 };
 
 function WorkspaceSettingsContainer(props: StateToProps & DispatchToProps): JSX.Element {

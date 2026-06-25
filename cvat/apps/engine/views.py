@@ -2495,6 +2495,7 @@ class JobViewSet(
     )
     def annotations(self, request: ExtendedRequest, pk: int):
         self._object: models.Job = self.get_object()  # force call of check_object_permissions()
+
         if request.method == "GET":
 
             if {

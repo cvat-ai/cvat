@@ -67,30 +67,6 @@ function CatalogueReferenceModal(props: Props): JSX.Element {
     const [selectedReference, setSelectedReference] = useState<string>(currentValue);
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
-    useEffect(() => {
-        if (visible) {
-            setSearchText('');
-            fetchCatalogueData();
-        }
-    }, [visible, catalogueName]);
-
-    useEffect(() => {
-        if (visible) {
-            // Parse confidence scores from currentValue and update selected reference
-            const confidenceMap = parseConfidenceScores(currentValue);
-            const references = Object.keys(confidenceMap);
-
-            // If there are confidence scores, select the highest confidence one
-            // Otherwise use the current value as-is
-            if (references.length > 0) {
-                const sortedRefs = references.sort((a, b) => confidenceMap[b] - confidenceMap[a]);
-                setSelectedReference(sortedRefs[0]);
-            } else {
-                setSelectedReference(currentValue);
-            }
-        }
-    }, [visible, currentValue]);
-
     const parseConfidenceScores = (value: string): Record<string, number> => {
         const confidenceMap: Record<string, number> = {};
 
@@ -156,6 +132,30 @@ function CatalogueReferenceModal(props: Props): JSX.Element {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (visible) {
+            setSearchText('');
+            fetchCatalogueData();
+        }
+    }, [visible, catalogueName]);
+
+    useEffect(() => {
+        if (visible) {
+            // Parse confidence scores from currentValue and update selected reference
+            const confidenceMap = parseConfidenceScores(currentValue);
+            const references = Object.keys(confidenceMap);
+
+            // If there are confidence scores, select the highest confidence one
+            // Otherwise use the current value as-is
+            if (references.length > 0) {
+                const sortedRefs = references.sort((a, b) => confidenceMap[b] - confidenceMap[a]);
+                setSelectedReference(sortedRefs[0]);
+            } else {
+                setSelectedReference(currentValue);
+            }
+        }
+    }, [visible, currentValue]);
 
     const filteredData = useMemo(() => {
         if (!searchText) return catalogueData;
@@ -241,14 +241,20 @@ function CatalogueReferenceModal(props: Props): JSX.Element {
             title: 'Reference',
             dataIndex: 'reference',
             key: 'reference',
-            sorter: (a: CatalogueItemWithConfidence, b: CatalogueItemWithConfidence) => a.reference.localeCompare(b.reference),
+            sorter: (
+                a: CatalogueItemWithConfidence,
+                b: CatalogueItemWithConfidence,
+            ) => a.reference.localeCompare(b.reference),
             render: (text: string) => <Text strong>{text}</Text>,
         },
         {
             title: 'Description',
             dataIndex: 'description',
             key: 'description',
-            sorter: (a: CatalogueItemWithConfidence, b: CatalogueItemWithConfidence) => a.description.localeCompare(b.description),
+            sorter: (
+                a: CatalogueItemWithConfidence,
+                b: CatalogueItemWithConfidence,
+            ) => a.description.localeCompare(b.description),
         },
         {
             title: 'Confidence',

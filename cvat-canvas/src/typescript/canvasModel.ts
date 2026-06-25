@@ -103,6 +103,7 @@ export interface Configuration {
     resetZoom?: boolean;
     hideEditedObject?: boolean;
     focusedObjectPadding?: number;
+    showPrivateAttributes?: boolean;
     snapRadius?: number;
 }
 
@@ -431,6 +432,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 textContent: consts.DEFAULT_SHAPE_TEXT_CONTENT,
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
                 hideEditedObject: false,
+                showPrivateAttributes: false,
                 focusedObjectPadding: 50,
             },
             imageBitmap: false,
@@ -1028,6 +1030,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.hideEditedObject === 'boolean') {
             this.data.configuration.hideEditedObject = configuration.hideEditedObject;
+        }
+
+        if (typeof configuration.showPrivateAttributes === 'boolean') {
+            this.data.configuration.showPrivateAttributes = configuration.showPrivateAttributes;
         }
 
         if (typeof configuration.focusedObjectPadding === 'number') {
