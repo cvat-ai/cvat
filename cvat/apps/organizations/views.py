@@ -20,6 +20,7 @@ from cvat.apps.organizations.permissions import (
     OrganizationPermission,
 )
 from cvat.apps.organizations.throttle import ResendOrganizationInvitationThrottle
+from cvat.utils import django_database as db_utils
 
 from .models import Invitation, Membership, Organization
 from .serializers import (
@@ -110,6 +111,11 @@ class OrganizationViewSet(
         if not serializer.validated_data.get("name"):
             extra_kwargs.update({"name": serializer.validated_data["slug"]})
         serializer.save(**extra_kwargs)
+
+    @transaction.atomic
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_destroy(self, instance: Organization) -> None:
+        return super().perform_destroy(instance)
 
     class Meta:
         model = Membership
@@ -288,7 +294,7 @@ class InvitationViewSet(
 
         return queryset
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
