@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 
+import argparse
 import contextlib
 import getpass
 import json
+import logging
 import os
 import stat
 import tempfile
@@ -16,7 +18,13 @@ from pathlib import Path
 import attrs
 import platformdirs
 
-from cvat_sdk.core.client import AccessTokenCredentials, Client, Credentials, PasswordCredentials
+from cvat_sdk.core.client import (
+    AccessTokenCredentials,
+    Client,
+    Config,
+    Credentials,
+    PasswordCredentials,
+)
 from cvat_sdk.core.exceptions import AuthStoreError
 from cvat_sdk.core.utils import is_posix
 
@@ -115,6 +123,69 @@ def make_client_from_profile(
 
     client = Client(url=entry.server, check_server_version=False)
     client.login(AccessTokenCredentials(entry.token))
+    return client
+
+
+def make_client_from_cli(
+    parsed_args: argparse.Namespace,
+    *,
+    logger: logging.Logger | None = None,
+    store: AuthStore | None = None,
+) -> Client:
+    """Build and authenticate a Client from parsed CLI-style arguments."""
+    store = store or AuthStore()
+
+    profile = getattr(parsed_args, "profile", None)
+    auth = getattr(parsed_args, "auth", None)
+    server_host = getattr(parsed_args, "server_host", None)
+    server_port = getattr(parsed_args, "server_port", None)
+    insecure = getattr(parsed_args, "insecure", False)
+    organization = getattr(parsed_args, "organization", None)
+
+    if profile is not None and (
+        server_host is not None or server_port is not None or auth is not None
+    ):
+        raise AuthStoreError(
+            "--profile is mutually exclusive with --server-host/--server-port/--auth."
+        )
+
+    if profile is not None:
+        client = make_client_from_profile(profile, store=store)
+        if organization is not None:
+            client.organization_slug = organization
+        return client
+
+    env_token = os.getenv(CVAT_ACCESS_TOKEN_ENV_VAR)
+    explicit_host = server_host is not None or server_port is not None
+    explicit_cred = auth is not None or env_token is not None
+
+    if not explicit_host and not explicit_cred:
+        default = store.get_default_profile()
+        if default is not None:
+            client = make_client_from_profile(default[0], store=store)
+            if organization is not None:
+                client.organization_slug = organization
+            return client
+
+    if explicit_host:
+        url = (
+            server_host
+            if server_host is not None
+            else store.get_default_server() or DEFAULT_SERVER
+        )
+        if server_port:
+            url = f"{url}:{server_port}"
+    else:
+        url = store.get_default_server() or DEFAULT_SERVER
+
+    config = Config(verify_ssl=not insecure)
+    client = Client(url=url, logger=logger, config=config, check_server_version=False)
+
+    auth_factory = auth if auth is not None else default_auth_factory()
+    client.login(auth_factory(client.api_client.configuration.host))
+
+    if organization is not None:
+        client.organization_slug = organization
     return client
 
 

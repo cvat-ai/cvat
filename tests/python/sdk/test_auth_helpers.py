@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import argparse
+
 import pytest
 
 from cvat_sdk.core.auth import (
@@ -12,6 +14,7 @@ from cvat_sdk.core.auth import (
     ProfileEntry,
     default_auth_factory,
     get_auth_factory,
+    make_client_from_cli,
     make_client_from_profile,
     resolve_server_host,
 )
@@ -23,9 +26,31 @@ class _FakeClient:
         self.url = url
         self.logged_in_with = None
         self.organization_slug = None
+        self.config = kwargs.get("config")
+        self.logger = kwargs.get("logger")
+        self.check_server_version = kwargs.get("check_server_version")
+        self.api_client = type(
+            "ApiClient",
+            (),
+            {"configuration": type("Config", (), {"host": "https://stub"})()},
+        )()
 
     def login(self, credentials):
         self.logged_in_with = credentials
+
+
+def _ns(**kw):
+    ns = argparse.Namespace(
+        profile=None,
+        auth=None,
+        server_host=None,
+        server_port=None,
+        insecure=False,
+        organization=None,
+    )
+    for k, v in kw.items():
+        setattr(ns, k, v)
+    return ns
 
 
 def test_get_auth_factory_parses_user_pass():
@@ -113,3 +138,74 @@ def test_make_client_from_profile_no_default_raises(tmp_path):
     store = AuthStore(path=tmp_path / "auth.json")
     with pytest.raises(AuthStoreError, match="default profile"):
         make_client_from_profile(store=store)
+
+
+def test_make_client_from_cli_profile_path(tmp_path, monkeypatch):
+    from cvat_sdk.core import auth as auth_mod
+
+    store = AuthStore(path=tmp_path / "auth.json")
+    store.add_profile(
+        "p",
+        ProfileEntry(server="https://prof", token="pat", created_date="2026-01-01T00:00:00+00:00"),
+    )
+    monkeypatch.setattr(auth_mod, "Client", _FakeClient)
+    client = make_client_from_cli(_ns(profile="p"), store=store)
+    assert client.url == "https://prof"
+    assert client.logged_in_with.token == "pat"
+
+
+def test_make_client_from_cli_profile_conflicts(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+    with pytest.raises(AuthStoreError, match="mutually exclusive"):
+        make_client_from_cli(_ns(profile="p", server_host="https://x"), store=store)
+    with pytest.raises(AuthStoreError, match="mutually exclusive"):
+        make_client_from_cli(_ns(profile="p", auth=get_auth_factory("u:p")), store=store)
+
+
+def test_make_client_from_cli_zero_flag_uses_default_profile(tmp_path, monkeypatch):
+    from cvat_sdk.core import auth as auth_mod
+
+    store = AuthStore(path=tmp_path / "auth.json")
+    store.add_profile(
+        "p",
+        ProfileEntry(
+            server="https://prof", token="dpat", created_date="2026-01-01T00:00:00+00:00"
+        ),
+        set_default=True,
+    )
+    monkeypatch.setattr(auth_mod, "Client", _FakeClient)
+    monkeypatch.delenv(CVAT_ACCESS_TOKEN_ENV_VAR, raising=False)
+    client = make_client_from_cli(_ns(), store=store)
+    assert client.url == "https://prof"
+    assert client.logged_in_with.token == "dpat"
+
+
+def test_make_client_from_cli_explicit_host_does_not_borrow_profile_token(
+    tmp_path, monkeypatch
+):
+    from cvat_sdk.core import auth as auth_mod
+
+    store = AuthStore(path=tmp_path / "auth.json")
+    store.add_profile(
+        "p",
+        ProfileEntry(
+            server="https://prof", token="dpat", created_date="2026-01-01T00:00:00+00:00"
+        ),
+        set_default=True,
+    )
+    monkeypatch.setattr(auth_mod, "Client", _FakeClient)
+    monkeypatch.setenv(CVAT_ACCESS_TOKEN_ENV_VAR, "env-tok")
+    client = make_client_from_cli(_ns(server_host="https://explicit"), store=store)
+    assert client.url == "https://explicit"
+    assert client.logged_in_with.token == "env-tok"
+
+
+def test_make_client_from_cli_env_token_zero_flag(tmp_path, monkeypatch):
+    from cvat_sdk.core import auth as auth_mod
+
+    store = AuthStore(path=tmp_path / "auth.json")
+    monkeypatch.setattr(auth_mod, "Client", _FakeClient)
+    monkeypatch.setenv(CVAT_ACCESS_TOKEN_ENV_VAR, "env-tok")
+    client = make_client_from_cli(_ns(), store=store)
+    assert client.url == DEFAULT_SERVER
+    assert client.logged_in_with.token == "env-tok"
