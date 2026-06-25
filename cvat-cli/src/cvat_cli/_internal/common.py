@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
-import getpass
 import importlib
 import importlib.util
 import logging
@@ -19,10 +18,11 @@ import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk.core.auth import (
     CVAT_ACCESS_TOKEN_ENV_VAR,
     DEFAULT_SERVER,
-    default_auth_factory,
     get_auth_factory,
+    make_client_from_cli,
 )
-from cvat_sdk.core.client import Client, Config
+from cvat_sdk.core.client import Client
+from cvat_sdk.core.exceptions import AuthStoreError
 
 from ..version import VERSION
 from .parsers import BuildDictAction, parse_function_parameter
@@ -33,8 +33,8 @@ class CriticalError(Exception):
     pass
 
 
-def add_cli_parser_args(parser: argparse.ArgumentParser) -> None:
-    """Add the standard auth-related global args for the CLI."""
+def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--version", action="version", version=VERSION)
     parser.add_argument(
         "--insecure",
         action="store_true",
@@ -79,48 +79,6 @@ def add_cli_parser_args(parser: argparse.ArgumentParser) -> None:
         help="use a saved profile (server + credential); see 'cvat-cli profile list'."
         " Mutually exclusive with --server-host/--server-port/--auth.",
     )
-
-
-def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--version", action="version", version=VERSION)
-    parser.add_argument(
-        "--insecure",
-        action="store_true",
-        help="Allows to disable SSL certificate check",
-    )
-
-    parser.add_argument(
-        "--auth",
-        type=get_auth_factory,
-        metavar="USER[:PASS]",
-        default=default_auth_factory(),
-        help=textwrap.dedent("""\
-            User and password to use for authentication;
-            defaults to the current user and supports the PASS
-            environment variable or password prompt.
-            A Personal Access Token (PAT) can be generated on the server
-            and specified in the {} environment variable instead.
-            (default user: {}).
-        """).format(CVAT_ACCESS_TOKEN_ENV_VAR, getpass.getuser()),
-    )
-    parser.add_argument(
-        "--server-host", type=str, default="http://localhost", help="host (default: %(default)s)"
-    )
-    parser.add_argument(
-        "--server-port",
-        type=int,
-        default=None,
-        help="port (default: 80 for http and 443 for https connections)",
-    )
-    parser.add_argument(
-        "--organization",
-        "--org",
-        metavar="SLUG",
-        help="""short name (slug) of the organization
-                to use when listing or creating resources;
-                set to blank string to use the personal workspace
-                (default: list all accessible objects, create in personal workspace)""",
-    )
     parser.add_argument(
         "--debug",
         action="store_const",
@@ -145,24 +103,21 @@ def configure_logger(logger: logging.Logger, parsed_args: argparse.Namespace) ->
 
 
 def build_client(parsed_args: argparse.Namespace, logger: logging.Logger) -> Client:
-    config = Config(verify_ssl=not popattr(parsed_args, "insecure"))
-
-    url = popattr(parsed_args, "server_host")
-    if server_port := popattr(parsed_args, "server_port"):
-        url += f":{server_port}"
-
-    client = Client(
-        url=url,
-        logger=logger,
-        config=config,
-        check_server_version=False,  # version is checked after auth to support versions < 2.3
+    auth_args = argparse.Namespace(
+        profile=popattr(parsed_args, "profile"),
+        insecure=popattr(parsed_args, "insecure"),
+        server_host=popattr(parsed_args, "server_host"),
+        server_port=popattr(parsed_args, "server_port"),
+        auth=popattr(parsed_args, "auth"),
+        organization=popattr(parsed_args, "organization"),
     )
 
-    client.login(popattr(parsed_args, "auth")(client.api_client.configuration.host))
+    try:
+        client = make_client_from_cli(auth_args, logger=logger)
+    except AuthStoreError as e:
+        raise CriticalError(str(e)) from e
+
     client.check_server_version(fail_if_unsupported=False)
-
-    client.organization_slug = popattr(parsed_args, "organization")
-
     return client
 
 
