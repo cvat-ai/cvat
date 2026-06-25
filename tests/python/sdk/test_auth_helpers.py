@@ -209,3 +209,19 @@ def test_make_client_from_cli_env_token_zero_flag(tmp_path, monkeypatch):
     client = make_client_from_cli(_ns(), store=store)
     assert client.url == DEFAULT_SERVER
     assert client.logged_in_with.token == "env-tok"
+
+
+def test_public_exports():
+    import cvat_sdk
+    import cvat_sdk.core
+
+    for name in (
+        "AuthStore",
+        "ProfileEntry",
+        "get_auth_store_path",
+        "make_client_from_cli",
+        "make_client_from_profile",
+        "resolve_server_host",
+    ):
+        assert hasattr(cvat_sdk, name), f"cvat_sdk.{name} missing"
+        assert hasattr(cvat_sdk.core, name), f"cvat_sdk.core.{name} missing"
