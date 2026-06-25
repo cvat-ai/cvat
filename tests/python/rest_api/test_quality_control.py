@@ -22,8 +22,8 @@ from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
-    CollectionSimpleFilterTestBase,
     DEFAULT_RETRIES,
+    CollectionSimpleFilterTestBase,
     create_task,
     invite_user_to_org,
     register_new_user,
@@ -1305,9 +1305,7 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
             return parent_type, [s for s in self.samples if s["project_id"]]
         elif field == "project_id":
             project_id = self._find_valid_field_value(self.samples, field_path=["project_id"])
-            project_task_ids = {
-                t["id"] for t in self.task_samples if t["project_id"] == project_id
-            }
+            project_task_ids = {t["id"] for t in self.task_samples if t["project_id"] == project_id}
             return project_id, [
                 s
                 for s in self.samples
