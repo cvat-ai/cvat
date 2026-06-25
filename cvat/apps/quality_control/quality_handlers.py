@@ -513,15 +513,8 @@ class RequirementHandler(ABC):
             models.QualityRequirementAnnotationType.SKELETON_KEYPOINT: [dm.AnnotationType.points],
             models.QualityRequirementAnnotationType.POINTS: [dm.AnnotationType.points],
             models.QualityRequirementAnnotationType.POLYLINE: [dm.AnnotationType.polyline],
-            # Masks and polygons are compared together by the comparator.
-            models.QualityRequirementAnnotationType.MASK: [
-                dm.AnnotationType.mask,
-                dm.AnnotationType.polygon,
-            ],
-            models.QualityRequirementAnnotationType.POLYGON: [
-                dm.AnnotationType.polygon,
-                dm.AnnotationType.mask,
-            ],
+            models.QualityRequirementAnnotationType.MASK: [dm.AnnotationType.mask],
+            models.QualityRequirementAnnotationType.POLYGON: [dm.AnnotationType.polygon],
             models.QualityRequirementAnnotationType.ELLIPSE: [dm.AnnotationType.ellipse],
         }
         return mapping.get(self.requirement.annotation_type, [])
