@@ -80,13 +80,32 @@ def default_auth_factory() -> Callable[[str], Credentials]:
     return get_auth_factory(getpass.getuser())
 
 
+def resolve_server_host(cli_value: str | None, store: AuthStore) -> str:
+    """Resolve a server host from CLI input, saved defaults, or the built-in fallback."""
+    if cli_value:
+        return cli_value
+
+    default = store.get_default_profile()
+    if default is not None:
+        return default[1].server
+
+    return store.get_default_server() or DEFAULT_SERVER
+
+
 class AuthStore:
     """Reads/writes the persistent auth.json config file, enforcing 0600/0700 permissions."""
 
-    def __init__(self, config_file_path: Path | None = None) -> None:
-        self._path = (
-            Path(config_file_path) if config_file_path is not None else get_auth_store_path()
-        )
+    def __init__(
+        self,
+        path: Path | None = None,
+        *,
+        config_file_path: Path | None = None,
+    ) -> None:
+        if path is not None and config_file_path is not None:
+            raise TypeError("'path' and 'config_file_path' cannot be used together")
+
+        store_path = path if path is not None else config_file_path
+        self._path = Path(store_path) if store_path is not None else get_auth_store_path()
         self._doc: dict | None = None
 
     @property

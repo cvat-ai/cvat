@@ -16,7 +16,12 @@ from typing import Any
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
-from cvat_sdk.core.auth import CVAT_ACCESS_TOKEN_ENV_VAR, default_auth_factory, get_auth_factory
+from cvat_sdk.core.auth import (
+    CVAT_ACCESS_TOKEN_ENV_VAR,
+    DEFAULT_SERVER,
+    default_auth_factory,
+    get_auth_factory,
+)
 from cvat_sdk.core.client import Client, Config
 
 from ..version import VERSION
@@ -26,6 +31,56 @@ from .utils import popattr
 
 class CriticalError(Exception):
     pass
+
+
+def add_cli_parser_args(parser: argparse.ArgumentParser) -> None:
+    """Add the standard auth-related global args for the CLI."""
+    parser.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Allows to disable SSL certificate check",
+    )
+    parser.add_argument(
+        "--auth",
+        type=get_auth_factory,
+        metavar="USER[:PASS]",
+        default=None,
+        help=textwrap.dedent(
+            """\
+            User and password to use for authentication;
+            supports the PASS environment variable or a password prompt.
+            A Personal Access Token (PAT) can be supplied via the {} environment
+            variable, or saved as a profile (see 'cvat-cli profile').
+            """
+        ).format(CVAT_ACCESS_TOKEN_ENV_VAR),
+    )
+    parser.add_argument(
+        "--server-host",
+        type=str,
+        default=None,
+        help="host (default: the active profile, default_server, or %s)" % DEFAULT_SERVER,
+    )
+    parser.add_argument(
+        "--server-port",
+        type=int,
+        default=None,
+        help="port (default: 80 for http and 443 for https connections)",
+    )
+    parser.add_argument(
+        "--organization",
+        "--org",
+        metavar="SLUG",
+        help="""short name (slug) of the organization
+                to use when listing or creating resources;
+                set to blank string to use the personal workspace""",
+    )
+    parser.add_argument(
+        "--profile",
+        metavar="NAME",
+        default=None,
+        help="use a saved profile (server + credential); see 'cvat-cli profile list'."
+        " Mutually exclusive with --server-host/--server-port/--auth.",
+    )
 
 
 def configure_common_arguments(parser: argparse.ArgumentParser) -> None:

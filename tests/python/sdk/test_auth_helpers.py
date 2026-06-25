@@ -4,8 +4,12 @@
 
 from cvat_sdk.core.auth import (
     CVAT_ACCESS_TOKEN_ENV_VAR,
+    DEFAULT_SERVER,
+    AuthStore,
+    ProfileEntry,
     default_auth_factory,
     get_auth_factory,
+    resolve_server_host,
 )
 from cvat_sdk.core.client import AccessTokenCredentials, PasswordCredentials
 
@@ -24,8 +28,27 @@ def test_default_auth_factory_reads_env_token(monkeypatch):
     assert cred.token == "pat-123"
 
 
-def test_common_reexports_for_backward_compat():
-    from cvat_cli._internal import common
+def test_resolve_server_host_prefers_explicit(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+    assert resolve_server_host("https://explicit", store) == "https://explicit"
 
-    assert common.CVAT_ACCESS_TOKEN_ENV_VAR == CVAT_ACCESS_TOKEN_ENV_VAR
-    assert common.get_auth_factory is get_auth_factory
+
+def test_resolve_server_host_falls_back_to_default_server(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+    store.set_default_server("https://staging.example.com")
+    assert resolve_server_host(None, store) == "https://staging.example.com"
+
+
+def test_resolve_server_host_builtin_default(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+    assert resolve_server_host(None, store) == DEFAULT_SERVER
+
+
+def test_resolve_server_host_uses_default_profile_server(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+    store.add_profile(
+        "p",
+        ProfileEntry(server="https://prof", token="t", created_date="2026-01-01T00:00:00+00:00"),
+        set_default=True,
+    )
+    assert resolve_server_host(None, store) == "https://prof"
