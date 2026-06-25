@@ -32,6 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 masks = ["numpy>=2"]
 pytorch = ["torch", "torchvision", "scikit-image>=0.24", "cvat_sdk[masks]"]
+twelvelabs = ["twelvelabs>=1.2.8"]
 
 [project.urls]
 homepage = "https://github.com/cvat-ai/cvat"

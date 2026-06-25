@@ -476,6 +476,58 @@ This AA function uses torchvision's keypoint detection models.
 It produces skeleton annotations.
 Keypoints which the model marks as invisible will be marked as occluded in CVAT.
 
+## Video auto-annotation with TwelveLabs Pegasus
+
+This layer also includes a task-level helper that uses the
+[TwelveLabs](https://twelvelabs.io) Pegasus video-understanding model
+to annotate a video task.
+
+Unlike the torchvision functions above, Pegasus reasons about a whole video
+rather than individual frames, so it is not a per-frame detection function and
+is not used via `annotate_task` or the CLI `auto-annotate` command. Instead, it
+exposes its own `annotate_task` method that sends the task's source video to the
+TwelveLabs API, asks Pegasus to enumerate the distinct events in the video
+together with their timestamps, and turns each event into a tag placed on the
+corresponding frame. Event labels are matched to task labels by name, the same
+way as for the detection functions.
+
+To use it, install CVAT SDK with the `twelvelabs` extra and
+[get a TwelveLabs API key](https://twelvelabs.io) (there is a free tier):
+
+```
+$ pip install "cvat-sdk[twelvelabs]"
+$ export TWELVELABS_API_KEY=<your key>
+```
+
+Then, from Python:
+
+```python
+from cvat_sdk import make_client
+from cvat_sdk.auto_annotation.functions.twelvelabs_pegasus import create as create_pegasus
+
+# The video must be reachable by the TwelveLabs API, e.g. as a public URL.
+func = create_pegasus(video_url="https://example.com/my-video.mp4")
+
+with make_client("http://localhost", credentials=("user", "password")) as client:
+    # fps is used to map event timestamps to frame numbers; if omitted, all
+    # tags are placed on the first frame.
+    func.annotate_task(client, 12345, fps=30)
+```
+
+`create` accepts the following parameters:
+
+- `video_url` (`str`) - a public HTTP(S) URL to the task's source video.
+- `asset_id` (`str`) - the id of a video asset already uploaded to TwelveLabs.
+  Exactly one of `video_url` and `asset_id` must be provided.
+- `api_key` (`str`) - the TwelveLabs API key.
+  Defaults to the `TWELVELABS_API_KEY` environment variable.
+- `model_name` (`str`) - the Pegasus model to use. Defaults to `pegasus1.5`.
+- `prompt` (`str`) - the prompt used to extract events. A sensible default is
+  provided.
+- `max_tokens` (`int`) - the maximum number of output tokens. Defaults to 2048.
+- `default_label` (`str`) - the label to fall back to for events whose label
+  does not match any task label. Defaults to `event`.
+
 ## Additional AA functions
 
 The CVAT source repository contains additional predefined auto-annotation functions
