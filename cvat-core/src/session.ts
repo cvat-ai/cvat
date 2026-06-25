@@ -249,13 +249,14 @@ function buildDuplicatedAPI(prototype): void {
         }),
         frames: Object.freeze({
             value: {
-                async get(frame, isPlaying = false, step = 1) {
+                async get(frame, isPlaying = false, step = 1, dataQuality = false) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.get,
                         frame,
                         isPlaying,
                         step,
+                        dataQuality,
                     );
                     return result;
                 },
@@ -475,7 +476,7 @@ export class Session {
     };
 
     public frames: {
-        get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
+        get: (frame: number, isPlaying?: boolean, step?: number, dataQuality?: boolean) => Promise<FrameData>;
         delete: (frame: number) => Promise<void>;
         restore: (frame: number) => Promise<void>;
         save: () => Promise<FramesMetaData[]>;

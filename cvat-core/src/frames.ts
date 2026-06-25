@@ -38,6 +38,7 @@ const frameDataCache: Record<string, {
     }>;
     getChunk: (chunkIndex: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
     getMeta: () => Promise<FramesMetaData>;
+    currentChunkQuality: ChunkQuality;
 }> = {};
 
 // frame meta data storage by job id
@@ -346,6 +347,7 @@ export class FrameData {
     public readonly relatedFiles: number;
     public readonly deleted: boolean;
     public readonly jobID: number;
+    public readonly preferOriginalQuality: boolean;
 
     constructor({
         width,
@@ -354,6 +356,7 @@ export class FrameData {
         jobID,
         frameNumber,
         deleted,
+        preferOriginalQuality = false,
         related_files: relatedFiles,
     }) {
         Object.defineProperties(
@@ -385,6 +388,10 @@ export class FrameData {
                 },
                 deleted: {
                     value: deleted,
+                    writable: false,
+                },
+                preferOriginalQuality: {
+                    value: preferOriginalQuality,
                     writable: false,
                 },
             }),
@@ -463,6 +470,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
         } = frameDataCache[this.jobID];
         const meta = await frameDataCache[this.jobID].getMeta();
 
+        const chunkQuality = this.preferOriginalQuality ? ChunkQuality.ORIGINAL : ChunkQuality.COMPRESSED;
+
         return new Promise<{
             renderWidth: number;
             renderHeight: number;
@@ -515,7 +524,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                             };
 
                             frameDataCache[this.jobID].getChunk(
-                                nextChunkIndex, ChunkQuality.COMPRESSED,
+                                nextChunkIndex,
+                                chunkQuality,
                             ).then((chunk: ArrayBuffer) => {
                                 if (!(this.jobID in frameDataCache)) {
                                     // check if frameDataCache still exist
@@ -578,7 +588,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                 ) => {
                     let wasResolved = false;
                     frameDataCache[this.jobID].getChunk(
-                        chunkIndex, ChunkQuality.COMPRESSED,
+                        chunkIndex,
+                        chunkQuality,
                     ).then((chunk: ArrayBuffer) => {
                         try {
                             if (!(this.jobID in frameDataCache)) {
@@ -907,6 +918,7 @@ export async function getFrame(
     step: number,
     dimension: DimensionType,
     getChunk: (chunkIndex: number, quality: ChunkQuality) => Promise<ArrayBuffer>,
+    preferOriginalQuality: boolean = false,
 ): Promise<FrameData> {
     const dataCacheExists = jobID in frameDataCache;
 
@@ -953,6 +965,7 @@ export async function getFrame(
             latestContextImagesRequest: null,
             contextCache: {},
             getChunk,
+            currentChunkQuality: preferOriginalQuality ? ChunkQuality.ORIGINAL : ChunkQuality.COMPRESSED,
             getMeta: () => {
                 const cached = frameMetaCache[jobID];
                 if (!(cached instanceof Promise)) {
@@ -987,6 +1000,13 @@ export async function getFrame(
     frameDataCache[jobID].decodeForward = isPlaying;
     frameDataCache[jobID].forwardStep = step;
 
+    const requestedChunkQuality = preferOriginalQuality ? ChunkQuality.ORIGINAL : ChunkQuality.COMPRESSED;
+    if (frameDataCache[jobID].currentChunkQuality !== requestedChunkQuality) {
+        // Avoid reusing already-decoded chunks from the previous quality mode.
+        frameDataCache[jobID].provider.cleanup(Number.MAX_SAFE_INTEGER);
+        frameDataCache[jobID].currentChunkQuality = requestedChunkQuality;
+    }
+
     const meta = await frameDataCache[jobID].getMeta();
 
     return new FrameData({
@@ -997,6 +1017,7 @@ export async function getFrame(
         frameNumber: frame,
         deleted: frame in meta.deletedFrames,
         jobID,
+        preferOriginalQuality,
     });
 }
 

@@ -57,6 +57,7 @@ export enum SettingsActionTypes {
     SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
     SWITCH_SHOWING_DELETED_FRAMES = 'SWITCH_SHOWING_DELETED_FRAMES',
     SWITCH_SHOWING_TAGS_ON_FRAME = 'SWITCH_SHOWING_TAGS_ON_FRAME',
+    SWITCH_DATA_QUALITY = 'SWITCH_DATA_QUALITY',
     ENABLE_IMAGE_FILTER = 'ENABLE_IMAGE_FILTER',
     DISABLE_IMAGE_FILTER = 'DISABLE_IMAGE_FILTER',
     RESET_IMAGE_FILTERS = 'RESET_IMAGE_FILTERS',
@@ -418,6 +419,15 @@ export function switchShowingTagsOnFrame(showTagsOnFrame: boolean): AnyAction {
         type: SettingsActionTypes.SWITCH_SHOWING_TAGS_ON_FRAME,
         payload: {
             showTagsOnFrame,
+        },
+    };
+}
+
+export function switchDataQuality(dataQuality: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_DATA_QUALITY,
+        payload: {
+            dataQuality,
         },
     };
 }

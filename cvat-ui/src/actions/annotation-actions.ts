@@ -762,7 +762,8 @@ export function changeFrameAsync(
                 return;
             }
 
-            const data = await job.frames.get(toFrame, fillBuffer, frameStep);
+            // pass dataQuality from settings to request original or compressed frames
+            const data = await job.frames.get(toFrame, fillBuffer, frameStep, getState().settings.player.dataQuality);
 
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME,
@@ -992,7 +993,7 @@ export function getJobAsync({
 
             const {
                 settings: {
-                    player: { showDeletedFrames },
+                    player: { showDeletedFrames, dataQuality },
                 },
             } = state;
 
@@ -1029,7 +1030,7 @@ export function getJobAsync({
                 )) || job.startFrame;
 
             const isAudio = job.dimension === DimensionType.DIMENSION_1D;
-            const frameData = isAudio ? null : await job.frames.get(frameNumber);
+            const frameData = isAudio ? null : await job.frames.get(frameNumber, false, 1, dataQuality);
             const jobMeta = await cvat.frames.getMeta('job', job.id);
             const frameNumbers = await job.frames.frameNumbers();
             if (frameData) {
