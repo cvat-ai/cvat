@@ -145,6 +145,7 @@ from cvat.apps.engine.serializers import (
     TaskWriteSerializer,
     UserSerializer,
 )
+from cvat.apps.engine.task import ensure_task_is_initialized
 from cvat.apps.engine.tus import TusFile
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import parse_exception_message, sendfile
@@ -1818,10 +1819,7 @@ class TaskViewSet(
             return Response(data)
 
         elif request.method == "POST" or request.method == "OPTIONS":
-            if not self._object.media_type:
-                raise ValidationError(
-                    "This task data has not been initialized yet. Please try again later"
-                )
+            ensure_task_is_initialized(task=self._object)
 
             return self.upload_data(request, append_url_name="append-annotations-chunk")
 
@@ -1974,10 +1972,7 @@ class TaskViewSet(
         prefetch()
 
         if request.method == "PATCH":
-            if not db_task.media_type:
-                raise ValidationError(
-                    "This task data has not been initialized yet. Please try again later"
-                )
+            ensure_task_is_initialized(task=db_task)
 
             if db_task.media_type == models.MediaType.AUDIO:
                 # TODO: introduce support for frame deletion when there's more information

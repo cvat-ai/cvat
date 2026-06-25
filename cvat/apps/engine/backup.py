@@ -65,8 +65,7 @@ from cvat.apps.engine.serializers import (
     TaskReadSerializer,
     ValidationParamsSerializer,
 )
-from cvat.apps.engine.task import JobFileMapping
-from cvat.apps.engine.task import create_thread as create_task
+from cvat.apps.engine.task import JobFileMapping, initialize_task
 from cvat.apps.engine.utils import (
     av_scan_paths,
     transaction_with_repeatable_read,
@@ -1159,7 +1158,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         db_data.save(update_fields=["storage"])
 
-        create_task(self._db_task.pk, data.copy(), is_backup_restore=True)
+        initialize_task(db_task=self._db_task.pk, data=data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 

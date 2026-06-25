@@ -50,6 +50,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
+from cvat.apps.engine.task import ensure_task_is_initialized
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
@@ -1292,10 +1293,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 "This task has no data attached yet. Please set up task data and try again"
             )
 
-        if not task.media_type:
-            raise serializers.ValidationError(
-                "This task data has not been initialized yet. Please try again later"
-            )
+        ensure_task_is_initialized(task=task)
 
         if task.data.validation_mode in (models.ValidationMode.GT_POOL, models.ValidationMode.GT):
             raise serializers.ValidationError(

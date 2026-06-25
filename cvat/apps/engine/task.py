@@ -1554,8 +1554,13 @@ def _create_audio_task_media_descriptors(
     return audio
 
 
+def ensure_task_is_initialized(task: models.Task) -> None:
+    if not task.media_type:
+        raise ValidationError("This task data has not been initialized yet. Please try again later")
+
+
 @transaction.atomic
-def create_thread(
+def initialize_task(
     db_task: int | models.Task,
     data: dict[str, Any],
     *,

@@ -19,7 +19,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
-from cvat.apps.engine.task import create_thread as create_task
+from cvat.apps.engine.task import initialize_task
 from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
 from cvat.utils.django_database import bulk_create
 
@@ -109,7 +109,7 @@ class ProjectAnnotation:
         data["server_files_path"] = files["data_root"]
         data["stop_frame"] = None
 
-        create_task(db_task, data)
+        initialize_task(db_task=db_task, data=data)
         self.db_tasks = (
             models.Task.objects.filter(project__id=self.db_project.id)
             .exclude(data=None)

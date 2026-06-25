@@ -51,6 +51,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.rq import RequestId, define_dependent_job
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.engine.task import ensure_task_is_initialized
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job, take_by
 from cvat.apps.events.handlers import handle_function_call
@@ -1491,10 +1492,7 @@ class RequestViewSet(viewsets.ViewSet):
 
         db_task = Task.objects.get(pk=task)
 
-        if not db_task.media_type:
-            raise serializers.ValidationError(
-                "This task data has not been initialized yet. Please try again later"
-            )
+        ensure_task_is_initialized(task=db_task)
 
         if db_task.media_type == MediaType.AUDIO:
             raise serializers.ValidationError("Auto-annotation is not available in audio tasks")
