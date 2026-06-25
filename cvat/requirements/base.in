@@ -16,7 +16,7 @@ dj-rest-auth[with_social]==7.2.0
 django-allauth[saml]==65.18.0
 
 django-auth-ldap==2.2.0
-django-cors-headers==3.5.0
+django-cors-headers==4.9.0
 django-crum==0.7.9
 django-filter>=25.2
 django-health-check>=3.18.1,<4
