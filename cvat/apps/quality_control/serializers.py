@@ -151,15 +151,6 @@ class QualityReportSummarySerializer(serializers.Serializer):
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
 
-    valid_count = serializers.IntegerField(source="annotations.valid_count")
-    ds_count = serializers.IntegerField(source="annotations.ds_count")
-    gt_count = serializers.IntegerField(source="annotations.gt_count")
-    total_count = serializers.IntegerField(source="annotations.total_count")
-
-    accuracy = serializers.FloatField(source="annotations.accuracy")
-    precision = serializers.FloatField(source="annotations.precision")
-    recall = serializers.FloatField(source="annotations.recall")
-
     tasks = QualityReportTasksSummarySerializer(
         required=False, help_text="Included only in project reports"
     )

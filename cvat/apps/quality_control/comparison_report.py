@@ -830,9 +830,6 @@ class ComparisonReportSummary(ReportNode):
     error_count: int
     conflicts_by_type: dict[AnnotationConflictType, int]
 
-    annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
-
     tasks: ComparisonReportTaskStats | None
     jobs: ComparisonReportJobStats | None
     requirements: ComparisonReportRequirementsSummary | None = None
@@ -865,7 +862,7 @@ class ComparisonReportSummary(ReportNode):
             return super()._value_serializer(v)
 
     @classmethod
-    def from_dict(cls, d: dict):
+    def _from_dict_kwargs(cls, d: dict) -> dict[str, Any]:
         if "total_frames" in d:
             total_frames = d["total_frames"]
         else:
@@ -879,27 +876,43 @@ class ComparisonReportSummary(ReportNode):
         if requirements is None:
             requirements = d.get("targets")
 
-        return cls(
-            frames=d["frames"] if "frames" in d else None,
-            total_frames=total_frames,
+        return {
+            "frames": d["frames"] if "frames" in d else None,
+            "total_frames": total_frames,
             **(dict(frame_count=d["frame_count"]) if "frame_count" in d else {}),
-            conflict_count=d["conflict_count"],
-            warning_count=d.get("warning_count", 0),
-            error_count=d.get("error_count", 0),
-            conflicts_by_type={
+            "conflict_count": d["conflict_count"],
+            "warning_count": d.get("warning_count", 0),
+            "error_count": d.get("error_count", 0),
+            "conflicts_by_type": {
                 _parse_annotation_conflict_type(k): v
                 for k, v in d.get("conflicts_by_type", {}).items()
             },
-            annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
-            annotation_components=(
-                ComparisonReportAnnotationComponentsSummary.from_dict(d["annotation_components"])
-            ),
-            tasks=ComparisonReportTaskStats.from_dict(d["tasks"]) if d.get("tasks") else None,
-            jobs=ComparisonReportJobStats.from_dict(d["jobs"]) if d.get("jobs") else None,
-            requirements=(
+            "tasks": ComparisonReportTaskStats.from_dict(d["tasks"]) if d.get("tasks") else None,
+            "jobs": ComparisonReportJobStats.from_dict(d["jobs"]) if d.get("jobs") else None,
+            "requirements": (
                 ComparisonReportRequirementsSummary.from_dict(requirements)
                 if requirements is not None
                 else None
+            ),
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(**cls._from_dict_kwargs(d))
+
+
+@define(kw_only=True, init=False, slots=False)
+class ComparisonReportRequirementComparisonSummary(ComparisonReportSummary):
+    annotations: ComparisonReportAnnotationsSummary
+    annotation_components: ComparisonReportAnnotationComponentsSummary
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(
+            **cls._from_dict_kwargs(d),
+            annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
+            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
+                d["annotation_components"]
             ),
         )
 
@@ -961,7 +974,7 @@ class ComparisonReportFrameSummary(ReportNode):
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReportRequirementSummary(ReportNode):
     parameters: dict[str, Any]
-    comparison_summary: ComparisonReportSummary
+    comparison_summary: ComparisonReportRequirementComparisonSummary
     frame_results: dict[int, ComparisonReportFrameSummary] | None
 
     @property
@@ -977,7 +990,9 @@ class ComparisonReportRequirementSummary(ReportNode):
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementSummary:
         return cls(
             parameters=d.get("parameters", {}),
-            comparison_summary=ComparisonReportSummary.from_dict(d["comparison_summary"]),
+            comparison_summary=ComparisonReportRequirementComparisonSummary.from_dict(
+                d["comparison_summary"]
+            ),
             frame_results=(
                 {
                     int(k): ComparisonReportFrameSummary.from_dict(v)

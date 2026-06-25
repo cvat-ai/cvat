@@ -1107,9 +1107,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert group_annotations["extra_count"] == 0
         assert group_annotations["total_count"] == 1
 
-        total_annotations = report_data["comparison_summary"]["annotations"]
-        assert total_annotations["valid_count"] == 1
-        assert total_annotations["total_count"] == 1
+        assert "annotations" not in report_data["comparison_summary"]
         assert report_data["comparison_summary"]["conflict_count"] == 0
 
     def test_task_report_metrics_change_after_gt_annotations_change(self, admin_user):
@@ -1164,7 +1162,17 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         initial_report = self.create_quality_report(user=admin_user, task_id=task_id)
         assert initial_report["summary"]["conflict_count"] == 0
-        assert initial_report["summary"]["valid_count"] == 1
+        assert "valid_count" not in initial_report["summary"]
+        initial_item = next(
+            item
+            for item in initial_report["summary"]["requirements"]["items"]
+            if item["name"] == requirement_name
+        )
+        assert initial_item["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
 
         with make_api_client(admin_user) as api_client:
             api_client.jobs_api.partial_update_annotations(
@@ -1186,7 +1194,15 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             changed_report["summary"]["conflict_count"]
             > initial_report["summary"]["conflict_count"]
         )
-        assert changed_report["summary"]["gt_count"] > initial_report["summary"]["gt_count"]
+        changed_item = next(
+            item
+            for item in changed_report["summary"]["requirements"]["items"]
+            if item["name"] == requirement_name
+        )
+        assert (
+            changed_item["score_components"]["missing_count"]
+            > initial_item["score_components"]["missing_count"]
+        )
 
     def test_task_report_filter_does_not_match_attribute_name_and_value_from_different_attributes(
         self, admin_user
@@ -1251,7 +1267,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "annotations"
         ]
         assert group_annotations["total_count"] == 0
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 0
+        assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_data_applies_attribute_comparison_rules(self, admin_user):
         (
@@ -1463,7 +1479,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             ]
             == 1
         )
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 2
+        assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_counts_enabled_intermediate_requirements(self, admin_user):
         (
@@ -1578,7 +1594,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             ]
             == 1
         )
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 2
+        assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_data_contains_groups_and_requirements(self, admin_user):
         task_id, _ = create_task(
@@ -1717,7 +1733,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report_summary = report_data["comparison_summary"]
         assert report_summary["warning_count"] == 0
         assert report_summary["error_count"] == report_summary["conflict_count"]
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
+        assert "annotations" not in report_summary
 
     def test_project_report_summary_counts_completed_jobs_and_tasks(self, admin_user):
         with make_api_client(admin_user) as api_client:
@@ -1885,7 +1901,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         with ZipFile(BytesIO(response.content)) as archive:
             archive_entries = set(archive.namelist())
             assert "manifest.json" in archive_entries
-            assert "overall.csv" in archive_entries
+            assert "overall.csv" not in archive_entries
 
             manifest = json.loads(archive.read("manifest.json"))
             assert manifest["report_id"] == report["id"]
@@ -1899,11 +1915,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             assert disabled_requirement_id not in group_matrices
             assert group_matrices[enabled_requirement_id]["name"] == enabled_requirement_name
 
-            overall_csv = archive.read("overall.csv").decode()
             enabled_group_csv = archive.read(
                 group_matrices[enabled_requirement_id]["path"]
             ).decode()
-            assert "ds \\ gt" in overall_csv
             assert "ds \\ gt" in enabled_group_csv
 
         response = get_method(
@@ -2068,4 +2082,4 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
         }
         assert report["summary"]["requirements"] == expected_requirements_summary
         assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
+        assert "annotations" not in report_data["comparison_summary"]

@@ -4646,8 +4646,7 @@ paths:
               schema:
                 type: string
                 format: binary
-          description: ZIP archive with the overall and per-requirement confusion
-            matrices
+          description: ZIP archive with per-requirement confusion matrices
   /api/quality/reports/{id}/confusion/matrix:
     get:
       operationId: quality_retrieve_report_requirement_confusion
@@ -11202,23 +11201,6 @@ components:
           type: object
           additionalProperties:
             type: integer
-        valid_count:
-          type: integer
-        ds_count:
-          type: integer
-        gt_count:
-          type: integer
-        total_count:
-          type: integer
-        accuracy:
-          type: number
-          format: double
-        precision:
-          type: number
-          format: double
-        recall:
-          type: number
-          format: double
         tasks:
           allOf:
           - $ref: '#/components/schemas/QualityReportTasksSummary'
@@ -11230,17 +11212,10 @@ components:
         requirements:
           $ref: '#/components/schemas/QualityReportRequirementsSummary'
       required:
-      - accuracy
       - conflict_count
       - conflicts_by_type
-      - ds_count
       - error_count
-      - gt_count
-      - precision
-      - recall
-      - total_count
       - total_frames
-      - valid_count
       - validation_frame_share
       - validation_frames
       - warning_count

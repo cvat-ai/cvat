@@ -451,7 +451,7 @@ class QualityReportViewSet(
         responses={
             "200": OpenApiResponse(
                 response=OpenApiTypes.BINARY,
-                description="ZIP archive with the overall and per-requirement confusion matrices",
+                description="ZIP archive with per-requirement confusion matrices",
             )
         },
     )

@@ -35,6 +35,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
+    ComparisonReportRequirementComparisonSummary,
     ComparisonReportRequirementsSummary,
     ComparisonReportRequirementSummary,
     ComparisonReportRequirementSummaryItem,
@@ -384,7 +385,7 @@ def build_requirement_report(
 
     return ComparisonReportRequirementSummary(
         parameters=serialize_requirement_parameters(requirement),
-        comparison_summary=ComparisonReportSummary(
+        comparison_summary=ComparisonReportRequirementComparisonSummary(
             frames=sorted(frame_results),
             total_frames=total_frames,
             conflict_count=len(conflicts),
@@ -1366,17 +1367,11 @@ class DatasetQualityEstimator:
         dict[int, ComparisonReportFrameSummary],
         list[int],
         list[AnnotationConflict],
-        ComparisonReportAnnotationsSummary,
-        ComparisonReportAnnotationComponentsSummary,
     ]:
         all_frame_results: dict[int, ComparisonReportFrameSummary] = {}
         frame_result_counts: dict[int, int] = {}
         intersection_frames = []
         conflicts: list[AnnotationConflict] = []
-
-        total_annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
-        total_annotation_components = ComparisonReportAnnotationComponentsSummary.create_empty()
-        mean_ious = []
 
         enabled_requirement_names = {
             requirement.name
@@ -1403,19 +1398,13 @@ class DatasetQualityEstimator:
 
         for frame_result in all_frame_results.values():
             conflicts += frame_result.conflicts
-            self._merge_annotations_summary(total_annotations_summary, frame_result.annotations)
-            total_annotation_components.accumulate(frame_result.annotation_components)
-            mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
-        total_annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
         conflicts = deduplicate_annotation_conflicts(conflicts)
 
         return (
             all_frame_results,
             intersection_frames,
             conflicts,
-            total_annotations_summary,
-            total_annotation_components,
         )
 
     def generate_report(self) -> ComparisonReport:
@@ -1425,8 +1414,6 @@ class DatasetQualityEstimator:
             all_frame_results,
             intersection_frames,
             conflicts,
-            total_annotations_summary,
-            total_annotation_components,
         ) = self._aggregate_all_results()
 
         group_reports = {
@@ -1447,8 +1434,6 @@ class DatasetQualityEstimator:
                 warning_count=0,
                 error_count=len(conflicts),
                 conflicts_by_type=Counter(c.type for c in conflicts),
-                annotations=total_annotations_summary,
-                annotation_components=total_annotation_components,
                 tasks=None,
                 jobs=None,
                 requirements=requirement_stats,

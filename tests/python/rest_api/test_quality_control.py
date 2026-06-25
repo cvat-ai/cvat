@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import math
 from collections.abc import Callable, Collection, Iterable
 from copy import deepcopy
 from functools import partial
@@ -367,6 +366,22 @@ class _PermissionTestBase:
         "job": "job_id",
     }
 
+    @staticmethod
+    def strip_root_annotation_summary_fields(report: dict[str, Any]) -> dict[str, Any]:
+        report = deepcopy(report)
+        for field in (
+            "valid_count",
+            "ds_count",
+            "gt_count",
+            "total_count",
+            "accuracy",
+            "precision",
+            "recall",
+        ):
+            report["summary"].pop(field, None)
+
+        return report
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListQualityReports(_PermissionTestBase):
@@ -392,7 +407,10 @@ class TestListQualityReports(_PermissionTestBase):
             assert response.status == HTTPStatus.FORBIDDEN
 
     def test_can_list_quality_reports(self, admin_user, quality_reports):
-        reports = sorted(quality_reports, key=lambda r: -r["id"])
+        reports = sorted(
+            [self.strip_root_annotation_summary_fields(report) for report in quality_reports],
+            key=lambda r: -r["id"],
+        )
 
         self._test_list_reports_200(admin_user, sort="-id", expected_data=reports)
 
@@ -492,7 +510,10 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_class, admin_user, quality_reports, jobs, tasks, projects):
         self.user = admin_user
-        self.samples = quality_reports
+        self.samples = [
+            _PermissionTestBase.strip_root_annotation_summary_fields(report)
+            for report in quality_reports
+        ]
         self.job_samples = jobs
         self.task_samples = tasks
         self.project_samples = projects
@@ -1553,14 +1574,13 @@ class TestQualityReportContents(_PermissionTestBase):
         assert all(summary["conflicts_by_type"].values())
         assert summary["conflict_count"] == sum(summary["conflicts_by_type"].values())
         assert summary["conflict_count"] == summary["warning_count"] + summary["error_count"]
-        assert 0 < summary["valid_count"]
-        assert summary["valid_count"] < summary["ds_count"]
-        assert summary["valid_count"] < summary["gt_count"]
         assert summary["frame_count"] == gt_job["frame_count"]
         assert summary["frame_share"] == summary["frame_count"] / task["size"]
 
     def test_accumulation_annotation_conflicts_multiple_jobs(self, admin_user):
-        self.enable_default_quality_requirement(admin_user, self.demo_task_id_multiple_jobs)
+        requirement = self.enable_default_quality_requirement(
+            admin_user, self.demo_task_id_multiple_jobs
+        )
         report = self.create_quality_report(
             user=admin_user, task_id=self.demo_task_id_multiple_jobs
         )
@@ -1568,7 +1588,10 @@ class TestQualityReportContents(_PermissionTestBase):
             _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
         report_data = json.loads(response.data)
-        task_confusion_matrix = report_data["comparison_summary"]["annotations"][
+        assert "annotations" not in report_data["comparison_summary"]
+
+        group_report = report_data["groups"][requirement["name"]]
+        task_confusion_matrix = group_report["comparison_summary"]["annotations"][
             "confusion_matrix"
         ]["rows"]
 
@@ -1577,9 +1600,9 @@ class TestQualityReportContents(_PermissionTestBase):
             "7": [[1, 0, 0], [0, 0, 0], [0, 0, 0]],
             "4": [[0, 0, 1], [0, 0, 0], [1, 0, 0]],
         }
-        for frame_id in report_data["frame_results"].keys():
+        for frame_id in group_report["frame_results"].keys():
             assert (
-                report_data["frame_results"][frame_id]["annotations"]["confusion_matrix"]["rows"]
+                group_report["frame_results"][frame_id]["annotations"]["confusion_matrix"]["rows"]
                 == expected_frame_confusion_matrix[frame_id]
             )
 
@@ -1628,7 +1651,7 @@ class TestQualityReportContents(_PermissionTestBase):
         task_id = next(t["id"] for t in tasks if t["validation_mode"] == "gt_pool")
         gt_job = next(j for j in jobs if j["task_id"] == task_id if j["type"] == "ground_truth")
         gt_job_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
-        self.enable_default_quality_requirement(admin_user, task_id)
+        requirement = self.enable_default_quality_requirement(admin_user, task_id)
 
         with make_api_client(admin_user) as api_client:
             gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
@@ -1739,7 +1762,7 @@ class TestQualityReportContents(_PermissionTestBase):
             if not t["validation_mode"] and t["size"] >= 5 and not t["project_id"]
         )
         label_id = next(l["id"] for l in labels if l.get("task_id") == task_id)
-        self.enable_default_quality_requirement(admin_user, task_id)
+        requirement = self.enable_default_quality_requirement(admin_user, task_id)
 
         with make_api_client(admin_user) as api_client:
             gt_frames = [1, 3]
@@ -1832,8 +1855,18 @@ class TestQualityReportContents(_PermissionTestBase):
             report = self.create_quality_report(user=admin_user, task_id=task_id)
 
             assert report["summary"]["conflict_count"] == 0
-            assert report["summary"]["valid_count"] == 2
-            assert report["summary"]["total_count"] == 2
+            assert "valid_count" not in report["summary"]
+            item = next(
+                item
+                for item in report["summary"]["requirements"]["items"]
+                if item["name"] == requirement["name"]
+            )
+            assert item["score"] == 1.0
+            assert item["score_components"] == {
+                "valid_count": 2,
+                "missing_count": 0,
+                "extra_count": 0,
+            }
 
     def test_project_report_aggregates_nested_task_reports(self, quality_reports, tasks, jobs):
         project_report = max(
@@ -1856,23 +1889,7 @@ class TestQualityReportContents(_PermissionTestBase):
         ]
         assert len(task_reports) == len(tasks_with_configured_validation)
 
-        # Base fields of confusion matrix are scaled by inverse task validation frame share.
-        # This is needed to make the derived averaged metrics (accuracy etc.)
-        # for projects consistent with the averaged metrics in tasks in cases
-        # with different validation frame shares in project tasks
-        task_weights = {
-            r["task_id"]: 1 / r["summary"]["validation_frame_share"] for r in task_reports
-        }
         summary = project_report["summary"]
-        for confusion_field in ["valid_count", "total_count", "ds_count", "gt_count"]:
-            assert summary[confusion_field] == sum(
-                math.ceil(r["summary"][confusion_field] * task_weights[r["task_id"]])
-                for r in task_reports
-            )
-
-        assert summary["accuracy"] == summary["valid_count"] / summary["total_count"]
-        assert summary["precision"] == summary["valid_count"] / summary["ds_count"]
-        assert summary["recall"] == summary["valid_count"] / summary["gt_count"]
 
         # other summary fields are simply aggregated
         for summary_field in [
@@ -1952,7 +1969,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
         report = self.create_quality_report(user=admin_user, project_id=project_id)
 
         assert report["project_id"] == project_id
-        assert report["summary"]["total_count"] == 0
+        assert "total_count" not in report["summary"]
         assert report["summary"]["tasks"]["total"] == 0
 
     def test_can_create_project_report_when_there_are_tasks_without_validation(
