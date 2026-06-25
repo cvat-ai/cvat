@@ -3319,6 +3319,11 @@ class UserViewSet(
 
         return queryset
 
+    @transaction.atomic
+    @db_utils.set_local_lock_timeout_decorator()
+    def perform_destroy(self, instance: User) -> None:
+        return super().perform_destroy(instance)
+
     def get_serializer_class(self):
         # Early exit for drf-spectacular compatibility
         if getattr(self, "swagger_fake_view", False):
