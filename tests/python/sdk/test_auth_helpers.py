@@ -5,7 +5,6 @@
 import argparse
 
 import pytest
-
 from cvat_sdk.core.auth import (
     CVAT_ACCESS_TOKEN_ENV_VAR,
     DEFAULT_SERVER,
@@ -168,9 +167,7 @@ def test_make_client_from_cli_zero_flag_uses_default_profile(tmp_path, monkeypat
     store = AuthStore(path=tmp_path / "auth.json")
     store.add_profile(
         "p",
-        ProfileEntry(
-            server="https://prof", token="dpat", created_date="2026-01-01T00:00:00+00:00"
-        ),
+        ProfileEntry(server="https://prof", token="dpat", created_date="2026-01-01T00:00:00+00:00"),
         set_default=True,
     )
     monkeypatch.setattr(auth_mod, "Client", _FakeClient)
@@ -180,17 +177,13 @@ def test_make_client_from_cli_zero_flag_uses_default_profile(tmp_path, monkeypat
     assert client.logged_in_with.token == "dpat"
 
 
-def test_make_client_from_cli_explicit_host_does_not_borrow_profile_token(
-    tmp_path, monkeypatch
-):
+def test_make_client_from_cli_explicit_host_does_not_borrow_profile_token(tmp_path, monkeypatch):
     from cvat_sdk.core import auth as auth_mod
 
     store = AuthStore(path=tmp_path / "auth.json")
     store.add_profile(
         "p",
-        ProfileEntry(
-            server="https://prof", token="dpat", created_date="2026-01-01T00:00:00+00:00"
-        ),
+        ProfileEntry(server="https://prof", token="dpat", created_date="2026-01-01T00:00:00+00:00"),
         set_default=True,
     )
     monkeypatch.setattr(auth_mod, "Client", _FakeClient)

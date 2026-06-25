@@ -17,7 +17,6 @@ from pathlib import Path
 
 import attrs
 import platformdirs
-
 from cvat_sdk.core.client import (
     AccessTokenCredentials,
     Client,
@@ -100,9 +99,7 @@ def resolve_server_host(cli_value: str | None, store: AuthStore) -> str:
     return store.get_default_server() or DEFAULT_SERVER
 
 
-def make_client_from_profile(
-    name: str | None = None, *, store: AuthStore | None = None
-) -> Client:
+def make_client_from_profile(name: str | None = None, *, store: AuthStore | None = None) -> Client:
     """Build and authenticate a Client from a saved profile."""
     store = store or AuthStore()
 
@@ -169,9 +166,7 @@ def make_client_from_cli(
 
     if explicit_host:
         url = (
-            server_host
-            if server_host is not None
-            else store.get_default_server() or DEFAULT_SERVER
+            server_host if server_host is not None else store.get_default_server() or DEFAULT_SERVER
         )
         if server_port:
             url = f"{url}:{server_port}"

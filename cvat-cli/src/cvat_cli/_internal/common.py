@@ -45,14 +45,12 @@ def add_cli_parser_args(parser: argparse.ArgumentParser) -> None:
         type=get_auth_factory,
         metavar="USER[:PASS]",
         default=None,
-        help=textwrap.dedent(
-            """\
+        help=textwrap.dedent("""\
             User and password to use for authentication;
             supports the PASS environment variable or a password prompt.
             A Personal Access Token (PAT) can be supplied via the {} environment
             variable, or saved as a profile (see 'cvat-cli profile').
-            """
-        ).format(CVAT_ACCESS_TOKEN_ENV_VAR),
+            """).format(CVAT_ACCESS_TOKEN_ENV_VAR),
     )
     parser.add_argument(
         "--server-host",
