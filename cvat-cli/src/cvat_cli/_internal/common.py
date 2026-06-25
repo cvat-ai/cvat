@@ -18,7 +18,6 @@ import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk.core.auth import (
     CVAT_ACCESS_TOKEN_ENV_VAR,
     DEFAULT_SERVER,
-    default_auth_factory,
     get_auth_factory,
     make_client_from_cli,
 )

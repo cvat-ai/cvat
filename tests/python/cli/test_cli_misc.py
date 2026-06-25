@@ -131,11 +131,11 @@ class TestCliMisc(TestCliBase):
 
         from getpass import getuser as original_getuser
 
-        from cvat_cli._internal.common import default_auth_factory
+        from cvat_sdk.core.auth import default_auth_factory
 
         with (
             mock.patch(
-                "cvat_cli._internal.common.default_auth_factory", wraps=default_auth_factory
+                "cvat_sdk.core.auth.default_auth_factory", wraps=default_auth_factory
             ) as mock_auth_factory,
             mock.patch("getpass.getuser", wraps=original_getuser) as mock_getuser,
             mock.patch("getpass.getpass", return_value=self.password) as mock_getpass,
@@ -151,11 +151,11 @@ class TestCliMisc(TestCliBase):
 
         from getpass import getuser as original_getpass
 
-        from cvat_cli._internal.common import default_auth_factory
+        from cvat_sdk.core.auth import default_auth_factory
 
         with (
             mock.patch(
-                "cvat_cli._internal.common.default_auth_factory", wraps=default_auth_factory
+                "cvat_sdk.core.auth.default_auth_factory", wraps=default_auth_factory
             ) as mock_auth_factory,
             mock.patch("getpass.getpass", wraps=original_getpass) as mock_getpass,
         ):
