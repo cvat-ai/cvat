@@ -27,6 +27,8 @@ const frameDataCache: Record<string, {
     latestContextImagesRequest: number | null;
     provider: FrameDecoder;
     prefetchAnalyzer: PrefetchAnalyzer;
+    compressedDecodedBlocksCacheSize: number;
+    originalDecodedBlocksCacheSize: number;
     decodedBlocksCacheSize: number;
     activeChunkRequest: Promise<void> | null;
     activeContextRequest: Promise<Record<number, ImageBitmap>> | null;
@@ -46,6 +48,27 @@ const frameDataCache: Record<string, {
 
 function getBlockType(chunkType: 'video' | 'imageset'): BlockType {
     return chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
+}
+
+function estimateDecodedBlocksCacheSize(
+    meta: FramesMetaData,
+    chunkSize: number,
+    quality: ChunkQuality,
+): number {
+    const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
+    const stdDev = Math.sqrt(
+        meta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
+        meta.frames.length,
+    );
+
+    const memoryBudgetBytes = quality === ChunkQuality.COMPRESSED ?
+        3072 * 1024 * 1024 :
+        2048 * 1024 * 1024;
+
+    return Math.min(
+        Math.floor(memoryBudgetBytes / ((mean + stdDev) * 4 * chunkSize)) || 1,
+        10,
+    );
 }
 
 // frame meta data storage by job id
@@ -949,17 +972,19 @@ export async function getFrame(
     if (!dataCacheExists) {
         const blockType = getBlockType(requestedChunkType);
         const meta = await getFramesMeta('job', jobID);
-
-        const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
-        const stdDev = Math.sqrt(
-            meta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
-            meta.frames.length,
+        const compressedDecodedBlocksCacheSize = estimateDecodedBlocksCacheSize(
+            meta,
+            chunkSize,
+            ChunkQuality.COMPRESSED,
         );
-
-        // limit of decoded frames cache by 2GB
-        const decodedBlocksCacheSize = Math.min(
-            Math.floor((2048 * 1024 * 1024) / ((mean + stdDev) * 4 * chunkSize)) || 1, 10,
+        const originalDecodedBlocksCacheSize = estimateDecodedBlocksCacheSize(
+            meta,
+            chunkSize,
+            ChunkQuality.ORIGINAL,
         );
+        const decodedBlocksCacheSize = requestedChunkQuality === ChunkQuality.COMPRESSED ?
+            compressedDecodedBlocksCacheSize :
+            originalDecodedBlocksCacheSize;
 
         const dataFrameNumberGetter = (frameNumber: number): number => (
             meta.getDataFrameNumber(frameNumber - jobStartFrame)
@@ -982,6 +1007,8 @@ export async function getFrame(
                 dimension,
             ),
             prefetchAnalyzer: new PrefetchAnalyzer(meta, dataFrameNumberGetter),
+            compressedDecodedBlocksCacheSize,
+            originalDecodedBlocksCacheSize,
             decodedBlocksCacheSize,
             activeChunkRequest: null,
             activeContextRequest: null,
@@ -1029,15 +1056,22 @@ export async function getFrame(
     frameDataCache[jobID].compressedChunkType = chunkType;
     frameDataCache[jobID].originalChunkType = originalChunkType;
 
+    const requestedDecodedBlocksCacheSize = requestedChunkQuality === ChunkQuality.COMPRESSED ?
+        frameDataCache[jobID].compressedDecodedBlocksCacheSize :
+        frameDataCache[jobID].originalDecodedBlocksCacheSize;
+
     const currentChunkType = frameDataCache[jobID].currentChunkType;
-    if (currentChunkType !== requestedChunkType) {
+    if (
+        currentChunkType !== requestedChunkType ||
+        frameDataCache[jobID].decodedBlocksCacheSize !== requestedDecodedBlocksCacheSize
+    ) {
         const dataFrameNumberGetter = (frameNumber: number): number => (
             framesMetaData.getDataFrameNumber(frameNumber - frameDataCache[jobID].jobStartFrame)
         );
 
         frameDataCache[jobID].provider = new FrameDecoder(
             getBlockType(requestedChunkType),
-            frameDataCache[jobID].decodedBlocksCacheSize,
+            requestedDecodedBlocksCacheSize,
             (frameNumber: number): number => (
                 framesMetaData.getFrameChunkIndex(dataFrameNumberGetter(frameNumber))
             ),
@@ -1045,6 +1079,7 @@ export async function getFrame(
         );
         frameDataCache[jobID].activeChunkRequest = null;
         frameDataCache[jobID].latestFrameDecodeRequest = null;
+        frameDataCache[jobID].decodedBlocksCacheSize = requestedDecodedBlocksCacheSize;
         frameDataCache[jobID].currentChunkType = requestedChunkType;
     } else if (frameDataCache[jobID].currentChunkQuality !== requestedChunkQuality) {
         // Avoid reusing already-decoded chunks from the previous quality mode.

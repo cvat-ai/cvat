@@ -1241,30 +1241,25 @@ class Mpeg4ChunkWriter(IChunkWriter):
     def __init__(self, *, quality: int, dimension: DimensionType) -> None:
         assert dimension == DimensionType.DIM_2D
 
-        # translate inversed range [1:100] to [0:51]
+        # Convert to a scale of 0-51
         quality = round(51 * (100 - quality) / 99)
         super().__init__(quality=quality, dimension=dimension)
 
         self._output_fps = 25
-        # Scale CVAT quality (1-100, higher=better) to H.264 QP (0-51, lower=better)
-        # QP = 51 * (100 - quality) / 100
-        h264_qp = max(0, min(51, int(51 * (100 - self._quality) / 100)))
-        # For x264, CRF (0-51, lower=better); use same QP scaling
-        x264_crf = max(0, min(51, int(51 * (100 - self._quality) / 100)))
         try:
             codec = av.codec.Codec("libopenh264", "w")
             self._codec_name = codec.name
             self._codec_opts = {
                 "profile": "constrained_baseline",
-                "qmin": str(h264_qp),
-                "qmax": str(h264_qp),
+                "qmin": str(quality),
+                "qmax": str(quality),
                 "rc_mode": "buffer",
             }
         except av.codec.codec.UnknownCodecError:
             codec = av.codec.Codec("libx264", "w")
             self._codec_name = codec.name
             self._codec_opts = {
-                "crf": str(x264_crf),
+                "crf": str(quality),
                 "preset": "ultrafast",
             }
 

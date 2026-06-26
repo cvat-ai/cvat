@@ -1034,6 +1034,13 @@ export function getJobAsync({
             const frameData = isAudio ? null : await job.frames.get(frameNumber, false, 1, dataQuality);
             const jobMeta = await cvat.frames.getMeta('job', job.id);
             const frameNumbers = await job.frames.frameNumbers();
+            if (frameData) {
+                try {
+                    await frameData.data();
+                } catch (_error) {
+                    // do nothing, user will be notified when data request is done
+                }
+            }
 
             await job.annotations.clear({ reload: true });
 
