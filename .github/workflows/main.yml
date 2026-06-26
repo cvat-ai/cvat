@@ -39,13 +39,13 @@ jobs:
         run: ./dev/check_changelog_fragments.py
 
       - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
       - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
