@@ -338,6 +338,7 @@ class TestTaskUsecases(TestDatasetExport):
             ),
         ],
     )
+    @pytest.mark.timeout(60)
     def test_can_export_dataset(
         self,
         format_name: str,
