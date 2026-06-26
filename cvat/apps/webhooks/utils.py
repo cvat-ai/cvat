@@ -59,6 +59,7 @@ def get_event_name_and_webhook_payload_from_export_request(
         "target_id": request.target_id,
         "rq_id": request.render(),
         "message": message,
+        "subresource": request.subresource.value,
         **subresource_data,
     }
 
