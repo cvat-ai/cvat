@@ -10,8 +10,9 @@ from django.dispatch import receiver
 from cvat.apps.engine import utils as engine_utils
 from cvat.apps.engine.models import RequestTarget
 from cvat.apps.engine.rq import ExportRequestId, RequestId
-from cvat.apps.engine.signals import request_failed, request_succeeded
 from cvat.apps.events.handlers import organization_id, project_id
+from cvat.apps.redis_handler.signals import request_failed, request_succeeded
+from cvat.apps.redis_handler.utils import RequestStatusEnum
 from cvat.apps.webhooks import services, utils
 from cvat.apps.webhooks.dispatch import batch_add_to_queue
 
@@ -21,7 +22,7 @@ from cvat.apps.webhooks.dispatch import batch_add_to_queue
 def request_completed_event_handler(
     sender: Any,
     request_id: str,
-    status: engine_utils.RequestStatusEnum,
+    status: RequestStatusEnum,
     message: str | None,
     **kwargs,
 ) -> None:

@@ -114,7 +114,16 @@ class AbstractRequestManager(metaclass=ABCMeta):
         self.job_on_failure_callback = None
 
     def init_job_callbacks(self) -> None:
-        """Hook to initialize RQ lifecycle callbacks for the job"""
+        from cvat.apps.redis_handler import utils
+
+        self.job_on_success_callback = Callback(
+            utils.send_request_succeeded_signal,
+            timeout=60,
+        )
+        self.job_on_failure_callback = Callback(
+            utils.send_request_failed_signal,
+            timeout=60,
+        )
 
     def validate_request(self) -> Response | None:
         """Hook to run some validations before processing a request"""

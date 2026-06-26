@@ -9,11 +9,11 @@ from http import HTTPStatus
 
 import requests
 
-from cvat.apps.engine import utils as engine_utils
 from cvat.apps.engine.models import RequestSubresource
 from cvat.apps.engine.rq import ExportRequestId
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.events.handlers import get_request, get_user
+from cvat.apps.redis_handler.utils import RequestStatusEnum
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 
 from .event_type import event_name
@@ -33,7 +33,7 @@ def get_sender(instance) -> dict:
 
 def get_event_name_and_webhook_payload_from_export_request(
     request: ExportRequestId,
-    status: engine_utils.RequestStatusEnum,
+    status: RequestStatusEnum,
     message: str,
 ) -> tuple[str, dict]:
     match request.subresource:

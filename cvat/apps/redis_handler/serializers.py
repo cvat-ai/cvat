@@ -20,9 +20,9 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestAction
 from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta, RequestIdWithOptionalFormat
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.engine.utils import parse_exception_message
 from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
+from cvat.utils.exceptions import parse_exception_message
 
 slogger = ServerLogManager(__name__)
 
