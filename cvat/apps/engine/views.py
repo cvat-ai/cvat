@@ -148,7 +148,7 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.task import ensure_task_is_initialized
 from cvat.apps.engine.tus import TusFile
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import parse_exception_message, sendfile
+from cvat.apps.engine.utils import sendfile
 from cvat.apps.engine.view_utils import (
     get_410_response_for_export_api,
     get_410_response_when_checking_process_status,
@@ -158,6 +158,7 @@ from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 from cvat.utils import django_database as db_utils
+from cvat.utils.exceptions import parse_exception_message
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
