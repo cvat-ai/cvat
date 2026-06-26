@@ -592,7 +592,9 @@ def collect_code_coverage_from_containers():
             docker_exec(container, f"kill -15 {pid}")
             sleep(3)
         else:
-            logger.info(f"No python3 process in {container}, worker likely exited — coverage already flushed")
+            logger.info(
+                f"No python3 process in {container}, worker likely exited — coverage already flushed"
+            )
 
         # get code coverage report
         docker_exec(container, "coverage combine", capture_output=False)
