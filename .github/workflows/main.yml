@@ -217,9 +217,17 @@ jobs:
             docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
             docker logs test_cvat_worker_import_1 > $LOGS_DIR/cvat_worker_import.log
             docker logs test_cvat_worker_annotation_1 > $LOGS_DIR/cvat_worker_annotation.log
+            docker logs test_cvat_worker_reports_1 > $LOGS_DIR/cvat_worker_quality.log
             docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
+            # all remaining workers (any one can fail)
+            docker logs test_cvat_worker_utils_1 > $LOGS_DIR/cvat_worker_utils.log
+            docker logs test_cvat_worker_annotation_1 > $LOGS_DIR/cvat_worker_annotation.log
+            docker logs test_cvat_worker_quality_reports_1 > $LOGS_DIR/cvat_worker_quality_reports.log
+            docker logs test_cvat_worker_consensus_1 > $LOGS_DIR/cvat_worker_consensus.log
+            docker logs test_cvat_worker_webhooks_1 > $LOGS_DIR/cvat_worker_webhooks.log
+            docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
 
-      - name: Uploading "cvat" container logs as an artifact
+
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v7
         with:
