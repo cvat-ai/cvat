@@ -29,8 +29,8 @@
   "panels": [
     {
       "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PDEE91DDB90597936"
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
       },
       "fieldConfig": {
         "defaults": {
@@ -147,22 +147,74 @@
       "targets": [
         {
           "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PDEE91DDB90597936"
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
           },
-          "format": 1,
-          "queryType": "sql",
-          "rawSql": "WITH\n  cur AS (\n    SELECT count() AS v\n    FROM cvat.events\n    WHERE scope = 'send:exception'\n      AND timestamp >= $__fromTime\n      AND timestamp <= $__toTime\n      AND source IN (${sources})\n      AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n  ),\n  prev AS (\n    SELECT count() AS v\n    FROM cvat.events\n    WHERE scope = 'send:exception'\n      AND timestamp >= ($__fromTime - ($__toTime - $__fromTime))\n      AND timestamp < $__fromTime\n      AND source IN (${sources})\n      AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n  )\nSELECT\n  cur.v AS total_errors,\n  if(prev.v = 0, NULL, round((cur.v - prev.v) * 100.0 / prev.v, 2)) AS delta_percent\nFROM cur CROSS JOIN prev",
+          "panelId": 200,
           "refId": "A"
         }
       ],
       "title": "Total Errors",
-      "type": "stat"
+      "type": "stat",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "stats"
+                  }
+                }
+              },
+              {
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "source": true,
+              "category": true,
+              "unique_users": true,
+              "percentage": true,
+              "prev_error_count": true,
+              "prev_unique_users": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "error_count": 0,
+              "delta_percent": 1
+            },
+            "renameByName": {
+              "error_count": "total_errors"
+            }
+          }
+        }
+      ]
     },
     {
       "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PDEE91DDB90597936"
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
       },
       "fieldConfig": {
         "defaults": {
@@ -279,22 +331,75 @@
       "targets": [
         {
           "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PDEE91DDB90597936"
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
           },
-          "format": 1,
-          "queryType": "sql",
-          "rawSql": "WITH\n  cur AS (\n    SELECT uniqExactIf(user_id, isNotNull(user_id)) AS v\n    FROM cvat.events\n    WHERE scope = 'send:exception'\n      AND timestamp >= $__fromTime\n      AND timestamp <= $__toTime\n      AND source IN (${sources})\n      AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n  ),\n  prev AS (\n    SELECT uniqExactIf(user_id, isNotNull(user_id)) AS v\n    FROM cvat.events\n    WHERE scope = 'send:exception'\n      AND timestamp >= ($__fromTime - ($__toTime - $__fromTime))\n      AND timestamp < $__fromTime\n      AND source IN (${sources})\n      AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n  )\nSELECT\n  cur.v AS unique_users_impacted,\n  if(prev.v = 0, NULL, round((cur.v - prev.v) * 100.0 / prev.v, 2)) AS delta_percent\nFROM cur CROSS JOIN prev",
+          "panelId": 200,
           "refId": "A"
         }
       ],
       "title": "Unique Users Impacted",
-      "type": "stat"
+      "type": "stat",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "stats"
+                  }
+                }
+              },
+              {
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "source": true,
+              "category": true,
+              "error_count": true,
+              "percentage": true,
+              "prev_error_count": true,
+              "prev_unique_users": true,
+              "delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "unique_users": 0,
+              "unique_users_delta_percent": 1
+            },
+            "renameByName": {
+              "unique_users": "unique_users_impacted",
+              "unique_users_delta_percent": "delta_percent"
+            }
+          }
+        }
+      ]
     },
     {
       "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PDEE91DDB90597936"
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
       },
       "fieldConfig": {
         "defaults": {
@@ -317,7 +422,26 @@
           },
           "unit": "percent"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "percentage"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show drilldown for ${__data.fields.category}",
+                    "url": "/d/${__dashboard.uid}?${__url_time_range}&${sources:queryparam}&var-category=${__data.fields.category}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 18,
@@ -346,22 +470,84 @@
       "targets": [
         {
           "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PDEE91DDB90597936"
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
           },
-          "format": 1,
-          "queryType": "sql",
-          "rawSql": "WITH base AS (\n  SELECT\n    source,\n    lowerUTF8(JSONExtractString(payload, 'message')) AS msg_lower\n  FROM cvat.events\n  WHERE scope = 'send:exception'\n    AND $__timeFilter(timestamp)\n    AND source IN (${sources})\n    AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n), categorized AS (\n  SELECT\n    multiIf(\n      position(msg_lower, 'network error') > 0, 'Network Error',\n      position(msg_lower, 'bad gateway') > 0, '502 Bad Gateway',\n      position(msg_lower, 'gateway time-out') > 0 OR position(msg_lower, '504 gateway') > 0 OR position(msg_lower, 'code 504 received') > 0 OR position(msg_lower, 'timeout exceeded') > 0 OR position(msg_lower, 'request aborted') > 0, '504 Gateway Timeout',\n      position(msg_lower, 'server error') > 0, '500 Server Error',\n      position(msg_lower, 'no available server') > 0, 'No available server / service unavailable',\n      position(msg_lower, 'redis.exceptions') > 0 OR position(msg_lower, 'kvrocks') > 0, 'Redis / kvrocks',\n      position(msg_lower, 'django.db.utils.operationalerror') > 0 OR position(msg_lower, 'database system is') > 0, 'Postgres / DB (operational)',\n      position(msg_lower, 'integrityerror') > 0 OR position(msg_lower, 'foreign key constraint') > 0 OR position(msg_lower, 'unique constraint') > 0, 'Postgres / DB (integrity)',\n      position(msg_lower, 'rq.timeouts.jobtimeoutexception') > 0 OR position(msg_lower, 'takes too long chunks') > 0, 'Timeouts / background jobs',\n      source = 'client' AND (position(msg_lower, 'cannot read properties of') > 0 OR position(msg_lower, 'can''t access property') > 0 OR position(msg_lower, 'objectstate must be provided correct label, got wrong value undefined') > 0 OR position(msg_lower, 'cannot set properties of undefined') > 0), 'JS null/undefined access',\n      source = 'client' AND (position(msg_lower, 'is not a function') > 0 OR position(msg_lower, 'is not iterable') > 0), 'JS type/method errors',\n      source = 'client' AND position(msg_lower, 'setting getter-only property') > 0, 'JS read-only property assignment',\n      source = 'client' AND position(msg_lower, 'the start frame is out of the job') > 0, 'Client validation / frame bounds',\n      source = 'client' AND (position(msg_lower, 'canvas') > 0 OR position(msg_lower, 'webgl') > 0 OR position(msg_lower, 'createimagebitmap') > 0 OR position(msg_lower, 'createobjecturl') > 0 OR position(msg_lower, 'getimagedata') > 0), 'Canvas / WebGL / memory',\n      source = 'client' AND (position(msg_lower, 'react error') > 0 OR position(msg_lower, '__reactfiber') > 0), 'React / DOM',\n      source = 'client' AND (startsWith(msg_lower, '**shapes**') OR startsWith(msg_lower, '**labels**')), 'Debug logging / shapes dump',\n      source = 'client' AND (position(msg_lower, 'queryselector') > 0 OR position(msg_lower, 'not a valid selector') > 0), 'JS DOM API / Selectors',\n      source = 'client' AND position(msg_lower, 'session has not been initialized yet. call annotations.get() or annotations.clear({ reload: true }) before') > 0, 'CVAT-core / Business Logic',\n      position(msg_lower, 'reached the maximum number of projects') > 0 OR position(msg_lower, 'cachetoolargedataerror') > 0, 'Quotas / size limits',\n      position(msg_lower, 'decompressionbomberror') > 0, 'Quotas / size limits (image bomb)',\n      position(msg_lower, 'polygon must have at least') > 0 OR position(msg_lower, 'all the objects must have the same label') > 0 OR position(msg_lower, 'expected only one visible shape per frame') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'action name must be unique') > 0 OR position(msg_lower, 'all label names must be unique') > 0, 'Uniqueness / names / ids',\n      position(msg_lower, 'label') > 0 AND position(msg_lower, 'is not registered for this task') > 0, 'Labels not registered',\n      position(msg_lower, 'trying to save an attribute') > 0 AND position(msg_lower, 'invalid value') > 0, 'Attributes invalid value',\n      position(msg_lower, 'unsupported media type') > 0 OR position(msg_lower, 'file must be file instance') > 0, 'Unsupported / invalid input',\n      position(msg_lower, 'unexpected type of track') > 0 OR position(msg_lower, 'skeleton template must be specified') > 0 OR position(msg_lower, 'cannot join these polygons: the operation would create a shape with holes, which is not supported by cvat. please select different polygons or use the mask tool.') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'oserror: [errno 36]') > 0, 'OS error / file system',\n      startsWith(msg_lower, 'rest_framework.exceptions.notfound'), 'DRF 404 / NotFound',\n      position(msg_lower, 'rest_framework.exceptions.methodnotallowed') > 0, 'DRF MethodNotAllowed',\n      position(msg_lower, 'datumaro.components.errors') > 0 OR position(msg_lower, 'annotationexporterror') > 0 OR position(msg_lower, 'itemexporterror') > 0 OR position(msg_lower, 'repeateditemerror') > 0 OR position(msg_lower, 'datumaro.components.contexts.importer._importfail') > 0 OR position(msg_lower, 'there is no item named ''project.json'' in the archive') > 0 OR position(msg_lower, 'there is no item named ''task.json'' in the archive') > 0 OR position(msg_lower, 'no media data found') > 0 OR position(msg_lower, 'no image found') > 0 OR position(msg_lower, 'cvat.apps.dataset_manager.bindings.cvatimporterror') > 0, 'Import/Export / Datumaro',\n      position(msg_lower, 'cloudstoragemissingerror') > 0, 'Cloud storage / file missing',\n      position(msg_lower, 'invalidimageerror') > 0 OR position(msg_lower, 'unidentifiedimageerror') > 0, 'Invalid image file',\n      position(msg_lower, 'runtimeerror: exception occurred during compression of image') > 0, 'Image compression errors',\n      position(msg_lower, 'av.error') > 0, 'AV / codec errors',\n      position(msg_lower, 'filenotfounderror: [errno 2] no such file or directory') > 0 OR position(msg_lower, 'manifest.jsonl') > 0, 'File not found / missing file',\n      position(msg_lower, 'not found on the cloud storage') > 0 OR position(msg_lower, 'resource ali-') > 0, 'Cloud storage / file not found',\n      position(msg_lower, 'trying to use undefined cloud storage') > 0, 'Cloud storage / config error',\n      position(msg_lower, 'already being processed (action=') > 0, 'Concurrent export/import / duplicate request',\n      position(msg_lower, 'duplicate key value violates unique constraint') > 0, 'DB duplicate key',\n      position(msg_lower, 'locknotownederror') > 0, 'Redis lock / concurrency',\n      'Other / uncategorized'\n    ) AS category\n  FROM base\n), agg AS (\n  SELECT category, count() AS error_count\n  FROM categorized\n  GROUP BY category\n)\nSELECT\n  category,\n  round(error_count * 100.0 / sum(error_count) OVER (), 2) AS percentage\nFROM agg\nORDER BY percentage DESC",
+          "panelId": 200,
           "refId": "A"
         }
       ],
       "title": "Category Share",
-      "type": "barchart"
+      "type": "barchart",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "category"
+                  }
+                }
+              },
+              {
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "source": true,
+              "error_count": true,
+              "unique_users": true,
+              "prev_error_count": true,
+              "prev_unique_users": true,
+              "delta_percent": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "category": 0,
+              "percentage": 1
+            },
+            "renameByName": {}
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "percentage",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
     },
     {
       "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PDEE91DDB90597936"
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
       },
       "fieldConfig": {
         "defaults": {
@@ -438,23 +624,95 @@
       "targets": [
         {
           "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PDEE91DDB90597936"
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
           },
-          "format": 0,
-          "queryType": "sql",
-          "rawSql": "WITH base AS (\n  SELECT\n    timestamp,\n    source,\n    lowerUTF8(JSONExtractString(payload, 'message')) AS msg_lower\n  FROM cvat.events\n  WHERE scope = 'send:exception'\n    AND $__timeFilter(timestamp)\n    AND source IN (${sources})\n    AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n  AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n   \n), categorized AS (\n  SELECT\n    toStartOfDay(timestamp) AS time,\n    multiIf(\n      position(msg_lower, 'network error') > 0, 'Network Error',\n      position(msg_lower, 'bad gateway') > 0, '502 Bad Gateway',\n      position(msg_lower, 'gateway time-out') > 0 OR position(msg_lower, '504 gateway') > 0 OR position(msg_lower, 'code 504 received') > 0 OR position(msg_lower, 'timeout exceeded') > 0 OR position(msg_lower, 'request aborted') > 0, '504 Gateway Timeout',\n      position(msg_lower, 'server error') > 0, '500 Server Error',\n      position(msg_lower, 'no available server') > 0, 'No available server / service unavailable',\n      position(msg_lower, 'redis.exceptions') > 0 OR position(msg_lower, 'kvrocks') > 0, 'Redis / kvrocks',\n      position(msg_lower, 'django.db.utils.operationalerror') > 0 OR position(msg_lower, 'database system is') > 0, 'Postgres / DB (operational)',\n      position(msg_lower, 'integrityerror') > 0 OR position(msg_lower, 'foreign key constraint') > 0 OR position(msg_lower, 'unique constraint') > 0, 'Postgres / DB (integrity)',\n      position(msg_lower, 'rq.timeouts.jobtimeoutexception') > 0 OR position(msg_lower, 'takes too long chunks') > 0, 'Timeouts / background jobs',\n      source = 'client' AND (position(msg_lower, 'cannot read properties of') > 0 OR position(msg_lower, 'can''t access property') > 0 OR position(msg_lower, 'objectstate must be provided correct label, got wrong value undefined') > 0 OR position(msg_lower, 'cannot set properties of undefined') > 0), 'JS null/undefined access',\n      source = 'client' AND (position(msg_lower, 'is not a function') > 0 OR position(msg_lower, 'is not iterable') > 0), 'JS type/method errors',\n      source = 'client' AND position(msg_lower, 'setting getter-only property') > 0, 'JS read-only property assignment',\n      source = 'client' AND position(msg_lower, 'the start frame is out of the job') > 0, 'Client validation / frame bounds',\n      source = 'client' AND (position(msg_lower, 'canvas') > 0 OR position(msg_lower, 'webgl') > 0 OR position(msg_lower, 'createimagebitmap') > 0 OR position(msg_lower, 'createobjecturl') > 0 OR position(msg_lower, 'getimagedata') > 0), 'Canvas / WebGL / memory',\n      source = 'client' AND (position(msg_lower, 'react error') > 0 OR position(msg_lower, '__reactfiber') > 0), 'React / DOM',\n      source = 'client' AND (startsWith(msg_lower, '**shapes**') OR startsWith(msg_lower, '**labels**')), 'Debug logging / shapes dump',\n      source = 'client' AND (position(msg_lower, 'queryselector') > 0 OR position(msg_lower, 'not a valid selector') > 0), 'JS DOM API / Selectors',\n      source = 'client' AND position(msg_lower, 'session has not been initialized yet. call annotations.get() or annotations.clear({ reload: true }) before') > 0, 'CVAT-core / Business Logic',\n      \n      position(msg_lower, 'reached the maximum number of projects') > 0 OR position(msg_lower, 'cachetoolargedataerror') > 0, 'Quotas / size limits',\n      position(msg_lower, 'decompressionbomberror') > 0, 'Quotas / size limits (image bomb)',\n      position(msg_lower, 'polygon must have at least') > 0 OR position(msg_lower, 'all the objects must have the same label') > 0 OR position(msg_lower, 'expected only one visible shape per frame') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'action name must be unique') > 0 OR position(msg_lower, 'all label names must be unique') > 0, 'Uniqueness / names / ids',\n      position(msg_lower, 'label') > 0 AND position(msg_lower, 'is not registered for this task') > 0, 'Labels not registered',\n      position(msg_lower, 'trying to save an attribute') > 0 AND position(msg_lower, 'invalid value') > 0, 'Attributes invalid value',\n      position(msg_lower, 'unsupported media type') > 0 OR position(msg_lower, 'file must be file instance') > 0, 'Unsupported / invalid input',\n      position(msg_lower, 'unexpected type of track') > 0 OR position(msg_lower, 'skeleton template must be specified') > 0 OR position(msg_lower, 'cannot join these polygons: the operation would create a shape with holes, which is not supported by cvat. please select different polygons or use the mask tool.') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'oserror: [errno 36]') > 0, 'OS error / file system',\n      startsWith(msg_lower, 'rest_framework.exceptions.notfound'), 'DRF 404 / NotFound',\n      position(msg_lower, 'rest_framework.exceptions.methodnotallowed') > 0, 'DRF MethodNotAllowed',\n      \n      position(msg_lower, 'datumaro.components.errors') > 0 OR position(msg_lower, 'annotationexporterror') > 0 OR position(msg_lower, 'itemexporterror') > 0 OR position(msg_lower, 'repeateditemerror') > 0 OR position(msg_lower, 'datumaro.components.contexts.importer._importfail') > 0 OR position(msg_lower, 'there is no item named ''project.json'' in the archive') > 0 OR position(msg_lower, 'there is no item named ''task.json'' in the archive') > 0 OR position(msg_lower, 'no media data found') > 0 OR position(msg_lower, 'no image found') > 0 OR position(msg_lower, 'cvat.apps.dataset_manager.bindings.cvatimporterror') > 0, 'Import/Export / Datumaro',\n      position(msg_lower, 'cloudstoragemissingerror') > 0, 'Cloud storage / file missing',\n      position(msg_lower, 'invalidimageerror') > 0 OR position(msg_lower, 'unidentifiedimageerror') > 0, 'Invalid image file',\n      position(msg_lower, 'runtimeerror: exception occurred during compression of image') > 0, 'Image compression errors',\n      position(msg_lower, 'av.error') > 0, 'AV / codec errors',\n      position(msg_lower, 'filenotfounderror: [errno 2] no such file or directory') > 0 OR position(msg_lower, 'manifest.jsonl') > 0, 'File not found / missing file',\n      position(msg_lower, 'not found on the cloud storage') > 0 OR position(msg_lower, 'resource ali-') > 0, 'Cloud storage / file not found',\n      position(msg_lower, 'trying to use undefined cloud storage') > 0, 'Cloud storage / config error',\n      position(msg_lower, 'already being processed (action=') > 0, 'Concurrent export/import / duplicate request',\n      position(msg_lower, 'duplicate key value violates unique constraint') > 0, 'DB duplicate key',\n      position(msg_lower, 'locknotownederror') > 0, 'Redis lock / concurrency',\n      'Other / uncategorized'\n    ) AS metric\n  FROM base\n)\nSELECT\n  time,\n  count() AS value,\n  metric\nFROM categorized\nGROUP BY time, metric\nORDER BY time ASC",
-          "refId": "A",
-          "legendFormat": "{{metric}}"
+          "panelId": 200,
+          "refId": "A"
         }
       ],
       "title": "Errors by Day (Stacked by Category)",
-      "type": "timeseries"
+      "type": "timeseries",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "day_category"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "source": true,
+              "unique_users": true,
+              "percentage": true,
+              "prev_error_count": true,
+              "prev_unique_users": true,
+              "delta_percent": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "time": 0,
+              "error_count": 1,
+              "category": 2
+            },
+            "renameByName": {
+              "error_count": "value",
+              "category": "metric"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "metric",
+                "desc": false
+              },
+              {
+                "field": "time",
+                "desc": false
+              }
+            ]
+          }
+        },
+        {
+          "id": "prepareTimeSeries",
+          "options": {
+            "format": "multi"
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "/^(?:error_count|value) (.*)$/",
+            "renamePattern": "$1"
+          }
+        }
+      ]
     },
     {
       "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PDEE91DDB90597936"
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
       },
       "fieldConfig": {
         "defaults": {
@@ -497,6 +755,24 @@
                 "value": 2
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "category"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show drilldown for ${__data.fields.category}",
+                    "url": "/d/${__dashboard.uid}?${__url_time_range}&${sources:queryparam}&var-category=${__data.fields.category}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
@@ -528,97 +804,75 @@
       "targets": [
         {
           "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PDEE91DDB90597936"
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
           },
-          "format": 1,
-          "queryType": "sql",
-          "rawSql": "WITH base AS (\n  SELECT\n    'current' AS period,\n    source,\n    user_id,\n    lowerUTF8(JSONExtractString(payload, 'message')) AS msg_lower\n  FROM cvat.events\n  WHERE scope = 'send:exception'\n    AND timestamp >= $__fromTime\n    AND timestamp <= $__toTime\n    AND source IN (${sources})\n    AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n\n  UNION ALL\n\n  SELECT\n    'previous' AS period,\n    source,\n    user_id,\n    lowerUTF8(JSONExtractString(payload, 'message')) AS msg_lower\n  FROM cvat.events\n  WHERE scope = 'send:exception'\n    AND timestamp >= ($__fromTime - ($__toTime - $__fromTime))\n    AND timestamp < $__fromTime\n    AND source IN (${sources})\n    AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n), categorized AS (\n  SELECT\n    period,\n    source,\n    user_id,\n    multiIf(\n      position(msg_lower, 'network error') > 0, 'Network Error',\n      position(msg_lower, 'bad gateway') > 0, '502 Bad Gateway',\n      position(msg_lower, 'gateway time-out') > 0 OR position(msg_lower, '504 gateway') > 0 OR position(msg_lower, 'code 504 received') > 0 OR position(msg_lower, 'timeout exceeded') > 0 OR position(msg_lower, 'request aborted') > 0, '504 Gateway Timeout',\n      position(msg_lower, 'server error') > 0, '500 Server Error',\n      position(msg_lower, 'no available server') > 0, 'No available server / service unavailable',\n      position(msg_lower, 'redis.exceptions') > 0 OR position(msg_lower, 'kvrocks') > 0, 'Redis / kvrocks',\n      position(msg_lower, 'django.db.utils.operationalerror') > 0 OR position(msg_lower, 'database system is') > 0, 'Postgres / DB (operational)',\n      position(msg_lower, 'integrityerror') > 0 OR position(msg_lower, 'foreign key constraint') > 0 OR position(msg_lower, 'unique constraint') > 0, 'Postgres / DB (integrity)',\n      position(msg_lower, 'rq.timeouts.jobtimeoutexception') > 0 OR position(msg_lower, 'takes too long chunks') > 0, 'Timeouts / background jobs',\n      source = 'client' AND (position(msg_lower, 'cannot read properties of') > 0 OR position(msg_lower, 'can''t access property') > 0 OR position(msg_lower, 'objectstate must be provided correct label, got wrong value undefined') > 0 OR position(msg_lower, 'cannot set properties of undefined') > 0), 'JS null/undefined access',\n      source = 'client' AND (position(msg_lower, 'is not a function') > 0 OR position(msg_lower, 'is not iterable') > 0), 'JS type/method errors',\n      source = 'client' AND position(msg_lower, 'setting getter-only property') > 0, 'JS read-only property assignment',\n      source = 'client' AND position(msg_lower, 'the start frame is out of the job') > 0, 'Client validation / frame bounds',\n      source = 'client' AND (position(msg_lower, 'canvas') > 0 OR position(msg_lower, 'webgl') > 0 OR position(msg_lower, 'createimagebitmap') > 0 OR position(msg_lower, 'createobjecturl') > 0 OR position(msg_lower, 'getimagedata') > 0), 'Canvas / WebGL / memory',\n      source = 'client' AND (position(msg_lower, 'react error') > 0 OR position(msg_lower, '__reactfiber') > 0), 'React / DOM',\n      source = 'client' AND (startsWith(msg_lower, '**shapes**') OR startsWith(msg_lower, '**labels**')), 'Debug logging / shapes dump',\n      source = 'client' AND (position(msg_lower, 'queryselector') > 0 OR position(msg_lower, 'not a valid selector') > 0), 'JS DOM API / Selectors',\n      source = 'client' AND position(msg_lower, 'session has not been initialized yet. call annotations.get() or annotations.clear({ reload: true }) before') > 0, 'CVAT-core / Business Logic',\n      position(msg_lower, 'reached the maximum number of projects') > 0 OR position(msg_lower, 'cachetoolargedataerror') > 0, 'Quotas / size limits',\n      position(msg_lower, 'decompressionbomberror') > 0, 'Quotas / size limits (image bomb)',\n      position(msg_lower, 'polygon must have at least') > 0 OR position(msg_lower, 'all the objects must have the same label') > 0 OR position(msg_lower, 'expected only one visible shape per frame') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'action name must be unique') > 0 OR position(msg_lower, 'all label names must be unique') > 0, 'Uniqueness / names / ids',\n      position(msg_lower, 'label') > 0 AND position(msg_lower, 'is not registered for this task') > 0, 'Labels not registered',\n      position(msg_lower, 'trying to save an attribute') > 0 AND position(msg_lower, 'invalid value') > 0, 'Attributes invalid value',\n      position(msg_lower, 'unsupported media type') > 0 OR position(msg_lower, 'file must be file instance') > 0, 'Unsupported / invalid input',\n      position(msg_lower, 'unexpected type of track') > 0 OR position(msg_lower, 'skeleton template must be specified') > 0 OR position(msg_lower, 'cannot join these polygons: the operation would create a shape with holes, which is not supported by cvat. please select different polygons or use the mask tool.') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'oserror: [errno 36]') > 0, 'OS error / file system',\n      startsWith(msg_lower, 'rest_framework.exceptions.notfound'), 'DRF 404 / NotFound',\n      position(msg_lower, 'rest_framework.exceptions.methodnotallowed') > 0, 'DRF MethodNotAllowed',\n      position(msg_lower, 'datumaro.components.errors') > 0 OR position(msg_lower, 'annotationexporterror') > 0 OR position(msg_lower, 'itemexporterror') > 0 OR position(msg_lower, 'repeateditemerror') > 0 OR position(msg_lower, 'datumaro.components.contexts.importer._importfail') > 0 OR position(msg_lower, 'there is no item named ''project.json'' in the archive') > 0 OR position(msg_lower, 'there is no item named ''task.json'' in the archive') > 0 OR position(msg_lower, 'no media data found') > 0 OR position(msg_lower, 'no image found') > 0 OR position(msg_lower, 'cvat.apps.dataset_manager.bindings.cvatimporterror') > 0, 'Import/Export / Datumaro',\n      position(msg_lower, 'cloudstoragemissingerror') > 0, 'Cloud storage / file missing',\n      position(msg_lower, 'invalidimageerror') > 0 OR position(msg_lower, 'unidentifiedimageerror') > 0, 'Invalid image file',\n      position(msg_lower, 'runtimeerror: exception occurred during compression of image') > 0, 'Image compression errors',\n      position(msg_lower, 'av.error') > 0, 'AV / codec errors',\n      position(msg_lower, 'filenotfounderror: [errno 2] no such file or directory') > 0 OR position(msg_lower, 'manifest.jsonl') > 0, 'File not found / missing file',\n      position(msg_lower, 'not found on the cloud storage') > 0 OR position(msg_lower, 'resource ali-') > 0, 'Cloud storage / file not found',\n      position(msg_lower, 'trying to use undefined cloud storage') > 0, 'Cloud storage / config error',\n      position(msg_lower, 'already being processed (action=') > 0, 'Concurrent export/import / duplicate request',\n      position(msg_lower, 'duplicate key value violates unique constraint') > 0, 'DB duplicate key',\n      position(msg_lower, 'locknotownederror') > 0, 'Redis lock / concurrency',\n      'Other / uncategorized'\n    ) AS category\n  FROM base\n), agg AS (\n  SELECT\n    period,\n    source,\n    category,\n    count() AS error_count,\n    uniqExactIf(user_id, isNotNull(user_id)) AS unique_users\n  FROM categorized\n  GROUP BY period, source, category\n), cur AS (\n  SELECT source, category, error_count, unique_users\n  FROM agg\n  WHERE period = 'current'\n), prev AS (\n  SELECT source, category, error_count AS prev_error_count, unique_users AS prev_unique_users\n  FROM agg\n  WHERE period = 'previous'\n)\nSELECT\n  cur.source AS source,\n  cur.category AS category,\n  cur.error_count AS error_count,\n  round(cur.error_count * 100.0 / sum(cur.error_count) OVER (), 2) AS percentage,\n  cur.unique_users AS unique_users,\n  ifNull(prev.prev_error_count, 0) AS prev_error_count,\n  if(ifNull(prev.prev_error_count, 0) = 0, NULL, round((cur.error_count - prev.prev_error_count) * 100.0 / prev.prev_error_count, 2)) AS delta_percent,\n  ifNull(prev.prev_unique_users, 0) AS prev_unique_users\nFROM cur\nLEFT JOIN prev ON cur.category = prev.category AND cur.source = prev.source\nORDER BY cur.error_count DESC\n\n",
+          "panelId": 200,
           "refId": "A"
         }
       ],
       "title": "Category Summary",
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PDEE91DDB90597936"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "displayMode": "auto",
-            "inspect": true
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+      "type": "table",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
               {
-                "color": "green",
-                "value": null
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "source_category"
+                  }
+                }
               },
               {
-                "color": "red",
-                "value": 80
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
               }
-            ]
+            ],
+            "match": "all",
+            "type": "include"
           }
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 40
-      },
-      "id": 6,
-      "options": {
-        "footer": {
-          "enablePagination": true,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "error_count"
-          }
-        ]
-      },
-      "pluginVersion": "9.3.6",
-      "targets": [
         {
-          "datasource": {
-            "type": "grafana-clickhouse-datasource",
-            "uid": "PDEE91DDB90597936"
-          },
-          "format": 1,
-          "queryType": "sql",
-          "rawSql": "SELECT\n  category,\n  msg_lower AS error,\n  source,\n  count() AS error_count,\n  uniqExactIf(user_id, isNotNull(user_id)) AS unique_users\nFROM\n(\n  SELECT\n    source,\n    user_id,\n    msg_lower,\n    multiIf(\n      position(msg_lower, 'network error') > 0, 'Network Error',\n      position(msg_lower, 'bad gateway') > 0, '502 Bad Gateway',\n      position(msg_lower, 'gateway time-out') > 0 OR position(msg_lower, '504 gateway') > 0 OR position(msg_lower, 'code 504 received') > 0 OR position(msg_lower, 'timeout exceeded') > 0 OR position(msg_lower, 'request aborted') > 0, '504 Gateway Timeout',\n      position(msg_lower, 'server error') > 0, '500 Server Error',\n      position(msg_lower, 'no available server') > 0, 'No available server / service unavailable',\n      position(msg_lower, 'redis.exceptions') > 0 OR position(msg_lower, 'kvrocks') > 0, 'Redis / kvrocks',\n      position(msg_lower, 'django.db.utils.operationalerror') > 0 OR position(msg_lower, 'database system is') > 0, 'Postgres / DB (operational)',\n      position(msg_lower, 'integrityerror') > 0 OR position(msg_lower, 'foreign key constraint') > 0 OR position(msg_lower, 'unique constraint') > 0, 'Postgres / DB (integrity)',\n      position(msg_lower, 'rq.timeouts.jobtimeoutexception') > 0 OR position(msg_lower, 'takes too long chunks') > 0, 'Timeouts / background jobs',\n      source = 'client' AND (position(msg_lower, 'cannot read properties of') > 0 OR position(msg_lower, 'can''t access property') > 0 OR position(msg_lower, 'objectstate must be provided correct label, got wrong value undefined') > 0 OR position(msg_lower, 'cannot set properties of undefined') > 0), 'JS null/undefined access',\n      source = 'client' AND (position(msg_lower, 'is not a function') > 0 OR position(msg_lower, 'is not iterable') > 0), 'JS type/method errors',\n      source = 'client' AND position(msg_lower, 'setting getter-only property') > 0, 'JS read-only property assignment',\n      source = 'client' AND position(msg_lower, 'the start frame is out of the job') > 0, 'Client validation / frame bounds',\n      source = 'client' AND (position(msg_lower, 'canvas') > 0 OR position(msg_lower, 'webgl') > 0 OR position(msg_lower, 'createimagebitmap') > 0 OR position(msg_lower, 'createobjecturl') > 0 OR position(msg_lower, 'getimagedata') > 0), 'Canvas / WebGL / memory',\n      source = 'client' AND (position(msg_lower, 'react error') > 0 OR position(msg_lower, '__reactfiber') > 0), 'React / DOM',\n      source = 'client' AND (startsWith(msg_lower, '**shapes**') OR startsWith(msg_lower, '**labels**')), 'Debug logging / shapes dump',\n      source = 'client' AND (position(msg_lower, 'queryselector') > 0 OR position(msg_lower, 'not a valid selector') > 0), 'JS DOM API / Selectors',\n      source = 'client' AND position(msg_lower, 'session has not been initialized yet. call annotations.get() or annotations.clear({ reload: true }) before') > 0, 'CVAT-core / Business Logic',\n      \n      position(msg_lower, 'reached the maximum number of projects') > 0 OR position(msg_lower, 'cachetoolargedataerror') > 0, 'Quotas / size limits',\n      position(msg_lower, 'decompressionbomberror') > 0, 'Quotas / size limits (image bomb)',\n      position(msg_lower, 'polygon must have at least') > 0 OR position(msg_lower, 'all the objects must have the same label') > 0 OR position(msg_lower, 'expected only one visible shape per frame') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'action name must be unique') > 0 OR position(msg_lower, 'all label names must be unique') > 0, 'Uniqueness / names / ids',\n      position(msg_lower, 'label') > 0 AND position(msg_lower, 'is not registered for this task') > 0, 'Labels not registered',\n      position(msg_lower, 'trying to save an attribute') > 0 AND position(msg_lower, 'invalid value') > 0, 'Attributes invalid value',\n      position(msg_lower, 'unsupported media type') > 0 OR position(msg_lower, 'file must be file instance') > 0, 'Unsupported / invalid input',\n      position(msg_lower, 'unexpected type of track') > 0 OR position(msg_lower, 'skeleton template must be specified') > 0 OR position(msg_lower, 'cannot join these polygons: the operation would create a shape with holes, which is not supported by cvat. please select different polygons or use the mask tool.') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'oserror: [errno 36]') > 0, 'OS error / file system',\n      startsWith(msg_lower, 'rest_framework.exceptions.notfound'), 'DRF 404 / NotFound',\n      position(msg_lower, 'rest_framework.exceptions.methodnotallowed') > 0, 'DRF MethodNotAllowed',\n      \n      position(msg_lower, 'datumaro.components.errors') > 0 OR position(msg_lower, 'annotationexporterror') > 0 OR position(msg_lower, 'itemexporterror') > 0 OR position(msg_lower, 'repeateditemerror') > 0 OR position(msg_lower, 'datumaro.components.contexts.importer._importfail') > 0 OR position(msg_lower, 'there is no item named ''project.json'' in the archive') > 0 OR position(msg_lower, 'there is no item named ''task.json'' in the archive') > 0 OR position(msg_lower, 'no media data found') > 0 OR position(msg_lower, 'no image found') > 0 OR position(msg_lower, 'cvat.apps.dataset_manager.bindings.cvatimporterror') > 0, 'Import/Export / Datumaro',\n      position(msg_lower, 'cloudstoragemissingerror') > 0, 'Cloud storage / file missing',\n      position(msg_lower, 'invalidimageerror') > 0 OR position(msg_lower, 'unidentifiedimageerror') > 0, 'Invalid image file',\n      position(msg_lower, 'runtimeerror: exception occurred during compression of image') > 0, 'Image compression errors',\n      position(msg_lower, 'av.error') > 0, 'AV / codec errors',\n      position(msg_lower, 'filenotfounderror: [errno 2] no such file or directory') > 0 OR position(msg_lower, 'manifest.jsonl') > 0, 'File not found / missing file',\n      position(msg_lower, 'not found on the cloud storage') > 0 OR position(msg_lower, 'resource ali-') > 0, 'Cloud storage / file not found',\n      position(msg_lower, 'trying to use undefined cloud storage') > 0, 'Cloud storage / config error',\n      position(msg_lower, 'already being processed (action=') > 0, 'Concurrent export/import / duplicate request',\n      position(msg_lower, 'duplicate key value violates unique constraint') > 0, 'DB duplicate key',\n      position(msg_lower, 'locknotownederror') > 0, 'Redis lock / concurrency',\n      'Other / uncategorized'\n    ) AS category\n  FROM\n  (\n    SELECT\n      source,\n      user_id,\n      lowerUTF8(JSONExtractString(payload, 'message')) AS msg_lower\n    FROM cvat.events\n    WHERE scope = 'send:exception'\n      AND $__timeFilter(timestamp)\n      AND source IN (${sources})\n    AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n  AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n      AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n     \n  ) raw\n) categorized\nWHERE '${category}' = '__all' OR category = '${category}'\nGROUP BY category, msg_lower, source\nORDER BY error_count DESC\nLIMIT 200\n",
-          "refId": "A"
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "source": 0,
+              "category": 1,
+              "error_count": 2,
+              "percentage": 3,
+              "unique_users": 4,
+              "prev_error_count": 5,
+              "delta_percent": 6,
+              "prev_unique_users": 7
+            },
+            "renameByName": {}
+          }
         }
-      ],
-      "title": "Category Drilldown (Top Exceptions)",
-      "type": "table"
+      ]
     },
     {
       "id": 7,
       "title": "Server vs Client",
       "type": "barchart",
       "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PDEE91DDB90597936"
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
       },
       "gridPos": {
         "h": 6,
@@ -710,16 +964,300 @@
       "targets": [
         {
           "datasource": {
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 200,
+          "refId": "A"
+        }
+      ],
+      "pluginVersion": "9.3.6",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "source"
+                  }
+                }
+              },
+              {
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "category": true,
+              "unique_users": true,
+              "percentage": true,
+              "prev_unique_users": true,
+              "delta_percent": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "source": 0,
+              "error_count": 1,
+              "prev_error_count": 2
+            },
+            "renameByName": {
+              "error_count": "current_count",
+              "prev_error_count": "previous_count"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 201,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "[Show all drilldown categories](/d/paid-users-exceptions-experimental?from=${__from}&to=${__to}&${sources:queryparam}&var-category=__all)",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.1.2",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "id": 6,
+      "options": {
+        "footer": {
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "error_count"
+          }
+        ]
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
             "type": "grafana-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
           "format": 1,
           "queryType": "sql",
-          "refId": "A",
-          "rawSql": "WITH current_period AS (\n  SELECT source, count() AS current_count\n  FROM cvat.events\n  WHERE scope = 'send:exception'\n    AND timestamp >= $__fromTime\n    AND timestamp <= $__toTime\n    AND source IN (${sources})\n    AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n  GROUP BY source\n), previous_period AS (\n  SELECT source, count() AS previous_count\n  FROM cvat.events\n  WHERE scope = 'send:exception'\n    AND timestamp >= ($__fromTime - ($__toTime - $__fromTime))\n    AND timestamp < $__fromTime\n    AND source IN (${sources})\n    AND length(trim(BOTH ' ' FROM JSONExtractString(payload, 'message'))) > 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'permissiondenied') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'validationerror:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'django.http.response.http404') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'you do not have permission to perform this action.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'limitreachedexception:') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'throttled') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'request failed with status code 429') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'matches the given query.') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cloud storage instance was deleted') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'cvatdatasetnotfounderror') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authenticationfailed') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'no media data found') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'authentication credentials were not provided') = 0\n    AND positionCaseInsensitive(JSONExtractString(payload, 'message'), 'rest_framework.exceptions.notacceptable: could not satisfy the request accept header') = 0\n  GROUP BY source\n)\nSELECT\n  coalesce(c.source, p.source) AS source,\n  ifNull(c.current_count, 0) AS current_count,\n  ifNull(p.previous_count, 0) AS previous_count\nFROM current_period c\nFULL OUTER JOIN previous_period p ON c.source = p.source\nORDER BY source\n"
+          "rawSql": "WITH raw AS (\n  SELECT\n    source,\n    user_id,\n    JSONExtractString(payload, 'message') AS msg\n  FROM cvat.events\n  PREWHERE scope = 'send:exception'\n    AND source IN (${sources})\n    AND $__timeFilter(timestamp)\n  WHERE length(trim(BOTH ' ' FROM msg)) > 0\n    AND NOT multiSearchAnyCaseInsensitive(msg, [\n      'permissiondenied',\n      'validationerror:',\n      'django.http.response.http404',\n      'you do not have permission to perform this action.',\n      'limitreachedexception:',\n      'throttled',\n      'request failed with status code 429',\n      'matches the given query.',\n      'cloud storage instance was deleted',\n      'cvatdatasetnotfounderror',\n      'authenticationfailed',\n      'no media data found',\n      'authentication credentials were not provided',\n      'rest_framework.exceptions.notacceptable: could not satisfy the request accept header'\n    ])\n), categorized AS (\n  SELECT\n    source,\n    user_id,\n    lowerUTF8(msg) AS msg_lower,\n    multiIf(\n      position(msg_lower, 'network error') > 0, 'Network Error',\n      position(msg_lower, 'bad gateway') > 0, '502 Bad Gateway',\n      position(msg_lower, 'gateway time-out') > 0 OR position(msg_lower, '504 gateway') > 0 OR position(msg_lower, 'code 504 received') > 0 OR position(msg_lower, 'timeout exceeded') > 0 OR position(msg_lower, 'request aborted') > 0, '504 Gateway Timeout',\n      position(msg_lower, 'server error') > 0, '500 Server Error',\n      position(msg_lower, 'no available server') > 0, 'No available server / service unavailable',\n      position(msg_lower, 'redis.exceptions') > 0 OR position(msg_lower, 'kvrocks') > 0, 'Redis / kvrocks',\n      position(msg_lower, 'django.db.utils.operationalerror') > 0 OR position(msg_lower, 'database system is') > 0, 'Postgres / DB (operational)',\n      position(msg_lower, 'integrityerror') > 0 OR position(msg_lower, 'foreign key constraint') > 0 OR position(msg_lower, 'unique constraint') > 0, 'Postgres / DB (integrity)',\n      position(msg_lower, 'rq.timeouts.jobtimeoutexception') > 0 OR position(msg_lower, 'takes too long chunks') > 0, 'Timeouts / background jobs',\n      source = 'client' AND (position(msg_lower, 'cannot read properties of') > 0 OR position(msg_lower, 'can''t access property') > 0 OR position(msg_lower, 'objectstate must be provided correct label, got wrong value undefined') > 0 OR position(msg_lower, 'cannot set properties of undefined') > 0), 'JS null/undefined access',\n      source = 'client' AND (position(msg_lower, 'is not a function') > 0 OR position(msg_lower, 'is not iterable') > 0), 'JS type/method errors',\n      source = 'client' AND position(msg_lower, 'setting getter-only property') > 0, 'JS read-only property assignment',\n      source = 'client' AND position(msg_lower, 'the start frame is out of the job') > 0, 'Client validation / frame bounds',\n      source = 'client' AND (position(msg_lower, 'canvas') > 0 OR position(msg_lower, 'webgl') > 0 OR position(msg_lower, 'createimagebitmap') > 0 OR position(msg_lower, 'createobjecturl') > 0 OR position(msg_lower, 'getimagedata') > 0), 'Canvas / WebGL / memory',\n      source = 'client' AND (position(msg_lower, 'react error') > 0 OR position(msg_lower, '__reactfiber') > 0), 'React / DOM',\n      source = 'client' AND (startsWith(msg_lower, '**shapes**') OR startsWith(msg_lower, '**labels**')), 'Debug logging / shapes dump',\n      source = 'client' AND (position(msg_lower, 'queryselector') > 0 OR position(msg_lower, 'not a valid selector') > 0), 'JS DOM API / Selectors',\n      source = 'client' AND position(msg_lower, 'session has not been initialized yet. call annotations.get() or annotations.clear({ reload: true }) before') > 0, 'CVAT-core / Business Logic',\n      position(msg_lower, 'reached the maximum number of projects') > 0 OR position(msg_lower, 'cachetoolargedataerror') > 0, 'Quotas / size limits',\n      position(msg_lower, 'decompressionbomberror') > 0, 'Quotas / size limits (image bomb)',\n      position(msg_lower, 'polygon must have at least') > 0 OR position(msg_lower, 'all the objects must have the same label') > 0 OR position(msg_lower, 'expected only one visible shape per frame') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'action name must be unique') > 0 OR position(msg_lower, 'all label names must be unique') > 0, 'Uniqueness / names / ids',\n      position(msg_lower, 'label') > 0 AND position(msg_lower, 'is not registered for this task') > 0, 'Labels not registered',\n      position(msg_lower, 'trying to save an attribute') > 0 AND position(msg_lower, 'invalid value') > 0, 'Attributes invalid value',\n      position(msg_lower, 'unsupported media type') > 0 OR position(msg_lower, 'file must be file instance') > 0, 'Unsupported / invalid input',\n      position(msg_lower, 'unexpected type of track') > 0 OR position(msg_lower, 'skeleton template must be specified') > 0 OR position(msg_lower, 'cannot join these polygons: the operation would create a shape with holes, which is not supported by cvat. please select different polygons or use the mask tool.') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'oserror: [errno 36]') > 0, 'OS error / file system',\n      startsWith(msg_lower, 'rest_framework.exceptions.notfound'), 'DRF 404 / NotFound',\n      position(msg_lower, 'rest_framework.exceptions.methodnotallowed') > 0, 'DRF MethodNotAllowed',\n      position(msg_lower, 'datumaro.components.errors') > 0 OR position(msg_lower, 'annotationexporterror') > 0 OR position(msg_lower, 'itemexporterror') > 0 OR position(msg_lower, 'repeateditemerror') > 0 OR position(msg_lower, 'datumaro.components.contexts.importer._importfail') > 0 OR position(msg_lower, 'there is no item named ''project.json'' in the archive') > 0 OR position(msg_lower, 'there is no item named ''task.json'' in the archive') > 0 OR position(msg_lower, 'no media data found') > 0 OR position(msg_lower, 'no image found') > 0 OR position(msg_lower, 'cvat.apps.dataset_manager.bindings.cvatimporterror') > 0, 'Import/Export / Datumaro',\n      position(msg_lower, 'cloudstoragemissingerror') > 0, 'Cloud storage / file missing',\n      position(msg_lower, 'invalidimageerror') > 0 OR position(msg_lower, 'unidentifiedimageerror') > 0, 'Invalid image file',\n      position(msg_lower, 'runtimeerror: exception occurred during compression of image') > 0, 'Image compression errors',\n      position(msg_lower, 'av.error') > 0, 'AV / codec errors',\n      position(msg_lower, 'filenotfounderror: [errno 2] no such file or directory') > 0 OR position(msg_lower, 'manifest.jsonl') > 0, 'File not found / missing file',\n      position(msg_lower, 'not found on the cloud storage') > 0 OR position(msg_lower, 'resource ali-') > 0, 'Cloud storage / file not found',\n      position(msg_lower, 'trying to use undefined cloud storage') > 0, 'Cloud storage / config error',\n      position(msg_lower, 'already being processed (action=') > 0, 'Concurrent export/import / duplicate request',\n      position(msg_lower, 'duplicate key value violates unique constraint') > 0, 'DB duplicate key',\n      position(msg_lower, 'locknotownederror') > 0, 'Redis lock / concurrency',\n      'Other / uncategorized'\n    ) AS category\n  FROM raw\n)\nSELECT\n  category,\n  msg_lower AS error,\n  source,\n  count() AS error_count,\n  uniqExactIf(user_id, isNotNull(user_id)) AS unique_users\nFROM categorized\nWHERE '${category}' = '__all' OR category = '${category}'\nGROUP BY category, msg_lower, source\nORDER BY error_count DESC, category ASC, error ASC, source ASC\nLIMIT 200",
+          "refId": "A"
         }
       ],
-      "pluginVersion": "9.3.6"
+      "title": "Category Drilldown (Top Exceptions)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none",
+          "custom": {
+            "width": 1
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_errors"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "displayName",
+                "value": "Total Errors"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "delta_percent"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "displayName",
+                "value": "Delta vs Prev"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 0,
+        "w": 24,
+        "x": 0,
+        "y": 54
+      },
+      "id": 200,
+      "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": false
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "queryType": "sql",
+          "rawSql": "WITH raw AS (\n  SELECT\n    timestamp,\n    source,\n    user_id,\n    lowerUTF8(JSONExtractString(payload, 'message')) AS msg_lower\n  FROM cvat.events\n  PREWHERE scope = 'send:exception'\n    AND source IN (${sources})\n    AND timestamp >= subtractSeconds($__fromTime, dateDiff('second', $__fromTime, $__toTime))\n    AND timestamp <= $__toTime\n), filtered AS (\n  SELECT\n    timestamp,\n    source,\n    user_id,\n    toUInt8(timestamp >= $__fromTime) AS period_id,\n    if(timestamp >= $__fromTime, toStartOfDay(timestamp), toDateTime('1970-01-01 00:00:00', 'Etc/UTC')) AS day,\n    msg_lower\n  FROM raw\n  WHERE length(trim(BOTH ' ' FROM msg_lower)) > 0\n    AND NOT multiSearchAny(msg_lower, [\n      'permissiondenied',\n      'validationerror:',\n      'django.http.response.http404',\n      'you do not have permission to perform this action.',\n      'limitreachedexception:',\n      'throttled',\n      'request failed with status code 429',\n      'matches the given query.',\n      'cloud storage instance was deleted',\n      'cvatdatasetnotfounderror',\n      'authenticationfailed',\n      'no media data found',\n      'authentication credentials were not provided',\n      'rest_framework.exceptions.notacceptable: could not satisfy the request accept header'\n    ])\n), categorized AS (\n  SELECT\n    period_id,\n    day,\n    source,\n    user_id,\n    multiIf(\n      position(msg_lower, 'network error') > 0, toUInt8(1),\n      position(msg_lower, 'bad gateway') > 0, toUInt8(2),\n      multiSearchAny(msg_lower, ['gateway time-out', '504 gateway', 'code 504 received', 'timeout exceeded', 'request aborted']), toUInt8(3),\n      position(msg_lower, 'server error') > 0, toUInt8(4),\n      position(msg_lower, 'no available server') > 0, toUInt8(5),\n      multiSearchAny(msg_lower, ['redis.exceptions', 'kvrocks']), toUInt8(6),\n      multiSearchAny(msg_lower, ['django.db.utils.operationalerror', 'database system is']), toUInt8(7),\n      multiSearchAny(msg_lower, ['integrityerror', 'foreign key constraint', 'unique constraint']), toUInt8(8),\n      multiSearchAny(msg_lower, ['rq.timeouts.jobtimeoutexception', 'takes too long chunks']), toUInt8(9),\n      multiSearchAny(msg_lower, ['cannot read properties of', 'can''t access property', 'objectstate must be provided correct label, got wrong value undefined', 'cannot set properties of undefined']), toUInt8(10),\n      multiSearchAny(msg_lower, ['is not a function', 'is not iterable']), toUInt8(11),\n      position(msg_lower, 'setting getter-only property') > 0, toUInt8(12),\n      position(msg_lower, 'the start frame is out of the job') > 0, toUInt8(13),\n      multiSearchAny(msg_lower, ['canvas', 'webgl', 'createimagebitmap', 'createobjecturl', 'getimagedata']), toUInt8(14),\n      multiSearchAny(msg_lower, ['react error', '__reactfiber']), toUInt8(15),\n      (startsWith(msg_lower, '**shapes**') OR startsWith(msg_lower, '**labels**')), toUInt8(16),\n      multiSearchAny(msg_lower, ['queryselector', 'not a valid selector']), toUInt8(17),\n      position(msg_lower, 'session has not been initialized yet. call annotations.get() or annotations.clear({ reload: true }) before') > 0, toUInt8(18),\n      multiSearchAny(msg_lower, ['reached the maximum number of projects', 'cachetoolargedataerror']), toUInt8(19),\n      position(msg_lower, 'decompressionbomberror') > 0, toUInt8(20),\n      multiSearchAny(msg_lower, ['polygon must have at least', 'all the objects must have the same label', 'expected only one visible shape per frame']), toUInt8(21),\n      multiSearchAny(msg_lower, ['action name must be unique', 'all label names must be unique']), toUInt8(22),\n      position(msg_lower, 'label') > 0 AND position(msg_lower, 'is not registered for this task') > 0, toUInt8(23),\n      position(msg_lower, 'trying to save an attribute') > 0 AND position(msg_lower, 'invalid value') > 0, toUInt8(24),\n      multiSearchAny(msg_lower, ['unsupported media type', 'file must be file instance']), toUInt8(25),\n      multiSearchAny(msg_lower, ['unexpected type of track', 'skeleton template must be specified', 'cannot join these polygons: the operation would create a shape with holes, which is not supported by cvat. please select different polygons or use the mask tool.']), toUInt8(21),\n      position(msg_lower, 'oserror: [errno 36]') > 0, toUInt8(26),\n      startsWith(msg_lower, 'rest_framework.exceptions.notfound'), toUInt8(27),\n      position(msg_lower, 'rest_framework.exceptions.methodnotallowed') > 0, toUInt8(28),\n      multiSearchAny(msg_lower, ['datumaro.components.errors', 'annotationexporterror', 'itemexporterror', 'repeateditemerror', 'datumaro.components.contexts.importer._importfail', 'there is no item named ''project.json'' in the archive', 'there is no item named ''task.json'' in the archive', 'no media data found', 'no image found', 'cvat.apps.dataset_manager.bindings.cvatimporterror']), toUInt8(29),\n      position(msg_lower, 'cloudstoragemissingerror') > 0, toUInt8(30),\n      multiSearchAny(msg_lower, ['invalidimageerror', 'unidentifiedimageerror']), toUInt8(31),\n      position(msg_lower, 'runtimeerror: exception occurred during compression of image') > 0, toUInt8(32),\n      position(msg_lower, 'av.error') > 0, toUInt8(33),\n      multiSearchAny(msg_lower, ['filenotfounderror: [errno 2] no such file or directory', 'manifest.jsonl']), toUInt8(34),\n      multiSearchAny(msg_lower, ['not found on the cloud storage', 'resource ali-']), toUInt8(35),\n      position(msg_lower, 'trying to use undefined cloud storage') > 0, toUInt8(36),\n      position(msg_lower, 'already being processed (action=') > 0, toUInt8(37),\n      position(msg_lower, 'duplicate key value violates unique constraint') > 0, toUInt8(38),\n      position(msg_lower, 'locknotownederror') > 0, toUInt8(39),\n      toUInt8(255)\n    ) AS category_id\n  FROM filtered\n), grouped AS (\n  SELECT\n    grouping(period_id) AS g_period,\n    grouping(day) AS g_day,\n    grouping(source) AS g_source,\n    grouping(category_id) AS g_category,\n    period_id,\n    day,\n    source,\n    category_id,\n    count() AS error_count,\n    uniqExactIf(user_id, isNotNull(user_id)) AS unique_users\n  FROM categorized\n  GROUP BY GROUPING SETS (\n    (period_id),\n    (period_id, source),\n    (period_id, category_id),\n    (period_id, source, category_id),\n    (day, category_id)\n  )\n)\nSELECT\n  dataset,\n  period,\n  time,\n  source,\n  category,\n  category_order,\n  error_count,\n  unique_users,\n  if(dataset IN ('category', 'source_category') AND period = 'current', round(error_count * 100.0 / sumIf(error_count, period = 'current') OVER (PARTITION BY dataset), 2), NULL) AS percentage,\n  if(dataset IN ('stats', 'source', 'category', 'source_category'), sumIf(error_count, period = 'previous') OVER (PARTITION BY dataset, source, category), NULL) AS prev_error_count,\n  if(dataset IN ('stats', 'source', 'category', 'source_category'), sumIf(unique_users, period = 'previous') OVER (PARTITION BY dataset, source, category), NULL) AS prev_unique_users,\n  if(dataset IN ('stats', 'source', 'category', 'source_category') AND period = 'current' AND prev_error_count != 0, round((error_count - prev_error_count) * 100.0 / prev_error_count, 2), NULL) AS delta_percent,\n  if(dataset = 'stats' AND period = 'current' AND prev_unique_users != 0, round((unique_users - prev_unique_users) * 100.0 / prev_unique_users, 2), NULL) AS unique_users_delta_percent\nFROM\n(\n  SELECT\n    multiIf(\n      g_period = 0 AND g_day = 1 AND g_source = 1 AND g_category = 1, 'stats',\n      g_period = 0 AND g_day = 1 AND g_source = 0 AND g_category = 1, 'source',\n      g_period = 0 AND g_day = 1 AND g_source = 1 AND g_category = 0, 'category',\n      g_period = 0 AND g_day = 1 AND g_source = 0 AND g_category = 0, 'source_category',\n      g_period = 1 AND g_day = 0 AND g_source = 1 AND g_category = 0, 'day_category',\n      'unknown'\n    ) AS dataset,\n    if(g_period = 0, if(period_id = 1, 'current', 'previous'), '') AS period,\n    day AS time,\n    source,\n    if(g_category = 0, multiIf(\n      category_id = 1, 'Network Error',\n      category_id = 2, '502 Bad Gateway',\n      category_id = 3, '504 Gateway Timeout',\n      category_id = 4, '500 Server Error',\n      category_id = 5, 'No available server / service unavailable',\n      category_id = 6, 'Redis / kvrocks',\n      category_id = 7, 'Postgres / DB (operational)',\n      category_id = 8, 'Postgres / DB (integrity)',\n      category_id = 9, 'Timeouts / background jobs',\n      category_id = 10, 'JS null/undefined access',\n      category_id = 11, 'JS type/method errors',\n      category_id = 12, 'JS read-only property assignment',\n      category_id = 13, 'Client validation / frame bounds',\n      category_id = 14, 'Canvas / WebGL / memory',\n      category_id = 15, 'React / DOM',\n      category_id = 16, 'Debug logging / shapes dump',\n      category_id = 17, 'JS DOM API / Selectors',\n      category_id = 18, 'CVAT-core / Business Logic',\n      category_id = 19, 'Quotas / size limits',\n      category_id = 20, 'Quotas / size limits (image bomb)',\n      category_id = 21, 'Geometry / annotation rules',\n      category_id = 22, 'Uniqueness / names / ids',\n      category_id = 23, 'Labels not registered',\n      category_id = 24, 'Attributes invalid value',\n      category_id = 25, 'Unsupported / invalid input',\n      category_id = 26, 'OS error / file system',\n      category_id = 27, 'DRF 404 / NotFound',\n      category_id = 28, 'DRF MethodNotAllowed',\n      category_id = 29, 'Import/Export / Datumaro',\n      category_id = 30, 'Cloud storage / file missing',\n      category_id = 31, 'Invalid image file',\n      category_id = 32, 'Image compression errors',\n      category_id = 33, 'AV / codec errors',\n      category_id = 34, 'File not found / missing file',\n      category_id = 35, 'Cloud storage / file not found',\n      category_id = 36, 'Cloud storage / config error',\n      category_id = 37, 'Concurrent export/import / duplicate request',\n      category_id = 38, 'DB duplicate key',\n      category_id = 39, 'Redis lock / concurrency',\n      'Other / uncategorized'\n    ), '') AS category,\n    if(g_category = 0, multiIf(\n      category_id = 7, 1,\n      category_id = 10, 2,\n      category_id = 34, 3,\n      category_id = 33, 4,\n      category_id = 30, 5,\n      category_id = 21, 6,\n      category_id = 27, 7,\n      category_id = 20, 8,\n      category_id = 31, 9,\n      category_id = 19, 10,\n      category_id = 16, 11,\n      category_id = 8, 12,\n      category_id = 15, 13,\n      category_id = 18, 14,\n      category_id = 3, 15,\n      category_id = 37, 16,\n      category_id = 14, 17,\n      category_id = 13, 18,\n      category_id = 22, 19,\n      category_id = 28, 20,\n      category_id = 11, 21,\n      category_id = 1, 22,\n      category_id = 23, 23,\n      category_id = 4, 24,\n      category_id = 255, 25,\n      category_id = 25, 26,\n      category_id = 29, 27,\n      category_id = 2, 28,\n      1000 + category_id\n    ), 0) AS category_order,\n    error_count,\n    unique_users\n  FROM grouped\n  WHERE NOT (g_period = 1 AND g_day = 0 AND day = toDateTime('1970-01-01 00:00:00', 'Etc/UTC'))\n)",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "table",
+      "transparent": true
     }
   ],
   "refresh": false,
@@ -775,7 +1313,7 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "hide": 0,
+        "hide": 2,
         "includeAll": true,
         "label": "Category",
         "multi": false,
