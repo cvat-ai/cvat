@@ -1110,6 +1110,123 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert "annotations" not in report_data["comparison_summary"]
         assert report_data["comparison_summary"]["conflict_count"] == 0
 
+    def test_label_free_requirement_matching_prefers_same_label_shapes(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "label-aware-matching-report",
+                "labels": [
+                    {"name": "car", "type": "rectangle"},
+                    {"name": "person", "type": "rectangle"},
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        _, response = self._patch_settings(admin_user, settings["id"], {"inherit": False})
+        assert response.status_code == HTTPStatus.OK
+
+        all_requirement_name = f"all-overlapping-rectangles-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                all_requirement_name,
+                settings_id=settings["id"],
+                required_score=1.0,
+                annotation_type="rectangle",
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        car_requirement_name = f"car-overlapping-rectangles-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                car_requirement_name,
+                settings_id=settings["id"],
+                required_score=1.0,
+                annotation_type="rectangle",
+                filter_expression=json.dumps({"==": [{"var": "shape.label"}, "car"]}),
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        person_requirement_name = f"person-overlapping-rectangles-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                person_requirement_name,
+                settings_id=settings["id"],
+                required_score=1.0,
+                annotation_type="rectangle",
+                filter_expression=json.dumps({"==": [{"var": "shape.label"}, "person"]}),
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["car"].id,
+                            points=[0, 0, 10, 10],
+                        ),
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["person"].id,
+                            points=[0.1, 0, 10.1, 10],
+                        ),
+                    ]
+                },
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["car"].id,
+                            points=[0.1, 0, 10.1, 10],
+                        ),
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["person"].id,
+                            points=[0, 0, 10, 10],
+                        ),
+                    ]
+                },
+            )
+
+        self._complete_job(admin_user, gt_job.id)
+
+        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+
+        all_annotations = report_data["groups"][all_requirement_name]["comparison_summary"][
+            "annotations"
+        ]
+        car_annotations = report_data["groups"][car_requirement_name]["comparison_summary"][
+            "annotations"
+        ]
+        person_annotations = report_data["groups"][person_requirement_name]["comparison_summary"][
+            "annotations"
+        ]
+
+        assert all_annotations["valid_count"] == 2
+        assert all_annotations["missing_count"] == 0
+        assert all_annotations["extra_count"] == 0
+        assert car_annotations["valid_count"] == 1
+        assert person_annotations["valid_count"] == 1
+
     def test_task_report_metrics_change_after_gt_annotations_change(self, admin_user):
         task_id, _ = create_task(
             admin_user,

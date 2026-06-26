@@ -12,18 +12,15 @@
       "parent_id": null,
       "project_id": 17,
       "summary": {
-        "accuracy": 0.2727272727272727,
         "conflict_count": 10,
         "conflicts_by_type": {
           "extra_annotation": 1,
           "low_overlap": 2,
           "missing_annotation": 7
         },
-        "ds_count": 8,
         "error_count": 8,
         "frame_count": 6,
         "frame_share": 0.5,
-        "gt_count": 20,
         "jobs": {
           "excluded": 0,
           "included": 3,
@@ -31,8 +28,6 @@
           "total": 3,
           "completed": 0
         },
-        "precision": 0.75,
-        "recall": 0.3,
         "tasks": {
           "custom": 0,
           "excluded": 0,
@@ -41,9 +36,7 @@
           "total": 2,
           "completed": 0
         },
-        "total_count": 22,
         "total_frames": 12,
-        "valid_count": 6,
         "validation_frame_share": 0.5,
         "validation_frames": 6,
         "warning_count": 2
@@ -61,22 +54,15 @@
       "parent_id": 15,
       "project_id": 17,
       "summary": {
-        "accuracy": 0.25,
         "conflict_count": 3,
         "conflicts_by_type": {
           "extra_annotation": 1,
           "missing_annotation": 2
         },
-        "ds_count": 2,
         "error_count": 3,
         "frame_count": 2,
         "frame_share": 0.6666666666666666,
-        "gt_count": 3,
-        "precision": 0.5,
-        "recall": 0.3333333333333333,
-        "total_count": 4,
         "total_frames": 3,
-        "valid_count": 1,
         "validation_frame_share": 0.6666666666666666,
         "validation_frames": 2,
         "warning_count": 0
@@ -94,22 +80,15 @@
       "parent_id": 15,
       "project_id": 17,
       "summary": {
-        "accuracy": 0.3333333333333333,
         "conflict_count": 3,
         "conflicts_by_type": {
           "low_overlap": 1,
           "missing_annotation": 2
         },
-        "ds_count": 1,
         "error_count": 2,
         "frame_count": 2,
         "frame_share": 0.4,
-        "gt_count": 3,
-        "precision": 1.0,
-        "recall": 0.3333333333333333,
-        "total_count": 3,
         "total_frames": 5,
-        "valid_count": 1,
         "validation_frame_share": 0.4,
         "validation_frames": 2,
         "warning_count": 1
@@ -127,18 +106,15 @@
       "parent_id": 18,
       "project_id": 17,
       "summary": {
-        "accuracy": 0.2857142857142857,
         "conflict_count": 6,
         "conflicts_by_type": {
           "extra_annotation": 1,
           "low_overlap": 1,
           "missing_annotation": 4
         },
-        "ds_count": 3,
         "error_count": 5,
         "frame_count": 4,
         "frame_share": 0.5,
-        "gt_count": 6,
         "jobs": {
           "excluded": 0,
           "included": 2,
@@ -146,11 +122,7 @@
           "total": 2,
           "completed": 0
         },
-        "precision": 0.6666666666666666,
-        "recall": 0.3333333333333333,
-        "total_count": 7,
         "total_frames": 8,
-        "valid_count": 2,
         "validation_frame_share": 0.5,
         "validation_frames": 4,
         "warning_count": 1
@@ -168,22 +140,15 @@
       "parent_id": 13,
       "project_id": 17,
       "summary": {
-        "accuracy": 0.25,
         "conflict_count": 4,
         "conflicts_by_type": {
           "low_overlap": 1,
           "missing_annotation": 3
         },
-        "ds_count": 1,
         "error_count": 3,
         "frame_count": 2,
         "frame_share": 0.5,
-        "gt_count": 4,
-        "precision": 1.0,
-        "recall": 0.25,
-        "total_count": 4,
         "total_frames": 4,
-        "valid_count": 1,
         "validation_frame_share": 0.5,
         "validation_frames": 2,
         "warning_count": 1
@@ -201,17 +166,14 @@
       "parent_id": 18,
       "project_id": 17,
       "summary": {
-        "accuracy": 0.25,
         "conflict_count": 4,
         "conflicts_by_type": {
           "low_overlap": 1,
           "missing_annotation": 3
         },
-        "ds_count": 1,
         "error_count": 3,
         "frame_count": 2,
         "frame_share": 0.5,
-        "gt_count": 4,
         "jobs": {
           "excluded": 0,
           "included": 1,
@@ -219,11 +181,7 @@
           "total": 1,
           "completed": 0
         },
-        "precision": 1.0,
-        "recall": 0.25,
-        "total_count": 4,
         "total_frames": 4,
-        "valid_count": 1,
         "validation_frame_share": 0.5,
         "validation_frames": 2,
         "warning_count": 1
@@ -241,7 +199,6 @@
       "parent_id": 11,
       "project_id": null,
       "summary": {
-        "accuracy": 0.4583333333333333,
         "conflict_count": 42,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -253,16 +210,10 @@
           "mismatching_label": 3,
           "missing_annotation": 12
         },
-        "ds_count": 36,
         "error_count": 26,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
-        "gt_count": 37,
-        "precision": 0.6111111111111112,
-        "recall": 0.5945945945945946,
-        "total_count": 48,
         "total_frames": 11,
-        "valid_count": 22,
         "validation_frame_share": 0.2727272727272727,
         "validation_frames": 3,
         "warning_count": 16
@@ -280,7 +231,6 @@
       "parent_id": null,
       "project_id": null,
       "summary": {
-        "accuracy": 0.4583333333333333,
         "conflict_count": 42,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -292,11 +242,9 @@
           "mismatching_label": 3,
           "missing_annotation": 12
         },
-        "ds_count": 36,
         "error_count": 26,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
-        "gt_count": 37,
         "jobs": {
           "excluded": 0,
           "included": 1,
@@ -304,11 +252,7 @@
           "total": 1,
           "completed": 0
         },
-        "precision": 0.6111111111111112,
-        "recall": 0.5945945945945946,
-        "total_count": 48,
         "total_frames": 11,
-        "valid_count": 22,
         "validation_frame_share": 0.2727272727272727,
         "validation_frames": 3,
         "warning_count": 16
@@ -326,22 +270,15 @@
       "parent_id": 7,
       "project_id": null,
       "summary": {
-        "accuracy": 0.0,
         "conflict_count": 2,
         "conflicts_by_type": {
           "extra_annotation": 1,
           "missing_annotation": 1
         },
-        "ds_count": 1,
         "error_count": 2,
         "frame_count": 1,
         "frame_share": 0.2,
-        "gt_count": 1,
-        "precision": 0.0,
-        "recall": 0.0,
-        "total_count": 2,
         "total_frames": 5,
-        "valid_count": 0,
         "validation_frame_share": 0.2,
         "validation_frames": 1,
         "warning_count": 0
@@ -359,21 +296,14 @@
       "parent_id": 7,
       "project_id": null,
       "summary": {
-        "accuracy": 1.0,
         "conflict_count": 1,
         "conflicts_by_type": {
           "low_overlap": 1
         },
-        "ds_count": 2,
         "error_count": 0,
         "frame_count": 2,
         "frame_share": 0.4,
-        "gt_count": 2,
-        "precision": 1.0,
-        "recall": 1.0,
-        "total_count": 2,
         "total_frames": 5,
-        "valid_count": 2,
         "validation_frame_share": 0.4,
         "validation_frames": 2,
         "warning_count": 1
@@ -391,19 +321,12 @@
       "parent_id": 7,
       "project_id": null,
       "summary": {
-        "accuracy": 0.0,
         "conflict_count": 0,
         "conflicts_by_type": {},
-        "ds_count": 0,
         "error_count": 0,
         "frame_count": 0,
         "frame_share": 0.0,
-        "gt_count": 0,
-        "precision": 0.0,
-        "recall": 0.0,
-        "total_count": 0,
         "total_frames": 0,
-        "valid_count": 0,
         "validation_frame_share": 0.0,
         "validation_frames": 0,
         "warning_count": 0
@@ -421,23 +344,16 @@
       "parent_id": null,
       "project_id": null,
       "summary": {
-        "accuracy": 0.5,
         "conflict_count": 3,
         "conflicts_by_type": {
           "extra_annotation": 1,
           "low_overlap": 1,
           "missing_annotation": 1
         },
-        "ds_count": 3,
         "error_count": 2,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
-        "gt_count": 3,
-        "precision": 0.6666666666666666,
-        "recall": 0.6666666666666666,
-        "total_count": 4,
         "total_frames": 11,
-        "valid_count": 2,
         "validation_frame_share": 0.2727272727272727,
         "validation_frames": 3,
         "warning_count": 1
@@ -455,7 +371,6 @@
       "parent_id": 5,
       "project_id": null,
       "summary": {
-        "accuracy": 0.4782608695652174,
         "conflict_count": 40,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -467,16 +382,10 @@
           "mismatching_label": 3,
           "missing_annotation": 10
         },
-        "ds_count": 36,
         "error_count": 24,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
-        "gt_count": 35,
-        "precision": 0.6111111111111112,
-        "recall": 0.6285714285714286,
-        "total_count": 46,
         "total_frames": 11,
-        "valid_count": 22,
         "validation_frame_share": 0.2727272727272727,
         "validation_frames": 3,
         "warning_count": 16
@@ -494,7 +403,6 @@
       "parent_id": null,
       "project_id": null,
       "summary": {
-        "accuracy": 0.4782608695652174,
         "conflict_count": 40,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -506,16 +414,10 @@
           "mismatching_label": 3,
           "missing_annotation": 10
         },
-        "ds_count": 36,
         "error_count": 24,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
-        "gt_count": 35,
-        "precision": 0.6111111111111112,
-        "recall": 0.6285714285714286,
-        "total_count": 46,
         "total_frames": 11,
-        "valid_count": 22,
         "validation_frame_share": 0.2727272727272727,
         "validation_frames": 3,
         "warning_count": 16
@@ -533,7 +435,6 @@
       "parent_id": 3,
       "project_id": null,
       "summary": {
-        "accuracy": 0.4782608695652174,
         "conflict_count": 40,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -545,16 +446,10 @@
           "mismatching_label": 3,
           "missing_annotation": 10
         },
-        "ds_count": 36,
         "error_count": 24,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
-        "gt_count": 35,
-        "precision": 0.6111111111111112,
-        "recall": 0.6285714285714286,
-        "total_count": 46,
         "total_frames": 11,
-        "valid_count": 22,
         "validation_frame_share": 0.2727272727272727,
         "validation_frames": 3,
         "warning_count": 16
@@ -572,7 +467,6 @@
       "parent_id": null,
       "project_id": null,
       "summary": {
-        "accuracy": 0.4782608695652174,
         "conflict_count": 40,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -584,16 +478,10 @@
           "mismatching_label": 3,
           "missing_annotation": 10
         },
-        "ds_count": 36,
         "error_count": 24,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
-        "gt_count": 35,
-        "precision": 0.6111111111111112,
-        "recall": 0.6285714285714286,
-        "total_count": 46,
         "total_frames": 11,
-        "valid_count": 22,
         "validation_frame_share": 0.2727272727272727,
         "validation_frames": 3,
         "warning_count": 16
@@ -611,7 +499,6 @@
       "parent_id": 1,
       "project_id": null,
       "summary": {
-        "accuracy": 0.4883720930232558,
         "conflict_count": 37,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -623,16 +510,10 @@
           "mismatching_label": 3,
           "missing_annotation": 9
         },
-        "ds_count": 34,
         "error_count": 22,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
-        "gt_count": 33,
-        "precision": 0.6176470588235294,
-        "recall": 0.6363636363636364,
-        "total_count": 43,
         "total_frames": 11,
-        "valid_count": 21,
         "validation_frame_share": 0.2727272727272727,
         "validation_frames": 3,
         "warning_count": 15
@@ -650,7 +531,6 @@
       "parent_id": null,
       "project_id": null,
       "summary": {
-        "accuracy": 0.4883720930232558,
         "conflict_count": 37,
         "conflicts_by_type": {
           "covered_annotation": 1,
@@ -662,16 +542,10 @@
           "mismatching_label": 3,
           "missing_annotation": 9
         },
-        "ds_count": 34,
         "error_count": 22,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
-        "gt_count": 33,
-        "precision": 0.6176470588235294,
-        "recall": 0.6363636363636364,
-        "total_count": 43,
         "total_frames": 11,
-        "valid_count": 21,
         "validation_frame_share": 0.2727272727272727,
         "validation_frames": 3,
         "warning_count": 15
