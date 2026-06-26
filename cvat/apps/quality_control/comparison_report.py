@@ -371,6 +371,31 @@ class ComparisonParameters(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
+class ComparisonReportParameters(ReportNode):
+    inherited: bool = False
+    """
+    Indicates that parent object parameters are inherited.
+    For example, a task can inherit project parameters.
+    """
+
+    job_filter: str = ""
+    "JSON filter expression for included jobs"
+
+    @classmethod
+    def from_dict(cls, d: dict) -> ComparisonReportParameters:
+        return cls(inherited=d["inherited"], job_filter=d["job_filter"])
+
+    @classmethod
+    def from_comparison_parameters(
+        cls, parameters: ComparisonParameters
+    ) -> ComparisonReportParameters:
+        return cls(
+            inherited=parameters.inherited,
+            job_filter=parameters.job_filter,
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
 class ConfusionMatrix(ReportNode):
     labels: list[str] | None
     rows: np.ndarray | None
@@ -416,7 +441,7 @@ class ConfusionMatrix(ReportNode):
         ) / (total_annotations_count or 1)
 
     @cached_property
-    def precision(self) -> np.ndarray | None:  # pylint: disable=method-hidden (fixed in pylint 3.0)
+    def precision(self) -> np.ndarray | None:  # pylint: disable=method-hidden
         self._update_cached_fields()
         return self.precision
 
@@ -1006,7 +1031,7 @@ class ComparisonReportRequirementSummary(ReportNode):
 
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReport(ReportNode):
-    parameters: ComparisonParameters
+    parameters: ComparisonReportParameters
     comparison_summary: ComparisonReportSummary
     frame_results: dict[int, ComparisonReportFrameSummary] | None
     groups: dict[str, ComparisonReportRequirementSummary] | None = None
@@ -1028,7 +1053,7 @@ class ComparisonReport(ReportNode):
             else None
         )
         return cls(
-            parameters=ComparisonParameters.from_dict(d["parameters"]),
+            parameters=ComparisonReportParameters.from_dict(d["parameters"]),
             comparison_summary=ComparisonReportSummary.from_dict(d["comparison_summary"]),
             frame_results=(
                 {

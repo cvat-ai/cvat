@@ -35,6 +35,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
+    ComparisonReportParameters,
     ComparisonReportRequirementComparisonSummary,
     ComparisonReportRequirementsSummary,
     ComparisonReportRequirementSummary,
@@ -1426,7 +1427,7 @@ class DatasetQualityEstimator:
         }
         requirement_stats = build_requirements_summary(self._requirements, group_reports)
         return ComparisonReport(
-            parameters=self.DEFAULT_SETTINGS,
+            parameters=ComparisonReportParameters(),
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
                 total_frames=self._get_total_frames(),

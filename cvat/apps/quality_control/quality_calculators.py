@@ -33,6 +33,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
     ComparisonReportJobStats,
+    ComparisonReportParameters,
     ComparisonReportRequirementComparisonSummary,
     ComparisonReportRequirementSummary,
     ComparisonReportSummary,
@@ -329,7 +330,7 @@ class TaskQualityCalculator:
             group_report.parameters for group_report in requirement_groups.values()
         ]
         task_report_data = ComparisonReport(
-            parameters=parameters,
+            parameters=ComparisonReportParameters.from_comparison_parameters(parameters),
             comparison_summary=ComparisonReportSummary(
                 frame_count=task_validation_frames_count,
                 total_frames=task_total_frames,
@@ -698,7 +699,7 @@ class ProjectQualityCalculator:
         ]
         project_conflicts = deduplicate_annotation_conflicts(project_conflicts)
         project_report_data = ComparisonReport(
-            parameters=quality_params,
+            parameters=ComparisonReportParameters.from_comparison_parameters(quality_params),
             comparison_summary=ComparisonReportSummary(
                 total_frames=total_frames,
                 frame_count=total_validated_frames,

@@ -1827,6 +1827,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert "groups" in report_data
         assert enabled_requirement_name in report_data["groups"]
         assert disabled_requirement_name in report_data["groups"]
+        assert report_data["parameters"] == {
+            "inherited": False,
+            "job_filter": updated_settings["job_filter"],
+        }
         assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
         parameters = report_data["groups"][enabled_requirement_name]["parameters"]
         assert parameters["requirement_id"] == enabled_requirement_id
