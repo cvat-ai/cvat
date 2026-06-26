@@ -8,7 +8,6 @@ from time import sleep, time
 
 import pytest
 from deepdiff import DeepDiff
-
 from shared.fixtures.data import Container
 from shared.fixtures.init import CVAT_ROOT_DIR
 from shared.utils.config import delete_method, get_method, patch_method, post_method
@@ -800,13 +799,15 @@ class TestWebhookExportEvents:
     def test_webhook_create_export_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
         webhook_id = create_webhook(
-            events=["create:export"], webhook_type="organization", org_id=task["organization"]
+            events=["create:dataset_export"],
+            webhook_type="organization",
+            org_id=task["organization"],
         )["id"]
 
         export_task_dataset("admin1", id=task["id"], save_images=False, download_result=False)
 
         _, payload = get_deliveries(webhook_id)
-        assert payload["event"] == "create:export"
+        assert payload["event"] == "create:dataset_export"
         assert payload["status"] == "succeeded"
         assert payload["target"] == "task"
         assert payload["target_id"] == task["id"]
@@ -817,13 +818,15 @@ class TestWebhookBackupEvents:
     def test_webhook_create_backup_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
         webhook_id = create_webhook(
-            events=["create:backup"], webhook_type="organization", org_id=task["organization"]
+            events=["create:backup_export"],
+            webhook_type="organization",
+            org_id=task["organization"],
         )["id"]
 
         export_task_backup("admin1", id=task["id"], download_result=False)
 
         _, payload = get_deliveries(webhook_id)
-        assert payload["event"] == "create:backup"
+        assert payload["event"] == "create:backup_export"
         assert payload["status"] == "succeeded"
         assert payload["target"] == "task"
         assert payload["target_id"] == task["id"]

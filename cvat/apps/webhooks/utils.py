@@ -38,10 +38,10 @@ def get_event_name_and_webhook_payload_from_export_request(
 ) -> tuple[str, dict]:
     match request.subresource:
         case RequestSubresource.DATASET | RequestSubresource.ANNOTATIONS:
-            _event_name = event_name(action="create", resource="export")
+            _event_name = event_name(action="create", resource="dataset_export")
             subresource_data = {"format": request.format}
         case RequestSubresource.BACKUP:
-            _event_name = event_name(action="create", resource="backup")
+            _event_name = event_name(action="create", resource="backup_export")
             # NOTE @sosov: RequestId omits falsey fields, but webhook payloads should
             # preserve the default regular-backup value as false.
             subresource_data = {
