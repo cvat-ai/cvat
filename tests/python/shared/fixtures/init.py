@@ -579,22 +579,14 @@ def session_finish(session):
 
 def collect_code_coverage_from_containers():
     for container in Container.covered():
-        # find python3 processes excluding PID 1 (entrypoint)
-        result = run(
-            f"docker exec -u root {PREFIX}_{container}_1 pidof python3 -o 1".split(),
-            stdout=PIPE,
-            stderr=PIPE,
-        )  # nosec
-        pid = result.stdout.decode().strip()
+        process_command = "python3"
 
-        if pid:
-            # gracefully stop process to flush coverage
-            docker_exec(container, f"kill -15 {pid}")
-            sleep(3)
-        else:
-            logger.info(
-                f"No python3 process in {container}, worker likely exited — coverage already flushed"
-            )
+        # find process with code coverage
+        pid = docker_exec(container, f"pidof {process_command} -o 1")
+
+        # stop process with code coverage
+        docker_exec(container, f"kill -15 {pid}")
+        sleep(3)
 
         # get code coverage report
         docker_exec(container, "coverage combine", capture_output=False)
