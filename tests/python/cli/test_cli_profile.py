@@ -5,7 +5,6 @@
 import json
 
 import pytest
-
 from cvat_sdk.core.auth import AuthStore, ProfileEntry
 
 from .util import run_cli
