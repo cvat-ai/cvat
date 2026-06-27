@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 
 import pytest
 from cvat_sdk.core.auth import AuthStore, ProfileEntry
