@@ -545,6 +545,7 @@ def kube_start(cvat_db_dir, keep_data):
 
     wait_for_services()
 
+
     kube_exec_cvat(
         ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata_sorted /tmp/data.json"]
     )
