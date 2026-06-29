@@ -1,3 +1,7 @@
+# Copyright (C) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import logging
 from collections.abc import Iterable, Sequence
 from functools import wraps
@@ -64,23 +68,28 @@ def find_psycopg_cause(
 
 
 def set_local_lock_timeout(timeout_seconds: int | None = None) -> None:
-    if connection.vendor != "postgresql":
-        # NOTE @aleksei: SQLite-backed tests cannot emulate PostgreSQL lock_timeout.
-        _logger.warning("Skipping PostgreSQL lock_timeout on %s backend", connection.vendor)
-        return
-
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "SET LOCAL lock_timeout = %s;",
-            [
-                (
-                    timeout_seconds
-                    if timeout_seconds is not None
-                    else settings.CVAT_POSTGRES_TRANSACTION_LOCK_TIMEOUT_SECONDS
+    match connection.vendor:
+        case "postgresql":
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SET LOCAL lock_timeout = %s;",
+                    [
+                        (
+                            timeout_seconds
+                            if timeout_seconds is not None
+                            else settings.CVAT_POSTGRES_TRANSACTION_LOCK_TIMEOUT_SECONDS
+                        )
+                        * 1000
+                    ],
                 )
-                * 1000
-            ],
-        )
+        case "sqlite":
+            # NOTE @aleksei: SQLite-backed tests cannot emulate PostgreSQL lock_timeout.
+            _logger.warning("Skipping PostgreSQL lock_timeout on %s backend", connection.vendor)
+            return
+        case _:
+            raise NotImplementedError(
+                f"set_local_lock_timeout is not implemented for {connection.vendor} backend"
+            )
 
 
 def set_local_lock_timeout_decorator(
@@ -167,16 +176,21 @@ def get_cached(queryset: _QuerysetT, pk: int) -> _ModelT:
 
 
 def get_object_by_id_for_share(model: type[_ModelT], object_id: int) -> _ModelT:
-    if connection.vendor != "postgresql":
-        # NOTE @aleksei: SQLite-backed tests cannot emulate PostgreSQL FOR SHARE locks.
-        _logger.warning("Falling back to unlocked %s.objects.get()", model.__name__)
-        return model.objects.get(pk=object_id)
+    match connection.vendor:
+        case "postgresql":
+            query = sql.SQL("SELECT id FROM {table_name} WHERE id = %s FOR SHARE").format(
+                table_name=sql.Identifier(model._meta.db_table),
+            )
 
-    query = sql.SQL("SELECT id FROM {table_name} WHERE id = %s FOR SHARE").format(
-        table_name=sql.Identifier(model._meta.db_table),
-    )
+            with connection.cursor() as cursor:
+                cursor.execute(query, [object_id])
 
-    with connection.cursor() as cursor:
-        cursor.execute(query, [object_id])
-
-    return model.objects.get(pk=object_id)
+            return model.objects.get(pk=object_id)
+        case "sqlite":
+            # NOTE @aleksei: SQLite-backed tests cannot emulate PostgreSQL FOR SHARE locks.
+            _logger.warning("Falling back to unlocked %s.objects.get()", model.__name__)
+            return model.objects.get(pk=object_id)
+        case _:
+            raise NotImplementedError(
+                f"get_object_by_id_for_share is not implemented for {connection.vendor} backend"
+            )
