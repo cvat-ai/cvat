@@ -498,17 +498,10 @@ export interface SerializedQualityReportData {
     gt_last_updated?: string;
     assignee?: SerializedUser | null;
     summary?: {
-        accuracy: number;
-        precision: number;
-        recall: number;
         total_frames: number;
         validation_frames: number;
         validation_frame_share: number;
         conflict_count: number;
-        valid_count: number;
-        ds_count: number;
-        gt_count: number;
-        total_count: number;
         error_count: number;
         warning_count: number;
         conflicts_by_type: {

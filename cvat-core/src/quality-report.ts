@@ -10,12 +10,6 @@ export interface QualitySummary {
     validationFrames: number;
     validationFrameShare: number;
     conflictCount: number;
-    validCount: number;
-    dsCount: number;
-    gtCount: number;
-    accuracy: number;
-    precision: number;
-    recall: number;
     errorCount: number;
     warningCount: number;
     conflictsByType: {
@@ -126,12 +120,6 @@ export default class QualityReport {
             validationFrames: this.#summary.validation_frames,
             validationFrameShare: this.#summary.validation_frame_share,
             conflictCount: this.#summary.conflict_count,
-            validCount: this.#summary.valid_count,
-            dsCount: this.#summary.ds_count,
-            gtCount: this.#summary.gt_count,
-            accuracy: this.#summary.accuracy,
-            precision: this.#summary.precision,
-            recall: this.#summary.recall,
             conflictsByType: {
                 extraAnnotations: this.#summary.conflicts_by_type?.extra_annotation,
                 missingAnnotations: this.#summary.conflicts_by_type?.missing_annotation,
