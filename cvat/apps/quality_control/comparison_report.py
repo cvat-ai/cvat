@@ -927,14 +927,30 @@ class ComparisonReportSummary(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
-class ComparisonReportRequirementComparisonSummary(ComparisonReportSummary):
+class ComparisonReportRequirementComparisonSummary(ReportNode):
+    conflict_count: int
+    warning_count: int
+    error_count: int
+    conflicts_by_type: dict[AnnotationConflictType, int]
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
+
+    def _value_serializer(self, v):
+        if isinstance(v, AnnotationConflictType):
+            return str(v)
+        else:
+            return super()._value_serializer(v)
 
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
-            **cls._from_dict_kwargs(d),
+            conflict_count=d["conflict_count"],
+            warning_count=d.get("warning_count", 0),
+            error_count=d.get("error_count", 0),
+            conflicts_by_type={
+                _parse_annotation_conflict_type(k): v
+                for k, v in d.get("conflicts_by_type", {}).items()
+            },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
                 d["annotation_components"]

@@ -309,7 +309,6 @@ class TaskQualityCalculator:
             group_name: build_requirement_report(
                 requirement=task_group_parameters[group_name],
                 frame_results=group_frame_results,
-                total_frames=task_total_frames,
             )
             for group_name, group_frame_results in task_group_frame_results.items()
         }
@@ -322,7 +321,6 @@ class TaskQualityCalculator:
                 build_requirement_report(
                     requirement=requirement,
                     frame_results={},
-                    total_frames=task_total_frames,
                 ),
             )
 
@@ -625,8 +623,6 @@ class ProjectQualityCalculator:
         project_group_annotations: dict[str, ComparisonReportAnnotationsSummary] = {}
         project_group_components: dict[str, ComparisonReportAnnotationComponentsSummary] = {}
         project_group_conflicts: dict[str, list[AnnotationConflict]] = {}
-        project_group_total_frames: Counter[str] = Counter()
-        project_group_validated_frames: Counter[str] = Counter()
         for task_id, r in task_reports.items():
             if task_id not in included_tasks:
                 continue
@@ -638,14 +634,11 @@ class ProjectQualityCalculator:
 
             for group_name, group_report in (r.groups or {}).items():
                 project_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
-                project_group_total_frames[
-                    group_name
-                ] += group_report.comparison_summary.total_frames
-                project_group_validated_frames[
-                    group_name
-                ] += group_report.comparison_summary.frame_count
+                group_total_frames = r.comparison_summary.total_frames
+                group_validated_frames = len(group_report.frame_results or {})
 
-                group_weight = 1 / (group_report.comparison_summary.frame_share or 1)
+                group_frame_share = group_validated_frames / (group_total_frames or 1)
+                group_weight = 1 / (group_frame_share or 1)
                 project_group_annotations.setdefault(
                     group_name, ComparisonReportAnnotationsSummary.create_empty()
                 ).accumulate(group_report.comparison_summary.annotations, weight=group_weight)
@@ -664,18 +657,12 @@ class ProjectQualityCalculator:
             requirement_groups[group_name] = ComparisonReportRequirementSummary(
                 parameters=parameters,
                 comparison_summary=ComparisonReportRequirementComparisonSummary(
-                    total_frames=project_group_total_frames[group_name],
-                    frame_count=project_group_validated_frames[group_name],
-                    frames=None,
                     conflict_count=len(group_conflicts),
                     warning_count=0,
                     error_count=len(group_conflicts),
                     conflicts_by_type=Counter(c.type for c in group_conflicts),
                     annotations=project_group_annotations[group_name],
                     annotation_components=project_group_components[group_name],
-                    tasks=None,
-                    jobs=None,
-                    requirements=None,
                 ),
                 frame_results=None,
             )
@@ -689,7 +676,6 @@ class ProjectQualityCalculator:
                 build_requirement_report(
                     requirement=requirement,
                     frame_results={},
-                    total_frames=total_frames,
                     include_frame_results=False,
                 ),
             )

@@ -367,7 +367,6 @@ def build_requirement_report(
     *,
     requirement: Any,
     frame_results: dict[int, ComparisonReportFrameSummary],
-    total_frames: int,
     include_frame_results: bool = True,
 ) -> ComparisonReportRequirementSummary:
     conflicts: list[AnnotationConflict] = []
@@ -387,17 +386,12 @@ def build_requirement_report(
     return ComparisonReportRequirementSummary(
         parameters=serialize_requirement_parameters(requirement),
         comparison_summary=ComparisonReportRequirementComparisonSummary(
-            frames=sorted(frame_results),
-            total_frames=total_frames,
             conflict_count=len(conflicts),
             warning_count=0,
             error_count=len(conflicts),
             conflicts_by_type=Counter(c.type for c in conflicts),
             annotations=annotations_summary,
             annotation_components=annotation_components,
-            tasks=None,
-            jobs=None,
-            requirements=None,
         ),
         frame_results=deepcopy(frame_results) if include_frame_results else None,
     )
@@ -1421,7 +1415,6 @@ class DatasetQualityEstimator:
             requirement.name: build_requirement_report(
                 requirement=requirement,
                 frame_results=self._results.get(requirement.name, {}),
-                total_frames=self._get_total_frames(),
             )
             for requirement in self._requirements
         }

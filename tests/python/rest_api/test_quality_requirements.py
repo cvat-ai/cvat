@@ -1832,6 +1832,19 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "job_filter": updated_settings["job_filter"],
         }
         assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        report_level_summary_fields = {
+            "frames",
+            "total_frames",
+            "frame_count",
+            "frame_share",
+            "mean_conflict_count",
+            "tasks",
+            "jobs",
+            "requirements",
+        }
+        for group in report_data["groups"].values():
+            assert not report_level_summary_fields & set(group["comparison_summary"])
+
         parameters = report_data["groups"][enabled_requirement_name]["parameters"]
         assert parameters["requirement_id"] == enabled_requirement_id
         assert "source_requirement_id" not in parameters
