@@ -16,6 +16,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.69.0'></a>
+## \[2.69.0\] - 2026-06-22
+
+### Added
+
+- \[SDK\] `TrackingFunction` is now exported from `cvat_sdk.auto_annotation`
+  (<https://github.com/cvat-ai/cvat/pull/10739>)
+
+- Added configurable startup arguments and process counts for backend
+  workers, including support for running webhook workers through `rqworker-pool`
+  with a configurable number of processes (numWorkers)
+- numProcs is now passed as value, should not use additionalEnv anymore.
+  NUMPROCS from values override additionalEnv value.
+  (<https://github.com/cvat-ai/cvat/pull/10783>)
+
+### Changed
+
+- SSRF mitigations are no longer applied to backing cloud storage requests
+  (<https://github.com/cvat-ai/cvat/pull/10653>)
+
+- \[SDK\] The `x_organization` parameter passed to individual API calls
+  now takes precedence over the client-level `organization_slug`. Previously,
+  `organization_slug` would silently override it, causing those calls to
+  operate in the wrong organization context
+  (<https://github.com/cvat-ai/cvat/pull/10665>)
+
+- Updated backend worker liveness probes. Now it validates the expected
+  worker count from chart values, so both regular workers and webhook worker that uses `rqworker-pool`
+  can be checked correctly.
+  (<https://github.com/cvat-ai/cvat/pull/10783>)
+
+- Updated nuclio subchart version + dashboard version
+  (<https://github.com/cvat-ai/cvat/pull/10792>)
+
+- \[Server API\] Export and backup webhook payloads now report successful
+  requests with the `succeeded` status instead of `completed`
+  (<https://github.com/cvat-ai/cvat/pull/10734>)
+
+- Allowed importing COCO and COCO Keypoints annotations without the `iscrowd` field.
+  (<https://github.com/cvat-ai/datumaro/pull/138>)
+
+### Fixed
+
+- \[SDK\] Fixed `Project.get_tasks()`, `Project.get_labels()`, `Task.get_jobs()`,
+  `Task.get_labels()`, `Job.get_issues()`, `Job.get_labels()`, and `Issue.get_comments()`
+  methods returning an empty list when called on organization resources without
+  an explicit organization context set on the client, or with a different
+  organization context set
+  (<https://github.com/cvat-ai/cvat/pull/10665>)
+
+- Fixed incorrect responses being returned from the `GET
+  /api/quality/reports` endpoint when the `parent_id` parameter
+  refers to a report inaccessible by the current user
+  (<https://github.com/cvat-ai/cvat/pull/10807>)
+
+### Security
+
+- Fixed a bug allowing a user to determine whether an inaccessible
+  quality report is located in an organization they are not a member of
+  or elsewhere
+  (<https://github.com/cvat-ai/cvat/pull/10807>)
+
+<a id='changelog-2.68.0'></a>
+## \[2.68.0\] - 2026-06-10
+
+### Added
+
+- It's now possible to change the minimum user role needed to create
+  organizations by setting the `CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE`
+  environment variable
+  (<https://github.com/cvat-ai/cvat/pull/10688>)
+
+- Added `attempt` and `request_duration` fields to webhook deliveries
+  (<https://github.com/cvat-ai/cvat/pull/10693>)
+
+- Added an audio annotation workspace with waveform controls, interval regions, and audio task creation
+  (<https://github.com/cvat-ai/cvat/pull/10708>)
+
+### Changed
+
+- \[CLI\] Simplified native function agent task cache limiting to keep the last 10 task caches
+  after task annotation stopped persisting shared chunk caches.
+  (<https://github.com/cvat-ai/cvat/pull/10714>)
+
+- \[CLI\] Native function agents now download and process task image chunks incrementally
+  for task annotation requests, reducing temporary disk usage and allowing progress
+  updates to start sooner.
+  (<https://github.com/cvat-ai/cvat/pull/10675>)
+
+### Fixed
+
+- Preserve annotation source in GT jobs during edit/undo/redo so annotations in GT jobs no longer displayed as GT.
+  (<https://github.com/cvat-ai/cvat/pull/10659>)
+
+- Restricted organization workers assigned to resources from exporting datasets, annotations, or backups
+  unless they own the resource or relevant parent resource
+  (<https://github.com/cvat-ai/cvat/pull/10685>)
+
+- Bug which retained organization name in the list even when its deleted (<https://github.com/cvat-ai/cvat/pull/10690>)
+
+- Fixed stale unsaved-change prompts after saving audio interval annotations
+  (<https://github.com/cvat-ai/cvat/pull/10708>)
+
 <a id='changelog-2.67.0'></a>
 ## \[2.67.0\] - 2026-06-02
 

@@ -47,11 +47,11 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                     number: frameNumber,
                 },
             },
-            annotations: {
-                initialized: annotationsInitialized,
-            },
         },
     } = state;
+
+    const annotationsInitialized = workspace === Workspace.AUDIO ?
+        true : state.annotation.annotations.initialized;
 
     return {
         job: jobID === requestedId || (Number.isNaN(jobID) && Number.isNaN(requestedId)) ? job : null,

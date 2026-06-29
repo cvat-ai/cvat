@@ -7,7 +7,7 @@ jobs:
   docker-images:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build images
         run: |
@@ -38,7 +38,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Generate SDK
         run: |
@@ -61,15 +61,15 @@ jobs:
     env:
       DOCKERHUB_WORKSPACE: ${{ secrets.DOCKERHUB_WORKSPACE }}
     steps:
-      - uses: actions/checkout@v4
-       # v4.3.1
+      - uses: actions/checkout@v7
+
       - name: Set up Helm
-        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
           version: v3.19.0
-       # v3.6.0
+
       - name: Log in to Docker Hub
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}

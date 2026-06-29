@@ -4,13 +4,14 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from django.conf import settings
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission
 
 if TYPE_CHECKING:
     from rest_framework.viewsets import ViewSet
