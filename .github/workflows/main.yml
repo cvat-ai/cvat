@@ -228,6 +228,7 @@ jobs:
             docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
 
 
+      - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v7
         with:
