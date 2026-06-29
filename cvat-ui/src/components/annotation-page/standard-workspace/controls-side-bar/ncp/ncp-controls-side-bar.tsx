@@ -17,13 +17,13 @@ import { LabelType, ObjectType } from 'cvat-core-wrapper';
 
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { ShortcutScope } from 'utils/enums';
 import ControlVisibilityObserver, {
     ExtraControlsControl, ContainerHeightContext,
-} from './control-visibility-observer';
-import ToolsControl from './tools-control';
-import OpenCVControl from './opencv-control';
+} from '../control-visibility-observer';
+import OpenCVControl from '../opencv-control';
 import RabbitControl from './rabbit-control';
-import NCPSetupTagControl from './ncp-setup-tag-control';
+import NCPSetupTagControl from './road-material/ncp-setup-tag-control';
 
 
 type Label = CombinedState['annotation']['job']['labels'][0];
@@ -45,6 +45,25 @@ interface Props {
 }
 
 const componentShortcuts = {
+    PASTE_SHAPE: {
+        name: 'Paste shape',
+        description: 'Paste a shape from internal CVAT clipboard',
+        sequences: ['ctrl+v'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_DRAW_MODE_STANDARD_CONTROLS: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters',
+        sequences: ['n'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_REDRAW_MODE_STANDARD_CONTROLS: {
+        name: 'Redraw shape',
+        description: 'Remove selected shape and redraw it from scratch',
+        sequences: ['shift+n'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -73,6 +92,31 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
+
+    // ── Selected label (lifted from RabbitControl) ───────────────────────────
+    const [selectedLabelID, setSelectedLabelID] = React.useState<number | null>(
+        labels.length ? (labels[0].id as number) : null,
+    );
+
+    // Keep the selection valid when the label list first loads or changes.
+    React.useEffect(() => {
+        if (labels.length && selectedLabelID === null) {
+            setSelectedLabelID(labels[0].id as number);
+        }
+    }, [labels, selectedLabelID]);
+
+    // Listen to ncp:select-label events so the selected label is always kept
+    // in sync at the sidebar level, regardless of which child dispatches the event.
+    React.useEffect(() => {
+        const handler = (e: Event): void => {
+            const { label: lbl } = (e as CustomEvent).detail;
+            if (lbl?.id != null) {
+                setSelectedLabelID(lbl.id as number);
+            }
+        };
+        window.addEventListener('ncp:select-label', handler);
+        return (): void => window.removeEventListener('ncp:select-label', handler);
+    }, []);
 
 
     // ── First-frame tag check ────────────────────────────────────────────────
@@ -217,7 +261,10 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
             <Layout.Sider ref={containerRef} className='cvat-canvas-controls-sidebar' theme='light' width={44}>
                 <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <ObservedOpenCVControl />
-                <ObservedRabbitControl />
+                <ObservedRabbitControl
+                    selectedLabelID={selectedLabelID}
+                    setSelectedLabelID={setSelectedLabelID}
+                />
                 <NCPObservedSetupTagControl disabled={controlsDisabled} />
 
             </Layout.Sider>
