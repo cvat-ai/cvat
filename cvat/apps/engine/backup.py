@@ -66,10 +66,8 @@ from cvat.apps.engine.serializers import (
     ValidationParamsSerializer,
 )
 from cvat.apps.engine.task import JobFileMapping, initialize_task
-from cvat.apps.engine.utils import (
-    av_scan_paths,
-    transaction_with_repeatable_read,
-)
+from cvat.apps.engine.utils import av_scan_paths
+from cvat.utils.django_database.contextmanagers import transaction_with_repeatable_read
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 

@@ -20,7 +20,8 @@ from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import initialize_task
-from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
+from cvat.apps.engine.utils import av_scan_paths
+from cvat.utils.django_database.contextmanagers import transaction_with_repeatable_read
 from cvat.utils.django_database.utils import bulk_create
 
 from .annotation import AnnotationIR
