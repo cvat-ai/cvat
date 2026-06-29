@@ -9,7 +9,6 @@ import shutil
 from glob import glob
 
 from datumaro.components.dataset import Dataset
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
@@ -38,7 +37,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 @importer(name="PASCAL VOC", ext="ZIP", version="1.1")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
-    Archive(src_file.name).extractall(temp_dir)
+    shutil.unpack_archive(src_file.name, temp_dir, "zip")
 
     # put label map from the task if not present
     labelmap_file = osp.join(temp_dir, "labelmap.txt")
