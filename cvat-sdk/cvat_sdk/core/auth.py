@@ -18,6 +18,7 @@ from pathlib import Path
 
 import attrs
 import platformdirs
+
 from cvat_sdk.core.client import (
     AccessTokenCredentials,
     Client,
