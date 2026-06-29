@@ -76,3 +76,4 @@ Once enabled:
 
 - **Use both features**: Both snap tools can be enabled simultaneously for maximum precision.
   Use snap to contour for tracing edges and snap to point for aligning vertices.
+

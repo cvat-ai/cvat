@@ -7,31 +7,28 @@ import { Row } from 'antd/es/grid';
 import Text from 'antd/lib/typography/Text';
 
 import {
-    FramesMetaData, Job, QualitySettings, Task, TaskValidationLayout,
+    FramesMetaData, QualitySettings, Task, TaskValidationLayout,
 } from 'cvat-core-wrapper';
 import Card from 'components/common/cvat-card';
-import JobItem from 'components/job-item/job-item';
 import { validationModeText } from 'utils/quality';
 import { usePageSizeData } from 'utils/hooks';
 import AllocationTable from './allocation-table';
 
 interface Props {
     task: Task;
-    gtJobInstance: Job;
     gtJobId: number;
     gtJobMeta: FramesMetaData;
     validationLayout: TaskValidationLayout;
     qualitySettings: QualitySettings;
-    onJobUpdate(job: Job, fields: Parameters<Job['save']>[0]): void;
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }
 
 function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     const {
-        task, gtJobInstance, gtJobId, gtJobMeta,
+        task, gtJobId, gtJobMeta,
         validationLayout, qualitySettings,
-        onJobUpdate, onDeleteFrames, onRestoreFrames,
+        onDeleteFrames, onRestoreFrames,
     } = props;
 
     const totalCount = validationLayout.validationFrames.length;
@@ -72,13 +69,6 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                     <Text type='secondary' strong>{validationModeTextRepresentation}</Text>
                 </Row>
             ) : null}
-            <Row className='cvat-quality-control-gt-job'>
-                <JobItem
-                    task={task}
-                    job={gtJobInstance}
-                    onJobUpdate={onJobUpdate}
-                />
-            </Row>
             <AllocationTable
                 task={task}
                 gtJobId={gtJobId}

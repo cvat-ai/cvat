@@ -3,9 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { camelCase, snakeCase } from 'lodash';
+import { snakeCase } from 'lodash';
 import { ArgumentError } from './exceptions';
-import { CamelizedV2 } from './type-utils';
 
 export function isBoolean(value): boolean {
     return typeof value === 'boolean';
@@ -154,13 +153,6 @@ export function fieldsToSnakeCase(params: Record<string, any>): Record<string, a
         result[snakeCase(k)] = v;
     }
     return result;
-}
-
-export function fieldsToCamelCase<T extends object>(params: T): CamelizedV2<T> {
-    return Object.entries(params).reduce((acc, [key, value]) => {
-        acc[camelCase(key)] = value;
-        return acc;
-    }, {} as Record<string, unknown>) as CamelizedV2<T>;
 }
 
 export function filterFieldsToSnakeCase(

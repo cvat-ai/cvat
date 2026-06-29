@@ -4,8 +4,7 @@
 
 import {
     AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, QualityRequirementsFilter, ConsensusSettingsFilter, ApiTokensFilter,
-    SerializedQualityRequirementData,
+    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -34,7 +33,6 @@ import Webhook from './webhook';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
-import QualityRequirement, { QualityRequirementSaveFields } from './quality-requirement';
 import ConsensusSettings from './consensus-settings';
 import AnnotationGuide from './guide';
 import ApiToken from './api-token';
@@ -172,15 +170,6 @@ export default interface CVATCore {
                     aggregate?: boolean,
                 ) => Promise<PaginatedResource<QualitySettings>>;
             };
-            requirements: {
-                get: (
-                    filter: QualityRequirementsFilter,
-                    aggregate?: boolean,
-                ) => Promise<PaginatedResource<QualityRequirement>>;
-                create: (
-                    data: QualityRequirementSaveFields | SerializedQualityRequirementData,
-                ) => Promise<QualityRequirement>;
-            };
         };
         events: {
             export: (filter: AnalyticsEventsFilter) => Promise<string>;
@@ -254,7 +243,6 @@ export default interface CVATCore {
         QualityReport: typeof QualityReport;
         QualityConflict: typeof QualityConflict;
         QualitySettings: typeof QualitySettings;
-        QualityRequirement: typeof QualityRequirement;
         ApiToken: typeof ApiToken;
         Request: typeof Request;
         FramesMetaData: typeof FramesMetaData;

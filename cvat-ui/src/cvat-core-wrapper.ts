@@ -27,7 +27,6 @@ import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings, { TargetMetric, QualitySettingsSaveFields } from 'cvat-core/src/quality-settings';
-import QualityRequirement, { QualityRequirementSaveFields } from 'cvat-core/src/quality-requirement';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import ApiToken from 'cvat-core/src/api-token';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
@@ -117,7 +116,6 @@ export {
     QualityReport,
     QualityConflict,
     QualitySettings,
-    QualityRequirement,
     ConsensusSettings,
     ApiToken,
     TargetMetric,
@@ -153,7 +151,6 @@ export type {
     UpdateStatusData,
     OrganizationMembersFilter,
     QualitySettingsSaveFields,
-    QualityRequirementSaveFields,
     AnalyticsEventsFilter,
     MinimalShape,
     InteractorResults,

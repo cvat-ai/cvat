@@ -19,20 +19,20 @@ interface Props {
     };
 }
 
-function QualityRequirementsTab(): JSX.Element {
+function QualityOverviewTab(): JSX.Element {
     return (
         <PaidFeaturePlaceholder featureDescription={config.PAID_PLACEHOLDER_CONFIG.features.qualityControl} />
     );
 }
 
-function QualityRequirementsTabWrap(props: Readonly<Props>): JSX.Element {
+function QualityOverviewTabWrap(props: Readonly<Props>): JSX.Element {
     const { instance } = props;
 
     const {
         taskOverrides, projectOverrides,
     } = useSelector((state: CombinedState) => ({
-        taskOverrides: state.plugins.overridableComponents.qualityControlPage.task.requirementsTab,
-        projectOverrides: state.plugins.overridableComponents.qualityControlPage.project.requirementsTab,
+        taskOverrides: state.plugins.overridableComponents.qualityControlPage.task.overviewTab,
+        projectOverrides: state.plugins.overridableComponents.qualityControlPage.project.overviewTab,
     }), shallowEqual);
 
     if (instance instanceof Task && taskOverrides.length) {
@@ -45,7 +45,7 @@ function QualityRequirementsTabWrap(props: Readonly<Props>): JSX.Element {
         return <Component {...props} instance={instance} />;
     }
 
-    return <QualityRequirementsTab />;
+    return <QualityOverviewTab />;
 }
 
-export default React.memo(QualityRequirementsTabWrap);
+export default React.memo(QualityOverviewTabWrap);

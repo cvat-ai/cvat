@@ -56,9 +56,7 @@
 .cvat-table-columns-settings-menu {
     display: flex;
     flex-direction: column;
-    gap: $grid-unit-size * 0.5;
     max-height: $grid-unit-size * 40;
-    min-width: $grid-unit-size * 22;
     overflow-y: auto;
 }
 

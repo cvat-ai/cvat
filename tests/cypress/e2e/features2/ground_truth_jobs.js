@@ -295,11 +295,6 @@ context('Ground truth jobs', () => {
             cy.contains('.cvat-allocation-summary-excluded', '0').should('exist');
             cy.contains('.cvat-allocation-summary-total', '3').should('exist');
             cy.contains('.cvat-allocation-summary-active', '3').should('exist');
-            cy.get('.cvat-quality-control-gt-job').within(() => {
-                cy.get('.cvat-job-item').should('exist');
-                cy.contains('Ground truth').should('exist');
-                cy.contains(`Job #${groundTruthJobId}`).should('exist');
-            });
 
             cy.get('.cvat-frame-allocation-table').should('exist');
             cy.get('.cvat-allocation-frame-row').should('have.length', 3);
@@ -526,7 +521,6 @@ context('Ground truth jobs', () => {
                     cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
                     cy.get('.cvat-spinner').should('not.exist');
                     cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-                    cy.get('.cvat-workspace-selector').should('exist').and('be.visible');
                     cy.changeWorkspace('Review');
                     cy.get('.cvat-objects-sidebar-show-ground-truth').click();
                     cy.get('.cvat-objects-sidebar-show-ground-truth').should(

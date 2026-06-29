@@ -369,7 +369,7 @@ export interface PluginsState {
         };
         qualityControlPage: {
             task: {
-                requirementsTab: ((props: {
+                overviewTab: ((props: {
                     instance: Task;
                     qualitySettings: {
                         settings: QualitySettings | null;
@@ -389,7 +389,7 @@ export interface PluginsState {
                     }) => JSX.Element)[];
             }
             project : {
-                requirementsTab: ((props: {
+                overviewTab: ((props: {
                     instance: Project;
                     qualitySettings: {
                         settings: QualitySettings | null;
@@ -408,11 +408,6 @@ export interface PluginsState {
         };
     },
     components: {
-        qualityControlPage: {
-            tabs: {
-                items: PluginComponent[];
-            };
-        };
         header: {
             userMenu: {
                 items: PluginComponent[];
