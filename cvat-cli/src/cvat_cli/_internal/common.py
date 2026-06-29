@@ -8,7 +8,6 @@ import importlib
 import importlib.util
 import logging
 import sys
-import textwrap
 from http.client import HTTPConnection
 from pathlib import Path
 from typing import Any
@@ -16,9 +15,8 @@ from typing import Any
 import attrs
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk.core.auth import (
-    CVAT_ACCESS_TOKEN_ENV_VAR,
-    DEFAULT_SERVER,
-    get_auth_factory,
+    ClientAuthParameters,
+    configure_client_auth_arguments,
     make_client_from_cli,
 )
 from cvat_sdk.core.client import Client
@@ -35,50 +33,7 @@ class CriticalError(Exception):
 
 def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--version", action="version", version=VERSION)
-    parser.add_argument(
-        "--insecure",
-        action="store_true",
-        help="Allows to disable SSL certificate check",
-    )
-    parser.add_argument(
-        "--auth",
-        type=get_auth_factory,
-        metavar="USER[:PASS]",
-        default=None,
-        help=textwrap.dedent("""\
-            User and password to use for authentication;
-            supports the PASS environment variable or a password prompt.
-            A Personal Access Token (PAT) can be supplied via the {} environment
-            variable, or saved as a profile (see 'cvat-cli profile').
-            """).format(CVAT_ACCESS_TOKEN_ENV_VAR),
-    )
-    parser.add_argument(
-        "--server-host",
-        type=str,
-        default=None,
-        help="host (default: the active profile, default_server, or %s)" % DEFAULT_SERVER,
-    )
-    parser.add_argument(
-        "--server-port",
-        type=int,
-        default=None,
-        help="port (default: 80 for http and 443 for https connections)",
-    )
-    parser.add_argument(
-        "--organization",
-        "--org",
-        metavar="SLUG",
-        help="""short name (slug) of the organization
-                to use when listing or creating resources;
-                set to blank string to use the personal workspace""",
-    )
-    parser.add_argument(
-        "--profile",
-        metavar="NAME",
-        default=None,
-        help="use a saved profile (server + credential); see 'cvat-cli profile list'."
-        " Mutually exclusive with --server-host/--server-port/--auth.",
-    )
+    configure_client_auth_arguments(parser)
     parser.add_argument(
         "--debug",
         action="store_const",
@@ -103,7 +58,7 @@ def configure_logger(logger: logging.Logger, parsed_args: argparse.Namespace) ->
 
 
 def build_client(parsed_args: argparse.Namespace, logger: logging.Logger) -> Client:
-    auth_args = argparse.Namespace(
+    auth_args = ClientAuthParameters(
         profile=popattr(parsed_args, "profile"),
         insecure=popattr(parsed_args, "insecure"),
         server_host=popattr(parsed_args, "server_host"),
