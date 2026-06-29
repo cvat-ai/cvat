@@ -562,7 +562,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     session_start(session)
 
 
-def pytest_sessionfinish(session: pytest.Session, _exitstatus: int) -> None:
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     session_finish(session)
 
 
