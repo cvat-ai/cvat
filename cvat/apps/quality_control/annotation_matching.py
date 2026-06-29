@@ -37,7 +37,7 @@ SegmentMatchingResult: TypeAlias = tuple[
 ]
 
 
-def match_segments(
+def _match_segments_once(
     a_segms: Sequence[_ShapeT1],
     b_segms: Sequence[_ShapeT2],
     *,
@@ -45,12 +45,6 @@ def match_segments(
     dist_thresh: float = 1.0,
     label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] = lambda a, b: a.label == b.label,
 ) -> SegmentMatchingResult[_ShapeT1, _ShapeT2]:
-    # Comparing to the dm version, this one changes the algorithm to match shapes first
-    # label comparison is only used to distinguish between matches and mismatches
-
-    assert callable(distance), distance
-    assert callable(label_matcher), label_matcher
-
     max_anns = max(len(a_segms), len(b_segms))
     distances = np.array(
         [
@@ -98,6 +92,44 @@ def match_segments(
         b_unmatched = list(b_segms)
 
     return matches, mispred, a_unmatched, b_unmatched
+
+
+def match_segments(
+    a_segms: Sequence[_ShapeT1],
+    b_segms: Sequence[_ShapeT2],
+    *,
+    distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2],
+    dist_thresh: float = 1.0,
+    label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] = lambda a, b: a.label == b.label,
+) -> SegmentMatchingResult[_ShapeT1, _ShapeT2]:
+    assert callable(distance), distance
+    assert callable(label_matcher), label_matcher
+
+    def _same_label_distance(a: _ShapeT1, b: _ShapeT2) -> float:
+        if not label_matcher(a, b):
+            return 0
+
+        return distance(a, b)
+
+    matches, _, a_unmatched, b_unmatched = _match_segments_once(
+        a_segms,
+        b_segms,
+        distance=_same_label_distance,
+        dist_thresh=dist_thresh,
+        label_matcher=label_matcher,
+    )
+    if not a_unmatched or not b_unmatched:
+        return matches, [], a_unmatched, b_unmatched
+
+    extra_matches, mismatches, a_unmatched, b_unmatched = _match_segments_once(
+        a_unmatched,
+        b_unmatched,
+        distance=distance,
+        dist_thresh=dist_thresh,
+        label_matcher=label_matcher,
+    )
+
+    return matches + extra_matches, mismatches, a_unmatched, b_unmatched
 
 
 def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):

@@ -9,7 +9,6 @@ from collections import Counter
 from contextlib import suppress
 from copy import deepcopy
 
-import numpy as np
 from django.db import transaction
 from django.db.models import OuterRef, Subquery, prefetch_related_objects
 
@@ -34,6 +33,8 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
     ComparisonReportJobStats,
+    ComparisonReportParameters,
+    ComparisonReportRequirementComparisonSummary,
     ComparisonReportRequirementSummary,
     ComparisonReportSummary,
     ComparisonReportTaskStats,
@@ -254,9 +255,6 @@ class TaskQualityCalculator:
         task_validation_frames_count = 0  # in included and non-checkable jobs
         task_total_frames = 0  # in included and non-checkable jobs
         task_conflicts: list[AnnotationConflict] = []
-        task_annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
-        task_ann_components_summary = ComparisonReportAnnotationComponentsSummary.create_empty()
-        task_mean_shape_ious = []
         task_frame_results: dict[int, ComparisonReportFrameSummary] = {}
         task_frame_results_counts = {}
         task_group_frame_results: dict[str, dict[int, ComparisonReportFrameSummary]] = {}
@@ -267,10 +265,6 @@ class TaskQualityCalculator:
             task_validation_frames_count += r.comparison_summary.frame_count
             task_total_frames += r.comparison_summary.total_frames
             task_conflicts.extend(r.conflicts)
-
-            task_annotations_summary.accumulate(r.comparison_summary.annotations)
-            task_ann_components_summary.accumulate(r.comparison_summary.annotation_components)
-            task_mean_shape_ious.append(task_ann_components_summary.shape.mean_iou)
 
             for frame_id, job_frame_result in r.frame_results.items():
                 task_frame_result = task_frame_results.get(frame_id)
@@ -309,9 +303,6 @@ class TaskQualityCalculator:
                     group_frame_counts[frame_id] = group_frame_count + 1
                     group_frame_results[frame_id] = merged_group_frame_result
 
-        task_ann_components_summary.shape.mean_iou = np.mean(
-            task_mean_shape_ious or []
-        )  # TODO: maybe remove
         task_conflicts = deduplicate_annotation_conflicts(task_conflicts)
 
         requirement_groups = {
@@ -339,7 +330,7 @@ class TaskQualityCalculator:
             group_report.parameters for group_report in requirement_groups.values()
         ]
         task_report_data = ComparisonReport(
-            parameters=parameters,
+            parameters=ComparisonReportParameters.from_comparison_parameters(parameters),
             comparison_summary=ComparisonReportSummary(
                 frame_count=task_validation_frames_count,
                 total_frames=task_total_frames,
@@ -348,8 +339,6 @@ class TaskQualityCalculator:
                 warning_count=0,
                 error_count=len(task_conflicts),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
-                annotations=task_annotations_summary,
-                annotation_components=task_ann_components_summary,
                 tasks=None,
                 jobs=job_stats,
                 requirements=build_requirements_summary(target_requirements, requirement_groups),
@@ -631,8 +620,6 @@ class ProjectQualityCalculator:
 
         total_frames = 0
         total_validated_frames = 0
-        project_annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
-        project_ann_components_summary = ComparisonReportAnnotationComponentsSummary.create_empty()
         project_conflicts: list[AnnotationConflict] = []
         project_group_parameters: dict[str, dict] = {}
         project_group_annotations: dict[str, ComparisonReportAnnotationsSummary] = {}
@@ -647,14 +634,6 @@ class ProjectQualityCalculator:
             total_frames += r.comparison_summary.total_frames
             total_validated_frames += r.comparison_summary.frame_count
 
-            # Compute the combined weighted summary of the task reports.
-            # Task summary counts are extrapolated to the whole task size
-            # This way, we get averages for the whole project (micro average)
-            weight = 1 / (r.comparison_summary.frame_share or 1)
-            project_annotations_summary.accumulate(r.comparison_summary.annotations, weight=weight)
-            project_ann_components_summary.accumulate(
-                r.comparison_summary.annotation_components, weight=weight
-            )
             project_conflicts.extend(r.conflicts)
 
             for group_name, group_report in (r.groups or {}).items():
@@ -684,7 +663,7 @@ class ProjectQualityCalculator:
             )
             requirement_groups[group_name] = ComparisonReportRequirementSummary(
                 parameters=parameters,
-                comparison_summary=ComparisonReportSummary(
+                comparison_summary=ComparisonReportRequirementComparisonSummary(
                     total_frames=project_group_total_frames[group_name],
                     frame_count=project_group_validated_frames[group_name],
                     frames=None,
@@ -720,7 +699,7 @@ class ProjectQualityCalculator:
         ]
         project_conflicts = deduplicate_annotation_conflicts(project_conflicts)
         project_report_data = ComparisonReport(
-            parameters=quality_params,
+            parameters=ComparisonReportParameters.from_comparison_parameters(quality_params),
             comparison_summary=ComparisonReportSummary(
                 total_frames=total_frames,
                 frame_count=total_validated_frames,
@@ -729,8 +708,6 @@ class ProjectQualityCalculator:
                 warning_count=0,
                 error_count=len(project_conflicts),
                 conflicts_by_type=Counter(c.type for c in project_conflicts),
-                annotations=project_annotations_summary,
-                annotation_components=project_ann_components_summary,
                 tasks=task_stats,
                 jobs=job_stats,
                 requirements=build_requirements_summary(target_requirements, requirement_groups),

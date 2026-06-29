@@ -35,6 +35,8 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
+    ComparisonReportParameters,
+    ComparisonReportRequirementComparisonSummary,
     ComparisonReportRequirementsSummary,
     ComparisonReportRequirementSummary,
     ComparisonReportRequirementSummaryItem,
@@ -384,7 +386,7 @@ def build_requirement_report(
 
     return ComparisonReportRequirementSummary(
         parameters=serialize_requirement_parameters(requirement),
-        comparison_summary=ComparisonReportSummary(
+        comparison_summary=ComparisonReportRequirementComparisonSummary(
             frames=sorted(frame_results),
             total_frames=total_frames,
             conflict_count=len(conflicts),
@@ -423,12 +425,14 @@ def build_requirements_summary(
         required_score = _get_requirement_field(
             requirement, "target_metric_threshold", "required_score", default=0
         )
-        actual_score = getattr(group_report.comparison_summary.annotations, metric, None)
+        annotations = group_report.comparison_summary.annotations
+        actual_score = getattr(annotations, metric, None)
         items.append(
             ComparisonReportRequirementSummaryItem(
                 name=group_name,
                 metric=str(metric),
                 score=float(actual_score) if actual_score is not None else None,
+                score_components=annotations.to_score_components(),
                 threshold=float(required_score),
                 requirement_id=_get_requirement_field(
                     requirement, "source_requirement_id", "requirement_id"
@@ -513,15 +517,8 @@ class RequirementHandler(ABC):
             models.QualityRequirementAnnotationType.SKELETON_KEYPOINT: [dm.AnnotationType.points],
             models.QualityRequirementAnnotationType.POINTS: [dm.AnnotationType.points],
             models.QualityRequirementAnnotationType.POLYLINE: [dm.AnnotationType.polyline],
-            # Masks and polygons are compared together by the comparator.
-            models.QualityRequirementAnnotationType.MASK: [
-                dm.AnnotationType.mask,
-                dm.AnnotationType.polygon,
-            ],
-            models.QualityRequirementAnnotationType.POLYGON: [
-                dm.AnnotationType.polygon,
-                dm.AnnotationType.mask,
-            ],
+            models.QualityRequirementAnnotationType.MASK: [dm.AnnotationType.mask],
+            models.QualityRequirementAnnotationType.POLYGON: [dm.AnnotationType.polygon],
             models.QualityRequirementAnnotationType.ELLIPSE: [dm.AnnotationType.ellipse],
         }
         return mapping.get(self.requirement.annotation_type, [])
@@ -1371,17 +1368,11 @@ class DatasetQualityEstimator:
         dict[int, ComparisonReportFrameSummary],
         list[int],
         list[AnnotationConflict],
-        ComparisonReportAnnotationsSummary,
-        ComparisonReportAnnotationComponentsSummary,
     ]:
         all_frame_results: dict[int, ComparisonReportFrameSummary] = {}
         frame_result_counts: dict[int, int] = {}
         intersection_frames = []
         conflicts: list[AnnotationConflict] = []
-
-        total_annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
-        total_annotation_components = ComparisonReportAnnotationComponentsSummary.create_empty()
-        mean_ious = []
 
         enabled_requirement_names = {
             requirement.name
@@ -1408,19 +1399,13 @@ class DatasetQualityEstimator:
 
         for frame_result in all_frame_results.values():
             conflicts += frame_result.conflicts
-            self._merge_annotations_summary(total_annotations_summary, frame_result.annotations)
-            total_annotation_components.accumulate(frame_result.annotation_components)
-            mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
-        total_annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
         conflicts = deduplicate_annotation_conflicts(conflicts)
 
         return (
             all_frame_results,
             intersection_frames,
             conflicts,
-            total_annotations_summary,
-            total_annotation_components,
         )
 
     def generate_report(self) -> ComparisonReport:
@@ -1430,8 +1415,6 @@ class DatasetQualityEstimator:
             all_frame_results,
             intersection_frames,
             conflicts,
-            total_annotations_summary,
-            total_annotation_components,
         ) = self._aggregate_all_results()
 
         group_reports = {
@@ -1444,7 +1427,7 @@ class DatasetQualityEstimator:
         }
         requirement_stats = build_requirements_summary(self._requirements, group_reports)
         return ComparisonReport(
-            parameters=self.DEFAULT_SETTINGS,
+            parameters=ComparisonReportParameters(),
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
                 total_frames=self._get_total_frames(),
@@ -1452,8 +1435,6 @@ class DatasetQualityEstimator:
                 warning_count=0,
                 error_count=len(conflicts),
                 conflicts_by_type=Counter(c.type for c in conflicts),
-                annotations=total_annotations_summary,
-                annotation_components=total_annotation_components,
                 tasks=None,
                 jobs=None,
                 requirements=requirement_stats,

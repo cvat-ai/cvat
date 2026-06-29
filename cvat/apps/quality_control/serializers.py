@@ -93,11 +93,18 @@ class QualityReportJobsSummarySerializer(serializers.Serializer):
     )
 
 
+class QualityReportScoreComponentsSerializer(serializers.Serializer):
+    valid_count = serializers.IntegerField()
+    missing_count = serializers.IntegerField()
+    extra_count = serializers.IntegerField()
+
+
 class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
     requirement_id = serializers.IntegerField(allow_null=True)
     name = serializers.CharField()
     metric = serializers.CharField()
     score = serializers.FloatField(allow_null=True)
+    score_components = QualityReportScoreComponentsSerializer()
     threshold = serializers.FloatField()
 
 
@@ -143,15 +150,6 @@ class QualityReportSummarySerializer(serializers.Serializer):
     warning_count = serializers.IntegerField(help_text="Deprecated. Always 0 for new reports.")
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
-
-    valid_count = serializers.IntegerField(source="annotations.valid_count")
-    ds_count = serializers.IntegerField(source="annotations.ds_count")
-    gt_count = serializers.IntegerField(source="annotations.gt_count")
-    total_count = serializers.IntegerField(source="annotations.total_count")
-
-    accuracy = serializers.FloatField(source="annotations.accuracy")
-    precision = serializers.FloatField(source="annotations.precision")
-    recall = serializers.FloatField(source="annotations.recall")
 
     tasks = QualityReportTasksSummarySerializer(
         required=False, help_text="Included only in project reports"

@@ -371,6 +371,31 @@ class ComparisonParameters(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
+class ComparisonReportParameters(ReportNode):
+    inherited: bool = False
+    """
+    Indicates that parent object parameters are inherited.
+    For example, a task can inherit project parameters.
+    """
+
+    job_filter: str = ""
+    "JSON filter expression for included jobs"
+
+    @classmethod
+    def from_dict(cls, d: dict) -> ComparisonReportParameters:
+        return cls(inherited=d["inherited"], job_filter=d["job_filter"])
+
+    @classmethod
+    def from_comparison_parameters(
+        cls, parameters: ComparisonParameters
+    ) -> ComparisonReportParameters:
+        return cls(
+            inherited=parameters.inherited,
+            job_filter=parameters.job_filter,
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
 class ConfusionMatrix(ReportNode):
     labels: list[str] | None
     rows: np.ndarray | None
@@ -416,7 +441,7 @@ class ConfusionMatrix(ReportNode):
         ) / (total_annotations_count or 1)
 
     @cached_property
-    def precision(self) -> np.ndarray | None:  # pylint: disable=method-hidden (fixed in pylint 3.0)
+    def precision(self) -> np.ndarray | None:  # pylint: disable=method-hidden
         self._update_cached_fields()
         return self.precision
 
@@ -470,6 +495,35 @@ class ConfusionMatrix(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
+class ComparisonReportScoreComponents(ReportNode):
+    valid_count: int
+    missing_count: int
+    extra_count: int
+
+    @classmethod
+    def from_counts(
+        cls, *, valid_count: int, missing_count: int, extra_count: int
+    ) -> ComparisonReportScoreComponents:
+        return cls(
+            valid_count=valid_count,
+            missing_count=missing_count,
+            extra_count=extra_count,
+        )
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportScoreComponents:
+        return cls(
+            valid_count=d.get("valid_count", 0),
+            missing_count=d.get("missing_count", 0),
+            extra_count=d.get("extra_count", 0),
+        )
+
+    @classmethod
+    def create_empty(cls) -> ComparisonReportScoreComponents:
+        return cls(valid_count=0, missing_count=0, extra_count=0)
+
+
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportAnnotationsSummary(ReportNode):
     valid_count: int
     missing_count: int
@@ -490,6 +544,13 @@ class ComparisonReportAnnotationsSummary(ReportNode):
     @property
     def recall(self) -> float:
         return self.valid_count / (self.gt_count or 1)
+
+    def to_score_components(self) -> ComparisonReportScoreComponents:
+        return ComparisonReportScoreComponents.from_counts(
+            valid_count=self.valid_count,
+            missing_count=self.missing_count,
+            extra_count=self.extra_count,
+        )
 
     def accumulate(self, other: ComparisonReportAnnotationsSummary, *, weight: float = 1):
         for field in [
@@ -742,6 +803,7 @@ class ComparisonReportRequirementSummaryItem(ReportNode):
     name: str
     metric: str
     score: float | None
+    score_components: ComparisonReportScoreComponents
     threshold: float
     requirement_id: int | None = None
 
@@ -752,6 +814,9 @@ class ComparisonReportRequirementSummaryItem(ReportNode):
             name=d["name"],
             metric=d["metric"],
             score=d.get("score"),
+            score_components=ComparisonReportScoreComponents.from_dict(
+                d.get("score_components", {})
+            ),
             threshold=d["threshold"],
         )
 
@@ -790,9 +855,6 @@ class ComparisonReportSummary(ReportNode):
     error_count: int
     conflicts_by_type: dict[AnnotationConflictType, int]
 
-    annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
-
     tasks: ComparisonReportTaskStats | None
     jobs: ComparisonReportJobStats | None
     requirements: ComparisonReportRequirementsSummary | None = None
@@ -825,7 +887,7 @@ class ComparisonReportSummary(ReportNode):
             return super()._value_serializer(v)
 
     @classmethod
-    def from_dict(cls, d: dict):
+    def _from_dict_kwargs(cls, d: dict) -> dict[str, Any]:
         if "total_frames" in d:
             total_frames = d["total_frames"]
         else:
@@ -839,27 +901,43 @@ class ComparisonReportSummary(ReportNode):
         if requirements is None:
             requirements = d.get("targets")
 
-        return cls(
-            frames=d["frames"] if "frames" in d else None,
-            total_frames=total_frames,
+        return {
+            "frames": d["frames"] if "frames" in d else None,
+            "total_frames": total_frames,
             **(dict(frame_count=d["frame_count"]) if "frame_count" in d else {}),
-            conflict_count=d["conflict_count"],
-            warning_count=d.get("warning_count", 0),
-            error_count=d.get("error_count", 0),
-            conflicts_by_type={
+            "conflict_count": d["conflict_count"],
+            "warning_count": d.get("warning_count", 0),
+            "error_count": d.get("error_count", 0),
+            "conflicts_by_type": {
                 _parse_annotation_conflict_type(k): v
                 for k, v in d.get("conflicts_by_type", {}).items()
             },
-            annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
-            annotation_components=(
-                ComparisonReportAnnotationComponentsSummary.from_dict(d["annotation_components"])
-            ),
-            tasks=ComparisonReportTaskStats.from_dict(d["tasks"]) if d.get("tasks") else None,
-            jobs=ComparisonReportJobStats.from_dict(d["jobs"]) if d.get("jobs") else None,
-            requirements=(
+            "tasks": ComparisonReportTaskStats.from_dict(d["tasks"]) if d.get("tasks") else None,
+            "jobs": ComparisonReportJobStats.from_dict(d["jobs"]) if d.get("jobs") else None,
+            "requirements": (
                 ComparisonReportRequirementsSummary.from_dict(requirements)
                 if requirements is not None
                 else None
+            ),
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(**cls._from_dict_kwargs(d))
+
+
+@define(kw_only=True, init=False, slots=False)
+class ComparisonReportRequirementComparisonSummary(ComparisonReportSummary):
+    annotations: ComparisonReportAnnotationsSummary
+    annotation_components: ComparisonReportAnnotationComponentsSummary
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(
+            **cls._from_dict_kwargs(d),
+            annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
+            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
+                d["annotation_components"]
             ),
         )
 
@@ -921,7 +999,7 @@ class ComparisonReportFrameSummary(ReportNode):
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReportRequirementSummary(ReportNode):
     parameters: dict[str, Any]
-    comparison_summary: ComparisonReportSummary
+    comparison_summary: ComparisonReportRequirementComparisonSummary
     frame_results: dict[int, ComparisonReportFrameSummary] | None
 
     @property
@@ -937,7 +1015,9 @@ class ComparisonReportRequirementSummary(ReportNode):
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementSummary:
         return cls(
             parameters=d.get("parameters", {}),
-            comparison_summary=ComparisonReportSummary.from_dict(d["comparison_summary"]),
+            comparison_summary=ComparisonReportRequirementComparisonSummary.from_dict(
+                d["comparison_summary"]
+            ),
             frame_results=(
                 {
                     int(k): ComparisonReportFrameSummary.from_dict(v)
@@ -951,7 +1031,7 @@ class ComparisonReportRequirementSummary(ReportNode):
 
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReport(ReportNode):
-    parameters: ComparisonParameters
+    parameters: ComparisonReportParameters
     comparison_summary: ComparisonReportSummary
     frame_results: dict[int, ComparisonReportFrameSummary] | None
     groups: dict[str, ComparisonReportRequirementSummary] | None = None
@@ -973,7 +1053,7 @@ class ComparisonReport(ReportNode):
             else None
         )
         return cls(
-            parameters=ComparisonParameters.from_dict(d["parameters"]),
+            parameters=ComparisonReportParameters.from_dict(d["parameters"]),
             comparison_summary=ComparisonReportSummary.from_dict(d["comparison_summary"]),
             frame_results=(
                 {

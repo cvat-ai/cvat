@@ -282,7 +282,7 @@ def _make_unique_group_archive_path(group_name: str, used_paths: set[str]) -> st
 def prepare_confusion_matrices_archive_for_downloading(db_report: models.QualityReport) -> bytes:
     comparison_report = ComparisonReport.from_json(db_report.get_report_data())
     archive_buffer = BytesIO()
-    used_paths = {"overall.csv", "manifest.json"}
+    used_paths = {"manifest.json"}
     manifest = {
         "report_id": db_report.id,
         "target": str(db_report.target),
@@ -313,14 +313,6 @@ def prepare_confusion_matrices_archive_for_downloading(db_report: models.Quality
         manifest["matrices"].append(manifest_item)
 
     with ZipFile(archive_buffer, mode="w", compression=ZIP_DEFLATED) as archive:
-        _add_matrix_to_archive(
-            archive,
-            archive_path="overall.csv",
-            scope="overall",
-            name="overall",
-            confusion_matrix=comparison_report.comparison_summary.annotations.confusion_matrix,
-        )
-
         for group_name, group_report in sorted((comparison_report.groups or {}).items()):
             _add_matrix_to_archive(
                 archive,

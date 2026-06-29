@@ -5,8 +5,7 @@
 
 from __future__ import annotations
 
-import csv
-from io import BytesIO, TextIOWrapper
+from io import BytesIO
 from typing import IO
 
 from datumaro.util import dump_json
@@ -16,11 +15,6 @@ from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.models import Job, User
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.quality_reports import ComparisonReport
-from cvat.apps.quality_control.statistics import (
-    Averaging,
-    compute_accuracy,
-    compute_dice_coefficient,
-)
 
 
 class QualityReportExportFormat(TextChoices):
@@ -136,55 +130,10 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
 
 def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[bytes]:
     """
-    Create a report with a .csv confusion matrix.
+    Root reports do not have an aggregate confusion matrix.
     """
 
-    report_summary = db_report.summary
-    conf_matrix = report_summary.annotations.confusion_matrix
-
-    if not conf_matrix:
-        # Old reports can have no matrix included
-        return BytesIO()
-
-    labels = list(conf_matrix.labels)
-    confusion_rows = conf_matrix.rows
-    precisions = conf_matrix.precision
-    recalls = conf_matrix.recall
-
-    # Accuracy per class is Jaccard in Object detection
-    jaccards = conf_matrix.jaccard_index
-    jaccards[-1] = "nan"
-
-    unmatched_label = "unmatched"
-    dataset_accuracy_micro, *_ = compute_accuracy(
-        confusion_rows, excluded_label_idx=labels.index(unmatched_label)
-    )
-    dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, *_ = compute_dice_coefficient(
-        confusion_rows,
-        averaging=Averaging.macro,
-        excluded_label_idx=labels.index(unmatched_label),
-    )
-
-    csv_file = BytesIO()
-
-    csv_text_wrapper = TextIOWrapper(csv_file, write_through=True, newline="")
-    csv_writer = csv.writer(csv_text_wrapper)
-    csv_writer.writerow(["DS (row) \\ GT (col) label"] + labels + ["precision"])
-
-    for confusion_row, label, precision in zip(confusion_rows, labels, precisions):
-        csv_writer.writerow([label] + confusion_row.tolist() + [precision])
-
-    csv_writer.writerow(["recall"] + recalls.tolist())
-    csv_writer.writerow(["dice coefficient"] + dataset_dice_coeff_by_class.tolist())
-    csv_writer.writerow(["jaccard index"] + jaccards.tolist())
-    csv_writer.writerow([""])
-    csv_writer.writerow(["avg. accuracy (micro)", dataset_accuracy_micro])
-    csv_writer.writerow(["avg. dice coefficient (macro)", dataset_dice_coeff_avg_macro])
-    csv_text_wrapper.detach()
-
-    csv_file.seek(0)
-
-    return csv_file
+    return BytesIO()
 
 
 def prepare_report_for_downloading(

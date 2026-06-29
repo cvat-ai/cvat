@@ -111,6 +111,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         )
 
     def _get_task_settings(self, user: str, *, task_id: int, **kwargs) -> dict[str, Any]:
+        kwargs.setdefault("parent_type", "task")
         response = get_method(user, self._settings_endpoint, task_id=task_id, **kwargs)
         assert response.status_code == HTTPStatus.OK
 
@@ -119,14 +120,11 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         return results[0]
 
     def _get_project_settings(self, user: str, *, project_id: int, **kwargs) -> dict[str, Any]:
+        kwargs.setdefault("parent_type", "project")
         response = get_method(user, self._settings_endpoint, project_id=project_id, **kwargs)
         assert response.status_code == HTTPStatus.OK
 
-        results = [
-            settings
-            for settings in response.json()["results"]
-            if settings["project_id"] == project_id and settings["task_id"] is None
-        ]
+        results = response.json()["results"]
         assert len(results) == 1
         return results[0]
 
@@ -991,9 +989,7 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
         assert all(requirement["enabled"] is False for requirement in requirements)
         assert all(requirement["is_default"] is True for requirement in requirements)
 
-    def test_new_project_task_gets_disabled_default_requirements_for_all_supported_types(
-        self, admin_user
-    ):
+    def test_new_project_task_inherits_project_quality_settings_by_default(self, admin_user):
         with make_api_client(admin_user) as api_client:
             project, response = api_client.projects_api.create(
                 {
@@ -1019,17 +1015,10 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
         )
 
         settings = self._get_task_settings(admin_user, task_id=task_id)
-        requirements = settings["requirements"]
 
-        assert {
-            requirement["annotation_type"] for requirement in requirements
-        } == self._default_standalone_annotation_types
-        assert {requirement["name"] for requirement in requirements} == {
-            self._default_requirement_name(annotation_type)
-            for annotation_type in self._default_standalone_annotation_types
-        }
-        assert all(requirement["enabled"] is False for requirement in requirements)
-        assert all(requirement["is_default"] is True for requirement in requirements)
+        assert settings["task_id"] == task_id
+        assert settings["project_id"] is None
+        assert settings["inherit"] is True
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1118,10 +1107,125 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert group_annotations["extra_count"] == 0
         assert group_annotations["total_count"] == 1
 
-        total_annotations = report_data["comparison_summary"]["annotations"]
-        assert total_annotations["valid_count"] == 1
-        assert total_annotations["total_count"] == 1
+        assert "annotations" not in report_data["comparison_summary"]
         assert report_data["comparison_summary"]["conflict_count"] == 0
+
+    def test_label_free_requirement_matching_prefers_same_label_shapes(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "label-aware-matching-report",
+                "labels": [
+                    {"name": "car", "type": "rectangle"},
+                    {"name": "person", "type": "rectangle"},
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        _, response = self._patch_settings(admin_user, settings["id"], {"inherit": False})
+        assert response.status_code == HTTPStatus.OK
+
+        all_requirement_name = f"all-overlapping-rectangles-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                all_requirement_name,
+                settings_id=settings["id"],
+                required_score=1.0,
+                annotation_type="rectangle",
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        car_requirement_name = f"car-overlapping-rectangles-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                car_requirement_name,
+                settings_id=settings["id"],
+                required_score=1.0,
+                annotation_type="rectangle",
+                filter_expression=json.dumps({"==": [{"var": "shape.label"}, "car"]}),
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        person_requirement_name = f"person-overlapping-rectangles-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                person_requirement_name,
+                settings_id=settings["id"],
+                required_score=1.0,
+                annotation_type="rectangle",
+                filter_expression=json.dumps({"==": [{"var": "shape.label"}, "person"]}),
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["car"].id,
+                            points=[0, 0, 10, 10],
+                        ),
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["person"].id,
+                            points=[0.1, 0, 10.1, 10],
+                        ),
+                    ]
+                },
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["car"].id,
+                            points=[0.1, 0, 10.1, 10],
+                        ),
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["person"].id,
+                            points=[0, 0, 10, 10],
+                        ),
+                    ]
+                },
+            )
+
+        self._complete_job(admin_user, gt_job.id)
+
+        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+
+        all_annotations = report_data["groups"][all_requirement_name]["comparison_summary"][
+            "annotations"
+        ]
+        car_annotations = report_data["groups"][car_requirement_name]["comparison_summary"][
+            "annotations"
+        ]
+        person_annotations = report_data["groups"][person_requirement_name]["comparison_summary"][
+            "annotations"
+        ]
+
+        assert all_annotations["valid_count"] == 2
+        assert all_annotations["missing_count"] == 0
+        assert all_annotations["extra_count"] == 0
+        assert car_annotations["valid_count"] == 1
+        assert person_annotations["valid_count"] == 1
 
     def test_task_report_metrics_change_after_gt_annotations_change(self, admin_user):
         task_id, _ = create_task(
@@ -1175,7 +1279,17 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         initial_report = self.create_quality_report(user=admin_user, task_id=task_id)
         assert initial_report["summary"]["conflict_count"] == 0
-        assert initial_report["summary"]["valid_count"] == 1
+        assert "valid_count" not in initial_report["summary"]
+        initial_item = next(
+            item
+            for item in initial_report["summary"]["requirements"]["items"]
+            if item["name"] == requirement_name
+        )
+        assert initial_item["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
 
         with make_api_client(admin_user) as api_client:
             api_client.jobs_api.partial_update_annotations(
@@ -1197,9 +1311,19 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             changed_report["summary"]["conflict_count"]
             > initial_report["summary"]["conflict_count"]
         )
-        assert changed_report["summary"]["gt_count"] > initial_report["summary"]["gt_count"]
+        changed_item = next(
+            item
+            for item in changed_report["summary"]["requirements"]["items"]
+            if item["name"] == requirement_name
+        )
+        assert (
+            changed_item["score_components"]["missing_count"]
+            > initial_item["score_components"]["missing_count"]
+        )
 
-    def test_task_report_filter_matches_attribute_name_value_on_same_attribute(self, admin_user):
+    def test_task_report_filter_does_not_match_attribute_name_and_value_from_different_attributes(
+        self, admin_user
+    ):
         (
             task_id,
             settings,
@@ -1260,7 +1384,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "annotations"
         ]
         assert group_annotations["total_count"] == 0
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 0
+        assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_data_applies_attribute_comparison_rules(self, admin_user):
         (
@@ -1472,7 +1596,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             ]
             == 1
         )
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 2
+        assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_counts_enabled_intermediate_requirements(self, admin_user):
         (
@@ -1552,6 +1676,11 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                     "name": parent_requirement_name,
                     "metric": "accuracy",
                     "score": 1.0,
+                    "score_components": {
+                        "valid_count": 1,
+                        "missing_count": 0,
+                        "extra_count": 0,
+                    },
                     "threshold": 1.0,
                 },
                 {
@@ -1559,6 +1688,11 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                     "name": leaf_requirement_name,
                     "metric": "accuracy",
                     "score": 1.0,
+                    "score_components": {
+                        "valid_count": 1,
+                        "missing_count": 0,
+                        "extra_count": 0,
+                    },
                     "threshold": 1.0,
                 },
             ],
@@ -1577,7 +1711,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             ]
             == 1
         )
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 2
+        assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_data_contains_groups_and_requirements(self, admin_user):
         task_id, _ = create_task(
@@ -1671,6 +1805,11 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                     "name": enabled_requirement_name,
                     "metric": "accuracy",
                     "score": 1.0,
+                    "score_components": {
+                        "valid_count": 1,
+                        "missing_count": 0,
+                        "extra_count": 0,
+                    },
                     "threshold": 0.75,
                 }
             ],
@@ -1688,6 +1827,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert "groups" in report_data
         assert enabled_requirement_name in report_data["groups"]
         assert disabled_requirement_name in report_data["groups"]
+        assert report_data["parameters"] == {
+            "inherited": False,
+            "job_filter": updated_settings["job_filter"],
+        }
         assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
         parameters = report_data["groups"][enabled_requirement_name]["parameters"]
         assert parameters["requirement_id"] == enabled_requirement_id
@@ -1711,7 +1854,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report_summary = report_data["comparison_summary"]
         assert report_summary["warning_count"] == 0
         assert report_summary["error_count"] == report_summary["conflict_count"]
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
+        assert "annotations" not in report_summary
 
     def test_project_report_summary_counts_completed_jobs_and_tasks(self, admin_user):
         with make_api_client(admin_user) as api_client:
@@ -1879,7 +2022,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         with ZipFile(BytesIO(response.content)) as archive:
             archive_entries = set(archive.namelist())
             assert "manifest.json" in archive_entries
-            assert "overall.csv" in archive_entries
+            assert "overall.csv" not in archive_entries
 
             manifest = json.loads(archive.read("manifest.json"))
             assert manifest["report_id"] == report["id"]
@@ -1893,11 +2036,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             assert disabled_requirement_id not in group_matrices
             assert group_matrices[enabled_requirement_id]["name"] == enabled_requirement_name
 
-            overall_csv = archive.read("overall.csv").decode()
             enabled_group_csv = archive.read(
                 group_matrices[enabled_requirement_id]["path"]
             ).decode()
-            assert "ds \\ gt" in overall_csv
             assert "ds \\ gt" in enabled_group_csv
 
         response = get_method(
@@ -2051,10 +2192,15 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
                     "name": expected_name,
                     "metric": "accuracy",
                     "score": 1.0,
+                    "score_components": {
+                        "valid_count": 1,
+                        "missing_count": 0,
+                        "extra_count": 0,
+                    },
                     "threshold": 1.0,
                 }
             ],
         }
         assert report["summary"]["requirements"] == expected_requirements_summary
         assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
-        assert report_data["comparison_summary"]["annotations"]["total_count"] == 1
+        assert "annotations" not in report_data["comparison_summary"]
