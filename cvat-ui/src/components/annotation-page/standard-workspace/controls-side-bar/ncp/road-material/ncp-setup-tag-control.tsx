@@ -30,24 +30,10 @@ import { CombinedState } from 'reducers';
 import { createAnnotationsAsync, removeObjectAsync, rememberObject } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { RoadSVGIcon } from 'icons';
 
-import withVisibilityHandling from './handle-popover-visibility';
+import withVisibilityHandling from '../../handle-popover-visibility';
 
-// ─── Road icon ────────────────────────────────────────────────────────────────
-
-const RoadSVGIcon = (): JSX.Element => (
-    <svg
-        width='1em'
-        height='1em'
-        viewBox='0 0 24 24'
-        xmlns='http://www.w3.org/2000/svg'
-    >
-        <path d='M3 22 L9.5 2 L14.5 2 L21 22 Z' fill='currentColor' />
-        <line x1='12' y1='19.5' x2='12' y2='17' stroke='white' strokeWidth='1.5' strokeLinecap='round' />
-        <line x1='12' y1='14.5' x2='12' y2='12.5' stroke='white' strokeWidth='1.2' strokeLinecap='round' />
-        <line x1='12' y1='10.5' x2='12' y2='9' stroke='white' strokeWidth='1' strokeLinecap='round' />
-    </svg>
-);
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

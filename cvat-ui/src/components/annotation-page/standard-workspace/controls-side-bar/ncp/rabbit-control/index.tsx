@@ -25,6 +25,11 @@
  *   'list'     — the popover shows all labels as one-click buttons that
  *                immediately start the annotation.  Saves one click.
  *   'dropdown' — classic LabelSelector dropdown + "Start" button.
+ *
+ * When the user presses a label-switching shortcut (Ctrl+N) while idle in NCP
+ * mode, a `ncp:select-label` DOM event is dispatched.  The RabbitControl
+ * intercepts it, highlights the corresponding label in the popover, and opens
+ * the popover so the user can confirm and start the annotation.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -53,7 +58,8 @@ import {
     lineBufferVertices,
     polygonToMaskPoints,
 } from './geometry';
-import withVisibilityHandling from '../handle-popover-visibility';
+import withVisibilityHandling from '../../handle-popover-visibility';
+import { RabbitSVGIcon } from 'icons';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -71,6 +77,11 @@ export interface Props {
      * - `'dropdown'` → classic dropdown selector + "Start" button.
      */
     labelSelectorMode?: LabelSelectorMode;
+
+    /** Currently selected label ID – lifted to the parent sidebar. */
+    selectedLabelID: number | null;
+    /** Setter for the selected label ID – lifted to the parent sidebar. */
+    setSelectedLabelID: (id: number | null) => void;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -133,36 +144,13 @@ function getModeGlyph(mode: LabelMode): string {
     return '●';
 }
 
-// ─── Icon ─────────────────────────────────────────────────────────────────────
-
-const RabbitSVGIcon = (): JSX.Element => (
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path
-    d="M9.4 10.2C7.7 6.6 7.1 2.9 8.6 2.2C10 1.5 11.5 5 11.8 8.6C12.9 5 15.1 1.6 16.6 2.4C18.1 3.2 16.7 6.9 14.9 10.2C17.5 11.1 19 13.2 19 15.8C19 19.1 15.9 21.5 12 21.5C8.1 21.5 5 19.1 5 15.8C5 13.2 6.6 11.1 9.4 10.2Z"
-    fill="white"
-    stroke="black"
-    stroke-width="1.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-  <circle cx="9.6" cy="14.6" r="0.9" fill="black"/>
-  <circle cx="14.4" cy="14.6" r="0.9" fill="black"/>
-  <path
-    d="M11.5 17.3C11.8 17.6 12.2 17.6 12.5 17.3"
-    stroke="black"
-    stroke-width="1.3"
-    stroke-linecap="round"
-  />
-</svg>
-);
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'rabbit-control');
 
 function RabbitControl(props: Props): JSX.Element {
-    const { labelSelectorMode = 'list' } = props;
+    const { labelSelectorMode = 'list', selectedLabelID, setSelectedLabelID } = props;
     const dispatch = useDispatch();
 
     // ── Redux selectors ──────────────────────────────────────────────────────
@@ -174,15 +162,24 @@ function RabbitControl(props: Props): JSX.Element {
     const curZOrder = useSelector(
         (state: CombinedState) => state.annotation.annotations.zLayer.cur,
     );
-    const frameData = useSelector((state: CombinedState) => state.annotation.player.frame.data);
+
     const activeControl = useSelector(
         (state: CombinedState) => state.annotation.canvas.activeControl,
     );
 
     // ── Local state ──────────────────────────────────────────────────────────
-    const [selectedLabelID, setSelectedLabelID] = useState<number | null>(
-        labels.length ? (labels[0].id as number) : null,
-    );
+    /**
+     * ID of the label that was highlighted via the Ctrl+N keyboard shortcut.
+     * `null` means no shortcut-driven highlight is active.
+     */
+    const [shortcutHighlightedLabelID, setShortcutHighlightedLabelID] = useState<number | null>(null);
+    /**
+     * Controlled open state for the popover.
+     * `undefined` → uncontrolled (trigger-based click to open).
+     * `true`      → force-open (triggered by keyboard shortcut).
+     * `false`     → force-closed (while drawing).
+     */
+    const [popoverOpen, setPopoverOpen] = useState<boolean | undefined>(undefined);
     /**
      * Guards against the canvas firing `canvas.interacted` for every mouse-move
      * (preview updates).  Once we have decided to finish an interaction we flip
@@ -190,16 +187,26 @@ function RabbitControl(props: Props): JSX.Element {
      * Only used for line/circle modes (polygon uses the native draw tool).
      */
     const interactionDoneRef = useRef(false);
-
-    useEffect(() => {
-        if (labels.length && selectedLabelID === null) {
-            setSelectedLabelID(labels[0].id as number);
-        }
-    }, [labels, selectedLabelID]);
+    /**
+     * Stable ref to the latest `handleActivate` function so it can be called
+     * from the `ncp:select-label` event listener without a stale closure.
+     */
+    const handleActivateRef = useRef<(labelOverride?: any) => void>(() => {});
 
     useEffect(() => {
         if (!activeControl || activeControl !== ActiveControl.RABBIT) {
             interactionDoneRef.current = false;
+        }
+        if (activeControl === ActiveControl.RABBIT || activeControl === ActiveControl.DRAW_POLYGON) {
+            // Annotation started – force the popover open so the user can see
+            // which label is currently being annotated (it will be highlighted).
+            setPopoverOpen(true);
+        } else if (activeControl === ActiveControl.CURSOR) {
+            // Annotation finished – close the popover.
+            // Using `false` (not `undefined`) so antd controlled-mode hides it;
+            // the subsequent onOpenChange(false) resets it to uncontrolled.
+            setPopoverOpen(false);
+            setShortcutHighlightedLabelID(null);
         }
     }, [activeControl]);
 
@@ -210,7 +217,6 @@ function RabbitControl(props: Props): JSX.Element {
      * DRAW_POLYGON and is handled entirely by the canvas-wrapper.
      */
     const isActive = activeControl === ActiveControl.RABBIT;
-    const controlsDisabled = !labels.length || frameData.deleted;
     const selectedLabel = labels.find((l: any) => l.id === selectedLabelID) ?? null;
     const labelMode: LabelMode = selectedLabel ? getLabelMode(selectedLabel.name, labels) : 'circle';
     const requiredPoints = getRequiredPointCount(labelMode);
@@ -219,6 +225,27 @@ function RabbitControl(props: Props): JSX.Element {
     const annotationLabels = labels.filter(
         (l: any) => l.name !== '_geom' && l.type !== ObjectType.TAG,
     );
+
+    // ── ncp:select-label event listener ─────────────────────────────────────
+    // Fired by labels-list.tsx when Ctrl+N is pressed in NCP mode while idle.
+    // Opens the popover with the corresponding label highlighted AND immediately
+    // starts the annotation (canvas waits for the user's click/draw).
+    useEffect(() => {
+        const handler = (e: Event): void => {
+            const { label: lbl } = (e as CustomEvent).detail;
+            if (!lbl) return;
+            // Only handle annotation labels (skip _geom, tag-only labels)
+            const isAnnotationLabel = annotationLabels.some((l: any) => l.id === lbl.id);
+            if (!isAnnotationLabel) return;
+            setSelectedLabelID(lbl.id as number);
+            setShortcutHighlightedLabelID(lbl.id as number);
+            setPopoverOpen(true);
+            // Start the annotation immediately so the canvas waits for input
+            handleActivateRef.current(lbl);
+        };
+        window.addEventListener('ncp:select-label', handler);
+        return (): void => window.removeEventListener('ncp:select-label', handler);
+    }, [annotationLabels]);
 
     // ── Canvas interaction listener (line / circle modes only) ───────────────
     // Polygon mode uses canvasInstance.draw() and is handled by the
@@ -313,6 +340,7 @@ function RabbitControl(props: Props): JSX.Element {
         const labelToUse = labelOverride ?? selectedLabel;
         if (!labelToUse) return;
         interactionDoneRef.current = false; // reset for new interaction
+        setShortcutHighlightedLabelID(null); // clear shortcut highlight
         if (labelOverride && labelOverride.id !== selectedLabelID) {
             setSelectedLabelID(labelOverride.id as number);
         }
@@ -345,26 +373,46 @@ function RabbitControl(props: Props): JSX.Element {
         }
     }, [canvasInstance, dispatch, selectedLabel, selectedLabelID, labels]);
 
+    // Keep the ref always pointing to the latest handleActivate closure so the
+    // ncp:select-label event listener can call it without a stale closure.
+    // This effect runs after every render (no dep array) to stay in sync.
+    useEffect(() => {
+        handleActivateRef.current = handleActivate;
+    });
+
     const handleDeactivate = useCallback((): void => {
         canvasInstance.interact({ enabled: false });
         dispatch(updateActiveControlAction(ActiveControl.CURSOR));
     }, [canvasInstance, dispatch]);
+
+    const handlePopoverOpenChange = useCallback((visible: boolean): void => {
+        if (!visible) {
+            setPopoverOpen(undefined);
+            setShortcutHighlightedLabelID(null);
+        }
+    }, []);
 
     // ── Popover content ───────────────────────────────────────────────────────
     const listModeContent = (
         <div className='cvat-rabbit-control-popover-content'>
             <Row justify='start' style={{ marginBottom: 6 }}>
                 <Col>
-                    <Text className='cvat-text-color' strong>Rabbit tool</Text>
+                    <Text className='cvat-text-color' strong>Classes</Text>
                 </Col>
             </Row>
             {annotationLabels.map((label: any) => {
                 const mode = getLabelMode(label.name, labels);
+                // Always highlight the currently selected label so the user knows
+                // which class is active.  Also highlight a shortcut-selected label
+                // while waiting for the first canvas click.
+                const isHighlighted = label.id === selectedLabelID || label.id === shortcutHighlightedLabelID;
                 return (
                     <Row key={label.id} style={{ marginTop: 2 }}>
                         <Col span={24}>
                             <Button
                                 block
+                                type={isHighlighted ? 'primary' : 'default'}
+                                ghost={isHighlighted}
                                 style={{ textAlign: 'left' }}
                                 onClick={() => handleActivate(label)}
                             >
@@ -424,19 +472,10 @@ function RabbitControl(props: Props): JSX.Element {
 
     const popoverContent = labelSelectorMode === 'list' ? listModeContent : dropdownModeContent;
 
-    // ── Render ────────────────────────────────────────────────────────────────
-    if (controlsDisabled) {
-        return (
-            <Icon
-                className='cvat-rabbit-control cvat-disabled-canvas-control'
-                component={RabbitSVGIcon}
-            />
-        );
-    }
-
     return (
         <CustomPopover
-            {...(isActive ? { overlayStyle: { display: 'none' } } : {})}
+            open={popoverOpen}
+            onOpenChange={handlePopoverOpenChange}
             overlayClassName='cvat-rabbit-control-popover'
             placement='right'
             content={popoverContent}
@@ -449,7 +488,7 @@ function RabbitControl(props: Props): JSX.Element {
                             ? 'cvat-rabbit-control cvat-active-canvas-control'
                             : 'cvat-rabbit-control'
                     }
-                    onClick={isActive ? handleDeactivate : undefined}
+                    onClick={isActive ? handleDeactivate : handleActivate}
                 />
             </CVATTooltip>
         </CustomPopover>
