@@ -34,6 +34,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationLabelSummary,
     ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
+    ComparisonReportFrameComparisonSummary,
     ComparisonReportFrameSummary,
     ComparisonReportParameters,
     ComparisonReportRequirementComparisonSummary,
@@ -54,7 +55,7 @@ if TYPE_CHECKING:
 
 @attrs.define
 class RequirementFrameResult:
-    summary: ComparisonReportFrameSummary
+    summary: ComparisonReportFrameComparisonSummary
     matched_pairs: list[tuple[dm.Annotation, dm.Annotation]] = attrs.Factory(list)
 
 
@@ -349,8 +350,8 @@ def merge_annotations_summary(
 
 
 def merge_frame_summaries(
-    target: ComparisonReportFrameSummary,
-    other: ComparisonReportFrameSummary,
+    target: ComparisonReportFrameComparisonSummary,
+    other: ComparisonReportFrameComparisonSummary,
     *,
     current_count: int,
 ) -> None:
@@ -366,7 +367,7 @@ def merge_frame_summaries(
 def build_requirement_report(
     *,
     requirement: Any,
-    frame_results: dict[int, ComparisonReportFrameSummary],
+    frame_results: dict[int, ComparisonReportFrameComparisonSummary],
     include_frame_results: bool = True,
 ) -> ComparisonReportRequirementSummary:
     conflicts: list[AnnotationConflict] = []
@@ -517,8 +518,8 @@ class RequirementHandler(ABC):
         }
         return mapping.get(self.requirement.annotation_type, [])
 
-    def _make_empty_frame_summary(self) -> ComparisonReportFrameSummary:
-        return ComparisonReportFrameSummary(
+    def _make_empty_frame_summary(self) -> ComparisonReportFrameComparisonSummary:
+        return ComparisonReportFrameComparisonSummary(
             annotations=ComparisonReportAnnotationsSummary(
                 valid_count=0,
                 missing_count=0,
@@ -778,7 +779,7 @@ class RequirementHandler(ABC):
         return summary
 
     def _generate_dataset_annotations_summary(
-        self, frame_summaries: dict[int, ComparisonReportFrameSummary]
+        self, frame_summaries: dict[int, ComparisonReportFrameComparisonSummary]
     ) -> tuple[ComparisonReportAnnotationsSummary, ComparisonReportAnnotationComponentsSummary]:
         # accumulate stats
         annotation_components = ComparisonReportAnnotationComponentsSummary(
@@ -917,7 +918,7 @@ class TagRequirementHandler(RequirementHandler):
         total_count = valid_count + len(mismatches) + missing_count + extra_count
 
         return RequirementFrameResult(
-            summary=ComparisonReportFrameSummary(
+            summary=ComparisonReportFrameComparisonSummary(
                 annotations=self._generate_frame_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
                 ),
@@ -1195,7 +1196,7 @@ class ShapeRequirementHandler(RequirementHandler):
                 gt_shapes_count = 1
 
         return RequirementFrameResult(
-            summary=ComparisonReportFrameSummary(
+            summary=ComparisonReportFrameComparisonSummary(
                 annotations=self._generate_frame_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
                 ),
@@ -1238,7 +1239,7 @@ class DatasetQualityEstimator:
         self._ds_dataset = self._ds_data_provider.dm_dataset
         self._gt_dataset = self._gt_data_provider.dm_dataset
 
-        self._results: dict[str, dict[int, ComparisonReportFrameSummary]] = {}
+        self._results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
 
     @staticmethod
     def _merge_annotations_summary(
@@ -1249,8 +1250,8 @@ class DatasetQualityEstimator:
     @classmethod
     def _merge_frame_summaries(
         cls,
-        target: ComparisonReportFrameSummary,
-        other: ComparisonReportFrameSummary,
+        target: ComparisonReportFrameComparisonSummary,
+        other: ComparisonReportFrameComparisonSummary,
         *,
         current_count: int,
     ) -> None:
@@ -1364,7 +1365,6 @@ class DatasetQualityEstimator:
         list[AnnotationConflict],
     ]:
         all_frame_results: dict[int, ComparisonReportFrameSummary] = {}
-        frame_result_counts: dict[int, int] = {}
         intersection_frames = []
         conflicts: list[AnnotationConflict] = []
 
@@ -1380,16 +1380,14 @@ class DatasetQualityEstimator:
 
             for frame_id, frame_result in requirement_metrics.items():
                 if frame_id not in all_frame_results:
-                    all_frame_results[frame_id] = deepcopy(frame_result)
-                    frame_result_counts[frame_id] = 1
+                    all_frame_results[frame_id] = ComparisonReportFrameSummary(
+                        conflicts=deepcopy(frame_result.conflicts)
+                    )
                     intersection_frames.append(frame_id)
                 else:
-                    self._merge_frame_summaries(
-                        all_frame_results[frame_id],
-                        frame_result,
-                        current_count=frame_result_counts[frame_id],
+                    all_frame_results[frame_id].conflicts = deduplicate_annotation_conflicts(
+                        [*all_frame_results[frame_id].conflicts, *frame_result.conflicts]
                     )
-                    frame_result_counts[frame_id] += 1
 
         for frame_result in all_frame_results.values():
             conflicts += frame_result.conflicts

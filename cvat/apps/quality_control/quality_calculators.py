@@ -31,6 +31,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReport,
     ComparisonReportAnnotationComponentsSummary,
     ComparisonReportAnnotationsSummary,
+    ComparisonReportFrameComparisonSummary,
     ComparisonReportFrameSummary,
     ComparisonReportJobStats,
     ComparisonReportParameters,
@@ -256,8 +257,7 @@ class TaskQualityCalculator:
         task_total_frames = 0  # in included and non-checkable jobs
         task_conflicts: list[AnnotationConflict] = []
         task_frame_results: dict[int, ComparisonReportFrameSummary] = {}
-        task_frame_results_counts = {}
-        task_group_frame_results: dict[str, dict[int, ComparisonReportFrameSummary]] = {}
+        task_group_frame_results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
         task_group_frame_counts: dict[str, dict[int, int]] = {}
         task_group_parameters: dict[str, dict] = {}
         for r in job_reports.values():
@@ -268,18 +268,14 @@ class TaskQualityCalculator:
 
             for frame_id, job_frame_result in r.frame_results.items():
                 task_frame_result = task_frame_results.get(frame_id)
-                frame_results_count = task_frame_results_counts.get(frame_id, 0)
 
                 if task_frame_result is None:
                     task_frame_result = deepcopy(job_frame_result)
                 else:
-                    merge_frame_summaries(
-                        task_frame_result,
-                        job_frame_result,
-                        current_count=frame_results_count,
+                    task_frame_result.conflicts = deduplicate_annotation_conflicts(
+                        [*task_frame_result.conflicts, *job_frame_result.conflicts]
                     )
 
-                task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
 
             for group_name, group_report in (r.groups or {}).items():

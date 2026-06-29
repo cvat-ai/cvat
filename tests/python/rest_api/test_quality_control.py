@@ -1589,6 +1589,9 @@ class TestQualityReportContents(_PermissionTestBase):
             assert response.status == HTTPStatus.OK
         report_data = json.loads(response.data)
         assert "annotations" not in report_data["comparison_summary"]
+        for frame_result in report_data["frame_results"].values():
+            assert "annotations" not in frame_result
+            assert "annotation_components" not in frame_result
 
         group_report = report_data["groups"][requirement["name"]]
         task_confusion_matrix = group_report["comparison_summary"]["annotations"][

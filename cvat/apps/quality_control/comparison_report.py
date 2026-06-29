@@ -962,9 +962,6 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
 class ComparisonReportFrameSummary(ReportNode):
     conflicts: list[AnnotationConflict]
 
-    annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
-
     @cached_property
     def conflict_count(self) -> int:
         return len(self.conflicts)
@@ -1005,6 +1002,24 @@ class ComparisonReportFrameSummary(ReportNode):
                 else {}
             ),
             conflicts=[AnnotationConflict.from_dict(v) for v in d["conflicts"]],
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
+class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
+    annotations: ComparisonReportAnnotationsSummary
+    annotation_components: ComparisonReportAnnotationComponentsSummary
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        frame_summary = ComparisonReportFrameSummary.from_dict(d)
+        return cls(
+            conflicts=frame_summary.conflicts,
+            **{
+                field: getattr(frame_summary, field)
+                for field in frame_summary._get_cached_fields()
+                if field in frame_summary.__dict__
+            },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
                 d["annotation_components"]
@@ -1016,7 +1031,7 @@ class ComparisonReportFrameSummary(ReportNode):
 class ComparisonReportRequirementSummary(ReportNode):
     parameters: dict[str, Any]
     comparison_summary: ComparisonReportRequirementComparisonSummary
-    frame_results: dict[int, ComparisonReportFrameSummary] | None
+    frame_results: dict[int, ComparisonReportFrameComparisonSummary] | None
 
     @property
     def conflicts(self) -> list[AnnotationConflict]:
@@ -1036,7 +1051,7 @@ class ComparisonReportRequirementSummary(ReportNode):
             ),
             frame_results=(
                 {
-                    int(k): ComparisonReportFrameSummary.from_dict(v)
+                    int(k): ComparisonReportFrameComparisonSummary.from_dict(v)
                     for k, v in d["frame_results"].items()
                 }
                 if d.get("frame_results") is not None
