@@ -21,7 +21,7 @@ from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import initialize_task
 from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
-from cvat.utils.django_database import bulk_create
+from cvat.utils.django_database.utils import bulk_create
 
 from .annotation import AnnotationIR
 from .bindings import CvatDatasetNotFoundError, CvatImportError, ProjectData, load_dataset_data

@@ -67,7 +67,7 @@ from cvat.apps.engine.utils import (
 from cvat.apps.iam.permissions import get_iam_context
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
-from cvat.utils.django_database import bulk_create
+from cvat.utils.django_database.utils import bulk_create
 from cvat.utils.paths import problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 

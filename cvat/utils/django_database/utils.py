@@ -1,40 +1,41 @@
-# Copyright (C) 2023 Intel Corporation
-#
-# SPDX-License-Identifier: MIT
-
 import logging
 from collections.abc import Iterable, Sequence
-from functools import wraps
-from typing import Callable, ParamSpec, TypeAlias, TypeVar
+from typing import Any, TypeVar
 
 from django.conf import settings
 from django.db import DatabaseError, connection
-from django.db.models import Model, QuerySet
+from django.db.models import Manager, Model, QuerySet
 from psycopg2 import Error as PsycopgError
 from psycopg2 import sql
 
-P = ParamSpec("P")
-R = TypeVar("R")
-_T = TypeVar("_T")
 _ModelT = TypeVar("_ModelT", bound=Model)
 _QuerysetT = TypeVar("_QuerysetT", bound=QuerySet)
 _unspecified = object()
+
 _logger = logging.getLogger(__name__)
 
 
-class Undefined:
-    pass
+def get_or_404(
+    queryset: type[_ModelT] | QuerySet[_ModelT] | Manager[_ModelT],
+    pk: Any,
+) -> _ModelT:
+    """
+    A simpler version of django.shortcuts.get_object_or_404()
+    Produces a better error message.
+    """
 
+    if hasattr(queryset, "_default_manager"):
+        queryset = queryset._default_manager.all()
 
-MaybeUndefined: TypeAlias = _T | Undefined
-"""
-Can be used to annotate dynamic class members that may be undefined in the object.
-Such fields should typically be accessed via hasattr() and getattr().
+    model_type = queryset.model
 
-Common use cases:
-- the reverse side of one-to-one relationship
-- extra annotations from a model queryset
-"""
+    try:
+        return queryset.get(pk=pk)
+    except model_type.DoesNotExist as ex:
+        from rest_framework.exceptions import NotFound
+
+        readable_model_name = queryset.model._meta.verbose_name.capitalize()
+        raise NotFound(f"{readable_model_name} {pk} does not exist") from ex
 
 
 def find_psycopg_cause(
@@ -68,6 +69,9 @@ def find_psycopg_cause(
 
 
 def set_local_lock_timeout(timeout_seconds: int | None = None) -> None:
+    if not connection.in_atomic_block:
+        raise RuntimeError("set_local_lock_timeout must be called inside a transaction")
+
     match connection.vendor:
         case "postgresql":
             with connection.cursor() as cursor:
@@ -90,20 +94,6 @@ def set_local_lock_timeout(timeout_seconds: int | None = None) -> None:
             raise NotImplementedError(
                 f"set_local_lock_timeout is not implemented for {connection.vendor} backend"
             )
-
-
-def set_local_lock_timeout_decorator(
-    timeout_seconds: int | None = None,
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    def decorator(func: Callable[P, R]) -> Callable[P, R]:
-        @wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            set_local_lock_timeout(timeout_seconds=timeout_seconds)
-            return func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
 
 
 def bulk_create(

@@ -10,7 +10,7 @@ from django.db.models import Count, Q, QuerySet
 
 from cvat.apps.engine.models import CloudStorage, Project, Task, User
 from cvat.apps.organizations.models import Organization
-from cvat.utils.django_database import _ModelT
+from cvat.utils.django_database.utils import _ModelT
 
 _USER_DELETION_VALIDATORS = []
 

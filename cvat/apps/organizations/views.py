@@ -20,7 +20,7 @@ from cvat.apps.organizations.permissions import (
     OrganizationPermission,
 )
 from cvat.apps.organizations.throttle import ResendOrganizationInvitationThrottle
-from cvat.utils import django_database as db_utils
+from cvat.utils.django_database import decorators as django_database_decorators
 
 from .models import Invitation, Membership, Organization
 from .serializers import (
@@ -113,7 +113,7 @@ class OrganizationViewSet(
         serializer.save(**extra_kwargs)
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_destroy(self, instance: Organization) -> None:
         return super().perform_destroy(instance)
 

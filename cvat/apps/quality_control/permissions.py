@@ -10,8 +10,8 @@ from django.conf import settings
 
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.permissions import JobPermission, ProjectPermission, TaskPermission
-from cvat.apps.engine.view_utils import get_or_404
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, get_iam_context
+from cvat.utils.django_database.utils import get_or_404
 
 from .models import AnnotationConflict, QualityReport, QualitySettings
 from .serializers import QualityReportCreateSerializer

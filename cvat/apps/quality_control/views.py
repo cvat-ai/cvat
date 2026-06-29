@@ -25,7 +25,7 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.view_utils import deprecate_response, get_or_404
+from cvat.apps.engine.view_utils import deprecate_response
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.export import (
     QualityReportExportFormat,
@@ -51,7 +51,8 @@ from cvat.apps.quality_control.serializers import (
     QualitySettingsSerializer,
 )
 from cvat.apps.redis_handler.serializers import RqIdSerializer
-from cvat.utils import django_database as db_utils
+from cvat.utils.django_database import decorators as django_database_decorators
+from cvat.utils.django_database.utils import get_or_404
 
 
 @extend_schema(tags=["quality"])
@@ -518,7 +519,7 @@ class QualitySettingsViewSet(
     serializer_class = QualitySettingsSerializer
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_update(self, serializer: QualitySettingsSerializer) -> None:
         return super().perform_update(serializer)
 

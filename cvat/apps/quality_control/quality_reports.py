@@ -63,7 +63,7 @@ from cvat.apps.quality_control.models import (
 )
 from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.apps.redis_handler.background import AbstractRequestManager
-from cvat.utils.django_database import bulk_create
+from cvat.utils.django_database.utils import bulk_create
 
 
 @define(slots=False)

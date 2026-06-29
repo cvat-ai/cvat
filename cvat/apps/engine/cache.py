@@ -53,7 +53,7 @@ from cvat.apps.engine.utils import (
     get_rq_lock_for_job,
     md5_hash,
 )
-from cvat.utils.django_database import is_field_cached
+from cvat.utils.django_database.utils import is_field_cached
 from cvat.utils.paths import join_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 from utils.dataset_manifest.utils import Openable

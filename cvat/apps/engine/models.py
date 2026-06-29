@@ -33,7 +33,7 @@ from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
-from cvat.utils.django_database import MaybeUndefined
+from cvat.utils.django_database.types import MaybeUndefined
 
 if TYPE_CHECKING:
     from cvat.apps.engine.cloud_provider import AbstractCloudStorage

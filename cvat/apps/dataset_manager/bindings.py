@@ -52,7 +52,7 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.rq import ImportRQMeta
-from cvat.utils.django_database import add_prefetch_fields
+from cvat.utils.django_database.utils import add_prefetch_fields
 
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager

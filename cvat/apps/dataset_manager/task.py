@@ -31,7 +31,7 @@ from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.utils import av_scan_paths, take_by, transaction_with_repeatable_read
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
-from cvat.utils.django_database import add_prefetch_fields, bulk_create, get_cached
+from cvat.utils.django_database.utils import add_prefetch_fields, bulk_create, get_cached
 
 dlogger = DatasetLogManager()
 

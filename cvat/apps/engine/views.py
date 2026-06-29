@@ -157,7 +157,8 @@ from cvat.apps.engine.view_utils import (
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
-from cvat.utils import django_database as db_utils
+from cvat.utils.django_database import decorators as django_database_decorators
+from cvat.utils.django_database import utils as django_database_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
@@ -416,12 +417,12 @@ class ProjectViewSet(
         return queryset
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_update(self, serializer: ProjectWriteSerializer) -> None:
         return super().perform_update(serializer)
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_destroy(self, instance: Project) -> None:
         return super().perform_destroy(instance)
 
@@ -1279,7 +1280,7 @@ class TaskViewSet(
         return get_410_response_for_export_api("/api/tasks/id/backup/export")
 
     @transaction.atomic()
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_update(self, serializer: TaskWriteSerializer) -> None:
         instance = serializer.instance
 
@@ -1306,7 +1307,7 @@ class TaskViewSet(
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_destroy(self, instance: Task) -> None:
         return super().perform_destroy(instance)
 
@@ -1338,7 +1339,7 @@ class TaskViewSet(
     def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
-        db_utils.bulk_create(
+        django_database_utils.bulk_create(
             ClientFile,
             [
                 ClientFile(file=self._prepare_upload_info_entry(cf["file"].name), data=task_data)
@@ -3206,7 +3207,7 @@ class LabelViewSet(
         return super().get_serializer(*args, **kwargs)
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_update(self, serializer: LabelSerializer) -> None:
         if serializer.instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
@@ -3219,7 +3220,7 @@ class LabelViewSet(
         return super().perform_update(serializer)
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_destroy(self, instance: models.Label) -> None:
         if instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
@@ -3315,7 +3316,7 @@ class UserViewSet(
         return queryset
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_destroy(self, instance: User) -> None:
         return super().perform_destroy(instance)
 
@@ -3436,7 +3437,7 @@ class CloudStorageViewSet(
         return queryset
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_update(self, serializer: CloudStorageWriteSerializer):
         return super().perform_update(serializer)
 
@@ -3446,7 +3447,7 @@ class CloudStorageViewSet(
         )
 
     @transaction.atomic
-    @db_utils.set_local_lock_timeout_decorator()
+    @django_database_decorators.set_local_lock_timeout()
     def perform_destroy(self, instance: CloudStorage) -> None:
         return super().perform_destroy(instance)
 
@@ -3907,7 +3908,7 @@ class AnnotationGuidesViewSet(
         super().perform_create(serializer)
         self._update_related_assets(self.request, serializer.instance)
         with transaction.atomic():
-            db_utils.set_local_lock_timeout()
+            django_database_utils.set_local_lock_timeout()
             serializer.instance.target.touch()
 
     def perform_update(self, serializer):
@@ -3915,7 +3916,7 @@ class AnnotationGuidesViewSet(
         self._update_related_assets(self.request, serializer.instance)
 
         with transaction.atomic():
-            db_utils.set_local_lock_timeout()
+            django_database_utils.set_local_lock_timeout()
             serializer.instance.target.touch()
 
     def perform_destroy(self, instance):
@@ -3923,7 +3924,7 @@ class AnnotationGuidesViewSet(
         super().perform_destroy(instance)
 
         with transaction.atomic():
-            db_utils.set_local_lock_timeout()
+            django_database_utils.set_local_lock_timeout()
             target.touch()
 
 
