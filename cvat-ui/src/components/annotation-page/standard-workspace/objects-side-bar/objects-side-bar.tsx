@@ -28,6 +28,7 @@ interface OwnProps {
 interface StateToProps {
     sidebarCollapsed: boolean;
     jobInstance: any;
+    showPrivateAttributes: boolean;
 }
 
 interface DispatchToProps {
@@ -40,11 +41,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
             sidebarCollapsed,
             job: { instance: jobInstance },
         },
+        settings: {
+            workspace: { showPrivateAttributes },
+        },
     } = state;
 
     return {
         sidebarCollapsed,
         jobInstance,
+        showPrivateAttributes,
     };
 }
 
@@ -58,7 +63,7 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
 
 function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        sidebarCollapsed, collapseSidebar, objectsList, jobInstance,
+        sidebarCollapsed, collapseSidebar, objectsList, jobInstance, showPrivateAttributes,
     } = props;
     const [activeTab, setActiveTab] = useState('objects');
     useEffect((): () => void => {
@@ -125,7 +130,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                     children: <LabelsList />,
                 }, ...(is2D ? [{ key: 'issues', label: 'Issues', children: <IssuesListComponent /> }] : [])]}
             />
-            {!sidebarCollapsed && <AppearanceBlock />}
+            {!sidebarCollapsed && showPrivateAttributes && <AppearanceBlock />}
         </Layout.Sider>
     );
 }

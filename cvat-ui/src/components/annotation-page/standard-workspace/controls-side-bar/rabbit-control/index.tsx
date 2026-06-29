@@ -14,8 +14,9 @@
  *   `_circle` → label names listed here produce a circular mask
  *               (CIRCLE_BUFFER_PX radius).  Auto-completes after 1 click.
  *
- *   Any other label (not listed in either attribute) → polygon mask.
- *   Click ≥ 3 points then press Enter, click "Confirm", or double-click.
+ *   Any other label (not listed in either attribute) → polygon shape.
+ *   Uses the standard polygon draw tool (lines between points visible).
+ *   Double-click or press Enter to finish (min 3 points).
  *
  * If no `_geom` label exists in the project, falls back to the first-letter
  * heuristic: C → polygon, L → line, else → circle.
@@ -27,7 +28,6 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
@@ -41,6 +41,7 @@ import { ActiveControl, CombinedState } from 'reducers';
 import {
     createAnnotationsAsync,
     updateActiveControl as updateActiveControlAction,
+    rememberObject,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -99,15 +100,13 @@ function getLabelMode(labelName: string, allLabels: any[]): LabelMode {
 }
 
 function getRequiredPointCount(mode: LabelMode): number {
-    if (mode === 'polygon') return Infinity;
+    // polygon uses the native draw tool; only line/circle need auto-complete counts
     if (mode === 'line') return 2;
-    return 1;
+    return 1; // circle
 }
 
 function buildMaskPoints(mode: LabelMode, points: [number, number][]): number[] {
     switch (mode) {
-        case 'polygon':
-            return polygonToMaskPoints(points);
         case 'line': {
             const vertices = lineBufferVertices(points[0], points[1], LINE_BUFFER_PX);
             return polygonToMaskPoints(vertices);
@@ -122,7 +121,7 @@ function buildMaskPoints(mode: LabelMode, points: [number, number][]): number[] 
 }
 
 function getModeHint(mode: LabelMode): string {
-    if (mode === 'polygon') return 'Click to add points, then press Enter or click "Confirm" (min 3 points).';
+    if (mode === 'polygon') return 'Draw a polygon shape (lines visible). Double-click or press Enter to finish (min 3 points).';
     if (mode === 'line') return `Click 2 points to define a line mask (${LINE_BUFFER_PX}px buffer).`;
     return `Click 1 point to define a circular mask (${CIRCLE_BUFFER_PX}px radius).`;
 }
@@ -157,50 +156,6 @@ const RabbitSVGIcon = (): JSX.Element => (
 </svg>
 );
 
-// ─── Floating confirm panel ───────────────────────────────────────────────────
-
-interface PolygonConfirmPanelProps {
-    pointCount: number;
-    onConfirm: () => void;
-    onCancel: () => void;
-}
-
-function PolygonConfirmPanel({ pointCount, onConfirm, onCancel }: PolygonConfirmPanelProps): JSX.Element {
-    const canConfirm = pointCount >= 3;
-    return ReactDOM.createPortal(
-        <div
-            style={{
-                position: 'fixed',
-                left: 54,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 1000,
-                background: '#fff',
-                border: '1px solid #d9d9d9',
-                borderRadius: 4,
-                padding: '8px 12px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                minWidth: 160,
-            }}
-            className='cvat-rabbit-polygon-confirm'
-        >
-            <Text strong style={{ fontSize: 12 }}>Rabbit – polygon</Text>
-            <Text style={{ fontSize: 12 }} type={canConfirm ? 'success' : 'secondary'}>
-                {pointCount} point{pointCount !== 1 ? 's' : ''}
-                {!canConfirm && ' (need ≥ 3)'}
-            </Text>
-            <Button type='primary' size='small' disabled={!canConfirm} onClick={onConfirm}>
-                Confirm <kbd style={{ marginLeft: 4, opacity: 0.7, fontSize: 10 }}>Enter</kbd>
-            </Button>
-            <Button size='small' onClick={onCancel}>Cancel</Button>
-        </div>,
-        document.body,
-    );
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const core = getCore();
@@ -228,12 +183,11 @@ function RabbitControl(props: Props): JSX.Element {
     const [selectedLabelID, setSelectedLabelID] = useState<number | null>(
         labels.length ? (labels[0].id as number) : null,
     );
-    const [polygonPointsCount, setPolygonPointsCount] = useState(0);
-    const latestPointsRef = useRef<[number, number][]>([]);
     /**
      * Guards against the canvas firing `canvas.interacted` for every mouse-move
      * (preview updates).  Once we have decided to finish an interaction we flip
      * this to `true`; subsequent events are ignored until the next activation.
+     * Only used for line/circle modes (polygon uses the native draw tool).
      */
     const interactionDoneRef = useRef(false);
 
@@ -245,13 +199,16 @@ function RabbitControl(props: Props): JSX.Element {
 
     useEffect(() => {
         if (!activeControl || activeControl !== ActiveControl.RABBIT) {
-            setPolygonPointsCount(0);
-            latestPointsRef.current = [];
             interactionDoneRef.current = false;
         }
     }, [activeControl]);
 
     // ── Derived values ───────────────────────────────────────────────────────
+    /**
+     * isActive is true only when the rabbit tool is running an interact()
+     * session (i.e. line or circle mode).  Polygon mode dispatches
+     * DRAW_POLYGON and is handled entirely by the canvas-wrapper.
+     */
     const isActive = activeControl === ActiveControl.RABBIT;
     const controlsDisabled = !labels.length || frameData.deleted;
     const selectedLabel = labels.find((l: any) => l.id === selectedLabelID) ?? null;
@@ -263,32 +220,9 @@ function RabbitControl(props: Props): JSX.Element {
         (l: any) => l.name !== '_geom' && l.type !== ObjectType.TAG,
     );
 
-    // ── Shared finish logic ───────────────────────────────────────────────────
-    const finishPolygon = useCallback((): void => {
-        if (interactionDoneRef.current) return; // guard against duplicate calls
-        interactionDoneRef.current = true;
-        const points = latestPointsRef.current;
-        if (points.length >= 3 && selectedLabel) {
-            const maskPoints = buildMaskPoints('polygon', points);
-            if (maskPoints.length >= 6) {
-                const objectState = new core.classes.ObjectState({
-                    shapeType: ShapeType.MASK,
-                    objectType: ObjectType.SHAPE,
-                    source: core.enums.Source.SEMI_AUTO,
-                    label: selectedLabel,
-                    points: maskPoints,
-                    frame,
-                    occluded: false,
-                    zOrder: curZOrder,
-                });
-                dispatch(createAnnotationsAsync([objectState]));
-            }
-        }
-        canvasInstance.interact({ enabled: false });
-        dispatch(updateActiveControlAction(ActiveControl.CURSOR));
-    }, [canvasInstance, dispatch, selectedLabel, frame, curZOrder]);
-
-    // ── Canvas interaction listener ──────────────────────────────────────────
+    // ── Canvas interaction listener (line / circle modes only) ───────────────
+    // Polygon mode uses canvasInstance.draw() and is handled by the
+    // canvas-wrapper's canvas.drawn listener — no custom listener needed.
     useEffect(() => {
         if (!canvasInstance || !isActive || !selectedLabel) return (): void => {};
 
@@ -297,38 +231,28 @@ function RabbitControl(props: Props): JSX.Element {
             const rawPoints: number[][] = convertShapesForInteractor(shapes, 'points', 'positive');
             const points: [number, number][] = rawPoints.map((p) => [p[0], p[1]]);
 
-            if (labelMode === 'polygon') {
-                latestPointsRef.current = points;
-                setPolygonPointsCount(points.length);
-            }
-
             const shouldAutoComplete = points.length >= requiredPoints;
-            const shouldFinish = shouldAutoComplete || (finished && labelMode === 'polygon' && points.length >= 3);
-            const shouldCancelEmpty = finished && !shouldFinish;
+            const shouldCancelEmpty = finished && !shouldAutoComplete;
 
-            if (shouldFinish) {
-                if (interactionDoneRef.current) return; // already handled (e.g. mousemove after click)
-                if (labelMode === 'polygon') {
-                    finishPolygon(); // finishPolygon sets the flag itself
-                } else {
-                    interactionDoneRef.current = true;
-                    const maskPoints = buildMaskPoints(labelMode, points);
-                    if (maskPoints.length >= 6) {
-                        const objectState = new core.classes.ObjectState({
-                            shapeType: ShapeType.MASK,
-                            objectType: ObjectType.SHAPE,
-                            source: core.enums.Source.SEMI_AUTO,
-                            label: selectedLabel,
-                            points: maskPoints,
-                            frame,
-                            occluded: false,
-                            zOrder: curZOrder,
-                        });
-                        dispatch(createAnnotationsAsync([objectState]));
-                    }
-                    canvasInstance.interact({ enabled: false });
-                    dispatch(updateActiveControlAction(ActiveControl.CURSOR));
+            if (shouldAutoComplete) {
+                if (interactionDoneRef.current) return; // already handled
+                interactionDoneRef.current = true;
+                const maskPoints = buildMaskPoints(labelMode, points);
+                if (maskPoints.length >= 6) {
+                    const objectState = new core.classes.ObjectState({
+                        shapeType: ShapeType.MASK,
+                        objectType: ObjectType.SHAPE,
+                        source: core.enums.Source.SEMI_AUTO,
+                        label: selectedLabel,
+                        points: maskPoints,
+                        frame,
+                        occluded: false,
+                        zOrder: curZOrder,
+                    });
+                    dispatch(createAnnotationsAsync([objectState]));
                 }
+                canvasInstance.interact({ enabled: false });
+                dispatch(updateActiveControlAction(ActiveControl.CURSOR));
             } else if (shouldCancelEmpty) {
                 canvasInstance.interact({ enabled: false });
                 dispatch(updateActiveControlAction(ActiveControl.CURSOR));
@@ -346,9 +270,9 @@ function RabbitControl(props: Props): JSX.Element {
             canvasInstance.html().removeEventListener('canvas.canceled', handleCanceled);
         };
     }, [isActive, canvasInstance, selectedLabel, labelMode, requiredPoints,
-        frame, curZOrder, dispatch, finishPolygon]);
+        frame, curZOrder, dispatch]);
 
-    // ── Suppress "Draw point prompts" hint while active ──────────────────────
+    // ── Suppress "Draw point prompts" hint while active (interact modes) ─────
     //
     // The canvas fires `canvas.message` with topic='interaction' to show the
     // "Draw point prompts" / "Draw rectangle prompts" tooltip.  We intercept
@@ -370,29 +294,20 @@ function RabbitControl(props: Props): JSX.Element {
         };
     }, [isActive, canvasInstance]);
 
-    // ── Enter key shortcut ───────────────────────────────────────────────────
-    useEffect(() => {
-        if (!isActive || labelMode !== 'polygon') return (): void => {};
-        const handleKeyDown = (e: KeyboardEvent): void => {
-            if (e.key === 'Enter' && latestPointsRef.current.length >= 3) {
-                e.preventDefault();
-                e.stopPropagation();
-                finishPolygon();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown, { capture: true });
-        return (): void => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-    }, [isActive, labelMode, finishPolygon]);
-
     // ── Handlers ─────────────────────────────────────────────────────────────
     /**
-     * Starts the canvas interaction.
+     * Starts the annotation.
+     *
+     * - Polygon mode: delegates to `canvasInstance.draw()` with ShapeType.POLYGON
+     *   so the user sees connecting lines between points (same as the standard
+     *   polygon tool).  The canvas-wrapper handles `canvas.drawn` and creates
+     *   a POLYGON annotation automatically.
+     *
+     * - Line / circle modes: uses `canvasInstance.interact()` to collect points
+     *   and then creates a MASK annotation with the appropriate geometry.
      *
      * `labelOverride` — when provided (list mode), this label is used
-     * immediately and `selectedLabelID` is updated in parallel.  In the
-     * sub-millisecond window before React re-renders the `useEffect` with the
-     * new label, the old `handleInteraction` closure is still valid because the
-     * user cannot physically click a canvas point that fast.
+     * immediately and `selectedLabelID` is updated in parallel.
      */
     const handleActivate = useCallback((labelOverride?: any): void => {
         const labelToUse = labelOverride ?? selectedLabel;
@@ -401,14 +316,34 @@ function RabbitControl(props: Props): JSX.Element {
         if (labelOverride && labelOverride.id !== selectedLabelID) {
             setSelectedLabelID(labelOverride.id as number);
         }
+        const mode = getLabelMode(labelToUse.name, labels);
         canvasInstance.cancel();
-        canvasInstance.interact({
-            enabled: true,
-            command: 'draw_points',
-            settings: { crosshair: true },
-        });
-        dispatch(updateActiveControlAction(ActiveControl.RABBIT));
-    }, [canvasInstance, dispatch, selectedLabel, selectedLabelID]);
+
+        if (mode === 'polygon') {
+            // ── Polygon: use the native polygon draw path ──────────────────
+            // This shows connecting lines between vertices (like the standard
+            // polygon tool), and lets canvas-wrapper create the POLYGON shape.
+            dispatch(rememberObject({
+                activeObjectType: ObjectType.SHAPE,
+                activeShapeType: ShapeType.POLYGON,
+                activeLabelID: labelToUse.id,
+            }));
+            canvasInstance.draw({
+                enabled: true,
+                shapeType: ShapeType.POLYGON,
+                crosshair: false,
+            });
+            dispatch(updateActiveControlAction(ActiveControl.DRAW_POLYGON));
+        } else {
+            // ── Line / circle: use interact() to collect points ────────────
+            canvasInstance.interact({
+                enabled: true,
+                command: 'draw_points',
+                settings: { crosshair: true },
+            });
+            dispatch(updateActiveControlAction(ActiveControl.RABBIT));
+        }
+    }, [canvasInstance, dispatch, selectedLabel, selectedLabelID, labels]);
 
     const handleDeactivate = useCallback((): void => {
         canvasInstance.interact({ enabled: false });
@@ -500,34 +435,24 @@ function RabbitControl(props: Props): JSX.Element {
     }
 
     return (
-        <>
-            <CustomPopover
-                {...(isActive ? { overlayStyle: { display: 'none' } } : {})}
-                overlayClassName='cvat-rabbit-control-popover'
-                placement='right'
-                content={popoverContent}
-            >
-                <CVATTooltip title='Rabbit tool' placement='right'>
-                    <Icon
-                        component={RabbitSVGIcon}
-                        className={
-                            isActive
-                                ? 'cvat-rabbit-control cvat-active-canvas-control'
-                                : 'cvat-rabbit-control'
-                        }
-                        onClick={isActive ? handleDeactivate : undefined}
-                    />
-                </CVATTooltip>
-            </CustomPopover>
-
-            {isActive && labelMode === 'polygon' && (
-                <PolygonConfirmPanel
-                    pointCount={polygonPointsCount}
-                    onConfirm={finishPolygon}
-                    onCancel={handleDeactivate}
+        <CustomPopover
+            {...(isActive ? { overlayStyle: { display: 'none' } } : {})}
+            overlayClassName='cvat-rabbit-control-popover'
+            placement='right'
+            content={popoverContent}
+        >
+            <CVATTooltip title='Rabbit tool' placement='right'>
+                <Icon
+                    component={RabbitSVGIcon}
+                    className={
+                        isActive
+                            ? 'cvat-rabbit-control cvat-active-canvas-control'
+                            : 'cvat-rabbit-control'
+                    }
+                    onClick={isActive ? handleDeactivate : undefined}
                 />
-            )}
-        </>
+            </CVATTooltip>
+        </CustomPopover>
     );
 }
 

@@ -17,6 +17,7 @@ import { LabelType, ObjectType } from 'cvat-core-wrapper';
 
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { ShortcutScope } from 'utils/enums';
 import ControlVisibilityObserver, {
     ExtraControlsControl, ContainerHeightContext,
 } from './control-visibility-observer';
@@ -45,6 +46,25 @@ interface Props {
 }
 
 const componentShortcuts = {
+    PASTE_SHAPE: {
+        name: 'Paste shape',
+        description: 'Paste a shape from internal CVAT clipboard',
+        sequences: ['ctrl+v'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_DRAW_MODE_STANDARD_CONTROLS: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters',
+        sequences: ['n'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_REDRAW_MODE_STANDARD_CONTROLS: {
+        name: 'Redraw shape',
+        description: 'Remove selected shape and redraw it from scratch',
+        sequences: ['shift+n'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
