@@ -142,7 +142,7 @@ def make_client_from_cli(
 
     if profile is not None and (
         server_host is not None or server_port is not None or auth is not None
-    ):
+    if profile is not None and any(v is not None for v in (server_host, server_port, auth)):
         raise AuthStoreError(
             "--profile is mutually exclusive with --server-host/--server-port/--auth."
         )
