@@ -254,6 +254,7 @@ export function showAttribute(
     showPrivateAttributes: boolean,
 ): boolean {
     const isAutomaticValue = ['auto', 'automatic'].includes(attrValue);
+    console.log("isAutomaticValue",attrValue,isAutomaticValue)
     const isPrivateAttribute = attrName.startsWith('_');
     return (!isPrivateAttribute && !isAutomaticValue) || showPrivateAttributes;
 }

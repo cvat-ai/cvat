@@ -22,6 +22,7 @@ import ControlVisibilityObserver, {
     ExtraControlsControl, ContainerHeightContext,
 } from '../control-visibility-observer';
 import OpenCVControl from '../opencv-control';
+import FitControl, { Props as FitControlProps } from '../fit-control';
 import RabbitControl from './rabbit-control';
 import NCPSetupTagControl from './road-material/ncp-setup-tag-control';
 
@@ -77,6 +78,7 @@ registerComponentShortcuts(componentShortcuts);
 // We use the observer to see if these controls are in the scopeport
 // They automatically put to extra if not
 const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl, 'OpenCVControl');
+const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl, 'FitControl');
 const ObservedRabbitControl = ControlVisibilityObserver(RabbitControl, 'RabbitControl');
 const NCPObservedSetupTagControl = ControlVisibilityObserver(NCPSetupTagControl, 'NCPSetupTagControl');
 
@@ -100,16 +102,10 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
     const controlsDisabled = !labels.length || frameData.deleted;
 
     // ── Selected label (lifted from RabbitControl) ───────────────────────────
-    const [selectedLabelID, setSelectedLabelID] = React.useState<number | null>(
-        labels.length ? (labels[0].id as number) : null,
-    );
-
-    // Keep the selection valid when the label list first loads or changes.
-    React.useEffect(() => {
-        if (labels.length && selectedLabelID === null) {
-            setSelectedLabelID(labels[0].id as number);
-        }
-    }, [labels, selectedLabelID]);
+    // `null` means idle (no class chosen) — in this state the rabbit control is
+    // visible. As soon as a class is chosen the rabbit hides itself; RabbitControl
+    // resets this back to null when the canvas returns to cursor (idle) mode.
+    const [selectedLabelID, setSelectedLabelID] = React.useState<number | null>(null);
 
     // Listen to ncp:select-label events so the selected label is always kept
     // in sync at the sidebar level, regardless of which child dispatches the event.
@@ -260,7 +256,30 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
                 pasteShape();
             },
             SWITCH_DRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
-                handleDrawMode(event, 'draw');
+                const drawing = [
+                    ActiveControl.DRAW_POINTS,
+                    ActiveControl.DRAW_POLYGON,
+                    ActiveControl.DRAW_POLYLINE,
+                    ActiveControl.DRAW_RECTANGLE,
+                    ActiveControl.DRAW_CUBOID,
+                    ActiveControl.DRAW_ELLIPSE,
+                    ActiveControl.DRAW_SKELETON,
+                    ActiveControl.DRAW_MASK,
+                    ActiveControl.AI_TOOLS,
+                    ActiveControl.OPENCV_TOOLS,
+                    ActiveControl.RABBIT,
+                ].includes(activeControl);
+                const editing = canvasInstance.mode() === CanvasMode.EDIT;
+
+                if (drawing || editing) {
+                    // Currently drawing/editing → keep the standard finish behavior.
+                    handleDrawMode(event, 'draw');
+                } else {
+                    // Idle → open the rabbit class-picker popover. In standard mode this
+                    // shortcut shows the brush toolbox; in NCP mode it opens the rabbit.
+                    event?.preventDefault();
+                    window.dispatchEvent(new CustomEvent('ncp:open-rabbit'));
+                }
             },
             SWITCH_REDRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
                 handleDrawMode(event, 'redraw');
@@ -272,6 +291,7 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
         <ContainerHeightContext.Provider value={containerHeight}>
             <Layout.Sider ref={containerRef} className='cvat-canvas-controls-sidebar' theme='light' width={44}>
                 <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+                <ObservedFitControl canvasInstance={canvasInstance} />
                 <ObservedOpenCVControl />
                 <ObservedRabbitControl
                     selectedLabelID={selectedLabelID}
