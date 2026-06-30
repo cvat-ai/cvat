@@ -211,10 +211,14 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     }
 
     private replaceCurrentShapePoints(points: number[][]): void {
+        const paintHandler = this.currentShape.remember('_paintHandler');
+        if (!paintHandler) {
+            return;
+        }
+
         const lastPoint = (this.currentShape as any).array().valueOf().slice(-1)[0];
         (this.currentShape as any).plot([...points, lastPoint]);
 
-        const paintHandler = this.currentShape.remember('_paintHandler');
         paintHandler.drawCircles();
         paintHandler.set.members.forEach((el: SVG.Circle): void => {
             el.attr('stroke-width', 1 / this.scale).attr('r', 2.5 / this.scale);
