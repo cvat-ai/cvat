@@ -19,7 +19,12 @@ from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import CvatDataExtractor, TaskData, find_dataset_root
+from cvat.apps.dataset_manager.bindings import (
+    CvatDataExtractor,
+    TaskData,
+    find_dataset_root,
+    import_dm_annotations,
+)
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import (
     ensure_extractors_efficiency,
@@ -1094,6 +1099,50 @@ class TaskAnnotationsImportTest(_DbTestBase):
 
             dm.task.import_task_annotations(dataset_path, task["id"], format_name, True)
             self._test_can_import_annotations(task, format_name)
+
+    def test_can_import_dataset_with_empty_mask(self):
+        # https://github.com/cvat-ai/cvat/issues/7458
+        # An empty (zero-area) mask must be dropped on import, while a valid
+        # mask on the same image survives.
+        valid_mask = np.zeros((5, 7), dtype=np.uint8)
+        valid_mask[1:3, 2:4] = 1
+        empty_mask = np.zeros((5, 7), dtype=np.uint8)
+
+        source_dataset = Dataset.from_iterable(
+            [
+                DatasetItem(
+                    id="image_0",
+                    annotations=[
+                        Mask(valid_mask, label=0),
+                        Mask(empty_mask, label=0),
+                    ],
+                )
+            ],
+            categories=["label_0"],
+        )
+
+        images = self._generate_task_images(1, size=(5, 7))
+        task = {
+            "name": "test empty mask import",
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [{"name": "label_0"}],
+        }
+        task = self._create_task(task, images)
+
+        task_ann = TaskAnnotation(task["id"])
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task["id"]))
+
+        # Must not raise, and the empty mask must be skipped
+        import_dm_annotations(source_dataset, task_data)
+
+        shapes = task_ann.ir_data.shapes
+        self.assertEqual(len(shapes), 1)
+        self.assertEqual(shapes[0]["type"], "mask")
+        # The surviving shape is the valid mask: the CVAT RLE ends with
+        # [left, top, right, bottom], i.e. the tight bbox of valid_mask.
+        self.assertEqual([int(p) for p in shapes[0]["points"][-4:]], [2, 1, 3, 2])
 
     def _make_coco_annotation_without_iscrowd(
         self, format_name: str = "COCO 1.0", has_segmentation: bool = True
