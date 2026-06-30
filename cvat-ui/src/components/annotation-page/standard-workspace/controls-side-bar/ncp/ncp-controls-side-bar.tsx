@@ -45,6 +45,12 @@ interface Props {
 }
 
 const componentShortcuts = {
+    CANCEL: {
+        name: 'Cancel',
+        description: 'Cancel any active canvas mode',
+        sequences: ['esc'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
     PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
@@ -193,6 +199,12 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
 
 
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
+        CANCEL: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            if (activeControl !== ActiveControl.CURSOR) {
+                canvasInstance.cancel();
+            }
+        },
     };
 
     const handleDrawMode = (event: KeyboardEvent | undefined, action: 'draw' | 'redraw'): void => {
