@@ -211,7 +211,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     }
 
     private replaceCurrentShapePoints(points: number[][]): void {
-        const paintHandler = this.currentShape.remember('_paintHandler');
+        const paintHandler = this.currentShape?.remember('_paintHandler');
         if (!paintHandler) {
             return;
         }
