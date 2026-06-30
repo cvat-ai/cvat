@@ -202,29 +202,26 @@ def make_client_from_cli(
             "--profile is mutually exclusive with --server-host/--server-port/--auth."
         )
 
+    env_token = os.getenv(CVAT_ACCESS_TOKEN_ENV_VAR)
+    explicit_host = params.server_host is not None or params.server_port is not None
+    explicit_cred = params.auth is not None or env_token is not None
+
+    profile = None
     if params.profile is not None:
+        profile = _get_profile_or_raise(store, params.profile)
+    elif not explicit_host and not explicit_cred:
+        default = store.get_default_profile()
+        if default is not None:
+            profile = default[1]
+
+    if profile is not None:
         return _make_client_from_profile(
-            _get_profile_or_raise(store, params.profile),
+            profile,
             logger=logger,
             config=client_config,
             check_server_version=check_server_version,
             organization=params.organization,
         )
-
-    env_token = os.getenv(CVAT_ACCESS_TOKEN_ENV_VAR)
-    explicit_host = params.server_host is not None or params.server_port is not None
-    explicit_cred = params.auth is not None or env_token is not None
-
-    if not explicit_host and not explicit_cred:
-        default = store.get_default_profile()
-        if default is not None:
-            return _make_client_from_profile(
-                default[1],
-                logger=logger,
-                config=client_config,
-                check_server_version=check_server_version,
-                organization=params.organization,
-            )
 
     if explicit_host:
         url = (
@@ -295,17 +292,8 @@ def _set_organization(client: Client, organization: str | None) -> Client:
 class AuthStore:
     """Reads/writes the persistent auth.json config file, enforcing 0600/0700 permissions."""
 
-    def __init__(
-        self,
-        path: Path | None = None,
-        *,
-        config_file_path: Path | None = None,
-    ):
-        if path is not None and config_file_path is not None:
-            raise TypeError("'path' and 'config_file_path' cannot be used together")
-
-        store_path = path if path is not None else config_file_path
-        self._path = Path(store_path) if store_path is not None else get_auth_store_path()
+    def __init__(self, path: Path | None = None):
+        self._path = Path(path) if path is not None else get_auth_store_path()
         self._doc: dict | None = None
 
     @property
