@@ -11,6 +11,7 @@ from django.db import DatabaseError, connection
 from django.db.models import Manager, Model, QuerySet
 from psycopg2 import Error as PsycopgError
 from psycopg2 import sql
+from psycopg2.errors import LockNotAvailable
 
 _ModelT = TypeVar("_ModelT", bound=Model)
 _QuerysetT = TypeVar("_QuerysetT", bound=QuerySet)
@@ -22,6 +23,7 @@ _logger = logging.getLogger(__name__)
 __all__ = (
     "get_or_404",
     "find_psycopg_cause",
+    "is_lock_timeout_error",
     "bulk_create",
     "is_prefetched",
     "is_field_cached",
@@ -82,6 +84,10 @@ def find_psycopg_cause(
         return None
 
     return find_deepest(exc)
+
+
+def is_lock_timeout_error(exc: DatabaseError) -> bool:
+    return isinstance(find_psycopg_cause(exc), LockNotAvailable)
 
 
 def bulk_create(

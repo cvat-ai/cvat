@@ -8,7 +8,6 @@ from typing import Any
 import rq
 from crum import get_current_request, get_current_user
 from django.db import DatabaseError
-from psycopg2.errors import LockNotAvailable
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
@@ -683,7 +682,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
 def exception_handler(exc: Exception, context) -> Response | None:
     if isinstance(exc, DatabaseError):
-        if isinstance(db_utils.find_psycopg_cause(exc=exc), LockNotAvailable):
+        if db_utils.is_lock_timeout_error(exc):
             exc = ResourceIsBusyApiException()
 
     return drf_exception_handler(exc=exc, context=context)
