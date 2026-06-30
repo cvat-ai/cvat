@@ -746,6 +746,7 @@ class RequirementHandler(ABC):
 
         return summary
 
+
 class TagRequirementHandler(RequirementHandler):
     def match_annotations(
         self,
