@@ -247,7 +247,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     const siderProps: SiderProps = {
         className: 'attribute-annotation-sidebar',
         theme: 'light',
-        width: 300,
+        width: 320,
         collapsedWidth: 0,
         reverseArrow: true,
         collapsible: true,

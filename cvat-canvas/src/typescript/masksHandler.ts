@@ -343,6 +343,7 @@ export class MasksHandlerImpl implements MasksHandler {
         const updateBlockedToolsDebounced = debounce(this.updateBlockedTools.bind(this), 250);
         return new Proxy(drawnObjects, {
             set(target, property, value) {
+                // eslint-disable-next-line no-param-reassign
                 target[property] = value;
                 updateBlockedToolsDebounced();
                 return true;

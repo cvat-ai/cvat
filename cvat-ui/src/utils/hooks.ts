@@ -16,7 +16,6 @@ import { authQuery } from './auth-query';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
 import { dispatchContextMenuEvent } from './context-menu-helper';
 
-// eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
     const ref = useRef<T>();
     useEffect(() => {
@@ -39,7 +38,7 @@ export function useIsMounted(): () => boolean {
 }
 
 export type Plugin = {
-    component: CallableFunction;
+    component: any; // TODO: research which type should be here
     weight: number;
 };
 
@@ -51,7 +50,7 @@ export function usePlugins(
     const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
     const mappedComponents = filteredComponents
         .map(({ component, data }): {
-            component: CallableFunction;
+            component: any; // TODO: research which type should be here
             weight: number;
         } => ({
             component,

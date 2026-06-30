@@ -22,7 +22,7 @@ export enum PointSizeBase {
 }
 
 export type QualitySettingsSaveFields = Partial<Camelized<
-Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions'>
+    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'descriptions'>
 >>;
 
 export default class QualitySettings {

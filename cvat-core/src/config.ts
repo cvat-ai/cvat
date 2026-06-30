@@ -11,6 +11,7 @@ const config = {
     },
     origin: '',
     uploadChunkSize: 100,
+    opencvPath: '',
     removeUnderlyingMaskPixels: {
         enabled: false,
         onEmptyMaskOccurrence: null,
@@ -21,6 +22,8 @@ const config = {
     requestsStatusDelay: null,
 
     jobMetaDataReloadPeriod: 1 * 60 * 60 * 1000, // 1 hour
+
+    previewPlaceholders: {} as Record<string, string>,
 };
 
 export default config;

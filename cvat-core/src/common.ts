@@ -135,10 +135,6 @@ export class FieldUpdateTrigger {
     }
 }
 
-export function clamp(value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), max);
-}
-
 export function camelToSnakeCase(str: string): string {
     return str.replace(/[A-Z]/g, (letter: string) => `_${letter.toLowerCase()}`);
 }

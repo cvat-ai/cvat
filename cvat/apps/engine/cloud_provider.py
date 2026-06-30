@@ -24,7 +24,12 @@ from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
-from botocore.exceptions import ClientError, EndpointConnectionError
+from botocore.exceptions import (
+    ClientError,
+    ConnectTimeoutError,
+    EndpointConnectionError,
+    ReadTimeoutError,
+)
 from botocore.handlers import disable_signing
 from django.conf import settings
 from google.api_core.exceptions import RetryError
@@ -148,8 +153,9 @@ def validate_file_status(func):
 
 
 class AbstractCloudStorage(ABC):
-    def __init__(self, prefix: str | None = None) -> None:
+    def __init__(self, *, prefix: str | None = None, is_trusted: bool = False) -> None:
         self.prefix = prefix
+        self.proxies = None if is_trusted else PROXIES_FOR_UNTRUSTED_URLS
 
     @property
     @abstractmethod
@@ -447,11 +453,23 @@ class HeaderFirstDownloader(ABC):
             buff.write(chunk)
 
             partial_contents = buff.getvalue()
+            if len(partial_contents) < header_size:
+                # This means that the entire file is smaller than the current header_size.
+                # It doesn't matter whether the header can be parsed,
+                # since there's no more data to download anyway.
+                return MemNamedOpenable(partial_contents, key)
+
             if self.try_parse_header(key, partial_contents):
                 return MemNamedOpenable(partial_contents, key)
 
             if i + 1 < len(headers_to_try):
                 self.log_header_miss(key=key, header_size=header_size)
+
+            # If the full size is exactly equal to header_size,
+            # the next download_range_of_bytes call will have start_byte equal to the file size,
+            # and the request will fail (since an HTTP range can't be empty).
+            # To prevent this, force the range to be non-empty by redownloading the last byte.
+            buff.seek(-1, os.SEEK_CUR)
 
         full_contents = self.client.download_fileobj(key)
         self.log_header_miss(key=key, header_size=header_size, full_contents=full_contents)
@@ -537,6 +555,7 @@ def get_cloud_storage_instance(
     resource: str,
     credentials: Credentials,
     specific_attributes: dict[str, Any],
+    is_trusted: bool = False,
 ):
     instance = None
     if cloud_provider == CloudProviderChoice.AMAZON_S3:
@@ -548,6 +567,7 @@ def get_cloud_storage_instance(
             region=specific_attributes.get("region"),
             endpoint_url=specific_attributes.get("endpoint_url"),
             prefix=specific_attributes.get("prefix"),
+            is_trusted=is_trusted,
         )
     elif cloud_provider == CloudProviderChoice.AZURE_BLOB_STORAGE:
         instance = AzureBlobCloudStorage(
@@ -556,6 +576,7 @@ def get_cloud_storage_instance(
             sas_token=credentials.session_token,
             connection_string=credentials.connection_string,
             prefix=specific_attributes.get("prefix"),
+            is_trusted=is_trusted,
         )
     elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
         instance = GcsCloudStorage(
@@ -590,8 +611,9 @@ class S3CloudStorage(AbstractCloudStorage):
         session_token: str | None = None,
         endpoint_url: str | None = None,
         prefix: str | None = None,
+        is_trusted: bool = False,
     ):
-        super().__init__(prefix=prefix)
+        super().__init__(prefix=prefix, is_trusted=is_trusted)
         if sum(1 for credential in (access_key_id, secret_key, session_token) if credential) == 1:
             raise Exception("Insufficient data for authentication")
 
@@ -609,11 +631,16 @@ class S3CloudStorage(AbstractCloudStorage):
                 kwargs[key] = arg_v
 
         session = boto3.Session(**kwargs)
+        # Status checks are part of the control plane, not the data-transfer path, so
+        # Bucket status probes should fail fast when the endpoint is unreachable or
+        # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
+        # the regular resource/client retain their standard retry behavior for normal
+        # storage operations.
         self._s3 = session.resource(
             "s3",
             endpoint_url=endpoint_url,
             config=Config(
-                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+                proxies=self.proxies or {},
                 max_pool_connections=(
                     # AWS can throttle the requests if there are too many of them,
                     # the SDK handles it with the retry policy:
@@ -623,10 +650,21 @@ class S3CloudStorage(AbstractCloudStorage):
                 ),
             ),
         )
+        self._status_client = session.client(
+            "s3",
+            endpoint_url=endpoint_url,
+            config=Config(
+                proxies=self.proxies or {},
+                connect_timeout=2,
+                read_timeout=5,
+                retries={"total_max_attempts": 1, "mode": "standard"},
+            ),
+        )
 
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
             self._s3.meta.client.meta.events.register("choose-signer.s3.*", disable_signing)
+            self._status_client.meta.events.register("choose-signer.s3.*", disable_signing)
 
         self._client = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
@@ -641,9 +679,12 @@ class S3CloudStorage(AbstractCloudStorage):
         return self._bucket.name
 
     def _head(self):
-        return self._client.head_bucket(Bucket=self.name)
+        # Bucket status checks use the dedicated fast-fail client.
+        return self._status_client.head_bucket(Bucket=self.name)
 
     def _head_file(self, key: str, /):
+        # File metadata reads stay on the regular client so they retain standard retry
+        # behavior on slower S3-compatible backends.
         return self._client.head_object(Bucket=self.name, Key=key)
 
     def get_status(self):
@@ -658,7 +699,9 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
-        except EndpointConnectionError:
+        # Handle transport-level reachability failures separately from ClientError-
+        # based 403/404 responses.
+        except (ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError):
             slogger.glob.warning(
                 f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available",
                 exc_info=True,
@@ -675,6 +718,14 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        # Handle transport-level reachability failures separately from ClientError-
+        # based 403/404 responses.
+        except (ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError):
+            slogger.glob.warning(
+                f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name}/{key} not available",
+                exc_info=True,
+            )
+            return Status.NOT_FOUND
 
     @validate_file_status
     @validate_bucket_status
@@ -803,22 +854,23 @@ class AzureBlobCloudStorage(AbstractCloudStorage):
         sas_token: str | None = None,
         connection_string: str | None = None,
         prefix: str | None = None,
+        is_trusted: bool = False,
     ):
-        super().__init__(prefix=prefix)
+        super().__init__(prefix=prefix, is_trusted=is_trusted)
         self._account_name = account_name
         if connection_string:
             self._blob_service_client = BlobServiceClient.from_connection_string(
-                connection_string, proxies=PROXIES_FOR_UNTRUSTED_URLS
+                connection_string, proxies=self.proxies
             )
         elif sas_token:
             self._blob_service_client = BlobServiceClient(
                 account_url=self.account_url,
                 credential=sas_token,
-                proxies=PROXIES_FOR_UNTRUSTED_URLS,
+                proxies=self.proxies,
             )
         else:
             self._blob_service_client = BlobServiceClient(
-                account_url=self.account_url, proxies=PROXIES_FOR_UNTRUSTED_URLS
+                account_url=self.account_url, proxies=self.proxies
             )
         self._client = self._blob_service_client.get_container_client(container)
 
@@ -1224,7 +1276,9 @@ class Credentials:
         ]
 
 
-def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
+def db_storage_to_storage_instance(
+    db_storage: CloudStorage, *, is_trusted: bool = False
+) -> AbstractCloudStorage:
     credentials = Credentials()
     credentials.convert_from_db(
         {
@@ -1237,7 +1291,11 @@ def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudSto
         "credentials": credentials,
         "specific_attributes": db_storage.get_specific_attributes(),
     }
-    return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+    return get_cloud_storage_instance(
+        cloud_provider=db_storage.provider_type,
+        is_trusted=is_trusted,
+        **details,
+    )
 
 
 P = ParamSpec("P")

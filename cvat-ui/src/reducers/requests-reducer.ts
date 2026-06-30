@@ -4,6 +4,7 @@
 
 import _ from 'lodash';
 import { AnyAction } from 'redux';
+import { RQStatus } from 'cvat-core-wrapper';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { RequestsActionsTypes } from 'actions/requests-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
@@ -65,14 +66,17 @@ export default function (
         }
         case RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS: {
             const { requests, cancelled } = state;
+            const { request } = action.payload;
 
             return {
                 ...state,
                 requests: {
                     ...requests,
-                    [action.payload.request.id]: action.payload.request,
+                    [request.id]: request,
                 },
-                cancelled: _.omit(cancelled, action.payload.request.id),
+                cancelled: request.status === RQStatus.CANCELED ?
+                    { ...cancelled, [request.id]: true } :
+                    _.omit(cancelled, request.id),
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

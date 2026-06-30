@@ -11,7 +11,7 @@ import shutil
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePath, PurePosixPath
 from typing import Any, NamedTuple, TypeAlias
 from urllib import parse as urlparse
@@ -19,17 +19,18 @@ from urllib import request as urlrequest
 
 import attrs
 import av
+import requests
 import rq
 from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
 from rest_framework.serializers import ValidationError
 
-from cvat.apps.engine import models
-from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
+    AudioReader,
     CachingMediaIterator,
     ImageListReader,
     IMediaReader,
@@ -37,18 +38,26 @@ from cvat.apps.engine.media_extractors import (
     Mpeg4CompressedChunkWriter,
     RandomAccessIterator,
     ValidateDimension,
+    VideoReader,
     ZipChunkWriter,
     ZipCompressedChunkWriter,
     get_mime,
     load_image,
     sort,
 )
+from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
-from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
+from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
+from utils.dataset_manifest import (
+    ImageManifestManager,
+    VideoManifestManager,
+    is_manifest,
+)
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import find_related_images
 
@@ -57,6 +66,8 @@ from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_in
 slogger = ServerLogManager(__name__)
 
 JobFileMapping: TypeAlias = list[list[str]]
+
+MAX_AUDIO_DURATION = timedelta(hours=4)
 
 
 class SegmentParams(NamedTuple):
@@ -154,14 +165,24 @@ def _generate_segment_params(
         if segment_size == 0 or segment_size > data_size:
             segment_size = data_size
 
-        overlap = min(
-            (
-                db_task.overlap
-                if db_task.overlap is not None
-                else 5 if db_task.mode == "interpolation" else 0
-            ),
-            segment_size // 2,
-        )
+        overlap = db_task.overlap
+        if overlap is None:
+            if data_size <= segment_size:
+                overlap = 0
+            elif (
+                db_task.media_type == models.MediaType.IMAGE
+                and db_task.mode == models.TaskMode.INTERPOLATION
+            ):
+                overlap = 5
+            elif (
+                db_task.media_type == models.MediaType.AUDIO
+                and db_task.mode == models.TaskMode.INTERPOLATION
+            ):
+                overlap = 10000
+            else:
+                overlap = 0
+
+        overlap = min(overlap, segment_size // 2)
         segments_range = range(0, data_size - overlap, segment_size - overlap)
         segments_count = len(segments_range)
 
@@ -227,17 +248,9 @@ def _create_segments_and_jobs(
     db_task.save()
 
 
-def _count_files(data):
+def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
     share_root = settings.SHARE_ROOT
-    server_files = []
-
-    for path in data["server_files"]:
-        path = os.path.normpath(path).lstrip("/")
-        if ".." in path.split(os.path.sep):
-            raise ValueError("Don't use '..' inside file paths")
-        if not (share_root / path).resolve().is_relative_to(share_root):
-            raise ValueError("Bad file path: " + path)
-        server_files.append(path)
+    server_files = [f.rstrip("/") for f in data["server_files"]]
 
     sorted_server_files = sorted(server_files, reverse=True)
     # The idea of the code is trivial. After sort we will have files in the
@@ -275,9 +288,7 @@ def _count_files(data):
     )
 
     count_files(
-        file_mapping={
-            f: os.path.abspath(os.path.join(share_root, f)) for f in data["server_files"]
-        },
+        file_mapping={f: join_untrusted_path(share_root, f) for f in data["server_files"]},
         counter=counter,
     )
 
@@ -294,7 +305,7 @@ def _find_manifest_files(data):
     return manifest_files
 
 
-def _validate_data(counter, manifest_files=None):
+def _validate_data(counter: dict[str, list[str]], *, manifest_files: list[str] = None):
     unique_entries = 0
     multiple_entries = 0
     for media_type, media_config in MEDIA_TYPES.items():
@@ -379,7 +390,7 @@ def _validate_validation_params(
 
     if (
         params["mode"] == models.ValidationMode.GT
-        and params["frame_selection_method"] == models.JobFrameSelectionMethod.RANDOM_PER_JOB
+        and params.get("frame_selection_method") == models.JobFrameSelectionMethod.RANDOM_PER_JOB
         and (frames_per_job := params.get("frames_per_job_count"))
         and db_task.segment_size <= frames_per_job
     ):
@@ -419,7 +430,7 @@ def _validate_manifest(
     root_dir: Path,
     *,
     is_in_cloud: bool,
-    db_cloud_storage: Any | None,
+    db_cloud_storage: models.CloudStorage | None,
     is_backup_restore: bool,
 ) -> str | None:
     if not manifests:
@@ -428,7 +439,7 @@ def _validate_manifest(
     if len(manifests) != 1:
         raise ValidationError("Only one manifest file can be attached to data")
     manifest_file = manifests[0]
-    full_manifest_path = root_dir / manifests[0]
+    full_manifest_path = join_untrusted_path(root_dir, manifest_file)
 
     if is_in_cloud and not is_backup_restore:
         cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
@@ -458,24 +469,43 @@ def _validate_scheme(url):
         )
 
 
+class _FailedToDownloadFileError(Exception):
+    pass
+
+
 def _download_data(
     urls: Iterable[str],
     upload_dir: str,
     *,
     update_status_callback: Callable[[str], None],
-):
+    timeout: tuple[int, int] | None = (10, 60),
+) -> list[str]:
     local_files = {}
 
     with make_requests_session() as session:
         for url in urls:
             name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
             if name in local_files:
-                raise Exception("filename collision: {}".format(name))
+                raise _FailedToDownloadFileError("filename collision: {}".format(name))
+
             _validate_scheme(url)
+
             slogger.glob.info("Downloading: {}".format(url))
+
             update_status_callback("{} is being downloaded..".format(url))
 
-            response = session.get(url, stream=True, proxies=PROXIES_FOR_UNTRUSTED_URLS)
+            try:
+                response = session.get(
+                    url,
+                    stream=True,
+                    proxies=PROXIES_FOR_UNTRUSTED_URLS,
+                    timeout=timeout,
+                )
+            except requests.exceptions.RequestException as e:
+                raise _FailedToDownloadFileError(
+                    f"Failed to download {url}: {e.__class__.__name__}: {e}"
+                ) from e
+
             if response.status_code == 200:
                 response.raw.decode_content = True
                 with open(os.path.join(upload_dir, name), "wb") as output_file:
@@ -490,7 +520,7 @@ def _download_data(
                 elif response.status_code:
                     error_message += f"; HTTP error {response.status_code}"
 
-                raise Exception(error_message)
+                raise _FailedToDownloadFileError(error_message)
 
             local_files[name] = True
 
@@ -574,11 +604,13 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
         content = list(map(_add_prefix, raw_content))
     else:
         sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+
     if not content:
         raise ValidationError(
             "There is no intersection of the files specified"
             "in the request with the contents of the bucket"
         )
+
     sorted_content = (i[1] for i in sorted(zip(sequence, content)))
     manifest.create(sorted_content)
 
@@ -624,7 +656,7 @@ def _find_and_filter_related_images(
     regular_images, related_images = find_related_images(
         extractor.absolute_source_paths,
         # backward compatibility
-        is_scene_path=(lambda p: not "related_images" in p.parts),
+        is_scene_path=(lambda p: "related_images" not in p.parts),
     )
 
     # extractor.filter() uses absolute paths, so we pass them
@@ -679,10 +711,10 @@ def _allocate_honeypots(
             )
         )
     else:
-        if db_task.mode != "annotation":
+        if db_task.mode != models.TaskMode.ANNOTATION:
             raise ValidationError(
                 f"validation mode '{models.ValidationMode.GT_POOL}' can only be used "
-                "with 'annotation' mode tasks"
+                f"with '{models.TaskMode.ANNOTATION}' mode tasks"
             )
 
         # 1. select pool frames
@@ -861,99 +893,138 @@ def _create_validation_jobs(
 ) -> None:
     db_data = db_task.require_data()
 
+    if db_task.media_type == models.MediaType.AUDIO and (
+        validation_params and validation_params["mode"] != models.ValidationMode.GT
+    ):
+        raise ValidationError(
+            "Only the '{}' validation mode is available in '{}' tasks.".format(
+                models.ValidationMode.GT, models.MediaType.AUDIO
+            )
+        )
+
+    if db_task.media_type == models.MediaType.POINT_CLOUD and (
+        validation_params and validation_params["mode"]
+    ):
+        raise ValidationError(f"Validation is not available in '{db_task.media_type}' tasks.")
+
     if validation_params and validation_params["mode"] == models.ValidationMode.GT:
 
         def _to_rel_frame(abs_frame: int) -> int:
             return (abs_frame - db_data.start_frame) // db_data.get_frame_step()
 
-        # The RNG backend must not change to yield reproducible frame picks,
-        # so here we specify it explicitly
-        from numpy import random
+        if db_task.media_type == models.MediaType.AUDIO:
+            if "frame_selection_method" in validation_params:
+                field_validation.require_one_of_values(
+                    validation_params, "frame_selection_method", ["random_uniform"]
+                )
+                validation_params.pop("frame_selection_method")
 
-        seed = validation_params.get("random_seed")
-        rng = random.Generator(random.MT19937(seed=seed))
+            if "frames" in validation_params:
+                if not validation_params["frames"]:
+                    validation_params.pop("frames")
 
-        match validation_params["frame_selection_method"]:
-            case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                all_frames = range(db_data.size)
+            if extra_params := set(validation_params.keys()) - {"mode"}:
+                raise ValidationError(
+                    "Validation parameters {} are not applicable to the '{}' media type.".format(
+                        ", ".join(f"'{v}'" for v in extra_params),
+                        db_task.media_type,
+                    )
+                )
 
-                if frame_count := validation_params.get("frame_count"):
-                    if db_data.size < frame_count:
+            validation_frames = []
+        else:
+            field_validation.require_field(validation_params, "frame_selection_method")
+
+            # The RNG backend must not change to yield reproducible frame picks,
+            # so here we specify it explicitly
+            from numpy import random
+
+            seed = validation_params.get("random_seed")
+            rng = random.Generator(random.MT19937(seed=seed))
+
+            match validation_params["frame_selection_method"]:
+                case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                    all_frames = range(db_data.size)
+
+                    if frame_count := validation_params.get("frame_count"):
+                        if db_data.size < frame_count:
+                            raise ValidationError(
+                                f"The number of validation frames requested ({frame_count}) "
+                                f"is greater that the number of task frames ({db_data.size})"
+                            )
+                    elif frame_share := validation_params.get("frame_share"):
+                        frame_count = max(1, int(frame_share * len(all_frames)))
+                    else:
+                        raise ValidationError("The number of validation frames is not specified")
+
+                    validation_frames = rng.choice(
+                        all_frames, size=frame_count, shuffle=False, replace=False
+                    ).tolist()
+                case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+                    if frame_count := validation_params.get("frames_per_job_count"):
+                        if db_task.segment_size < frame_count:
+                            raise ValidationError(
+                                "The requested number of GT frames per job must be less "
+                                f"than task segment size ({db_task.segment_size})"
+                            )
+                    elif frame_share := validation_params.get("frames_per_job_share"):
+                        frame_count = min(
+                            max(1, int(frame_share * db_task.segment_size)), db_data.size
+                        )
+                    else:
+                        raise ValidationError("The number of validation frames is not specified")
+
+                    validation_frames: list[int] = []
+                    overlap = db_task.overlap
+                    for segment in db_task.segment_set.all():
+                        segment_frames = set(map(_to_rel_frame, segment.frame_set))
+                        selected_frames = segment_frames.intersection(validation_frames)
+                        selected_count = len(selected_frames)
+
+                        missing_count = min(len(segment_frames), frame_count) - selected_count
+                        if missing_count <= 0:
+                            continue
+
+                        selectable_segment_frames = set(
+                            sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
+                        ).difference(selected_frames)
+
+                        validation_frames.extend(
+                            rng.choice(
+                                tuple(selectable_segment_frames), size=missing_count, replace=False
+                            ).tolist()
+                        )
+                case models.JobFrameSelectionMethod.MANUAL:
+                    if not images:
                         raise ValidationError(
-                            f"The number of validation frames requested ({frame_count}) "
-                            f"is greater that the number of task frames ({db_data.size})"
+                            "{} validation frame selection method at task creation "
+                            "is only available for image-based tasks. "
+                            "Please create the GT job after the task is created.".format(
+                                models.JobFrameSelectionMethod.MANUAL
+                            )
                         )
-                elif frame_share := validation_params.get("frame_share"):
-                    frame_count = max(1, int(frame_share * len(all_frames)))
-                else:
-                    raise ValidationError("The number of validation frames is not specified")
 
-                validation_frames = rng.choice(
-                    all_frames, size=frame_count, shuffle=False, replace=False
-                ).tolist()
-            case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
-                if frame_count := validation_params.get("frames_per_job_count"):
-                    if db_task.segment_size < frame_count:
+                    validation_frames: list[int] = []
+                    known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
+                    unknown_requested_frames = []
+                    for frame_filename in validation_params["frames"]:
+                        frame_id = known_frame_names.get(frame_filename)
+                        if frame_id is None:
+                            unknown_requested_frames.append(frame_filename)
+                            continue
+
+                        validation_frames.append(frame_id)
+
+                    if unknown_requested_frames:
                         raise ValidationError(
-                            "The requested number of GT frames per job must be less "
-                            f"than task segment size ({db_task.segment_size})"
+                            "Unknown validation frames requested: {}".format(
+                                format_list(sorted(unknown_requested_frames))
+                            )
                         )
-                elif frame_share := validation_params.get("frames_per_job_share"):
-                    frame_count = min(max(1, int(frame_share * db_task.segment_size)), db_data.size)
-                else:
-                    raise ValidationError("The number of validation frames is not specified")
-
-                validation_frames: list[int] = []
-                overlap = db_task.overlap
-                for segment in db_task.segment_set.all():
-                    segment_frames = set(map(_to_rel_frame, segment.frame_set))
-                    selected_frames = segment_frames.intersection(validation_frames)
-                    selected_count = len(selected_frames)
-
-                    missing_count = min(len(segment_frames), frame_count) - selected_count
-                    if missing_count <= 0:
-                        continue
-
-                    selectable_segment_frames = set(
-                        sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
-                    ).difference(selected_frames)
-
-                    validation_frames.extend(
-                        rng.choice(
-                            tuple(selectable_segment_frames), size=missing_count, replace=False
-                        ).tolist()
-                    )
-            case models.JobFrameSelectionMethod.MANUAL:
-                if not images:
-                    raise ValidationError(
-                        "{} validation frame selection method at task creation "
-                        "is only available for image-based tasks. "
-                        "Please create the GT job after the task is created.".format(
-                            models.JobFrameSelectionMethod.MANUAL
-                        )
-                    )
-
-                validation_frames: list[int] = []
-                known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
-                unknown_requested_frames = []
-                for frame_filename in validation_params["frames"]:
-                    frame_id = known_frame_names.get(frame_filename)
-                    if frame_id is None:
-                        unknown_requested_frames.append(frame_filename)
-                        continue
-
-                    validation_frames.append(frame_id)
-
-                if unknown_requested_frames:
-                    raise ValidationError(
-                        "Unknown validation frames requested: {}".format(
-                            format_list(sorted(unknown_requested_frames))
-                        )
-                    )
-            case _:
-                assert (
-                    False
-                ), f'Unknown frame selection method {validation_params["frame_selection_method"]}'
+                case _:
+                    assert (
+                        False
+                    ), f'Unknown frame selection method {validation_params["frame_selection_method"]}'
 
         db_data.update_validation_layout(
             models.ValidationLayout(
@@ -973,7 +1044,11 @@ def _create_validation_jobs(
                 start_frame=0,
                 stop_frame=db_data.size - 1,
                 frames=list(map(_to_abs_frame, db_data.validation_layout.frames)),
-                type=models.SegmentType.SPECIFIC_FRAMES,
+                type=(
+                    models.SegmentType.SPECIFIC_FRAMES
+                    if db_data.validation_layout.frames
+                    else models.SegmentType.RANGE
+                ),
             )
         elif db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
             db_gt_segment = models.Segment(
@@ -997,21 +1072,12 @@ def _filter_cloud_storage_files(
     data: dict[str, Any],
     *,
     job_file_mapping: JobFileMapping | None,
-    manifest_file: str | None,
-) -> tuple[ImageManifestManager | None, str | None]:
+    cloud_storage_manifest_prefix: str | None,
+    cloud_storage_manifest: ImageManifestManager | None,
+) -> None:
     cloud_storage_instance = db_storage_to_storage_instance(cloud_storage)
 
-    cloud_storage_manifest = None
-    cloud_storage_manifest_prefix = None
-    if manifest_file:
-        cloud_storage_manifest = ImageManifestManager(
-            cloud_storage.get_storage_dirname() / manifest_file,
-            cloud_storage.get_storage_dirname(),
-        )
-        cloud_storage_manifest.set_index()
-        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
-
-    if manifest_file and not data["server_files"] and not data["filename_pattern"]:
+    if cloud_storage_manifest and not data["server_files"] and not data["filename_pattern"]:
         # only manifest file was specified in server files by the user
         data["filename_pattern"] = "*"
 
@@ -1020,7 +1086,7 @@ def _filter_cloud_storage_files(
         copy_of_server_files = data["server_files"].copy()
         copy_of_dirs = dirs.copy()
         additional_files = []
-        if manifest_file:
+        if cloud_storage_manifest:
             for directory in dirs:
                 if cloud_storage_manifest_prefix:
                     # cloud_storage_manifest_prefix is a dirname of manifest,
@@ -1050,6 +1116,9 @@ def _filter_cloud_storage_files(
                     prefix=directory, _use_flat_listing=True
                 ):
                     if f["type"] == "REG":
+                        if problem_with_untrusted_path(f["name"]):
+                            continue
+
                         additional_files.append(f["name"])
                     else:
                         dirs.append(f["name"])
@@ -1078,7 +1147,7 @@ def _filter_cloud_storage_files(
     if data["filename_pattern"]:
         additional_files = []
 
-        if not manifest_file:
+        if not cloud_storage_manifest:
             # NOTE: we cannot list files with specified pattern on the providers page,
             # because they don't provide such function
             dirs = []
@@ -1087,6 +1156,9 @@ def _filter_cloud_storage_files(
             while True:
                 for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
                     if f["type"] == "REG":
+                        if problem_with_untrusted_path(f["name"]):
+                            continue
+
                         additional_files.append(f["name"])
                     else:
                         dirs.append(f["name"])
@@ -1126,7 +1198,360 @@ def _filter_cloud_storage_files(
 
         data["server_files"] = filtered_files
 
-    return cloud_storage_manifest, cloud_storage_manifest_prefix
+
+def _detect_media_type_and_dimension(
+    extractor: IMediaReader, *, source_dir: Path, db_data: models.Data
+) -> tuple[models.MediaType, models.DimensionType]:
+    if isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
+        detected_media_type = models.MediaType.IMAGE
+        detected_dimension = models.DimensionType.DIM_2D
+    elif isinstance(extractor, MEDIA_TYPES["audio"]["extractor"]):
+        # TODO: support audio reading from video?
+        detected_media_type = models.MediaType.AUDIO
+        detected_dimension = models.DimensionType.DIM_1D
+    else:
+        validate_dimension = ValidateDimension()
+        if db_data.storage == models.StorageChoice.LOCAL or (
+            db_data.storage == models.StorageChoice.SHARE
+            and isinstance(
+                extractor, (MEDIA_TYPES["archive"]["extractor"], MEDIA_TYPES["zip"]["extractor"])
+            )
+        ):
+            validate_dimension.validate(source_dir)
+        else:
+            validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
+
+        detected_dimension = validate_dimension.dimension
+
+        if detected_dimension == models.DimensionType.DIM_2D:
+            detected_media_type = models.MediaType.IMAGE
+        elif detected_dimension == models.DimensionType.DIM_3D:
+            detected_media_type = models.MediaType.POINT_CLOUD
+        else:
+            assert False
+
+    return detected_media_type, detected_dimension
+
+
+def _validate_project_media_type(
+    db_project: models.Project, *, detected_media_type: models.MediaType
+):
+    # TODO: fix the race condition between concurrent task creations
+    project_media_type = next(
+        iter(db_project.tasks.exclude(media_type="").values_list("media_type", flat=True)[:1]), ""
+    )
+
+    if project_media_type and project_media_type != detected_media_type:
+        raise ValidationError(
+            f"Media type ({detected_media_type}) of the task must be compatible "
+            f"with other tasks in the project ({project_media_type})"
+        )
+
+
+def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
+    db_data = db_task.require_data()
+
+    match (db_task.media_type, db_task.mode):
+        case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+            db_data.compressed_chunk_type = models.DataChoice.AUDIO_MP3
+            db_data.original_chunk_type = models.DataChoice.AUDIO_MP3
+        case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+            db_data.compressed_chunk_type = (
+                models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
+            )
+            db_data.original_chunk_type = models.DataChoice.VIDEO
+        case (models.MediaType.IMAGE | models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION):
+            db_data.compressed_chunk_type = models.DataChoice.IMAGESET
+            db_data.original_chunk_type = models.DataChoice.IMAGESET
+        case (media_type, mode):
+            assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
+
+
+def _collect_video_dataset_descriptors(
+    extractor: VideoReader,
+    video_path: Path,
+    *,
+    db_data: models.Data,
+    data: dict[str, Any],
+    manifest_file: str | None,
+    manifest_frame_alignment: int,
+    upload_dir: Path,
+    update_status: Callable[[str], None],
+) -> tuple[models.Video, int, VideoManifestManager]:
+    if manifest_file:
+        try:
+            update_status("Validating the input manifest file")
+
+            manifest = VideoManifestValidator(
+                source_path=video_path,
+                manifest_path=db_data.get_manifest_path(),
+            )
+            manifest.init_index()
+            manifest.validate_seek_key_frames()
+
+            if not len(manifest):
+                raise ValidationError("No key frames found in the manifest")
+
+        except Exception as ex:
+            manifest.remove()
+            manifest = None
+
+            if isinstance(ex, (ValidationError, AssertionError)):
+                base_msg = f"Invalid manifest file was uploaded: {ex}"
+            else:
+                base_msg = "Failed to parse the uploaded manifest file"
+                slogger.glob.warning(ex, exc_info=True)
+
+            update_status(base_msg)
+    else:
+        manifest = None
+
+    if not manifest:
+        try:
+            update_status("Preparing a manifest file")
+
+            # TODO: maybe generate manifest in a temp directory
+            manifest = VideoManifestManager(db_data.get_manifest_path())
+            manifest.link(
+                media_file=video_path,
+                chunk_size=manifest_frame_alignment,  # TODO: try to remove
+                force=True,
+            )
+            manifest.create()
+
+            update_status("A manifest has been created")
+
+        except Exception as ex:
+            manifest.remove()
+            manifest = None
+
+            if isinstance(ex, AssertionError):
+                base_msg = f": {ex}"
+            else:
+                base_msg = ""
+                slogger.glob.warning(ex, exc_info=True)
+
+            update_status(
+                f"Failed to create manifest for the uploaded video{base_msg}. "
+                "A manifest will not be used in this task"
+            )
+
+    if manifest:
+        video_frame_count = manifest.video_length
+        video_frame_size = manifest.video_resolution
+    else:
+        video_frame_count = extractor.get_frame_count()
+        video_frame_size = extractor.get_image_size(0)
+
+    video_length = len(
+        range(
+            db_data.start_frame,
+            min(
+                data["stop_frame"] + 1 if data["stop_frame"] else video_frame_count,
+                video_frame_count,
+            ),
+            db_data.get_frame_step(),
+        )
+    )
+
+    video = models.Video(
+        data=db_data,
+        path=video_path.relative_to(upload_dir).as_posix(),
+        width=video_frame_size[0],
+        height=video_frame_size[1],
+    )
+
+    return video, video_length, manifest
+
+
+def _create_video_task_media_descriptors(
+    db_task: models.Task,
+    data: dict[str, Any],
+    *,
+    extractor: IMediaReader,
+    media: dict[str, Any],
+    upload_dir: Path,
+    manifest_file: str | None,
+    update_status: Callable[[str], None],
+) -> tuple[models.Video, VideoManifestManager]:
+    db_data = db_task.require_data()
+
+    video, video_length, manifest = _collect_video_dataset_descriptors(
+        extractor=extractor,
+        video_path=upload_dir / media["video"][0],
+        upload_dir=upload_dir,
+        db_data=db_data,
+        data=data,
+        manifest_file=manifest_file,
+        manifest_frame_alignment=db_data.chunk_size,
+        update_status=update_status,
+    )
+    db_data.size = video_length
+
+    video.save()
+
+    return video, manifest
+
+
+def _collect_image_dataset_descriptors(
+    extractor: ImageListReader,
+    *,
+    db_task: models.Task,
+    upload_dir: Path,
+    is_data_in_cloud: bool,
+    related_images: dict[str, list[str]],
+) -> tuple[list[models.Image], ImageManifestManager]:
+    db_data = db_task.require_data()
+
+    manifest = ImageManifestManager(db_data.get_manifest_path())
+    if not manifest.exists:
+        # TODO: Try to avoid adding manifest entries for images that are not in
+        # extractor.frame_range. In addition to less processing here, it would also allow
+        # us to avoid downloading such images from cloud storage (when using static chunks),
+        # or copying them from the attached share (when using copy_data).
+        manifest.link(
+            sources=extractor.absolute_source_paths,
+            meta={k: {"related_images": related_images[k]} for k in related_images},
+            data_dir=upload_dir,
+            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+        )
+        manifest.create()
+    else:
+        manifest.init_index()
+
+    images: list[models.Image] = []
+    for frame_id in extractor.frame_range:
+        image_path = extractor.get_path(frame_id).relative_to(upload_dir).as_posix()
+        image_size = None
+
+        if manifest:
+            image_info = manifest[frame_id]
+
+            # check mapping
+            manifest_image_path = f"{image_info['name']}{image_info['extension']}"
+            if image_path != manifest_image_path and not image_path.endswith(
+                "/" + manifest_image_path
+            ):
+                raise ValidationError("Incorrect file mapping to manifest content")
+
+            if image_info.get("width") is not None and image_info.get("height") is not None:
+                image_size = (image_info["width"], image_info["height"])
+            elif is_data_in_cloud:
+                raise ValidationError(
+                    "Can't find image '{}' width or height info in the manifest".format(
+                        manifest_image_path
+                    )
+                )
+
+        if not image_size:
+            image_size = extractor.get_image_size(frame_id)
+
+        images.append(
+            models.Image(
+                data=db_data,
+                path=image_path,
+                frame=frame_id,
+                width=image_size[0],
+                height=image_size[1],
+            )
+        )
+
+    return images, manifest
+
+
+def _create_image_task_media_descriptors(
+    db_task: models.Task,
+    *,
+    is_backup_restore: bool,
+    validation_params: dict[str, Any],
+    upload_dir: Path,
+    is_data_in_cloud: bool,
+    extractor: IMediaReader,
+    related_images: dict[str, Sequence[dict[str, Any]]],
+    job_file_mapping: JobFileMapping | None,
+) -> tuple[list[models.Image], ImageManifestManager, JobFileMapping | None]:
+    db_data = db_task.require_data()
+
+    images, manifest = _collect_image_dataset_descriptors(
+        extractor=extractor,
+        related_images=related_images,
+        upload_dir=upload_dir,
+        db_task=db_task,
+        is_data_in_cloud=is_data_in_cloud,
+    )
+    db_data.size = len(images)
+
+    job_file_mapping, images = _allocate_honeypots(
+        db_task,
+        validation_params,
+        images=images,
+        manifest=manifest,
+        job_file_mapping=job_file_mapping,
+        is_backup_restore=is_backup_restore,
+    )
+
+    images = bulk_create(models.Image, images)
+
+    db_related_files = [
+        models.RelatedFile(
+            data=db_data,
+            path=related_file_path,
+        )
+        for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
+    ]
+
+    db_related_files = bulk_create(models.RelatedFile, db_related_files)
+    db_related_files_by_path = {rf.path: rf for rf in db_related_files}
+
+    ThroughModel = models.RelatedFile.images.through
+    bulk_create(
+        ThroughModel,
+        (
+            ThroughModel(
+                relatedfile_id=db_related_files_by_path[related_file_path].id,
+                image_id=image.id,
+            )
+            for image in images
+            for related_file_path in related_images.get(image.path, [])
+        ),
+    )
+
+    return images, manifest, job_file_mapping
+
+
+def _collect_audio_dataset_descriptors(
+    extractor: AudioReader, *, db_data: models.Data, upload_dir: Path, audio_path: Path
+) -> tuple[models.Audio, int]:
+    audio = models.Audio(
+        data=db_data,
+        path=audio_path.relative_to(upload_dir),
+        sampling_rate=extractor.sampling_rate,
+        has_cover_image=extractor.get_preview_image() is not None,
+    )
+
+    if MAX_AUDIO_DURATION.total_seconds() < extractor.duration:
+        raise ValidationError(f"Audio files longer than {MAX_AUDIO_DURATION} are not allowed")
+
+    return audio, extractor.length
+
+
+def _create_audio_task_media_descriptors(
+    db_task: models.Task, *, extractor: AudioReader, upload_dir: Path, media: dict[str, Any]
+) -> models.Audio:
+    db_data = db_task.require_data()
+
+    audio, audio_length = _collect_audio_dataset_descriptors(
+        extractor=extractor,
+        audio_path=upload_dir / media["audio"][0],
+        upload_dir=upload_dir,
+        db_data=db_data,
+    )
+    db_data.size = audio_length
+    db_data.chunk_size = audio_length  # the UI can't handle chunks yet
+
+    audio.save()
+
+    return audio
 
 
 @transaction.atomic
@@ -1163,9 +1588,13 @@ def create_thread(
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data["remote_files"]:
-        data["remote_files"] = _download_data(
-            data["remote_files"], upload_dir, update_status_callback=update_status
-        )
+        try:
+            data["remote_files"] = _download_data(
+                data["remote_files"], upload_dir, update_status_callback=update_status
+            )
+        except _FailedToDownloadFileError as e:
+            slogger.glob.exception("Failed to download remote files")
+            raise ValidationError(str(e)) from e
 
     # find and validate manifest file
     manifest_files = _find_manifest_files(data)
@@ -1183,17 +1612,6 @@ def create_thread(
     else:
         assert False, f"Unknown file storage {db_data.storage}"
 
-    if (
-        db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
-        and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
-    ) or (
-        # static cache can not be initialized on lightweight backup restore
-        is_data_in_cloud
-        and is_backup_restore
-        and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
-    ):
-        db_data.storage_method = models.StorageMethodChoice.CACHE
-
     manifest_file = _validate_manifest(
         manifest_files,
         manifest_root,
@@ -1203,17 +1621,49 @@ def create_thread(
     )
 
     if is_data_in_cloud and not is_backup_restore:
-        cloud_storage_manifest, cloud_storage_manifest_prefix = _filter_cloud_storage_files(
+        cloud_storage_manifest: ImageManifestManager | None = None
+        cloud_storage_manifest_prefix: str | None = None
+        if manifest_file:
+            cloud_storage_manifest = ImageManifestManager(
+                db_data.cloud_storage.get_storage_dirname() / manifest_file,
+                db_data.cloud_storage.get_storage_dirname(),
+            )
+            cloud_storage_manifest.set_index()
+            cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+
+        _filter_cloud_storage_files(
             db_data.cloud_storage,
             data,
             job_file_mapping=job_file_mapping,
-            manifest_file=manifest_file,
+            cloud_storage_manifest=cloud_storage_manifest,
+            cloud_storage_manifest_prefix=cloud_storage_manifest_prefix,
         )
 
     # count and validate uploaded files
     media = _count_files(data)
-    media, task_mode = _validate_data(media, manifest_files)
+    media, detected_mode = _validate_data(media, manifest_files=manifest_files)
     is_media_sorted = False
+
+    if job_file_mapping is not None and detected_mode != models.TaskMode.ANNOTATION:
+        raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
+
+    if (
+        (
+            db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+            and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
+        )
+        or (
+            # static cache can not be initialized on lightweight backup restore
+            is_data_in_cloud
+            and is_backup_restore
+            and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+        )
+        or (
+            # TODO: Not supported yet, maybe implement later
+            media["audio"]
+        )
+    ):
+        db_data.storage_method = models.StorageMethodChoice.CACHE
 
     manifest = None
     if is_data_in_cloud:
@@ -1238,9 +1688,6 @@ def create_thread(
                 db_data.storage = models.StorageChoice.LOCAL
         else:
             manifest = ImageManifestManager(db_data.get_manifest_path())
-
-    if job_file_mapping is not None and task_mode != "annotation":
-        raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if data["server_files"]:
         if db_data.storage == models.StorageChoice.LOCAL and not db_data.cloud_storage:
@@ -1268,14 +1715,18 @@ def create_thread(
                 if not is_backup_restore:
                     # Define task manifest content based on cloud storage manifest content and uploaded files
                     _create_task_manifest_based_on_cloud_storage_manifest(
-                        sorted_media,
-                        cloud_storage_manifest_prefix,
-                        cloud_storage_manifest,
-                        manifest,
+                        sorted_media=sorted_media,
+                        cloud_storage_manifest_prefix=cloud_storage_manifest_prefix,
+                        cloud_storage_manifest=cloud_storage_manifest,
+                        manifest=manifest,
                     )
             else:  # without manifest file but with use_cache option
                 # Define task manifest content based on list with uploaded files
-                _create_task_manifest_from_cloud_data(db_data.cloud_storage, sorted_media, manifest)
+                _create_task_manifest_from_cloud_data(
+                    db_storage=db_data.cloud_storage,
+                    sorted_media=sorted_media,
+                    manifest=manifest,
+                )
 
     av_scan_paths(upload_dir)
 
@@ -1336,10 +1787,10 @@ def create_thread(
 
         details = {
             "source_paths": source_paths,
-            "step": db_data.get_frame_step(),
             "start": db_data.start_frame,
             "stop": data["stop_frame"],
         }
+
         if (
             media_type in {"archive", "zip", "pdf"}
             and db_data.storage == models.StorageChoice.SHARE
@@ -1347,10 +1798,14 @@ def create_thread(
             details["extract_dir"] = db_data.get_upload_dirname()
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
-        if media_type != "video":
+
+        if MEDIA_TYPES[media_type]["mode"] == models.TaskMode.ANNOTATION:
             details["sorting_method"] = (
                 data["sorting_method"] if not is_media_sorted else models.SortingMethod.PREDEFINED
             )
+
+        if media_type != "audio":
+            details["step"] = db_data.get_frame_step()
 
         extractor = MEDIA_TYPES[media_type]["extractor"](**details)
 
@@ -1379,30 +1834,19 @@ def create_thread(
     if isinstance(extractor, MEDIA_TYPES["zip"]["extractor"]):
         extractor.extract()
 
-    validate_dimension = ValidateDimension()
-    if db_data.storage == models.StorageChoice.LOCAL or (
-        db_data.storage == models.StorageChoice.SHARE
-        and isinstance(
-            extractor, (MEDIA_TYPES["archive"]["extractor"], MEDIA_TYPES["zip"]["extractor"])
-        )
-    ):
-        validate_dimension.validate(upload_dir)
-    elif not isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
-        validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
+    detected_media_type, detected_dimension = _detect_media_type_and_dimension(
+        extractor=extractor, source_dir=upload_dir, db_data=db_data
+    )
 
-    if (
-        db_task.project is not None
-        and db_task.project.tasks.count() > 1
-        and db_task.project.tasks.first().dimension != validate_dimension.dimension
-    ):
-        raise ValidationError(
-            f"Dimension ({validate_dimension.dimension}) of the task must be the "
-            f"same as other tasks in project ({db_task.project.tasks.first().dimension})"
-        )
+    if db_task.project_id is not None:
+        _validate_project_media_type(db_task.project, detected_media_type=detected_media_type)
 
-    db_task.dimension = validate_dimension.dimension
+    assert not db_task.media_type
+    db_task.media_type = detected_media_type
+    db_task.dimension = detected_dimension
+    db_task.mode = detected_mode
 
-    if validate_dimension.dimension == models.DimensionType.DIM_3D:
+    if db_task.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
             source_paths=[
                 # We always work with .pcd files instead of .bin
@@ -1412,7 +1856,7 @@ def create_thread(
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data["stop_frame"],
-            dimension=validate_dimension.dimension,
+            dimension=db_task.dimension,
         )
 
     related_images = {}
@@ -1421,7 +1865,9 @@ def create_thread(
 
     if job_file_mapping or (
         (
-            not isinstance(extractor, MEDIA_TYPES["video"]["extractor"])
+            not isinstance(
+                extractor, (MEDIA_TYPES["video"]["extractor"], MEDIA_TYPES["audio"]["extractor"])
+            )
             and is_backup_restore
             and db_data.storage_method == models.StorageMethodChoice.CACHE
             and db_data.sorting_method
@@ -1435,7 +1881,10 @@ def create_thread(
                 isinstance(extractor, MEDIA_TYPES["zip"]["extractor"])
                 # Sorting with manifest is optional for non-video
                 or (manifest_file or manifest)
-                and not isinstance(extractor, MEDIA_TYPES["video"]["extractor"])
+                and not isinstance(
+                    extractor,
+                    (MEDIA_TYPES["video"]["extractor"], MEDIA_TYPES["audio"]["extractor"]),
+                )
             )
         )
     ):
@@ -1484,15 +1933,21 @@ def create_thread(
             sorting_method=data["sorting_method"],
         )
 
-    db_task.mode = task_mode
-    db_data.compressed_chunk_type = (
-        models.DataChoice.VIDEO
-        if task_mode == "interpolation" and not data["use_zip_chunks"]
-        else models.DataChoice.IMAGESET
-    )
-    db_data.original_chunk_type = (
-        models.DataChoice.VIDEO if task_mode == "interpolation" else models.DataChoice.IMAGESET
-    )
+    if isinstance(extractor, MEDIA_TYPES["audio"]["extractor"]):
+        if job_file_mapping:
+            raise ValidationError("The 'job_file_mapping' parameter cannot be used in audio tasks")
+
+        if not is_backup_restore and (db_task.segment_size or data.get("segment_size")):
+            raise ValidationError("The 'segment_size' parameter cannot be used in audio tasks")
+
+    # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
+    if manifest_file and not os.path.exists(db_data.get_manifest_path()):
+        shutil.copyfile(os.path.join(manifest_root, manifest_file), db_data.get_manifest_path())
+        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
+            os.remove(os.path.join(manifest_root, manifest_file))
+        manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
+
+    _configure_chunk_types(db_task, data)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
@@ -1508,195 +1963,46 @@ def create_thread(
         else:
             db_data.chunk_size = 36
 
-    # TODO: try to pull up
-    # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
-    if manifest_file and not os.path.exists(db_data.get_manifest_path()):
-        shutil.copyfile(os.path.join(manifest_root, manifest_file), db_data.get_manifest_path())
-        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
-            os.remove(os.path.join(manifest_root, manifest_file))
-        manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
+    if db_task.media_type == models.MediaType.IMAGE and not data.get(
+        "image_quality", db_data.image_quality
+    ):
+        raise ValidationError(
+            "The 'image_quality' parameter is required for image- and video-based tasks"
+        )
 
-    # Create task frames from the metadata collected
-    video_path: str = ""
-    video_frame_size: tuple[int, int] = (0, 0)
-
-    images: list[models.Image] = []
-
-    for media_type, media_files in media.items():
-        if not media_files:
-            continue
-
-        if task_mode == MEDIA_TYPES["video"]["mode"]:
-            if manifest_file:
-                try:
-                    update_status("Validating the input manifest file")
-
-                    manifest = VideoManifestValidator(
-                        source_path=upload_dir / media_files[0],
-                        manifest_path=db_data.get_manifest_path(),
-                    )
-                    manifest.init_index()
-                    manifest.validate_seek_key_frames()
-
-                    if not len(manifest):
-                        raise ValidationError("No key frames found in the manifest")
-
-                except Exception as ex:
-                    manifest.remove()
-                    manifest = None
-
-                    if isinstance(ex, (ValidationError, AssertionError)):
-                        base_msg = f"Invalid manifest file was uploaded: {ex}"
-                    else:
-                        base_msg = "Failed to parse the uploaded manifest file"
-                        slogger.glob.warning(ex, exc_info=True)
-
-                    update_status(base_msg)
-            else:
-                manifest = None
-
-            if not manifest:
-                try:
-                    update_status("Preparing a manifest file")
-
-                    # TODO: maybe generate manifest in a temp directory
-                    manifest = VideoManifestManager(db_data.get_manifest_path())
-                    manifest.link(
-                        media_file=Path(upload_dir, media_files[0]),
-                        chunk_size=db_data.chunk_size,  # TODO: why it's needed here?
-                        force=True,
-                    )
-                    manifest.create()
-
-                    update_status("A manifest has been created")
-
-                except Exception as ex:
-                    manifest.remove()
-                    manifest = None
-
-                    if isinstance(ex, AssertionError):
-                        base_msg = f": {ex}"
-                    else:
-                        base_msg = ""
-                        slogger.glob.warning(ex, exc_info=True)
-
-                    update_status(
-                        f"Failed to create manifest for the uploaded video{base_msg}. "
-                        "A manifest will not be used in this task"
-                    )
-
-            if manifest:
-                video_frame_count = manifest.video_length
-                video_frame_size = manifest.video_resolution
-            else:
-                video_frame_count = extractor.get_frame_count()
-                video_frame_size = extractor.get_image_size(0)
-
-            db_data.size = len(
-                range(
-                    db_data.start_frame,
-                    min(
-                        data["stop_frame"] + 1 if data["stop_frame"] else video_frame_count,
-                        video_frame_count,
-                    ),
-                    db_data.get_frame_step(),
-                )
+    # Create task media descriptors from the metadata collected
+    images = None
+    match (db_task.media_type, db_task.mode):
+        case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+            _create_video_task_media_descriptors(
+                db_task,
+                data,
+                extractor=extractor,
+                media=media,
+                upload_dir=upload_dir,
+                manifest_file=manifest_file,
+                update_status=update_status,
             )
-            video_path = os.path.join(upload_dir, media_files[0])
-        else:  # images, archive, pdf
-            db_data.size = len(extractor)
-
-            manifest = ImageManifestManager(db_data.get_manifest_path())
-            if not manifest.exists:
-                # TODO: Try to avoid adding manifest entries for images that are not in
-                # extractor.frame_range. In addition to less processing here, it would also allow
-                # us to avoid downloading such images from cloud storage (when using static chunks),
-                # or copying them from the attached share (when using copy_data).
-                manifest.link(
-                    sources=extractor.absolute_source_paths,
-                    meta={k: {"related_images": related_images[k]} for k in related_images},
-                    data_dir=upload_dir,
-                    DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-                )
-                manifest.create()
-            else:
-                manifest.init_index()
-
-            for frame_id in extractor.frame_range:
-                image_path = extractor.get_path(frame_id)
-                image_size = None
-
-                if manifest:
-                    image_info = manifest[frame_id]
-
-                    # check mapping
-                    if not image_path.as_posix().endswith(
-                        f"{image_info['name']}{image_info['extension']}"
-                    ):
-                        raise ValidationError("Incorrect file mapping to manifest content")
-
-                    if image_info.get("width") is not None and image_info.get("height") is not None:
-                        image_size = (image_info["width"], image_info["height"])
-                    elif is_data_in_cloud:
-                        raise ValidationError(
-                            "Can't find image '{}' width or height info in the manifest".format(
-                                f"{image_info['name']}{image_info['extension']}"
-                            )
-                        )
-
-                if not image_size:
-                    image_size = extractor.get_image_size(frame_id)
-
-                images.append(
-                    models.Image(
-                        data=db_data,
-                        path=os.path.relpath(image_path, upload_dir),
-                        frame=frame_id,
-                        width=image_size[0],
-                        height=image_size[1],
-                    )
-                )
-
-    if db_task.mode == "annotation":
-        job_file_mapping, images = _allocate_honeypots(
-            db_task,
-            validation_params,
-            images=images,
-            manifest=manifest,
-            job_file_mapping=job_file_mapping,
-            is_backup_restore=is_backup_restore,
-        )
-
-        images = bulk_create(models.Image, images)
-
-        db_related_files = [
-            models.RelatedFile(
-                data=db_data,
-                path=related_file_path,
+        case (models.MediaType.IMAGE | models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION):
+            images, _, job_file_mapping = _create_image_task_media_descriptors(
+                db_task,
+                extractor=extractor,
+                related_images=related_images,
+                validation_params=validation_params,
+                job_file_mapping=job_file_mapping,
+                upload_dir=upload_dir,
+                is_backup_restore=is_backup_restore,
+                is_data_in_cloud=is_data_in_cloud,
             )
-            for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
-        ]
-        db_related_files = bulk_create(models.RelatedFile, db_related_files)
-        db_related_files_by_path = {rf.path: rf for rf in db_related_files}
-
-        ThroughModel = models.RelatedFile.images.through
-        bulk_create(
-            ThroughModel,
-            (
-                ThroughModel(
-                    relatedfile_id=db_related_files_by_path[related_file_path].id, image_id=image.id
-                )
-                for image in images
-                for related_file_path in related_images.get(image.path, [])
-            ),
-        )
-    else:
-        models.Video.objects.create(
-            data=db_data,
-            path=os.path.relpath(video_path, upload_dir),
-            width=video_frame_size[0],
-            height=video_frame_size[1],
-        )
+        case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+            _create_audio_task_media_descriptors(
+                db_task,
+                media=media,
+                extractor=extractor,
+                upload_dir=upload_dir,
+            )
+        case (media_type, mode):
+            assert False, f"Unexpected media type '{media_type}' with mode '{mode}'"
 
     # validate stop_frame
     if db_data.stop_frame == 0:
@@ -1706,7 +2012,13 @@ def create_thread(
             db_data.stop_frame, db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
         )
 
-    slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
+    slogger.glob.info(
+        "Saved media for Data #{}: media type '{}', {} frames".format(
+            db_data.id,
+            db_task.media_type,
+            db_data.size,
+        )
+    )
 
     _create_segments_and_jobs(
         db_task, job_file_mapping=job_file_mapping, update_status_callback=update_status
@@ -1721,9 +2033,21 @@ def create_thread(
     ):
         _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
-    # Prepare the preview image and save it in the cache
     if not (is_data_in_cloud and is_backup_restore):
-        TaskFrameProvider(db_task=db_task).get_preview()
+        _create_task_preview(db_task)
+
+    _move_to_backing_cs_if_configured(db_data)
+
+
+def _create_task_preview(db_task: models.Task):
+    # Prepare the preview image and save it in the cache
+    match db_task.media_type:
+        case models.MediaType.AUDIO:
+            TaskAudioProvider(db_task).get_preview_image()
+        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+            TaskFrameProvider(db_task).get_preview_image()
+        case _ as media_type:
+            assert False, f"Unknown media type '{media_type}'"
 
 
 def _create_static_chunks(
@@ -1786,6 +2110,11 @@ def _create_static_chunks(
         )
 
         fs_original.result()
+
+    assert db_task.media_type in (
+        models.MediaType.IMAGE,
+        models.MediaType.POINT_CLOUD,
+    )
 
     db_data = db_task.require_data()
 
@@ -1879,3 +2208,16 @@ def _create_static_chunks(
                     save_chunks(executor, db_segment, chunk_idx, chunk_frame_ids)
 
                 progress_updater.update_progress(segment_idx / len(db_segments))
+
+
+def _move_to_backing_cs_if_configured(db_data):
+    backing_cs_id = settings.DEFAULT_BACKING_CS_ID
+    if backing_cs_id is not None and db_data.supports_backing_cs():
+        try:
+            backing_cs = models.CloudStorage.objects.get(pk=backing_cs_id)
+        except models.CloudStorage.DoesNotExist:
+            slogger.glob.warning(
+                f"Cloud storage #{backing_cs_id} (configured as default backing CS) does not exist"
+            )
+        else:
+            db_data.move_to_backing_cs(backing_cs)

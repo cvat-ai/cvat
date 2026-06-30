@@ -88,6 +88,7 @@ class InvitationReadSerializer(serializers.ModelSerializer):
             "user",
             "organization",
             "expired",
+            "accepted",
             "organization_info",
         ]
         read_only_fields = fields

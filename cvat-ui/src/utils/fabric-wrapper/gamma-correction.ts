@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import { fabric } from 'fabric';
-import { ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
+import { SerializedImageFilter } from 'cvat-core-wrapper';
+import { ImageFilterAlias } from 'utils/image-processing';
 import FabricFilter from './fabric-wrapper';
 
 export interface GammaFilterOptions {

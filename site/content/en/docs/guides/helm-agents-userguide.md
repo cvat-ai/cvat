@@ -181,9 +181,9 @@ Helm will:
 2. Run the function registration Job (pre-install hook)
 3. Deploy the agent pods
 
-![Helm registration function](images/helm_registration_function.webp)
+![Helm registration function](/images/helm_registration_function.webp)
 
-![Helm registration logs](images/helm_registration_logs.webp)
+![Helm registration logs](/images/helm_registration_logs.webp)
 
 Check that the registration Job completed:
 
@@ -197,7 +197,7 @@ Check that agent pods are running:
 kubectl get pods -n cvat-agents -l "app.kubernetes.io/instance=my-agent,app.kubernetes.io/component!=job"
 ```
 
-![CVAT Helm agent running logs](images/cvat_helm_agent_running_logs.webp)
+![CVAT Helm agent running logs](/images/cvat_helm_agent_running_logs.webp)
 
 View agent logs:
 
@@ -207,28 +207,28 @@ kubectl logs -n cvat-agents -l "app.kubernetes.io/instance=my-agent,app.kubernet
 
 Now go to CVAT UI and verify that the model is registered and available.
 
-![CVAT Helm model ID appeared UI](images/cvat_helm_model_id_appeared_UI.webp)
+![CVAT Helm model ID appeared UI](/images/cvat_helm_model_id_appeared_UI.webp)
 
 ### Running agent powered model tracker in CVAT
 
 We will be running SAM2 tracker in this example, so I will draw a box around the object, then
 click on "Run annotation function"
 
-![CVAT Helm run annotation function](images/cvat_helm_run_annotation_function.webp)
+![CVAT Helm run annotation function](/images/cvat_helm_run_annotation_function.webp)
 
 So now we need to decide for how many frames we want to run the tracker. Let's say 14 frames.
 
-![Tracking 14 frames](images/cvat_helm_track_14_frames.webp)
+![Tracking 14 frames](/images/cvat_helm_track_14_frames.webp)
 
-![Helm action is running](images/cvat_helm_action_is_running.webp)
+![Helm action is running](/images/cvat_helm_action_is_running.webp)
 
 We can see that the agent pod is processing the task:
 
-![Agent processing task logs](images/cvat_helm_agent_processing_task_logs.webp)
+![Agent processing task logs](/images/cvat_helm_agent_processing_task_logs.webp)
 
 So now we can see that the tracker has finished and the annotations are updated in CVAT:
 
-![Tracking finished successfully](images/cvat_helm_tracking_worked.webp)
+![Tracking finished successfully](/images/cvat_helm_tracking_worked.webp)
 
 ### Upgrading the release
 
@@ -251,7 +251,7 @@ helm uninstall my-agent -n cvat-agents
 The pre-delete hook will automatically run a deregistration Job that removes the function from
 CVAT before deleting all Kubernetes resources. No manual `cvat-cli` commands needed.
 
-![Uninstall complete](images/cvat_helm_uninstall_complete.webp)
+![Uninstall complete](/images/cvat_helm_uninstall_complete.webp)
 
 ## Troubleshooting common issues with Helm deployment
 
