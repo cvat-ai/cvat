@@ -32,14 +32,16 @@ import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
-    AnalyticsEventsFilter, QualityConflictsFilter, QualityRequirementsFilter,
-    SerializedAsset, ConsensusSettingsFilter, SerializedOrganization,
+    SerializedAsset, SerializedOrganization,
 } from './server-response-types';
-import QualityReport from './quality-report';
+import {
+    AnalyticsEventsFilter, QualityConflictsFilter, QualityRequirementsFilter, ConsensusSettingsFilter,
+} from './server-request-types';
+import {
+    ConflictSeverity, getQualitySettingsSchemaDescriptions, QualityConflict,
+    QualityReport, QualityRequirement, QualitySettings,
+} from './quality';
 import AboutData from './about';
-import QualityConflict, { ConflictSeverity } from './quality-conflict';
-import QualitySettings, { getQualitySettingsSchemaDescriptions } from './quality-settings';
-import QualityRequirement from './quality-requirement';
 import { getFramesMeta } from './frames';
 import ConsensusSettings from './consensus-settings';
 import {
@@ -587,14 +589,6 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                 { count: requirementsData.count },
             );
             return requirements;
-        });
-    implementationMixin(
-        cvat.analytics.quality.requirements.create, async (
-            fields: Parameters<CVATCore['analytics']['quality']['requirements']['create']>[0],
-        ) => {
-            const data = fieldsToSnakeCase(fields);
-            const requirementData = await serverProxy.analytics.quality.requirements.create(data);
-            return new QualityRequirement({ ...requirementData });
         });
     implementationMixin(cvat.analytics.events.export, async (
         filter: AnalyticsEventsFilter,

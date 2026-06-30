@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedQualityReportData } from './server-response-types';
-import User from './user';
+import { SerializedQualityReportData, SerializedQualityRequirementReportSummaryItem } from './server-response-types';
+import { CamelizedV2 } from '../type-utils';
+import { fieldsToCamelCase } from '../common';
+import User from '../user';
 
 export interface QualitySummary {
     totalFrames: number;
@@ -38,13 +40,7 @@ export interface QualitySummary {
         total: number;
         enabled: number;
         completed: number;
-        items: {
-            requirementId: number | null;
-            name: string;
-            metric: string;
-            score: number | null;
-            threshold: number;
-        }[];
+        items: CamelizedV2<SerializedQualityRequirementReportSummaryItem>[];
     } | null;
 }
 
@@ -148,13 +144,7 @@ export default class QualityReport {
                 total: this.#summary.requirements.total,
                 enabled: this.#summary.requirements.enabled,
                 completed: this.#summary.requirements.completed,
-                items: this.#summary.requirements.items.map((item) => ({
-                    requirementId: item.requirement_id,
-                    name: item.name,
-                    metric: item.metric,
-                    score: item.score,
-                    threshold: item.threshold,
-                })),
+                items: this.#summary.requirements.items.map((item) => fieldsToCamelCase(item)),
             } : null,
         };
     }

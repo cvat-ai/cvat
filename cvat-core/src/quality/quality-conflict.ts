@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { SerializedAnnotationConflictData, SerializedQualityConflictData } from './server-response-types';
-import { ObjectType } from './enums';
+import { ObjectType } from '../enums';
 
 export enum QualityConflictType {
     EXTRA = 'extra_annotation',

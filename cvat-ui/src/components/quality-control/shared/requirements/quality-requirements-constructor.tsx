@@ -104,7 +104,7 @@ function compareRequirements(first: QualityRequirement, second: QualityRequireme
         return first.name.localeCompare(second.name);
     }
 
-    return (first.id ?? 0) - (second.id ?? 0);
+    return first.id - second.id;
 }
 
 function buildRequirementTree(requirements: QualityRequirement[]): RequirementRow[] {
@@ -125,7 +125,7 @@ function buildRequirementTree(requirements: QualityRequirement[]): RequirementRo
 
     const buildRows = (parentId: number | null): RequirementRow[] => (
         (childrenByParent.get(parentId) ?? []).map((requirement: QualityRequirement): RequirementRow => {
-            const children = typeof requirement.id === 'number' ? buildRows(requirement.id) : [];
+            const children = buildRows(requirement.id);
             const annotationType = formatAnnotationType(getRequirementDisplayValue(
                 requirement,
                 requirementsById,
@@ -154,7 +154,7 @@ function buildRequirementTree(requirements: QualityRequirement[]): RequirementRo
             ].join(' ').toLowerCase();
 
             return {
-                key: String(requirement.id ?? requirement.name),
+                key: String(requirement.id),
                 requirement,
                 name: requirement.name,
                 annotationType,
@@ -229,9 +229,7 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
 
     useEffect(() => {
         const nextEnabledValues = settings.requirements.reduce<Record<string, boolean>>((acc, requirement) => {
-            if (typeof requirement.id === 'number') {
-                acc[requirement.id] = requirement.enabled;
-            }
+            acc[requirement.id] = requirement.enabled;
             return acc;
         }, {});
         setEnabledValues(nextEnabledValues);
@@ -243,10 +241,6 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
         action: () => Promise<void>,
         errorMessage: string,
     ): Promise<void> => {
-        if (typeof requirement.id !== 'number') {
-            return;
-        }
-
         try {
             setPendingRequirementId(requirement.id);
             await action();
@@ -263,10 +257,6 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
     };
 
     const onEnabledChange = (requirement: QualityRequirement, enabled: boolean): void => {
-        if (typeof requirement.id !== 'number') {
-            return;
-        }
-
         const nextEnabledValues = {
             ...enabledValues,
             [requirement.id]: enabled,
@@ -295,7 +285,6 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
     };
 
     const isRequirementEnabled = (requirement: QualityRequirement): boolean => (
-        typeof requirement.id === 'number' &&
         typeof enabledValues[requirement.id] === 'boolean' ?
             enabledValues[requirement.id] :
             requirement.enabled

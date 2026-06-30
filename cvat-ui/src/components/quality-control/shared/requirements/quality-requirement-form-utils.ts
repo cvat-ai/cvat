@@ -3,18 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    Label,
-    QualityRequirement,
-    QualitySettings,
+    Label, QualityRequirement, QualityRequirementSaveFields, QualitySettings,
 } from 'cvat-core-wrapper';
 import {
-    QualityRequirementAnnotationType,
-    QualityRequirementMetric,
-    QualityRequirementPointSizeBase,
+    QualityRequirementAnnotationType, QualityRequirementAttributeComparator,
+    QualityRequirementMetric, QualityRequirementPointSizeBase,
     SerializedQualityRequirementAttributeComparison,
     SerializedQualityRequirementAttributeRule,
-    SerializedQualityRequirementData,
-} from 'cvat-core/src/server-response-types';
+} from 'cvat-core/src/quality/server-response-types';
 import {
     buildRequirementsById,
     getRequirementEffectiveField,
@@ -22,12 +18,12 @@ import {
 } from './quality-requirements-utils';
 
 export const ROOT_DEFAULTS = {
-    annotationType: 'rectangle' as QualityRequirementAnnotationType,
-    metric: 'accuracy' as QualityRequirementMetric,
+    annotationType: QualityRequirementAnnotationType.RECTANGLE,
+    metric: QualityRequirementMetric.ACCURACY,
     requiredScore: 70,
     iouThreshold: 40,
     pointSize: 9,
-    pointSizeBase: 'group_bbox_size' as QualityRequirementPointSizeBase,
+    pointSizeBase: QualityRequirementPointSizeBase.GROUP_BBOX_SIZE,
     lineThickness: 1,
     matchOrientation: true,
     lineOrientationThreshold: 10,
@@ -39,23 +35,25 @@ export const ROOT_DEFAULTS = {
     emptyIsAnnotated: false,
 };
 
-export const METRIC_OPTIONS: QualityRequirementMetric[] = ['accuracy', 'precision', 'recall'];
-export const POINT_SIZE_BASE_OPTIONS: QualityRequirementPointSizeBase[] = ['group_bbox_size', 'image_size'];
+export const METRIC_OPTIONS: QualityRequirementMetric[] = Object.values(QualityRequirementMetric);
+export const POINT_SIZE_BASE_OPTIONS: QualityRequirementPointSizeBase[] = Object.values(
+    QualityRequirementPointSizeBase,
+);
 export const IOU_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
-    'rectangle',
-    'ellipse',
-    'polygon',
-    'mask',
-    'polyline',
+    QualityRequirementAnnotationType.RECTANGLE,
+    QualityRequirementAnnotationType.ELLIPSE,
+    QualityRequirementAnnotationType.POLYGON,
+    QualityRequirementAnnotationType.MASK,
+    QualityRequirementAnnotationType.POLYLINE,
 ]);
 export const POINT_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
-    'points',
-    'skeleton',
-    'skeleton_keypoint',
+    QualityRequirementAnnotationType.POINTS,
+    QualityRequirementAnnotationType.SKELETON,
+    QualityRequirementAnnotationType.SKELETON_KEYPOINT,
 ]);
 export const SEGMENTATION_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
-    'polygon',
-    'mask',
+    QualityRequirementAnnotationType.POLYGON,
+    QualityRequirementAnnotationType.MASK,
 ]);
 
 export type InheritedFormFieldName =
@@ -139,7 +137,7 @@ const LOCAL_INHERITED_FIELD_GETTERS: Record<
 export interface AttributeRuleFormValue {
     specId?: number;
     enabled?: boolean;
-    comparator?: 'exact' | 'levenshtein';
+    comparator?: QualityRequirementAttributeComparator;
     threshold?: number | null;
     isLocal?: boolean;
 }
@@ -181,7 +179,6 @@ export interface QualityRequirementFormProps {
 
 interface SerializedInheritedFieldDescriptor {
     fieldName: InheritedFormFieldName;
-    serializedFieldName: keyof SerializedQualityRequirementData;
     getValue: (values: RequirementFormValues, isRootRequirement: boolean) => unknown;
 }
 
@@ -270,7 +267,7 @@ function normalizeAttributeRule(rule: SerializedQualityRequirementAttributeRule)
     return {
         specId: getAttributeRuleSpecId(rule as unknown as Record<string, unknown>),
         enabled: rule.enabled ?? true,
-        comparator: rule.comparator ?? 'exact',
+        comparator: rule.comparator ?? QualityRequirementAttributeComparator.EXACT,
         threshold: typeof rule.threshold === 'number' ? rule.threshold : null,
     };
 }
@@ -511,7 +508,7 @@ export function getCopiedInitialValues(
 
 function buildDescendantIdSet(requirements: QualityRequirement[], requirement: QualityRequirement | null): Set<number> {
     const excludedIds = new Set<number>();
-    if (typeof requirement?.id !== 'number') {
+    if (!requirement) {
         return excludedIds;
     }
 
@@ -521,7 +518,6 @@ function buildDescendantIdSet(requirements: QualityRequirement[], requirement: Q
         changed = false;
         for (const candidate of requirements) {
             if (
-                typeof candidate.id === 'number' &&
                 typeof candidate.parentRequirementId === 'number' &&
                 excludedIds.has(candidate.parentRequirementId) &&
                 !excludedIds.has(candidate.id)
@@ -541,12 +537,10 @@ export function buildParentOptions(
 ): { value: number; label: string }[] {
     const excludedIds = buildDescendantIdSet(requirements, requirement);
     const childrenByParent = new Map<number | null, QualityRequirement[]>();
-    const requirementIds = new Set(requirements
-        .map((item) => item.id)
-        .filter((id: number | undefined): id is number => typeof id === 'number'));
+    const requirementIds = new Set(requirements.map((item) => item.id));
 
     for (const item of requirements) {
-        if (typeof item.id !== 'number' || excludedIds.has(item.id)) {
+        if (excludedIds.has(item.id)) {
             continue;
         }
 
@@ -603,14 +597,13 @@ export function getCopiedTouchedFields(copiedRequirement: QualityRequirement | n
 }
 
 function setResettableFieldValue(
-    fields: SerializedQualityRequirementData,
+    fields: QualityRequirementSaveFields,
     resetFields: Set<string>,
     fieldName: InheritedFormFieldName,
-    serializedFieldName: keyof SerializedQualityRequirementData,
     value: unknown,
 ): void {
     Object.assign(fields, {
-        [serializedFieldName]: resetFields.has(fieldName) ? null : value,
+        [fieldName]: resetFields.has(fieldName) ? null : value,
     });
 }
 
@@ -623,14 +616,17 @@ function buildAttributeComparison(
             typeof rule.specId === 'number' && (isRootRequirement || !!rule.isLocal)
         ))
         .map((rule) => {
-            const comparator = rule.comparator ?? 'exact';
+            const comparator = rule.comparator ?? QualityRequirementAttributeComparator.EXACT;
+            const shouldSaveThreshold = (
+                comparator === QualityRequirementAttributeComparator.LEVENSHTEIN &&
+                typeof rule.threshold === 'number'
+            );
+
             return {
                 spec_id: rule.specId,
                 enabled: rule.enabled ?? true,
                 comparator,
-                ...(comparator === 'levenshtein' && typeof rule.threshold === 'number' ? {
-                    threshold: rule.threshold,
-                } : {}),
+                ...(shouldSaveThreshold ? { threshold: rule.threshold } : {}),
             };
         });
 
@@ -645,7 +641,9 @@ function buildAttributeComparison(
     return {
         default: {
             enabled: !!values.matchUnspecifiedAttributes,
-            ...(values.matchUnspecifiedAttributes ? { comparator: 'exact' as const } : {}),
+            ...(values.matchUnspecifiedAttributes ? {
+                comparator: QualityRequirementAttributeComparator.EXACT,
+            } : {}),
         },
         ...(rules.length ? { rules } : {}),
     };
@@ -653,63 +651,48 @@ function buildAttributeComparison(
 
 const SERIALIZED_INHERITED_FIELD_DESCRIPTORS: SerializedInheritedFieldDescriptor[] = [{
     fieldName: 'metric',
-    serializedFieldName: 'metric',
     getValue: (values: RequirementFormValues) => values.metric,
 }, {
     fieldName: 'requiredScore',
-    serializedFieldName: 'required_score',
     getValue: (values: RequirementFormValues) => fromPercent(values.requiredScore),
 }, {
     fieldName: 'iouThreshold',
-    serializedFieldName: 'iou_threshold',
     getValue: (values: RequirementFormValues) => fromPercent(values.iouThreshold),
 }, {
     fieldName: 'pointSize',
-    serializedFieldName: 'point_size',
     getValue: (values: RequirementFormValues) => fromPercent(values.pointSize),
 }, {
     fieldName: 'pointSizeBase',
-    serializedFieldName: 'point_size_base',
     getValue: (values: RequirementFormValues) => values.pointSizeBase ?? null,
 }, {
     fieldName: 'lineThickness',
-    serializedFieldName: 'line_thickness',
     getValue: (values: RequirementFormValues) => fromPercent(values.lineThickness),
 }, {
     fieldName: 'matchOrientation',
-    serializedFieldName: 'match_orientation',
     getValue: (values: RequirementFormValues) => values.matchOrientation ?? null,
 }, {
     fieldName: 'lineOrientationThreshold',
-    serializedFieldName: 'line_orientation_threshold',
     getValue: (values: RequirementFormValues) => fromPercent(values.lineOrientationThreshold),
 }, {
     fieldName: 'matchGroups',
-    serializedFieldName: 'match_groups',
     getValue: (values: RequirementFormValues) => values.matchGroups ?? null,
 }, {
     fieldName: 'groupMatchThreshold',
-    serializedFieldName: 'group_match_threshold',
     getValue: (values: RequirementFormValues) => fromPercent(values.groupMatchThreshold),
 }, {
     fieldName: 'checkCoveredAnnotations',
-    serializedFieldName: 'check_covered_annotations',
     getValue: (values: RequirementFormValues) => values.checkCoveredAnnotations ?? null,
 }, {
     fieldName: 'objectVisibilityThreshold',
-    serializedFieldName: 'object_visibility_threshold',
     getValue: (values: RequirementFormValues) => fromPercent(values.objectVisibilityThreshold),
 }, {
     fieldName: 'panopticComparison',
-    serializedFieldName: 'panoptic_comparison',
     getValue: (values: RequirementFormValues) => values.panopticComparison ?? null,
 }, {
     fieldName: 'emptyIsAnnotated',
-    serializedFieldName: 'empty_is_annotated',
     getValue: (values: RequirementFormValues) => values.emptyIsAnnotated ?? null,
 }, {
     fieldName: 'attributeComparison',
-    serializedFieldName: 'attribute_comparison',
     getValue: (values: RequirementFormValues, isRootRequirement: boolean) => (
         buildAttributeComparison(values, isRootRequirement)
     ),
@@ -721,22 +704,22 @@ export function serializeRequirementValues(
     requirement: QualityRequirement | null,
     touchedFields: Set<string>,
     resetFields: Set<string>,
-): SerializedQualityRequirementData {
+): QualityRequirementSaveFields {
     const parentRequirement = values.parentRequirement ?? null;
     const isRootRequirement = parentRequirement === null;
-    const fields: SerializedQualityRequirementData = {
+    const fields: QualityRequirementSaveFields = {
         name: values.name.trim(),
-        parent_requirement: parentRequirement,
+        parentRequirement,
         filter: values.filter ?? '',
         enabled: values.enabled,
     };
 
     if (!requirement) {
-        fields.settings_id = settings.id;
-        fields.sort_order = Math.max(0, ...settings.requirements.map((item) => item.sortOrder)) + 1;
+        fields.settingsId = settings.id;
+        fields.sortOrder = Math.max(0, ...settings.requirements.map((item) => item.sortOrder)) + 1;
     }
 
-    fields.annotation_type = isRootRequirement ? values.annotationType : null;
+    fields.annotationType = isRootRequirement ? values.annotationType : null;
 
     const includeInheritedOrResetField = (fieldName: InheritedFormFieldName): boolean => (
         includeInheritedField(fieldName, isRootRequirement, touchedFields) || resetFields.has(fieldName)
@@ -751,7 +734,6 @@ export function serializeRequirementValues(
             fields,
             resetFields,
             descriptor.fieldName,
-            descriptor.serializedFieldName,
             descriptor.getValue(values, isRootRequirement),
         );
     }
@@ -802,7 +784,7 @@ export function getAncestorFilters(
     const visited = new Set<number>();
     let current = parent;
 
-    while (current && typeof current.id === 'number' && !visited.has(current.id)) {
+    while (current && !visited.has(current.id)) {
         visited.add(current.id);
 
         if (current.filter) {

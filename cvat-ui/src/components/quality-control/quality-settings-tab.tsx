@@ -83,7 +83,6 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
             const enabledValues = form.getFieldValue(QUALITY_REQUIREMENTS_ENABLED_FIELD) as
                 Record<string, boolean> | undefined;
             const hasEnabledChanges = !!enabledValues && settings.requirements.some((requirement) => (
-                typeof requirement.id === 'number' &&
                 typeof enabledValues[requirement.id] === 'boolean' &&
                 enabledValues[requirement.id] !== requirement.enabled
             ));

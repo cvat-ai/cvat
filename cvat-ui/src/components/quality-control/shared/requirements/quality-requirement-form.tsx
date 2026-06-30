@@ -3,10 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useMemo, useState } from 'react';
-import {
-    QuestionCircleOutlined,
-    UndoOutlined,
-} from '@ant-design/icons';
+import { QuestionCircleOutlined, UndoOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
 import Divider from 'antd/lib/divider';
@@ -19,10 +16,10 @@ import Select from 'antd/lib/select';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { getCore } from 'cvat-core-wrapper';
+import { QualityRequirement } from 'cvat-core-wrapper';
 import {
-    QualityRequirementAnnotationType,
-} from 'cvat-core/src/server-response-types';
+    QualityRequirementAnnotationType, QualityRequirementPointSizeBase,
+} from 'cvat-core/src/quality/server-response-types';
 import {
     ANNOTATION_TYPES,
     formatAnnotationType,
@@ -55,8 +52,6 @@ import {
     serializeRequirementValues,
     validateJsonLogic,
 } from './quality-requirement-form-utils';
-
-const core = getCore();
 
 export default function QualityRequirementForm(props: Readonly<QualityRequirementFormProps>): JSX.Element {
     const {
@@ -266,9 +261,9 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
             setSubmitting(true);
             const fields = serializeRequirementValues(values, settings, requirement, touchedFields, resetFields);
             if (requirement) {
-                await requirement.save(fields as any);
+                await requirement.save(fields);
             } else {
-                await core.analytics.quality.requirements.create(fields);
+                await QualityRequirement.create(fields);
             }
 
             await onReload();
@@ -474,7 +469,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
     );
 
     const renderShapeComparison = (): JSX.Element | null => {
-        if (annotationType === 'tag') {
+        if (annotationType === QualityRequirementAnnotationType.TAG) {
             return null;
         }
 
@@ -510,7 +505,11 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                                     <Select>
                                         {POINT_SIZE_BASE_OPTIONS.map((value) => (
                                             <Select.Option key={value} value={value}>
-                                                {value === 'group_bbox_size' ? 'Group bbox size' : 'Image size'}
+                                                {value === QualityRequirementPointSizeBase.GROUP_BBOX_SIZE ? (
+                                                    'Group bbox size'
+                                                ) : (
+                                                    'Image size'
+                                                )}
                                             </Select.Option>
                                         ))}
                                     </Select>

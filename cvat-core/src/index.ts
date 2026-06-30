@@ -5,8 +5,7 @@
 import {
     AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
     QualitySettingsFilter, QualityRequirementsFilter, ConsensusSettingsFilter, ApiTokensFilter,
-    SerializedQualityRequirementData,
-} from './server-response-types';
+} from './server-request-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
@@ -31,10 +30,9 @@ import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
-import QualityReport from './quality-report';
-import QualityConflict from './quality-conflict';
-import QualitySettings from './quality-settings';
-import QualityRequirement, { QualityRequirementSaveFields } from './quality-requirement';
+import {
+    QualityConflict, QualityReport, QualityRequirement, QualitySettings,
+} from './quality';
 import ConsensusSettings from './consensus-settings';
 import AnnotationGuide from './guide';
 import ApiToken from './api-token';
@@ -177,9 +175,6 @@ export default interface CVATCore {
                     filter: QualityRequirementsFilter,
                     aggregate?: boolean,
                 ) => Promise<PaginatedResource<QualityRequirement>>;
-                create: (
-                    data: QualityRequirementSaveFields | SerializedQualityRequirementData,
-                ) => Promise<QualityRequirement>;
             };
         };
         events: {

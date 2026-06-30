@@ -2,32 +2,28 @@
 //
 // SPDX-License-Identifier: MIT
 
-import PluginRegistry from './plugins';
-import serverProxy from './server-proxy';
-import { fieldsToCamelCase, fieldsToSnakeCase } from './common';
-import { CamelizedV2 } from './type-utils';
+import PluginRegistry from '../plugins';
+import serverProxy from '../server-proxy';
+import { fieldsToCamelCase, fieldsToSnakeCase } from '../common';
+import { CamelizedV2 } from '../type-utils';
 import {
     SerializedEffectiveQualityRequirementData,
     SerializedQualityRequirementAttributeComparison,
     SerializedQualityRequirementData,
+    SerializedQualityRequirementSaveData,
     QualityRequirementAnnotationType,
     QualityRequirementJsonLogicFilter,
     QualityRequirementMetric,
     QualityRequirementPointSizeBase,
 } from './server-response-types';
 
-export type QualityRequirementSaveFields = Partial<CamelizedV2<
-    Omit<
-        SerializedQualityRequirementData,
-        'id' | 'task_id' | 'project_id' | 'is_default' | 'effective' | 'created_date' | 'updated_date'
-    >
->>;
+export type QualityRequirementSaveFields = CamelizedV2<SerializedQualityRequirementSaveData>;
 
 export type QualityRequirementEffectiveData = CamelizedV2<SerializedEffectiveQualityRequirementData>;
 
 export default class QualityRequirement {
-    #id?: number;
-    #settingsId?: number;
+    #id: number;
+    #settingsId: number;
     #taskId: number | null;
     #projectId: number | null;
     #name: string;
@@ -53,46 +49,46 @@ export default class QualityRequirement {
     #panopticComparison: boolean | null;
     #attributeComparison: SerializedQualityRequirementAttributeComparison | null;
     #emptyIsAnnotated: boolean | null;
-    #createdDate?: string;
-    #updatedDate?: string;
+    #createdDate: string;
+    #updatedDate: string;
 
-    constructor(initialData: SerializedQualityRequirementData = {}) {
+    constructor(initialData: SerializedQualityRequirementData) {
         this.#id = initialData.id;
         this.#settingsId = initialData.settings_id;
-        this.#taskId = initialData.task_id ?? null;
-        this.#projectId = initialData.project_id ?? null;
-        this.#name = initialData.name ?? '';
-        this.#isDefault = initialData.is_default ?? false;
-        this.#sortOrder = initialData.sort_order ?? 0;
-        this.#filter = initialData.filter ?? '';
-        this.#enabled = initialData.enabled ?? true;
-        this.#annotationType = initialData.annotation_type ?? null;
-        this.#metric = initialData.metric ?? null;
-        this.#requiredScore = initialData.required_score ?? null;
-        this.#parentRequirementId = initialData.parent_requirement ?? null;
+        this.#taskId = initialData.task_id;
+        this.#projectId = initialData.project_id;
+        this.#name = initialData.name;
+        this.#isDefault = initialData.is_default;
+        this.#sortOrder = initialData.sort_order;
+        this.#filter = initialData.filter;
+        this.#enabled = initialData.enabled;
+        this.#annotationType = initialData.annotation_type;
+        this.#metric = initialData.metric;
+        this.#requiredScore = initialData.required_score;
+        this.#parentRequirementId = initialData.parent_requirement;
         this.#effective = initialData.effective ? fieldsToCamelCase(initialData.effective) : null;
-        this.#iouThreshold = initialData.iou_threshold ?? null;
-        this.#pointSize = initialData.point_size ?? null;
-        this.#pointSizeBase = initialData.point_size_base ?? null;
-        this.#lineThickness = initialData.line_thickness ?? null;
-        this.#matchOrientation = initialData.match_orientation ?? null;
-        this.#lineOrientationThreshold = initialData.line_orientation_threshold ?? null;
-        this.#matchGroups = initialData.match_groups ?? null;
-        this.#groupMatchThreshold = initialData.group_match_threshold ?? null;
-        this.#checkCoveredAnnotations = initialData.check_covered_annotations ?? null;
-        this.#objectVisibilityThreshold = initialData.object_visibility_threshold ?? null;
-        this.#panopticComparison = initialData.panoptic_comparison ?? null;
-        this.#attributeComparison = initialData.attribute_comparison ?? null;
-        this.#emptyIsAnnotated = initialData.empty_is_annotated ?? null;
+        this.#iouThreshold = initialData.iou_threshold;
+        this.#pointSize = initialData.point_size;
+        this.#pointSizeBase = initialData.point_size_base;
+        this.#lineThickness = initialData.line_thickness;
+        this.#matchOrientation = initialData.match_orientation;
+        this.#lineOrientationThreshold = initialData.line_orientation_threshold;
+        this.#matchGroups = initialData.match_groups;
+        this.#groupMatchThreshold = initialData.group_match_threshold;
+        this.#checkCoveredAnnotations = initialData.check_covered_annotations;
+        this.#objectVisibilityThreshold = initialData.object_visibility_threshold;
+        this.#panopticComparison = initialData.panoptic_comparison;
+        this.#attributeComparison = initialData.attribute_comparison;
+        this.#emptyIsAnnotated = initialData.empty_is_annotated;
         this.#createdDate = initialData.created_date;
         this.#updatedDate = initialData.updated_date;
     }
 
-    get id(): number | undefined {
+    get id(): number {
         return this.#id;
     }
 
-    get settingsId(): number | undefined {
+    get settingsId(): number {
         return this.#settingsId;
     }
 
@@ -196,12 +192,17 @@ export default class QualityRequirement {
         return this.#emptyIsAnnotated;
     }
 
-    get createdDate(): string | undefined {
+    get createdDate(): string {
         return this.#createdDate;
     }
 
-    get updatedDate(): string | undefined {
+    get updatedDate(): string {
         return this.#updatedDate;
+    }
+
+    static async create(fields: QualityRequirementSaveFields): Promise<QualityRequirement> {
+        const result = await PluginRegistry.apiWrapper.call(this, QualityRequirement.create, fields);
+        return result;
     }
 
     public async save(fields: QualityRequirementSaveFields = {}): Promise<QualityRequirement> {
@@ -215,6 +216,20 @@ export default class QualityRequirement {
     }
 }
 
+Object.defineProperties(QualityRequirement.create, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(
+            fields: QualityRequirementSaveFields,
+        ): Promise<QualityRequirement> {
+            const data = fieldsToSnakeCase(fields);
+            const result = await serverProxy.analytics.quality.requirements.create(data);
+            return new QualityRequirement(result);
+        },
+    },
+});
+
 Object.defineProperties(QualityRequirement.prototype.save, {
     implementation: {
         writable: false,
@@ -223,11 +238,9 @@ Object.defineProperties(QualityRequirement.prototype.save, {
             fields: Parameters<typeof QualityRequirement.prototype.save>[0],
         ): Promise<QualityRequirement> {
             const data = fieldsToSnakeCase(fields);
-            const result = typeof this.id === 'number' ?
-                await serverProxy.analytics.quality.requirements.update(this.id, data) :
-                await serverProxy.analytics.quality.requirements.create(data);
+            const result = await serverProxy.analytics.quality.requirements.update(this.id, data);
 
-            return new QualityRequirement({ ...result });
+            return new QualityRequirement(result);
         },
     },
 });
@@ -237,10 +250,6 @@ Object.defineProperties(QualityRequirement.prototype.delete, {
         writable: false,
         enumerable: false,
         value: async function implementation(): Promise<void> {
-            if (typeof this.id !== 'number') {
-                return;
-            }
-
             await serverProxy.analytics.quality.requirements.delete(this.id);
         },
     },

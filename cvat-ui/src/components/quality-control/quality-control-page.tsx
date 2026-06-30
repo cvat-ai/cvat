@@ -211,7 +211,7 @@ function QualityControlPage(): JSX.Element {
     const { instance } = state;
     const pluginTabs = usePlugins((combinedState: CombinedState) => (
         combinedState.plugins.components.qualityControlPage.tabs.items
-    ), { instance });
+    ), {}, state);
 
     const receiveInstance = async (type: InstanceType, id: number): Promise<void> => {
         let receivedInstance: Task | Project | null = null;

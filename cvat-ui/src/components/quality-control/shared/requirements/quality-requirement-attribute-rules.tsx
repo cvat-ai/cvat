@@ -23,6 +23,7 @@ import Switch from 'antd/lib/switch';
 import Text from 'antd/lib/typography/Text';
 import CVATTable from 'components/common/cvat-table';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { QualityRequirementAttributeComparator } from 'cvat-core/src/quality/server-response-types';
 import {
     AttributeOption,
     AttributeRuleFormValue,
@@ -30,7 +31,9 @@ import {
     RequirementFormValues,
 } from './quality-requirement-form-utils';
 
-const ATTRIBUTE_COMPARATORS = ['exact', 'levenshtein'] as const;
+const ATTRIBUTE_COMPARATORS: QualityRequirementAttributeComparator[] = Object.values(
+    QualityRequirementAttributeComparator,
+);
 const ATTRIBUTE_RULE_DEFAULT_THRESHOLD = 0.8;
 const attributeRulesFilterConfig: Partial<Config> = {
     fields: {
@@ -62,7 +65,7 @@ interface AttributeRuleRow {
     specId?: number;
     name: string;
     enabled: boolean;
-    comparator: 'exact' | 'levenshtein';
+    comparator: QualityRequirementAttributeComparator;
     isLocal: boolean;
     hasInheritedCounterpart: boolean;
     searchValue: string;
@@ -211,7 +214,7 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                         const name = attributeOption?.label ?? (
                             typeof rule.specId === 'number' ? `Unknown attribute #${rule.specId}` : ''
                         );
-                        const comparator = rule.comparator ?? 'exact';
+                        const comparator = rule.comparator ?? QualityRequirementAttributeComparator.EXACT;
 
                         return {
                             key: String(field.key),
@@ -241,7 +244,7 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                         add({
                             specId: availableOption.value,
                             enabled: true,
-                            comparator: 'exact',
+                            comparator: QualityRequirementAttributeComparator.EXACT,
                             threshold: ATTRIBUTE_RULE_DEFAULT_THRESHOLD,
                             isLocal: true,
                         });
@@ -339,15 +342,19 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                                             disabled={formDisabled}
                                             onChange={(value) => {
                                                 markAttributeRuleChanged(record.index);
-                                                if (value === 'exact') {
+                                                if (value === QualityRequirementAttributeComparator.EXACT) {
                                                     setExpandedAttributeRuleKeys((prev) => (
                                                         prev.filter((key) => key !== record.key)
                                                     ));
                                                 }
                                             }}
                                         >
-                                            <Select.Option value='exact'>Exact</Select.Option>
-                                            <Select.Option value='levenshtein'>Levenshtein</Select.Option>
+                                            <Select.Option value={QualityRequirementAttributeComparator.EXACT}>
+                                                Exact
+                                            </Select.Option>
+                                            <Select.Option value={QualityRequirementAttributeComparator.LEVENSHTEIN}>
+                                                Levenshtein
+                                            </Select.Option>
                                         </Select>
                                     </Form.Item>
                                 ),
@@ -399,7 +406,9 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                             pagination={false}
                             expandable={{
                                 expandedRowKeys: expandedAttributeRuleKeys,
-                                rowExpandable: (record: AttributeRuleRow) => record.comparator === 'levenshtein',
+                                rowExpandable: (record: AttributeRuleRow) => (
+                                    record.comparator === QualityRequirementAttributeComparator.LEVENSHTEIN
+                                ),
                                 onExpandedRowsChange: (keys) => setExpandedAttributeRuleKeys([...keys]),
                                 expandedRowRender: (record: AttributeRuleRow): JSX.Element => (
                                     <Row className='cvat-quality-requirement-attribute-rule-threshold-row'>

@@ -11,17 +11,25 @@ import { ChunkQuality } from 'cvat-data';
 import './axios-config';
 import { axiosTusHttpStack } from './axios-tus';
 import {
-    SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
-    SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
+    SerializedLabel, SerializedAnnotationFormats,
+    SerializedProject, SerializedTask, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, SerializedFunctionRequest,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
+    SerializedRegister, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
-    SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
-    SerializedQualityReportData, APIQualityReportsFilter, APIAnalyticsEventsFilter, APIConsensusSettingsFilter,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
-    SerializedApiToken, APIApiTokensFilter, APIQualityRequirementsFilter, SerializedQualityRequirementData,
+    SerializedApiToken,
 } from './server-response-types';
-import { APIApiTokenModifiableFields } from './server-request-types';
+import {
+    SerializedQualityConflictData, SerializedQualityReportData,
+    SerializedQualityRequirementData, SerializedQualityRequirementSaveData,
+    SerializedQualitySettingsData, SerializedQualitySettingsSaveData,
+} from './quality/server-response-types';
+import {
+    APIApiTokenModifiableFields,
+    ProjectsFilter, TasksFilter, JobsFilter,
+    APIQualitySettingsFilter, APIQualityConflictsFilter, APIQualityReportsFilter,
+    APIAnalyticsEventsFilter, APIConsensusSettingsFilter, APIApiTokensFilter, APIQualityRequirementsFilter,
+} from './server-request-types';
 import { PaginatedResource, SerializedModel, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
@@ -2460,7 +2468,7 @@ async function getQualitySettings(
 
 async function updateQualitySettings(
     settingsID: number,
-    settingsData: SerializedQualitySettingsData,
+    settingsData: SerializedQualitySettingsSaveData,
 ): Promise<SerializedQualitySettingsData> {
     const params = enableOrganization();
     const { backendAPI } = config;
@@ -2509,7 +2517,7 @@ async function getQualityRequirements(
 }
 
 async function createQualityRequirement(
-    requirementData: SerializedQualityRequirementData,
+    requirementData: SerializedQualityRequirementSaveData,
 ): Promise<SerializedQualityRequirementData> {
     const params = enableOrganization();
     const { backendAPI } = config;
@@ -2527,7 +2535,7 @@ async function createQualityRequirement(
 
 async function updateQualityRequirement(
     requirementID: number,
-    requirementData: SerializedQualityRequirementData,
+    requirementData: SerializedQualityRequirementSaveData,
 ): Promise<SerializedQualityRequirementData> {
     const params = enableOrganization();
     const { backendAPI } = config;

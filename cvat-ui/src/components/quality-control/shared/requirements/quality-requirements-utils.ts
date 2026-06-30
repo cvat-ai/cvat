@@ -2,38 +2,39 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { QualityRequirement } from 'cvat-core-wrapper';
 import {
-    QualityRequirement,
-} from 'cvat-core-wrapper';
-import { SerializedQualityRequirementData } from 'cvat-core/src/server-response-types';
+    QualityRequirementAnnotationType, QualityRequirementMetric,
+    SerializedQualityRequirementData, SerializedQualityRequirementSaveData,
+} from 'cvat-core/src/quality/server-response-types';
 
 export const ANNOTATION_TYPE_LABELS: Record<string, string> = {
-    tag: 'Tag',
-    rectangle: 'Rectangle',
-    skeleton: 'Skeleton',
-    skeleton_keypoint: 'Skeleton keypoint',
-    points: 'Points',
-    polyline: 'Polyline',
-    mask: 'Mask',
-    polygon: 'Polygon',
-    ellipse: 'Ellipse',
+    [QualityRequirementAnnotationType.TAG]: 'Tag',
+    [QualityRequirementAnnotationType.RECTANGLE]: 'Rectangle',
+    [QualityRequirementAnnotationType.SKELETON]: 'Skeleton',
+    [QualityRequirementAnnotationType.SKELETON_KEYPOINT]: 'Skeleton keypoint',
+    [QualityRequirementAnnotationType.POINTS]: 'Points',
+    [QualityRequirementAnnotationType.POLYLINE]: 'Polyline',
+    [QualityRequirementAnnotationType.MASK]: 'Mask',
+    [QualityRequirementAnnotationType.POLYGON]: 'Polygon',
+    [QualityRequirementAnnotationType.ELLIPSE]: 'Ellipse',
 };
 
 export const METRIC_LABELS: Record<string, string> = {
-    accuracy: 'Accuracy',
-    precision: 'Precision',
-    recall: 'Recall',
+    [QualityRequirementMetric.ACCURACY]: 'Accuracy',
+    [QualityRequirementMetric.PRECISION]: 'Precision',
+    [QualityRequirementMetric.RECALL]: 'Recall',
     f1_score: 'F1 Score',
 };
 
-export const ANNOTATION_TYPES = Object.keys(ANNOTATION_TYPE_LABELS);
-export const METRICS = Object.keys(METRIC_LABELS);
+export const ANNOTATION_TYPES: QualityRequirementAnnotationType[] = Object.values(QualityRequirementAnnotationType);
+export const METRICS: QualityRequirementMetric[] = Object.values(QualityRequirementMetric);
 export const QUALITY_REQUIREMENTS_RAW_FIELD = 'requirementsRaw';
 export const QUALITY_REQUIREMENTS_ENABLED_FIELD = 'requirementsEnabled';
 
 export type RequirementRawData = SerializedQualityRequirementData;
 
-const QUALITY_REQUIREMENT_SAVE_FIELD_NAMES: (keyof SerializedQualityRequirementData)[] = [
+const QUALITY_REQUIREMENT_SAVE_FIELD_NAMES: (keyof SerializedQualityRequirementSaveData)[] = [
     'settings_id',
     'name',
     'sort_order',
@@ -62,9 +63,7 @@ export function buildRequirementsById(requirements: QualityRequirement[]): Map<n
     const requirementsById = new Map<number, QualityRequirement>();
 
     for (const requirement of requirements) {
-        if (typeof requirement.id === 'number') {
-            requirementsById.set(requirement.id, requirement);
-        }
+        requirementsById.set(requirement.id, requirement);
     }
 
     return requirementsById;
@@ -184,15 +183,15 @@ export function requirementToRaw(requirement: QualityRequirement): RequirementRa
     };
 }
 
-export function rawToSaveFields(rawRequirement: RequirementRawData): SerializedQualityRequirementData {
-    const fields: SerializedQualityRequirementData = {};
+export function rawToSaveFields(rawRequirement: RequirementRawData): SerializedQualityRequirementSaveData {
+    const fields: SerializedQualityRequirementSaveData = {};
     for (const fieldName of QUALITY_REQUIREMENT_SAVE_FIELD_NAMES) {
         fields[fieldName] = rawRequirement[fieldName] as never;
     }
-    return fields as SerializedQualityRequirementData;
+    return fields;
 }
 
-export function requirementToSaveFields(requirement: QualityRequirement): SerializedQualityRequirementData {
+export function requirementToSaveFields(requirement: QualityRequirement): SerializedQualityRequirementSaveData {
     return rawToSaveFields(requirementToRaw(requirement));
 }
 
@@ -254,7 +253,7 @@ export function validateDefaultRequirementsArePresent(
         .filter((id: number | undefined): id is number => typeof id === 'number'));
 
     const removedDefault = currentRequirements.find((requirement: QualityRequirement): boolean => (
-        requirement.isDefault && typeof requirement.id === 'number' && !parsedIds.has(requirement.id)
+        requirement.isDefault && !parsedIds.has(requirement.id)
     ));
 
     if (removedDefault) {

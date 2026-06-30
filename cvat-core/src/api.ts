@@ -24,10 +24,9 @@ import AnnotationGuide from './guide';
 import { BaseAction } from './annotations-actions/base-action';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
-import QualityReport from './quality-report';
-import QualityConflict from './quality-conflict';
-import QualitySettings from './quality-settings';
-import QualityRequirement from './quality-requirement';
+import {
+    QualityConflict, QualityReport, QualityRequirement, QualitySettings,
+} from './quality';
 import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
@@ -434,18 +433,11 @@ function build(): CVATCore {
                     },
                 },
                 requirements: {
-                    async get(filter = {}, aggregate = false) {
+                    async get(filter, aggregate = false) {
                         const result = await PluginRegistry.apiWrapper(
                             cvat.analytics.quality.requirements.get,
                             filter,
                             aggregate,
-                        );
-                        return result;
-                    },
-                    async create(data = {}) {
-                        const result = await PluginRegistry.apiWrapper(
-                            cvat.analytics.quality.requirements.create,
-                            data,
                         );
                         return result;
                     },

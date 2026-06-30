@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedQualitySettingsData } from './server-response-types';
-import PluginRegistry from './plugins';
-import serverProxy from './server-proxy';
-import { convertDescriptions, getServerAPISchema } from './server-schema';
-import { fieldsToCamelCase, fieldsToSnakeCase } from './common';
-import { Camelized } from './type-utils';
+import { SerializedQualitySettingsData, SerializedQualitySettingsSaveData } from './server-response-types';
+import PluginRegistry from '../plugins';
+import serverProxy from '../server-proxy';
+import { convertDescriptions, getServerAPISchema } from '../server-schema';
+import { fieldsToCamelCase, fieldsToSnakeCase } from '../common';
+import { Camelized } from '../type-utils';
 import QualityRequirement from './quality-requirement';
 
 export enum TargetMetric {
@@ -21,9 +21,7 @@ export enum PointSizeBase {
     GROUP_BBOX_SIZE = 'group_bbox_size',
 }
 
-export type QualitySettingsSaveFields = Partial<Camelized<
-    Omit<SerializedQualitySettingsData, 'id' | 'task_id' | 'project_id' | 'descriptions' | 'requirement_descriptions'>
->>;
+export type QualitySettingsSaveFields = Camelized<SerializedQualitySettingsSaveData>;
 
 export async function getQualitySettingsSchemaDescriptions(): Promise<{
     descriptions: Record<string, string>;
