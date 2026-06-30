@@ -68,34 +68,6 @@ def find_psycopg_cause(
     return find_deepest(exc)
 
 
-def set_local_lock_timeout(timeout_seconds: int | None = None) -> None:
-    if not connection.in_atomic_block:
-        raise RuntimeError("set_local_lock_timeout must be called inside a transaction")
-
-    match connection.vendor:
-        case "postgresql":
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "SET LOCAL lock_timeout = %s;",
-                    [
-                        (
-                            timeout_seconds
-                            if timeout_seconds is not None
-                            else settings.CVAT_POSTGRES_TRANSACTION_LOCK_TIMEOUT_SECONDS
-                        )
-                        * 1000
-                    ],
-                )
-        case "sqlite":
-            # NOTE @aleksei: SQLite-backed tests cannot emulate PostgreSQL lock_timeout.
-            _logger.warning("Skipping PostgreSQL lock_timeout on %s backend", connection.vendor)
-            return
-        case _:
-            raise NotImplementedError(
-                f"set_local_lock_timeout is not implemented for {connection.vendor} backend"
-            )
-
-
 def bulk_create(
     db_model: type[_ModelT],
     objs: Iterable[_ModelT],

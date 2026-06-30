@@ -157,7 +157,6 @@ from cvat.apps.engine.view_utils import (
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
-from cvat.utils.django_database import decorators as django_database_decorators
 from cvat.utils.django_database import utils as django_database_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
@@ -415,16 +414,6 @@ class ProjectViewSet(
                 return perm.filter(queryset)
 
         return queryset
-
-    @transaction.atomic
-    @django_database_decorators.set_local_lock_timeout()
-    def perform_update(self, serializer: ProjectWriteSerializer) -> None:
-        return super().perform_update(serializer)
-
-    @transaction.atomic
-    @django_database_decorators.set_local_lock_timeout()
-    def perform_destroy(self, instance: Project) -> None:
-        return super().perform_destroy(instance)
 
     @transaction.atomic
     def perform_create(self, serializer, **kwargs):
@@ -1279,8 +1268,7 @@ class TaskViewSet(
     def export_backup(self, request: ExtendedRequest, pk: int):
         return get_410_response_for_export_api("/api/tasks/id/backup/export")
 
-    @transaction.atomic()
-    @django_database_decorators.set_local_lock_timeout()
+    @transaction.atomic
     def perform_update(self, serializer: TaskWriteSerializer) -> None:
         instance = serializer.instance
 
@@ -1305,11 +1293,6 @@ class TaskViewSet(
 
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
-
-    @transaction.atomic
-    @django_database_decorators.set_local_lock_timeout()
-    def perform_destroy(self, instance: Task) -> None:
-        return super().perform_destroy(instance)
 
     def _is_data_uploading(self) -> bool:
         return "data" in self.action
@@ -3206,8 +3189,6 @@ class LabelViewSet(
         kwargs["local"] = True
         return super().get_serializer(*args, **kwargs)
 
-    @transaction.atomic
-    @django_database_decorators.set_local_lock_timeout()
     def perform_update(self, serializer: LabelSerializer) -> None:
         if serializer.instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
@@ -3219,8 +3200,6 @@ class LabelViewSet(
 
         return super().perform_update(serializer)
 
-    @transaction.atomic
-    @django_database_decorators.set_local_lock_timeout()
     def perform_destroy(self, instance: models.Label) -> None:
         if instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
@@ -3314,11 +3293,6 @@ class UserViewSet(
             queryset = perm.filter(queryset)
 
         return queryset
-
-    @transaction.atomic
-    @django_database_decorators.set_local_lock_timeout()
-    def perform_destroy(self, instance: User) -> None:
-        return super().perform_destroy(instance)
 
     def get_serializer_class(self):
         # Early exit for drf-spectacular compatibility
@@ -3436,20 +3410,10 @@ class CloudStorageViewSet(
             raise ValidationError("Unsupported type of cloud provider")
         return queryset
 
-    @transaction.atomic
-    @django_database_decorators.set_local_lock_timeout()
-    def perform_update(self, serializer: CloudStorageWriteSerializer):
-        return super().perform_update(serializer)
-
     def perform_create(self, serializer):
         serializer.save(
             owner=self.request.user, organization=self.request.iam_context["organization"]
         )
-
-    @transaction.atomic
-    @django_database_decorators.set_local_lock_timeout()
-    def perform_destroy(self, instance: CloudStorage) -> None:
-        return super().perform_destroy(instance)
 
     def create(self, request: ExtendedRequest, *args, **kwargs):
         try:
@@ -3907,25 +3871,17 @@ class AnnotationGuidesViewSet(
     def perform_create(self, serializer):
         super().perform_create(serializer)
         self._update_related_assets(self.request, serializer.instance)
-        with transaction.atomic():
-            django_database_utils.set_local_lock_timeout()
-            serializer.instance.target.touch()
+        serializer.instance.target.touch()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
         self._update_related_assets(self.request, serializer.instance)
-
-        with transaction.atomic():
-            django_database_utils.set_local_lock_timeout()
-            serializer.instance.target.touch()
+        serializer.instance.target.touch()
 
     def perform_destroy(self, instance):
         target = instance.target
         super().perform_destroy(instance)
-
-        with transaction.atomic():
-            django_database_utils.set_local_lock_timeout()
-            target.touch()
+        target.touch()
 
 
 def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):

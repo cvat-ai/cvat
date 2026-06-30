@@ -5,7 +5,6 @@
 import textwrap
 from datetime import datetime, timezone
 
-from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
@@ -51,7 +50,6 @@ from cvat.apps.quality_control.serializers import (
     QualitySettingsSerializer,
 )
 from cvat.apps.redis_handler.serializers import RqIdSerializer
-from cvat.utils.django_database import decorators as django_database_decorators
 from cvat.utils.django_database.utils import get_or_404
 
 
@@ -517,11 +515,6 @@ class QualitySettingsViewSet(
     ordering = "id"
 
     serializer_class = QualitySettingsSerializer
-
-    @transaction.atomic
-    @django_database_decorators.set_local_lock_timeout()
-    def perform_update(self, serializer: QualitySettingsSerializer) -> None:
-        return super().perform_update(serializer)
 
     def get_queryset(self):
         queryset = super().get_queryset()
