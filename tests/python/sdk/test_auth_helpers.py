@@ -143,7 +143,7 @@ def test_make_client_from_cli_unknown_profile_raises(tmp_path):
         make_client_from_cli(_ns(profile="ghost"), store=store)
 
 
-def test_make_client_from_cli_profile_path(tmp_path, monkeypatch):
+def test_make_client_from_cli_uses_existing_named_profile(tmp_path, monkeypatch):
     from cvat_sdk.core import auth as auth_mod
 
     store = AuthStore(path=tmp_path / "auth.json")
@@ -157,7 +157,7 @@ def test_make_client_from_cli_profile_path(tmp_path, monkeypatch):
     assert client.logged_in_with.token == "pat"
 
 
-def test_make_client_from_cli_profile_conflicts(tmp_path):
+def test_make_client_from_cli_profile_conflicts_with_explicit_host_or_auth(tmp_path):
     store = AuthStore(path=tmp_path / "auth.json")
     with pytest.raises(AuthStoreError, match="mutually exclusive"):
         make_client_from_cli(_ns(profile="p", server_host=EXPLICIT_URL), store=store)
@@ -181,7 +181,7 @@ def test_make_client_from_cli_zero_flag_uses_default_profile(tmp_path, monkeypat
     assert client.logged_in_with.token == "dpat"
 
 
-def test_make_client_from_cli_profile_path_applies_client_options(tmp_path, monkeypatch):
+def test_make_client_from_cli_applies_client_options_to_named_profile(tmp_path, monkeypatch):
     from cvat_sdk.core import auth as auth_mod
 
     logger = logging.getLogger("test-auth")
