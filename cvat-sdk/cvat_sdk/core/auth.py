@@ -244,7 +244,9 @@ def make_client_from_cli(
     auth_factory = params.auth if params.auth is not None else default_auth_factory()
     client.login(auth_factory(client.api_client.configuration.host))
 
-    return _set_organization(client, params.organization)
+    if params.organization is not None:
+        client.organization_slug = params.organization
+    return client
 
 
 def _make_client_config(params: ClientAuthParameters, config: Config | None) -> Config:
@@ -278,10 +280,6 @@ def _make_client_from_profile(
         config=config,
         check_server_version=check_server_version,
     )
-    return _set_organization(client, organization)
-
-
-def _set_organization(client: Client, organization: str | None) -> Client:
     if organization is not None:
         client.organization_slug = organization
     return client
