@@ -260,9 +260,7 @@ def _make_client_config(params: ClientAuthParameters, config: Config | None) -> 
 def _get_profile_or_raise(store: AuthStore, name: str) -> ProfileEntry:
     profile = store.get_profile(name)
     if profile is None:
-        raise AuthStoreError(
-            f"Unknown profile {name!r}."
-        )
+        raise AuthStoreError(f"Unknown profile {name!r}.")
     return profile
 
 
