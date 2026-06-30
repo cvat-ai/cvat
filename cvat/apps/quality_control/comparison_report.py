@@ -600,114 +600,6 @@ class ComparisonReportAnnotationsSummary(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
-class ComparisonReportAnnotationShapeSummary(ReportNode):
-    valid_count: int
-    missing_count: int
-    extra_count: int
-    total_count: int
-    ds_count: int
-    gt_count: int
-    # TODO: total_iou: float
-    mean_iou: float
-
-    @property
-    def accuracy(self) -> float:
-        return self.valid_count / (self.total_count or 1)
-
-    def accumulate(self, other: ComparisonReportAnnotationShapeSummary, *, weight: float = 1):
-        for field in [
-            "valid_count",
-            "missing_count",
-            "extra_count",
-            "total_count",
-            "ds_count",
-            "gt_count",
-            # TODO: "total_iou",
-        ]:
-            setattr(self, field, getattr(self, field) + math.ceil(getattr(other, field) * weight))
-
-    @classmethod
-    def from_dict(cls, d: dict):
-        return cls(
-            valid_count=d["valid_count"],
-            missing_count=d["missing_count"],
-            extra_count=d["extra_count"],
-            total_count=d["total_count"],
-            ds_count=d["ds_count"],
-            gt_count=d["gt_count"],
-            # TODO: total_iou=d.get("total_iou"),
-            mean_iou=d.get("mean_iou"),
-        )
-
-    @classmethod
-    def create_empty(cls) -> ComparisonReportAnnotationShapeSummary:
-        return cls(
-            valid_count=0,
-            missing_count=0,
-            extra_count=0,
-            total_count=0,
-            ds_count=0,
-            gt_count=0,
-            mean_iou=0,
-        )
-
-
-@define(kw_only=True, init=False, slots=False)
-class ComparisonReportAnnotationLabelSummary(ReportNode):
-    valid_count: int
-    invalid_count: int
-    total_count: int
-
-    @property
-    def accuracy(self) -> float:
-        return self.valid_count / (self.total_count or 1)
-
-    def accumulate(self, other: ComparisonReportAnnotationLabelSummary, *, weight: float = 1):
-        for field in ["valid_count", "total_count", "invalid_count"]:
-            setattr(self, field, getattr(self, field) + math.ceil(getattr(other, field) * weight))
-
-    @classmethod
-    def from_dict(cls, d: dict):
-        return cls(
-            valid_count=d["valid_count"],
-            invalid_count=d["invalid_count"],
-            total_count=d["total_count"],
-        )
-
-    @classmethod
-    def create_empty(cls) -> ComparisonReportAnnotationLabelSummary:
-        return cls(
-            valid_count=0,
-            invalid_count=0,
-            total_count=0,
-        )
-
-
-@define(kw_only=True, init=False, slots=False)
-class ComparisonReportAnnotationComponentsSummary(ReportNode):
-    shape: ComparisonReportAnnotationShapeSummary
-    label: ComparisonReportAnnotationLabelSummary
-
-    def accumulate(self, other: ComparisonReportAnnotationComponentsSummary, *, weight: float = 1):
-        self.shape.accumulate(other.shape, weight=weight)
-        self.label.accumulate(other.label, weight=weight)
-
-    @classmethod
-    def from_dict(cls, d: dict):
-        return cls(
-            shape=ComparisonReportAnnotationShapeSummary.from_dict(d["shape"]),
-            label=ComparisonReportAnnotationLabelSummary.from_dict(d["label"]),
-        )
-
-    @classmethod
-    def create_empty(cls) -> ComparisonReportAnnotationComponentsSummary:
-        return cls(
-            shape=ComparisonReportAnnotationShapeSummary.create_empty(),
-            label=ComparisonReportAnnotationLabelSummary.create_empty(),
-        )
-
-
-@define(kw_only=True, init=False, slots=False)
 class ComparisonReportTaskStats(ReportNode):
     all: set[int]
     custom: set[int]
@@ -933,7 +825,6 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
     error_count: int
     conflicts_by_type: dict[AnnotationConflictType, int]
     annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
 
     def _value_serializer(self, v):
         if isinstance(v, AnnotationConflictType):
@@ -952,9 +843,6 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
                 for k, v in d.get("conflicts_by_type", {}).items()
             },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
-            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
-                d["annotation_components"]
-            ),
         )
 
 
@@ -1008,7 +896,6 @@ class ComparisonReportFrameSummary(ReportNode):
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
     annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -1021,9 +908,6 @@ class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
                 if field in frame_summary.__dict__
             },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
-            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
-                d["annotation_components"]
-            ),
         )
 
 

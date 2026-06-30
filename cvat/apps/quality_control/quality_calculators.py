@@ -29,7 +29,6 @@ from cvat.apps.quality_control.comparison_report import (
     AnnotationConflict,
     ComparisonParameters,
     ComparisonReport,
-    ComparisonReportAnnotationComponentsSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameComparisonSummary,
     ComparisonReportFrameSummary,
@@ -258,7 +257,6 @@ class TaskQualityCalculator:
         task_conflicts: list[AnnotationConflict] = []
         task_frame_results: dict[int, ComparisonReportFrameSummary] = {}
         task_group_frame_results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
-        task_group_frame_counts: dict[str, dict[int, int]] = {}
         task_group_parameters: dict[str, dict] = {}
         for r in job_reports.values():
             task_validated_frames.update(r.comparison_summary.frames)
@@ -281,22 +279,15 @@ class TaskQualityCalculator:
             for group_name, group_report in (r.groups or {}).items():
                 task_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
                 group_frame_results = task_group_frame_results.setdefault(group_name, {})
-                group_frame_counts = task_group_frame_counts.setdefault(group_name, {})
 
                 for frame_id, group_frame_result in (group_report.frame_results or {}).items():
                     merged_group_frame_result = group_frame_results.get(frame_id)
-                    group_frame_count = group_frame_counts.get(frame_id, 0)
 
                     if merged_group_frame_result is None:
                         merged_group_frame_result = deepcopy(group_frame_result)
                     else:
-                        merge_frame_summaries(
-                            merged_group_frame_result,
-                            group_frame_result,
-                            current_count=group_frame_count,
-                        )
+                        merge_frame_summaries(merged_group_frame_result, group_frame_result)
 
-                    group_frame_counts[frame_id] = group_frame_count + 1
                     group_frame_results[frame_id] = merged_group_frame_result
 
         task_conflicts = deduplicate_annotation_conflicts(task_conflicts)
@@ -617,7 +608,6 @@ class ProjectQualityCalculator:
         project_conflicts: list[AnnotationConflict] = []
         project_group_parameters: dict[str, dict] = {}
         project_group_annotations: dict[str, ComparisonReportAnnotationsSummary] = {}
-        project_group_components: dict[str, ComparisonReportAnnotationComponentsSummary] = {}
         project_group_conflicts: dict[str, list[AnnotationConflict]] = {}
         for task_id, r in task_reports.items():
             if task_id not in included_tasks:
@@ -638,11 +628,6 @@ class ProjectQualityCalculator:
                 project_group_annotations.setdefault(
                     group_name, ComparisonReportAnnotationsSummary.create_empty()
                 ).accumulate(group_report.comparison_summary.annotations, weight=group_weight)
-                project_group_components.setdefault(
-                    group_name, ComparisonReportAnnotationComponentsSummary.create_empty()
-                ).accumulate(
-                    group_report.comparison_summary.annotation_components, weight=group_weight
-                )
                 project_group_conflicts.setdefault(group_name, []).extend(group_report.conflicts)
 
         requirement_groups = {}
@@ -658,7 +643,6 @@ class ProjectQualityCalculator:
                     error_count=len(group_conflicts),
                     conflicts_by_type=Counter(c.type for c in group_conflicts),
                     annotations=project_group_annotations[group_name],
-                    annotation_components=project_group_components[group_name],
                 ),
                 frame_results=None,
             )
