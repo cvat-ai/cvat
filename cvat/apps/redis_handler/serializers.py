@@ -34,6 +34,15 @@ class RequestStatus(TextChoices):
     FINISHED = "finished"
 
 
+class RequestStatusField(serializers.ChoiceField):
+    def get_attribute(self, instance: CustomRQJob) -> str | None:
+        # Reuse the status loaded when the job was fetched instead of re-reading it from
+        # Redis. A fresh read (get_status(refresh=True)) is racy: the job hash may expire
+        # between fetching the job and serializing it, in which case Redis returns None and
+        # the client receives a null status.
+        return instance.get_status(refresh=False)
+
+
 class RqIdSerializer(serializers.Serializer):
     rq_id = serializers.CharField(help_text="Request id")
 
@@ -79,7 +88,11 @@ class RequestDataOperationSerializer(serializers.Serializer):
 
 
 class RequestSerializer(serializers.Serializer):
-    status = serializers.SerializerMethodField()
+    # SerializerMethodField is not used here to mark "status" field as required and fix schema generation.
+    # Marking them as read_only leads to generating type as allOf with one reference to RequestStatus component.
+    # The client generated using openapi-generator from such a schema contains wrong type like:
+    # status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]
+    status = RequestStatusField(choices=RequestStatus.choices)
     message = serializers.SerializerMethodField()
     id = serializers.CharField()
     operation = RequestDataOperationSerializer(source="*")
@@ -131,15 +144,6 @@ class RequestSerializer(serializers.Serializer):
             return expiry_date.replace(tzinfo=timezone.utc)
 
         return None
-
-    @extend_schema_field(serializers.ChoiceField(choices=RequestStatus.choices))
-    def get_status(self, rq_job: CustomRQJob) -> str | None:
-        # Reuse the status loaded when the job was fetched instead of re-reading it from
-        # Redis. A fresh read (get_status(refresh=True)) is racy: the job hash may expire
-        # between fetching the job and serializing it, in which case Redis returns None and
-        # the client receives a null status. The view guarantees the status is not None by
-        # the time it reaches the serializer.
-        return rq_job.get_status(refresh=False)
 
     @extend_schema_field(serializers.CharField(allow_blank=True))
     def get_message(self, rq_job: CustomRQJob) -> str:
