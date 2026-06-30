@@ -34,6 +34,16 @@ class RequestStatus(TextChoices):
     FINISHED = "finished"
 
 
+class RequestStatusField(serializers.ChoiceField):
+    def get_attribute(self, instance: CustomRQJob) -> str | None:
+        # Reuse the status loaded when the job was fetched instead of re-reading it from
+        # Redis. A fresh read (get_status(refresh=True)) is racy: the job hash may expire
+        # between fetching the job and serializing it, in which case Redis returns None and
+        # the client receives a null status. The view guarantees the status is not None by
+        # the time it reaches the serializer.
+        return instance.get_status(refresh=False)
+
+
 class RqIdSerializer(serializers.Serializer):
     rq_id = serializers.CharField(help_text="Request id")
 
@@ -83,7 +93,7 @@ class RequestSerializer(serializers.Serializer):
     # Marking them as read_only leads to generating type as allOf with one reference to RequestStatus component.
     # The client generated using openapi-generator from such a schema contains wrong type like:
     # status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]
-    status = serializers.ChoiceField(source="get_status", choices=RequestStatus.choices)
+    status = RequestStatusField(choices=RequestStatus.choices)
     message = serializers.SerializerMethodField()
     id = serializers.CharField()
     operation = RequestDataOperationSerializer(source="*")
@@ -139,7 +149,7 @@ class RequestSerializer(serializers.Serializer):
     @extend_schema_field(serializers.CharField(allow_blank=True))
     def get_message(self, rq_job: CustomRQJob) -> str:
         assert self._base_rq_job_meta
-        rq_job_status = rq_job.get_status()
+        rq_job_status = rq_job.get_status(refresh=False)
         message = ""
 
         if RQJobStatus.STARTED == rq_job_status:
