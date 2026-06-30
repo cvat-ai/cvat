@@ -33,6 +33,8 @@ import QualitySettingsTab, { UpdateSettingsData } from './quality-settings-tab';
 
 const core = getCore();
 
+type QualityControlTabItem = NonNullable<TabsProps['items']>[0];
+
 interface State {
     instance: Task | Project | null;
     instanceType: InstanceType | null;
@@ -211,7 +213,7 @@ function QualityControlPage(): JSX.Element {
     const { instance } = state;
     const pluginTabs = usePlugins((combinedState: CombinedState) => (
         combinedState.plugins.components.qualityControlPage.tabs.items
-    ), {}, state);
+    ), state, state);
 
     const receiveInstance = async (type: InstanceType, id: number): Promise<void> => {
         let receivedInstance: Task | Project | null = null;
@@ -363,7 +365,7 @@ function QualityControlPage(): JSX.Element {
 
     const onJobUpdate = useCallback((job: Job, fields: Parameters<Job['save']>[0]): void => {
         reduxDispatch(updateJobAsync(job, fields))
-            .then(() => receiveInstance(requestedInstanceType, requestedInstanceID))
+            .then(() => receiveInstance(requestedInstanceType, requestedInstanceID).catch(() => undefined))
             .catch((error: unknown) => {
                 notification.error({
                     message: 'Could not update job',
@@ -448,69 +450,22 @@ function QualityControlPage(): JSX.Element {
             </Col>
         );
 
-        const tabsItems: NonNullable<TabsProps['items']>[0][] = [];
-        const isTaskWithGT = instance instanceof Task && gtJobInstance && gtJobMeta;
+        const tabsItems: QualityControlTabItem[] = [];
+        const isTaskWithGT = instance instanceof Task && !!gtJobInstance && !!gtJobMeta;
         const isProject = instance instanceof Project;
 
-        const renderDefaultManagementTab = (): JSX.Element | null => {
-            if (isTaskWithGT && validationLayout && qualitySettings) {
-                return (
-                    <QualityManagementTab
-                        task={instance}
-                        gtJobInstance={gtJobInstance}
-                        gtJobId={gtJobInstance.id}
-                        gtJobMeta={gtJobMeta}
-                        validationLayout={validationLayout}
-                        qualitySettings={qualitySettings}
-                        onJobUpdate={onJobUpdate}
-                        onDeleteFrames={onDeleteFrames}
-                        onRestoreFrames={onRestoreFrames}
-                    />
-                );
-            }
+        const sortedPluginTabs = [...pluginTabs].sort((first, second) => first.weight - second.weight);
+        for (const [index, { component }] of sortedPluginTabs.entries()) {
+            const renderPluginTab = component as (
+                props: { key: number; targetProps: State }
+            ) => QualityControlTabItem | null;
+            const tabItem = renderPluginTab({
+                key: index,
+                targetProps: state,
+            });
 
-            return null;
-        };
-
-        const renderDefaultSettingsTab = (): JSX.Element | null => {
-            if ((isTaskWithGT || isProject) && qualitySettings) {
-                return (
-                    <QualitySettingsTab
-                        instance={instance}
-                        fetching={qualitySettingsFetching}
-                        qualitySettings={{ settings: qualitySettings, childrenSettings: childrenQualitySettings }}
-                        labels={instance.labels}
-                        setQualitySettings={onSaveQualitySettings}
-                        refreshQualitySettings={refreshQualitySettings}
-                    />
-                );
-            }
-
-            return null;
-        };
-
-        if (pluginTabs.length) {
-            const sortedPluginTabs = [...pluginTabs].sort((first, second) => first.weight - second.weight);
-            for (const { component: Component } of sortedPluginTabs) {
-                const key = Component.tabKey;
-                const label = Component.tabLabel;
-                if (typeof key === 'string' && typeof label === 'string') {
-                    tabsItems.push({
-                        key,
-                        label,
-                        children: (
-                            <Component
-                                instance={instance}
-                                qualitySettings={{
-                                    settings: qualitySettings,
-                                    childrenSettings: childrenQualitySettings,
-                                }}
-                                renderDefaultManagementTab={renderDefaultManagementTab}
-                                renderDefaultSettingsTab={renderDefaultSettingsTab}
-                            />
-                        ),
-                    });
-                }
+            if (tabItem) {
+                tabsItems.push(tabItem);
             }
         }
 
@@ -527,19 +482,40 @@ function QualityControlPage(): JSX.Element {
             });
         }
 
-        if (!pluginTabs.length && isTaskWithGT && validationLayout && qualitySettings) {
+        if (isTaskWithGT && validationLayout && qualitySettings) {
             tabsItems.push({
                 key: 'management',
                 label: 'Management',
-                children: renderDefaultManagementTab(),
+                children: (
+                    <QualityManagementTab
+                        task={instance}
+                        gtJobInstance={gtJobInstance}
+                        gtJobId={gtJobInstance.id}
+                        gtJobMeta={gtJobMeta}
+                        validationLayout={validationLayout}
+                        qualitySettings={qualitySettings}
+                        onJobUpdate={onJobUpdate}
+                        onDeleteFrames={onDeleteFrames}
+                        onRestoreFrames={onRestoreFrames}
+                    />
+                ),
             });
         }
 
-        if (!pluginTabs.length && (isTaskWithGT || isProject)) {
+        if ((isTaskWithGT || isProject) && qualitySettings) {
             tabsItems.push({
                 key: 'settings',
                 label: 'Settings',
-                children: renderDefaultSettingsTab(),
+                children: (
+                    <QualitySettingsTab
+                        instance={instance}
+                        fetching={qualitySettingsFetching}
+                        qualitySettings={{ settings: qualitySettings, childrenSettings: childrenQualitySettings }}
+                        labels={instance.labels}
+                        setQualitySettings={onSaveQualitySettings}
+                        refreshQualitySettings={refreshQualitySettings}
+                    />
+                ),
             });
         }
 
