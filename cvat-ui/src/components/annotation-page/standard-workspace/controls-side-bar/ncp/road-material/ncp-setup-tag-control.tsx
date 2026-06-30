@@ -8,11 +8,6 @@
  *
  * Uses a road icon instead of the generic tag icon to visually distinguish it
  * from the standard tag control.
- *
- * `labelSelectorMode` prop (default `'list'`):
- *   'list'     — flat buttons, one per matching label; clicking immediately
- *                creates the tag.  Saves one click.
- *   'dropdown' — classic LabelSelector + "+" button.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -46,14 +41,6 @@ export interface Props {
      */
     labelPrefix?: string;
     labelPrefixFr?:string;
-    /**
-     * Controls how labels are presented inside the popover.
-     *
-     * - `'list'`     (default) → flat list of one-click label buttons; clicking
-     *                            a label creates the tag immediately.
-     * - `'dropdown'` → classic LabelSelector + "+" button.
-     */
-    labelSelectorMode?: 'list' | 'dropdown';
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -66,7 +53,6 @@ function NCPSetupTagControl(props: Props): JSX.Element {
         disabled = false,
         labelPrefix = 'Material --',
         labelPrefixFr = 'Matière --',
-        labelSelectorMode = 'list',
     } = props;
     const dispatch = useDispatch();
 
@@ -224,44 +210,8 @@ function NCPSetupTagControl(props: Props): JSX.Element {
         </div>
     );
 
-    const dropdownModeContent = (
-        <div className='cvat-ncp-setup-tag-popover-content'>
-            <Row justify='start'>
-                <Col>
-                    <Text className='cvat-text-color' strong>Material tag</Text>
-                </Col>
-            </Row>
-            <Row justify='start'>
-                <Col>
-                    <Text className='cvat-text-color'>Label</Text>
-                </Col>
-            </Row>
-            <Row justify='start'>
-                <Col>
-                    <LabelSelector
-                        labels={satisfiedLabels}
-                        value={selectedLabelID}
-                        onChange={onChangeLabel}
-                        onEnterPress={onSetup}
-                    />
-                    <CVATTooltip title={`Press ${repeatShortcut} to add a tag again`}>
-                        <Button
-                            type='primary'
-                            className='cvat-add-tag-button'
-                            disabled={!canAddTag(selectedLabelID)}
-                            onClick={onSetup}
-                            icon={<PlusOutlined />}
-                        />
-                    </CVATTooltip>
-                </Col>
-            </Row>
-        </div>
-    );
-
-    const popoverContent = labelSelectorMode === 'list' ? listModeContent : dropdownModeContent;
-
     return (
-        <CustomPopover placement='right' content={popoverContent}>
+        <CustomPopover placement='right' content={listModeContent}>
             <CVATTooltip title='Material tag' placement='right'>
                 <Icon className='cvat-ncp-setup-tag-control' component={RoadSVGIcon} />
             </CVATTooltip>
