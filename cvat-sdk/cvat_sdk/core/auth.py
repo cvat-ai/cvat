@@ -51,7 +51,7 @@ class ProfileEntry:
     """ISO-8601 UTC timestamp of when the profile was saved."""
 
 
-@attrs.frozen
+@attrs.define
 class ClientAuthParameters:
     """Common CLI/SDK authentication parameters consumed by make_client_from_cli."""
 
@@ -203,13 +203,13 @@ def make_client_from_cli(
         )
 
     if params.profile is not None:
-        client = make_client_from_profile(
+        return _make_client_from_profile(
             _get_profile_or_raise(store, params.profile),
             logger=logger,
             config=client_config,
             check_server_version=check_server_version,
+            organization=params.organization,
         )
-        return _set_organization(client, params.organization)
 
     env_token = os.getenv(CVAT_ACCESS_TOKEN_ENV_VAR)
     explicit_host = params.server_host is not None or params.server_port is not None
@@ -218,13 +218,13 @@ def make_client_from_cli(
     if not explicit_host and not explicit_cred:
         default = store.get_default_profile()
         if default is not None:
-            client = make_client_from_profile(
+            return _make_client_from_profile(
                 default[1],
                 logger=logger,
                 config=client_config,
                 check_server_version=check_server_version,
+                organization=params.organization,
             )
-            return _set_organization(client, params.organization)
 
     if explicit_host:
         url = (
@@ -264,9 +264,26 @@ def _get_profile_or_raise(store: AuthStore, name: str) -> ProfileEntry:
     profile = store.get_profile(name)
     if profile is None:
         raise AuthStoreError(
-            f"Unknown profile {name!r}. Run 'cvat-cli profile list' to see saved profiles."
+            f"Unknown profile {name!r}."
         )
     return profile
+
+
+def _make_client_from_profile(
+    profile: ProfileEntry,
+    *,
+    logger: logging.Logger | None,
+    config: Config,
+    check_server_version: bool,
+    organization: str | None,
+) -> Client:
+    client = make_client_from_profile(
+        profile,
+        logger=logger,
+        config=config,
+        check_server_version=check_server_version,
+    )
+    return _set_organization(client, organization)
 
 
 def _set_organization(client: Client, organization: str | None) -> Client:

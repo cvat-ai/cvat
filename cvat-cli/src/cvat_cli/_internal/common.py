@@ -58,14 +58,9 @@ def configure_logger(logger: logging.Logger, parsed_args: argparse.Namespace) ->
 
 
 def build_client(parsed_args: argparse.Namespace, logger: logging.Logger) -> Client:
-    auth_args = ClientAuthParameters(
-        profile=popattr(parsed_args, "profile"),
-        insecure=popattr(parsed_args, "insecure"),
-        server_host=popattr(parsed_args, "server_host"),
-        server_port=popattr(parsed_args, "server_port"),
-        auth=popattr(parsed_args, "auth"),
-        organization=popattr(parsed_args, "organization"),
-    )
+    auth_args = ClientAuthParameters.from_namespace(parsed_args)
+    for field in attrs.fields(ClientAuthParameters):
+        popattr(parsed_args, field.name)
 
     try:
         client = make_client_from_cli(auth_args, logger=logger)
