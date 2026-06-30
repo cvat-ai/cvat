@@ -52,7 +52,7 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.rq import ImportRQMeta
-from cvat.utils.django_database.utils import add_prefetch_fields
+from cvat.utils import django_database as db_utils
 
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
@@ -90,7 +90,7 @@ class InstanceLabelData:
     def add_prefetch_info(cls, queryset: QuerySet[Label]) -> QuerySet[Label]:
         assert issubclass(queryset.model, Label)
 
-        return add_prefetch_fields(
+        return db_utils.add_prefetch_fields(
             queryset,
             [
                 "skeleton",

@@ -1,8 +1,10 @@
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from typing import TypeAlias, TypeVar
+
+__all__ = ("MaybeUndefined",)
 
 _T = TypeVar("_T")
 

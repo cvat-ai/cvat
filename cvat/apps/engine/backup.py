@@ -67,7 +67,7 @@ from cvat.apps.engine.serializers import (
 )
 from cvat.apps.engine.task import JobFileMapping, initialize_task
 from cvat.apps.engine.utils import av_scan_paths
-from cvat.utils.django_database.contextmanagers import transaction_with_repeatable_read
+from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
@@ -797,7 +797,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
             for db_job_id in db_job_ids:
-                with transaction_with_repeatable_read():
+                with db_utils.transaction_with_repeatable_read():
                     annotations = dm.task.get_job_data(db_job_id, streaming=True)
                     assert not isinstance(annotations["shapes"], list)
                     # Django many=True fields can only handle the list type

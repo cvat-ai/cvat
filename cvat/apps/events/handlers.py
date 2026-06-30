@@ -47,7 +47,7 @@ from cvat.apps.organizations.serializers import (
 )
 from cvat.apps.webhooks.models import Webhook
 from cvat.apps.webhooks.serializers import WebhookReadSerializer
-from cvat.utils.django_database.utils import find_psycopg_cause
+from cvat.utils import django_database as db_utils
 from cvat.utils.http import ResourceIsBusyApiException
 
 from .cache import get_cache
@@ -683,7 +683,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
 def exception_handler(exc: Exception, context) -> Response | None:
     if isinstance(exc, DatabaseError):
-        if isinstance(find_psycopg_cause(exc=exc), LockNotAvailable):
+        if isinstance(db_utils.find_psycopg_cause(exc=exc), LockNotAvailable):
             exc = ResourceIsBusyApiException()
 
     return drf_exception_handler(exc=exc, context=context)

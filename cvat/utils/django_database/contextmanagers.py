@@ -1,10 +1,12 @@
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from contextlib import contextmanager
 
 from django.db import connection, transaction
+
+__all__ = ("transaction_with_repeatable_read",)
 
 
 @contextmanager

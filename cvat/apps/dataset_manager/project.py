@@ -21,8 +21,7 @@ from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import initialize_task
 from cvat.apps.engine.utils import av_scan_paths
-from cvat.utils.django_database.contextmanagers import transaction_with_repeatable_read
-from cvat.utils.django_database.utils import bulk_create
+from cvat.utils import django_database as db_utils
 
 from .annotation import AnnotationIR
 from .bindings import CvatDatasetNotFoundError, CvatImportError, ProjectData, load_dataset_data
@@ -30,7 +29,7 @@ from .bindings import CvatDatasetNotFoundError, CvatImportError, ProjectData, lo
 dlogger = DatasetLogManager()
 
 
-@transaction_with_repeatable_read()
+@db_utils.transaction_with_repeatable_read()
 def export_project(
     project_id: int,
     dst_file: str,
@@ -132,7 +131,7 @@ class ProjectAnnotation:
             (label,) = filter(lambda l: l.name == label_name, labels)
             attribute.label = label
         if attributes:
-            bulk_create(models.AttributeSpec, [a[1] for a in attributes])
+            db_utils.bulk_create(models.AttributeSpec, [a[1] for a in attributes])
 
     def _init_task_from_db(self, task_id: int, *, streaming: bool = False) -> None:
         annotation = TaskAnnotation(pk=task_id)

@@ -157,7 +157,7 @@ from cvat.apps.engine.view_utils import (
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
-from cvat.utils.django_database import utils as django_database_utils
+from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
@@ -1322,7 +1322,7 @@ class TaskViewSet(
     def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
-        django_database_utils.bulk_create(
+        db_utils.bulk_create(
             ClientFile,
             [
                 ClientFile(file=self._prepare_upload_info_entry(cf["file"].name), data=task_data)

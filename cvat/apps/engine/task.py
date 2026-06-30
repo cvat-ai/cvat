@@ -50,7 +50,7 @@ from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, take_by
-from cvat.utils.django_database.utils import bulk_create, get_object_by_id_for_share
+from cvat.utils import django_database as db_utils
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import (
@@ -1490,7 +1490,7 @@ def _create_image_task_media_descriptors(
         is_backup_restore=is_backup_restore,
     )
 
-    images = bulk_create(models.Image, images)
+    images = db_utils.bulk_create(models.Image, images)
 
     db_related_files = [
         models.RelatedFile(
@@ -1500,11 +1500,11 @@ def _create_image_task_media_descriptors(
         for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
     ]
 
-    db_related_files = bulk_create(models.RelatedFile, db_related_files)
+    db_related_files = db_utils.bulk_create(models.RelatedFile, db_related_files)
     db_related_files_by_path = {rf.path: rf for rf in db_related_files}
 
     ThroughModel = models.RelatedFile.images.through
-    bulk_create(
+    db_utils.bulk_create(
         ThroughModel,
         (
             ThroughModel(
@@ -1575,7 +1575,7 @@ def initialize_task(
         )
 
     if db_task.data.cloud_storage_id is not None:
-        db_task.data.cloud_storage = get_object_by_id_for_share(
+        db_task.data.cloud_storage = db_utils.get_object_by_id_for_share(
             model=models.CloudStorage,
             object_id=db_task.data.cloud_storage_id,
         )

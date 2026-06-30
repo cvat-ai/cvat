@@ -1,3 +1,7 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import logging
 from collections.abc import Iterable, Sequence
 from typing import Any, TypeVar
@@ -13,6 +17,18 @@ _QuerysetT = TypeVar("_QuerysetT", bound=QuerySet)
 _unspecified = object()
 
 _logger = logging.getLogger(__name__)
+
+
+__all__ = (
+    "get_or_404",
+    "find_psycopg_cause",
+    "bulk_create",
+    "is_prefetched",
+    "is_field_cached",
+    "add_prefetch_fields",
+    "get_cached",
+    "get_object_by_id_for_share",
+)
 
 
 def get_or_404(
@@ -126,7 +142,7 @@ def get_cached(queryset: _QuerysetT, pk: int) -> _ModelT:
     # Read more about caching insights:
     # https://www.mattduck.com/2021-01-django-orm-result-cache.html
     # The field is initialized on accessing the query results, eg. on iteration
-    if getattr(queryset, "_result_cache"):
+    if queryset._result_cache:
         result = next((obj for obj in queryset if obj.pk == pk), None)
     else:
         result = None
