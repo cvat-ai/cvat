@@ -3276,7 +3276,11 @@ class AnnotationSerializer(serializers.Serializer):
     frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
-    source = serializers.CharField(default=models.SourceType.MANUAL)
+    source = serializers.CharField(
+        # TODO: change the field type to ChoiceField,
+        # when SDK can compare string enum values without explicit .value access
+        default=models.SourceType.MANUAL
+    )
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3286,21 +3290,6 @@ class AnnotationSerializer(serializers.Serializer):
     def _validate_id_present(self, value):
         if value is None:
             raise serializers.ValidationError("must be present and not null")
-        return value
-
-    def validate_source(self, value):
-        try:
-            models.SourceType(value)
-        except ValueError:
-            # TODO: change the field type to ChoiceField,
-            # when SDK can compare string enum values without explicit .value access
-            raise serializers.ValidationError(
-                "must be one of {}, got '{}'".format(
-                    format_list([f"'{v[0]}'" for v in models.SourceType.choices()]),
-                    value
-                )
-            )
-
         return value
 
     @cached_property
@@ -3326,6 +3315,30 @@ class AnnotationSerializer(serializers.Serializer):
                 assert False, f"Unknown action {action!r}"
 
         return None
+
+    def validate(self, attrs):
+        source = attrs.get('source')
+        try:
+            models.SourceType(source)
+        except ValueError:
+            if attrs.get('id'):
+                # Workaround for the DB records that could have been introduced by the UI before
+                # https://github.com/cvat-ai/cvat/issues/8874 was fixed.
+                # We allow the DB to store the old invalid annotations and return them from
+                # the server API, but disallow saving new ones. If the annotations were used
+                # for updating the existing annotations, we silently fix the input annotations.
+                # This is done this way to avoid heavy DB migrations.
+                source = str(models.SourceType.MANUAL)
+            else:
+                raise serializers.ValidationError(
+                    "must be one of {}, got '{}'".format(
+                        format_list([f"'{v[0]}'" for v in models.SourceType.choices()]),
+                        source
+                    )
+                )
+        attrs["source"] = source
+
+        return attrs
 
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True, default=[])
