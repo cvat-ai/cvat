@@ -10897,7 +10897,9 @@ components:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/RequestStatus'
+          allOf:
+          - $ref: '#/components/schemas/RequestStatus'
+          readOnly: true
         message:
           type: string
           readOnly: true
@@ -10943,7 +10945,6 @@ components:
       - created_date
       - id
       - operation
-      - status
     RequestDataOperation:
       type: object
       properties:
