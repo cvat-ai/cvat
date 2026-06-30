@@ -14,8 +14,9 @@
  *   `_circle` → label names listed here produce a circular mask
  *               (CIRCLE_BUFFER_PX radius).  Auto-completes after 1 click.
  *
- *   Any other label (not listed in either attribute) → polygon shape.
- *   Uses the standard polygon draw tool (lines between points visible).
+ *   Any other label (not listed in either attribute) → polygon mask.
+ *   Uses the standard polygon draw tool (lines between points visible);
+ *   the drawn vertices are then converted into a mask.
  *   Double-click or press Enter to finish (min 3 points).
  *
  * If no `_geom` label exists in the project, falls back to the first-letter
@@ -39,6 +40,7 @@ import { Col, Row } from 'antd/lib/grid';
 
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import { getCore, ObjectState, ObjectType, ShapeType } from 'cvat-core-wrapper';
+import { EventScope } from 'cvat-logger';
 import { ActiveControl, CombinedState } from 'reducers';
 import {
     createAnnotationsAsync,
@@ -137,6 +139,7 @@ function RabbitControl(props: Props): JSX.Element {
         (state: CombinedState) => state.annotation.canvas.instance as Canvas,
     );
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
+    const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance);
     const frame = useSelector((state: CombinedState) => state.annotation.player.frame.number);
     const curZOrder = useSelector(
         (state: CombinedState) => state.annotation.annotations.zLayer.cur,
@@ -167,12 +170,13 @@ function RabbitControl(props: Props): JSX.Element {
      */
     const interactionDoneRef = useRef(false);
     /**
-     * True while a rabbit *line* is being drawn via the native polyline draw
-     * tool. Used by the capture-phase `canvas.drawn` listener to know that the
-     * resulting polyline must be converted into a buffered mask (and that the
-     * canvas-wrapper must be prevented from creating a polyline shape).
+     * Set while a rabbit shape is being drawn via the native draw tool (line →
+     * polyline, polygon → polygon). Used by the capture-phase `canvas.drawn`
+     * listener to know the drawn shape must be converted into a mask (and that
+     * the canvas-wrapper must be prevented from creating the raw shape).
+     * `null` when no native draw is in progress.
      */
-    const rabbitLineActiveRef = useRef(false);
+    const rabbitDrawModeRef = useRef<'line' | 'polygon' | null>(null);
     /**
      * Stable ref to the latest `handleActivate` function so it can be called
      * from the `ncp:select-label` event listener without a stale closure.
@@ -192,8 +196,8 @@ function RabbitControl(props: Props): JSX.Element {
             // rabbit control becomes visible again (it hides while a class is set).
             setShortcutHighlightedLabelID(null);
             setSelectedLabelID(null);
-            // Cancelled line draw (e.g. Escape) leaves the flag set – clear it.
-            rabbitLineActiveRef.current = false;
+            // Cancelled native draw (e.g. Escape) leaves the flag set – clear it.
+            rabbitDrawModeRef.current = null;
         }
     }, [activeControl, setSelectedLabelID]);
 
@@ -317,24 +321,27 @@ function RabbitControl(props: Props): JSX.Element {
         };
     }, [isActive, canvasInstance]);
 
-    // ── Line draw → buffered mask (polyline draw path) ───────────────────────
+    // ── Native draw → mask (line / polygon draw paths) ───────────────────────
     //
-    // Line mode draws a native 2-point polyline so the user sees the line being
-    // drawn as soon as the first point is set. We intercept `canvas.drawn` in
-    // the CAPTURE phase (before the canvas-wrapper's bubble-phase listener that
-    // would create a polyline shape), call stopImmediatePropagation, and create
-    // a buffered MASK from the two points instead.
+    // Line mode draws a native 2-point polyline (so the user sees the line as
+    // soon as the first point is set) and polygon mode draws a native polygon.
+    // In both cases we intercept `canvas.drawn` in the CAPTURE phase (before the
+    // canvas-wrapper's bubble-phase listener that would create the raw polyline/
+    // polygon shape), call stopImmediatePropagation, and create a MASK from the
+    // drawn vertices instead.
     useEffect(() => {
         if (!canvasInstance) return (): void => {};
 
         const handleDrawn = (e: Event): void => {
-            if (!rabbitLineActiveRef.current) return;
-            const { state } = (e as CustomEvent).detail ?? {};
-            if (!state || state.shapeType !== ShapeType.POLYLINE) return;
+            const drawMode = rabbitDrawModeRef.current;
+            if (!drawMode) return;
+            const { state, duration } = (e as CustomEvent).detail ?? {};
+            const expectedShape = drawMode === 'line' ? ShapeType.POLYLINE : ShapeType.POLYGON;
+            if (!state || state.shapeType !== expectedShape) return;
 
-            // Prevent the canvas-wrapper from turning this into a polyline shape.
+            // Prevent the canvas-wrapper from turning this into a raw shape.
             e.stopImmediatePropagation();
-            rabbitLineActiveRef.current = false;
+            rabbitDrawModeRef.current = null;
 
             const flat: number[] = state.points ?? [];
             const points: [number, number][] = [];
@@ -342,21 +349,28 @@ function RabbitControl(props: Props): JSX.Element {
                 points.push([flat[i], flat[i + 1]]);
             }
 
-            if (selectedLabel && points.length >= 2) {
-                const maskPoints = buildMaskPoints('line', [points[0], points[points.length - 1]]);
-                if (maskPoints.length >= 6) {
-                    const objectState = new core.classes.ObjectState({
-                        shapeType: ShapeType.MASK,
-                        objectType: ObjectType.SHAPE,
-                        source: core.enums.Source.SEMI_AUTO,
-                        label: selectedLabel,
-                        points: maskPoints,
-                        frame,
-                        occluded: false,
-                        zOrder: curZOrder,
-                    });
-                    dispatch(createAnnotationsAsync([objectState]));
-                }
+            let maskPoints: number[] = [];
+            if (drawMode === 'line' && points.length >= 2) {
+                maskPoints = buildMaskPoints('line', [points[0], points[points.length - 1]]);
+            } else if (drawMode === 'polygon' && points.length >= 3) {
+                maskPoints = polygonToMaskPoints(points);
+            }
+
+            if (selectedLabel && maskPoints.length >= 6) {
+                const objectState = new core.classes.ObjectState({
+                    shapeType: ShapeType.MASK,
+                    objectType: ObjectType.SHAPE,
+                    source: core.enums.Source.SEMI_AUTO,
+                    label: selectedLabel,
+                    points: maskPoints,
+                    frame,
+                    occluded: false,
+                    zOrder: curZOrder,
+                });
+                // Preserve the draw-duration logging the canvas-wrapper would
+                // normally emit (suppressed here via stopImmediatePropagation).
+                jobInstance?.logger.log(EventScope.drawObject, { count: 1, duration });
+                dispatch(createAnnotationsAsync([objectState]));
             }
 
             setSelectedLabelID(null);
@@ -368,7 +382,7 @@ function RabbitControl(props: Props): JSX.Element {
         return (): void => {
             canvasInstance.html().removeEventListener('canvas.drawn', handleDrawn, { capture: true });
         };
-    }, [canvasInstance, selectedLabel, frame, curZOrder, dispatch, setSelectedLabelID]);
+    }, [canvasInstance, selectedLabel, frame, curZOrder, dispatch, setSelectedLabelID, jobInstance]);
 
     // ── Handlers ─────────────────────────────────────────────────────────────
     /**
@@ -376,8 +390,8 @@ function RabbitControl(props: Props): JSX.Element {
      *
      * - Polygon mode: delegates to `canvasInstance.draw()` with ShapeType.POLYGON
      *   so the user sees connecting lines between points (same as the standard
-     *   polygon tool).  The canvas-wrapper handles `canvas.drawn` and creates
-     *   a POLYGON annotation automatically.
+     *   polygon tool). The capture-phase `canvas.drawn` listener converts the
+     *   drawn vertices into a MASK (the wrapper's polygon creation is suppressed).
      *
      * - Line mode: delegates to `canvasInstance.draw()` with ShapeType.POLYLINE
      *   (numberOfPoints: 2) so the line is drawn as soon as the first point is
@@ -402,16 +416,17 @@ function RabbitControl(props: Props): JSX.Element {
             setSelectedLabelID(labelOverride.id as number);
         }
         const mode = getLabelMode(labelToUse.name, labels);
-        rabbitLineActiveRef.current = false;
+        rabbitDrawModeRef.current = null;
         canvasInstance.cancel();
         // Close the popover once a class is selected so it does not cover the
         // canvas while drawing. It reopens on the next N press / icon click.
         setPopoverOpen(false);
 
         if (mode === 'polygon') {
-            // ── Polygon: use the native polygon draw path ──────────────────
-            // This shows connecting lines between vertices (like the standard
-            // polygon tool), and lets canvas-wrapper create the POLYGON shape.
+            // ── Polygon: draw a native polygon (connecting lines between
+            // vertices, like the standard polygon tool). The capture-phase
+            // `canvas.drawn` listener then converts the vertices into a mask.
+            rabbitDrawModeRef.current = 'polygon';
             dispatch(rememberObject({
                 activeObjectType: ObjectType.SHAPE,
                 activeShapeType: ShapeType.POLYGON,
@@ -428,7 +443,7 @@ function RabbitControl(props: Props): JSX.Element {
             // (rubber-band preview) as soon as the first point is set. It
             // auto-finishes at 2 points; the capture-phase `canvas.drawn`
             // listener then converts those 2 points into a buffered mask.
-            rabbitLineActiveRef.current = true;
+            rabbitDrawModeRef.current = 'line';
             dispatch(rememberObject({
                 activeObjectType: ObjectType.SHAPE,
                 activeShapeType: ShapeType.POLYLINE,
