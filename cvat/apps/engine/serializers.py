@@ -3932,11 +3932,11 @@ class AnnotationSerializer(serializers.Serializer):
         return None
 
     def validate(self, attrs):
-        source = attrs.get('source')
+        source = attrs.get("source")
         try:
             models.SourceType(source)
         except ValueError:
-            if attrs.get('id'):
+            if attrs.get("id"):
                 # Workaround for the DB records that could have been introduced by the UI before
                 # https://github.com/cvat-ai/cvat/issues/8874 was fixed.
                 # We allow the DB to store the old invalid annotations and return them from
@@ -3947,8 +3947,7 @@ class AnnotationSerializer(serializers.Serializer):
             else:
                 raise serializers.ValidationError(
                     "must be one of {}, got '{}'".format(
-                        format_list([f"'{v[0]}'" for v in models.SourceType.choices()]),
-                        source
+                        format_list([f"'{v[0]}'" for v in models.SourceType.choices()]), source
                     )
                 )
         attrs["source"] = source
@@ -3959,7 +3958,14 @@ class AnnotationSerializer(serializers.Serializer):
 class LabeledImageSerializer(
     AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
 ):
-    pass
+    def validate(self, attrs):
+        for base_cls in (
+            AnnotationSerializer,
+            FrameAnnotationSerializer,
+            AttributedAnnotationSerializer,
+        ):
+            attrs = super(base_cls, self).validate(attrs)
+        return attrs
 
 
 class OptimizedFloatListField(serializers.ListField):
@@ -4032,7 +4038,16 @@ class SubLabeledShapeSerializer(
     AttributedAnnotationSerializer,
     ScoredAnnotationSerializer,
 ):
-    pass
+    def validate(self, attrs):
+        for base_cls in (
+            ShapeSerializer,
+            AnnotationSerializer,
+            FrameAnnotationSerializer,
+            AttributedAnnotationSerializer,
+            ScoredAnnotationSerializer,
+        ):
+            attrs = super(base_cls, self).validate(attrs)
+        return attrs
 
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
@@ -4169,11 +4184,25 @@ class TrackedShapeSerializer(ShapeSerializer, AttributedAnnotationSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
 
+    def validate(self, attrs):
+        for base_cls in (ShapeSerializer, AttributedAnnotationSerializer):
+            attrs = super(base_cls, self).validate(attrs)
+        return attrs
+
 
 class SubLabeledTrackSerializer(
     AnnotationSerializer, FrameAnnotationSerializer, AttributedAnnotationSerializer
 ):
     shapes = TrackedShapeSerializer(many=True, allow_empty=True)
+
+    def validate(self, attrs):
+        for base_cls in (
+            AnnotationSerializer,
+            FrameAnnotationSerializer,
+            AttributedAnnotationSerializer,
+        ):
+            attrs = super(base_cls, self).validate(attrs)
+        return attrs
 
 
 class LabeledTrackSerializer(SubLabeledTrackSerializer):
@@ -4187,6 +4216,15 @@ class LabeledIntervalSerializer(
 ):
     start = serializers.IntegerField(min_value=0)
     stop = serializers.IntegerField(min_value=0, allow_null=True)
+
+    def validate(self, attrs):
+        for base_cls in (
+            AnnotationSerializer,
+            AttributedAnnotationSerializer,
+            ScoredAnnotationSerializer,
+        ):
+            attrs = super(base_cls, self).validate(attrs)
+        return attrs
 
 
 class LabeledDataSerializer(serializers.Serializer):

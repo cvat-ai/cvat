@@ -28,7 +28,7 @@ from PIL import Image
 from pytest_cases import parametrize
 
 from shared.tasks.utils import parse_frame_step
-from shared.utils.config import make_api_client
+from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
@@ -1347,6 +1347,48 @@ class TestPatchJobAnnotations:
         job = next(j for j in jobs_with_shapes if j["type"] == job_type)
         data = request_data(job["id"])
         self._check_response(admin_user, job["id"], True, data)
+
+    def test_can_autofix_annotation_source_for_updated_annotations(self, admin_user):
+        jid = 19
+
+        response = get_method(admin_user, f"jobs/{jid}/annotations")
+        response.raise_for_status()
+        response = response.json()
+
+        modified_shape = next(s for s in response["shapes"] if s["type"] == "rectangle")
+        modified_shape["points"] = [1, 2, 3, 4]
+        modified_shape["source"] = "Ground truth"
+
+        payload = {"shapes": [s for s in response["shapes"] if s["id"] != modified_shape["id"]]}
+        response = patch_method(admin_user, f"jobs/{jid}/annotations", payload, action="delete")
+        response.raise_for_status()
+        response = response.json()
+        assert len(response["shapes"]) == 1
+
+        payload = {"shapes": [modified_shape]}
+        response = patch_method(admin_user, f"jobs/{jid}/annotations", payload, action="update")
+        response.raise_for_status()
+        response = response.json()
+        assert len(response["shapes"]) == 1
+        assert response["shapes"][0]["source"] == "manual"
+        assert response["shapes"][0]["points"] == modified_shape["points"]
+
+    def test_can_check_annotation_source(self, admin_user):
+        jid = 19
+
+        response = get_method(admin_user, f"jobs/{jid}/annotations")
+        response.raise_for_status()
+        response = response.json()
+
+        new_shape = next(s for s in response["shapes"] if s["type"] == "rectangle")
+        del new_shape["id"]
+        new_shape["points"] = [1, 2, 3, 4]
+        new_shape["source"] = "Ground truth"
+
+        payload = {"shapes": [new_shape]}
+        response = patch_method(admin_user, f"jobs/{jid}/annotations", payload, action="update")
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert b"must be one of" in response.content
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
