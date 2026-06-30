@@ -45,6 +45,7 @@ export interface Props {
      * popover.  Defaults to `"Material --"`.
      */
     labelPrefix?: string;
+    labelPrefixFr?:string;
     /**
      * Controls how labels are presented inside the popover.
      *
@@ -64,6 +65,7 @@ function NCPSetupTagControl(props: Props): JSX.Element {
     const {
         disabled = false,
         labelPrefix = 'Material --',
+        labelPrefixFr = 'Matière --',
         labelSelectorMode = 'list',
     } = props;
     const dispatch = useDispatch();
@@ -85,7 +87,7 @@ function NCPSetupTagControl(props: Props): JSX.Element {
     const satisfiedLabels = useMemo(
         () => allLabels.filter(
             (label: any) => ['any', ObjectType.TAG].includes(label.type) &&
-                label.name.startsWith(labelPrefix),
+                (label.name.startsWith(labelPrefix) || label.name.startsWith(labelPrefixFr)),
         ),
         [allLabels, labelPrefix],
     );
