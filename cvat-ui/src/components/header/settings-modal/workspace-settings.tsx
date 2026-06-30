@@ -262,11 +262,11 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                             onSwitchShowingPrivateAttributes(event.target.checked);
                         }}
                     >
-                        Show private attributes
+                        Gold (classical interface)
                     </Checkbox>
                 </Col>
                 <Col span={24}>
-                    <Text type='secondary'>Show private attributes in item details</Text>
+                    <Text type='secondary'>Show detailed interface</Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-focused-object-padding cvat-player-setting'>

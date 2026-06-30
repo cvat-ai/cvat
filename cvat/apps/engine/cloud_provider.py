@@ -153,8 +153,9 @@ def validate_file_status(func):
 
 
 class AbstractCloudStorage(ABC):
-    def __init__(self, prefix: str | None = None) -> None:
+    def __init__(self, *, prefix: str | None = None, is_trusted: bool = False) -> None:
         self.prefix = prefix
+        self.proxies = None if is_trusted else PROXIES_FOR_UNTRUSTED_URLS
 
     @property
     @abstractmethod
@@ -554,6 +555,7 @@ def get_cloud_storage_instance(
     resource: str,
     credentials: Credentials,
     specific_attributes: dict[str, Any],
+    is_trusted: bool = False,
 ):
     instance = None
     if cloud_provider == CloudProviderChoice.AMAZON_S3:
@@ -565,6 +567,7 @@ def get_cloud_storage_instance(
             region=specific_attributes.get("region"),
             endpoint_url=specific_attributes.get("endpoint_url"),
             prefix=specific_attributes.get("prefix"),
+            is_trusted=is_trusted,
         )
     elif cloud_provider == CloudProviderChoice.AZURE_BLOB_STORAGE:
         instance = AzureBlobCloudStorage(
@@ -573,6 +576,7 @@ def get_cloud_storage_instance(
             sas_token=credentials.session_token,
             connection_string=credentials.connection_string,
             prefix=specific_attributes.get("prefix"),
+            is_trusted=is_trusted,
         )
     elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
         instance = GcsCloudStorage(
@@ -607,8 +611,9 @@ class S3CloudStorage(AbstractCloudStorage):
         session_token: str | None = None,
         endpoint_url: str | None = None,
         prefix: str | None = None,
+        is_trusted: bool = False,
     ):
-        super().__init__(prefix=prefix)
+        super().__init__(prefix=prefix, is_trusted=is_trusted)
         if sum(1 for credential in (access_key_id, secret_key, session_token) if credential) == 1:
             raise Exception("Insufficient data for authentication")
 
@@ -635,7 +640,7 @@ class S3CloudStorage(AbstractCloudStorage):
             "s3",
             endpoint_url=endpoint_url,
             config=Config(
-                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+                proxies=self.proxies or {},
                 max_pool_connections=(
                     # AWS can throttle the requests if there are too many of them,
                     # the SDK handles it with the retry policy:
@@ -649,7 +654,7 @@ class S3CloudStorage(AbstractCloudStorage):
             "s3",
             endpoint_url=endpoint_url,
             config=Config(
-                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+                proxies=self.proxies or {},
                 connect_timeout=2,
                 read_timeout=5,
                 retries={"total_max_attempts": 1, "mode": "standard"},
@@ -849,22 +854,23 @@ class AzureBlobCloudStorage(AbstractCloudStorage):
         sas_token: str | None = None,
         connection_string: str | None = None,
         prefix: str | None = None,
+        is_trusted: bool = False,
     ):
-        super().__init__(prefix=prefix)
+        super().__init__(prefix=prefix, is_trusted=is_trusted)
         self._account_name = account_name
         if connection_string:
             self._blob_service_client = BlobServiceClient.from_connection_string(
-                connection_string, proxies=PROXIES_FOR_UNTRUSTED_URLS
+                connection_string, proxies=self.proxies
             )
         elif sas_token:
             self._blob_service_client = BlobServiceClient(
                 account_url=self.account_url,
                 credential=sas_token,
-                proxies=PROXIES_FOR_UNTRUSTED_URLS,
+                proxies=self.proxies,
             )
         else:
             self._blob_service_client = BlobServiceClient(
-                account_url=self.account_url, proxies=PROXIES_FOR_UNTRUSTED_URLS
+                account_url=self.account_url, proxies=self.proxies
             )
         self._client = self._blob_service_client.get_container_client(container)
 
@@ -1270,7 +1276,9 @@ class Credentials:
         ]
 
 
-def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
+def db_storage_to_storage_instance(
+    db_storage: CloudStorage, *, is_trusted: bool = False
+) -> AbstractCloudStorage:
     credentials = Credentials()
     credentials.convert_from_db(
         {
@@ -1283,7 +1291,11 @@ def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudSto
         "credentials": credentials,
         "specific_attributes": db_storage.get_specific_attributes(),
     }
-    return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+    return get_cloud_storage_instance(
+        cloud_provider=db_storage.provider_type,
+        is_trusted=is_trusted,
+        **details,
+    )
 
 
 P = ParamSpec("P")

@@ -16,7 +16,7 @@ import {
     resetAnnotationsGroup,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
-import NCPControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/ncp-controls-side-bar';
+import NCPControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/ncp/ncp-controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers';
 import { KeyMap } from 'utils/mousetrap-react';
 

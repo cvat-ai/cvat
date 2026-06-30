@@ -16,7 +16,7 @@
   ],
   "devDependencies": {
     "@babel/cli": "^7.13.16",
-    "@babel/core": "^7.6.0",
+    "@babel/core": "^7.29.6",
     "@babel/eslint-parser": "^7.23.3",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/plugin-proposal-optional-chaining": "^7.11.0",
@@ -88,7 +88,7 @@
     "vfile-reporter-json": "^2.0.2",
     "webpack": "^5.104.1",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "5.2.1"
+    "webpack-dev-server": "5.2.5"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

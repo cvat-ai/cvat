@@ -13,6 +13,9 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 
 import { Source } from 'cvat-core-wrapper';
 import ItemAttribute from './object-item-attribute';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
+import { showAttribute } from 'cvat-canvas/src/typescript/shared';
 
 interface Props {
     readonly: boolean;
@@ -97,11 +100,18 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
         sizeParams, changeSize, source, score, votes,
     } = props;
 
+    const showPrivateAttributes = useSelector(
+            (state: CombinedState) => state.settings.workspace.showPrivateAttributes,
+        );
+    const visibleAttributes = attributes.filter((attribute) =>
+        showAttribute(attribute.name, attribute.value, showPrivateAttributes),
+    );
+
     const isConsensus = source === Source.CONSENSUS;
     const withScore = isConsensus;
     const withVotes = isConsensus;
 
-    const hasDetails = attributes.length > 0 || sizeParams !== null;
+    const hasDetails = visibleAttributes.length > 0 || sizeParams !== null;
 
     const baseTooltipAlign = {
         points: ['bl', 'tl'],
@@ -186,7 +196,7 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
                                 ))}
                             </Row>
                         ),
-                        ...attributes.map(
+                        ...visibleAttributes.map(
                             (attribute: any): JSX.Element => (
                                 <Row
                                     key={attribute.id}

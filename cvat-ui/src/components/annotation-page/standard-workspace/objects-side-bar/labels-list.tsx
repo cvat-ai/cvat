@@ -9,7 +9,7 @@ import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
 import { LabelType, ObjectType, ShapeType } from 'cvat-core-wrapper';
-import { CombinedState } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
@@ -79,6 +79,19 @@ function LabelsListComponent(): JSX.Element {
             const relevantAppState = getCVATStore().getState();
             const { states, activatedStateID } = relevantAppState.annotation.annotations;
             const { activeShapeType, activeObjectType } = relevantAppState.annotation.drawing;
+            const { showPrivateAttributes } = relevantAppState.settings.workspace;
+            const { activeControl } = relevantAppState.annotation.canvas;
+
+            // NCP mode: when idle and no annotation is selected, open the RabbitControl
+            // popover for the shortcut's label instead of changing the default draw label.
+            if (!showPrivateAttributes){
+                if (Number.isInteger(activatedStateID)){
+                    message.warning("Alreading adding a label")
+                    return;
+                }
+                window.dispatchEvent(new CustomEvent('ncp:select-label', { detail: { label } }));
+                return;
+            }
 
             if (Number.isInteger(activatedStateID)) {
                 const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];

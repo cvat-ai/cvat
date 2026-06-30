@@ -170,13 +170,13 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
 
     def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/tasks/%s/annotations" % tid, data=data, format="json")
+            response = self.client.put(f"/api/tasks/{tid}/annotations", data=data, format="json")
 
         return response
 
     def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/jobs/%s/annotations" % jid, data=data, format="json")
+            response = self.client.put(f"/api/jobs/{jid}/annotations", data=data, format="json")
 
         return response
 
@@ -194,7 +194,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     @staticmethod
     def _generate_task_images(count, name_offsets=0):  # pylint: disable=no-self-use
         images = {
-            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % (i + name_offsets))
+            f"client_files[{i}]": generate_image_file(f"image_{i + name_offsets}.jpg")
             for i in range(count)
         }
         images["image_quality"] = 75
@@ -202,9 +202,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
 
     @staticmethod
     def _generate_task_videos(count):  # pylint: disable=no-self-use
-        videos = {
-            "client_files[%d]" % i: generate_video_file("video_%d.mp4" % i) for i in range(count)
-        }
+        videos = {f"client_files[{i}]": generate_video_file(f"video_{i}.mp4") for i in range(count)}
         videos["image_quality"] = 75
         return videos
 
@@ -214,7 +212,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json()["rq_id"]
 
@@ -225,7 +223,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
                 response_json["status"], "finished", msg=f"Message: {response_json['message']}"
             )
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/tasks/{tid}")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
@@ -876,7 +874,6 @@ class TaskDumpUploadTest(_DbTestBase):
         test_cases = ["all", "first"]
 
         for dump_format_name in dump_formats:
-
             images = self._generate_task_images(10)
             task = self._create_task(tasks["change overlap and segment size"], images)
             task_id = task["id"]
@@ -1842,10 +1839,10 @@ class ExportBehaviorTest(_DbTestBase):
 
             with (
                 patch(
-                    "cvat.apps.redis_handler.background.get_export_cache_lock",
+                    "cvat.apps.engine.background.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
                 ),
-                patch("cvat.apps.redis_handler.background.osp.exists") as mock_osp_exists,
+                patch("cvat.apps.engine.background.osp.exists") as mock_osp_exists,
                 TemporaryDirectory() as temp_dir,
             ):
                 mock_osp_exists.side_effect = patched_osp_exists
