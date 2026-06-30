@@ -186,7 +186,12 @@ def make_client_from_cli(
     check_server_version: bool = False,
     store: AuthStore | None = None,
 ) -> Client:
-    """Build and authenticate a Client from parsed CLI-style arguments."""
+    """Build and authenticate a Client from parsed CLI-style arguments.
+
+    If config is provided, it is used as the base Client configuration. The
+    parsed ``insecure`` flag is then applied on top by setting ``verify_ssl`` to
+    false; all other Client options come from keyword arguments.
+    """
     store = store or AuthStore()
     params = (
         parsed_args

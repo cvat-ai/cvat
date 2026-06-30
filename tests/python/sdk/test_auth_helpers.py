@@ -185,7 +185,7 @@ def test_make_client_from_cli_applies_client_options_to_named_profile(tmp_path, 
     from cvat_sdk.core import auth as auth_mod
 
     logger = logging.getLogger("test-auth")
-    config = Config(status_check_period=0.1, verify_ssl=True)
+    config = Config(status_check_period=0.1)
     store = AuthStore(path=tmp_path / "auth.json")
     store.add_profile(
         "p",
@@ -227,7 +227,7 @@ def test_make_client_from_cli_explicit_host_does_not_borrow_profile_token(tmp_pa
 def test_make_client_from_cli_accepts_typed_parameters_and_config(tmp_path, monkeypatch):
     from cvat_sdk.core import auth as auth_mod
 
-    config = Config(status_check_period=0.1, verify_ssl=True)
+    config = Config(status_check_period=0.1)
     store = AuthStore(path=tmp_path / "auth.json")
     monkeypatch.setattr(auth_mod, "Client", _FakeClient)
     monkeypatch.setenv(CVAT_ACCESS_TOKEN_ENV_VAR, "env-tok")
