@@ -24,6 +24,8 @@ from shared.utils.config import make_api_client
 
 from .utils import (
     CollectionSimpleFilterTestBase,
+    create_gt_job,
+    create_quality_report,
     invite_user_to_org,
     register_new_user,
     wait_background_request,
@@ -31,76 +33,6 @@ from .utils import (
 
 
 class _PermissionTestBase:
-    def create_quality_report(
-        self, *, user: str, task_id: int | None = None, project_id: int | None = None
-    ) -> dict:
-        assert task_id is not None or project_id is not None
-
-        with make_api_client(user) as api_client:
-            _, response = api_client.quality_api.create_report(
-                quality_report_create_request=models.QualityReportCreateRequest(
-                    **{"task_id": task_id} if task_id else {},
-                    **{"project_id": project_id} if project_id else {},
-                ),
-                _parse_response=False,
-            )
-            assert response.status == HTTPStatus.ACCEPTED
-            rq_id = json.loads(response.data)["rq_id"]
-
-            background_request, _ = wait_background_request(api_client, rq_id)
-            assert (
-                background_request.status.value
-                == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
-            )
-            report_id = background_request.result_id
-
-            _, response = api_client.quality_api.retrieve_report(report_id, _parse_response=False)
-
-            return json.loads(response.data)
-
-    def create_gt_job(self, user: str, task_id: int, *, complete: bool = True) -> models.IJobRead:
-        with make_api_client(user) as api_client:
-            meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
-            start_frame = meta.start_frame
-
-            job, _ = api_client.jobs_api.create(
-                models.JobWriteRequest(
-                    type="ground_truth",
-                    task_id=task_id,
-                    frame_selection_method="manual",
-                    frames=[start_frame],
-                )
-            )
-
-            if complete:
-                labels, _ = api_client.labels_api.list(
-                    **({"project_id": job.project_id} if job.project_id else {"task_id": task_id})
-                )
-
-                api_client.jobs_api.update_annotations(
-                    job.id,
-                    labeled_data_request=dict(
-                        shapes=[
-                            dict(
-                                frame=start_frame,
-                                label_id=labels.results[0].id,
-                                type="rectangle",
-                                points=[1, 1, 2, 2],
-                            ),
-                        ],
-                    ),
-                )
-
-                api_client.jobs_api.partial_update(
-                    job.id,
-                    patched_job_write_request={
-                        "stage": "acceptance",
-                        "state": "completed",
-                    },
-                )
-
-        return job
-
     @pytest.fixture(scope="class")
     def find_sandbox_task(self, tasks, jobs, users, is_task_staff):
         def _find(
@@ -351,13 +283,13 @@ class TestListQualityReports(_PermissionTestBase):
         if target == "project":
             project, user = find_sandbox_project_without_validation(is_staff)
             task = next(t for t in tasks if t["project_id"] == project["id"] and t["size"])
-            self.create_gt_job(admin_user, task["id"])
-            report = self.create_quality_report(user=admin_user, project_id=project["id"])
+            create_gt_job(admin_user, task["id"])
+            report = create_quality_report(user=admin_user, project_id=project["id"])
             target_id = project["id"]
         else:
             task, user = find_sandbox_task_without_gt(is_staff)
-            self.create_gt_job(admin_user, task["id"])
-            report = self.create_quality_report(user=admin_user, task_id=task["id"])
+            create_gt_job(admin_user, task["id"])
+            report = create_quality_report(user=admin_user, task_id=task["id"])
             target_id = task["id"]
 
             if target == "job":
@@ -397,13 +329,13 @@ class TestListQualityReports(_PermissionTestBase):
         if target == "project":
             project, user = find_org_project_without_validation(is_staff, org_role)
             task = next(t for t in tasks if t["project_id"] == project["id"] and t["size"])
-            self.create_gt_job(admin_user, task["id"])
-            report = self.create_quality_report(user=admin_user, project_id=project["id"])
+            create_gt_job(admin_user, task["id"])
+            report = create_quality_report(user=admin_user, project_id=project["id"])
             target_id = project["id"]
         else:
             task, user = find_org_task_without_gt(is_staff, org_role)
-            self.create_gt_job(admin_user, task["id"])
-            report = self.create_quality_report(user=admin_user, task_id=task["id"])
+            create_gt_job(admin_user, task["id"])
+            report = create_quality_report(user=admin_user, task_id=task["id"])
             target_id = task["id"]
 
             if target == "job":
@@ -436,8 +368,8 @@ class TestListQualityReports(_PermissionTestBase):
         find_sandbox_task_without_gt,
     ):
         task, user = find_sandbox_task_without_gt(is_staff)
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        create_gt_job(admin_user, task["id"])
+        report = create_quality_report(user=admin_user, task_id=task["id"])
         if allow:
             self._test_list_reports_200(user=user["username"], parent_id=report["id"])
         else:
@@ -454,8 +386,8 @@ class TestListQualityReports(_PermissionTestBase):
         admin_user,
     ):
         task, user = find_org_task_without_gt(is_staff, org_role)
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        create_gt_job(admin_user, task["id"])
+        report = create_quality_report(user=admin_user, task_id=task["id"])
         if allow:
             self._test_list_reports_200(user=user["username"], parent_id=report["id"])
         else:
@@ -492,8 +424,8 @@ class TestGetQualityReports(_PermissionTestBase):
     ):
         task, user = find_sandbox_task_without_gt(is_staff)
 
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        create_gt_job(admin_user, task["id"])
+        report = create_quality_report(user=admin_user, task_id=task["id"])
 
         if allow:
             self._test_get_report_200(user["username"], report["id"], expected_data=report)
@@ -512,8 +444,8 @@ class TestGetQualityReports(_PermissionTestBase):
     ):
         task, user = find_org_task_without_gt(is_staff, org_role)
 
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        create_gt_job(admin_user, task["id"])
+        report = create_quality_report(user=admin_user, task_id=task["id"])
 
         if allow:
             self._test_get_report_200(user["username"], report["id"], expected_data=report)
@@ -565,8 +497,8 @@ class TestGetQualityReportData(_PermissionTestBase):
     ):
         task, user = find_sandbox_task_without_gt(is_staff)
 
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        create_gt_job(admin_user, task["id"])
+        report = create_quality_report(user=admin_user, task_id=task["id"])
         report_data = json.loads(self._test_get_report_data_200(admin_user, report["id"]).data)
 
         if allow:
@@ -588,8 +520,8 @@ class TestGetQualityReportData(_PermissionTestBase):
     ):
         task, user = find_org_task_without_gt(is_staff, org_role)
 
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        create_gt_job(admin_user, task["id"])
+        report = create_quality_report(user=admin_user, task_id=task["id"])
         report_data = json.loads(self._test_get_report_data_200(admin_user, report["id"]).data)
 
         if allow:
@@ -628,7 +560,7 @@ class TestGetQualityReportData(_PermissionTestBase):
                     },
                 )
 
-        task_report = self.create_quality_report(user=admin_user, task_id=task_id)
+        task_report = create_quality_report(user=admin_user, task_id=task_id)
 
         with make_api_client(admin_user) as api_client:
             job_report = api_client.quality_api.list_reports(
@@ -684,7 +616,7 @@ class TestPostQualityReports(_PermissionTestBase):
         )
         task_id = gt_job["task_id"]
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         assert models.QualityReport._from_openapi_data(**report)
 
     @pytest.mark.parametrize("has_assignee", [False, True])
@@ -710,14 +642,14 @@ class TestPostQualityReports(_PermissionTestBase):
                     },
                 )
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         assert models.QualityReport._from_openapi_data(**report)
 
     def test_cannot_create_report_without_gt_job(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if t["jobs"]["count"] == 1)
 
         with pytest.raises(exceptions.ApiException) as capture:
-            self.create_quality_report(user=admin_user, task_id=task_id)
+            create_quality_report(user=admin_user, task_id=task_id)
 
         assert (
             "Quality reports require a Ground Truth job in the task at the acceptance "
@@ -752,7 +684,7 @@ class TestPostQualityReports(_PermissionTestBase):
             )
 
         with pytest.raises(exceptions.ApiException) as capture:
-            self.create_quality_report(user=admin_user, task_id=task_id)
+            create_quality_report(user=admin_user, task_id=task_id)
 
         assert (
             "Quality reports require a Ground Truth job in the task at the acceptance "
@@ -760,7 +692,7 @@ class TestPostQualityReports(_PermissionTestBase):
         ) in capture.value.body
 
     def _test_create_report_200(self, user: str, task_id: int):
-        return self.create_quality_report(user=user, task_id=task_id)
+        return create_quality_report(user=user, task_id=task_id)
 
     def _test_create_report_403(self, user: str, task_id: int):
         with make_api_client(user) as api_client:
@@ -779,7 +711,7 @@ class TestPostQualityReports(_PermissionTestBase):
     ):
         task, user = find_sandbox_task_without_gt(is_staff)
 
-        self.create_gt_job(admin_user, task["id"])
+        create_gt_job(admin_user, task["id"])
 
         if allow:
             self._test_create_report_200(user["username"], task["id"])
@@ -797,7 +729,7 @@ class TestPostQualityReports(_PermissionTestBase):
     ):
         task, user = find_org_task_without_gt(is_staff, org_role)
 
-        self.create_gt_job(admin_user, task["id"])
+        create_gt_job(admin_user, task["id"])
 
         if allow:
             self._test_create_report_200(user["username"], task["id"])
@@ -846,7 +778,7 @@ class TestPostQualityReports(_PermissionTestBase):
         admin_user: str,
     ):
         task, another_user = find_org_task_without_gt(is_staff=False, user_org_role=role)
-        self.create_gt_job(admin_user, task["id"])
+        create_gt_job(admin_user, task["id"])
 
         task_owner = task["owner"]
 
@@ -880,7 +812,7 @@ class TestPostQualityReports(_PermissionTestBase):
     ):
         task, task_staff = find_sandbox_task_without_gt(is_staff=True)
 
-        self.create_gt_job(admin_user, task["id"])
+        create_gt_job(admin_user, task["id"])
 
         another_user = next(
             u
@@ -915,7 +847,7 @@ class TestPostQualityReports(_PermissionTestBase):
     ):
         task, task_staff = find_org_task_without_gt(is_staff=True, user_org_role="supervisor")
 
-        self.create_gt_job(admin_user, task["id"])
+        create_gt_job(admin_user, task["id"])
 
         # create another user that passes the requirements
         another_user = register_new_user(f"{same_org}{role}")
@@ -956,7 +888,7 @@ class TestPostQualityReports(_PermissionTestBase):
             )
         )
 
-        self.create_gt_job(admin_user, task["id"])
+        create_gt_job(admin_user, task["id"])
 
         rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
 
@@ -1061,8 +993,8 @@ class TestListQualityConflicts(_PermissionTestBase):
     ):
         task, user = find_sandbox_task_without_gt(is_staff)
 
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        create_gt_job(admin_user, task["id"])
+        report = create_quality_report(user=admin_user, task_id=task["id"])
         conflicts = self._test_list_conflicts_200(admin_user, report_id=report["id"])
         assert conflicts
 
@@ -1084,8 +1016,8 @@ class TestListQualityConflicts(_PermissionTestBase):
         task, user = find_org_task_without_gt(is_staff, org_role)
         user = user["username"]
 
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        create_gt_job(admin_user, task["id"])
+        report = create_quality_report(user=admin_user, task_id=task["id"])
         conflicts = self._test_list_conflicts_200(admin_user, report_id=report["id"])
         assert conflicts
 
@@ -1572,7 +1504,7 @@ class TestQualityReportContents(_PermissionTestBase):
         )
         task_id = old_report["task_id"]
 
-        new_report = self.create_quality_report(user=admin_user, task_id=task_id)
+        new_report = create_quality_report(user=admin_user, task_id=task_id)
 
         with make_api_client(admin_user) as api_client:
             old_report_data = json.load(
@@ -1640,7 +1572,7 @@ class TestQualityReportContents(_PermissionTestBase):
                 ),
             )
 
-        new_report = self.create_quality_report(user=admin_user, task_id=task_id)
+        new_report = create_quality_report(user=admin_user, task_id=task_id)
         assert new_report["summary"]["conflict_count"] > old_report["summary"]["conflict_count"]
 
     @pytest.mark.parametrize("task_id", [demo_task_id])
@@ -1692,7 +1624,7 @@ class TestQualityReportContents(_PermissionTestBase):
                 settings["id"], patched_quality_settings_request=settings
             )
 
-        new_report = self.create_quality_report(user=admin_user, task_id=task_id)
+        new_report = create_quality_report(user=admin_user, task_id=task_id)
         if parameter == "empty_is_annotated":
             assert new_report["summary"]["valid_count"] != old_report["summary"]["valid_count"]
             assert new_report["summary"]["total_count"] != old_report["summary"]["total_count"]
@@ -1715,9 +1647,7 @@ class TestQualityReportContents(_PermissionTestBase):
             assert d["annotations"]["confusion_matrix"]["jaccard_index"] is None
 
     def test_accumulation_annotation_conflicts_multiple_jobs(self, admin_user):
-        report = self.create_quality_report(
-            user=admin_user, task_id=self.demo_task_id_multiple_jobs
-        )
+        report = create_quality_report(user=admin_user, task_id=self.demo_task_id_multiple_jobs)
         with make_api_client(admin_user) as api_client:
             _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
@@ -1769,9 +1699,9 @@ class TestQualityReportContents(_PermissionTestBase):
                 },
             )
 
-        self.create_gt_job(admin_user, task_id)
+        create_gt_job(admin_user, task_id)
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         with make_api_client(admin_user) as api_client:
             _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
@@ -1814,7 +1744,7 @@ class TestQualityReportContents(_PermissionTestBase):
                     stage="acceptance", state="completed"
                 ),
             )
-            report = self.create_quality_report(user=admin_user, task_id=task_id)
+            report = create_quality_report(user=admin_user, task_id=task_id)
 
             _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
@@ -1830,7 +1760,7 @@ class TestQualityReportContents(_PermissionTestBase):
                 ),
             )
 
-            report = self.create_quality_report(user=admin_user, task_id=task_id)
+            report = create_quality_report(user=admin_user, task_id=task_id)
 
             _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
@@ -1857,7 +1787,7 @@ class TestQualityReportContents(_PermissionTestBase):
                     stage="acceptance", state="completed"
                 ),
             )
-            report = self.create_quality_report(user=admin_user, task_id=task_id)
+            report = create_quality_report(user=admin_user, task_id=task_id)
 
             _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
@@ -1871,7 +1801,7 @@ class TestQualityReportContents(_PermissionTestBase):
                 ),
             )
 
-            report = self.create_quality_report(user=admin_user, task_id=task_id)
+            report = create_quality_report(user=admin_user, task_id=task_id)
 
             _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
@@ -1980,7 +1910,7 @@ class TestQualityReportContents(_PermissionTestBase):
                 ),
             )
 
-            report = self.create_quality_report(user=admin_user, task_id=task_id)
+            report = create_quality_report(user=admin_user, task_id=task_id)
 
             assert report["summary"]["conflict_count"] == 0
             assert report["summary"]["valid_count"] == 2
@@ -2073,7 +2003,7 @@ class TestQualityReportContents(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostProjectQualityReports(_PermissionTestBase):
     def _test_create_report_200(self, user: str, project_id: int):
-        return self.create_quality_report(user=user, project_id=project_id)
+        return create_quality_report(user=user, project_id=project_id)
 
     def _test_create_report_403(self, user: str, project_id: int):
         with make_api_client(user) as api_client:
@@ -2101,10 +2031,10 @@ class TestPostProjectQualityReports(_PermissionTestBase):
         # Create GT jobs for all tasks in the project
         tasks = [t for t in tasks if t.get("project_id") == project_id]
         for task in tasks:
-            self.create_gt_job(admin_user, task["id"])
+            create_gt_job(admin_user, task["id"])
 
         # Create project report
-        report = self.create_quality_report(user=admin_user, project_id=project_id)
+        report = create_quality_report(user=admin_user, project_id=project_id)
 
         # Check report data
         with make_api_client(admin_user) as api_client:
@@ -2134,7 +2064,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
         project = next(p for p in projects if p["tasks"]["count"] == 0)
         project_id = project["id"]
 
-        report = self.create_quality_report(user=admin_user, project_id=project_id)
+        report = create_quality_report(user=admin_user, project_id=project_id)
 
         assert report["project_id"] == project_id
         assert report["summary"]["total_count"] == 0
@@ -2152,7 +2082,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
         )
         project_id = project["id"]
 
-        self.create_quality_report(user=admin_user, project_id=project_id)
+        create_quality_report(user=admin_user, project_id=project_id)
 
     def test_can_create_project_report_when_there_are_tasks_without_configured_gt(
         self, admin_user, projects, tasks, jobs, labels
@@ -2178,7 +2108,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
             )
 
         # Create project report
-        self.create_quality_report(user=admin_user, project_id=project_id)
+        create_quality_report(user=admin_user, project_id=project_id)
 
     def test_can_reuse_relevant_task_reports_in_project_report(
         self, admin_user, projects, tasks, labels, quality_settings, quality_reports
@@ -2220,7 +2150,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
         }
 
         # Create project report before task changes
-        new_report_before_task_changes = self.create_quality_report(
+        new_report_before_task_changes = create_quality_report(
             user=admin_user, project_id=project_id
         )
 
@@ -2245,7 +2175,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
             )
 
         # Create new project report after task changes
-        new_report_after_task_changes = self.create_quality_report(
+        new_report_after_task_changes = create_quality_report(
             user=admin_user, project_id=project_id
         )
 
@@ -2317,7 +2247,7 @@ class TestProjectQualitySettingsBehavior(_PermissionTestBase):
         task_id = task["id"]
         project_id = task["project_id"]
 
-        self.create_gt_job(admin_user, task_id)
+        create_gt_job(admin_user, task_id)
 
         project_settings = next(s for s in quality_settings if s["project_id"] == project_id)
         task_settings = next(s for s in quality_settings if s["task_id"] == task_id)
@@ -2339,7 +2269,7 @@ class TestProjectQualitySettingsBehavior(_PermissionTestBase):
             )
 
             # Create task report
-            task_report = self.create_quality_report(user=admin_user, task_id=task_id)
+            task_report = create_quality_report(user=admin_user, task_id=task_id)
 
             # Get report data to verify settings were inherited
             task_report_data = json.load(

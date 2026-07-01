@@ -2,17 +2,34 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import json
 from http import HTTPStatus
 from time import sleep, time
 
 import pytest
 from deepdiff import DeepDiff
+
 from shared.fixtures.data import Container
 from shared.fixtures.init import CVAT_ROOT_DIR
-from shared.utils.config import delete_method, get_method, patch_method, post_method
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    patch_method,
+    post_method,
+)
+from shared.utils.helpers import generate_image_files
 
-from .utils import export_task_backup, export_task_dataset
+from .utils import (
+    create_consensus_merge,
+    create_gt_job,
+    create_quality_report,
+    create_task,
+    export_task_backup,
+    export_task_dataset,
+    import_task_annotations,
+    import_task_backup,
+)
 
 # Testing webhook functionality:
 #  - webhook_receiver container receive post request and return responses with the same body
@@ -795,7 +812,7 @@ def _task_with_data_in_org(tasks: Container) -> dict:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestWebhookExportEvents:
+class TestWebhookOnDatasetExportRequest:
     def test_webhook_create_export_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
         webhook_id = create_webhook(
@@ -811,10 +828,47 @@ class TestWebhookExportEvents:
         assert payload["status"] == "succeeded"
         assert payload["target"] == "task"
         assert payload["target_id"] == task["id"]
+        assert payload["subresource"] == "annotations"
+        assert payload["format"] == "CVAT for images 1.1"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestWebhookBackupEvents:
+class TestWebhookOnDatasetImportRequest:
+    def test_webhook_create_dataset_import_for_task(self, tasks: Container) -> None:
+        task = _task_with_data_in_org(tasks)
+
+        exported_annotations = export_task_dataset(
+            "admin1", id=task["id"], save_images=False, download_result=True
+        )
+
+        assert isinstance(exported_annotations, bytes)
+        file_content = io.BytesIO(exported_annotations)
+        file_content.name = "annotations.zip"
+
+        webhook_id = create_webhook(
+            events=["create:dataset_import"],
+            webhook_type="organization",
+            org_id=task["organization"],
+        )["id"]
+
+        import_task_annotations(
+            "admin1",
+            file_content=file_content,
+            id=task["id"],
+            format="CVAT 1.1",
+        )
+
+        _, payload = get_deliveries(webhook_id)
+
+        assert payload["event"] == "create:dataset_import"
+        assert payload["status"] == "succeeded"
+        assert payload["target"] == "task"
+        assert payload["target_id"] == task["id"]
+        assert payload["subresource"] == "annotations"
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookOnBackupExportRequest:
     def test_webhook_create_backup_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
         webhook_id = create_webhook(
@@ -827,6 +881,101 @@ class TestWebhookBackupEvents:
 
         _, payload = get_deliveries(webhook_id)
         assert payload["event"] == "create:backup_export"
+        assert payload["status"] == "succeeded"
+        assert payload["target"] == "task"
+        assert payload["target_id"] == task["id"]
+        assert payload["subresource"] == "backup"
+        assert payload["lightweight"] is False
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookOnBackupImportRequest:
+
+    def test_webhook_create_backup_import_for_task(self, tasks: Container) -> None:
+        task = _task_with_data_in_org(tasks)
+        exported_backup = export_task_backup("admin1", id=task["id"], download_result=True)
+        assert isinstance(exported_backup, bytes)
+        file_content = io.BytesIO(exported_backup)
+        file_content.name = "backup.zip"
+        webhook_id = create_webhook(
+            events=["create:backup_import"],
+            webhook_type="organization",
+            org_id=task["organization"],
+        )["id"]
+
+        import_task_backup("admin1", file_content=file_content)
+
+        _, payload = get_deliveries(webhook_id)
+        assert payload["event"] == "create:backup_import"
+        assert payload["status"] == "succeeded"
+        assert payload["target"] == "task"
+        assert payload["subresource"] == "backup"
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookOnTaskInitializationRequest:
+    def test_webhook_create_task_initialization(self, organizations: Container) -> None:
+        org_id = organizations[0]["id"]
+        webhook_id = create_webhook(
+            events=["create:task_initialization"],
+            webhook_type="organization",
+            org_id=org_id,
+        )["id"]
+
+        task_id, _ = create_task(
+            "admin1",
+            spec={"name": "task initialization webhook test"},
+            data={
+                "image_quality": 75,
+                "client_files": generate_image_files(2),
+                "segment_size": 1,
+            },
+            org_id=org_id,
+        )
+
+        _, payload = get_deliveries(webhook_id)
+        assert payload["event"] == "create:task_initialization"
+        assert payload["status"] == "succeeded"
+        assert payload["target"] == "task"
+        assert payload["target_id"] == task_id
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookOnQualityReportCreationRequest:
+    def test_webhook_create_quality_report(self, tasks: Container) -> None:
+        task = _task_with_data_in_org(tasks)
+        webhook_id = create_webhook(
+            events=["create:quality_report"],
+            webhook_type="organization",
+            org_id=task["organization"],
+        )["id"]
+
+        create_gt_job("admin1", task["id"])
+
+        create_quality_report(user="admin1", task_id=task["id"])
+
+        _, payload = get_deliveries(webhook_id)
+        assert payload["event"] == "create:quality_report"
+        assert payload["status"] == "succeeded"
+        assert payload["target"] == "task"
+        assert payload["target_id"] == task["id"]
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookOnConsensusMergeCreation:
+    def test_webhook_create_consensus_merge(self, tasks: Container) -> None:
+        task = next(t for t in tasks if t["consensus_enabled"] and t["organization"] is not None)
+
+        webhook_id = create_webhook(
+            events=["create:consensus_merge"],
+            webhook_type="organization",
+            org_id=task["organization"],
+        )["id"]
+
+        create_consensus_merge(user="admin1", task_id=task["id"])
+
+        _, payload = get_deliveries(webhook_id)
+        assert payload["event"] == "create:consensus_merge"
         assert payload["status"] == "succeeded"
         assert payload["target"] == "task"
         assert payload["target_id"] == task["id"]
