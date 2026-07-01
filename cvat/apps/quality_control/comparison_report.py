@@ -552,6 +552,29 @@ class ComparisonReportAnnotationsSummary(ReportNode):
             extra_count=self.extra_count,
         )
 
+    @classmethod
+    def from_confusion_matrix(
+        cls, confusion_matrix: ConfusionMatrix | None
+    ) -> ComparisonReportAnnotationsSummary:
+        if not confusion_matrix or confusion_matrix.rows is None:
+            return cls.create_empty()
+
+        rows = confusion_matrix.rows
+        matched_ann_counts = np.diag(rows)
+        ds_ann_counts = np.sum(rows, axis=1)
+        gt_ann_counts = np.sum(rows, axis=0)
+        unmatched_idx = -1
+
+        return cls(
+            valid_count=np.sum(matched_ann_counts),
+            missing_count=np.sum(rows[unmatched_idx, :]),
+            extra_count=np.sum(rows[:, unmatched_idx]),
+            total_count=np.sum(rows),
+            ds_count=np.sum(ds_ann_counts[:unmatched_idx]),
+            gt_count=np.sum(gt_ann_counts[:unmatched_idx]),
+            confusion_matrix=confusion_matrix,
+        )
+
     def accumulate(self, other: ComparisonReportAnnotationsSummary, *, weight: float = 1):
         for field in [
             "valid_count",
@@ -824,7 +847,9 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
     warning_count: int
     error_count: int
     conflicts_by_type: dict[AnnotationConflictType, int]
-    annotations: ComparisonReportAnnotationsSummary
+    score: float | None
+    score_components: ComparisonReportScoreComponents
+    confusion_matrix: ConfusionMatrix | None
 
     def _value_serializer(self, v):
         if isinstance(v, AnnotationConflictType):
@@ -842,7 +867,15 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
                 _parse_annotation_conflict_type(k): v
                 for k, v in d.get("conflicts_by_type", {}).items()
             },
-            annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
+            score=d.get("score"),
+            score_components=ComparisonReportScoreComponents.from_dict(
+                d.get("score_components", {})
+            ),
+            confusion_matrix=(
+                ConfusionMatrix.from_dict(d["confusion_matrix"])
+                if d.get("confusion_matrix")
+                else None
+            ),
         )
 
 

@@ -1594,10 +1594,15 @@ class TestQualityReportContents(_PermissionTestBase):
             assert "annotation_components" not in frame_result
 
         group_report = report_data["groups"][requirement["name"]]
+        assert "annotations" not in group_report["comparison_summary"]
         assert "annotation_components" not in group_report["comparison_summary"]
-        task_confusion_matrix = group_report["comparison_summary"]["annotations"][
-            "confusion_matrix"
-        ]["rows"]
+        assert group_report["comparison_summary"]["score"] == 0.5
+        assert group_report["comparison_summary"]["score_components"] == {
+            "valid_count": 2,
+            "missing_count": 1,
+            "extra_count": 1,
+        }
+        task_confusion_matrix = group_report["comparison_summary"]["confusion_matrix"]["rows"]
 
         expected_frame_confusion_matrix = {
             "5": [[1, 0, 0], [0, 0, 0], [0, 0, 0]],

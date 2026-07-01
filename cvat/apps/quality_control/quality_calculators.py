@@ -34,7 +34,6 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportFrameSummary,
     ComparisonReportJobStats,
     ComparisonReportParameters,
-    ComparisonReportRequirementComparisonSummary,
     ComparisonReportRequirementSummary,
     ComparisonReportSummary,
     ComparisonReportTaskStats,
@@ -42,6 +41,7 @@ from cvat.apps.quality_control.comparison_report import (
 )
 from cvat.apps.quality_control.quality_handlers import (
     DatasetQualityEstimator,
+    build_requirement_comparison_summary,
     build_requirement_report,
     build_requirements_summary,
     merge_frame_summaries,
@@ -625,9 +625,12 @@ class ProjectQualityCalculator:
 
                 group_frame_share = group_validated_frames / (group_total_frames or 1)
                 group_weight = 1 / (group_frame_share or 1)
+                group_annotations = ComparisonReportAnnotationsSummary.from_confusion_matrix(
+                    group_report.comparison_summary.confusion_matrix
+                )
                 project_group_annotations.setdefault(
                     group_name, ComparisonReportAnnotationsSummary.create_empty()
-                ).accumulate(group_report.comparison_summary.annotations, weight=group_weight)
+                ).accumulate(group_annotations, weight=group_weight)
                 project_group_conflicts.setdefault(group_name, []).extend(group_report.conflicts)
 
         requirement_groups = {}
@@ -637,12 +640,10 @@ class ProjectQualityCalculator:
             )
             requirement_groups[group_name] = ComparisonReportRequirementSummary(
                 parameters=parameters,
-                comparison_summary=ComparisonReportRequirementComparisonSummary(
-                    conflict_count=len(group_conflicts),
-                    warning_count=0,
-                    error_count=len(group_conflicts),
-                    conflicts_by_type=Counter(c.type for c in group_conflicts),
+                comparison_summary=build_requirement_comparison_summary(
+                    requirement=parameters,
                     annotations=project_group_annotations[group_name],
+                    conflicts=group_conflicts,
                 ),
                 frame_results=None,
             )

@@ -354,6 +354,36 @@ def merge_frame_summaries(
     merge_annotations_summary(target.annotations, other.annotations)
 
 
+def _get_requirement_metric(requirement: Any) -> str:
+    metric = _get_requirement_field(
+        requirement,
+        "target_metric",
+        "metric",
+        default=models.QualityTargetMetricType.ACCURACY,
+    )
+    return str(metric or models.QualityTargetMetricType.ACCURACY)
+
+
+def build_requirement_comparison_summary(
+    *,
+    requirement: Any,
+    annotations: ComparisonReportAnnotationsSummary,
+    conflicts: list[AnnotationConflict],
+) -> ComparisonReportRequirementComparisonSummary:
+    metric = _get_requirement_metric(requirement)
+    score = getattr(annotations, metric, None)
+
+    return ComparisonReportRequirementComparisonSummary(
+        conflict_count=len(conflicts),
+        warning_count=0,
+        error_count=len(conflicts),
+        conflicts_by_type=Counter(c.type for c in conflicts),
+        score=float(score) if score is not None else None,
+        score_components=annotations.to_score_components(),
+        confusion_matrix=annotations.confusion_matrix,
+    )
+
+
 def build_requirement_report(
     *,
     requirement: Any,
@@ -371,12 +401,10 @@ def build_requirement_report(
 
     return ComparisonReportRequirementSummary(
         parameters=serialize_requirement_parameters(requirement),
-        comparison_summary=ComparisonReportRequirementComparisonSummary(
-            conflict_count=len(conflicts),
-            warning_count=0,
-            error_count=len(conflicts),
-            conflicts_by_type=Counter(c.type for c in conflicts),
+        comparison_summary=build_requirement_comparison_summary(
+            requirement=requirement,
             annotations=annotations_summary,
+            conflicts=conflicts,
         ),
         frame_results=deepcopy(frame_results) if include_frame_results else None,
     )
@@ -400,18 +428,17 @@ def build_requirements_summary(
         if not group_report:
             continue
 
-        metric = _get_requirement_field(requirement, "target_metric", "metric")
+        metric = _get_requirement_metric(requirement)
         required_score = _get_requirement_field(
             requirement, "target_metric_threshold", "required_score", default=0
         )
-        annotations = group_report.comparison_summary.annotations
-        actual_score = getattr(annotations, metric, None)
+        actual_score = group_report.comparison_summary.score
         items.append(
             ComparisonReportRequirementSummaryItem(
                 name=group_name,
                 metric=str(metric),
-                score=float(actual_score) if actual_score is not None else None,
-                score_components=annotations.to_score_components(),
+                score=actual_score,
+                score_components=group_report.comparison_summary.score_components,
                 threshold=float(required_score),
                 requirement_id=_get_requirement_field(
                     requirement, "source_requirement_id", "requirement_id"
