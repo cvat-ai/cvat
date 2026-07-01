@@ -22,7 +22,7 @@ from cvat.apps.engine.models import (
     Task,
     ValidationMode,
 )
-from cvat.apps.engine.utils import take_by, transaction_with_repeatable_read
+from cvat.apps.engine.utils import take_by
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
     AnnotationConflict,
@@ -75,7 +75,7 @@ class TaskQualityCalculator:
     }
 
     def compute_report(self, task: Task | int) -> models.QualityReport | None:
-        with transaction_with_repeatable_read():
+        with db_utils.transaction_with_repeatable_read():
             if isinstance(task, int):
                 task = Task.objects.select_related("data").get(id=task)
 
