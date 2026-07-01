@@ -8032,14 +8032,19 @@ components:
     EventsEnum:
       enum:
       - create:backup_export
+      - create:backup_import
       - create:comment
+      - create:consensus_merge
       - create:dataset_export
+      - create:dataset_import
       - create:invitation
       - create:issue
       - create:job
       - create:membership
       - create:project
+      - create:quality_report
       - create:task
+      - create:task_initialization
       - delete:comment
       - delete:invitation
       - delete:issue
@@ -8058,14 +8063,19 @@ components:
       type: string
       description: |-
         * `create:backup_export` - CREATE:BACKUP_EXPORT
+        * `create:backup_import` - CREATE:BACKUP_IMPORT
         * `create:comment` - CREATE:COMMENT
+        * `create:consensus_merge` - CREATE:CONSENSUS_MERGE
         * `create:dataset_export` - CREATE:DATASET_EXPORT
+        * `create:dataset_import` - CREATE:DATASET_IMPORT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
         * `create:membership` - CREATE:MEMBERSHIP
         * `create:project` - CREATE:PROJECT
+        * `create:quality_report` - CREATE:QUALITY_REPORT
         * `create:task` - CREATE:TASK
+        * `create:task_initialization` - CREATE:TASK_INITIALIZATION
         * `delete:comment` - DELETE:COMMENT
         * `delete:invitation` - DELETE:INVITATION
         * `delete:issue` - DELETE:ISSUE
