@@ -39,7 +39,7 @@ def send_request_succeeded_signal(
 
     _ = signals.request_succeeded.send_robust(
         sender=AbstractRequestManager,
-        request_id=rq_job.id,
+        rq_job=rq_job,
         status=RequestStatusEnum.SUCCEEDED,
         message=None,
     )
@@ -60,7 +60,7 @@ def send_request_failed_signal(
 
     _ = signals.request_failed.send_robust(
         sender=AbstractRequestManager,
-        request_id=rq_job.id,
+        rq_job=rq_job,
         status=RequestStatusEnum.FAILED,
         message=parse_exception_message(
             "".join(traceback.format_exception_only(exc_type, exc_value))

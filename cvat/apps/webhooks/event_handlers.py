@@ -6,11 +6,11 @@
 from typing import Any
 
 from django.dispatch import receiver
+from rq.job import Job as RQJob
 
-from cvat.apps.engine import utils as engine_utils
-from cvat.apps.engine.models import RequestTarget
-from cvat.apps.engine.rq import ExportRequestId, RequestId
-from cvat.apps.events.handlers import organization_id, project_id
+from cvat.apps.consensus.rq import ConsensusRequestId
+from cvat.apps.engine.rq import BaseRQMeta, ExportRequestId, ImportRequestId, RequestId
+from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.apps.redis_handler.signals import request_failed, request_succeeded
 from cvat.apps.redis_handler.utils import RequestStatusEnum
 from cvat.apps.webhooks import services, utils
@@ -19,43 +19,67 @@ from cvat.apps.webhooks.dispatch import batch_add_to_queue
 
 @receiver(request_succeeded)
 @receiver(request_failed)
-def request_completed_event_handler(
+def enqueue_request_completion_webhooks(
     sender: Any,
-    request_id: str,
+    rq_job: RQJob,
     status: RequestStatusEnum,
     message: str | None,
     **kwargs,
 ) -> None:
-    request, _queue = RequestId.parse(request_id, try_legacy_format=True)
+    from cvat.apps.events.export import TARGET as events_export_TARGET
 
-    match request:
+    request_id, _queue = RequestId.parse(rq_job.id, try_legacy_format=True)
+
+    match request_id:
         case ExportRequestId():
-            try:
-                event_name, webhook_payload = (
-                    utils.get_event_name_and_webhook_payload_from_export_request(
-                        request=request,
-                        status=status,
-                        message=message,
-                    )
-                )
-            # NOTE @sosov: Request completion webhooks are only implemented for
-            # export of dataset / annotations and backup
-            except NotImplementedError:
+            if request_id.target == events_export_TARGET:
+                # NOTE @sosov: We do not send webhooks for events export request
                 return
-        case _:
-            # NOTE @sosov: Request completion webhooks are only implemented for
-            # export of dataset / annotations and backup
-            return
 
-    target_cls = engine_utils.get_request_target_django_model_by_enum(
-        target=RequestTarget(request.target)
-    )
-    target = target_cls.objects.get(id=request.target_id)
+            event_name, webhook_payload = (
+                utils.get_event_name_and_webhook_payload_from_export_request(
+                    request=request_id,
+                    status=status,
+                    message=message,
+                )
+            )
+
+        case ImportRequestId():
+            event_name, webhook_payload = (
+                utils.get_event_name_and_webhook_payload_from_import_request(
+                    request=request_id,
+                    status=status,
+                    message=message,
+                )
+            )
+
+        case QualityRequestId():
+            event_name, webhook_payload = (
+                utils.get_event_name_and_webhook_payload_from_quality_request(
+                    request=request_id,
+                    status=status,
+                    message=message,
+                )
+            )
+
+        case ConsensusRequestId():
+            event_name, webhook_payload = (
+                utils.get_event_name_and_webhook_payload_from_consensus_requests(
+                    request=request_id,
+                    status=status,
+                    message=message,
+                )
+            )
+
+        case _:
+            raise ValueError(f"Unexpected request type: {type(request_id).__name__}")
+
+    rq_meta = BaseRQMeta.for_job(rq_job)
 
     webhooks = services.select_webhooks(
         event=event_name,
-        organization_id=organization_id(target),
-        project_id=project_id(target),
+        organization_id=rq_meta.org_id,
+        project_id=rq_meta.project_id,
     )
 
     if not webhooks:

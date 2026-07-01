@@ -9,10 +9,12 @@ from http import HTTPStatus
 
 import requests
 
-from cvat.apps.engine.models import RequestSubresource
-from cvat.apps.engine.rq import ExportRequestId
+from cvat.apps.consensus.rq import ConsensusRequestId
+from cvat.apps.engine.models import RequestAction, RequestSubresource
+from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.events.handlers import get_request, get_user
+from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.apps.redis_handler.utils import RequestStatusEnum
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 
@@ -48,9 +50,7 @@ def get_event_name_and_webhook_payload_from_export_request(
                 "lightweight": (request.lightweight if request.lightweight is not None else False)
             }
         case _:
-            raise NotImplementedError(
-                f"Webhook for subresource {request.subresource} is not implemented"
-            )
+            raise ValueError(f"Unexpected request subresource: {request.subresource}")
 
     webhook_payload = {
         "event": _event_name,
@@ -61,6 +61,90 @@ def get_event_name_and_webhook_payload_from_export_request(
         "message": message,
         "subresource": request.subresource.value,
         **subresource_data,
+    }
+
+    return _event_name, webhook_payload
+
+
+def get_event_name_and_webhook_payload_from_import_request(
+    request: ImportRequestId,
+    status: RequestStatusEnum,
+    message: str,
+) -> tuple[str, dict]:
+    match request.action:
+        case RequestAction.IMPORT:
+            match request.subresource:
+                case RequestSubresource.DATASET | RequestSubresource.ANNOTATIONS:
+                    _event_name = event_name(action="create", resource="dataset_import")
+                    webhook_payload = {
+                        "event": _event_name,
+                        "rq_id": request.render(),
+                        "status": status.value,
+                        "target": request.target,
+                        "target_id": request.target_id,
+                        "message": message,
+                        "subresource": request.subresource.value,
+                    }
+                case RequestSubresource.BACKUP:
+                    _event_name = event_name(action="create", resource="backup_import")
+                    webhook_payload = {
+                        "event": _event_name,
+                        "rq_id": request.render(),
+                        "target": request.target,
+                        "status": status.value,
+                        "message": message,
+                        "subresource": request.subresource.value,
+                    }
+                case _:
+                    raise ValueError(f"Unexpected request subresource: {request.subresource}")
+
+        case RequestAction.CREATE:
+            _event_name = event_name(action="create", resource="task_initialization")
+            webhook_payload = {
+                "event": _event_name,
+                "rq_id": request.render(),
+                "target": request.target,
+                "target_id": request.target_id,
+                "status": status.value,
+                "message": message,
+            }
+        case _:
+            raise ValueError(f"Unexpected request action: {request.action}")
+
+    return _event_name, webhook_payload
+
+
+def get_event_name_and_webhook_payload_from_quality_request(
+    request: QualityRequestId,
+    status: RequestStatusEnum,
+    message: str,
+) -> tuple[str, dict]:
+    _event_name = event_name(action="create", resource="quality_report")
+    webhook_payload = {
+        "event": _event_name,
+        "rq_id": request.render(),
+        "status": status.value,
+        "target": request.target,
+        "target_id": request.target_id,
+        "message": message,
+    }
+
+    return _event_name, webhook_payload
+
+
+def get_event_name_and_webhook_payload_from_consensus_requests(
+    request: ConsensusRequestId,
+    status: RequestStatusEnum,
+    message: str,
+) -> tuple[str, dict]:
+    _event_name = event_name(action="create", resource="consensus_merge")
+    webhook_payload = {
+        "event": _event_name,
+        "rq_id": request.render(),
+        "status": status.value,
+        "target": request.target,
+        "target_id": request.target_id,
+        "message": message,
     }
 
     return _event_name, webhook_payload

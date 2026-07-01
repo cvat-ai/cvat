@@ -20,7 +20,12 @@ class Events:
         "invitation": ["create", "delete"],
         "membership": ["create", "update", "delete"],
         "dataset_export": ["create"],
+        "dataset_import": ["create"],
         "backup_export": ["create"],
+        "backup_import": ["create"],
+        "task_initialization": ["create"],
+        "quality_report": ["create"],
+        "consensus_merge": ["create"],
     }
 
     @classmethod
@@ -51,7 +56,20 @@ class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
     events = [
         *Events.select(
-            ["task", "job", "label", "issue", "comment", "dataset_export", "backup_export"]
+            [
+                "task",
+                "job",
+                "label",
+                "issue",
+                "comment",
+                "dataset_export",
+                "dataset_import",
+                "backup_export",
+                "backup_import",
+                "task_initialization",
+                "quality_report",
+                "consensus_merge",
+            ]
         ),
         event_name(action="update", resource="project"),
         event_name(action="delete", resource="project"),

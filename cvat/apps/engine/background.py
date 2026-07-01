@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import Any
 from urllib.parse import quote
 from uuid import uuid4
 
@@ -57,6 +58,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.engine.rq import (
+    BaseRQMeta,
     ExportRequestId,
     ExportRQMeta,
     ImportRequestId,
@@ -79,6 +81,7 @@ from cvat.apps.engine.utils import (
     sendfile,
 )
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
+from cvat.apps.organizations.models import Organization
 from cvat.apps.redis_handler.background import AbstractRequestManager
 
 slogger = ServerLogManager(__name__)
@@ -236,8 +239,9 @@ class BaseResourceExporter(AbstractRequestManager):
 
     def build_meta(self, *, request_id):
         return ExportRQMeta.build_for(
-            request=self.request,
-            db_obj=self.db_instance,
+            uuid=self.request.uuid,
+            user=self.request.user,
+            instance=self.db_instance,
             result_url=(
                 self.make_result_url(request_id=request_id)
                 if self.export_args.location_config.location != Location.CLOUD_STORAGE
@@ -708,7 +712,7 @@ class BackupImporter(BaseResourceImporter):
 
     @dataclass
     class ImportArgs(BaseResourceImporter.ImportArgs):
-        org_id: int | None
+        organization: Organization | None
 
     def __init__(
         self,
@@ -723,9 +727,16 @@ class BackupImporter(BaseResourceImporter):
     def init_request_args(self) -> None:
         super().init_request_args()
 
+        organization_id = getattr(self.request.iam_context["organization"], "id", None)
+
+        if organization_id is None:
+            organization = None
+        else:
+            organization = Organization.objects.get(id=organization_id)
+
         self.import_args: BackupImporter.ImportArgs = self.ImportArgs(
             **self.import_args.to_dict(),
-            org_id=getattr(self.request.iam_context["organization"], "id", None),
+            organization=organization,
         )
 
     def build_request_id(self):
@@ -735,6 +746,18 @@ class BackupImporter(BaseResourceImporter):
             id=uuid4(),
             subresource=RequestSubresource.BACKUP,
         ).render()
+
+    def build_meta(self, *, request_id: str) -> dict[str, Any]:
+        organization = self.import_args.organization
+        return BaseRQMeta.build(
+            user=self.request.user,
+            uuid=self.request.uuid,
+            organization_id=organization.id if organization else None,
+            organization_slug=organization.slug if organization else None,
+            project_id=None,
+            task_id=None,
+            job_id=None,
+        )
 
     def _get_payload_file(self):
         # Common serializer is not used to not break API
@@ -754,7 +777,7 @@ class BackupImporter(BaseResourceImporter):
         self.callback_args = (
             str(self.tmp_dir / self.import_args.filename),
             self.user_id,
-            self.import_args.org_id,
+            self.import_args.organization.id if self.import_args.organization else None,
         )
 
     def finalize_request(self):

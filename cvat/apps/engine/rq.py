@@ -7,7 +7,7 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
 from types import NoneType
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self
 from uuid import UUID
 
 import attrs
@@ -151,7 +151,7 @@ class AbstractRQMeta(metaclass=ABCMeta):
         return self._meta
 
     @classmethod
-    def for_job(cls, job: RQJob):
+    def for_job(cls, job: RQJob) -> Self:
         return cls(job=job, meta=job.meta)
 
     @classmethod
