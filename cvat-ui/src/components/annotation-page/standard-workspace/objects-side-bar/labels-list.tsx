@@ -80,15 +80,9 @@ function LabelsListComponent(): JSX.Element {
             const { states, activatedStateID } = relevantAppState.annotation.annotations;
             const { activeShapeType, activeObjectType } = relevantAppState.annotation.drawing;
             const { showPrivateAttributes } = relevantAppState.settings.workspace;
-            const { activeControl } = relevantAppState.annotation.canvas;
 
-            // NCP mode: when idle and no annotation is selected, open the RabbitControl
-            // popover for the shortcut's label instead of changing the default draw label.
-            if (!showPrivateAttributes){
-                if (Number.isInteger(activatedStateID)){
-                    message.warning("Alreading adding a label")
-                    return;
-                }
+            // NCP mode: when idle and no annotation is selected, select a label and start drawing
+            if (!showPrivateAttributes && !Number.isInteger(activatedStateID)){
                 window.dispatchEvent(new CustomEvent('ncp:select-label', { detail: { label } }));
                 return;
             }
