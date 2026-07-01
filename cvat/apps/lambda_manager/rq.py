@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+from uuid import UUID
+
+from django.contrib.auth.models import User
 from django.db.models import Model
 
 from cvat.apps.engine.rq import (
@@ -12,7 +15,6 @@ from cvat.apps.engine.rq import (
     MutableRQMetaAttribute,
     RQJobMetaField,
 )
-from cvat.apps.engine.types import ExtendedRequest
 
 
 class LambdaRQMeta(BaseRQMeta):
@@ -28,11 +30,16 @@ class LambdaRQMeta(BaseRQMeta):
     def build_for(
         cls,
         *,
-        request: ExtendedRequest,
-        db_obj: Model,
+        user: User,
+        uuid: UUID,
+        instance: Model,
         function_id: str,
     ):
-        base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
+        base_meta = BaseRQMeta.build_from_instance(
+            user=user,
+            uuid=uuid,
+            instance=instance,
+        )
         return {
             **base_meta,
             RQJobMetaField.FUNCTION_ID: function_id,

@@ -161,7 +161,11 @@ class AbstractRequestManager(metaclass=ABCMeta):
         return None
 
     def build_meta(self, *, request_id: str) -> dict[str, Any]:
-        return BaseRQMeta.build(request=self.request, db_obj=self.db_instance)
+        return BaseRQMeta.build_from_instance(
+            user=self.request.user,
+            uuid=self.request.uuid,
+            instance=self.db_instance,
+        )
 
     def setup_new_job(self, queue: DjangoRQ, request_id: str, /, **kwargs):
         with get_rq_lock_by_user(queue, self.user_id):
