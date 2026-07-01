@@ -263,3 +263,5 @@ For the latest product releases, feature walkthroughs, and all things CVAT see:
 
 [discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
 [discord-url]: https://discord.gg/fNR3eXfk6C
+
+...
