@@ -222,8 +222,14 @@ livenessProbe:
     - manage.py
     - workerprobe
     {{- range .args }}
-    - {{ . }}
+    - {{ . | quote }}
     {{- end }}
 {{ toYaml (omit .livenessProbe "enabled") | indent 2}}
 {{- end }}
 {{- end }}
+
+{{- define "cvat.backend.worker.livenessProbe.workers" -}}
+{{- $numProcs := int (default 1 .numProcs) -}}
+{{- $numWorkers := int (default 1 .numWorkers) -}}
+{{- mul $numProcs $numWorkers -}}
+{{- end -}}

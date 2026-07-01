@@ -11,7 +11,6 @@ import logging
 import os
 import random
 import shutil
-import sysconfig
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
@@ -43,7 +42,6 @@ from django.test import SimpleTestCase, override_settings
 from pdf2image import convert_from_bytes
 from PIL import Image
 from pycocotools import coco as coco_loader
-from pyunpack import Archive
 from rest_framework import status
 from rest_framework.test import APIClient
 from rq.job import Job as RQJob
@@ -83,6 +81,7 @@ from cvat.apps.engine.tests.utils import (
     generate_video_file,
     get_paginated_collection,
 )
+from cvat.apps.engine.utils import extract_with_patool
 from cvat.apps.redis_handler.serializers import RequestStatus
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.utils import MemOpenable, PcdReader, find_related_images
@@ -4136,8 +4135,7 @@ class TaskDataAPITestCase(ApiTestBase):
     @staticmethod
     def _extract_rar_archive(archive):
         with tempfile.TemporaryDirectory(dir=settings.TMP_FILES_ROOT) as archive_dir:
-            patool_path = os.path.join(sysconfig.get_path("scripts"), "patool")
-            Archive(archive).extractall_patool(archive_dir, patool_path)
+            extract_with_patool(archive, archive_dir)
 
             images = [
                 (image, Image.open(os.path.join(archive_dir, image)))

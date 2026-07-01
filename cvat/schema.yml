@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.68.1
+  version: 2.69.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -438,6 +438,10 @@ paths:
   /api/auth/register:
     post:
       operationId: auth_create_register
+      description: |-
+        Registers a new user.
+
+        Accepts the following POST parameters: username, email, password1, password2.
       tags:
       - auth
       requestBody:
@@ -8679,6 +8683,13 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/LabelMappingEntryRequest'
           description: Label mapping from the model to the task labels
+        roi:
+          type: array
+          items:
+            type: integer
+          description: Region of interest as [xtl, ytl, xbr, ybr]
+          maxItems: 4
+          minItems: 4
       required:
       - function
       - task

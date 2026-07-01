@@ -22,13 +22,13 @@ jobs:
       startsWith(github.event.pull_request.head.ref, 'dependabot/pip/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -73,9 +73,9 @@ jobs:
       - name: Generate authentication token
         if: steps.changes.outputs.changed == 'true'
         id: gen-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
-          app-id: "${{ secrets.CVAT_BOT_APP_ID }}"
+          client-id: "${{ secrets.CVAT_BOT_CLIENT_ID }}"
           private-key: "${{ secrets.CVAT_BOT_PRIVATE_KEY }}"
 
       - name: Commit regenerated requirements

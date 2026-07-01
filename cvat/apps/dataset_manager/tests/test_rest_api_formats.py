@@ -874,7 +874,6 @@ class TaskDumpUploadTest(_DbTestBase):
         test_cases = ["all", "first"]
 
         for dump_format_name in dump_formats:
-
             images = self._generate_task_images(10)
             task = self._create_task(tasks["change overlap and segment size"], images)
             task_id = task["id"]
@@ -1840,10 +1839,10 @@ class ExportBehaviorTest(_DbTestBase):
 
             with (
                 patch(
-                    "cvat.apps.redis_handler.background.get_export_cache_lock",
+                    "cvat.apps.engine.background.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
                 ),
-                patch("cvat.apps.redis_handler.background.osp.exists") as mock_osp_exists,
+                patch("cvat.apps.engine.background.osp.exists") as mock_osp_exists,
                 TemporaryDirectory() as temp_dir,
             ):
                 mock_osp_exists.side_effect = patched_osp_exists
