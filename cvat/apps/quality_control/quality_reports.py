@@ -233,7 +233,7 @@ def _get_requirement_confusion_matrix(
     if not group_report:
         return None
 
-    confusion_matrix = group_report.comparison_summary.annotations.confusion_matrix
+    confusion_matrix = group_report.comparison_summary.confusion_matrix
     if not _has_downloadable_confusion_matrix(confusion_matrix):
         return None
 
@@ -319,7 +319,7 @@ def prepare_confusion_matrices_archive_for_downloading(db_report: models.Quality
                 archive_path=_make_unique_group_archive_path(group_name, used_paths),
                 scope="group",
                 name=group_name,
-                confusion_matrix=group_report.comparison_summary.annotations.confusion_matrix,
+                confusion_matrix=group_report.comparison_summary.confusion_matrix,
                 requirement_id=_get_group_requirement_id(group_report),
             )
 

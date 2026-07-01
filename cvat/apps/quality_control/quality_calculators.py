@@ -13,8 +13,7 @@ from django.db import transaction
 from django.db.models import OuterRef, Subquery, prefetch_related_objects
 
 from cvat.apps.engine.filters import JsonLogicFilter
-from cvat.apps.engine.frame_provider import TaskFrameProvider
-from cvat.apps.engine.model_utils import bulk_create
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.models import (
     Image,
     Job,
@@ -23,18 +22,17 @@ from cvat.apps.engine.models import (
     Task,
     ValidationMode,
 )
-from cvat.apps.engine.utils import take_by, transaction_with_repeatable_read
+from cvat.apps.engine.utils import take_by
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
     AnnotationConflict,
     ComparisonParameters,
     ComparisonReport,
-    ComparisonReportAnnotationComponentsSummary,
     ComparisonReportAnnotationsSummary,
+    ComparisonReportFrameComparisonSummary,
     ComparisonReportFrameSummary,
     ComparisonReportJobStats,
     ComparisonReportParameters,
-    ComparisonReportRequirementComparisonSummary,
     ComparisonReportRequirementSummary,
     ComparisonReportSummary,
     ComparisonReportTaskStats,
@@ -42,12 +40,14 @@ from cvat.apps.quality_control.comparison_report import (
 )
 from cvat.apps.quality_control.quality_handlers import (
     DatasetQualityEstimator,
+    build_requirement_comparison_summary,
     build_requirement_report,
     build_requirements_summary,
     merge_frame_summaries,
     resolve_effective_requirements,
 )
 from cvat.apps.quality_control.quality_reports import JobDataProvider, QualitySettingsManager
+from cvat.utils import django_database as db_utils
 
 _DEFAULT_FETCH_CHUNK_SIZE = 1000
 
@@ -75,7 +75,7 @@ class TaskQualityCalculator:
     }
 
     def compute_report(self, task: Task | int) -> models.QualityReport | None:
-        with transaction_with_repeatable_read():
+        with db_utils.transaction_with_repeatable_read():
             if isinstance(task, int):
                 task = Task.objects.select_related("data").get(id=task)
 
@@ -256,9 +256,7 @@ class TaskQualityCalculator:
         task_total_frames = 0  # in included and non-checkable jobs
         task_conflicts: list[AnnotationConflict] = []
         task_frame_results: dict[int, ComparisonReportFrameSummary] = {}
-        task_frame_results_counts = {}
-        task_group_frame_results: dict[str, dict[int, ComparisonReportFrameSummary]] = {}
-        task_group_frame_counts: dict[str, dict[int, int]] = {}
+        task_group_frame_results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
         task_group_parameters: dict[str, dict] = {}
         for r in job_reports.values():
             task_validated_frames.update(r.comparison_summary.frames)
@@ -268,39 +266,28 @@ class TaskQualityCalculator:
 
             for frame_id, job_frame_result in r.frame_results.items():
                 task_frame_result = task_frame_results.get(frame_id)
-                frame_results_count = task_frame_results_counts.get(frame_id, 0)
 
                 if task_frame_result is None:
                     task_frame_result = deepcopy(job_frame_result)
                 else:
-                    merge_frame_summaries(
-                        task_frame_result,
-                        job_frame_result,
-                        current_count=frame_results_count,
+                    task_frame_result.conflicts = deduplicate_annotation_conflicts(
+                        [*task_frame_result.conflicts, *job_frame_result.conflicts]
                     )
 
-                task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
 
             for group_name, group_report in (r.groups or {}).items():
                 task_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
                 group_frame_results = task_group_frame_results.setdefault(group_name, {})
-                group_frame_counts = task_group_frame_counts.setdefault(group_name, {})
 
                 for frame_id, group_frame_result in (group_report.frame_results or {}).items():
                     merged_group_frame_result = group_frame_results.get(frame_id)
-                    group_frame_count = group_frame_counts.get(frame_id, 0)
 
                     if merged_group_frame_result is None:
                         merged_group_frame_result = deepcopy(group_frame_result)
                     else:
-                        merge_frame_summaries(
-                            merged_group_frame_result,
-                            group_frame_result,
-                            current_count=group_frame_count,
-                        )
+                        merge_frame_summaries(merged_group_frame_result, group_frame_result)
 
-                    group_frame_counts[frame_id] = group_frame_count + 1
                     group_frame_results[frame_id] = merged_group_frame_result
 
         task_conflicts = deduplicate_annotation_conflicts(task_conflicts)
@@ -309,7 +296,6 @@ class TaskQualityCalculator:
             group_name: build_requirement_report(
                 requirement=task_group_parameters[group_name],
                 frame_results=group_frame_results,
-                total_frames=task_total_frames,
             )
             for group_name, group_frame_results in task_group_frame_results.items()
         }
@@ -322,7 +308,6 @@ class TaskQualityCalculator:
                 build_requirement_report(
                     requirement=requirement,
                     frame_results={},
-                    total_frames=task_total_frames,
                 ),
             )
 
@@ -372,7 +357,7 @@ class TaskQualityCalculator:
             )
             db_job_reports.append(db_job_report)
 
-        db_job_reports = bulk_create(models.QualityReport, db_job_reports)
+        db_job_reports = db_utils.bulk_create(models.QualityReport, db_job_reports)
         db_task_report.children.add(*db_job_reports)
 
         db_conflicts = []
@@ -389,7 +374,7 @@ class TaskQualityCalculator:
                 )
                 db_conflicts.append(db_conflict)
 
-        db_conflicts = bulk_create(models.AnnotationConflict, db_conflicts)
+        db_conflicts = db_utils.bulk_create(models.AnnotationConflict, db_conflicts)
 
         db_ann_ids = []
         db_conflicts_iter = iter(db_conflicts)
@@ -405,7 +390,7 @@ class TaskQualityCalculator:
                     )
                     db_ann_ids.append(db_ann_id)
 
-        bulk_create(models.AnnotationId, db_ann_ids)
+        db_utils.bulk_create(models.AnnotationId, db_ann_ids)
 
         return db_task_report
 
@@ -623,10 +608,7 @@ class ProjectQualityCalculator:
         project_conflicts: list[AnnotationConflict] = []
         project_group_parameters: dict[str, dict] = {}
         project_group_annotations: dict[str, ComparisonReportAnnotationsSummary] = {}
-        project_group_components: dict[str, ComparisonReportAnnotationComponentsSummary] = {}
         project_group_conflicts: dict[str, list[AnnotationConflict]] = {}
-        project_group_total_frames: Counter[str] = Counter()
-        project_group_validated_frames: Counter[str] = Counter()
         for task_id, r in task_reports.items():
             if task_id not in included_tasks:
                 continue
@@ -638,22 +620,17 @@ class ProjectQualityCalculator:
 
             for group_name, group_report in (r.groups or {}).items():
                 project_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
-                project_group_total_frames[
-                    group_name
-                ] += group_report.comparison_summary.total_frames
-                project_group_validated_frames[
-                    group_name
-                ] += group_report.comparison_summary.frame_count
+                group_total_frames = r.comparison_summary.total_frames
+                group_validated_frames = len(group_report.frame_results or {})
 
-                group_weight = 1 / (group_report.comparison_summary.frame_share or 1)
+                group_frame_share = group_validated_frames / (group_total_frames or 1)
+                group_weight = 1 / (group_frame_share or 1)
+                group_annotations = ComparisonReportAnnotationsSummary.from_confusion_matrix(
+                    group_report.comparison_summary.confusion_matrix
+                )
                 project_group_annotations.setdefault(
                     group_name, ComparisonReportAnnotationsSummary.create_empty()
-                ).accumulate(group_report.comparison_summary.annotations, weight=group_weight)
-                project_group_components.setdefault(
-                    group_name, ComparisonReportAnnotationComponentsSummary.create_empty()
-                ).accumulate(
-                    group_report.comparison_summary.annotation_components, weight=group_weight
-                )
+                ).accumulate(group_annotations, weight=group_weight)
                 project_group_conflicts.setdefault(group_name, []).extend(group_report.conflicts)
 
         requirement_groups = {}
@@ -663,19 +640,10 @@ class ProjectQualityCalculator:
             )
             requirement_groups[group_name] = ComparisonReportRequirementSummary(
                 parameters=parameters,
-                comparison_summary=ComparisonReportRequirementComparisonSummary(
-                    total_frames=project_group_total_frames[group_name],
-                    frame_count=project_group_validated_frames[group_name],
-                    frames=None,
-                    conflict_count=len(group_conflicts),
-                    warning_count=0,
-                    error_count=len(group_conflicts),
-                    conflicts_by_type=Counter(c.type for c in group_conflicts),
+                comparison_summary=build_requirement_comparison_summary(
+                    requirement=parameters,
                     annotations=project_group_annotations[group_name],
-                    annotation_components=project_group_components[group_name],
-                    tasks=None,
-                    jobs=None,
-                    requirements=None,
+                    conflicts=group_conflicts,
                 ),
                 frame_results=None,
             )
@@ -689,7 +657,6 @@ class ProjectQualityCalculator:
                 build_requirement_report(
                     requirement=requirement,
                     frame_results={},
-                    total_frames=total_frames,
                     include_frame_results=False,
                 ),
             )

@@ -5,6 +5,8 @@
 import requests
 import requests.utils
 from django.conf import settings
+from rest_framework import status
+from rest_framework.exceptions import APIException
 
 from cvat import __version__
 
@@ -21,6 +23,14 @@ if settings.SMOKESCREEN_ENABLED:
         "http": "http://localhost:4750",
         "https": "http://localhost:4750",
     }
+
+
+class ResourceIsBusyApiException(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = (
+        "This resource is currently busy with another operation. " "Please try again in a moment."
+    )
+    default_code = "database_resource_busy"
 
 
 def make_requests_session() -> requests.Session:

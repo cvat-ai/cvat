@@ -552,6 +552,29 @@ class ComparisonReportAnnotationsSummary(ReportNode):
             extra_count=self.extra_count,
         )
 
+    @classmethod
+    def from_confusion_matrix(
+        cls, confusion_matrix: ConfusionMatrix | None
+    ) -> ComparisonReportAnnotationsSummary:
+        if not confusion_matrix or confusion_matrix.rows is None:
+            return cls.create_empty()
+
+        rows = confusion_matrix.rows
+        matched_ann_counts = np.diag(rows)
+        ds_ann_counts = np.sum(rows, axis=1)
+        gt_ann_counts = np.sum(rows, axis=0)
+        unmatched_idx = -1
+
+        return cls(
+            valid_count=np.sum(matched_ann_counts),
+            missing_count=np.sum(rows[unmatched_idx, :]),
+            extra_count=np.sum(rows[:, unmatched_idx]),
+            total_count=np.sum(rows),
+            ds_count=np.sum(ds_ann_counts[:unmatched_idx]),
+            gt_count=np.sum(gt_ann_counts[:unmatched_idx]),
+            confusion_matrix=confusion_matrix,
+        )
+
     def accumulate(self, other: ComparisonReportAnnotationsSummary, *, weight: float = 1):
         for field in [
             "valid_count",
@@ -596,114 +619,6 @@ class ComparisonReportAnnotationsSummary(ReportNode):
             ds_count=0,
             gt_count=0,
             confusion_matrix=None,
-        )
-
-
-@define(kw_only=True, init=False, slots=False)
-class ComparisonReportAnnotationShapeSummary(ReportNode):
-    valid_count: int
-    missing_count: int
-    extra_count: int
-    total_count: int
-    ds_count: int
-    gt_count: int
-    # TODO: total_iou: float
-    mean_iou: float
-
-    @property
-    def accuracy(self) -> float:
-        return self.valid_count / (self.total_count or 1)
-
-    def accumulate(self, other: ComparisonReportAnnotationShapeSummary, *, weight: float = 1):
-        for field in [
-            "valid_count",
-            "missing_count",
-            "extra_count",
-            "total_count",
-            "ds_count",
-            "gt_count",
-            # TODO: "total_iou",
-        ]:
-            setattr(self, field, getattr(self, field) + math.ceil(getattr(other, field) * weight))
-
-    @classmethod
-    def from_dict(cls, d: dict):
-        return cls(
-            valid_count=d["valid_count"],
-            missing_count=d["missing_count"],
-            extra_count=d["extra_count"],
-            total_count=d["total_count"],
-            ds_count=d["ds_count"],
-            gt_count=d["gt_count"],
-            # TODO: total_iou=d.get("total_iou"),
-            mean_iou=d.get("mean_iou"),
-        )
-
-    @classmethod
-    def create_empty(cls) -> ComparisonReportAnnotationShapeSummary:
-        return cls(
-            valid_count=0,
-            missing_count=0,
-            extra_count=0,
-            total_count=0,
-            ds_count=0,
-            gt_count=0,
-            mean_iou=0,
-        )
-
-
-@define(kw_only=True, init=False, slots=False)
-class ComparisonReportAnnotationLabelSummary(ReportNode):
-    valid_count: int
-    invalid_count: int
-    total_count: int
-
-    @property
-    def accuracy(self) -> float:
-        return self.valid_count / (self.total_count or 1)
-
-    def accumulate(self, other: ComparisonReportAnnotationLabelSummary, *, weight: float = 1):
-        for field in ["valid_count", "total_count", "invalid_count"]:
-            setattr(self, field, getattr(self, field) + math.ceil(getattr(other, field) * weight))
-
-    @classmethod
-    def from_dict(cls, d: dict):
-        return cls(
-            valid_count=d["valid_count"],
-            invalid_count=d["invalid_count"],
-            total_count=d["total_count"],
-        )
-
-    @classmethod
-    def create_empty(cls) -> ComparisonReportAnnotationLabelSummary:
-        return cls(
-            valid_count=0,
-            invalid_count=0,
-            total_count=0,
-        )
-
-
-@define(kw_only=True, init=False, slots=False)
-class ComparisonReportAnnotationComponentsSummary(ReportNode):
-    shape: ComparisonReportAnnotationShapeSummary
-    label: ComparisonReportAnnotationLabelSummary
-
-    def accumulate(self, other: ComparisonReportAnnotationComponentsSummary, *, weight: float = 1):
-        self.shape.accumulate(other.shape, weight=weight)
-        self.label.accumulate(other.label, weight=weight)
-
-    @classmethod
-    def from_dict(cls, d: dict):
-        return cls(
-            shape=ComparisonReportAnnotationShapeSummary.from_dict(d["shape"]),
-            label=ComparisonReportAnnotationLabelSummary.from_dict(d["label"]),
-        )
-
-    @classmethod
-    def create_empty(cls) -> ComparisonReportAnnotationComponentsSummary:
-        return cls(
-            shape=ComparisonReportAnnotationShapeSummary.create_empty(),
-            label=ComparisonReportAnnotationLabelSummary.create_empty(),
         )
 
 
@@ -927,17 +842,39 @@ class ComparisonReportSummary(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
-class ComparisonReportRequirementComparisonSummary(ComparisonReportSummary):
-    annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
+class ComparisonReportRequirementComparisonSummary(ReportNode):
+    conflict_count: int
+    warning_count: int
+    error_count: int
+    conflicts_by_type: dict[AnnotationConflictType, int]
+    score: float | None
+    score_components: ComparisonReportScoreComponents
+    confusion_matrix: ConfusionMatrix | None
+
+    def _value_serializer(self, v):
+        if isinstance(v, AnnotationConflictType):
+            return str(v)
+        else:
+            return super()._value_serializer(v)
 
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
-            **cls._from_dict_kwargs(d),
-            annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
-            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
-                d["annotation_components"]
+            conflict_count=d["conflict_count"],
+            warning_count=d.get("warning_count", 0),
+            error_count=d.get("error_count", 0),
+            conflicts_by_type={
+                _parse_annotation_conflict_type(k): v
+                for k, v in d.get("conflicts_by_type", {}).items()
+            },
+            score=d.get("score"),
+            score_components=ComparisonReportScoreComponents.from_dict(
+                d.get("score_components", {})
+            ),
+            confusion_matrix=(
+                ConfusionMatrix.from_dict(d["confusion_matrix"])
+                if d.get("confusion_matrix")
+                else None
             ),
         )
 
@@ -945,9 +882,6 @@ class ComparisonReportRequirementComparisonSummary(ComparisonReportSummary):
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReportFrameSummary(ReportNode):
     conflicts: list[AnnotationConflict]
-
-    annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
 
     @cached_property
     def conflict_count(self) -> int:
@@ -989,10 +923,24 @@ class ComparisonReportFrameSummary(ReportNode):
                 else {}
             ),
             conflicts=[AnnotationConflict.from_dict(v) for v in d["conflicts"]],
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
+class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
+    annotations: ComparisonReportAnnotationsSummary
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        frame_summary = ComparisonReportFrameSummary.from_dict(d)
+        return cls(
+            conflicts=frame_summary.conflicts,
+            **{
+                field: getattr(frame_summary, field)
+                for field in frame_summary._get_cached_fields()
+                if field in frame_summary.__dict__
+            },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
-            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
-                d["annotation_components"]
-            ),
         )
 
 
@@ -1000,7 +948,7 @@ class ComparisonReportFrameSummary(ReportNode):
 class ComparisonReportRequirementSummary(ReportNode):
     parameters: dict[str, Any]
     comparison_summary: ComparisonReportRequirementComparisonSummary
-    frame_results: dict[int, ComparisonReportFrameSummary] | None
+    frame_results: dict[int, ComparisonReportFrameComparisonSummary] | None
 
     @property
     def conflicts(self) -> list[AnnotationConflict]:
@@ -1020,7 +968,7 @@ class ComparisonReportRequirementSummary(ReportNode):
             ),
             frame_results=(
                 {
-                    int(k): ComparisonReportFrameSummary.from_dict(v)
+                    int(k): ComparisonReportFrameComparisonSummary.from_dict(v)
                     for k, v in d["frame_results"].items()
                 }
                 if d.get("frame_results") is not None

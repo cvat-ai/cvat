@@ -1099,13 +1099,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        group_annotations = report_data["groups"][requirement_name]["comparison_summary"][
-            "annotations"
-        ]
-        assert group_annotations["valid_count"] == 1
-        assert group_annotations["missing_count"] == 0
-        assert group_annotations["extra_count"] == 0
-        assert group_annotations["total_count"] == 1
+        group_summary = report_data["groups"][requirement_name]["comparison_summary"]
+        assert "annotations" not in group_summary
+        assert group_summary["score"] == 1.0
+        assert group_summary["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
 
         assert "annotations" not in report_data["comparison_summary"]
         assert report_data["comparison_summary"]["conflict_count"] == 0
@@ -1211,21 +1212,20 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        all_annotations = report_data["groups"][all_requirement_name]["comparison_summary"][
-            "annotations"
-        ]
-        car_annotations = report_data["groups"][car_requirement_name]["comparison_summary"][
-            "annotations"
-        ]
-        person_annotations = report_data["groups"][person_requirement_name]["comparison_summary"][
-            "annotations"
-        ]
+        all_summary = report_data["groups"][all_requirement_name]["comparison_summary"]
+        car_summary = report_data["groups"][car_requirement_name]["comparison_summary"]
+        person_summary = report_data["groups"][person_requirement_name]["comparison_summary"]
 
-        assert all_annotations["valid_count"] == 2
-        assert all_annotations["missing_count"] == 0
-        assert all_annotations["extra_count"] == 0
-        assert car_annotations["valid_count"] == 1
-        assert person_annotations["valid_count"] == 1
+        assert "annotations" not in all_summary
+        assert all_summary["score_components"] == {
+            "valid_count": 2,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
+        assert "annotations" not in car_summary
+        assert car_summary["score_components"]["valid_count"] == 1
+        assert "annotations" not in person_summary
+        assert person_summary["score_components"]["valid_count"] == 1
 
     def test_task_report_metrics_change_after_gt_annotations_change(self, admin_user):
         task_id, _ = create_task(
@@ -1380,10 +1380,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        group_annotations = report_data["groups"][requirement_name]["comparison_summary"][
-            "annotations"
-        ]
-        assert group_annotations["total_count"] == 0
+        group_summary = report_data["groups"][requirement_name]["comparison_summary"]
+        assert "annotations" not in group_summary
+        assert sum(group_summary["score_components"].values()) == 0
         assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_data_applies_attribute_comparison_rules(self, admin_user):
@@ -1584,16 +1583,22 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
+        assert "annotations" not in report_data["groups"][first_leaf_name]["comparison_summary"]
         assert (
-            report_data["groups"][first_leaf_name]["comparison_summary"]["annotations"][
-                "total_count"
-            ]
+            sum(
+                report_data["groups"][first_leaf_name]["comparison_summary"][
+                    "score_components"
+                ].values()
+            )
             == 1
         )
+        assert "annotations" not in report_data["groups"][second_leaf_name]["comparison_summary"]
         assert (
-            report_data["groups"][second_leaf_name]["comparison_summary"]["annotations"][
-                "total_count"
-            ]
+            sum(
+                report_data["groups"][second_leaf_name]["comparison_summary"][
+                    "score_components"
+                ].values()
+            )
             == 1
         )
         assert "annotations" not in report_data["comparison_summary"]
@@ -1700,15 +1705,26 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert report["summary"]["requirements"] == expected_requirements_summary
         assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
         assert (
-            report_data["groups"][parent_requirement_name]["comparison_summary"]["annotations"][
-                "total_count"
-            ]
+            "annotations"
+            not in report_data["groups"][parent_requirement_name]["comparison_summary"]
+        )
+        assert (
+            sum(
+                report_data["groups"][parent_requirement_name]["comparison_summary"][
+                    "score_components"
+                ].values()
+            )
             == 1
         )
         assert (
-            report_data["groups"][leaf_requirement_name]["comparison_summary"]["annotations"][
-                "total_count"
-            ]
+            "annotations" not in report_data["groups"][leaf_requirement_name]["comparison_summary"]
+        )
+        assert (
+            sum(
+                report_data["groups"][leaf_requirement_name]["comparison_summary"][
+                    "score_components"
+                ].values()
+            )
             == 1
         )
         assert "annotations" not in report_data["comparison_summary"]
@@ -1832,6 +1848,19 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "job_filter": updated_settings["job_filter"],
         }
         assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        report_level_summary_fields = {
+            "frames",
+            "total_frames",
+            "frame_count",
+            "frame_share",
+            "mean_conflict_count",
+            "tasks",
+            "jobs",
+            "requirements",
+        }
+        for group in report_data["groups"].values():
+            assert not report_level_summary_fields & set(group["comparison_summary"])
+
         parameters = report_data["groups"][enabled_requirement_name]["parameters"]
         assert parameters["requirement_id"] == enabled_requirement_id
         assert "source_requirement_id" not in parameters
@@ -1849,7 +1878,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         disabled_summary = disabled_group["comparison_summary"]
         assert disabled_summary["warning_count"] == 0
         assert disabled_summary["error_count"] == disabled_summary["conflict_count"] == 0
-        assert disabled_summary["annotations"]["total_count"] == 0
+        assert "annotations" not in disabled_summary
+        assert disabled_summary["score"] == 0.0
+        assert disabled_summary["score_components"] == {
+            "valid_count": 0,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
+        assert disabled_summary["confusion_matrix"] is None
         assert disabled_group["frame_results"] == {}
         report_summary = report_data["comparison_summary"]
         assert report_summary["warning_count"] == 0

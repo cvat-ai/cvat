@@ -30,10 +30,8 @@ from cvat.apps.quality_control.comparison_report import (
     AnnotationId,
     ComparisonParameters,
     ComparisonReport,
-    ComparisonReportAnnotationComponentsSummary,
-    ComparisonReportAnnotationLabelSummary,
-    ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
+    ComparisonReportFrameComparisonSummary,
     ComparisonReportFrameSummary,
     ComparisonReportParameters,
     ComparisonReportRequirementComparisonSummary,
@@ -54,7 +52,7 @@ if TYPE_CHECKING:
 
 @attrs.define
 class RequirementFrameResult:
-    summary: ComparisonReportFrameSummary
+    summary: ComparisonReportFrameComparisonSummary
     matched_pairs: list[tuple[dm.Annotation, dm.Annotation]] = attrs.Factory(list)
 
 
@@ -349,55 +347,64 @@ def merge_annotations_summary(
 
 
 def merge_frame_summaries(
-    target: ComparisonReportFrameSummary,
-    other: ComparisonReportFrameSummary,
-    *,
-    current_count: int,
+    target: ComparisonReportFrameComparisonSummary,
+    other: ComparisonReportFrameComparisonSummary,
 ) -> None:
     target.conflicts = deduplicate_annotation_conflicts([*target.conflicts, *other.conflicts])
     merge_annotations_summary(target.annotations, other.annotations)
-    target.annotation_components.accumulate(other.annotation_components)
-    target.annotation_components.shape.mean_iou = (
-        target.annotation_components.shape.mean_iou * current_count
-        + other.annotation_components.shape.mean_iou
-    ) / (current_count + 1)
+
+
+def _get_requirement_metric(requirement: Any) -> str:
+    metric = _get_requirement_field(
+        requirement,
+        "target_metric",
+        "metric",
+        default=models.QualityTargetMetricType.ACCURACY,
+    )
+    return str(metric or models.QualityTargetMetricType.ACCURACY)
+
+
+def build_requirement_comparison_summary(
+    *,
+    requirement: Any,
+    annotations: ComparisonReportAnnotationsSummary,
+    conflicts: list[AnnotationConflict],
+) -> ComparisonReportRequirementComparisonSummary:
+    metric = _get_requirement_metric(requirement)
+    score = getattr(annotations, metric, None)
+
+    return ComparisonReportRequirementComparisonSummary(
+        conflict_count=len(conflicts),
+        warning_count=0,
+        error_count=len(conflicts),
+        conflicts_by_type=Counter(c.type for c in conflicts),
+        score=float(score) if score is not None else None,
+        score_components=annotations.to_score_components(),
+        confusion_matrix=annotations.confusion_matrix,
+    )
 
 
 def build_requirement_report(
     *,
     requirement: Any,
-    frame_results: dict[int, ComparisonReportFrameSummary],
-    total_frames: int,
+    frame_results: dict[int, ComparisonReportFrameComparisonSummary],
     include_frame_results: bool = True,
 ) -> ComparisonReportRequirementSummary:
     conflicts: list[AnnotationConflict] = []
     annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
-    annotation_components = ComparisonReportAnnotationComponentsSummary.create_empty()
-    mean_ious = []
 
     for frame_result in frame_results.values():
         conflicts += frame_result.conflicts
         merge_annotations_summary(annotations_summary, frame_result.annotations)
-        annotation_components.accumulate(frame_result.annotation_components)
-        mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
-    annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
     conflicts = deduplicate_annotation_conflicts(conflicts)
 
     return ComparisonReportRequirementSummary(
         parameters=serialize_requirement_parameters(requirement),
-        comparison_summary=ComparisonReportRequirementComparisonSummary(
-            frames=sorted(frame_results),
-            total_frames=total_frames,
-            conflict_count=len(conflicts),
-            warning_count=0,
-            error_count=len(conflicts),
-            conflicts_by_type=Counter(c.type for c in conflicts),
+        comparison_summary=build_requirement_comparison_summary(
+            requirement=requirement,
             annotations=annotations_summary,
-            annotation_components=annotation_components,
-            tasks=None,
-            jobs=None,
-            requirements=None,
+            conflicts=conflicts,
         ),
         frame_results=deepcopy(frame_results) if include_frame_results else None,
     )
@@ -421,18 +428,17 @@ def build_requirements_summary(
         if not group_report:
             continue
 
-        metric = _get_requirement_field(requirement, "target_metric", "metric")
+        metric = _get_requirement_metric(requirement)
         required_score = _get_requirement_field(
             requirement, "target_metric_threshold", "required_score", default=0
         )
-        annotations = group_report.comparison_summary.annotations
-        actual_score = getattr(annotations, metric, None)
+        actual_score = group_report.comparison_summary.score
         items.append(
             ComparisonReportRequirementSummaryItem(
                 name=group_name,
                 metric=str(metric),
-                score=float(actual_score) if actual_score is not None else None,
-                score_components=annotations.to_score_components(),
+                score=actual_score,
+                score_components=group_report.comparison_summary.score_components,
                 threshold=float(required_score),
                 requirement_id=_get_requirement_field(
                     requirement, "source_requirement_id", "requirement_id"
@@ -523,8 +529,8 @@ class RequirementHandler(ABC):
         }
         return mapping.get(self.requirement.annotation_type, [])
 
-    def _make_empty_frame_summary(self) -> ComparisonReportFrameSummary:
-        return ComparisonReportFrameSummary(
+    def _make_empty_frame_summary(self) -> ComparisonReportFrameComparisonSummary:
+        return ComparisonReportFrameComparisonSummary(
             annotations=ComparisonReportAnnotationsSummary(
                 valid_count=0,
                 missing_count=0,
@@ -539,22 +545,6 @@ class RequirementHandler(ABC):
                     recall=np.array([]),
                     accuracy=np.array([]),
                     jaccard_index=np.array([]),
-                ),
-            ),
-            annotation_components=ComparisonReportAnnotationComponentsSummary(
-                shape=ComparisonReportAnnotationShapeSummary(
-                    valid_count=0,
-                    missing_count=0,
-                    extra_count=0,
-                    total_count=0,
-                    ds_count=0,
-                    gt_count=0,
-                    mean_iou=0,
-                ),
-                label=ComparisonReportAnnotationLabelSummary(
-                    valid_count=0,
-                    invalid_count=0,
-                    total_count=0,
                 ),
             ),
             conflicts=[],
@@ -783,72 +773,6 @@ class RequirementHandler(ABC):
 
         return summary
 
-    def _generate_dataset_annotations_summary(
-        self, frame_summaries: dict[int, ComparisonReportFrameSummary]
-    ) -> tuple[ComparisonReportAnnotationsSummary, ComparisonReportAnnotationComponentsSummary]:
-        # accumulate stats
-        annotation_components = ComparisonReportAnnotationComponentsSummary(
-            shape=ComparisonReportAnnotationShapeSummary(
-                valid_count=0,
-                missing_count=0,
-                extra_count=0,
-                total_count=0,
-                ds_count=0,
-                gt_count=0,
-                mean_iou=0,
-            ),
-            label=ComparisonReportAnnotationLabelSummary(
-                valid_count=0,
-                invalid_count=0,
-                total_count=0,
-            ),
-        )
-        mean_ious = []
-        empty_gt_frames = set()
-        empty_ds_frames = set()
-        confusion_matrix_labels, confusion_matrix, _ = self._make_zero_confusion_matrix()
-
-        for frame_id, frame_result in frame_summaries.items():
-            confusion_matrix += frame_result.annotations.confusion_matrix.rows
-
-            if self.settings.empty_is_annotated and not np.any(
-                frame_result.annotations.confusion_matrix.rows[
-                    np.triu_indices_from(frame_result.annotations.confusion_matrix.rows)
-                ]
-            ):
-                empty_ds_frames.add(frame_id)
-
-            if self.settings.empty_is_annotated and not np.any(
-                frame_result.annotations.confusion_matrix.rows[
-                    np.tril_indices_from(frame_result.annotations.confusion_matrix.rows)
-                ]
-            ):
-                empty_gt_frames.add(frame_id)
-
-            if annotation_components is None:
-                annotation_components = deepcopy(frame_result.annotation_components)
-            else:
-                annotation_components.accumulate(frame_result.annotation_components)
-
-            mean_ious.append(frame_result.annotation_components.shape.mean_iou)
-
-        annotation_summary = self._compute_annotations_summary(
-            confusion_matrix, confusion_matrix_labels
-        )
-
-        if self.settings.empty_is_annotated:
-            # Add virtual annotations for empty frames,
-            # they are not included in the confusion matrix
-            annotation_summary.valid_count += len(empty_ds_frames & empty_gt_frames)
-            annotation_summary.total_count += len(empty_ds_frames | empty_gt_frames)
-            annotation_summary.ds_count += len(empty_ds_frames)
-            annotation_summary.gt_count += len(empty_gt_frames)
-
-        # Cannot be computed in accumulate()
-        annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
-
-        return annotation_summary, annotation_components
-
 
 class TagRequirementHandler(RequirementHandler):
     def match_annotations(
@@ -916,32 +840,10 @@ class TagRequirementHandler(RequirementHandler):
             gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        # Compute summary metrics
-        valid_count = len(matches)
-        missing_count = len(gt_unmatched)
-        extra_count = len(ds_unmatched)
-        total_count = valid_count + len(mismatches) + missing_count + extra_count
-
         return RequirementFrameResult(
-            summary=ComparisonReportFrameSummary(
+            summary=ComparisonReportFrameComparisonSummary(
                 annotations=self._generate_frame_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
-                ),
-                annotation_components=ComparisonReportAnnotationComponentsSummary(
-                    shape=ComparisonReportAnnotationShapeSummary(
-                        valid_count=0,
-                        missing_count=0,
-                        extra_count=0,
-                        total_count=0,
-                        ds_count=0,
-                        gt_count=0,
-                        mean_iou=0,
-                    ),
-                    label=ComparisonReportAnnotationLabelSummary(
-                        valid_count=valid_count,
-                        invalid_count=len(mismatches),
-                        total_count=total_count,
-                    ),
                 ),
                 conflicts=conflicts,
             ),
@@ -975,37 +877,13 @@ class ShapeRequirementHandler(RequirementHandler):
         (
             shape_matches,
             shape_mismatches,
-            shape_gt_unmatched,
-            shape_ds_unmatched,
+            _,
+            _,
             shape_pairwise_distances,
         ) = all_shape_types_result
 
         def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> float | None:
             return self._comparator.get_distance(shape_pairwise_distances, gt_ann, ds_ann)
-
-        _matched_shapes = set(
-            id(shape)
-            for shape_pair in itertools.chain(shape_matches, shape_mismatches)
-            for shape in shape_pair
-        )
-
-        def _find_closest_unmatched_shape(shape: dm.Annotation):
-            this_shape_id = id(shape)
-
-            this_shape_distances = []
-
-            for (gt_shape_id, ds_shape_id), dist in shape_pairwise_distances.items():
-                if gt_shape_id == this_shape_id:
-                    other_shape_id = ds_shape_id
-                elif ds_shape_id == this_shape_id:
-                    other_shape_id = gt_shape_id
-                else:
-                    continue
-
-                this_shape_distances.append((other_shape_id, dist))
-
-            matched_ann, distance = max(this_shape_distances, key=lambda v: v[1], default=(None, 0))
-            return matched_ann, distance
 
         for unmatched_ann in gt_unmatched:
             conflicts.append(
@@ -1036,23 +914,6 @@ class ShapeRequirementHandler(RequirementHandler):
                     ],
                 )
             )
-
-        resulting_distances = [
-            _get_similarity(shape_gt_ann, shape_ds_ann)
-            for shape_gt_ann, shape_ds_ann in itertools.chain(shape_matches, shape_mismatches)
-        ]
-
-        for shape_unmatched_ann in itertools.chain(shape_gt_unmatched, shape_ds_unmatched):
-            shape_matched_ann_id, similarity = _find_closest_unmatched_shape(shape_unmatched_ann)
-            if shape_matched_ann_id is not None:
-                _matched_shapes.add(shape_matched_ann_id)
-            resulting_distances.append(similarity)
-
-        resulting_distances = [
-            sim if sim is not None and (sim >= 0) else 0 for sim in resulting_distances
-        ]
-
-        mean_iou = np.mean(resulting_distances) if resulting_distances else 0
 
         if (
             self.settings.compare_line_orientation
@@ -1157,22 +1018,6 @@ class ShapeRequirementHandler(RequirementHandler):
                         )
                     )
 
-        valid_shapes_count = len(shape_matches) + len(shape_mismatches)
-        missing_shapes_count = len(shape_gt_unmatched)
-        extra_shapes_count = len(shape_ds_unmatched)
-        total_shapes_count = (
-            len(shape_matches)
-            + len(shape_mismatches)
-            + len(shape_gt_unmatched)
-            + len(shape_ds_unmatched)
-        )
-        ds_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_ds_unmatched)
-        gt_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_gt_unmatched)
-
-        valid_labels_count = len(matches)
-        invalid_labels_count = len(mismatches)
-        total_labels_count = valid_labels_count + invalid_labels_count
-
         confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
         for gt_ann, ds_ann in itertools.chain(
             # fully matched annotations - shape, label, attributes
@@ -1185,41 +1030,10 @@ class ShapeRequirementHandler(RequirementHandler):
             gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        if self.settings.empty_is_annotated:
-            # Add virtual annotations for empty frames
-            if not gt_item.annotations and not ds_item.annotations:
-                valid_labels_count = 1
-                total_labels_count = 1
-
-                valid_shapes_count = 1
-                total_shapes_count = 1
-
-            if not ds_item.annotations:
-                ds_shapes_count = 1
-
-            if not gt_item.annotations:
-                gt_shapes_count = 1
-
         return RequirementFrameResult(
-            summary=ComparisonReportFrameSummary(
+            summary=ComparisonReportFrameComparisonSummary(
                 annotations=self._generate_frame_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
-                ),
-                annotation_components=ComparisonReportAnnotationComponentsSummary(
-                    shape=ComparisonReportAnnotationShapeSummary(
-                        valid_count=valid_shapes_count,
-                        missing_count=missing_shapes_count,
-                        extra_count=extra_shapes_count,
-                        total_count=total_shapes_count,
-                        ds_count=ds_shapes_count,
-                        gt_count=gt_shapes_count,
-                        mean_iou=mean_iou,
-                    ),
-                    label=ComparisonReportAnnotationLabelSummary(
-                        valid_count=valid_labels_count,
-                        invalid_count=invalid_labels_count,
-                        total_count=total_labels_count,
-                    ),
                 ),
                 conflicts=conflicts,
             ),
@@ -1244,7 +1058,7 @@ class DatasetQualityEstimator:
         self._ds_dataset = self._ds_data_provider.dm_dataset
         self._gt_dataset = self._gt_data_provider.dm_dataset
 
-        self._results: dict[str, dict[int, ComparisonReportFrameSummary]] = {}
+        self._results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
 
     @staticmethod
     def _merge_annotations_summary(
@@ -1255,12 +1069,10 @@ class DatasetQualityEstimator:
     @classmethod
     def _merge_frame_summaries(
         cls,
-        target: ComparisonReportFrameSummary,
-        other: ComparisonReportFrameSummary,
-        *,
-        current_count: int,
+        target: ComparisonReportFrameComparisonSummary,
+        other: ComparisonReportFrameComparisonSummary,
     ) -> None:
-        merge_frame_summaries(target, other, current_count=current_count)
+        merge_frame_summaries(target, other)
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
         if dataset is self._ds_dataset:
@@ -1370,7 +1182,6 @@ class DatasetQualityEstimator:
         list[AnnotationConflict],
     ]:
         all_frame_results: dict[int, ComparisonReportFrameSummary] = {}
-        frame_result_counts: dict[int, int] = {}
         intersection_frames = []
         conflicts: list[AnnotationConflict] = []
 
@@ -1386,16 +1197,14 @@ class DatasetQualityEstimator:
 
             for frame_id, frame_result in requirement_metrics.items():
                 if frame_id not in all_frame_results:
-                    all_frame_results[frame_id] = deepcopy(frame_result)
-                    frame_result_counts[frame_id] = 1
+                    all_frame_results[frame_id] = ComparisonReportFrameSummary(
+                        conflicts=deepcopy(frame_result.conflicts)
+                    )
                     intersection_frames.append(frame_id)
                 else:
-                    self._merge_frame_summaries(
-                        all_frame_results[frame_id],
-                        frame_result,
-                        current_count=frame_result_counts[frame_id],
+                    all_frame_results[frame_id].conflicts = deduplicate_annotation_conflicts(
+                        [*all_frame_results[frame_id].conflicts, *frame_result.conflicts]
                     )
-                    frame_result_counts[frame_id] += 1
 
         for frame_result in all_frame_results.values():
             conflicts += frame_result.conflicts
@@ -1421,7 +1230,6 @@ class DatasetQualityEstimator:
             requirement.name: build_requirement_report(
                 requirement=requirement,
                 frame_results=self._results.get(requirement.name, {}),
-                total_frames=self._get_total_frames(),
             )
             for requirement in self._requirements
         }

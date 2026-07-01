@@ -1624,11 +1624,20 @@ class TestQualityReportContents(_PermissionTestBase):
             assert response.status == HTTPStatus.OK
         report_data = json.loads(response.data)
         assert "annotations" not in report_data["comparison_summary"]
+        for frame_result in report_data["frame_results"].values():
+            assert "annotations" not in frame_result
+            assert "annotation_components" not in frame_result
 
         group_report = report_data["groups"][requirement["name"]]
-        task_confusion_matrix = group_report["comparison_summary"]["annotations"][
-            "confusion_matrix"
-        ]["rows"]
+        assert "annotations" not in group_report["comparison_summary"]
+        assert "annotation_components" not in group_report["comparison_summary"]
+        assert group_report["comparison_summary"]["score"] == 0.5
+        assert group_report["comparison_summary"]["score_components"] == {
+            "valid_count": 2,
+            "missing_count": 1,
+            "extra_count": 1,
+        }
+        task_confusion_matrix = group_report["comparison_summary"]["confusion_matrix"]["rows"]
 
         expected_frame_confusion_matrix = {
             "5": [[1, 0, 0], [0, 0, 0], [0, 0, 0]],
@@ -1636,6 +1645,7 @@ class TestQualityReportContents(_PermissionTestBase):
             "4": [[0, 0, 1], [0, 0, 0], [1, 0, 0]],
         }
         for frame_id in group_report["frame_results"].keys():
+            assert "annotation_components" not in group_report["frame_results"][frame_id]
             assert (
                 group_report["frame_results"][frame_id]["annotations"]["confusion_matrix"]["rows"]
                 == expected_frame_confusion_matrix[frame_id]
