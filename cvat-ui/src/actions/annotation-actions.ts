@@ -1300,6 +1300,15 @@ export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
 
         if (currentWorkspace === Workspace.REVIEW && workspace !== Workspace.REVIEW) {
             userUnlockedInReviewMode.clear();
+
+            // The "Open an issue" control puts the canvas into select-region mode. Leaving the
+            // review workspace must cancel it, otherwise the next canvas click in another
+            // workspace is still interpreted as issue creation (see #9813).
+            const { instance: canvasInstance, activeControl } = state.annotation.canvas;
+            if (activeControl === ActiveControl.OPEN_ISSUE && canvasInstance instanceof Canvas) {
+                canvasInstance.selectRegion(false);
+                dispatch(updateActiveControl(ActiveControl.CURSOR));
+            }
         }
 
         dispatch(changeWorkspace(workspace));
