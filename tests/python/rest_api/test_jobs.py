@@ -1349,6 +1349,8 @@ class TestPatchJobAnnotations:
         self._check_response(admin_user, job["id"], True, data)
 
     def test_can_autofix_annotation_source_for_updated_annotations(self, admin_user):
+        # Backward compatibility test for https://github.com/cvat-ai/cvat/issues/8874
+
         jid = 19
 
         response = get_method(admin_user, f"jobs/{jid}/annotations")
@@ -1374,6 +1376,8 @@ class TestPatchJobAnnotations:
         assert response["shapes"][0]["points"] == modified_shape["points"]
 
     def test_can_check_annotation_source(self, admin_user):
+        # Regression test for https://github.com/cvat-ai/cvat/issues/8874
+
         jid = 19
 
         response = get_method(admin_user, f"jobs/{jid}/annotations")
