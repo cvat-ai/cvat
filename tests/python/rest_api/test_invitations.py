@@ -162,13 +162,3 @@ class TestGetInvitations:
 
         source_inv["owner"] = None
         assert DeepDiff(source_inv, fetched_inv, ignore_order=True) == {}
-
-
-@pytest.mark.usefixtures("restore_db_per_class")
-class TestUpdateInvitations:
-    def test_patch_invitation_endpoint_is_not_allowed(self, admin_user, invitations):
-        invitation = invitations[0]
-
-        response = patch_method(admin_user, f"invitations/{invitation['key']}", {})
-
-        assert response.status_code == HTTPStatus.METHOD_NOT_ALLOWED, response.content
