@@ -1264,8 +1264,7 @@
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
-    "exceptions",
-    "paid-users"
+    "exceptions"
   ],
   "templating": {
     "list": [
