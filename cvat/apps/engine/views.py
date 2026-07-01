@@ -1967,6 +1967,9 @@ class TaskViewSet(
         if db_data is None:
             raise ValidationError("Data is not uploaded for the task yet")
 
+        if not db_task.media_type:
+            raise ValidationError("Task has no media data yet")
+
         if (
             db_task.media_type == models.MediaType.AUDIO
             and db_task.mode == models.TaskMode.INTERPOLATION
