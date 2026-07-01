@@ -584,6 +584,7 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     public draw(drawData: DrawData): void {
+        const wasInserting = this.isInsertion;
         if (drawData.enabled && drawData.shapeType === 'mask') {
             if (!this.isInsertion && drawData.initialState?.shapeType === 'mask') {
                 // initialize inserting pipeline if not started
@@ -617,7 +618,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 );
 
                 this.isInsertion = true;
-            } else {
+            } else if (!this.isInsertion) {
                 this.updateBrushTools(drawData.brushTool);
                 if (!this.isDrawing) {
                     // initialize drawing pipeline if not started
@@ -671,7 +672,9 @@ export class MasksHandlerImpl implements MasksHandler {
             }
         }
 
-        this.drawData = drawData;
+        if (!wasInserting) {
+            this.drawData = drawData;
+        }
     }
 
     public edit(editData: MasksEditData): void {
