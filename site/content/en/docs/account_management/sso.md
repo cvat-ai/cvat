@@ -675,6 +675,64 @@ Additionally, each IdP configuration must include several protocol-specific para
 {{% /tab %}}
 {{< /tabpane >}}
 
+### SSO group authorization
+
+In CVAT Enterprise, an OIDC or SAML Identity Provider can optionally map IdP group claims or
+attributes to CVAT roles. If the `authorization` block is omitted, SSO only authenticates users
+and does not change their CVAT roles.
+
+When `authorization` is configured, `mapping` is required and must contain at least one item.
+CVAT applies the mapping on every SSO login and synchronizes the user's root role and configured
+organization memberships.
+If no matched mapping provides `root_role`, CVAT assigns `IAM_DEFAULT_ROLE` as the user's root role.
+
+```yaml
+---
+sso:
+  enabled: true
+  selection_mode: email_address
+  identity_providers:
+    - id: oidc-idp
+      protocol: OIDC
+      name: OIDC-based IdP
+      server_url: https://example.com
+      client_id: xxx
+      client_secret: xxx
+      email_domain: example.com
+
+      authorization:
+        groups_claims: ["groups"]
+        case_sensitive: false
+        mapping:
+          - groups: ["CVAT-Admins"]
+            root_role: admin
+
+          - groups: ["CVAT-Maintainers"]
+            organization_slug: example-org
+            organization_role: maintainer
+```
+
+| Setting              | Required   | Description |
+| -------------------- | ---------- | ----------- |
+| `groups_claims`      | _optional_ | Claim or attribute names that contain IdP group names. The default is `["groups"]`. |
+| `case_sensitive`     | _optional_ | Enables case-sensitive group matching. The default is `false`. |
+| `mapping`            | _required_ | A non-empty list of group-to-role mappings. |
+| `groups`             | _required_ | A non-empty list of IdP group names for a mapping item. |
+| `root_role`          | _optional_ | CVAT root role to assign. Supported values: `admin`, `user`, `worker`. |
+| `organization_slug`  | _optional_ | Organization slug. Must be specified together with `organization_role`. |
+| `organization_role`  | _optional_ | Organization role to assign. Supported values: `maintainer`, `supervisor`, `worker`. |
+
+Each mapping item must define `root_role`, `organization_role`, or both. If multiple group
+mappings match the same user, CVAT assigns the highest matched role. For root roles, the priority
+is `admin`, then `user`, then `worker`. For organization roles, the priority is `maintainer`,
+then `supervisor`, then `worker`.
+For organizations listed in the mapping, CVAT updates the user's membership according to the
+matched IdP groups.
+
+SSO authorization does not support mapping users to the organization `owner` role. Changing an
+organization owner requires updating both the organization owner field and the owner membership,
+which is handled outside the SSO mapping flow.
+
 Below are examples of SSO configuration file for both protocols:
 {{< tabpane text=true >}}
   {{% tab header="Integrate OIDC-based IdP" %}}
