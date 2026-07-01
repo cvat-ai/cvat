@@ -139,15 +139,12 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
         return invitation
 
-    def update(self, instance, validated_data):
-        return super().update(instance, {})
-
-    def save(self, request=None, **kwargs):
+    def save(self, request, **kwargs):
         invitation = super().save(**kwargs)
         _, regular_user = get_dummy_or_regular_user(invitation.membership.user.email)
         if not to_bool(settings.ORG_INVITATION_CONFIRM) and regular_user:
             invitation.accept()
-        elif request is not None:
+        else:
             invitation.send(request)
 
         return invitation

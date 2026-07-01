@@ -10,7 +10,7 @@ import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
-from shared.utils.config import get_method, make_api_client, post_method
+from shared.utils.config import get_method, make_api_client, patch_method, post_method
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -162,3 +162,13 @@ class TestGetInvitations:
 
         source_inv["owner"] = None
         assert DeepDiff(source_inv, fetched_inv, ignore_order=True) == {}
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestUpdateInvitations:
+    def test_patch_invitation_endpoint_is_not_allowed(self, admin_user, invitations):
+        invitation = invitations[0]
+
+        response = patch_method(admin_user, f"invitations/{invitation['key']}", {})
+
+        assert response.status_code == HTTPStatus.METHOD_NOT_ALLOWED, response.content
