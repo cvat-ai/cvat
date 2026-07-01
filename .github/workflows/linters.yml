@@ -110,7 +110,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Setup Regal
-        uses: StyraInc/setup-regal@33a142b1189004e0f14bf42b15972c67eecce776 # v1.0.0
+        uses: open-policy-agent/setup-regal@v2
         with:
           version: v0.21.3
 
