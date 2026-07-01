@@ -27,11 +27,11 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.util import TmpDirManager, faster_deepcopy
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
-from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
 from cvat.apps.engine.plugins import plugin_decorator
-from cvat.apps.engine.utils import av_scan_paths, take_by, transaction_with_repeatable_read
+from cvat.apps.engine.utils import av_scan_paths, take_by
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
+from cvat.utils import django_database as db_utils
 
 dlogger = DatasetLogManager()
 
@@ -167,7 +167,7 @@ class JobAnnotation:
     ) -> QuerySet[models.Job]:
         assert issubclass(queryset.model, models.Job)
 
-        label_qs = add_prefetch_fields(
+        label_qs = db_utils.add_prefetch_fields(
             models.Label.objects.all(),
             [
                 "skeleton",
@@ -216,7 +216,7 @@ class JobAnnotation:
             if lock_job_in_db:
                 queryset = queryset.select_for_update()
 
-            self.db_job: models.Job = get_cached(queryset, pk=int(pk))
+            self.db_job: models.Job = db_utils.get_cached(queryset, pk=int(pk))
         else:
             self.db_job: models.Job = db_job
 
@@ -378,22 +378,22 @@ class JobAnnotation:
                 if elements or parent_track is None:
                     track["elements"] = elements
 
-            db_tracks = bulk_create(models.LabeledTrack, db_tracks)
+            db_tracks = db_utils.bulk_create(models.LabeledTrack, db_tracks)
 
             for db_attr_val in db_track_attr_vals:
                 db_attr_val.track_id = db_tracks[db_attr_val.track_id].id
 
-            bulk_create(models.LabeledTrackAttributeVal, db_track_attr_vals)
+            db_utils.bulk_create(models.LabeledTrackAttributeVal, db_track_attr_vals)
 
             for db_shape in db_shapes:
                 db_shape.track_id = db_tracks[db_shape.track_id].id
 
-            db_shapes = bulk_create(models.TrackedShape, db_shapes)
+            db_shapes = db_utils.bulk_create(models.TrackedShape, db_shapes)
 
             for db_attr_val in db_shape_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(models.TrackedShapeAttributeVal, db_shape_attr_vals)
+            db_utils.bulk_create(models.TrackedShapeAttributeVal, db_shape_attr_vals)
 
             shape_idx = 0
             for track, db_track in zip(tracks, db_tracks):
@@ -435,12 +435,12 @@ class JobAnnotation:
                 if shape_elements or parent_shape is None:
                     shape["elements"] = shape_elements
 
-            db_shapes = bulk_create(models.LabeledShape, db_shapes)
+            db_shapes = db_utils.bulk_create(models.LabeledShape, db_shapes)
 
             for db_attr_val in db_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(models.LabeledShapeAttributeVal, db_attr_vals)
+            db_utils.bulk_create(models.LabeledShapeAttributeVal, db_attr_vals)
 
             for shape, db_shape in zip(shapes, db_shapes):
                 shape["id"] = db_shape.id
@@ -471,12 +471,12 @@ class JobAnnotation:
             db_tags.append(db_tag)
             tag["attributes"] = attributes
 
-        db_tags = bulk_create(models.LabeledImage, db_tags)
+        db_tags = db_utils.bulk_create(models.LabeledImage, db_tags)
 
         for db_attr_val in db_attr_vals:
             db_attr_val.image_id = db_tags[db_attr_val.tag_id].id
 
-        bulk_create(models.LabeledImageAttributeVal, db_attr_vals)
+        db_utils.bulk_create(models.LabeledImageAttributeVal, db_attr_vals)
 
         for tag, db_tag in zip(tags, db_tags):
             tag["id"] = db_tag.id
@@ -506,12 +506,12 @@ class JobAnnotation:
                 db_intervals.append(db_interval)
                 interval["attributes"] = attributes
 
-            db_intervals = bulk_create(models.LabeledInterval, db_intervals)
+            db_intervals = db_utils.bulk_create(models.LabeledInterval, db_intervals)
 
             for db_attr_val in db_attr_vals:
                 db_attr_val.interval_id = db_intervals[db_attr_val.interval_id].id
 
-            bulk_create(models.LabeledIntervalAttributeVal, db_attr_vals)
+            db_utils.bulk_create(models.LabeledIntervalAttributeVal, db_attr_vals)
 
             for interval, db_interval in zip(intervals, db_intervals):
                 interval["id"] = db_interval.id
@@ -1303,7 +1303,7 @@ def delete_job_data(pk, *, db_job: models.Job | None = None):
     annotation.delete()
 
 
-@transaction_with_repeatable_read()
+@db_utils.transaction_with_repeatable_read()
 def export_job(
     job_id: int,
     dst_file: str,
@@ -1362,7 +1362,7 @@ def delete_task_data(pk):
     annotation.delete()
 
 
-@transaction_with_repeatable_read()
+@db_utils.transaction_with_repeatable_read()
 def export_task(
     task_id: int,
     dst_file: str,
