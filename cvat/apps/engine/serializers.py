@@ -3948,9 +3948,11 @@ class AnnotationSerializer(serializers.Serializer):
                 source = str(models.SourceType.MANUAL)
             else:
                 raise serializers.ValidationError(
-                    "must be one of {}, got '{}'".format(
-                        format_list([f"'{v[0]}'" for v in models.SourceType.choices()]), source
-                    )
+                    {
+                        "source": "must be one of {}, got '{}'".format(
+                            format_list([f"'{v[0]}'" for v in models.SourceType.choices()]), source
+                        )
+                    }
                 )
         attrs["source"] = source
 
