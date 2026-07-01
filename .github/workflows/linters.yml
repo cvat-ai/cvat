@@ -111,6 +111,7 @@ jobs:
 
       - name: Setup Regal
         uses: open-policy-agent/setup-regal@v2.0.0
+
         with:
           version: v0.21.3
 
