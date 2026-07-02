@@ -4,24 +4,20 @@
 
 
 import pytest
-from cvat_sdk.core.auth import AuthStore, ProfileEntry
+from cvat_sdk.core.auth import AuthStore
 
 from .util import run_cli
 
 
 @pytest.fixture
 def store_path(tmp_path, monkeypatch):
+    from cvat_cli.__main__ import logger
+
+    logger.handlers.clear()
     path = tmp_path / "cvat" / "auth.json"
     monkeypatch.setattr("cvat_sdk.core.auth.get_auth_store_path", lambda: path)
-    return path
-
-
-def _seed(path, name, server, token, *, default=False):
-    AuthStore(path=path).add_profile(
-        name,
-        ProfileEntry(server=server, token=token, created_date="2026-01-01T00:00:00+00:00"),
-        set_default=default,
-    )
+    yield path
+    logger.handlers.clear()
 
 
 class TestConfigCommands:
@@ -34,4 +30,8 @@ class TestConfigCommands:
         assert "https://app.cvat.ai" in capsys.readouterr().out
 
         run_cli(self, "config", "default-server", "--unset")
+        assert AuthStore(path=store_path).get_default_server() is None
+
+    def test_default_server_rejects_empty_value(self, store_path):
+        run_cli(self, "config", "default-server", "", expected_code=1)
         assert AuthStore(path=store_path).get_default_server() is None

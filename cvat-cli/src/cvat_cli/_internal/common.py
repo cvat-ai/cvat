@@ -49,7 +49,7 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
             User and password to use for authentication;
             supports the PASS environment variable or a password prompt.
             A Personal Access Token (PAT) can be supplied via the {} environment
-            variable, or saved as a profile (see 'cvat-cli profile').
+            variable.
             """).format(CVAT_ACCESS_TOKEN_ENV_VAR),
     )
     parser.add_argument(
@@ -76,7 +76,7 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
         "--profile",
         metavar="NAME",
         default=None,
-        help="use a saved profile (server + credential); see 'cvat-cli profile list'."
+        help="use a saved profile (server + credential)."
         " Mutually exclusive with --server-host/--server-port/--auth.",
     )
     parser.add_argument(

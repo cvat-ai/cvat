@@ -107,17 +107,12 @@ def make_client_from_profile(name: str | None = None, *, store: AuthStore | None
     if name is None:
         default = store.get_default_profile()
         if default is None:
-            raise AuthStoreError(
-                "No default profile is set. Run 'cvat-cli profile default <name>' "
-                "or pass an explicit profile name."
-            )
+            raise AuthStoreError("No default profile is set. Pass an explicit profile name.")
         name, entry = default
     else:
         entry = store.get_profile(name)
         if entry is None:
-            raise AuthStoreError(
-                f"Unknown profile {name!r}. Run 'cvat-cli profile list' to see saved profiles."
-            )
+            raise AuthStoreError(f"Unknown profile {name!r}.")
 
     client = Client(url=entry.server, check_server_version=False)
     client.login(AccessTokenCredentials(entry.token))

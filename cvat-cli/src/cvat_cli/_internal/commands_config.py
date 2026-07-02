@@ -36,6 +36,8 @@ class ConfigDefaultServer:
             store.clear_default_server()
             print("Default server cleared.")
         elif args.server is not None:
+            if not args.server.strip():
+                raise CriticalError("Default server cannot be empty. Use --unset to clear it.")
             store.set_default_server(args.server)
             print(f"Default server is now {args.server!r}.")
         else:

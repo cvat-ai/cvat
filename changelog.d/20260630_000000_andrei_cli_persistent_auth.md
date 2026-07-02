@@ -1,7 +1,7 @@
 ### Added
 
 - \[CLI\] New `--profile NAME` option for all commands that talk to the server,
-  selecting a saved server + credential profile (see `cvat-cli profile`)
+  selecting an already-saved server + credential profile
   instead of passing `--server-host`/`--server-port`/`--auth`
   (<https://github.com/cvat-ai/cvat/pull/10845>)
 
