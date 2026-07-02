@@ -85,7 +85,7 @@ def attribute_value_validator(spec: models.IAttributeRequest) -> Callable[[str],
     The spec's `values` attribute must be consistent with its `input_type` attribute,
     otherwise ValueError will be raised.
     """
-    return _VALIDATOR_CLASSES[spec.input_type.value](spec.values)
+    return _VALIDATOR_CLASSES[spec.input_type](spec.values)
 
 
 def number_attribute_values(min_value: int, max_value: int, /, step: int = 1) -> list[str]:
