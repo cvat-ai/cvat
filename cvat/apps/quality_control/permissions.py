@@ -338,9 +338,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
             if scope in [Scopes.VIEW, Scopes.UPDATE]:
                 obj = cast(QualitySettings, obj)
                 if scope == Scopes.VIEW:
-                    permissions.append(
-                        cls.create_scope_view(request, obj, iam_context=iam_context)
-                    )
+                    permissions.append(cls.create_scope_view(request, obj, iam_context=iam_context))
                 else:
                     permissions.append(
                         cls.create_scope_update(request, obj, iam_context=iam_context)

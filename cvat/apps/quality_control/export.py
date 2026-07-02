@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import csv
 from io import BytesIO, StringIO
-from typing import Any, IO
+from typing import IO, Any
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from datumaro.util import dump_json

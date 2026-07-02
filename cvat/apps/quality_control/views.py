@@ -783,8 +783,7 @@ class QualityRequirementViewSet(
                 queryset = queryset.filter(settings__task_id=task_id)
             elif project_id := self.request.query_params.get("project_id", None):
                 queryset = queryset.filter(
-                    Q(settings__project_id=project_id)
-                    | Q(settings__task__project_id=project_id)
+                    Q(settings__project_id=project_id) | Q(settings__task__project_id=project_id)
                 )
 
             permissions = QualityRequirementPermission.create_scope_list(self.request)
