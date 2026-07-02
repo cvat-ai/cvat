@@ -20,7 +20,9 @@ from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
+from sdk.util import https_reverse_proxy
+
+from .util import TestCliBase, generate_images, run_cli
 
 
 class TestCliMisc(TestCliBase):
