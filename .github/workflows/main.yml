@@ -229,6 +229,7 @@ jobs:
             docker logs test_cvat_redis_ondisk_1 > $LOGS_DIR/cvat_redis_ondisk.log
 
 
+
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v7
