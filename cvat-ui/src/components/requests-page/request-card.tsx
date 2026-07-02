@@ -65,6 +65,10 @@ function constructName(operation: Request['operation']): string | null {
     return null;
 }
 
+function constructTypeText(type: string): string {
+    return type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
 function constructTimestamps(request: Request): JSX.Element {
     const started = dayjs(request.startedDate).format('MMM Do YY, H:mm');
     const finished = dayjs(request.finishedDate).format('MMM Do YY, H:mm');
@@ -137,7 +141,7 @@ const dimensions = {
     md: 8,
     lg: 8,
     xl: 8,
-    xxl: 6,
+    xxl: 7,
 };
 
 function RequestCard(props: Readonly<Props>): JSX.Element {
@@ -151,6 +155,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
     const linkToEntity = constructLink(request);
     const percent = request.status === RQStatus.FINISHED ? 100 : (request.progress ?? 0) * 100;
     const timestamps = constructTimestamps(request);
+    const typeText = constructTypeText(type);
 
     const name = constructName(operation);
 
@@ -172,10 +177,10 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
         >
             <Row justify='space-between'>
                 <Col span={12}>
-                    <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
+                    <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }} gutter={8}>
                         <Col className='cvat-requests-type' {...dimensions}>
-                            <Text>
-                                {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            <Text ellipsis={{ tooltip: typeText }}>
+                                {typeText}
                                 {' '}
                             </Text>
                         </Col>
