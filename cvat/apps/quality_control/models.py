@@ -150,7 +150,7 @@ class QualityReport(models.Model):
             assert False
 
     def _parse_report_summary(self):
-        from cvat.apps.quality_control.quality_reports import ComparisonReport
+        from cvat.apps.quality_control.comparison_report import ComparisonReport
 
         return ComparisonReport.summary_from_json(self.data)
 
