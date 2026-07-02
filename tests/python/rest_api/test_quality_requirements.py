@@ -434,6 +434,77 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         }
         assert requirement_name in listed_requirements_by_name
 
+    def test_can_crud_quality_requirements_for_project_settings(
+        self, admin_user, find_sandbox_project_without_validation
+    ):
+        project, _ = find_sandbox_project_without_validation(True)
+        settings = self._get_project_settings(admin_user, project_id=project["id"])
+
+        requirement_name = f"project-api-requirement-{project['id']}"
+        created_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(requirement_name, settings_id=settings["id"]),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert created_requirement["settings_id"] == settings["id"]
+        assert created_requirement["project_id"] == project["id"]
+        assert created_requirement["task_id"] is None
+
+        updated_requirement, response = self._patch_requirement(
+            admin_user,
+            created_requirement["id"],
+            {"enabled": False, "required_score": 0.25},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert updated_requirement["enabled"] is False
+        assert updated_requirement["required_score"] == 0.25
+
+        response = self._delete_requirement(admin_user, created_requirement["id"])
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+    def test_create_requirement_requires_settings_id(self, admin_user):
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload("missing-settings-id"),
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "settings_id" in response.json()
+
+    def test_list_requirements_by_project_includes_project_and_task_settings(
+        self, admin_user, find_sandbox_project_without_validation, tasks
+    ):
+        project, _ = find_sandbox_project_without_validation(True)
+        task = next(t for t in tasks if t["project_id"] == project["id"] and t["size"])
+
+        project_settings = self._get_project_settings(admin_user, project_id=project["id"])
+        task_settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        project_requirement_name = f"project-list-requirement-{project['id']}"
+        task_requirement_name = f"task-list-requirement-{task['id']}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                project_requirement_name,
+                settings_id=project_settings["id"],
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(task_requirement_name, settings_id=task_settings["id"]),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        listed_requirements, response = self._list_requirements(
+            admin_user, project_id=project["id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        listed_requirement_names = {requirement["name"] for requirement in listed_requirements}
+        assert project_requirement_name in listed_requirement_names
+        assert task_requirement_name in listed_requirement_names
+
     def test_requirement_uses_hld_comparison_field_names(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -906,6 +977,57 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
 
         listed_requirements, response = self._list_requirements(
             user["username"], task_id=task["id"]
+        )
+        assert response.status_code == (HTTPStatus.OK if allow else HTTPStatus.FORBIDDEN)
+        if allow:
+            assert any(
+                requirement["name"] == requirement_name for requirement in listed_requirements
+            )
+
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
+    def test_user_list_requirements_by_settings_in_sandbox(
+        self, admin_user, find_sandbox_task_without_gt, is_staff, allow
+    ):
+        task, user = find_sandbox_task_without_gt(is_staff)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        requirement_name = f"list-settings-permission-{task['id']}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(requirement_name, settings_id=settings["id"]),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        listed_requirements, response = self._list_requirements(
+            user["username"], settings_id=settings["id"]
+        )
+        assert response.status_code == (HTTPStatus.OK if allow else HTTPStatus.FORBIDDEN)
+        if allow:
+            assert any(
+                requirement["name"] == requirement_name for requirement in listed_requirements
+            )
+
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
+    def test_user_list_requirements_in_org_project(
+        self,
+        admin_user,
+        find_org_project_without_validation,
+        org_role,
+        is_staff,
+        allow,
+    ):
+        project, user = find_org_project_without_validation(is_staff, org_role)
+        org_id = project["organization"]
+        settings = self._get_project_settings(admin_user, project_id=project["id"], org_id=org_id)
+        requirement_name = f"list-org-project-permission-{project['id']}-{user['id']}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(requirement_name, settings_id=settings["id"]),
+            org_id=org_id,
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        listed_requirements, response = self._list_requirements(
+            user["username"], project_id=project["id"], org_id=org_id
         )
         assert response.status_code == (HTTPStatus.OK if allow else HTTPStatus.FORBIDDEN)
         if allow:

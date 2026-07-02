@@ -7,6 +7,7 @@ from enum import StrEnum
 from typing import cast
 
 from django.conf import settings
+from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.permissions import JobPermission, ProjectPermission, TaskPermission
@@ -54,7 +55,8 @@ def _create_owning_quality_settings_permission(
     view,
     settings_obj: QualitySettings,
     *,
-    scope: str,
+    task_scope: str,
+    project_scope: str,
     iam_context,
 ):
     if project := settings_obj.project:
@@ -62,7 +64,7 @@ def _create_owning_quality_settings_permission(
             request,
             view,
             iam_context=iam_context,
-            scope=scope,
+            scope=project_scope,
             obj=project,
         )
 
@@ -71,7 +73,7 @@ def _create_owning_quality_settings_permission(
             request,
             view,
             iam_context=iam_context,
-            scope=scope,
+            scope=task_scope,
             obj=task,
         )
 
@@ -305,7 +307,8 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
             request,
             None,
             settings,
-            scope=TaskPermission.Scopes.VIEW,
+            task_scope=TaskPermission.Scopes.VIEW,
+            project_scope=ProjectPermission.Scopes.VIEW,
             iam_context=iam_context,
         )
 
@@ -321,7 +324,8 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
             request,
             None,
             settings,
-            scope=TaskPermission.Scopes.UPDATE_DESC,
+            task_scope=TaskPermission.Scopes.UPDATE_DESC,
+            project_scope=ProjectPermission.Scopes.UPDATE_DESC,
             iam_context=iam_context,
         )
 
@@ -333,19 +337,14 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         for scope in cls.get_scopes(request, view, obj):
             if scope in [Scopes.VIEW, Scopes.UPDATE]:
                 obj = cast(QualitySettings, obj)
-                permissions.append(
-                    _create_owning_quality_settings_permission(
-                        request,
-                        view,
-                        obj,
-                        scope=(
-                            TaskPermission.Scopes.VIEW
-                            if scope == Scopes.VIEW
-                            else TaskPermission.Scopes.UPDATE_DESC
-                        ),
-                        iam_context=iam_context,
+                if scope == Scopes.VIEW:
+                    permissions.append(
+                        cls.create_scope_view(request, obj, iam_context=iam_context)
                     )
-                )
+                else:
+                    permissions.append(
+                        cls.create_scope_update(request, obj, iam_context=iam_context)
+                    )
             elif scope == cls.Scopes.LIST:
                 if task_id := request.query_params.get("task_id", None):
                     permissions.append(
@@ -395,7 +394,6 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
 
 class QualityRequirementPermission(OpenPolicyAgentPermission):
     obj: QualityRequirement | None
-    settings: QualitySettings | None
 
     class Scopes(StrEnum):
         LIST = "list"
@@ -410,40 +408,46 @@ class QualityRequirementPermission(OpenPolicyAgentPermission):
 
         for scope in cls.get_scopes(request, view, obj):
             if scope == cls.Scopes.LIST:
+                list_iam_context = iam_context
+
                 if settings_id := request.query_params.get("settings_id", None):
+                    settings_obj = db_utils.get_or_404(QualitySettings, int(settings_id))
+                    list_iam_context = get_iam_context(request, settings_obj)
                     permissions.append(
                         QualitySettingPermission.create_scope_view(
                             request,
-                            int(settings_id),
-                            iam_context=iam_context,
+                            settings_obj,
+                            iam_context=list_iam_context,
                         )
                     )
                 elif task_id := request.query_params.get("task_id", None):
+                    task = db_utils.get_or_404(Task, int(task_id))
+                    list_iam_context = get_iam_context(request, task)
                     permissions.append(
                         TaskPermission.create_scope_view(
                             request,
-                            int(task_id),
-                            iam_context=iam_context,
+                            task,
+                            iam_context=list_iam_context,
                         )
                     )
                 elif project_id := request.query_params.get("project_id", None):
+                    project = db_utils.get_or_404(Project, int(project_id))
+                    list_iam_context = get_iam_context(request, project)
                     permissions.append(
                         ProjectPermission.create_scope_view(
                             request,
-                            int(project_id),
-                            iam_context=iam_context,
+                            project,
+                            iam_context=list_iam_context,
                         )
                     )
 
-                permissions.append(cls.create_scope_list(request, iam_context))
+                permissions.append(cls.create_scope_list(request, list_iam_context))
             elif scope == cls.Scopes.VIEW:
                 requirement = cast(QualityRequirement, obj)
                 permissions.append(
-                    _create_owning_quality_settings_permission(
+                    QualitySettingPermission.create_scope_view(
                         request,
-                        view,
                         requirement.settings,
-                        scope=TaskPermission.Scopes.VIEW,
                         iam_context=iam_context,
                     )
                 )
@@ -451,19 +455,16 @@ class QualityRequirementPermission(OpenPolicyAgentPermission):
                 if scope == cls.Scopes.CREATE:
                     settings_id = request.data.get("settings_id")
                     if settings_id is None:
-                        permissions.append(cls.create_scope_list(request, iam_context))
-                        continue
+                        raise ValidationError({"settings_id": "This field is required."})
 
                     settings_obj = db_utils.get_or_404(QualitySettings, int(settings_id))
                 else:
                     settings_obj = cast(QualityRequirement, obj).settings
 
                 permissions.append(
-                    _create_owning_quality_settings_permission(
+                    QualitySettingPermission.create_scope_update(
                         request,
-                        view,
                         settings_obj,
-                        scope=TaskPermission.Scopes.UPDATE_DESC,
                         iam_context=None if scope == cls.Scopes.CREATE else iam_context,
                     )
                 )
@@ -473,10 +474,8 @@ class QualityRequirementPermission(OpenPolicyAgentPermission):
         return permissions
 
     def __init__(self, **kwargs):
-        self.settings = kwargs.pop("settings", None)
-
         super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + "/quality_settings/allow"
+        self.url = settings.IAM_OPA_DATA_URL + "/quality_requirements/allow"
 
     @classmethod
     def _get_scopes(cls, request, view, obj):
@@ -494,7 +493,5 @@ class QualityRequirementPermission(OpenPolicyAgentPermission):
     def get_resource(self):
         if self.obj:
             return _build_quality_resource(self.obj)
-        if self.settings:
-            return _build_quality_resource(self.settings)
 
         return None
