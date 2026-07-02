@@ -315,27 +315,12 @@ class REDIS_INMEM_DATABASES(IntEnum):
     RQ = 0
     CACHE = 1
 
-CVAT_RQ_REDIS_SOCKET_TIMEOUT = int(
-    os.getenv("CVAT_RQ_REDIS_SOCKET_TIMEOUT", 600)
-)
-CVAT_RQ_REDIS_SOCKET_CONNECT_TIMEOUT = int(
-    os.getenv("CVAT_RQ_REDIS_SOCKET_CONNECT_TIMEOUT", 10) # default
-)
 
 REDIS_INMEM_SETTINGS = {
     "HOST": redis_inmem_host,
     "PORT": redis_inmem_port,
     "DB": REDIS_INMEM_DATABASES.RQ,
     "PASSWORD": redis_inmem_password,
-    "REDIS_CLIENT_KWARGS": {
-        # rest api tests fail with healthy rqueues timing out at 405
-        # need to increase socket read timeouts
-        "socket_timeout": CVAT_RQ_REDIS_SOCKET_TIMEOUT,
-        "socket_connect_timeout": CVAT_RQ_REDIS_SOCKET_CONNECT_TIMEOUT,
-        "retry_on_timeout": True,
-        "health_check_interval": 30,
-        "socket_keepalive": True,
-    },
 }
 
 RQ_QUEUES = {
