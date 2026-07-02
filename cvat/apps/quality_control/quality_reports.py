@@ -20,7 +20,6 @@ from cvat.apps.dataset_manager.bindings import (
 )
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.engine.models import (
-    Job,
     Project,
     Task,
 )
