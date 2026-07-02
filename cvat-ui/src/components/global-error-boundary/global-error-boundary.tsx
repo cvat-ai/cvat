@@ -47,7 +47,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         job,
-        serverVersion: server.version as string,
+        serverVersion: (server?.version as string) ?? 'unknown',
         uiVersion: packageVersion.ui,
     };
 }
