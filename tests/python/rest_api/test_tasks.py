@@ -573,29 +573,19 @@ class TestPostTasks:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestGetTaskDataMeta:
-    def test_cannot_get_data_meta_when_task_media_type_is_missing(self, request, admin_user):
+    def test_cannot_get_data_meta_before_data_upload_is_finished(self, admin_user):
         """Regression test for https://github.com/cvat-ai/cvat/pull/10855.
 
-        Requesting task metadata when `Task.data` exists but `Task.media_type`
-        has not been detected yet used to raise `UnboundLocalError` (HTTP 500).
+        Requesting task metadata after data upload has started but before it
+        has finished used to raise `UnboundLocalError` (HTTP 500), because
+        `Task.data` existed while `Task.media_type` had not been detected yet.
         The endpoint must now return HTTP 400 with a clear message.
         """
         with make_api_client(admin_user) as api_client:
             task, _ = api_client.tasks_api.create({"name": "task without data"})
 
-            container_exec_cvat(
-                request,
-                [
-                    "./manage.py",
-                    "shell",
-                    "-c",
-                    (
-                        "from cvat.apps.engine.models import Data, Task; "
-                        "db_data = Data.objects.create(image_quality=70); "
-                        f"Task.objects.filter(pk={task.id}).update(data_id=db_data.id, media_type='')"
-                    ),
-                ],
-            )
+            _, upload_response = api_client.tasks_api.create_data(task.id, upload_start=True)
+            assert upload_response.status == HTTPStatus.ACCEPTED
 
             task, _ = api_client.tasks_api.retrieve(task.id)
             assert task.data is not None
