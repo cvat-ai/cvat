@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import json
 import os
 import stat
@@ -101,6 +102,9 @@ class AuthStore:
         self._doc = doc
         return self._doc
 
+    def _load_for_update(self) -> dict:
+        return copy.deepcopy(self._load())
+
     def _save(self, doc: dict) -> None:
         directory = self._path.parent
         directory.mkdir(parents=True, exist_ok=True)
@@ -143,18 +147,19 @@ class AuthStore:
         return self._to_entry(raw) if raw is not None else None
 
     def add_profile(self, name: str, entry: ProfileEntry, *, set_default: bool = False) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
+        is_first_profile = not doc["profiles"]
         doc["profiles"][name] = {
             "server": entry.server,
             "token": entry.token,
             "created_date": entry.created_date,
         }
-        if set_default or "default_profile" not in doc:
+        if set_default or is_first_profile:
             doc["default_profile"] = name
         self._save(doc)
 
     def remove_profile(self, name: str) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         del doc["profiles"][name]  # raises KeyError if absent
         if doc.get("default_profile") == name:
             doc.pop("default_profile", None)
@@ -168,14 +173,14 @@ class AuthStore:
         return name, self._to_entry(doc["profiles"][name])
 
     def set_default_profile(self, name: str) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         if name not in doc["profiles"]:
             raise KeyError(name)
         doc["default_profile"] = name
         self._save(doc)
 
     def clear_default_profile(self) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         doc.pop("default_profile", None)
         self._save(doc)
 
@@ -183,11 +188,11 @@ class AuthStore:
         return self._load().get("default_server")
 
     def set_default_server(self, server: str) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         doc["default_server"] = server
         self._save(doc)
 
     def clear_default_server(self) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         doc.pop("default_server", None)
         self._save(doc)
