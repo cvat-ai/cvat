@@ -100,9 +100,6 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 "list": Scopes.LIST,
                 "create": Scopes.CREATE,
                 "destroy": Scopes.DELETE,
-                "partial_update": (
-                    Scopes.ACCEPT if "accepted" in request.query_params else Scopes.RESEND
-                ),
                 "retrieve": Scopes.VIEW,
                 "accept": Scopes.ACCEPT,
                 "decline": Scopes.DECLINE,
