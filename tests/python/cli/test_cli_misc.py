@@ -149,15 +149,13 @@ class TestCliMisc(TestCliBase):
     def test_can_use_pass_env_variable(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("PASS", self.password)
 
-        from getpass import getuser as original_getpass
-
         from cvat_sdk.core.auth import get_auth_factory
 
         with (
             mock.patch(
-                "cvat_cli._internal.common.get_auth_factory", wraps=get_auth_factory
+                "cvat_sdk.core.auth.get_auth_factory", wraps=get_auth_factory
             ) as mock_auth_factory,
-            mock.patch("getpass.getpass", wraps=original_getpass) as mock_getpass,
+            mock.patch("getpass.getpass") as mock_getpass,
         ):
             self.run_cli(f"--auth={self.user}", "task", "ls", authenticate=False)
 
