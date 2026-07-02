@@ -197,6 +197,7 @@ jobs:
           pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
+
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v7
         with:
