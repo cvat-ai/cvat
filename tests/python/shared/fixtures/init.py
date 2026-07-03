@@ -585,7 +585,7 @@ def collect_code_coverage_from_containers():
         pid = docker_exec(container, f"pidof {process_command} -o 1")
 
         # stop process with code coverage
-        _test = docker_exec(container, f"kill -15 {pid}")
+        docker_exec(container, f"kill -15 {pid}")
         sleep(3)
 
         # get code coverage report
