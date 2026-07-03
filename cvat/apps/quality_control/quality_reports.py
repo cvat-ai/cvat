@@ -40,7 +40,6 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     DimensionType,
     Image,
@@ -64,6 +63,7 @@ from cvat.apps.quality_control.models import (
 )
 from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.apps.redis_handler.background import AbstractRequestManager
+from cvat.utils import django_database as db_utils
 
 
 @define(slots=False)
@@ -2935,7 +2935,7 @@ class TaskQualityCalculator:
             )
             db_job_reports.append(db_job_report)
 
-        db_job_reports = bulk_create(models.QualityReport, db_job_reports)
+        db_job_reports = db_utils.bulk_create(models.QualityReport, db_job_reports)
         db_task_report.children.add(*db_job_reports)
 
         db_conflicts = []
@@ -2951,7 +2951,7 @@ class TaskQualityCalculator:
                 )
                 db_conflicts.append(db_conflict)
 
-        db_conflicts = bulk_create(models.AnnotationConflict, db_conflicts)
+        db_conflicts = db_utils.bulk_create(models.AnnotationConflict, db_conflicts)
 
         db_ann_ids = []
         db_conflicts_iter = iter(db_conflicts)
@@ -2967,7 +2967,7 @@ class TaskQualityCalculator:
                     )
                     db_ann_ids.append(db_ann_id)
 
-        bulk_create(models.AnnotationId, db_ann_ids)
+        db_utils.bulk_create(models.AnnotationId, db_ann_ids)
 
         return db_task_report
 
