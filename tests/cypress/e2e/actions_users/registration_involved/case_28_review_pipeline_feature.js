@@ -177,6 +177,7 @@ context('Review pipeline feature', () => {
             // The reviewer reloads the page, all the issues still exist
             cy.reload();
             cy.get('.cvat-canvas-container').should('exist');
+            cy.closeNotification('.cvat-notification-continue-job');
         });
 
         it('Review pipeline, part 2', () => {
