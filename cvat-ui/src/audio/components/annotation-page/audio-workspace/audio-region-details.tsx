@@ -14,7 +14,7 @@ import { EditOutlined } from '@ant-design/icons';
 
 import { AudioIntervalState, Label, Attribute } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
-import { formatTimeShort } from 'audio/utils/format-audio-time';
+import { formatTimeShort, formatMilliseconds } from 'audio/utils/format-audio-time';
 
 interface AudioRegionDetailsProps {
     interval: AudioIntervalState;
@@ -22,14 +22,6 @@ interface AudioRegionDetailsProps {
     labels: Label[];
     onChangeLabel(labelId: number): void;
     onChangeAttribute(attrID: number, value: string): void;
-}
-
-function formatDuration(seconds: number): string {
-    const total = Math.max(0, seconds);
-    if (total < 60) return `${total.toFixed(1)}s`;
-    const mins = Math.floor(total / 60);
-    const secs = Math.floor(total % 60);
-    return `${mins}m ${secs}s`;
 }
 
 function AttributeInput({
@@ -201,7 +193,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
     const isReadonly = !!interval.lock;
     const start = interval.start / 1000;
     const end = (interval.stop ?? interval.start) / 1000;
-    const duration = Math.max(0, end - start);
+    const durationMs = Math.max(0, (interval.stop ?? interval.start) - interval.start);
 
     const handleChangeAttribute = useCallback((attrID: number, value: string) => {
         onChangeAttribute(attrID, value);
@@ -245,7 +237,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
                     {`${formatTimeShort(start)} \u2013 ${formatTimeShort(end)}`}
                 </span>
                 <span className='cvat-audio-region-details-duration'>
-                    {`(${formatDuration(duration)})`}
+                    {`(${formatMilliseconds(durationMs)})`}
                 </span>
             </div>
 
