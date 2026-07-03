@@ -1042,16 +1042,16 @@ class ShapeRequirementHandler(RequirementHandler):
 
 
 class DatasetQualityEstimator:
-    DEFAULT_SETTINGS = ComparisonParameters()
-
     def __init__(
         self,
         ds_data_provider: JobDataProvider,
         gt_data_provider: JobDataProvider,
         *,
         requirements: list[models.QualityRequirement],
+        parameters: ComparisonParameters,
     ) -> None:
         self._requirements = resolve_effective_requirements(requirements)
+        self._parameters = parameters
 
         self._ds_data_provider = ds_data_provider
         self._gt_data_provider = gt_data_provider
@@ -1235,7 +1235,7 @@ class DatasetQualityEstimator:
         }
         requirement_stats = build_requirements_summary(self._requirements, group_reports)
         return ComparisonReport(
-            parameters=ComparisonReportParameters(),
+            parameters=ComparisonReportParameters.from_comparison_parameters(self._parameters),
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
                 total_frames=self._get_total_frames(),

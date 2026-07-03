@@ -15,6 +15,7 @@ from django.db import models
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
+from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
@@ -476,9 +477,7 @@ def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
         changed = True
 
     if changed:
-        prefetched_objects_cache = getattr(quality_settings, "_prefetched_objects_cache", None)
-        if prefetched_objects_cache is not None:
-            prefetched_objects_cache.pop("requirements", None)
+        db_utils.clear_prefetched_relation_cache(quality_settings, "requirements")
         quality_settings.touch()
 
     return changed

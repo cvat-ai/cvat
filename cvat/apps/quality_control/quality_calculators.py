@@ -161,6 +161,7 @@ class TaskQualityCalculator:
                     job_data_provider,
                     gt_job_data_provider,
                     requirements=quality_requirements,
+                    parameters=quality_params,
                 )
                 job_comparison_reports[job.id] = comparator.generate_report()
 

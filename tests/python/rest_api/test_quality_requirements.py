@@ -750,6 +750,65 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             requirement["name"] for requirement in listed_requirements if not requirement["is_base"]
         } == {replacement_payload["name"]}
 
+    def test_settings_patch_saves_parent_requirements_before_children(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        parent_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"bulk-parent-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="rectangle",
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        child_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"bulk-child-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type=None,
+                parent_requirement=parent_requirement["id"],
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        child_requirement_id = child_requirement["id"]
+
+        patched_settings, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    {
+                        "id": child_requirement_id,
+                        "annotation_type": "skeleton_keypoint",
+                        "parent_requirement": parent_requirement["id"],
+                    },
+                    {
+                        "id": parent_requirement["id"],
+                        "annotation_type": "skeleton_keypoint",
+                    },
+                ]
+            },
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        patched_child_requirement = next(
+            requirement
+            for requirement in patched_settings["requirements"]
+            if requirement["id"] == child_requirement_id
+        )
+        assert patched_child_requirement["annotation_type"] is None
+
+        child_requirement, response = self._retrieve_requirement(admin_user, child_requirement_id)
+        assert response.status_code == HTTPStatus.OK
+        assert child_requirement["effective"]["annotation_type"] == "skeleton_keypoint"
+
     def test_settings_patch_cannot_delete_base_requirements(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -1960,6 +2019,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert enabled_requirement_name in report_data["groups"]
         assert disabled_requirement_name in report_data["groups"]
         assert report_data["parameters"] == {
+            "inherited": False,
+            "job_filter": updated_settings["job_filter"],
+        }
+        with make_api_client(admin_user) as api_client:
+            job_report = api_client.quality_api.list_reports(target="job", parent_id=report["id"])[
+                0
+            ].results[0]
+        assert self._get_report_data(admin_user, job_report["id"])["parameters"] == {
             "inherited": False,
             "job_filter": updated_settings["job_filter"],
         }
