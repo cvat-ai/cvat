@@ -118,7 +118,7 @@ class _PermissionTestBase:
         assert len(results) == 1
         return results[0]
 
-    def enable_default_quality_requirement(
+    def enable_base_quality_requirement(
         self, user: str, task_id: int, *, annotation_type: str = "rectangle"
     ) -> dict[str, Any]:
         settings = self.get_task_quality_settings(user, task_id)
@@ -132,7 +132,7 @@ class _PermissionTestBase:
         requirement = next(
             requirement
             for requirement in settings["requirements"]
-            if requirement["is_default"] and requirement["annotation_type"] == annotation_type
+            if requirement["is_base"] and requirement["annotation_type"] == annotation_type
         )
 
         response = patch_method(
@@ -1081,7 +1081,7 @@ class TestListQualityConflicts(_PermissionTestBase):
         task, _ = find_sandbox_task_without_gt(True)
 
         self.create_gt_job(admin_user, task["id"])
-        self.enable_default_quality_requirement(admin_user, task["id"])
+        self.enable_base_quality_requirement(admin_user, task["id"])
         task_report = self.create_quality_report(user=admin_user, task_id=task["id"])
 
         with make_api_client(admin_user) as api_client:
@@ -1104,7 +1104,7 @@ class TestListQualityConflicts(_PermissionTestBase):
         task, user = find_sandbox_task_without_gt(is_staff)
 
         self.create_gt_job(admin_user, task["id"])
-        self.enable_default_quality_requirement(admin_user, task["id"])
+        self.enable_base_quality_requirement(admin_user, task["id"])
         report = self.create_quality_report(user=admin_user, task_id=task["id"])
         conflicts = self._test_list_conflicts_200(admin_user, report_id=report["id"])
         assert conflicts
@@ -1128,7 +1128,7 @@ class TestListQualityConflicts(_PermissionTestBase):
         user = user["username"]
 
         self.create_gt_job(admin_user, task["id"])
-        self.enable_default_quality_requirement(admin_user, task["id"])
+        self.enable_base_quality_requirement(admin_user, task["id"])
         report = self.create_quality_report(user=admin_user, task_id=task["id"])
         conflicts = self._test_list_conflicts_200(admin_user, report_id=report["id"])
         assert conflicts
@@ -1613,7 +1613,7 @@ class TestQualityReportContents(_PermissionTestBase):
         assert summary["frame_share"] == summary["frame_count"] / task["size"]
 
     def test_accumulation_annotation_conflicts_multiple_jobs(self, admin_user):
-        requirement = self.enable_default_quality_requirement(
+        requirement = self.enable_base_quality_requirement(
             admin_user, self.demo_task_id_multiple_jobs
         )
         report = self.create_quality_report(
@@ -1696,7 +1696,7 @@ class TestQualityReportContents(_PermissionTestBase):
         task_id = next(t["id"] for t in tasks if t["validation_mode"] == "gt_pool")
         gt_job = next(j for j in jobs if j["task_id"] == task_id if j["type"] == "ground_truth")
         gt_job_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
-        self.enable_default_quality_requirement(admin_user, task_id)
+        self.enable_base_quality_requirement(admin_user, task_id)
 
         with make_api_client(admin_user) as api_client:
             gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
@@ -1758,7 +1758,7 @@ class TestQualityReportContents(_PermissionTestBase):
         self, admin_user, task_id: int, jobs
     ):
         gt_job = next(j for j in jobs if j["task_id"] == task_id if j["type"] == "ground_truth")
-        self.enable_default_quality_requirement(admin_user, task_id)
+        self.enable_base_quality_requirement(admin_user, task_id)
 
         with make_api_client(admin_user) as api_client:
             gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
@@ -1807,7 +1807,7 @@ class TestQualityReportContents(_PermissionTestBase):
             if not t["validation_mode"] and t["size"] >= 5 and not t["project_id"]
         )
         label_id = next(l["id"] for l in labels if l.get("task_id") == task_id)
-        requirement = self.enable_default_quality_requirement(admin_user, task_id)
+        requirement = self.enable_base_quality_requirement(admin_user, task_id)
 
         with make_api_client(admin_user) as api_client:
             gt_frames = [1, 3]

@@ -701,7 +701,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "task_id",
             "project_id",
             "name",
-            "is_default",
+            "is_base",
             "sort_order",
             "filter",
             "enabled",
@@ -730,7 +730,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "id",
             "task_id",
             "project_id",
-            "is_default",
+            "is_base",
             "effective",
             "created_date",
             "updated_date",
@@ -1202,20 +1202,20 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         obsolete_requirement_ids = set(existing_requirements) - saved_requirement_ids
         if obsolete_requirement_ids:
-            obsolete_default_requirements = [
+            obsolete_base_requirements = [
                 existing_requirements[requirement_id].name
                 for requirement_id in obsolete_requirement_ids
-                if existing_requirements[requirement_id].is_default
+                if existing_requirements[requirement_id].is_base
             ]
-            if obsolete_default_requirements:
+            if obsolete_base_requirements:
                 raise serializers.ValidationError(
-                    {"requirements": "Default quality requirements cannot be deleted."}
+                    {"requirements": "Base quality requirements cannot be deleted."}
                 )
 
             instance.requirements.filter(id__in=obsolete_requirement_ids).delete()
 
     def to_representation(self, instance):
-        models.ensure_default_quality_requirements(instance)
+        models.ensure_base_quality_requirements(instance)
         return super().to_representation(instance)
 
     def update(self, instance, validated_data):
@@ -1227,7 +1227,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             elif instance.project_id:
                 instance.project.touch()
 
-            models.ensure_default_quality_requirements(instance)
+            models.ensure_base_quality_requirements(instance)
             instance = super().update(instance, validated_data)
 
             if requirements_data is not serializers.empty:

@@ -338,7 +338,7 @@ class QualityRequirement(TimestampedModel):
 
     name = models.CharField(max_length=250, blank=False)
 
-    is_default = models.BooleanField(default=False)
+    is_base = models.BooleanField(default=False)
 
     sort_order = models.IntegerField(default=0)
 
@@ -420,7 +420,7 @@ class QualityRequirement(TimestampedModel):
         return model_to_dict(self)
 
 
-_DEFAULT_REQUIREMENT_ANNOTATION_TYPES = (
+_BASE_REQUIREMENT_ANNOTATION_TYPES = (
     QualityRequirementAnnotationType.TAG,
     QualityRequirementAnnotationType.RECTANGLE,
     QualityRequirementAnnotationType.SKELETON,
@@ -433,38 +433,38 @@ _DEFAULT_REQUIREMENT_ANNOTATION_TYPES = (
 )
 
 
-def get_default_requirement_name(annotation_type: str) -> str:
-    return f"Default {str(annotation_type).replace('_', ' ')}"
+def get_base_requirement_name(annotation_type: str) -> str:
+    return f"Base {str(annotation_type).replace('_', ' ')}"
 
 
-def ensure_default_quality_requirements(quality_settings: QualitySettings) -> bool:
-    default_names = {
-        get_default_requirement_name(annotation_type)
-        for annotation_type in _DEFAULT_REQUIREMENT_ANNOTATION_TYPES
+def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
+    base_names = {
+        get_base_requirement_name(annotation_type)
+        for annotation_type in _BASE_REQUIREMENT_ANNOTATION_TYPES
     }
-    existing_default_names = set(
-        quality_settings.requirements.filter(name__in=default_names).values_list("name", flat=True)
+    existing_base_names = set(
+        quality_settings.requirements.filter(name__in=base_names).values_list("name", flat=True)
     )
 
     changed = False
-    if existing_default_names:
+    if existing_base_names:
         updated_count = quality_settings.requirements.filter(
-            name__in=existing_default_names,
-            is_default=False,
-        ).update(is_default=True)
+            name__in=existing_base_names,
+            is_base=False,
+        ).update(is_base=True)
         changed = bool(updated_count)
 
     requirements_to_create = []
-    for sort_order, annotation_type in enumerate(_DEFAULT_REQUIREMENT_ANNOTATION_TYPES):
-        name = get_default_requirement_name(annotation_type)
-        if name in existing_default_names:
+    for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
+        name = get_base_requirement_name(annotation_type)
+        if name in existing_base_names:
             continue
 
         requirements_to_create.append(
             QualityRequirement(
                 settings=quality_settings,
                 name=name,
-                is_default=True,
+                is_base=True,
                 sort_order=sort_order,
                 annotation_type=annotation_type,
                 enabled=False,

@@ -792,8 +792,8 @@ class QualityRequirementViewSet(
         return queryset
 
     def perform_destroy(self, instance):
-        if instance.is_default:
-            raise ValidationError("Default quality requirements cannot be deleted.")
+        if instance.is_base:
+            raise ValidationError("Base quality requirements cannot be deleted.")
 
         if instance.children.exists():
             raise ValidationError(
