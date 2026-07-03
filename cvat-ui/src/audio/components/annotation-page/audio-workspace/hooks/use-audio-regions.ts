@@ -17,6 +17,7 @@ import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
 import { getAudioRegionColor, getRegionItemColor } from '../audio-region-colors';
 import { getPlayOnceRegionId, setPlayOnceRegionId } from '../utils/play-once-region';
 import { attachRegionAutoScroll } from '../utils/region-auto-scroll';
+import { useRegionContextMenu } from './use-region-context-menu';
 import {
     clientIDFromWaveRegionId,
     intervalEndSeconds,
@@ -75,6 +76,7 @@ interface Params {
     onUpdateIntervalPosition(clientID: number, start: number, stop: number): void;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
+    onIntervalContextMenu(clientID: number | null, event: MouseEvent, region: Region): void;
     onWaveformReady(ready: boolean): void;
     onWavesurferReady(ws: WaveSurfer): void;
 }
@@ -93,13 +95,14 @@ export function useAudioRegions(params: Params): Result {
         labels, activeLabelId, colorBy, opacity, selectedOpacity, loop,
         onSwitchPlay, onSetCurrentTime, onSetDuration,
         onCreateInterval, onUpdateIntervalPosition, onSetActiveInterval, onSetHoveredInterval,
-        onWaveformReady, onWavesurferReady,
+        onIntervalContextMenu, onWaveformReady, onWavesurferReady,
     } = params;
 
     const dragSelectionCleanupRef = useRef<DragSelectionCleanup>(null);
     const regionsHandlersInitializedRef = useRef(false);
     const silentRemoveIdsRef = useRef<Set<string>>(new Set());
     const silentUpdateIdsRef = useRef<Set<string>>(new Set());
+    const { attachRegionContextMenu, cleanupRegionContextMenu } = useRegionContextMenu(onIntervalContextMenu);
 
     const intervalSelectionDisabled = (
         activeControl === ActiveControl.AUDIO_REGION_CREATE ||
@@ -196,6 +199,7 @@ export function useAudioRegions(params: Params): Result {
                 return;
             }
             clampRegionDragToBounds(region);
+            attachRegionContextMenu(region);
 
             const clientID = clientIDFromWaveRegionId(region.id);
             const exists = clientID !== null && intervalsRef.current.some((interval) => interval.clientID === clientID);
@@ -233,6 +237,8 @@ export function useAudioRegions(params: Params): Result {
         });
 
         plugin.on('region-removed', (region: Region) => {
+            cleanupRegionContextMenu(region.id);
+
             if (silentRemoveIdsRef.current.delete(region.id)) return;
             const clientID = clientIDFromWaveRegionId(region.id);
             if (clientID !== null && activeIntervalIDRef.current === clientID) {
@@ -281,8 +287,13 @@ export function useAudioRegions(params: Params): Result {
 
         regionsHandlersInitializedRef.current = true;
     }, [
-        computeClickTime, pickIntervalAtPosition,
-        centerViewportOnInterval, onSetCurrentTime, onSwitchPlay,
+        computeClickTime,
+        pickIntervalAtPosition,
+        attachRegionContextMenu,
+        cleanupRegionContextMenu,
+        centerViewportOnInterval,
+        onSetCurrentTime,
+        onSwitchPlay,
     ]);
 
     const handleReady = useCallback((ws: WaveSurfer): void => {
