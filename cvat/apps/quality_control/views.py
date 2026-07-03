@@ -747,22 +747,21 @@ class QualityRequirementViewSet(
     iam_permission_class = QualityRequirementPermission
 
     search_fields = []
-    filter_fields = [
+    simple_filters = ("annotation_type", "enabled")
+    filter_fields = (
+        *simple_filters,
         "id",
         "settings_id",
         "task_id",
         "project_id",
-        "annotation_type",
-        "enabled",
         "created_date",
         "updated_date",
-    ]
-    simple_filters = ["settings_id", "annotation_type", "enabled"]
+    )
     lookup_fields = {
         "task_id": "settings__task_id",
         "project_id": "settings__project_id",
     }
-    ordering_fields = filter_fields + ["name", "sort_order"]
+    ordering_fields = list(filter_fields) + ["name", "sort_order"]
     ordering = "id"
 
     serializer_class = QualityRequirementSerializer
@@ -782,6 +781,7 @@ class QualityRequirementViewSet(
             elif task_id := self.request.query_params.get("task_id", None):
                 queryset = queryset.filter(settings__task_id=task_id)
             elif project_id := self.request.query_params.get("project_id", None):
+                # Include requirements from both project settings and task settings under the project.
                 queryset = queryset.filter(
                     Q(settings__project_id=project_id) | Q(settings__task__project_id=project_id)
                 )
@@ -794,9 +794,6 @@ class QualityRequirementViewSet(
     def perform_destroy(self, instance):
         if instance.is_default:
             raise ValidationError("Default quality requirements cannot be deleted.")
-
-        if instance.settings.requirements.count() <= 1:
-            raise ValidationError("The last quality requirement cannot be deleted.")
 
         if instance.children.exists():
             raise ValidationError(
