@@ -346,7 +346,9 @@ class InteractionResultShape:
         self, attribute: attrs.Attribute, value: list[models.AttributeValRequest]
     ) -> None:
         for attrval in value:
-            if attrval.spec_id not in InteractionResultAttributes:
+            # FIXME: replace this with "attrval.spec_id not in InteractionResultAttributes"
+            # after we drop Python 3.11 support.
+            if not any(attrval.spec_id == member for member in InteractionResultAttributes):
                 raise BadFunctionError(
                     f"{attrval.spec_id} is not one of InteractionResultAttributes members"
                 )

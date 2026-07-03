@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections import OrderedDict
+from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 
 import attrs
@@ -15,6 +17,8 @@ from .agent_driver import (
     worker_current_function,
 )
 
+_MAX_AGE_OF_PP_IMAGE = timedelta(minutes=10)
+
 
 class _InteractionFunctionContextImpl(cvataa.InteractionFunctionContext):
     pass
@@ -27,8 +31,46 @@ class _InteractionPromptsImpl(cvataa.InteractionPrompts):
     bounding_box: tuple[tuple[float, float], tuple[float, float]] | None
 
 
+@attrs.define(kw_only=True)
+class _PpImageCacheEntry:
+    pp_image: object
+    last_accessed_at: datetime = attrs.field(factory=lambda: datetime.now(tz=timezone.utc))
+
+
+class _PpImageCache:
+    _MISSING = object()
+
+    def __init__(self):
+        self._contents = OrderedDict[object, _PpImageCacheEntry]()
+
+    def get(self, key: object) -> object:
+        if cache_entry := self._contents.get(key):
+            cache_entry.last_accessed_at = datetime.now(tz=timezone.utc)
+            self._contents.move_to_end(key)
+            return cache_entry.pp_image
+
+        return self._MISSING
+
+    def set(self, key: object, pp_image: object) -> None:
+        if key in self._contents:
+            self._contents.move_to_end(key)
+        else:
+            self.prune()
+
+        self._contents[key] = _PpImageCacheEntry(pp_image=pp_image)
+
+    def prune(self) -> None:
+        cutoff = datetime.now(tz=timezone.utc) - _MAX_AGE_OF_PP_IMAGE
+
+        while self._contents and next(iter(self._contents.values())).last_accessed_at < cutoff:
+            self._contents.popitem(last=False)
+
+
+_pp_image_cache: _PpImageCache
+
+
 def _worker_job_interact(
-    image: PIL.Image.Image, prompts: cvataa.InteractionPrompts
+    cache_key: object, image: PIL.Image.Image, prompts: cvataa.InteractionPrompts
 ) -> list[cvataa.InteractionResultShape]:
     current_function = cast(cvataa.InteractionFunction, worker_current_function())
     context = _InteractionFunctionContextImpl()
@@ -38,11 +80,31 @@ def _worker_job_interact(
     else:
         pp_image = image
 
+    _pp_image_cache.set(cache_key, pp_image)
+
+    return current_function.detect(context, pp_image, prompts)
+
+
+def _worker_job_interact_from_cache(
+    cache_key: object, prompts: cvataa.InteractionPrompts
+) -> list[cvataa.InteractionResultShape] | None:
+    current_function = cast(cvataa.InteractionFunction, worker_current_function())
+
+    pp_image = _pp_image_cache.get(cache_key)
+    if pp_image is _PpImageCache._MISSING:
+        return None
+
+    context = _InteractionFunctionContextImpl()
     return current_function.detect(context, pp_image, prompts)
 
 
 class AgentInteractionFunctionDriver(AgentFunctionDriver[cvataa.InteractionFunctionSpec]):
     FUNCTION_KIND = "interactor"
+
+    @classmethod
+    def init_worker(cls, state_id_generator: object) -> None:
+        global _pp_image_cache
+        _pp_image_cache = _PpImageCache()
 
     @classmethod
     def get_remote_function_fields(cls, spec: cvataa.InteractionFunctionSpec) -> dict[str, Any]:
@@ -110,8 +172,6 @@ class AgentInteractionFunctionDriver(AgentFunctionDriver[cvataa.InteractionFunct
     def _calculate_result_for_interact_ar(
         self, ar_params: dict[str, Any], check_in: object
     ) -> dict[str, Any]:
-        sample, _ = self._get_sample_from_ar_params(ar_params)
-
         pos_points = tuple(map(tuple, ar_params["pos_points"]))
         neg_points = tuple(map(tuple, ar_params["neg_points"]))
         bounding_box = tuple(map(tuple, ar_params["obj_bbox"])) or None
@@ -135,11 +195,23 @@ class AgentInteractionFunctionDriver(AgentFunctionDriver[cvataa.InteractionFunct
             pos_points=pos_points, neg_points=neg_points, bounding_box=bounding_box
         )
 
+        cache_key = (ar_params["task"], ar_params["frame"], tuple(ar_params.get("roi") or ()))
+
         shapes = self._executor.result(
-            self._executor.submit(
-                _worker_job_interact, self._load_image_for_ar(sample, ar_params), prompts
-            )
+            self._executor.submit(_worker_job_interact_from_cache, cache_key, prompts)
         )
+
+        if shapes is None:
+            sample, _ = self._get_sample_from_ar_params(ar_params)
+
+            shapes = self._executor.result(
+                self._executor.submit(
+                    _worker_job_interact,
+                    cache_key,
+                    self._load_image_for_ar(sample, ar_params),
+                    prompts,
+                )
+            )
 
         return {"shapes": [attrs.asdict(shape) for shape in shapes]}
 
