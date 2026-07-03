@@ -403,6 +403,33 @@ which starts containers and add JSON such as the following:
 These environment variables are set automatically within any container.
 Please see the [Docker documentation](https://docs.docker.com/network/proxy/) for more details.
 
+### Connecting to private cloud storage endpoints
+
+CVAT uses Smokescreen as an outbound request proxy for backend requests.
+If you attach an S3-compatible cloud storage, such as MinIO, and its endpoint
+resolves to a private or otherwise restricted IP address, CVAT can fail to
+connect with an error similar to:
+
+```text
+Failed to connect to proxy URL: "http://localhost:4750"
+```
+
+Allow the specific trusted storage IP address with `SMOKESCREEN_OPTS`:
+
+```shell
+export SMOKESCREEN_OPTS=--allow-address=<storage_endpoint_ip>
+docker compose up -d
+```
+
+When you use the standard `docker-compose.yml`, this variable is passed to
+all backend containers through the shared backend environment. If you use
+custom Docker Compose files or overrides, make sure the same
+`SMOKESCREEN_OPTS` value is set for every backend container that can create,
+validate, import from, export to, or read data from cloud storage. This includes
+the server and data-processing workers, such as `cvat_server`,
+`cvat_worker_import`, `cvat_worker_export`, `cvat_worker_annotation`,
+and `cvat_worker_chunks`.
+
 ### Using the Traefik dashboard
 
 If you are customizing the docker compose files and you come upon some unexpected issues, using the Traefik

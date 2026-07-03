@@ -19,6 +19,7 @@ Check out:
     - [Authenticated access](#authenticated-access)
     - [Anonymous access](#anonymous-access)
   - [Attach Amazon S3 storage](#attach-aws-s3-storage)
+  - [S3-compatible storage on private networks](#s3-compatible-storage-on-private-networks)
   - [Amazon S3 manifest file](#aws-s3-manifest-file)
   - [Video tutorial: Add Amazon S3 as Cloud Storage in CVAT](#video-tutorial-add-aws-s3-as-cloud-storage-in-cvat)
 - [Backblaze B2](#backblaze-b2)
@@ -137,6 +138,27 @@ Fill in the following fields:
 | **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
 
 After filling in all the fields, select **Submit**.
+
+### S3-compatible storage on private networks
+
+CVAT can connect to S3-compatible services, such as MinIO, by selecting
+**Amazon S3** as the provider and specifying the service endpoint in
+the **Endpoint URL** field.
+
+If the endpoint resolves to a private or otherwise restricted IP address,
+CVAT's outbound request proxy can block the connection. In this case,
+creating or using cloud storage can fail with an error similar to:
+
+```text
+Failed to connect to proxy URL: "http://localhost:4750"
+```
+
+Ask your CVAT administrator to allow the trusted storage IP address with
+Smokescreen. See the Docker Compose
+{{< ilink "/docs/administration/community/basics/installation#connecting-to-private-cloud-storage-endpoints" "installation guide" >}}
+or the Kubernetes
+{{< ilink "/docs/administration/community/advanced/k8s_deployment_with_helm#connecting-to-private-cloud-storage-endpoints" "Helm deployment guide" >}}
+for details.
 
 ### Amazon S3 manifest file
 
