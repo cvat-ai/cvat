@@ -19,6 +19,12 @@ import { getCore, AnnotationGuide } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import dimensions from 'utils/dimensions';
+import {
+    clearGuideDraft,
+    readGuideDraft,
+    saveGuideDraft,
+    shouldRestoreGuideDraft,
+} from './guide-drafts';
 
 const core = getCore();
 
@@ -30,6 +36,7 @@ function AnnotationGuidePage(): JSX.Element {
     const id = +useParams<{ id: string }>().id;
     const [guide, setGuide] = useState<AnnotationGuide | null>(null);
     const [fetching, setFetching] = useState(true);
+    const guideId = guide?.id;
 
     useEffect(() => {
         const promise = instanceType === 'project' ? core.projects.get({ id }) : core.tasks.get({ id });
@@ -45,7 +52,20 @@ function AnnotationGuidePage(): JSX.Element {
 
                 return existingGuide;
             }).then((guideInstance: AnnotationGuide) => {
-                setValue(guideInstance.markdown);
+                const guideInstanceId = guideInstance.id;
+                const draft = guideInstanceId !== undefined ? readGuideDraft(guideInstanceId) : null;
+                const shouldRestoreDraft = draft && shouldRestoreGuideDraft(draft, guideInstance);
+
+                if (shouldRestoreDraft) {
+                    setValue(draft.markdown);
+                    notification.info({ message: 'Your unsaved annotation guide changes were restored' });
+                } else {
+                    if (draft && guideInstanceId !== undefined) {
+                        clearGuideDraft(guideInstanceId);
+                    }
+                    setValue(guideInstance.markdown);
+                }
+
                 setGuide(guideInstance);
             }).catch((error: unknown) => {
                 notification.error({
@@ -57,13 +77,29 @@ function AnnotationGuidePage(): JSX.Element {
             });
     }, []);
 
-    const submit = useCallback((updatedValue: string) => {
+    const saveDraft = useCallback((updatedValue: string): void => {
+        if (guideId) {
+            saveGuideDraft(guideId, updatedValue);
+        }
+    }, [guideId]);
+
+    const updateValue = useCallback((updatedValue: string): void => {
+        setValue(updatedValue);
+        saveDraft(updatedValue);
+    }, [saveDraft]);
+
+    const submit = useCallback((updatedValue: string): Promise<void> => {
         if (guide) {
             guide.markdown = updatedValue;
             setFetching(true);
-            guide.save().then((result: AnnotationGuide) => {
+            return guide.save().then((result: AnnotationGuide) => {
+                const savedGuideId = result.id;
+
                 setValue(result.markdown);
                 setGuide(result);
+                if (savedGuideId) {
+                    clearGuideDraft(savedGuideId);
+                }
                 notification.info({ message: 'Annotation guide was saved successfully' });
             }).catch((error: unknown) => {
                 notification.error({
@@ -74,6 +110,8 @@ function AnnotationGuidePage(): JSX.Element {
                 setFetching(false);
             });
         }
+
+        return Promise.resolve();
     }, [guide]);
 
     const handleInsertFiles = useCallback(async (files: FileList): Promise<void> => {
@@ -125,9 +163,11 @@ function AnnotationGuidePage(): JSX.Element {
                 setFetching(false);
             }
 
-            await submit(computeNewValue());
+            const finalValue = computeNewValue();
+            saveDraft(finalValue);
+            await submit(finalValue);
         }
-    }, [guide, value]);
+    }, [guide, saveDraft, submit]);
 
     return (
         <Row
@@ -148,7 +188,7 @@ function AnnotationGuidePage(): JSX.Element {
                         ref={mdEditorRef}
                         value={value}
                         onChange={(val: string | undefined) => {
-                            setValue(val || '');
+                            updateValue(val || '');
                         }}
                         onPaste={(event: React.ClipboardEvent) => {
                             const { clipboardData } = event;
