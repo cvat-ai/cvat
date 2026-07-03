@@ -155,9 +155,12 @@ Failed to connect to proxy URL: "http://localhost:4750"
 
 Ask your CVAT administrator to allow the trusted storage IP address with
 Smokescreen. See the Docker Compose
-{{< ilink "/docs/administration/community/basics/installation#connecting-to-private-cloud-storage-endpoints" "installation guide" >}}
+{{< ilink "/docs/administration/community/basics/installation#connecting-to-private-cloud-storage-endpoints"
+     "installation guide" >}}
 or the Kubernetes
-{{< ilink "/docs/administration/community/advanced/k8s_deployment_with_helm#connecting-to-private-cloud-storage-endpoints" "Helm deployment guide" >}}
+{{< ilink
+     "/docs/administration/community/advanced/k8s_deployment_with_helm#connecting-to-private-cloud-storage-endpoints"
+     "Helm deployment guide" >}}
 for details.
 
 ### Amazon S3 manifest file
