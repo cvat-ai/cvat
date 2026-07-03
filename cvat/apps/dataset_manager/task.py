@@ -827,26 +827,27 @@ class JobAnnotation:
         for db_track in db_tracks:
             db_track.shapes = []
 
-        db_shapes = (
-            models.TrackedShape.objects.filter(track_id__in=list(tracks_by_id))
-            .values(
-                "track_id",
-                "type",
-                "occluded",
-                "z_order",
-                "rotation",
-                "points",
-                "id",
-                "frame",
-                "outside",
+        for track_ids_chunk in take_by(sorted(tracks_by_id), 1000):
+            db_shapes = (
+                models.TrackedShape.objects.filter(track_id__in=track_ids_chunk)
+                .values(
+                    "track_id",
+                    "type",
+                    "occluded",
+                    "z_order",
+                    "rotation",
+                    "points",
+                    "id",
+                    "frame",
+                    "outside",
+                )
+                .order_by("track_id", "frame")
+                .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
             )
-            .order_by("track_id", "frame")
-            .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
-        )
 
-        for db_shape in db_shapes:
-            track_id = db_shape.pop("track_id")
-            tracks_by_id[track_id].shapes.append(dotdict(db_shape))
+            for db_shape in db_shapes:
+                track_id = db_shape.pop("track_id")
+                tracks_by_id[track_id].shapes.append(dotdict(db_shape))
 
         labeledtrack_attributes = _receive_attributes_from_db(
             self.db_job.labeledtrackattributeval_set,
