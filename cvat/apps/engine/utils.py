@@ -380,7 +380,17 @@ def sendfile(
     if attachment_filename:
         attachment_filename = make_attachment_file_name(attachment_filename)
 
-    return _sendfile(request, filename, attachment, attachment_filename, mimetype, encoding)
+    response = _sendfile(request, filename, attachment, attachment_filename, mimetype, encoding)
+
+    # With an offloading backend (e.g. nginx X-Accel-Redirect), django-sendfile2 returns an
+    # empty body but still sets Content-Length to the file size. Under ASGI (uvicorn), the
+    # server enforces Content-Length and raises "Response content shorter than Content-Length",
+    # flooding the logs on every download. The front web server sets the real Content-Length
+    # when it serves the file, so drop the header when the body is offloaded.
+    if response.has_header("X-Accel-Redirect") or response.has_header("X-Sendfile"):
+        del response["Content-Length"]
+
+    return response
 
 
 def build_backup_file_name(
