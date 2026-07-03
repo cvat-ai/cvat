@@ -3,6 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
+import time
+import zipfile
 from collections.abc import Callable
 from http import HTTPStatus
 from pathlib import Path
@@ -17,6 +20,8 @@ from cvat_sdk.core.uploading import Uploader
 from pytest_cases import fixture, fixture_ref, parametrize
 
 from shared.fixtures.data import Container
+from shared.fixtures.init import Container as ServiceContainer
+from shared.fixtures.init import docker_logs
 from shared.utils.config import get_method, make_sdk_client, post_method
 from shared.utils.resource_import_export import (
     _CloudStorageResourceTest,
@@ -25,7 +30,7 @@ from shared.utils.resource_import_export import (
 )
 from shared.utils.s3 import make_client as make_s3_client
 
-from .utils import create_task
+from .utils import create_task, export_task_dataset
 
 
 class _S3ResourceTest(_CloudStorageResourceTest):
@@ -660,3 +665,35 @@ class TestUploads:
 
             # check that uploaded file still exists and owner can finish started process
             self._test_can_finish_upload(owner_client, url=url, query_params=query_params)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestExportDownloadServerLogs:
+    # Emitted by uvicorn when a response declares a Content-Length larger than the
+    # streamed body. The nginx sendfile backend returns an empty body with an
+    # X-Accel-Redirect header, so the fix drops the file-size Content-Length to
+    # keep this out of the logs. See cvat/apps/engine/utils.py:sendfile.
+    _CONTENT_LENGTH_ERROR = "Response content shorter than Content-Length"
+
+    def test_local_export_download_delivers_file_without_server_errors(
+        self, request, admin_user, tasks
+    ):
+        if request.config.getoption("--platform") != "local":
+            pytest.skip("reading container logs is only supported on the local platform")
+
+        task_id = next(
+            t["id"]
+            for t in tasks
+            if t["size"] > 0 and t["target_storage"] is None and t["organization"] is None
+        )
+
+        since = str(int(time.time()))
+
+        dataset = export_task_dataset(admin_user, save_images=True, id=task_id)
+
+        # the offloaded file must be delivered intact through nginx -> uvicorn
+        assert zipfile.is_zipfile(io.BytesIO(dataset))
+
+        # ... and serving it must not produce the ASGI Content-Length error
+        server_logs = docker_logs(ServiceContainer.SERVER, since=since)
+        assert self._CONTENT_LENGTH_ERROR not in server_logs

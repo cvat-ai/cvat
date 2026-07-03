@@ -159,6 +159,16 @@ def docker_exec(container, command, capture_output=True):
     return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
 
 
+def docker_logs(container, *, since=None):
+    command = ["docker", "logs"]
+    if since is not None:
+        command += ["--since", str(since)]
+    command.append(f"{PREFIX}_{container}_1")
+    # docker writes container stdout/stderr to the respective streams
+    proc = run(command, stdout=PIPE, stderr=PIPE)  # nosec
+    return proc.stdout.decode() + proc.stderr.decode()
+
+
 def docker_exec_cvat(command: list[str] | str):
     base = f"docker exec {PREFIX}_cvat_server_1"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
