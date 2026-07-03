@@ -48,9 +48,9 @@ from cvat.apps.engine.cloud_provider import (
 )
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
+from cvat.apps.engine.task import ensure_task_is_initialized
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
@@ -67,6 +67,7 @@ from cvat.apps.engine.utils import (
 from cvat.apps.iam.permissions import get_iam_context
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
+from cvat.utils import django_database as db_utils
 from cvat.utils.paths import problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
@@ -1285,18 +1286,22 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
 
         task_id = validated_data.pop("task_id")
-        task = models.Task.objects.select_for_update().get(pk=task_id)
+        task = models.Task.objects.get(pk=task_id)
 
-        if not task.data:
+        if task.data_id is None:
             raise serializers.ValidationError(
                 "This task has no data attached yet. Please set up task data and try again"
             )
+
+        ensure_task_is_initialized(task=task)
 
         if task.data.validation_mode in (models.ValidationMode.GT_POOL, models.ValidationMode.GT):
             raise serializers.ValidationError(
                 f'Task with validation mode "{task.data.validation_mode}" '
                 "cannot have more than 1 GT job"
             )
+
+        task = models.Task.objects.select_for_update().get(pk=task_id)
 
         if task.media_type == models.MediaType.AUDIO:
             frames = []
@@ -2120,7 +2125,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
         # The django generated bulk_update() query is too slow, so we use bulk_create() instead
         # NOTE: Silk doesn't show these queries in the list of queries
         # for some reason, but they can be seen in the profile
-        bulk_create(
+        db_utils.bulk_create(
             models.Image,
             list(bulk_context.updated_honeypots.values()),
             update_conflicts=True,
@@ -2177,7 +2182,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     for m2m_obj in validation_frame_m2m_objects
                 )
 
-        bulk_create(models.RelatedFile.images.through, new_m2m_objects)
+        db_utils.bulk_create(models.RelatedFile.images.through, new_m2m_objects)
 
         # Update manifest if present
         manifest_path = db_task.data.get_manifest_path()
@@ -2524,7 +2529,7 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
         instance = super().create(validated_data)
 
         if frames:
-            bulk_create(
+            db_utils.bulk_create(
                 models.ValidationFrame,
                 [
                     models.ValidationFrame(validation_params=instance, path=frame)
@@ -2545,7 +2550,7 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
         if frames:
             models.ValidationFrame.objects.filter(validation_params=instance).delete()
 
-            bulk_create(
+            db_utils.bulk_create(
                 models.ValidationFrame,
                 [
                     models.ValidationFrame(validation_params=instance, path=frame)
@@ -2851,7 +2856,7 @@ class DataSerializer(serializers.ModelSerializer):
             (models.ClientFile, models.ServerFile, models.RemoteFile),
         ):
             if files_type in files:
-                bulk_create(
+                db_utils.bulk_create(
                     files_model, [files_model(data=instance, **f) for f in files[files_type]]
                 )
 
@@ -4498,7 +4503,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
                 models.Manifest(filename=manifest, cloud_storage=db_storage)
                 for manifest in manifests
             ]
-            bulk_create(models.Manifest, manifest_file_instances)
+            db_utils.bulk_create(models.Manifest, manifest_file_instances)
 
             cloud_storage_path = db_storage.get_storage_dirname()
             if os.path.isdir(cloud_storage_path):
@@ -4603,7 +4608,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
                 manifest_instances = [
                     models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create
                 ]
-                bulk_create(models.Manifest, manifest_instances)
+                db_utils.bulk_create(models.Manifest, manifest_instances)
             if temporary_file:
                 # so, gcs key file is valid and we need to set correct path to the file
                 real_path_to_key_file = instance.get_key_file_path()

@@ -1784,37 +1784,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/InvitationRead'
           description: ''
-    patch:
-      operationId: invitations_partial_update
-      summary: Update an invitation
-      parameters:
-      - in: path
-        name: key
-        schema:
-          type: string
-        description: A unique value identifying this invitation.
-        required: true
-      tags:
-      - invitations
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedInvitationWriteRequest'
-      security:
-      - tokenAuth: []
-      - accessTokenAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/InvitationRead'
-          description: ''
     delete:
       operationId: invitations_destroy
       summary: Delete an invitation
@@ -9854,15 +9823,6 @@ components:
         cloud_storage_id:
           type: integer
           nullable: true
-    PatchedInvitationWriteRequest:
-      type: object
-      properties:
-        role:
-          $ref: '#/components/schemas/RoleEnum'
-        email:
-          type: string
-          format: email
-          minLength: 1
     PatchedIssueWriteRequest:
       type: object
       properties:

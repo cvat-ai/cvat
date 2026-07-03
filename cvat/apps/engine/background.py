@@ -68,7 +68,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer,
     TaskFileSerializer,
 )
-from cvat.apps.engine.task import create_thread as create_task
+from cvat.apps.engine.task import initialize_task
 from cvat.apps.engine.tus import TusFile, TusFileForbiddenError, TusFileNotFoundError
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
@@ -801,5 +801,5 @@ class TaskCreator(AbstractRequestManager):
         ).render()
 
     def init_callback_with_params(self):
-        self.callback = create_task
+        self.callback = initialize_task
         self.callback_args = (self.db_instance.pk, self.db_data)
