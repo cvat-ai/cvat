@@ -747,9 +747,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         )
         assert response.status_code == HTTPStatus.OK
         assert {
-            requirement["name"]
-            for requirement in listed_requirements
-            if not requirement["is_base"]
+            requirement["name"] for requirement in listed_requirements if not requirement["is_base"]
         } == {replacement_payload["name"]}
 
     def test_settings_patch_cannot_delete_base_requirements(
@@ -826,9 +824,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert response.json()["requirements"] == self._get_requirement_limit_error_message()
 
-    def test_cannot_delete_base_quality_requirement(
-        self, admin_user, find_sandbox_task_without_gt
-    ):
+    def test_cannot_delete_base_quality_requirement(self, admin_user, find_sandbox_task_without_gt):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
         base_requirement = next(
@@ -1083,9 +1079,7 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
         assert all(requirement["is_base"] is True for requirement in requirements)
         assert all("effective" not in requirement for requirement in requirements)
 
-    def test_new_project_gets_disabled_base_requirements_for_all_supported_types(
-        self, admin_user
-    ):
+    def test_new_project_gets_disabled_base_requirements_for_all_supported_types(self, admin_user):
         with make_api_client(admin_user) as api_client:
             project, response = api_client.projects_api.create(
                 {
