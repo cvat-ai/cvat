@@ -127,6 +127,7 @@ interface StateToProps {
     imageFilters: ImageFilter[];
     activeControl: ActiveControl;
     activeObjectHidden: boolean;
+    editedState: ObjectState | null;
 }
 
 interface DispatchToProps {
@@ -274,6 +275,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         highlightedConflict,
         imageFilters,
         activeObjectHidden,
+        editedState: state.annotation.editing.objectState,
     };
 }
 
@@ -300,6 +302,18 @@ const componentShortcuts = {
         name: 'Previous object',
         description: 'Go to the previous object and center it on the canvas',
         sequences: ['shift+tab'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+    RESIZE_BOX_TOP_LEFT: {
+        name: 'Resize box from top-left',
+        description: 'Start resizing the active rectangle from the top-left corner',
+        sequences: ['w'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+    RESIZE_BOX_BOTTOM_RIGHT: {
+        name: 'Resize box from bottom-right',
+        description: 'Start resizing the active rectangle from the bottom-right corner',
+        sequences: ['t'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
@@ -405,6 +419,88 @@ type Props = StateToProps & DispatchToProps;
 class CanvasWrapperComponent extends React.PureComponent<Props> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
+    private lastCanvasMousePosition: { clientX: number; clientY: number } | null = null;
+    private keyboardResizeHandle: 'svg_select_points_lt' | 'svg_select_points_rb' | null = null;
+    private keyboardResizeKey: 'KeyW' | 'KeyT' | null = null;
+
+    private activateResizeHandle(handleClass: 'svg_select_points_lt' | 'svg_select_points_rb'): void {
+        const { canvasInstance, activatedStateID, annotations } = this.props;
+        const activeState = annotations.find((state) => state.clientID === activatedStateID);
+
+        if (
+            !activeState ||
+            activeState.shapeType !== ShapeType.RECTANGLE ||
+            !canvasInstance
+        ) {
+            return;
+        }
+
+        const canvasRoot = canvasInstance.html() as unknown as HTMLElement;
+        const shapeRoot = canvasRoot.querySelector(`#cvat_canvas_shape_${activeState.clientID}`) as HTMLElement | null;
+        const handle = shapeRoot?.querySelector(`.${handleClass}`) ?? canvasRoot.querySelector(`.${handleClass}`);
+
+        if (!handle) {
+            return;
+        }
+
+        const boundingBox = (handle as HTMLElement).getBoundingClientRect();
+        handle.dispatchEvent(new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            buttons: 1,
+            clientX: boundingBox.left + (boundingBox.width / 2),
+            clientY: boundingBox.top + (boundingBox.height / 2),
+            view: window,
+        }));
+    }
+
+    private startKeyboardResize(handleClass: 'svg_select_points_lt' | 'svg_select_points_rb', key: 'KeyW' | 'KeyT'): void {
+        if (this.keyboardResizeHandle) {
+            return;
+        }
+
+        this.keyboardResizeHandle = handleClass;
+        this.keyboardResizeKey = key;
+        this.activateResizeHandle(handleClass);
+    }
+
+    private stopKeyboardResize(event?: KeyboardEvent): void {
+        if (!this.keyboardResizeHandle) {
+            return;
+        }
+
+        if (event && event.code !== this.keyboardResizeKey) {
+            return;
+        }
+
+        const { clientX, clientY } = this.lastCanvasMousePosition ?? { clientX: 0, clientY: 0 };
+        for (const target of [window.document, window]) {
+            target.dispatchEvent(new MouseEvent('mouseup', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                buttons: 0,
+                clientX,
+                clientY,
+                view: window,
+            }));
+        }
+
+        this.keyboardResizeHandle = null;
+        this.keyboardResizeKey = null;
+    }
+
+    private onKeyboardResizeKeyUp = (event: KeyboardEvent): void => {
+        this.stopKeyboardResize(event);
+    };
+
+    private onCanvasMouseMove = (event: MouseEvent): void => {
+        this.lastCanvasMousePosition = {
+            clientX: event.clientX,
+            clientY: event.clientY,
+        };
+    };
 
     public componentDidMount(): void {
         const {
@@ -434,6 +530,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         // But we do not have another way because cvat-canvas returns regular DOM element
         const [wrapper] = window.document.getElementsByClassName('cvat-canvas-container');
         wrapper.appendChild(canvasInstance.html());
+        canvasInstance.html().addEventListener('mousemove', this.onCanvasMouseMove);
+        window.addEventListener('keyup', this.onKeyboardResizeKeyUp, true);
 
         canvasInstance.configure({
             undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
@@ -635,6 +733,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
+        canvasInstance.html().removeEventListener('mousemove', this.onCanvasMouseMove);
+        window.removeEventListener('keyup', this.onKeyboardResizeKeyUp, true);
         canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
         canvasInstance.html().removeEventListener('canvas.editstart', this.onCanvasEditStart);
@@ -1035,17 +1135,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
                             if (imageIsNotProcessed) {
                                 try {
-                                    const { renderWidth, renderHeight, imageData: imageBitmap } = originalImage;
+                                    const { renderWidth, renderHeight } = originalImage;
 
                                     const offscreen = new OffscreenCanvas(renderWidth, renderHeight);
                                     const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
-                                    ctx.drawImage(imageBitmap, 0, 0, renderWidth, renderHeight);
                                     const imageData = ctx.getImageData(0, 0, renderWidth, renderHeight);
 
                                     const newImageData = imageFilters
                                         .reduce((oldImageData, activeImageModifier) => activeImageModifier
                                             .modifier.processImage(oldImageData, frame), imageData);
-                                    const newImageBitmap = await createImageBitmap(newImageData);
+                                    const newImageBitmap = new ImageData(
+                                        newImageData.data,
+                                        newImageData.width,
+                                        newImageData.height,
+                                    );
+
                                     return {
                                         renderWidth,
                                         renderHeight,
@@ -1212,6 +1316,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             PREVIOUS_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 navigateObject(-1);
+            },
+            RESIZE_BOX_TOP_LEFT: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                this.startKeyboardResize('svg_select_points_lt', 'KeyW');
+            },
+            RESIZE_BOX_BOTTOM_RIGHT: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                this.startKeyboardResize('svg_select_points_rb', 'KeyT');
             },
         };
 
