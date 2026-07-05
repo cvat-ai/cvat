@@ -306,13 +306,13 @@ const componentShortcuts = {
     },
     RESIZE_BOX_TOP_LEFT: {
         name: 'Resize box from top-left',
-        description: 'Start resizing the active rectangle from the top-left corner',
+        description: 'Start resizing the active rectangle from the top-left corner, without clicking the control point',
         sequences: ['w'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
     RESIZE_BOX_BOTTOM_RIGHT: {
         name: 'Resize box from bottom-right',
-        description: 'Start resizing the active rectangle from the bottom-right corner',
+        description: 'Start resizing the active rectangle from the bottom-right corner, without clicking the control point',
         sequences: ['t'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },

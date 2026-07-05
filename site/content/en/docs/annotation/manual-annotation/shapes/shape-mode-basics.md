@@ -37,9 +37,8 @@ Usage examples:
    - To learn more about creating a rectangle
      {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-rectangles" "read here" >}}.
 
-   - It is possible to adjust boundaries and location of the rectangle using a mouse.
-     The rectangle's size is shown in the top right corner, you can check it by selecting any point of the shape.
-     You can also undo your actions using `Ctrl+Z` and redo them with `Shift+Ctrl+Z` or `Ctrl+Y`.
+   - It is possible to adjust boundaries and location of the rectangle by clicking on the control points and moving the mouse. Also, pressing `w` will make the top-left corner follow the mouse, without clicking the control point. Similarly pressing `t` moves the bottom-right corner.
+   - The rectangle's size is shown in the top right corner, you can check it by selecting any point of the shape. You can also undo your actions using `Ctrl+Z` and redo them with `Shift+Ctrl+Z` or `Ctrl+Y`.
 
 1. You can see the `Object card` in the objects sidebar or open it by right-clicking on the object.
    You can change the attributes in the details section.
