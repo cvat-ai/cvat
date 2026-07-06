@@ -6,7 +6,7 @@
 import pytest
 from cvat_sdk.core.auth import AuthStore, ProfileEntry
 
-from .util import run_cli
+from .util import TestCliBase, run_cli
 
 
 @pytest.fixture
@@ -212,3 +212,37 @@ class TestProfileCreate:
             expected_code=1,
         )
         assert AuthStore(path=store_path).get_profile("p") is None
+
+
+class TestProfileSelectionE2E(TestCliBase):
+    @pytest.fixture(autouse=True)
+    def _isolate_store(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(
+            "cvat_sdk.core.auth.get_auth_store_path",
+            lambda: tmp_path / "cvat" / "auth.json",
+        )
+
+    def test_profile_supplies_host_and_credential(self, access_tokens):
+        token = next(t for t in access_tokens)["private_key"]
+        AuthStore().add_profile(
+            "it",
+            ProfileEntry(
+                server=f"{self.host}:{self.port}",
+                token=token,
+                created_date="2026-01-01T00:00:00+00:00",
+            ),
+        )
+        # No --server-host, no --auth: the profile supplies both.
+        run_cli(self, "--profile", "it", "task", "ls")
+
+    def test_profile_conflicts_with_server_host(self):
+        run_cli(
+            self,
+            "--profile",
+            "it",
+            "--server-host",
+            self.host,
+            "task",
+            "ls",
+            expected_code=1,
+        )
