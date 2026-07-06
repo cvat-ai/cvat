@@ -321,6 +321,9 @@ REDIS_INMEM_SETTINGS = {
     "PORT": redis_inmem_port,
     "DB": REDIS_INMEM_DATABASES.RQ,
     "PASSWORD": redis_inmem_password,
+    "REDIS_CLIENT_KWARGS": {
+        "socket_timeout": None,
+    },
 }
 
 RQ_QUEUES = {
