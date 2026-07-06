@@ -4,7 +4,7 @@
 
 
 import pytest
-from cvat_sdk.core.auth import AuthStore
+from cvat_sdk.core.auth import AuthStore, ProfileEntry
 
 from .util import run_cli
 
@@ -18,6 +18,14 @@ def store_path(tmp_path, monkeypatch):
     monkeypatch.setattr("cvat_sdk.core.auth.get_auth_store_path", lambda: path)
     yield path
     logger.handlers.clear()
+
+
+def _seed(path, name, server, token, *, default=False):
+    AuthStore(path=path).add_profile(
+        name,
+        ProfileEntry(server=server, token=token, created_date="2026-01-01T00:00:00+00:00"),
+        set_default=default,
+    )
 
 
 class TestConfigCommands:
@@ -35,3 +43,25 @@ class TestConfigCommands:
     def test_default_server_rejects_empty_value(self, store_path):
         run_cli(self, "config", "default-server", "", expected_code=1)
         assert AuthStore(path=store_path).get_default_server() is None
+
+
+class TestProfileList:
+    def test_list_marks_default(self, store_path, capsys):
+        _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
+        _seed(store_path, "staging", "https://staging.example.com", "t2")
+
+        run_cli(self, "profile", "list")
+        out = capsys.readouterr().out
+        assert "mycvat" in out and "https://app.cvat.ai" in out and "(default)" in out
+        assert "staging" in out and "https://staging.example.com" in out
+        default_lines = [ln for ln in out.splitlines() if "(default)" in ln]
+        assert len(default_lines) == 1 and "mycvat" in default_lines[0]
+
+    def test_list_quiet_prints_names_only(self, store_path, capsys):
+        _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
+        run_cli(self, "profile", "list", "--quiet")
+        assert capsys.readouterr().out.strip() == "mycvat"
+
+    def test_list_empty_prints_nothing(self, store_path, capsys):
+        run_cli(self, "profile", "list")
+        assert capsys.readouterr().out == ""
