@@ -194,7 +194,7 @@ class TestProfileCreate:
                 return False
 
         monkeypatch.setattr("getpass.getpass", lambda *a, **k: "tok-xyz")
-        monkeypatch.setattr("cvat_cli._internal.commands_profile.Client", _FakeClient)
+        monkeypatch.setattr("cvat_cli._internal.utils.Client", _FakeClient)
         run_cli(self, "--server-host", "https://app.cvat.ai", "profile", "create")
         assert (
             AuthStore(path=store_path).get_profile("server-side-name").token == "tok-xyz"
