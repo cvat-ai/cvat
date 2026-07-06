@@ -127,9 +127,12 @@ function AudioCanvasWrapper(): JSX.Element {
         }));
     }, [dispatch]);
     const onIntervalContextMenu =
-        useCallback((clientID: number | null, event?: MouseEvent): void => {
-            console.log('onIntervalContextMenu', clientID, event);
-        }, []);
+        useCallback((clientID: number | null, event: MouseEvent): void => {
+            if (clientID === null) return;
+
+            dispatch(audioActions.setAudioActiveInterval(clientID));
+            dispatch(audioActions.updateAudioContextMenu(true, event.clientX, event.clientY, clientID));
+        }, [dispatch]);
     const onUpdateIntervalAttribute = useCallback((clientID: number, attrID: number, value: string): void => {
         dispatch(updateAudioIntervalAsync(clientID, {
             attributes: { [attrID]: value },

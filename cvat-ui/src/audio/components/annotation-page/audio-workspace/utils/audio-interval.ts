@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { AudioIntervalState } from 'cvat-core-wrapper';
+import { toClipboard } from 'utils/to-clipboard';
 
 export function intervalID(interval: AudioIntervalState): number {
     return interval.clientID as number;
@@ -27,4 +28,11 @@ export function intervalEndSeconds(interval: AudioIntervalState): number {
 
 export function intervalDurationSeconds(interval: AudioIntervalState): number {
     return Math.max(0, intervalEndSeconds(interval) - intervalStartSeconds(interval));
+}
+
+export function copyAudioIntervalURL(serverID: number | null | undefined): void {
+    if (Number.isInteger(serverID)) {
+        const { origin, pathname } = window.location;
+        toClipboard(`${origin}${pathname}?type=interval&serverID=${serverID}`);
+    }
 }

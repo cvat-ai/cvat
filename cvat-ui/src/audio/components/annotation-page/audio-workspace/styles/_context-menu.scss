@@ -1,0 +1,31 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-audio-context-menu {
+    position: fixed;
+    z-index: 10;
+    max-height: 50%;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: $box-shadow-base;
+
+    .ant-menu {
+        padding: 4px;
+    }
+
+    .ant-menu-item {
+        padding: 5px 12px;
+        width: auto;
+        line-height: normal;
+        margin: 0;
+    }
+}
+
+.cvat-audio-context-menu-color-picker-anchor {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+}
