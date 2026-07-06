@@ -22,7 +22,6 @@ import { ThunkDispatch } from 'utils/redux';
 
 interface StateToProps {
     interval: AudioIntervalState | null;
-    visible: boolean;
     top: number;
     left: number;
     colorBy: ColorBy;
@@ -40,13 +39,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         visible, top, left, clientID,
     } = state.audio.player.contextMenu;
-    const interval = clientID !== null ?
+    const interval = visible && clientID !== null ?
         state.audio.player.intervals.find((_interval) => _interval.clientID === clientID) ?? null :
         null;
 
     return {
         interval,
-        visible: visible && !!interval,
         top,
         left,
         colorBy: state.settings.shapes.colorBy,
@@ -78,7 +76,6 @@ type Props = StateToProps & DispatchToProps;
 function AudioContextMenuContainer(props: Props): JSX.Element | null {
     const {
         interval,
-        visible,
         top,
         left,
         colorBy,
@@ -89,28 +86,23 @@ function AudioContextMenuContainer(props: Props): JSX.Element | null {
         onChangeIntervalColor,
     } = props;
 
-    const clientID = interval ? intervalID(interval) : null;
+    if (!interval) {
+        return null;
+    }
+
+    const clientID = intervalID(interval);
 
     return (
         <AudioContextMenuComponent
             interval={interval}
-            visible={visible}
             top={top}
             left={left}
             colorBy={colorBy}
             onCloseContextMenu={onCloseContextMenu}
-            onCreateURL={() => {
-                if (interval) onCreateURL(interval);
-            }}
-            onCopyInterval={() => {
-                if (clientID !== null) onCopyInterval(clientID);
-            }}
-            onDeleteInterval={() => {
-                if (clientID !== null) onDeleteInterval(clientID);
-            }}
-            onChangeIntervalColor={(color: string) => {
-                if (clientID !== null) onChangeIntervalColor(clientID, color);
-            }}
+            onCreateURL={() => onCreateURL(interval)}
+            onCopyInterval={() => onCopyInterval(clientID)}
+            onDeleteInterval={() => onDeleteInterval(clientID)}
+            onChangeIntervalColor={(color: string) => onChangeIntervalColor(clientID, color)}
         />
     );
 }

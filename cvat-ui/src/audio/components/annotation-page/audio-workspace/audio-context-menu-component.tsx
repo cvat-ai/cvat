@@ -14,8 +14,7 @@ import ColorPicker from 'components/annotation-page/standard-workspace/objects-s
 import AudioRegionItemMenu from './audio-region-item-menu';
 
 interface Props {
-    interval: AudioIntervalState | null;
-    visible: boolean;
+    interval: AudioIntervalState;
     top: number;
     left: number;
     colorBy: ColorBy;
@@ -26,10 +25,9 @@ interface Props {
     onChangeIntervalColor(color: string): void;
 }
 
-export default function AudioContextMenuComponent(props: Props): JSX.Element | null {
+export default function AudioContextMenuComponent(props: Props): JSX.Element {
     const {
         interval,
-        visible,
         top,
         left,
         colorBy,
@@ -47,17 +45,11 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element | n
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
     useEffect(() => {
-        if (!visible) {
-            setColorPickerVisible(false);
-        }
-    }, [visible]);
-
-    useEffect(() => {
         setColorPickerVisible(false);
-    }, [interval?.clientID]);
+    }, [interval.clientID]);
 
     useLayoutEffect(() => {
-        if (!visible || !menuRef.current) {
+        if (!menuRef.current) {
             setPosition({ top, left });
             return;
         }
@@ -68,11 +60,9 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element | n
             top: Math.max(0, Math.min(top, innerHeight - height)),
             left: Math.max(0, Math.min(left, innerWidth - width)),
         });
-    }, [visible, top, left, interval?.clientID]);
+    }, [top, left, interval.clientID]);
 
     useEffect(() => {
-        if (!visible) return undefined;
-
         const isEventInsideMenu = (target: EventTarget | null): boolean => {
             if (!(target instanceof Node)) return false;
 
@@ -101,7 +91,7 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element | n
             window.document.removeEventListener('mousedown', onMouseDown);
             window.document.removeEventListener('contextmenu', onContextMenu);
         };
-    }, [visible, onCloseContextMenu]);
+    }, [onCloseContextMenu]);
 
     const runAndClose = useCallback((callback: () => void): void => {
         callback();
@@ -110,10 +100,6 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element | n
     const onColorPickerPopupAlign = useCallback((element: HTMLElement): void => {
         colorPickerPopoverRef.current = element;
     }, []);
-
-    if (!visible || !interval) {
-        return null;
-    }
 
     const serverID = interval.serverID ?? undefined;
     const locked = !!interval.lock;
