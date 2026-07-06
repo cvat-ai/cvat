@@ -671,7 +671,9 @@ class RequirementHandler(ABC):
 
         return label_names, confusion_matrix, label_id_idx_map
 
-    def _prepare_item_for_requirement(self, item: dm.DatasetItem) -> dm.DatasetItem:
+    def _prepare_item_for_requirement(
+        self, item: dm.DatasetItem, data_provider: JobDataProvider
+    ) -> dm.DatasetItem:
         if (
             self.requirement.annotation_type
             != models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
@@ -707,7 +709,9 @@ class RequirementHandler(ABC):
                 element_attrs[RequirementJsonLogicFilter.PARENT_SKELETON_CONTEXT_KEY] = (
                     parent_skeleton_context
                 )
-                flattened_annotations.append(element.wrap(attributes=element_attrs))
+                wrapped_element = element.wrap(attributes=element_attrs)
+                data_provider.remember_dm_ann_alias(element, wrapped_element)
+                flattened_annotations.append(wrapped_element)
 
         return item.wrap(annotations=flattened_annotations)
 
@@ -860,8 +864,8 @@ class ShapeRequirementHandler(RequirementHandler):
     ) -> RequirementFrameResult:
         conflicts = []
         frame_id = self.context.frame_id
-        gt_item = self._prepare_item_for_requirement(gt_item)
-        ds_item = self._prepare_item_for_requirement(ds_item)
+        gt_item = self._prepare_item_for_requirement(gt_item, self._gt_data_provider)
+        ds_item = self._prepare_item_for_requirement(ds_item, self._ds_data_provider)
         gt_item = self._filter.filter_item(gt_item)
         ds_item = self._filter.filter_item(ds_item)
 

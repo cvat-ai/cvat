@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Hashable
+from collections.abc import Hashable, Sequence
 from functools import cached_property
 from typing import Any
 
@@ -39,9 +39,22 @@ class _MemoizingAnnotationConverterFactory:
         self._annotation_mapping = {}  # dm annotation -> cvat annotation
         self._attribute_spec_ids_by_label = attribute_spec_ids_by_label or {}
 
-    def remember_conversion(self, cvat_ann, dm_anns):
+    def remember_conversion(self, cvat_ann: Any, dm_anns: Sequence[dm.Annotation]) -> None:
         for dm_ann in dm_anns:
-            self._annotation_mapping[self._make_key(dm_ann)] = cvat_ann
+            self._remember_annotation(cvat_ann, dm_ann)
+
+    def _remember_annotation(self, cvat_ann: Any, dm_ann: dm.Annotation) -> None:
+        self._annotation_mapping[self._make_key(dm_ann)] = cvat_ann
+
+        if isinstance(dm_ann, dm.Skeleton):
+            cvat_elements = getattr(cvat_ann, "elements", ()) or ()
+            for cvat_element, dm_element in zip(cvat_elements, dm_ann.elements):
+                self._remember_annotation(cvat_element, dm_element)
+
+    def remember_annotation_alias(
+        self, source_dm_ann: dm.Annotation, alias_dm_ann: dm.Annotation
+    ) -> None:
+        self._annotation_mapping[self._make_key(alias_dm_ann)] = self.get_source_ann(source_dm_ann)
 
     def _make_key(self, dm_ann: dm.Annotation) -> Hashable:
         return id(dm_ann)
@@ -161,6 +174,9 @@ class JobDataProvider:
         return AnnotationId(
             obj_id=source_ann_id, type=ann_type, shape_type=shape_type, job_id=self.job_id
         )
+
+    def remember_dm_ann_alias(self, source_ann: dm.Annotation, alias_ann: dm.Annotation) -> None:
+        self._annotation_memo.remember_annotation_alias(source_ann, alias_ann)
 
 
 class QualitySettingsManager:

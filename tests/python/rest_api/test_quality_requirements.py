@@ -809,6 +809,96 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.OK
         assert child_requirement["effective"]["annotation_type"] == "skeleton_keypoint"
 
+    def test_patch_requirement_clears_inherited_fields_when_root_becomes_child(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        parent_payload = self._build_requirement_payload(
+            f"root-to-child-parent-{task['id']}",
+            settings_id=settings["id"],
+            annotation_type="rectangle",
+            point_size=0.1,
+            match_groups=True,
+        )
+        parent_payload["iou_threshold"] = 0.25
+        parent_requirement, response = self._create_requirement(admin_user, parent_payload)
+        assert response.status_code == HTTPStatus.CREATED
+
+        requirement_payload = self._build_requirement_payload(
+            f"root-to-child-{task['id']}",
+            settings_id=settings["id"],
+            annotation_type="rectangle",
+            point_size=0.7,
+            match_groups=False,
+        )
+        requirement_payload["iou_threshold"] = 0.9
+        requirement, response = self._create_requirement(admin_user, requirement_payload)
+        assert response.status_code == HTTPStatus.CREATED
+
+        patched_requirement, response = self._patch_requirement(
+            admin_user,
+            requirement["id"],
+            {"parent_requirement": parent_requirement["id"]},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        assert patched_requirement["annotation_type"] is None
+        assert patched_requirement["iou_threshold"] is None
+        assert patched_requirement["point_size"] is None
+        assert patched_requirement["match_groups"] is None
+        assert patched_requirement["effective"]["iou_threshold"] == parent_payload["iou_threshold"]
+        assert patched_requirement["effective"]["point_size"] == parent_payload["point_size"]
+        assert patched_requirement["effective"]["match_groups"] is True
+
+    def test_patch_requirement_applies_defaults_when_child_becomes_root(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        parent_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"child-to-root-parent-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="rectangle",
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        child_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"child-to-root-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type=None,
+                parent_requirement=parent_requirement["id"],
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert child_requirement["iou_threshold"] is None
+        assert child_requirement["point_size"] is None
+
+        patched_requirement, response = self._patch_requirement(
+            admin_user,
+            child_requirement["id"],
+            {
+                "parent_requirement": None,
+                "annotation_type": "rectangle",
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        assert patched_requirement["parent_requirement"] is None
+        assert patched_requirement["annotation_type"] == "rectangle"
+        assert patched_requirement["metric"] == "accuracy"
+        assert patched_requirement["required_score"] == 0.7
+        assert patched_requirement["iou_threshold"] == 0.4
+        assert patched_requirement["point_size"] == 0.09
+        assert patched_requirement["match_groups"] is True
+
     def test_settings_patch_cannot_delete_base_requirements(
         self, admin_user, find_sandbox_task_without_gt
     ):

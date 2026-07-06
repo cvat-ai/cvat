@@ -912,7 +912,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         return self.context.get("touch_settings", True)
 
     @staticmethod
-    def _apply_root_defaults(validated_data):
+    def _apply_root_defaults(validated_data: dict[str, Any]) -> None:
         defaults = models.QualityRequirement.get_defaults()
         for field_name in _INHERITED_REQUIREMENT_FIELDS:
             if field_name in validated_data:
@@ -930,7 +930,21 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 validated_data[field_name] = defaults[field_name]
 
     @staticmethod
-    def _clear_child_inherited_defaults(validated_data):
+    def _apply_missing_root_defaults(
+        instance: models.QualityRequirement, validated_data: dict[str, Any]
+    ) -> None:
+        defaults: dict[str, Any] = {}
+        QualityRequirementSerializer._apply_root_defaults(defaults)
+
+        for field_name, default_value in defaults.items():
+            if field_name in validated_data:
+                continue
+
+            if getattr(instance, field_name, None) is None:
+                validated_data[field_name] = default_value
+
+    @staticmethod
+    def _clear_child_inherited_defaults(validated_data: dict[str, Any]) -> None:
         for field_name in _INHERITED_REQUIREMENT_FIELDS:
             validated_data.setdefault(field_name, None)
 
@@ -946,6 +960,15 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
+        if "parent" in validated_data:
+            old_parent = instance.parent
+            new_parent = validated_data["parent"]
+
+            if old_parent is None and new_parent is not None:
+                self._clear_child_inherited_defaults(validated_data)
+            elif old_parent is not None and new_parent is None:
+                self._apply_missing_root_defaults(instance, validated_data)
+
         instance = super().update(instance, validated_data)
         if self._should_touch_settings():
             self._touch_settings(instance.settings)
