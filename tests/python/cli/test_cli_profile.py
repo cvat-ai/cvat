@@ -113,3 +113,102 @@ class TestProfileDelete:
 
     def test_delete_unknown_errors(self, store_path):
         run_cli(self, "profile", "delete", "ghost", expected_code=1)
+
+
+class TestProfileCreate:
+    def test_create_with_explicit_name_and_token(self, store_path, capsys):
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "mycvat",
+            "pat-token",
+            "--set-default",
+        )
+        store = AuthStore(path=store_path)
+        entry = store.get_profile("mycvat")
+        assert entry.server == "https://app.cvat.ai"
+        assert entry.token == "pat-token"
+        assert store.get_default_profile()[0] == "mycvat"
+        assert "mycvat" in capsys.readouterr().out
+
+    def test_create_prompts_for_token_without_echo(self, store_path, monkeypatch):
+        monkeypatch.setattr("getpass.getpass", lambda *a, **k: "prompted-pat")
+        run_cli(
+            self, "--server-host", "https://app.cvat.ai", "profile", "create", "p"
+        )
+        assert AuthStore(path=store_path).get_profile("p").token == "prompted-pat"
+
+    def test_create_existing_requires_force(self, store_path):
+        _seed(store_path, "p", "https://app.cvat.ai", "old")
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "p",
+            "new",
+            expected_code=1,
+        )
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "p",
+            "new",
+            "--force",
+        )
+        assert AuthStore(path=store_path).get_profile("p").token == "new"
+
+    def test_create_resolves_name_from_server(self, store_path, monkeypatch):
+        class _Resp:
+            name = "server-side-name"
+
+        class _AuthApi:
+            def retrieve_access_tokens_self(self):
+                return _Resp(), None
+
+        class _Configuration:
+            host = "https://app.cvat.ai"
+
+        class _ApiClient:
+            configuration = _Configuration()
+            auth_api = _AuthApi()
+
+        class _FakeClient:
+            def __init__(self, *a, **k):
+                self.api_client = _ApiClient()
+
+            def login(self, *a, **k):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        monkeypatch.setattr("getpass.getpass", lambda *a, **k: "tok-xyz")
+        monkeypatch.setattr("cvat_cli._internal.commands_profile.Client", _FakeClient)
+        run_cli(self, "--server-host", "https://app.cvat.ai", "profile", "create")
+        assert (
+            AuthStore(path=store_path).get_profile("server-side-name").token == "tok-xyz"
+        )
+
+    def test_create_rejects_empty_token(self, store_path, monkeypatch):
+        monkeypatch.setattr("getpass.getpass", lambda *a, **k: "")
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "p",
+            expected_code=1,
+        )
+        assert AuthStore(path=store_path).get_profile("p") is None

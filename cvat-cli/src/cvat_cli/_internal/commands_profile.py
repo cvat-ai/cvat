@@ -5,11 +5,38 @@
 from __future__ import annotations
 
 import argparse
+import getpass
+from datetime import datetime, timezone
 
-from cvat_sdk.core.auth import AuthStore
+from cvat_sdk import Client
+from cvat_sdk import Client as _NormalizerClient
+from cvat_sdk.core.auth import DEFAULT_SERVER, AuthStore, ProfileEntry
+from cvat_sdk.core.client import AccessTokenCredentials, Config
 
 from .command_base import CommandGroup
 from .common import CriticalError
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _normalize_server(raw: str) -> str:
+    """Normalize a server URL using Client's rules without connecting.
+
+    Uses a dedicated alias so tests can monkeypatch ``Client`` for the
+    network-touching path without breaking pure URL normalization.
+    """
+    return _NormalizerClient.__new__(_NormalizerClient)._validate_and_prepare_url(raw)
+
+
+def _fetch_name_from_server(server: str, token: str, *, insecure: bool) -> str:
+    with Client(
+        url=server, config=Config(verify_ssl=not insecure), check_server_version=False
+    ) as client:
+        client.login(AccessTokenCredentials(token))
+        info, _ = client.api_client.auth_api.retrieve_access_tokens_self()
+        return info.name
 
 COMMANDS = CommandGroup(description="Manage saved CVAT authentication profiles.")
 
@@ -89,3 +116,50 @@ class ProfileDelete:
         except KeyError:
             raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
         print(f'Removed profile "{args.name}".')
+
+
+@COMMANDS.command_class("create")
+class ProfileCreate:
+    needs_client = False
+    description = (
+        "Save a self-contained profile bundling a server and a PAT. "
+        "Only an existing PAT can be remembered; this does not create a server-side token."
+    )
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument("name", nargs="?", default=None, help="profile name (unique)")
+        parser.add_argument("token", nargs="?", default=None, help="PAT (omit to be prompted)")
+        parser.add_argument("--set-default", action="store_true", help="mark as default profile")
+        parser.add_argument("--force", action="store_true", help="overwrite an existing profile")
+
+    def execute(self, args: argparse.Namespace) -> None:
+        store = AuthStore()
+
+        token = args.token if args.token is not None else getpass.getpass("PAT: ")
+        if not token:
+            raise CriticalError("A non-empty PAT is required.")
+
+        if args.server_host:
+            server = args.server_host
+            if args.server_port:
+                server = f"{server}:{args.server_port}"
+        else:
+            server = store.get_default_server() or DEFAULT_SERVER
+        server = _normalize_server(server)
+
+        name = args.name
+        if name is None:
+            name = _fetch_name_from_server(server, token, insecure=args.insecure)
+
+        if store.get_profile(name) is not None and not args.force:
+            raise CriticalError(
+                f"Profile {name!r} already exists. Pass --force to overwrite."
+            )
+
+        store.add_profile(
+            name,
+            ProfileEntry(server=server, token=token, created_date=_now_iso()),
+            set_default=args.set_default,
+        )
+        suffix = " (set as default)" if store.get_default_profile()[0] == name else ""
+        print(f'Saved profile "{name}" for {server}{suffix}.')
