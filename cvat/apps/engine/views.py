@@ -1968,7 +1968,7 @@ class TaskViewSet(
             db_task.data = serializer.save()
 
         db_data = db_task.data
-        if db_data is None:
+        if db_data is None or not db_task.media_type:
             raise ValidationError("Data is not uploaded for the task yet")
 
         if (
