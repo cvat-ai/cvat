@@ -65,3 +65,30 @@ class TestProfileList:
     def test_list_empty_prints_nothing(self, store_path, capsys):
         run_cli(self, "profile", "list")
         assert capsys.readouterr().out == ""
+
+
+class TestProfileDefault:
+    def test_print_set_unset(self, store_path, capsys):
+        _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
+        _seed(store_path, "staging", "https://staging.example.com", "t2")
+
+        run_cli(self, "profile", "default")
+        assert capsys.readouterr().out.strip() == "mycvat"
+
+        run_cli(self, "profile", "default", "staging")
+        assert AuthStore(path=store_path).get_default_profile()[0] == "staging"
+
+        run_cli(self, "profile", "default", "--unset")
+        assert AuthStore(path=store_path).get_default_profile() is None
+
+    def test_set_unknown_profile_errors(self, store_path):
+        _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
+        run_cli(self, "profile", "default", "ghost", expected_code=1)
+        assert AuthStore(path=store_path).get_default_profile()[0] == "mycvat"
+
+    def test_name_and_unset_conflict(self, store_path):
+        _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
+        run_cli(self, "profile", "default", "mycvat", "--unset", expected_code=1)
+
+    def test_print_no_default_errors(self, store_path):
+        run_cli(self, "profile", "default", expected_code=1)

@@ -36,3 +36,36 @@ class ProfileList:
             else:
                 marker = "(default)" if name == default_name else ""
                 print(f"{name}\t{profiles[name].server}\t{marker}".rstrip())
+
+
+@COMMANDS.command_class("default")
+class ProfileDefault:
+    needs_client = False
+    description = "Print, set, or unset the default profile."
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument("name", nargs="?", default=None, help="profile to make default")
+        parser.add_argument("--unset", action="store_true", help="clear the default profile")
+
+    def execute(self, args: argparse.Namespace) -> None:
+        store = AuthStore()
+
+        if args.unset and args.name is not None:
+            raise CriticalError("Cannot combine a profile name with --unset.")
+
+        if args.unset:
+            store.clear_default_profile()
+            print("Default profile cleared.")
+        elif args.name is not None:
+            try:
+                store.set_default_profile(args.name)
+            except KeyError:
+                raise CriticalError(
+                    f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'."
+                )
+            print(f'Default profile is now "{args.name}".')
+        else:
+            default = store.get_default_profile()
+            if default is None:
+                raise CriticalError("No default profile is set.")
+            print(default[0])
