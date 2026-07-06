@@ -805,45 +805,49 @@ class JobAnnotation:
             self.ir_data.shapes = list(generate_shapes())
 
     def _init_tracks_from_db(self):
-        # NOTE: do not use .prefetch_related() with .values() since it's useless:
-        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
-        db_tracks = (
-            self.db_job.labeledtrack_set.values(
+        db_tracks = [
+            dotdict(row)
+            for row in self.db_job.labeledtrack_set.values(
                 "id",
                 "frame",
                 "label_id",
                 "group",
                 "source",
                 "parent",
-                "shape__type",
-                "shape__occluded",
-                "shape__z_order",
-                "shape__rotation",
-                "shape__points",
-                "shape__id",
-                "shape__frame",
-                "shape__outside",
             )
-            .order_by("id", "shape__frame")
+            .order_by("id")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
-        )
+        ]
 
-        db_tracks = merge_table_rows(
-            rows=db_tracks,
-            keys_for_merge={
-                "shapes": [
-                    "shape__type",
-                    "shape__occluded",
-                    "shape__z_order",
-                    "shape__points",
-                    "shape__rotation",
-                    "shape__id",
-                    "shape__frame",
-                    "shape__outside",
-                ],
-            },
-            field_id="id",
-        )
+        if not db_tracks:
+            self.ir_data.tracks = []
+            return
+
+        tracks_by_id = {db_track.id: db_track for db_track in db_tracks}
+        for db_track in db_tracks:
+            db_track.shapes = []
+
+        for track_ids_chunk in take_by(sorted(tracks_by_id), 1000):
+            db_shapes = (
+                models.TrackedShape.objects.filter(track_id__in=track_ids_chunk)
+                .values(
+                    "track_id",
+                    "type",
+                    "occluded",
+                    "z_order",
+                    "rotation",
+                    "points",
+                    "id",
+                    "frame",
+                    "outside",
+                )
+                .order_by("track_id", "frame")
+                .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
+            )
+
+            for db_shape in db_shapes:
+                track_id = db_shape.pop("track_id")
+                tracks_by_id[track_id].shapes.append(dotdict(db_shape))
 
         labeledtrack_attributes = _receive_attributes_from_db(
             self.db_job.labeledtrackattributeval_set,
