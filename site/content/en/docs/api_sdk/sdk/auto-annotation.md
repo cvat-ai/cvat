@@ -157,6 +157,9 @@ A detection function can be used in the following ways:
 
 - In agent mode, the AA function can be used from the CVAT UI to either annotate a complete task
   (similar to immediate mode) or a single frame in a task.
+  After being registered with CVAT, a detection function will appear on the job page
+  under "AI Tools" (in the "Detectors" tab),
+  as well as on the task page under "Actions -> Automatic annotation".
 
 A detection function must have two attributes, `spec` and `detect`.
 
@@ -286,8 +289,9 @@ A tracking function is a type of AA function that analyzes an image with one or 
 and then predicts the positions of those shapes on subsequent images.
 
 A tracking function can only be used in agent mode.
-When used with a tracking function, an agent will use it
-to process requests from the AI tracking tools in the CVAT UI.
+After being registered with CVAT, a tracking function will appear on the job page,
+either in "AI Tools" under the "Trackers" tab, or in the "Run annotation actions" dialog,
+depending on the supported shape types.
 
 {{% alert title="Warning" color="warning" %}}
 Currently, only one agent should be run for each tracking function.
