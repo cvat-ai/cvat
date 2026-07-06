@@ -92,3 +92,24 @@ class TestProfileDefault:
 
     def test_print_no_default_errors(self, store_path):
         run_cli(self, "profile", "default", expected_code=1)
+
+
+class TestProfileDelete:
+    def test_delete_removes_and_clears_default(self, store_path, capsys):
+        _seed(store_path, "staging", "https://staging.example.com", "t2", default=True)
+        run_cli(self, "profile", "delete", "staging")
+        assert "staging" in capsys.readouterr().out
+        store = AuthStore(path=store_path)
+        assert store.get_profile("staging") is None
+        assert store.get_default_profile() is None
+
+    def test_delete_leaves_others_and_default_when_not_default(self, store_path):
+        _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
+        _seed(store_path, "staging", "https://staging.example.com", "t2")
+        run_cli(self, "profile", "delete", "staging")
+        store = AuthStore(path=store_path)
+        assert store.get_profile("staging") is None
+        assert store.get_default_profile()[0] == "mycvat"
+
+    def test_delete_unknown_errors(self, store_path):
+        run_cli(self, "profile", "delete", "ghost", expected_code=1)

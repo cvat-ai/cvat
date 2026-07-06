@@ -69,3 +69,23 @@ class ProfileDefault:
             if default is None:
                 raise CriticalError("No default profile is set.")
             print(default[0])
+
+
+@COMMANDS.command_class("delete")
+class ProfileDelete:
+    needs_client = False
+    description = (
+        "Remove a saved profile. Does not revoke the server-side token. "
+        "If it was the default, the default becomes unset."
+    )
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument("name", help="profile to remove")
+
+    def execute(self, args: argparse.Namespace) -> None:
+        store = AuthStore()
+        try:
+            store.remove_profile(args.name)
+        except KeyError:
+            raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
+        print(f'Removed profile "{args.name}".')
