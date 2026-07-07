@@ -8,22 +8,21 @@ import Layout from 'antd/lib/layout';
 import notification from 'antd/lib/notification';
 import { useSelector } from 'react-redux';
 
-import { ActiveControl, CombinedState } from 'reducers';
+import { ActiveControl, Rotation, CombinedState } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { LabelType, ObjectType } from 'cvat-core-wrapper';
+import { ObjectType } from 'cvat-core-wrapper';
 
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { ShortcutScope } from 'utils/enums';
 import ControlVisibilityObserver, {
-    ExtraControlsControl, ContainerHeightContext,
+    ContainerHeightContext,
 } from '../control-visibility-observer';
 import OpenCVControl from '../opencv-control';
 import FitControl, { Props as FitControlProps } from '../fit-control';
 import RabbitControl from './rabbit-control';
 import NCPSetupTagControl from './road-material/ncp-setup-tag-control';
-
 
 type Label = CombinedState['annotation']['job']['labels'][0];
 
@@ -80,12 +79,10 @@ const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl
 const ObservedRabbitControl = ControlVisibilityObserver(RabbitControl, 'RabbitControl');
 const NCPObservedSetupTagControl = ControlVisibilityObserver(NCPSetupTagControl, 'NCPSetupTagControl');
 
-
 export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
     const {
         activeControl,
         canvasInstance,
-        normalizedKeyMap,
         keyMap,
         labels,
         repeatDrawShape,

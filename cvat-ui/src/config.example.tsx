@@ -19,9 +19,6 @@
  *
  * OR simply edit cvat-ui/src/config.tsx directly and rebuild.
  */
-
-import React from 'react';
-
 // ... (copy all constants from config.tsx)
 
 // EXAMPLE: Customize Feature Flags

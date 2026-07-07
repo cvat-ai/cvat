@@ -79,14 +79,6 @@ function LabelsListComponent(): JSX.Element {
             const relevantAppState = getCVATStore().getState();
             const { states, activatedStateID } = relevantAppState.annotation.annotations;
             const { activeShapeType, activeObjectType } = relevantAppState.annotation.drawing;
-            const { showPrivateAttributes } = relevantAppState.settings.workspace;
-
-            // NCP mode: when idle and no annotation is selected, select a label and start drawing
-            if (!showPrivateAttributes && !Number.isInteger(activatedStateID)) {
-                window.dispatchEvent(new CustomEvent('ncp:select-label', { detail: { label } }));
-                return;
-            }
-
             if (Number.isInteger(activatedStateID)) {
                 const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
                 const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === LabelType.TAG;

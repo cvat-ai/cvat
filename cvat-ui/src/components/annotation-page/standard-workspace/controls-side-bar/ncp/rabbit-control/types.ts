@@ -5,6 +5,4 @@
 /** Geometry mode resolved for a label from the `_geom` project tag. */
 export type LabelMode = 'polygon' | 'line' | 'circle';
 
-export interface Props {
-
-}
+export type Props = Record<string, never>;
