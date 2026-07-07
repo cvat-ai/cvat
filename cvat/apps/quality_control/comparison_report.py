@@ -28,6 +28,7 @@ from cvat.apps.quality_control.models import (
 )
 from cvat.apps.quality_control.utils import array_safe_divide
 
+
 def _parse_annotation_conflict_type(value: str) -> AnnotationConflictType:
     return AnnotationConflictType(value)
 
@@ -795,11 +796,7 @@ class ComparisonReportSummary(ReportNode):
         return {
             "frames": d.get("frames"),
             "total_frames": d["total_frames"],
-            **(
-                dict(validation_frames=d["validation_frames"])
-                if "validation_frames" in d
-                else {}
-            ),
+            **(dict(validation_frames=d["validation_frames"]) if "validation_frames" in d else {}),
             "conflict_count": d["conflict_count"],
             "error_count": d["error_count"],
             "conflicts_by_type": {
