@@ -93,10 +93,12 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         }
 
         function saveJobAnnotations() {
-            cy.intercept('**/api/jobs/*/annotations**').as('saveAnnotations');
+            cy.intercept('PUT', `/api/jobs/${jobId}/annotations**`).as('saveAnnotations');
             cy.clickSaveAnnotationView();
             cy.hideTooltips();
-            cy.wait('@saveAnnotations', { timeout: 25000 });
+            cy.wait('@saveAnnotations', { timeout: 25000 })
+                .its('response.statusCode')
+                .should('eq', 200);
         }
 
         function enableRemoveUnderlyingPixels() {
