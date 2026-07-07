@@ -3,13 +3,17 @@
 # SPDX-License-Identifier: MIT
 
 from copy import deepcopy
+from typing import TypeVar
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import Model
 from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
+from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
+from cvat.apps.engine.task import ensure_task_is_initialized
 from cvat.apps.events.handlers import (
     get_instance_diff,
     get_serializer,
@@ -17,11 +21,13 @@ from cvat.apps.events.handlers import (
 from cvat.apps.events.handlers import organization_id as resolve_organization_id
 from cvat.apps.events.handlers import project_id as resolve_project_id
 from cvat.apps.organizations.models import Invitation, Membership, Organization
+from cvat.apps.webhooks import utils
 
 from .dispatch import batch_add_to_queue
 from .event_type import EventTypeChoice, event_name
 from .services import select_webhooks
-from .utils import get_sender
+
+ModelT = TypeVar("ModelT", bound=Model)
 
 
 @receiver(pre_save, sender=Project)
@@ -32,14 +38,15 @@ from .utils import get_sender
 @receiver(pre_save, sender=Organization)
 @receiver(pre_save, sender=Invitation)
 @receiver(pre_save, sender=Membership)
-def pre_save_resource_event(sender, instance, **kwargs):
+def pre_save_resource_event(sender: type[ModelT], instance, **kwargs):
     instance._webhooks_selected_webhooks = []
+    instance._webhooks_old_data = None
 
     if instance.pk is None:
         created = True
     else:
         try:
-            old_instance = sender.objects.get(pk=instance.pk)
+            old_instance = utils.retrieve_instance(model=sender, pk=instance.pk)
             created = False
         except ObjectDoesNotExist:
             created = True
@@ -94,8 +101,7 @@ def pre_save_resource_event(sender, instance, **kwargs):
     if created:
         instance._webhooks_old_data = None
     else:
-        old_serializer = get_serializer(instance=old_instance)
-        instance._webhooks_old_data = old_serializer.data
+        instance._webhooks_old_data = get_serializer(instance=old_instance).data
 
 
 @receiver(post_save, sender=Project)
@@ -106,7 +112,13 @@ def pre_save_resource_event(sender, instance, **kwargs):
 @receiver(post_save, sender=Organization)
 @receiver(post_save, sender=Invitation)
 @receiver(post_save, sender=Membership)
-def post_save_resource_event(sender, instance, created: bool, raw: bool, **kwargs):
+def post_save_resource_event(
+    sender: type[ModelT],
+    instance: ModelT,
+    created: bool,
+    raw: bool,
+    **kwargs,
+):
     if created and raw:
         return
 
@@ -119,17 +131,22 @@ def post_save_resource_event(sender, instance, created: bool, raw: bool, **kwarg
     old_data = instance._webhooks_old_data
     del instance._webhooks_old_data
 
+    retrieved_instance = utils.retrieve_instance(
+        model=sender,
+        pk=instance.pk,
+    )
+
     created = old_data is None
 
     resource_name = instance.__class__.__name__.lower()
     event_type = event_name(action="create" if created else "update", resource=resource_name)
     only_one_event_type = not isinstance(selected_webhooks, dict)
 
-    serializer = get_serializer(instance=instance)
+    serializer = get_serializer(instance=retrieved_instance)
 
     data = {
         resource_name: serializer.data,
-        "sender": get_sender(instance=instance),
+        "sender": utils.get_sender(instance=instance),
     }
     # webhooks batch with only one event type
     if only_one_event_type:
@@ -170,7 +187,7 @@ def post_save_resource_event(sender, instance, created: bool, raw: bool, **kwarg
 @receiver(pre_delete, sender=Organization)
 @receiver(pre_delete, sender=Invitation)
 @receiver(pre_delete, sender=Membership)
-def pre_delete_resource_event(sender, instance, **kwargs):
+def pre_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
     related_webhooks = []
@@ -181,8 +198,9 @@ def pre_delete_resource_event(sender, instance, **kwargs):
             project_id=resolve_project_id(instance),
         )
 
-    serializer = get_serializer(instance=deepcopy(instance))
-    instance._deleted_object = dict(serializer.data)
+    retrieved_instance = utils.retrieve_instance(model=sender, pk=instance.pk)
+
+    instance._deleted_object = dict(get_serializer(instance=retrieved_instance).data)
     instance._related_webhooks = related_webhooks
 
 
@@ -194,7 +212,7 @@ def pre_delete_resource_event(sender, instance, **kwargs):
 @receiver(post_delete, sender=Organization)
 @receiver(post_delete, sender=Invitation)
 @receiver(post_delete, sender=Membership)
-def post_delete_resource_event(sender, instance, **kwargs):
+def post_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
     event_type = event_name(action="delete", resource=resource_name)
@@ -209,8 +227,8 @@ def post_delete_resource_event(sender, instance, **kwargs):
 
     data = {
         "event": event_type,
-        resource_name: getattr(instance, "_deleted_object"),
-        "sender": get_sender(instance=instance),
+        resource_name: instance._deleted_object,
+        "sender": utils.get_sender(instance=instance),
     }
 
     related_webhooks = [

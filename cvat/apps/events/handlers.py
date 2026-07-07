@@ -8,9 +8,11 @@ from typing import Any
 import rq
 from crum import get_current_request, get_current_user
 from django.db import DatabaseError
+from django.db.models import Model
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.views import exception_handler as drf_exception_handler
 
 from cvat.apps.access_tokens.models import AccessToken
@@ -274,7 +276,7 @@ def _get_object_name(instance):
     return None
 
 
-SERIALIZERS = [
+SERIALIZERS: list[tuple[type[Model], type[BaseSerializer]]] = [
     (AccessToken, AccessTokenReadSerializer),
     (Organization, OrganizationReadSerializer),
     (Project, ProjectReadSerializer),
@@ -291,15 +293,14 @@ SERIALIZERS = [
 ]
 
 
-def get_serializer(instance):
+def get_serializer(instance: Model) -> BaseSerializer | None:
     context = {"request": get_current_request()}
 
-    serializer = None
     for model, serializer_class in SERIALIZERS:
         if isinstance(instance, model):
-            serializer = serializer_class(instance=instance, context=context)
+            return serializer_class(instance=instance, context=context)
 
-    return serializer
+    return None
 
 
 SERIALIZER_CLEAN_UP_FIELDS = [
