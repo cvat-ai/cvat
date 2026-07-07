@@ -102,10 +102,10 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
     } = props;
 
     const showPrivateAttributes = useSelector(
-            (state: CombinedState) => state.settings.workspace.showPrivateAttributes,
-        );
-    const visibleAttributes = attributes.filter((attribute) =>
-        showAttribute(attribute.name, values[attribute.id], showPrivateAttributes),
+        (state: CombinedState) => state.settings.workspace.showPrivateAttributes,
+    );
+    const visibleAttributes = attributes.filter(
+        (attribute) => showAttribute(attribute.name, values[attribute.id], showPrivateAttributes),
     );
 
     const isConsensus = source === Source.CONSENSUS;

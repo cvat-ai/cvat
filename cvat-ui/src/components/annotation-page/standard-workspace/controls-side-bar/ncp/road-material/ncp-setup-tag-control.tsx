@@ -13,22 +13,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from '@ant-design/icons';
-import Popover from 'antd/lib/popover';
 import Button from 'antd/lib/button';
+import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
-import { PlusOutlined } from '@ant-design/icons';
 
-import { getCore, ObjectState, ObjectType } from 'cvat-core-wrapper';
+import { getCore, ObjectType } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { CombinedState } from 'reducers';
 import { createAnnotationsAsync, removeObjectAsync, rememberObject } from 'actions/annotation-actions';
-import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { RoadSVGIcon } from 'icons';
 
 import withVisibilityHandling from '../../handle-popover-visibility';
-
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -40,7 +37,7 @@ export interface Props {
      * popover.  Defaults to `"Material --"`.
      */
     labelPrefix?: string;
-    labelPrefixFr?:string;
+    labelPrefixFr?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -65,17 +62,13 @@ function NCPSetupTagControl(props: Props): JSX.Element {
     const canvasInstance = useSelector(
         (state: CombinedState) => state.annotation.canvas.instance as Canvas,
     );
-    const normalizedKeyMap = useSelector(
-        (state: CombinedState) => state.shortcuts.normalizedKeyMap,
-    );
-
     // ── Filtered labels ──────────────────────────────────────────────────────
     const satisfiedLabels = useMemo(
         () => allLabels.filter(
             (label: any) => ['any', ObjectType.TAG].includes(label.type) &&
                 (label.name.startsWith(labelPrefix) || label.name.startsWith(labelPrefixFr)),
         ),
-        [allLabels, labelPrefix],
+        [allLabels, labelPrefix, labelPrefixFr],
     );
 
     // ── Selected label state ─────────────────────────────────────────────────
@@ -111,7 +104,10 @@ function NCPSetupTagControl(props: Props): JSX.Element {
 
         // Remove the previous Material-- tag on this frame (if any)
         const existingPrefixTags = frameTags.filter(
-            (s: any) => s.label.name.startsWith(labelPrefix),
+            (s: any) => (
+                s.label.name.startsWith(labelPrefix) ||
+                s.label.name.startsWith(labelPrefixFr)
+            ),
         );
         for (const tagState of existingPrefixTags) {
             dispatch(removeObjectAsync(tagState, true));
@@ -130,25 +126,7 @@ function NCPSetupTagControl(props: Props): JSX.Element {
             frame,
         });
         dispatch(createAnnotationsAsync([objectState]));
-    }, [canvasInstance, allLabels, frame, dispatch, frameTags, labelPrefix]);
-
-    // ── Handlers ─────────────────────────────────────────────────────────────
-    /** Dropdown mode: label changed in selector. */
-    const onChangeLabel = useCallback((value: any): void => {
-        if (!value) return;
-        setSelectedLabelID(value.id as number);
-        dispatch(rememberObject({
-            activeObjectType: ObjectType.TAG,
-            activeLabelID: value.id,
-            activeShapeType: undefined,
-        }));
-    }, [dispatch]);
-
-    /** Dropdown mode: "+" button clicked. */
-    const onSetup = useCallback((): void => {
-        if (!canAddTag(selectedLabelID)) return;
-        createTag(selectedLabelID!);
-    }, [selectedLabelID, canAddTag, createTag]);
+    }, [canvasInstance, allLabels, frame, dispatch, frameTags, labelPrefix, labelPrefixFr]);
 
     /** List mode: label button clicked. */
     const onSetupLabel = useCallback((label: any): void => {
@@ -168,9 +146,6 @@ function NCPSetupTagControl(props: Props): JSX.Element {
             />
         );
     }
-
-    // ── Popover ───────────────────────────────────────────────────────────────
-    const repeatShortcut = normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS ?? 'N';
 
     const listModeContent = (
         <div className='cvat-ncp-setup-tag-popover-content'>

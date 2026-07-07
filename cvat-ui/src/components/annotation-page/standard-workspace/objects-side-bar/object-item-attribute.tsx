@@ -81,7 +81,6 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         }
     }, [attrValue]);
 
-
     if (attrInputType === 'checkbox') {
         return (
             <Col span={24}>

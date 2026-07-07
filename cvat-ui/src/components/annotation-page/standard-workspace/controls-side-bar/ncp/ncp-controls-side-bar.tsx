@@ -8,9 +8,7 @@ import Layout from 'antd/lib/layout';
 import notification from 'antd/lib/notification';
 import { useSelector } from 'react-redux';
 
-import {
-    ActiveControl, Rotation, CombinedState,
-} from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { LabelType, ObjectType } from 'cvat-core-wrapper';
@@ -90,11 +88,8 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
         normalizedKeyMap,
         keyMap,
         labels,
-        updateActiveControl,
-        rotateFrame,
         repeatDrawShape,
         pasteShape,
-        resetGroup,
         redrawShape,
         frameData,
     } = props;
@@ -119,8 +114,6 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
         window.addEventListener('ncp:select-label', handler);
         return (): void => window.removeEventListener('ncp:select-label', handler);
     }, []);
-
-
     // ── First-frame tag check ────────────────────────────────────────────────
     const currentFrame = useSelector(
         (state: CombinedState) => state.annotation.player.frame.number,
@@ -192,8 +185,6 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
 
         return () => {};
     }, []);
-
-
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
         CANCEL: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
@@ -298,7 +289,6 @@ export default function NCPControlsSideBarComponent(props: Props): JSX.Element {
                     setSelectedLabelID={setSelectedLabelID}
                 />
                 <NCPObservedSetupTagControl disabled={controlsDisabled} />
-
             </Layout.Sider>
         </ContainerHeightContext.Provider>
     );

@@ -69,9 +69,9 @@ export function polygonToMaskPoints(vertices: [number, number][]): number[] {
         const [bx, by] = vertices[(i + 1) % n];
         if (ay === by) continue; // horizontal edge — skip
 
-        const [loX, loY, hiX, hiY] = ay < by
-            ? [ax, ay, bx, by]
-            : [bx, by, ax, ay];
+        const [loX, loY, hiX, hiY] = ay < by ?
+            [ax, ay, bx, by] :
+            [bx, by, ax, ay];
 
         const yStart = Math.ceil(loY);
         const yEnd = Math.ceil(hiY) - 1;
@@ -113,14 +113,24 @@ export function polygonToMaskPoints(vertices: [number, number][]): number[] {
             // Background segment before this span
             const bgLen = xIn - col;
             if (bgLen > 0) {
-                if (isFg) { rle.push(run); isFg = false; run = bgLen; }
-                else { run += bgLen; }
+                if (isFg) {
+                    rle.push(run);
+                    isFg = false;
+                    run = bgLen;
+                } else {
+                    run += bgLen;
+                }
             }
 
             // Foreground span
             const fgLen = xOut - xIn + 1;
-            if (!isFg) { rle.push(run); isFg = true; run = fgLen; }
-            else { run += fgLen; }
+            if (!isFg) {
+                rle.push(run);
+                isFg = true;
+                run = fgLen;
+            } else {
+                run += fgLen;
+            }
 
             col = xOut + 1;
         }
@@ -129,8 +139,13 @@ export function polygonToMaskPoints(vertices: [number, number][]): number[] {
         // leading background, keeping the RLE flat across rows)
         const tailLen = right - col + 1;
         if (tailLen > 0) {
-            if (isFg) { rle.push(run); isFg = false; run = tailLen; }
-            else { run += tailLen; }
+            if (isFg) {
+                rle.push(run);
+                isFg = false;
+                run = tailLen;
+            } else {
+                run += tailLen;
+            }
         }
     }
 
@@ -152,13 +167,13 @@ export function lineBufferVertices(
     p2: [number, number],
     buffer: number,
 ): [number, number][] {
+    if (p1[0] === p2[0] && p1[1] === p2[1]) {
+        return circleVertices(p1, buffer);
+    }
+
     const dx = p2[0] - p1[0];
     const dy = p2[1] - p1[1];
     const len = Math.sqrt(dx * dx + dy * dy);
-
-    if (len < 1e-6) {
-        return circleVertices(p1, buffer);
-    }
 
     // Perpendicular unit vector scaled by buffer
     const nx = (-dy / len) * buffer;

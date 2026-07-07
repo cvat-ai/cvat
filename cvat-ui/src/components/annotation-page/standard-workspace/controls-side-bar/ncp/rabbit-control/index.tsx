@@ -39,7 +39,7 @@ import Text from 'antd/lib/typography/Text';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
-import { getCore, ObjectState, ObjectType, ShapeType } from 'cvat-core-wrapper';
+import { getCore, ObjectType, ShapeType } from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
 import { RabbitSVGIcon } from 'icons';
 import { ActiveControl, CombinedState } from 'reducers';
@@ -130,7 +130,7 @@ const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'rabbit-control');
 
 function RabbitControl(props: Props): JSX.Element {
-    const {selectedLabelID, setSelectedLabelID } = props;
+    const { selectedLabelID, setSelectedLabelID } = props;
     const dispatch = useDispatch();
 
     // ── Redux selectors ──────────────────────────────────────────────────────
@@ -189,7 +189,6 @@ function RabbitControl(props: Props): JSX.Element {
         if (activeControl === ActiveControl.RABBIT || activeControl === ActiveControl.DRAW_POLYGON) {
             // Annotation started – force the popover open so the user can see
             // which label is currently being annotated (it will be highlighted).
-            //setPopoverOpen(false);
         } else if (activeControl === ActiveControl.CURSOR) {
             // Back to idle – clear the highlight and the selected class so the
             // rabbit control becomes visible again (it hides while a class is set).
@@ -526,8 +525,6 @@ function RabbitControl(props: Props): JSX.Element {
             })}
         </div>
     );
-
-
     return (
         <CustomPopover
             open={popoverOpen}
@@ -539,11 +536,9 @@ function RabbitControl(props: Props): JSX.Element {
             <CVATTooltip title='Rabbit tool' placement='right'>
                 <Icon
                     component={RabbitSVGIcon}
-                    className={
-                        isActive
-                            ? 'cvat-rabbit-control cvat-active-canvas-control'
-                            : 'cvat-rabbit-control'
-                    }
+                    className={isActive ?
+                        'cvat-rabbit-control cvat-active-canvas-control' :
+                        'cvat-rabbit-control'}
                     onClick={isActive ? () => handleDeactivate() : () => handleActivate()}
                 />
             </CVATTooltip>

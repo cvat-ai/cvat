@@ -111,7 +111,7 @@ const mapDispatchToProps: DispatchToProps = {
     onChangeTextPosition: switchTextPosition,
     onChangeTextContent: switchTextContent,
     onSwitchShowingTagsOnFrame: switchShowingTagsOnFrame,
-    onSwitchShowingPrivateAttributes:switchShowingPrivateAttributes,
+    onSwitchShowingPrivateAttributes: switchShowingPrivateAttributes,
 };
 
 function WorkspaceSettingsContainer(props: StateToProps & DispatchToProps): JSX.Element {
