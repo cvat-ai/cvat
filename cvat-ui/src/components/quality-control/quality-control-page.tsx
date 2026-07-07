@@ -263,7 +263,7 @@ function QualityControlPage(): JSX.Element {
     const receiveSettings = async (
         type: InstanceType,
         id: number,
-        instance: Task | Project | null,
+        targetInstance: Task | Project | null,
     ): Promise<void> => {
         try {
             dispatch(reducerActions.setQualitySettingsFetching(true));
@@ -278,7 +278,7 @@ function QualityControlPage(): JSX.Element {
 
                 // A task that inherits project settings has no requirements of its own; they
                 // live on the project settings, so load them for the requirement-based views.
-                const projectId = instance instanceof Task ? instance.projectId : null;
+                const projectId = targetInstance instanceof Task ? targetInstance.projectId : null;
                 if (settings?.inherit && typeof projectId === 'number') {
                     [parentSettings] = await core.analytics.quality.settings.get(
                         { projectID: projectId, parentType: 'project' },
