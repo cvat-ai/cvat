@@ -13,7 +13,7 @@ context('Quality requirements UI', () => {
     const childRequirementName = 'E2E rectangle accuracy';
     const grandchildRequirementName = 'E2E precise rectangle accuracy';
     const copiedRequirementName = `Copy of ${childRequirementName}`;
-    const defaultRectangleRequirementName = 'Default rectangle';
+    const defaultRectangleRequirementName = 'Base rectangle';
     const validationParams = {
         frameCount: 2,
         mode: 'gt',
