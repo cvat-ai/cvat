@@ -3,7 +3,9 @@ from django.db import migrations, models
 from django.db.models import Count
 
 
-def _build_unique_task_name(existing_names: set[str], original_name: str, task_id: int, max_length: int) -> str:
+def _build_unique_task_name(
+    existing_names: set[str], original_name: str, task_id: int, max_length: int
+) -> str:
     suffix = f" ({task_id})"
     trimmed_name = original_name[: max_length - len(suffix)]
     candidate = f"{trimmed_name}{suffix}"
@@ -39,7 +41,9 @@ def deduplicate_task_names(apps, schema_editor):
         for task in tasks[1:]:
             existing_names.discard(task.name)
             new_name = _build_unique_task_name(existing_names, duplicated_name, task.id, max_length)
-            print(f"[0107_task_unique_task_name] Renaming task {task.id}: {task.name!r} -> {new_name!r}")
+            print(
+                f"[0107_task_unique_task_name] Renaming task {task.id}: {task.name!r} -> {new_name!r}"
+            )
             task.name = new_name
             task.save(update_fields=["name"])
             existing_names.add(task.name)
