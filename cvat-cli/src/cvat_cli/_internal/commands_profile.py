@@ -62,9 +62,7 @@ class ProfileDefault:
             try:
                 store.set_default_profile(args.name)
             except KeyError:
-                raise CriticalError(
-                    f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'."
-                )
+                raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
             print(f'Default profile is now "{args.name}".')
         else:
             default = store.get_default_profile()
@@ -127,9 +125,7 @@ class ProfileCreate:
             name = _fetch_name_from_server(server, token, insecure=args.insecure)
 
         if store.get_profile(name) is not None and not args.force:
-            raise CriticalError(
-                f"Profile {name!r} already exists. Pass --force to overwrite."
-            )
+            raise CriticalError(f"Profile {name!r} already exists. Pass --force to overwrite.")
 
         store.add_profile(
             name,

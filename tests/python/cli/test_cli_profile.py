@@ -136,9 +136,7 @@ class TestProfileCreate:
 
     def test_create_prompts_for_token_without_echo(self, store_path, monkeypatch):
         monkeypatch.setattr("getpass.getpass", lambda *a, **k: "prompted-pat")
-        run_cli(
-            self, "--server-host", "https://app.cvat.ai", "profile", "create", "p"
-        )
+        run_cli(self, "--server-host", "https://app.cvat.ai", "profile", "create", "p")
         assert AuthStore(path=store_path).get_profile("p").token == "prompted-pat"
 
     def test_create_existing_requires_force(self, store_path):
@@ -196,9 +194,7 @@ class TestProfileCreate:
         monkeypatch.setattr("getpass.getpass", lambda *a, **k: "tok-xyz")
         monkeypatch.setattr("cvat_cli._internal.utils.Client", _FakeClient)
         run_cli(self, "--server-host", "https://app.cvat.ai", "profile", "create")
-        assert (
-            AuthStore(path=store_path).get_profile("server-side-name").token == "tok-xyz"
-        )
+        assert AuthStore(path=store_path).get_profile("server-side-name").token == "tok-xyz"
 
     def test_create_rejects_empty_token(self, store_path, monkeypatch):
         monkeypatch.setattr("getpass.getpass", lambda *a, **k: "")
