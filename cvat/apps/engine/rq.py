@@ -8,6 +8,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from uuid import UUID
 
 import attrs
 import django_rq
@@ -20,7 +21,7 @@ from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
-from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.engine.background import AbstractRequestManager
 from cvat.apps.engine.utils import take_by
 from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
 from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresource
@@ -54,6 +55,7 @@ class RQJobMetaField:
     JOB_ID = "job_id"
     STATUS = "status"
     PROGRESS = "progress"
+    REQUEST_MANAGER_CLS = "request_manager_cls"
 
     # import-specific fields
     TASK_PROGRESS = "task_progress"
@@ -229,6 +231,10 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     project_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.PROJECT_ID, optional=True)
     task_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.TASK_ID, optional=True)
     job_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.JOB_ID, optional=True)
+    request_manager_cls: str | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.REQUEST_MANAGER_CLS,
+        optional=True,
+    )
 
     # mutable && optional fields
     org_id: int | None = MutableRQMetaAttribute(
@@ -255,9 +261,43 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     def build(
         cls,
         *,
-        request: ExtendedRequest,
-        db_obj: Model | None,
-    ):
+        uuid: UUID,
+        user: User,
+        request_manager_cls: type[AbstractRequestManager],
+        organization_id: int | None,
+        organization_slug: str | None,
+        project_id: int | None,
+        task_id: int | None,
+        job_id: int | None,
+    ) -> dict:
+        return {
+            RQJobMetaField.USER: {
+                RQJobMetaField.UserField.ID: user.pk,
+                RQJobMetaField.UserField.USERNAME: user.username,
+                RQJobMetaField.UserField.EMAIL: user.email,
+            },
+            RQJobMetaField.REQUEST: {
+                RQJobMetaField.RequestField.UUID: uuid,
+                RQJobMetaField.RequestField.TIMESTAMP: timezone.now(),
+            },
+            RQJobMetaField.ORG_ID: organization_id,
+            RQJobMetaField.ORG_SLUG: organization_slug,
+            RQJobMetaField.PROJECT_ID: project_id,
+            RQJobMetaField.TASK_ID: task_id,
+            RQJobMetaField.JOB_ID: job_id,
+            RQJobMetaField.REQUEST_MANAGER_CLS: (
+                f"{request_manager_cls.__module__}.{request_manager_cls.__qualname__}"
+            ),
+        }
+
+    @classmethod
+    def build_from_instance(
+        cls,
+        uuid: UUID,
+        user: User,
+        request_manager_cls: type[AbstractRequestManager],
+        instance: Model | None,
+    ) -> dict:
         # to prevent circular import
         from cvat.apps.events.handlers import (
             job_id,
@@ -267,30 +307,16 @@ class BaseRQMeta(RQMetaWithFailureInfo):
             task_id,
         )
 
-        oid = organization_id(db_obj)
-        oslug = organization_slug(db_obj)
-        pid = project_id(db_obj)
-        tid = task_id(db_obj)
-        jid = job_id(db_obj)
-
-        user: User = request.user
-
-        return {
-            RQJobMetaField.USER: {
-                RQJobMetaField.UserField.ID: user.pk,
-                RQJobMetaField.UserField.USERNAME: user.username,
-                RQJobMetaField.UserField.EMAIL: user.email,
-            },
-            RQJobMetaField.REQUEST: {
-                RQJobMetaField.RequestField.UUID: request.uuid,
-                RQJobMetaField.RequestField.TIMESTAMP: timezone.now(),
-            },
-            RQJobMetaField.ORG_ID: oid,
-            RQJobMetaField.ORG_SLUG: oslug,
-            RQJobMetaField.PROJECT_ID: pid,
-            RQJobMetaField.TASK_ID: tid,
-            RQJobMetaField.JOB_ID: jid,
-        }
+        return cls.build(
+            uuid=uuid,
+            user=user,
+            organization_id=organization_id(instance),
+            organization_slug=organization_slug(instance),
+            project_id=project_id(instance),
+            task_id=task_id(instance),
+            job_id=job_id(instance),
+            request_manager_cls=request_manager_cls,
+        )
 
 
 class ExportRQMeta(BaseRQMeta):
@@ -309,12 +335,19 @@ class ExportRQMeta(BaseRQMeta):
     def build_for(
         cls,
         *,
-        request: ExtendedRequest,
-        db_obj: Model,
+        uuid: UUID,
+        user: User,
+        request_manager_cls: type[AbstractRequestManager],
+        instance: Model,
         result_url: str | None,
         result_filename: str,
     ):
-        base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
+        base_meta = BaseRQMeta.build_from_instance(
+            uuid=uuid,
+            user=user,
+            instance=instance,
+            request_manager_cls=request_manager_cls,
+        )
 
         return {
             **base_meta,

@@ -746,7 +746,7 @@ class LambdaQueue:
         cleanup,
         conv_mask_to_poly,
         max_distance,
-        request,
+        request: ExtendedRequest,
         *,
         job: int | None = None,
         roi: list | None = None,
@@ -779,8 +779,10 @@ class LambdaQueue:
 
             with get_rq_lock_by_user(queue, user_id):
                 meta = LambdaRQMeta.build_for(
-                    request=request,
-                    db_obj=Job.objects.get(pk=job) if job else Task.objects.get(pk=task),
+                    user=request.user,
+                    uuid=request.uuid,
+                    request_manager_cls=type(self),
+                    instance=Job.objects.get(pk=job) if job else Task.objects.get(pk=task),
                     function_id=lambda_func.id,
                 )
                 rq_job = queue.create_job(

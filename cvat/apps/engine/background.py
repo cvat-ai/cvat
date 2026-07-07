@@ -249,8 +249,10 @@ class BaseResourceExporter(AbstractRequestManager):
 
     def build_meta(self, *, request_id):
         return ExportRQMeta.build_for(
-            request=self.request,
-            db_obj=self.db_instance,
+            uuid=self.request.uuid,
+            user=self.request.user,
+            request_manager_cls=type(self),
+            instance=self.db_instance,
             result_url=(
                 self.make_result_url(request_id=request_id)
                 if self.export_args.location_config.location != Location.CLOUD_STORAGE
