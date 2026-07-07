@@ -29,7 +29,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
     _requirements_endpoint = "quality/settings/requirements"
     _settings_endpoint = "quality/settings"
     _max_requirements_per_settings = 100
-    _default_standalone_annotation_types = {
+    _base_standalone_annotation_types = {
         "tag",
         "rectangle",
         "skeleton",
@@ -42,8 +42,8 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
     }
 
     @staticmethod
-    def _default_requirement_name(annotation_type: str) -> str:
-        return f"Default {annotation_type.replace('_', ' ')}"
+    def _base_requirement_name(annotation_type: str) -> str:
+        return f"Base {annotation_type.replace('_', ' ')}"
 
     @staticmethod
     def _build_requirement_payload(
@@ -155,13 +155,13 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         return response.json() if response.content else None, response
 
     @staticmethod
-    def _retained_default_requirement_payloads(
+    def _retained_base_requirement_payloads(
         settings: dict[str, Any],
     ) -> list[dict[str, Any]]:
         return [
             {"id": requirement["id"]}
             for requirement in settings["requirements"]
-            if requirement["is_default"]
+            if requirement["is_base"]
         ]
 
     def _get_report_data(self, user: str, report_id: int) -> dict[str, Any]:
@@ -434,6 +434,77 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         }
         assert requirement_name in listed_requirements_by_name
 
+    def test_can_crud_quality_requirements_for_project_settings(
+        self, admin_user, find_sandbox_project_without_validation
+    ):
+        project, _ = find_sandbox_project_without_validation(True)
+        settings = self._get_project_settings(admin_user, project_id=project["id"])
+
+        requirement_name = f"project-api-requirement-{project['id']}"
+        created_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(requirement_name, settings_id=settings["id"]),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert created_requirement["settings_id"] == settings["id"]
+        assert created_requirement["project_id"] == project["id"]
+        assert created_requirement["task_id"] is None
+
+        updated_requirement, response = self._patch_requirement(
+            admin_user,
+            created_requirement["id"],
+            {"enabled": False, "required_score": 0.25},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert updated_requirement["enabled"] is False
+        assert updated_requirement["required_score"] == 0.25
+
+        response = self._delete_requirement(admin_user, created_requirement["id"])
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+    def test_create_requirement_requires_settings_id(self, admin_user):
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload("missing-settings-id"),
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "settings_id" in response.json()
+
+    def test_list_requirements_by_project_includes_project_and_task_settings(
+        self, admin_user, find_sandbox_project_without_validation, tasks
+    ):
+        project, _ = find_sandbox_project_without_validation(True)
+        task = next(t for t in tasks if t["project_id"] == project["id"] and t["size"])
+
+        project_settings = self._get_project_settings(admin_user, project_id=project["id"])
+        task_settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        project_requirement_name = f"project-list-requirement-{project['id']}"
+        task_requirement_name = f"task-list-requirement-{task['id']}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                project_requirement_name,
+                settings_id=project_settings["id"],
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(task_requirement_name, settings_id=task_settings["id"]),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        listed_requirements, response = self._list_requirements(
+            admin_user, project_id=project["id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        listed_requirement_names = {requirement["name"] for requirement in listed_requirements}
+        assert project_requirement_name in listed_requirement_names
+        assert task_requirement_name in listed_requirement_names
+
     def test_requirement_uses_hld_comparison_field_names(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -479,7 +550,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         rectangle_root_id = next(
             requirement["id"]
             for requirement in settings["requirements"]
-            if requirement["name"] == self._default_requirement_name("rectangle")
+            if requirement["name"] == self._base_requirement_name("rectangle")
         )
 
         def assert_attribute_comparison_state(
@@ -495,7 +566,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
 
         root_requirement, response = self._retrieve_requirement(admin_user, rectangle_root_id)
         assert response.status_code == HTTPStatus.OK
-        assert root_requirement["name"] == self._default_requirement_name("rectangle")
+        assert root_requirement["name"] == self._base_requirement_name("rectangle")
         assert_attribute_comparison_state(
             root_requirement,
             stored=None,
@@ -613,7 +684,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
     ):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
-        retained_defaults = self._retained_default_requirement_payloads(settings)
+        retained_base_requirements = self._retained_base_requirement_payloads(settings)
 
         first_payload = self._build_requirement_payload(
             f"replace-{task['id']}-a",
@@ -630,7 +701,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             settings["id"],
             {
                 "inherit": False,
-                "requirements": [*retained_defaults, first_payload, second_payload],
+                "requirements": [*retained_base_requirements, first_payload, second_payload],
             },
         )
         assert response.status_code == HTTPStatus.OK
@@ -643,10 +714,10 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert {
             requirement["name"]
             for requirement in patched_settings["requirements"]
-            if requirement["is_default"]
+            if requirement["is_base"]
         } == {
-            self._default_requirement_name(annotation_type)
-            for annotation_type in self._default_standalone_annotation_types
+            self._base_requirement_name(annotation_type)
+            for annotation_type in self._base_standalone_annotation_types
         }
 
         replacement_payload = self._build_requirement_payload(
@@ -659,7 +730,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             settings["id"],
             {
                 "requirements": [
-                    *self._retained_default_requirement_payloads(patched_settings),
+                    *self._retained_base_requirement_payloads(patched_settings),
                     replacement_payload,
                 ]
             },
@@ -668,7 +739,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert {
             requirement["name"]
             for requirement in patched_settings["requirements"]
-            if not requirement["is_default"]
+            if not requirement["is_base"]
         } == {replacement_payload["name"]}
 
         listed_requirements, response = self._list_requirements(
@@ -676,12 +747,159 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         )
         assert response.status_code == HTTPStatus.OK
         assert {
-            requirement["name"]
-            for requirement in listed_requirements
-            if not requirement["is_default"]
+            requirement["name"] for requirement in listed_requirements if not requirement["is_base"]
         } == {replacement_payload["name"]}
 
-    def test_settings_patch_cannot_delete_default_requirements(
+    def test_settings_patch_saves_parent_requirements_before_children(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        parent_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"bulk-parent-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="rectangle",
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        child_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"bulk-child-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type=None,
+                parent_requirement=parent_requirement["id"],
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        child_requirement_id = child_requirement["id"]
+
+        patched_settings, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    {
+                        "id": child_requirement_id,
+                        "annotation_type": "skeleton_keypoint",
+                        "parent_requirement": parent_requirement["id"],
+                    },
+                    {
+                        "id": parent_requirement["id"],
+                        "annotation_type": "skeleton_keypoint",
+                    },
+                ]
+            },
+        )
+
+        assert response.status_code == HTTPStatus.OK
+        patched_child_requirement = next(
+            requirement
+            for requirement in patched_settings["requirements"]
+            if requirement["id"] == child_requirement_id
+        )
+        assert patched_child_requirement["annotation_type"] is None
+
+        child_requirement, response = self._retrieve_requirement(admin_user, child_requirement_id)
+        assert response.status_code == HTTPStatus.OK
+        assert child_requirement["effective"]["annotation_type"] == "skeleton_keypoint"
+
+    def test_patch_requirement_clears_inherited_fields_when_root_becomes_child(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        parent_payload = self._build_requirement_payload(
+            f"root-to-child-parent-{task['id']}",
+            settings_id=settings["id"],
+            annotation_type="rectangle",
+            point_size=0.1,
+            match_groups=True,
+        )
+        parent_payload["iou_threshold"] = 0.25
+        parent_requirement, response = self._create_requirement(admin_user, parent_payload)
+        assert response.status_code == HTTPStatus.CREATED
+
+        requirement_payload = self._build_requirement_payload(
+            f"root-to-child-{task['id']}",
+            settings_id=settings["id"],
+            annotation_type="rectangle",
+            point_size=0.7,
+            match_groups=False,
+        )
+        requirement_payload["iou_threshold"] = 0.9
+        requirement, response = self._create_requirement(admin_user, requirement_payload)
+        assert response.status_code == HTTPStatus.CREATED
+
+        patched_requirement, response = self._patch_requirement(
+            admin_user,
+            requirement["id"],
+            {"parent_requirement": parent_requirement["id"]},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        assert patched_requirement["annotation_type"] is None
+        assert patched_requirement["iou_threshold"] is None
+        assert patched_requirement["point_size"] is None
+        assert patched_requirement["match_groups"] is None
+        assert patched_requirement["effective"]["iou_threshold"] == parent_payload["iou_threshold"]
+        assert patched_requirement["effective"]["point_size"] == parent_payload["point_size"]
+        assert patched_requirement["effective"]["match_groups"] is True
+
+    def test_patch_requirement_applies_defaults_when_child_becomes_root(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        parent_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"child-to-root-parent-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="rectangle",
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        child_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"child-to-root-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type=None,
+                parent_requirement=parent_requirement["id"],
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert child_requirement["iou_threshold"] is None
+        assert child_requirement["point_size"] is None
+
+        patched_requirement, response = self._patch_requirement(
+            admin_user,
+            child_requirement["id"],
+            {
+                "parent_requirement": None,
+                "annotation_type": "rectangle",
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        assert patched_requirement["parent_requirement"] is None
+        assert patched_requirement["annotation_type"] == "rectangle"
+        assert patched_requirement["metric"] == "accuracy"
+        assert patched_requirement["required_score"] == 0.7
+        assert patched_requirement["iou_threshold"] == 0.4
+        assert patched_requirement["point_size"] == 0.09
+        assert patched_requirement["match_groups"] is True
+
+    def test_settings_patch_cannot_delete_base_requirements(
         self, admin_user, find_sandbox_task_without_gt
     ):
         task, _ = find_sandbox_task_without_gt(True)
@@ -693,7 +911,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             {
                 "requirements": [
                     self._build_requirement_payload(
-                        f"delete-defaults-{task['id']}",
+                        f"delete-bases-{task['id']}",
                         enabled=True,
                     )
                 ]
@@ -701,21 +919,21 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         )
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert "default quality requirements" in json.dumps(response.json()).lower()
+        assert "base quality requirements" in json.dumps(response.json()).lower()
 
     def test_cannot_create_requirement_above_limit(self, admin_user, find_sandbox_task_without_gt):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
-        retained_defaults = self._retained_default_requirement_payloads(settings)
+        retained_base_requirements = self._retained_base_requirement_payloads(settings)
 
         filled_requirements = self._build_requirement_payloads(
             f"limit-fill-{task['id']}",
-            self._max_requirements_per_settings - len(retained_defaults),
+            self._max_requirements_per_settings - len(retained_base_requirements),
         )
         patched_settings, response = self._patch_settings(
             admin_user,
             settings["id"],
-            {"requirements": [*retained_defaults, *filled_requirements]},
+            {"requirements": [*retained_base_requirements, *filled_requirements]},
         )
         assert response.status_code == HTTPStatus.OK
         assert len(patched_settings["requirements"]) == self._max_requirements_per_settings
@@ -736,17 +954,17 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
     ):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
-        retained_defaults = self._retained_default_requirement_payloads(settings)
+        retained_base_requirements = self._retained_base_requirement_payloads(settings)
 
         _, response = self._patch_settings(
             admin_user,
             settings["id"],
             {
                 "requirements": [
-                    *retained_defaults,
+                    *retained_base_requirements,
                     *self._build_requirement_payloads(
                         f"limit-payload-{task['id']}",
-                        self._max_requirements_per_settings - len(retained_defaults) + 1,
+                        self._max_requirements_per_settings - len(retained_base_requirements) + 1,
                     ),
                 ]
             },
@@ -755,19 +973,17 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert response.json()["requirements"] == self._get_requirement_limit_error_message()
 
-    def test_cannot_delete_default_quality_requirement(
-        self, admin_user, find_sandbox_task_without_gt
-    ):
+    def test_cannot_delete_base_quality_requirement(self, admin_user, find_sandbox_task_without_gt):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
-        default_requirement = next(
-            requirement for requirement in settings["requirements"] if requirement["is_default"]
+        base_requirement = next(
+            requirement for requirement in settings["requirements"] if requirement["is_base"]
         )
 
-        response = self._delete_requirement(admin_user, default_requirement["id"])
+        response = self._delete_requirement(admin_user, base_requirement["id"])
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert "default quality requirements" in json.dumps(response.json()).lower()
+        assert "base quality requirements" in json.dumps(response.json()).lower()
 
     def test_create_child_requirement_accepts_parent_filter_terms(
         self, admin_user, find_sandbox_task_without_gt
@@ -914,6 +1130,57 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             )
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
+    def test_user_list_requirements_by_settings_in_sandbox(
+        self, admin_user, find_sandbox_task_without_gt, is_staff, allow
+    ):
+        task, user = find_sandbox_task_without_gt(is_staff)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        requirement_name = f"list-settings-permission-{task['id']}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(requirement_name, settings_id=settings["id"]),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        listed_requirements, response = self._list_requirements(
+            user["username"], settings_id=settings["id"]
+        )
+        assert response.status_code == (HTTPStatus.OK if allow else HTTPStatus.FORBIDDEN)
+        if allow:
+            assert any(
+                requirement["name"] == requirement_name for requirement in listed_requirements
+            )
+
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
+    def test_user_list_requirements_in_org_project(
+        self,
+        admin_user,
+        find_org_project_without_validation,
+        org_role,
+        is_staff,
+        allow,
+    ):
+        project, user = find_org_project_without_validation(is_staff, org_role)
+        org_id = project["organization"]
+        settings = self._get_project_settings(admin_user, project_id=project["id"], org_id=org_id)
+        requirement_name = f"list-org-project-permission-{project['id']}-{user['id']}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(requirement_name, settings_id=settings["id"]),
+            org_id=org_id,
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        listed_requirements, response = self._list_requirements(
+            user["username"], project_id=project["id"], org_id=org_id
+        )
+        assert response.status_code == (HTTPStatus.OK if allow else HTTPStatus.FORBIDDEN)
+        if allow:
+            assert any(
+                requirement["name"] == requirement_name for requirement in listed_requirements
+            )
+
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_create_requirement_in_sandbox(
         self, admin_user, find_sandbox_task_without_gt, is_staff, allow
     ):
@@ -929,12 +1196,12 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
-    def test_new_task_gets_disabled_default_requirements_for_all_supported_types(self, admin_user):
+class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
+    def test_new_task_gets_disabled_base_requirements_for_all_supported_types(self, admin_user):
         task_id, _ = create_task(
             admin_user,
             spec={
-                "name": "task-default-quality-requirements",
+                "name": "task-base-quality-requirements",
                 "labels": [
                     {"name": "car", "type": "rectangle"},
                     {"name": "truck", "type": "rectangle"},
@@ -952,22 +1219,20 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
 
         assert {
             requirement["annotation_type"] for requirement in requirements
-        } == self._default_standalone_annotation_types
+        } == self._base_standalone_annotation_types
         assert {requirement["name"] for requirement in requirements} == {
-            self._default_requirement_name(annotation_type)
-            for annotation_type in self._default_standalone_annotation_types
+            self._base_requirement_name(annotation_type)
+            for annotation_type in self._base_standalone_annotation_types
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
-        assert all(requirement["is_default"] is True for requirement in requirements)
+        assert all(requirement["is_base"] is True for requirement in requirements)
         assert all("effective" not in requirement for requirement in requirements)
 
-    def test_new_project_gets_disabled_default_requirements_for_all_supported_types(
-        self, admin_user
-    ):
+    def test_new_project_gets_disabled_base_requirements_for_all_supported_types(self, admin_user):
         with make_api_client(admin_user) as api_client:
             project, response = api_client.projects_api.create(
                 {
-                    "name": "project-default-quality-requirements",
+                    "name": "project-base-quality-requirements",
                     "labels": [
                         {"name": "car", "type": "rectangle"},
                         {"name": "scene", "type": "tag"},
@@ -981,19 +1246,19 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
 
         assert {
             requirement["annotation_type"] for requirement in requirements
-        } == self._default_standalone_annotation_types
+        } == self._base_standalone_annotation_types
         assert {requirement["name"] for requirement in requirements} == {
-            self._default_requirement_name(annotation_type)
-            for annotation_type in self._default_standalone_annotation_types
+            self._base_requirement_name(annotation_type)
+            for annotation_type in self._base_standalone_annotation_types
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
-        assert all(requirement["is_default"] is True for requirement in requirements)
+        assert all(requirement["is_base"] is True for requirement in requirements)
 
     def test_new_project_task_inherits_project_quality_settings_by_default(self, admin_user):
         with make_api_client(admin_user) as api_client:
             project, response = api_client.projects_api.create(
                 {
-                    "name": "project-default-quality-requirements",
+                    "name": "project-base-quality-requirements",
                     "labels": [
                         {"name": "car", "type": "rectangle"},
                         {"name": "pose", "type": "skeleton"},
@@ -1005,7 +1270,7 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
         task_id, _ = create_task(
             admin_user,
             spec={
-                "name": "project-task-default-quality-requirements",
+                "name": "project-task-base-quality-requirements",
                 "project_id": project.id,
             },
             data={
@@ -1047,7 +1312,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             {
                 "inherit": False,
                 "requirements": [
-                    *self._retained_default_requirement_payloads(settings),
+                    *self._retained_base_requirement_payloads(settings),
                     self._build_requirement_payload(
                         requirement_name,
                         enabled=True,
@@ -1248,7 +1513,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             {
                 "inherit": False,
                 "requirements": [
-                    *self._retained_default_requirement_payloads(settings),
+                    *self._retained_base_requirement_payloads(settings),
                     self._build_requirement_payload(
                         requirement_name,
                         enabled=True,
@@ -1342,7 +1607,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             {
                 "inherit": False,
                 "requirements": [
-                    *self._retained_default_requirement_payloads(settings),
+                    *self._retained_base_requirement_payloads(settings),
                     self._build_requirement_payload(
                         requirement_name,
                         enabled=True,
@@ -1404,7 +1669,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             {
                 "inherit": False,
                 "requirements": [
-                    *self._retained_default_requirement_payloads(settings),
+                    *self._retained_base_requirement_payloads(settings),
                     self._build_requirement_payload(
                         requirement_name,
                         enabled=True,
@@ -1474,7 +1739,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             {
                 "inherit": False,
                 "requirements": [
-                    *self._retained_default_requirement_payloads(settings),
+                    *self._retained_base_requirement_payloads(settings),
                     self._build_requirement_payload(
                         requirement_name,
                         enabled=True,
@@ -1531,7 +1796,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         rectangle_root = next(
             requirement
             for requirement in settings["requirements"]
-            if requirement["name"] == self._default_requirement_name("rectangle")
+            if requirement["name"] == self._base_requirement_name("rectangle")
         )
 
         first_leaf_name = f"first-car-leaf-{task_id}"
@@ -1618,7 +1883,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         rectangle_root = next(
             requirement
             for requirement in settings["requirements"]
-            if requirement["name"] == self._default_requirement_name("rectangle")
+            if requirement["name"] == self._base_requirement_name("rectangle")
         )
 
         parent_requirement_name = f"cars-parent-{task_id}"
@@ -1751,7 +2016,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             {
                 "inherit": False,
                 "requirements": [
-                    *self._retained_default_requirement_payloads(settings),
+                    *self._retained_base_requirement_payloads(settings),
                     self._build_requirement_payload(
                         enabled_requirement_name,
                         enabled=True,
@@ -1847,6 +2112,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "inherited": False,
             "job_filter": updated_settings["job_filter"],
         }
+        with make_api_client(admin_user) as api_client:
+            job_report = api_client.quality_api.list_reports(target="job", parent_id=report["id"])[
+                0
+            ].results[0]
+        assert self._get_report_data(admin_user, job_report["id"])["parameters"] == {
+            "inherited": False,
+            "job_filter": updated_settings["job_filter"],
+        }
         assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
         report_level_summary_fields = {
             "frames",
@@ -1909,7 +2182,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             project_settings["id"],
             {
                 "requirements": [
-                    *self._retained_default_requirement_payloads(project_settings),
+                    *self._retained_base_requirement_payloads(project_settings),
                     self._build_requirement_payload(
                         requirement_name,
                         enabled=True,
@@ -2022,7 +2295,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             {
                 "inherit": False,
                 "requirements": [
-                    *self._retained_default_requirement_payloads(settings),
+                    *self._retained_base_requirement_payloads(settings),
                     self._build_requirement_payload(
                         enabled_requirement_name,
                         enabled=True,

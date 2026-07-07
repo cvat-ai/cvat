@@ -25,10 +25,12 @@ from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.view_utils import deprecate_response
-from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.export import (
     QualityReportExportFormat,
+    prepare_confusion_matrices_archive_for_downloading,
     prepare_report_for_downloading,
+    prepare_requirement_confusion_matrix_for_downloading,
+    prepare_requirement_confusion_matrix_json,
 )
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
@@ -438,7 +440,9 @@ class QualityReportViewSet(
             "format", default=QualityReportExportFormat.JSON.value
         )
         if format_name != QualityReportExportFormat.JSON.value:
-            raise ValidationError({"format": "Expected one of: json."})
+            raise ValidationError(
+                {"format": f"Expected one of: {QualityReportExportFormat.JSON.value}."}
+            )
 
         report_data, content_type = prepare_report_for_downloading(
             report,
@@ -460,7 +464,7 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="confusion", serializer_class=None)
     def confusion(self, request, pk):
         report = self.get_object()  # check permissions
-        archive = qc.prepare_confusion_matrices_archive_for_downloading(report)
+        archive = prepare_confusion_matrices_archive_for_downloading(report)
         response = HttpResponse(archive, content_type="application/zip")
         response["Content-Disposition"] = (
             f'attachment; filename="quality-report-{report.id}-confusion.zip"'
@@ -517,7 +521,7 @@ class QualityReportViewSet(
             ) from ex
 
         if format_name == QualityReportExportFormat.JSON:
-            matrix_json = qc.prepare_requirement_confusion_matrix_json(
+            matrix_json = prepare_requirement_confusion_matrix_json(
                 report,
                 requirement_id=requirement_id,
             )
@@ -528,7 +532,7 @@ class QualityReportViewSet(
 
             return Response(matrix_json)
 
-        matrix_csv = qc.prepare_requirement_confusion_matrix_for_downloading(
+        matrix_csv = prepare_requirement_confusion_matrix_for_downloading(
             report,
             requirement_id=requirement_id,
         )
@@ -740,22 +744,24 @@ class QualityRequirementViewSet(
     )
 
     iam_supports_organization_params = True
-    iam_organization_field = ["settings__task__organization", "settings__project__organization"]
     iam_permission_class = QualityRequirementPermission
 
     search_fields = []
-    filter_fields = [
+    simple_filters = ("annotation_type", "enabled")
+    filter_fields = (
+        *simple_filters,
         "id",
         "settings_id",
         "task_id",
         "project_id",
-        "annotation_type",
-        "enabled",
         "created_date",
         "updated_date",
-    ]
-    simple_filters = ["settings_id", "annotation_type", "enabled"]
-    ordering_fields = filter_fields + ["name", "sort_order"]
+    )
+    lookup_fields = {
+        "task_id": "settings__task_id",
+        "project_id": "settings__project_id",
+    }
+    ordering_fields = list(filter_fields) + ["name", "sort_order"]
     ordering = "id"
 
     serializer_class = QualityRequirementSerializer
@@ -770,42 +776,24 @@ class QualityRequirementViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
-            iam_context = None
-            settings_queryset = QualitySettings.objects.all()
-
             if settings_id := self.request.query_params.get("settings_id", None):
-                settings = db_utils.get_or_404(QualitySettings, settings_id)
-                self.check_object_permissions(self.request, settings)
-                iam_context = get_iam_context(self.request, settings)
-                settings_queryset = settings_queryset.filter(id=settings_id)
+                queryset = queryset.filter(settings_id=settings_id)
             elif task_id := self.request.query_params.get("task_id", None):
-                task = db_utils.get_or_404(Task, task_id)
-                self.check_object_permissions(self.request, task)
-                iam_context = get_iam_context(self.request, task)
-                settings_queryset = settings_queryset.filter(task_id=task_id)
+                queryset = queryset.filter(settings__task_id=task_id)
             elif project_id := self.request.query_params.get("project_id", None):
-                project = db_utils.get_or_404(Project, project_id)
-                self.check_object_permissions(self.request, project)
-                iam_context = get_iam_context(self.request, project)
-                settings_queryset = settings_queryset.filter(
-                    Q(project__id=project_id) | Q(task__project__id=project_id)
+                # Include requirements from both project settings and task settings under the project.
+                queryset = queryset.filter(
+                    Q(settings__project_id=project_id) | Q(settings__task__project_id=project_id)
                 )
 
-            permissions = QualitySettingPermission.create_scope_list(
-                self.request, iam_context=iam_context
-            )
-            allowed_settings = permissions.filter(settings_queryset).values_list("id", flat=True)
-            queryset = queryset.filter(settings_id__in=allowed_settings)
-            queryset = QualityRequirementPermission.add_org_filter_proof(queryset)
+            permissions = QualityRequirementPermission.create_scope_list(self.request)
+            queryset = permissions.filter(queryset)
 
         return queryset
 
     def perform_destroy(self, instance):
-        if instance.is_default:
-            raise ValidationError("Default quality requirements cannot be deleted.")
-
-        if instance.settings.requirements.count() <= 1:
-            raise ValidationError("The last quality requirement cannot be deleted.")
+        if instance.is_base:
+            raise ValidationError("Base quality requirements cannot be deleted.")
 
         if instance.children.exists():
             raise ValidationError(

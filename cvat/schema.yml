@@ -11247,7 +11247,7 @@ components:
         name:
           type: string
           maxLength: 250
-        is_default:
+        is_base:
           type: boolean
           readOnly: true
         sort_order:
@@ -11431,7 +11431,7 @@ components:
         name:
           type: string
           maxLength: 250
-        is_default:
+        is_base:
           type: boolean
           readOnly: true
         sort_order:

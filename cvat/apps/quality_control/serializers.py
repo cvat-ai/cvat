@@ -28,6 +28,7 @@ from cvat.apps.quality_control.attribute_comparison import (
     normalize_attribute_comparison,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
+from cvat.utils import django_database as db_utils
 
 
 class AnnotationIdSerializer(serializers.ModelSerializer):
@@ -701,7 +702,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "task_id",
             "project_id",
             "name",
-            "is_default",
+            "is_base",
             "sort_order",
             "filter",
             "enabled",
@@ -730,7 +731,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "id",
             "task_id",
             "project_id",
-            "is_default",
+            "is_base",
             "effective",
             "created_date",
             "updated_date",
@@ -911,7 +912,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         return self.context.get("touch_settings", True)
 
     @staticmethod
-    def _apply_root_defaults(validated_data):
+    def _apply_root_defaults(validated_data: dict[str, Any]) -> None:
         defaults = models.QualityRequirement.get_defaults()
         for field_name in _INHERITED_REQUIREMENT_FIELDS:
             if field_name in validated_data:
@@ -929,7 +930,21 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 validated_data[field_name] = defaults[field_name]
 
     @staticmethod
-    def _clear_child_inherited_defaults(validated_data):
+    def _apply_missing_root_defaults(
+        instance: models.QualityRequirement, validated_data: dict[str, Any]
+    ) -> None:
+        defaults: dict[str, Any] = {}
+        QualityRequirementSerializer._apply_root_defaults(defaults)
+
+        for field_name, default_value in defaults.items():
+            if field_name in validated_data:
+                continue
+
+            if getattr(instance, field_name, None) is None:
+                validated_data[field_name] = default_value
+
+    @staticmethod
+    def _clear_child_inherited_defaults(validated_data: dict[str, Any]) -> None:
         for field_name in _INHERITED_REQUIREMENT_FIELDS:
             validated_data.setdefault(field_name, None)
 
@@ -945,6 +960,15 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
+        if "parent" in validated_data:
+            old_parent = instance.parent
+            new_parent = validated_data["parent"]
+
+            if old_parent is None and new_parent is not None:
+                self._clear_child_inherited_defaults(validated_data)
+            elif old_parent is not None and new_parent is None:
+                self._apply_missing_root_defaults(instance, validated_data)
+
         instance = super().update(instance, validated_data)
         if self._should_touch_settings():
             self._touch_settings(instance.settings)
@@ -1070,6 +1094,74 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             context=serializer_context,
         )
 
+    @staticmethod
+    def _parse_requirement_id(value: Any) -> int | None:
+        if value is None:
+            return None
+
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _get_initial_requirement_parent_id(
+        self, child_serializer: QualityRequirementSerializer
+    ) -> int | None:
+        if "parent_requirement" in child_serializer.initial_data:
+            return self._parse_requirement_id(child_serializer.initial_data["parent_requirement"])
+
+        parent = getattr(child_serializer.instance, "parent", None)
+        return getattr(parent, "id", None)
+
+    def _sort_requirement_serializers_for_save(
+        self,
+        child_serializers: list[QualityRequirementSerializer],
+    ) -> list[QualityRequirementSerializer]:
+        serializers_by_requirement_id = {
+            child_serializer.instance.id: child_serializer
+            for child_serializer in child_serializers
+            if child_serializer.instance is not None
+        }
+        positions_by_serializer_id = {
+            id(child_serializer): index for index, child_serializer in enumerate(child_serializers)
+        }
+
+        def serializer_key(
+            child_serializer: QualityRequirementSerializer,
+        ) -> tuple[str, int]:
+            requirement_id = getattr(child_serializer.instance, "id", None)
+            if requirement_id is not None:
+                return ("existing", requirement_id)
+
+            return ("new", positions_by_serializer_id[id(child_serializer)])
+
+        ordered_serializers: list[QualityRequirementSerializer] = []
+        visited_serializer_keys: set[tuple[str, int]] = set()
+        visiting_serializer_keys: set[tuple[str, int]] = set()
+
+        def visit(child_serializer: QualityRequirementSerializer) -> None:
+            key = serializer_key(child_serializer)
+            if key in visited_serializer_keys:
+                return
+            if key in visiting_serializer_keys:
+                raise serializers.ValidationError(
+                    {"requirements": "Requirement parent cycle is not allowed."}
+                )
+
+            visiting_serializer_keys.add(key)
+            parent_id = self._get_initial_requirement_parent_id(child_serializer)
+            if parent_serializer := serializers_by_requirement_id.get(parent_id):
+                visit(parent_serializer)
+
+            visiting_serializer_keys.remove(key)
+            visited_serializer_keys.add(key)
+            ordered_serializers.append(child_serializer)
+
+        for child_serializer in child_serializers:
+            visit(child_serializer)
+
+        return ordered_serializers
+
     def _sync_requirements(
         self,
         instance: models.QualitySettings,
@@ -1137,30 +1229,12 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 retained_requirement_ids=retained_requirement_ids,
                 instance=requirement_instance,
             )
-            child_serializer.is_valid(raise_exception=True)
-
-            requirement_name = child_serializer.validated_data.get(
-                "name",
-                getattr(requirement_instance, "name", None),
-            )
-            if requirement_name in seen_requirement_names:
-                raise serializers.ValidationError(
-                    {"requirements": {index: {"name": "Requirement names must be unique."}}}
-                )
-
-            seen_requirement_names.add(requirement_name)
             child_serializers.append(child_serializer)
 
         referenced_parent_ids = {
-            parent.id
+            parent_id
             for child_serializer in child_serializers
-            if (
-                parent := child_serializer.validated_data.get(
-                    "parent",
-                    getattr(child_serializer.instance, "parent", None),
-                )
-            )
-            is not None
+            if (parent_id := self._get_initial_requirement_parent_id(child_serializer)) is not None
         }
         missing_parent_ids = referenced_parent_ids - retained_requirement_ids
         if missing_parent_ids:
@@ -1177,11 +1251,9 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if child_serializer.instance is None:
                 continue
 
-            parent = child_serializer.validated_data.get(
-                "parent",
-                getattr(child_serializer.instance, "parent", None),
+            prospective_parent_ids[child_serializer.instance.id] = (
+                self._get_initial_requirement_parent_id(child_serializer)
             )
-            prospective_parent_ids[child_serializer.instance.id] = getattr(parent, "id", None)
 
         for requirement_id in prospective_parent_ids:
             visited_requirement_ids = set()
@@ -1196,45 +1268,56 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 parent_id = prospective_parent_ids[parent_id]
 
         saved_requirement_ids = set()
-        for child_serializer in child_serializers:
+        for child_serializer in self._sort_requirement_serializers_for_save(child_serializers):
+            child_serializer.is_valid(raise_exception=True)
+
+            requirement_name = child_serializer.validated_data.get(
+                "name",
+                getattr(child_serializer.instance, "name", None),
+            )
+            if requirement_name in seen_requirement_names:
+                index = child_serializers.index(child_serializer)
+                raise serializers.ValidationError(
+                    {"requirements": {index: {"name": "Requirement names must be unique."}}}
+                )
+
+            seen_requirement_names.add(requirement_name)
             saved_requirement = child_serializer.save()
             saved_requirement_ids.add(saved_requirement.id)
 
         obsolete_requirement_ids = set(existing_requirements) - saved_requirement_ids
         if obsolete_requirement_ids:
-            obsolete_default_requirements = [
+            obsolete_base_requirements = [
                 existing_requirements[requirement_id].name
                 for requirement_id in obsolete_requirement_ids
-                if existing_requirements[requirement_id].is_default
+                if existing_requirements[requirement_id].is_base
             ]
-            if obsolete_default_requirements:
+            if obsolete_base_requirements:
                 raise serializers.ValidationError(
-                    {"requirements": "Default quality requirements cannot be deleted."}
+                    {"requirements": "Base quality requirements cannot be deleted."}
                 )
 
             instance.requirements.filter(id__in=obsolete_requirement_ids).delete()
 
     def to_representation(self, instance):
-        models.ensure_default_quality_requirements(instance)
+        models.ensure_base_quality_requirements(instance)
         return super().to_representation(instance)
 
     def update(self, instance, validated_data):
         requirements_data = validated_data.pop("requirements", serializers.empty)
 
         with transaction.atomic():
-            if instance.task_id:
-                instance.task.touch()
-            elif instance.project_id:
-                instance.project.touch()
-
-            models.ensure_default_quality_requirements(instance)
+            models.ensure_base_quality_requirements(instance)
             instance = super().update(instance, validated_data)
 
             if requirements_data is not serializers.empty:
                 self._sync_requirements(instance, requirements_data)
-                instance.save()
-                prefetched_objects_cache = getattr(instance, "_prefetched_objects_cache", None)
-                if prefetched_objects_cache is not None:
-                    prefetched_objects_cache.pop("requirements", None)
+                db_utils.clear_prefetched_relation_cache(instance, "requirements")
+                instance.touch()
+
+            if instance.task_id:
+                instance.task.touch()
+            elif instance.project_id:
+                instance.project.touch()
 
         return instance
