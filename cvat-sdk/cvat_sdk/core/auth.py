@@ -139,6 +139,9 @@ class AuthStore:
         )
 
     def list_profiles(self) -> dict[str, ProfileEntry]:
+        # TODO: revisit AuthStore API before it grows further — no in-place updates,
+        # N-writes per N-mutations; consider batch() context manager vs dict+save().
+        # For context see: https://github.com/cvat-ai/cvat/pull/10819
         doc = self._load()
         return {name: self._to_entry(raw) for name, raw in doc["profiles"].items()}
 
