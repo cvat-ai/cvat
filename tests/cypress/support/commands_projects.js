@@ -249,6 +249,15 @@ Cypress.Commands.add('waitForFileUploadToCloudStorage', () => {
     cy.verifyNotification();
 });
 
+Cypress.Commands.add('renameProject', (oldName, newName) => {
+    cy.get('.cvat-project-name').within(() => {
+        cy.get('[aria-label="edit"]').click();
+    });
+    cy.contains('.cvat-text-color', oldName).type(`{selectall}{backspace}${newName}{Enter}`);
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.contains('.cvat-project-name', newName).should('exist');
+});
+
 Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
     cy.clickInProjectMenu('Delete', true);
     cy.get('.cvat-modal-confirm-remove-project').within(() => {
