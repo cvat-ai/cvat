@@ -10,17 +10,6 @@ import { fieldsToCamelCase, fieldsToSnakeCase } from '../common';
 import { Camelized } from '../type-utils';
 import QualityRequirement from './quality-requirement';
 
-export enum TargetMetric {
-    ACCURACY = 'accuracy',
-    PRECISION = 'precision',
-    RECALL = 'recall',
-}
-
-export enum PointSizeBase {
-    IMAGE_SIZE = 'image_size',
-    GROUP_BBOX_SIZE = 'group_bbox_size',
-}
-
 export type QualitySettingsSaveFields = Camelized<SerializedQualitySettingsSaveData>;
 
 export async function getQualitySettingsSchemaDescriptions(): Promise<{
@@ -36,24 +25,9 @@ export async function getQualitySettingsSchemaDescriptions(): Promise<{
 
 export default class QualitySettings {
     #id: number;
-    #targetMetric: TargetMetric;
-    #targetMetricThreshold: number;
     #maxValidationsPerJob: number;
     #taskId: number;
     #projectId: number;
-    #iouThreshold: number;
-    #oksSigma: number;
-    #pointSizeBase: PointSizeBase;
-    #lineThickness: number;
-    #compareLineOrientation: boolean;
-    #lineOrientationThreshold: number;
-    #compareGroups: boolean;
-    #groupMatchThreshold: number;
-    #checkCoveredAnnotations: boolean;
-    #objectVisibilityThreshold: number;
-    #panopticComparison: boolean;
-    #compareAttributes: boolean;
-    #emptyIsAnnotated: boolean;
     #jobFilter: string;
     #inherit: boolean;
     #requirements: QualityRequirement[];
@@ -64,22 +38,7 @@ export default class QualitySettings {
         this.#id = initialData.id;
         this.#taskId = initialData.task_id;
         this.#projectId = initialData.project_id;
-        this.#targetMetric = initialData.target_metric as TargetMetric;
-        this.#targetMetricThreshold = initialData.target_metric_threshold;
         this.#maxValidationsPerJob = initialData.max_validations_per_job;
-        this.#iouThreshold = initialData.iou_threshold;
-        this.#oksSigma = initialData.oks_sigma;
-        this.#pointSizeBase = initialData.point_size_base as PointSizeBase;
-        this.#lineThickness = initialData.line_thickness;
-        this.#compareLineOrientation = initialData.compare_line_orientation;
-        this.#lineOrientationThreshold = initialData.line_orientation_threshold;
-        this.#compareGroups = initialData.compare_groups;
-        this.#groupMatchThreshold = initialData.group_match_threshold;
-        this.#checkCoveredAnnotations = initialData.check_covered_annotations;
-        this.#objectVisibilityThreshold = initialData.object_visibility_threshold;
-        this.#panopticComparison = initialData.panoptic_comparison;
-        this.#compareAttributes = initialData.compare_attributes;
-        this.#emptyIsAnnotated = initialData.empty_is_annotated;
         this.#jobFilter = initialData.job_filter || '';
         this.#inherit = initialData.inherit;
         this.#requirements = (initialData.requirements || []).map((requirement) => (
@@ -101,68 +60,8 @@ export default class QualitySettings {
         return this.#projectId;
     }
 
-    get iouThreshold(): number {
-        return this.#iouThreshold;
-    }
-
-    get oksSigma(): number {
-        return this.#oksSigma;
-    }
-
-    get pointSizeBase(): PointSizeBase {
-        return this.#pointSizeBase;
-    }
-
-    get lineThickness(): number {
-        return this.#lineThickness;
-    }
-
-    get compareLineOrientation(): boolean {
-        return this.#compareLineOrientation;
-    }
-
-    get lineOrientationThreshold(): number {
-        return this.#lineOrientationThreshold;
-    }
-
-    get compareGroups(): boolean {
-        return this.#compareGroups;
-    }
-
-    get groupMatchThreshold(): number {
-        return this.#groupMatchThreshold;
-    }
-
-    get checkCoveredAnnotations(): boolean {
-        return this.#checkCoveredAnnotations;
-    }
-
-    get objectVisibilityThreshold(): number {
-        return this.#objectVisibilityThreshold;
-    }
-
-    get panopticComparison(): boolean {
-        return this.#panopticComparison;
-    }
-
-    get compareAttributes(): boolean {
-        return this.#compareAttributes;
-    }
-
-    get targetMetric(): TargetMetric {
-        return this.#targetMetric;
-    }
-
-    get targetMetricThreshold(): number {
-        return this.#targetMetricThreshold;
-    }
-
     get maxValidationsPerJob(): number {
         return this.#maxValidationsPerJob;
-    }
-
-    get emptyIsAnnotated(): boolean {
-        return this.#emptyIsAnnotated;
     }
 
     get jobFilter(): string {

@@ -27,7 +27,7 @@ import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import {
     AnnotationConflict, ConflictSeverity, QualityConflict, QualityReport, QualityRequirement,
-    QualityRequirementSaveFields, QualitySettings, QualitySettingsSaveFields, QualitySummary, TargetMetric,
+    QualityRequirementSaveFields, QualitySettings, QualitySettingsSaveFields, QualitySummary,
 } from 'cvat-core/src/quality';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import ApiToken from 'cvat-core/src/api-token';
@@ -121,7 +121,6 @@ export {
     QualityRequirement,
     ConsensusSettings,
     ApiToken,
-    TargetMetric,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,

@@ -157,7 +157,7 @@ export function requirementToRaw(requirement: QualityRequirement): RequirementRa
         task_id: requirement.taskId,
         project_id: requirement.projectId,
         name: requirement.name,
-        is_default: requirement.isDefault,
+        is_base: requirement.isBase,
         sort_order: requirement.sortOrder,
         filter: requirement.filter,
         enabled: requirement.enabled,
@@ -244,7 +244,7 @@ export function validateKnownRequirementValues(requirements: RequirementRawData[
     }
 }
 
-export function validateDefaultRequirementsArePresent(
+export function validateBaseRequirementsArePresent(
     currentRequirements: QualityRequirement[],
     parsedRequirements: RequirementRawData[],
 ): void {
@@ -252,12 +252,12 @@ export function validateDefaultRequirementsArePresent(
         .map((requirement: RequirementRawData): number | undefined => requirement.id)
         .filter((id: number | undefined): id is number => typeof id === 'number'));
 
-    const removedDefault = currentRequirements.find((requirement: QualityRequirement): boolean => (
-        requirement.isDefault && !parsedIds.has(requirement.id)
+    const removedBase = currentRequirements.find((requirement: QualityRequirement): boolean => (
+        requirement.isBase && !parsedIds.has(requirement.id)
     ));
 
-    if (removedDefault) {
-        throw new Error(`Default requirement "${removedDefault.name}" cannot be removed`);
+    if (removedBase) {
+        throw new Error(`Base requirement "${removedBase.name}" cannot be removed`);
     }
 }
 
@@ -267,5 +267,5 @@ export function validateRawRequirements(
 ): void {
     validateRequirementNames(parsedRequirements);
     validateKnownRequirementValues(parsedRequirements);
-    validateDefaultRequirementsArePresent(currentRequirements, parsedRequirements);
+    validateBaseRequirementsArePresent(currentRequirements, parsedRequirements);
 }

@@ -64,29 +64,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
     }, [onRequirementFormVisibilityChange, requirementFormVisible]);
 
     const initialValues = {
-        targetMetric: settings.targetMetric,
-        targetMetricThreshold: settings.targetMetricThreshold * 100,
-
         maxValidationsPerJob: settings.maxValidationsPerJob,
-
-        iouThreshold: settings.iouThreshold * 100,
-        compareAttributes: settings.compareAttributes,
-        emptyIsAnnotated: settings.emptyIsAnnotated,
-
-        oksSigma: settings.oksSigma * 100,
-        pointSizeBase: settings.pointSizeBase,
-
-        lineThickness: settings.lineThickness * 100,
-        lineOrientationThreshold: settings.lineOrientationThreshold * 100,
-        compareLineOrientation: settings.compareLineOrientation,
-
-        compareGroups: settings.compareGroups,
-        groupMatchThreshold: settings.groupMatchThreshold * 100,
-
-        checkCoveredAnnotations: settings.checkCoveredAnnotations,
-        objectVisibilityThreshold: settings.objectVisibilityThreshold * 100,
-        panopticComparison: settings.panopticComparison,
-
         jobFilter: settings.jobFilter,
     };
 

@@ -110,6 +110,7 @@ export default interface CVATCore {
             search?: string;
             jobID?: number;
             taskID?: number;
+            projectID?: number;
             type?: string;
         }, aggregate?: boolean) => Promise<PaginatedResource<Job>>;
     };

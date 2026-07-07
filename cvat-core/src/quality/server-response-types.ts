@@ -88,7 +88,7 @@ export interface SerializedQualityRequirementData {
     task_id: number | null;
     project_id: number | null;
     name: string;
-    is_default: boolean;
+    is_base: boolean;
     sort_order: number;
     filter: QualityRequirementJsonLogicFilter;
     enabled: boolean;
@@ -117,7 +117,7 @@ export interface SerializedQualityRequirementData {
 export type SerializedQualityRequirementSaveData = Partial<
     Omit<
         SerializedQualityRequirementData,
-        'created_date' | 'updated_date' | 'effective' | 'is_default' | 'task_id' | 'project_id'
+        'created_date' | 'updated_date' | 'effective' | 'is_base' | 'task_id' | 'project_id'
     >
 >;
 
@@ -151,18 +151,14 @@ export interface SerializedQualityRequirementScores {
     items: SerializedQualityRequirementScore[];
 }
 
-export interface SerializedQualityConfusionMatrixCell {
-    actual: string;
-    expected: string;
-    count: number;
-}
-
 export interface SerializedQualityConfusionMatrixData {
-    requirement: string;
     labels: string[];
-    cells: SerializedQualityConfusionMatrixCell[];
-    precision?: Record<string, number | null>;
-    recall?: Record<string, number | null>;
+    rows: number[][];
+    axes: { cols: string; rows: string };
+    precision: (number | null)[];
+    recall: (number | null)[];
+    accuracy: (number | null)[];
+    jaccard_index: (number | null)[];
 }
 
 export interface SerializedQualitySettingsData {
@@ -175,21 +171,6 @@ export interface SerializedQualitySettingsData {
     requirements: SerializedQualityRequirementData[];
     created_date: string;
     updated_date: string;
-    target_metric?: string;
-    target_metric_threshold?: number;
-    iou_threshold?: number;
-    oks_sigma?: number;
-    point_size_base?: string;
-    line_thickness?: number;
-    compare_line_orientation?: boolean;
-    line_orientation_threshold?: number;
-    compare_groups?: boolean;
-    group_match_threshold?: number;
-    check_covered_annotations?: boolean;
-    object_visibility_threshold?: number;
-    panoptic_comparison?: boolean;
-    compare_attributes?: boolean;
-    empty_is_annotated?: boolean;
     descriptions?: Record<string, string>;
     requirement_descriptions?: Record<string, string>;
 }

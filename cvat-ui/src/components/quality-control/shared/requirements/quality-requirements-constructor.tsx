@@ -377,7 +377,7 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
                                     onClick={() => onEditRequirement(record.requirement)}
                                 />
                             </CVATTooltip>
-                            {!record.requirement.isDefault && (
+                            {!record.requirement.isBase && (
                                 <CVATTooltip title='Copy requirement'>
                                     <Button
                                         type='text'
@@ -389,7 +389,7 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
                                     />
                                 </CVATTooltip>
                             )}
-                            {!record.requirement.isDefault && (
+                            {!record.requirement.isBase && (
                                 <CVATTooltip title='Delete requirement'>
                                     <Button
                                         type='text'

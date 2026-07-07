@@ -57,26 +57,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         if (settings) {
             const values = await form.validateFields();
             const fields: QualitySettingsSaveFields = {
-                targetMetric: values.targetMetric ?? settings.targetMetric,
-                targetMetricThreshold: (values.targetMetricThreshold ?? settings.targetMetricThreshold * 100) / 100,
                 maxValidationsPerJob: values.maxValidationsPerJob ?? settings.maxValidationsPerJob,
-                iouThreshold: (values.iouThreshold ?? settings.iouThreshold * 100) / 100,
-                compareAttributes: values.compareAttributes ?? settings.compareAttributes,
-                emptyIsAnnotated: values.emptyIsAnnotated ?? settings.emptyIsAnnotated,
-                oksSigma: (values.oksSigma ?? settings.oksSigma * 100) / 100,
-                pointSizeBase: values.pointSizeBase ?? settings.pointSizeBase,
-                lineThickness: (values.lineThickness ?? settings.lineThickness * 100) / 100,
-                lineOrientationThreshold: (
-                    values.lineOrientationThreshold ?? settings.lineOrientationThreshold * 100
-                ) / 100,
-                compareLineOrientation: values.compareLineOrientation ?? settings.compareLineOrientation,
-                compareGroups: values.compareGroups ?? settings.compareGroups,
-                groupMatchThreshold: (values.groupMatchThreshold ?? settings.groupMatchThreshold * 100) / 100,
-                checkCoveredAnnotations: values.checkCoveredAnnotations ?? settings.checkCoveredAnnotations,
-                objectVisibilityThreshold: (
-                    values.objectVisibilityThreshold ?? settings.objectVisibilityThreshold * 100
-                ) / 100,
-                panopticComparison: values.panopticComparison ?? settings.panopticComparison,
                 jobFilter: values.jobFilter ?? '',
             };
 

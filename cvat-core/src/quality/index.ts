@@ -8,7 +8,7 @@ export type { QualitySummary } from './quality-report';
 export { default as QualityRequirement } from './quality-requirement';
 export type { QualityRequirementEffectiveData, QualityRequirementSaveFields } from './quality-requirement';
 export {
-    default as QualitySettings, getQualitySettingsSchemaDescriptions, PointSizeBase, TargetMetric,
+    default as QualitySettings, getQualitySettingsSchemaDescriptions,
 } from './quality-settings';
 export type { QualitySettingsSaveFields } from './quality-settings';
 export * from './server-response-types';

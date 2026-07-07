@@ -119,8 +119,8 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
             false) !== inheritedAttributeComparisonValues.matchUnspecifiedAttributes
     );
     const formDisabled = disabled || submitting;
-    const isDefaultRequirement = !!requirement?.isDefault;
-    const parentRequirementRequired = !isDefaultRequirement;
+    const isBaseRequirement = !!requirement?.isBase;
+    const parentRequirementRequired = !isBaseRequirement;
     const { requirementDescriptions } = settings;
     const overriddenFields = useMemo(() => {
         const next = new Set<string>();

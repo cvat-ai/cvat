@@ -47,6 +47,7 @@ interface State {
     qualitySettings: {
         settings: QualitySettings | null;
         childrenSettings: QualitySettings[] | null;
+        parentSettings: QualitySettings | null;
         fetching: boolean;
     };
 }
@@ -76,8 +77,12 @@ export const reducerActions = {
     setJobsReports: (qualityReports: QualityReport[]) => (
         createAction(ReducerActionType.SET_JOBS_REPORTS, { qualityReports })
     ),
-    setQualitySettings: (qualitySettings: QualitySettings, childrenSettings: QualitySettings[] | null = null) => (
-        createAction(ReducerActionType.SET_QUALITY_SETTINGS, { qualitySettings, childrenSettings })
+    setQualitySettings: (
+        qualitySettings: QualitySettings,
+        childrenSettings: QualitySettings[] | null = null,
+        parentSettings: QualitySettings | null = null,
+    ) => (
+        createAction(ReducerActionType.SET_QUALITY_SETTINGS, { qualitySettings, childrenSettings, parentSettings })
     ),
     setQualitySettingsFetching: (fetching: boolean) => (
         createAction(ReducerActionType.SET_QUALITY_SETTINGS_FETCHING, { fetching })
@@ -120,6 +125,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
                 ...state.qualitySettings,
                 settings: action.payload.qualitySettings,
                 childrenSettings: action.payload.childrenSettings,
+                parentSettings: action.payload.parentSettings,
             },
         };
     }
@@ -201,6 +207,7 @@ function QualityControlPage(): JSX.Element {
         qualitySettings: {
             settings: null,
             childrenSettings: null,
+            parentSettings: null,
             fetching: false,
         },
     });
@@ -215,7 +222,7 @@ function QualityControlPage(): JSX.Element {
         combinedState.plugins.components.qualityControlPage.tabs.items
     ), state, state);
 
-    const receiveInstance = async (type: InstanceType, id: number): Promise<void> => {
+    const receiveInstance = async (type: InstanceType, id: number): Promise<Task | Project | null> => {
         let receivedInstance: Task | Project | null = null;
 
         try {
@@ -237,7 +244,7 @@ function QualityControlPage(): JSX.Element {
                     dispatch(reducerActions.setValidationLayout(validationLayout));
                 }
             } else {
-                return;
+                return null;
             }
 
             dispatch(reducerActions.setInstance(receivedInstance));
@@ -249,23 +256,39 @@ function QualityControlPage(): JSX.Element {
             });
             throw error;
         }
+
+        return receivedInstance;
     };
 
-    const receiveSettings = async (type: InstanceType, id: number): Promise<void> => {
+    const receiveSettings = async (
+        type: InstanceType,
+        id: number,
+        instance: Task | Project | null,
+    ): Promise<void> => {
         try {
             dispatch(reducerActions.setQualitySettingsFetching(true));
             let settings: QualitySettings | null = null;
             let childrenSettings: QualitySettings[] | null = null;
+            let parentSettings: QualitySettings | null = null;
             if (type === InstanceType.PROJECT) {
                 [settings] = await core.analytics.quality.settings.get({ projectID: id, parentType: 'project' });
                 childrenSettings = await core.analytics.quality.settings.get({ projectID: id, parentType: 'task' }, true);
             } else if (type === InstanceType.TASK) {
                 [settings] = await core.analytics.quality.settings.get({ taskID: id });
+
+                // A task that inherits project settings has no requirements of its own; they
+                // live on the project settings, so load them for the requirement-based views.
+                const projectId = instance instanceof Task ? instance.projectId : null;
+                if (settings?.inherit && typeof projectId === 'number') {
+                    [parentSettings] = await core.analytics.quality.settings.get(
+                        { projectID: projectId, parentType: 'project' },
+                    );
+                }
             } else {
                 return;
             }
 
-            dispatch(reducerActions.setQualitySettings(settings, childrenSettings));
+            dispatch(reducerActions.setQualitySettings(settings, childrenSettings, parentSettings));
         } catch (error: unknown) {
             notification.error({
                 message: 'Could not receive quality settings',
@@ -279,8 +302,8 @@ function QualityControlPage(): JSX.Element {
 
     const initializeData = async (): Promise<void> => {
         try {
-            await receiveInstance(requestedInstanceType, requestedInstanceID);
-            await receiveSettings(requestedInstanceType, requestedInstanceID);
+            const receivedInstance = await receiveInstance(requestedInstanceType, requestedInstanceID);
+            await receiveSettings(requestedInstanceType, requestedInstanceID, receivedInstance);
             setActiveTab(getTabFromHash(supportedTabs));
         } catch (error: unknown) {
             dispatch(reducerActions.setError(error instanceof Error ? error : new Error('Unknown error')));
@@ -314,7 +337,9 @@ function QualityControlPage(): JSX.Element {
                 return updatedSetting || childSetting;
             }) ?? null;
 
-            dispatch(reducerActions.setQualitySettings(updatedInstanceSettings, updatedChildrenSettings));
+            dispatch(reducerActions.setQualitySettings(
+                updatedInstanceSettings, updatedChildrenSettings, state.qualitySettings.parentSettings,
+            ));
             notification.info({ message: 'Settings have been updated' });
         } catch (error: unknown) {
             notification.error({
@@ -325,11 +350,15 @@ function QualityControlPage(): JSX.Element {
         } finally {
             dispatch(reducerActions.setQualitySettingsFetching(false));
         }
-    }, [state.qualitySettings.settings, state.qualitySettings.childrenSettings]);
+    }, [
+        state.qualitySettings.settings,
+        state.qualitySettings.childrenSettings,
+        state.qualitySettings.parentSettings,
+    ]);
 
     const refreshQualitySettings = useCallback(async (): Promise<void> => {
-        await receiveSettings(requestedInstanceType, requestedInstanceID);
-    }, [requestedInstanceType, requestedInstanceID]);
+        await receiveSettings(requestedInstanceType, requestedInstanceID, instance);
+    }, [requestedInstanceType, requestedInstanceID, instance]);
 
     const updateMeta = async (): Promise<void> => {
         dispatch(reducerActions.setFetching(true));

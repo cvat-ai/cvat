@@ -27,7 +27,7 @@ export default class QualityRequirement {
     #taskId: number | null;
     #projectId: number | null;
     #name: string;
-    #isDefault: boolean;
+    #isBase: boolean;
     #sortOrder: number;
     #filter: QualityRequirementJsonLogicFilter;
     #enabled: boolean;
@@ -58,7 +58,7 @@ export default class QualityRequirement {
         this.#taskId = initialData.task_id;
         this.#projectId = initialData.project_id;
         this.#name = initialData.name;
-        this.#isDefault = initialData.is_default;
+        this.#isBase = initialData.is_base;
         this.#sortOrder = initialData.sort_order;
         this.#filter = initialData.filter;
         this.#enabled = initialData.enabled;
@@ -104,8 +104,8 @@ export default class QualityRequirement {
         return this.#name;
     }
 
-    get isDefault(): boolean {
-        return this.#isDefault;
+    get isBase(): boolean {
+        return this.#isBase;
     }
 
     get sortOrder(): number {
