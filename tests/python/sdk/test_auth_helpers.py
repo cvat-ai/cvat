@@ -147,7 +147,7 @@ def test_make_client_from_cli_uses_existing_named_profile(tmp_path, monkeypatch)
     from cvat_sdk.core import auth as auth_mod
 
     store = AuthStore(path=tmp_path / "auth.json")
-    store.add_profile(
+    store.put_profile(
         "p",
         ProfileEntry(server=PROFILE_URL, token="pat", created_date="2026-01-01T00:00:00+00:00"),
     )
@@ -169,7 +169,7 @@ def test_make_client_from_cli_zero_flag_uses_default_profile(tmp_path, monkeypat
     from cvat_sdk.core import auth as auth_mod
 
     store = AuthStore(path=tmp_path / "auth.json")
-    store.add_profile(
+    store.put_profile(
         "p",
         ProfileEntry(server=PROFILE_URL, token="dpat", created_date="2026-01-01T00:00:00+00:00"),
         set_default=True,
@@ -187,7 +187,7 @@ def test_make_client_from_cli_applies_client_options_to_named_profile(tmp_path, 
     logger = logging.getLogger("test-auth")
     config = Config(status_check_period=0.1)
     store = AuthStore(path=tmp_path / "auth.json")
-    store.add_profile(
+    store.put_profile(
         "p",
         ProfileEntry(server=PROFILE_URL, token="pat", created_date="2026-01-01T00:00:00+00:00"),
     )
@@ -212,7 +212,7 @@ def test_make_client_from_cli_explicit_host_does_not_borrow_profile_token(tmp_pa
     from cvat_sdk.core import auth as auth_mod
 
     store = AuthStore(path=tmp_path / "auth.json")
-    store.add_profile(
+    store.put_profile(
         "p",
         ProfileEntry(server=PROFILE_URL, token="dpat", created_date="2026-01-01T00:00:00+00:00"),
         set_default=True,
