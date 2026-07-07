@@ -103,10 +103,10 @@ def _entry(server="https://app.cvat.ai", token="tok") -> ProfileEntry:
     return ProfileEntry(server=server, token=token, created_date="2026-01-01T00:00:00+00:00")
 
 
-def test_add_get_list_remove_profile(tmp_path):
+def test_put_get_list_remove_profile(tmp_path):
     store = _store(tmp_path)
     assert store.list_profiles() == {}
-    store.add_profile("mycvat", _entry())
+    store.put_profile("mycvat", _entry())
     assert store.get_profile("mycvat") == _entry()
     assert set(store.list_profiles()) == {"mycvat"}
     store.remove_profile("mycvat")
@@ -115,7 +115,7 @@ def test_add_get_list_remove_profile(tmp_path):
 
 def test_failed_write_does_not_pollute_cached_doc(tmp_path, monkeypatch):
     store = _store(tmp_path)
-    store.add_profile("kept", _entry())
+    store.put_profile("kept", _entry())
 
     def fail_save(_doc):
         raise AuthStoreError("save failed")
@@ -123,7 +123,7 @@ def test_failed_write_does_not_pollute_cached_doc(tmp_path, monkeypatch):
     monkeypatch.setattr(store, "_save", fail_save)
 
     with pytest.raises(AuthStoreError, match="save failed"):
-        store.add_profile("ghost", _entry(token="ghost"))
+        store.put_profile("ghost", _entry(token="ghost"))
 
     assert set(store.list_profiles()) == {"kept"}
     assert store.get_profile("ghost") is None
@@ -162,7 +162,7 @@ def test_auth_store_reuses_loaded_doc(tmp_path, monkeypatch):
 
 def test_first_profile_becomes_default_when_requested(tmp_path):
     store = _store(tmp_path)
-    store.add_profile("mycvat", _entry(), set_default=True)
+    store.put_profile("mycvat", _entry(), set_default=True)
     name, entry = store.get_default_profile()
     assert name == "mycvat"
     assert entry == _entry()
@@ -170,16 +170,16 @@ def test_first_profile_becomes_default_when_requested(tmp_path):
 
 def test_first_profile_becomes_default_even_without_flag(tmp_path):
     store = _store(tmp_path)
-    store.add_profile("mycvat", _entry())
+    store.put_profile("mycvat", _entry())
     assert store.get_default_profile()[0] == "mycvat"
 
 
-def test_add_profile_after_clear_default_does_not_recreate_default(tmp_path):
+def test_put_profile_after_clear_default_does_not_recreate_default(tmp_path):
     store = _store(tmp_path)
-    store.add_profile("first", _entry())
+    store.put_profile("first", _entry())
 
     store.clear_default_profile()
-    store.add_profile("second", _entry(token="second"))
+    store.put_profile("second", _entry(token="second"))
 
     assert store.get_default_profile() is None
 
@@ -192,20 +192,20 @@ def test_set_default_profile_requires_existing(tmp_path):
 
 def test_removing_default_profile_clears_default(tmp_path):
     store = _store(tmp_path)
-    store.add_profile("mycvat", _entry(), set_default=True)
+    store.put_profile("mycvat", _entry(), set_default=True)
     store.remove_profile("mycvat")
     assert store.get_default_profile() is None
 
 
-def test_add_profile_after_removing_default_with_profiles_remaining_does_not_recreate_default(
+def test_put_profile_after_removing_default_with_profiles_remaining_does_not_recreate_default(
     tmp_path,
 ):
     store = _store(tmp_path)
-    store.add_profile("first", _entry())
-    store.add_profile("second", _entry(token="second"))
+    store.put_profile("first", _entry())
+    store.put_profile("second", _entry(token="second"))
 
     store.remove_profile("first")
-    store.add_profile("third", _entry(token="third"))
+    store.put_profile("third", _entry(token="third"))
 
     assert store.get_default_profile() is None
 
