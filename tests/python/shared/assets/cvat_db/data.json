@@ -10304,7 +10304,7 @@
       "points": "24.722413063049316, 37.791320228576296, 270.78543078899384, 610.5770170927044",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10323,7 +10323,7 @@
       "points": "87.86122530400826, 22.648517262936366, 277.2987968593843, 128.69934738874508",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10342,7 +10342,7 @@
       "points": "8.219268488885064, 76.40050053596497, 46.97136907577624, 76.9621251821518",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10361,7 +10361,7 @@
       "points": "40.372303777934576, 55.821463263035184, 232.15283377170636, 366.6659974813465",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10380,7 +10380,7 @@
       "points": "114.91701781749725, 49.88939428329468, 426.5192240476608, 201.82309412956238",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10399,7 +10399,7 @@
       "points": "69.46096818744991, 42.89721039235519, 143.9282634973515, 85.61091347932779",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10418,7 +10418,7 @@
       "points": "35.64345116019285, 190.86810638308634, 41.340930348635084, 213.02496989369502",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10741,7 +10741,7 @@
       "points": "17.650000000003274,11.30000000000291,30.55000000000291,21.700000000002547",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10760,7 +10760,7 @@
       "points": "18.850000000002183,12.000000000001819,25.850000000002183,19.50000000000182",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10779,7 +10779,7 @@
       "points": "26.150000000003274,25.00000000000182,34.150000000003274,34.50000000000182",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10798,7 +10798,7 @@
       "points": "24.600000000002183,11.500000000001819,37.10000000000218,18.700000000002547",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10817,7 +10817,7 @@
       "points": "17.863216443472993,36.43614886308387,41.266725327279346,42.765472201610464",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10836,7 +10836,7 @@
       "points": "34.349609375,52.806640625,27.086274131672326,63.1830161588623,40.229131337355284,67.44868033965395,48.87574792004307,59.03264019917333,45.53238950807099,53.3835173651496",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "polygon",
       "z_order": 0
     }
@@ -10855,7 +10855,7 @@
       "points": "160.71132684643453,59.61108186333331,254.8470583598446,111.65360009838878",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10874,7 +10874,7 @@
       "points": "434.6998787309949,78.74436062622226,502.0490199763608,127.72555425921564",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10893,7 +10893,7 @@
       "points": "245.67336843180783,162.98163621791718,334.90269485918907,215.98915686784676",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11767,7 +11767,7 @@
       "points": "57.55191292719792,91.01746029323476,93.51269847403637,113.40121456218549",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11786,7 +11786,7 @@
       "points": "117.7311866994587,44.78216459015675,154.0589190375922,83.67852446735014",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11805,7 +11805,7 @@
       "points": "118.46508028204698,92.85219424970637,155.15975941147371,114.86900172736205",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11824,7 +11824,7 @@
       "points": "98.24876888892686,49.789385627491356,122.23616360333835,77.89582791912471",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11919,7 +11919,7 @@
       "points": "33.41885724702297,41.82305888866176,72.56171420808096,84.03594384666576",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11938,7 +11938,7 @@
       "points": "97.69756843307368,42.974319387516516,145.4748791355414,84.03594384666576",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11957,7 +11957,7 @@
       "points": "68.74419891008984,45.20736400021633,113.71758860208683,83.33201414520954",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
