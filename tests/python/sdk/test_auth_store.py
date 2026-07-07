@@ -113,7 +113,7 @@ def test_add_get_list_remove_profile(tmp_path):
     assert store.get_profile("mycvat") is None
 
 
-def test_failed_write_does_not_dirty_cached_doc(tmp_path, monkeypatch):
+def test_failed_write_does_not_pollute_cached_doc(tmp_path, monkeypatch):
     store = _store(tmp_path)
     store.add_profile("kept", _entry())
 
