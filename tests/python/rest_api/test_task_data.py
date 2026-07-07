@@ -1390,10 +1390,12 @@ class TestPostTaskData:
             "validation_params": validation_params,
         }
 
-        def _create_task():
+        def _create_task(name):
             with make_api_client(self._USERNAME) as api_client:
                 task_id, _ = create_task(
-                    self._USERNAME, spec=deepcopy(task_params), data=deepcopy(data_params)
+                    self._USERNAME,
+                    spec={**deepcopy(task_params), "name": name},
+                    data=deepcopy(data_params),
                 )
                 task_meta = json.loads(api_client.tasks_api.retrieve_data_meta(task_id)[1].data)
                 task_validation_layout = json.loads(
@@ -1401,8 +1403,8 @@ class TestPostTaskData:
                 )
                 return task_meta, task_validation_layout
 
-        task1_meta, task1_validation_layout = _create_task()
-        task2_meta, task2_validation_layout = _create_task()
+        task1_meta, task1_validation_layout = _create_task(f"{fxt_test_name}-1")
+        task2_meta, task2_validation_layout = _create_task(f"{fxt_test_name}-2")
 
         assert (
             DeepDiff(
