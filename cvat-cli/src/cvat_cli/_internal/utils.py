@@ -7,8 +7,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from cvat_sdk import Client
-from cvat_sdk import Client as _NormalizerClient
 from cvat_sdk.core.client import AccessTokenCredentials, Config
+
+# Dedicated alias so tests can monkeypatch ``Client`` for the network-touching
+# path without breaking pure URL normalization.
+_NormalizerClient = Client
 
 
 def popattr(obj, name):
