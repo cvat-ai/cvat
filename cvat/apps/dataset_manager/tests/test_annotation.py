@@ -466,7 +466,7 @@ class TestTaskAnnotation(TestCase):
                 db_data = models.Data.objects.create(size=31, stop_frame=30, image_quality=50)
 
                 data = {
-                    "name": "my task",
+                    "name": f"my task {dimension.value}",
                     "owner": user,
                     "overlap": 1,
                     "segment_size": 11,

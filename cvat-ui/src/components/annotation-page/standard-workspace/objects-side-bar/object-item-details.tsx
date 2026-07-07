@@ -10,6 +10,9 @@ import Collapse from 'antd/lib/collapse';
 import InputNumber from 'antd/lib/input-number';
 import Tag from 'antd/lib/tag';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { useSelector } from 'react-redux';
+import { showAttribute } from 'cvat-canvas/src/typescript/shared';
+import { CombinedState } from 'reducers';
 
 import { Source } from 'cvat-core-wrapper';
 
@@ -97,7 +100,12 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
         collapsed, attributes, values, readonly, changeAttribute, collapse,
         sizeParams, changeSize, source, score, votes,
     } = props;
-    const visibleAttributes = attributes;
+    const showPrivateAttributes = useSelector(
+        (state: CombinedState) => state.settings.workspace.showPrivateAttributes,
+    );
+    const visibleAttributes = attributes.filter(
+        (attribute) => showAttribute(attribute.name, values[attribute.id], showPrivateAttributes),
+    );
 
     const isConsensus = source === Source.CONSENSUS;
     const withScore = isConsensus;
