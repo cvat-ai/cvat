@@ -30,17 +30,18 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import Icon from '@ant-design/icons';
-import Popover from 'antd/lib/popover';
 import Button from 'antd/lib/button';
-import message from 'antd/lib/message';
-import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
+import message from 'antd/lib/message';
+import Popover from 'antd/lib/popover';
+import Text from 'antd/lib/typography/Text';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import { getCore, ObjectState, ObjectType, ShapeType } from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
+import { RabbitSVGIcon } from 'icons';
 import { ActiveControl, CombinedState } from 'reducers';
 import {
     createAnnotationsAsync,
@@ -57,12 +58,10 @@ import {
     polygonToMaskPoints,
 } from './geometry';
 import withVisibilityHandling from '../../handle-popover-visibility';
-import { RabbitSVGIcon } from 'icons';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type LabelMode = 'polygon' | 'line' | 'circle';
-
 
 export interface Props {
     /** Currently selected label ID – lifted to the parent sidebar. */
@@ -264,7 +263,7 @@ function RabbitControl(props: Props): JSX.Element {
                 if (interactionDoneRef.current) return; // already handled
                 interactionDoneRef.current = true;
                 const maskPoints = buildMaskPoints(labelMode, points);
-                setSelectedLabelID(null)
+                setSelectedLabelID(null);
                 if (maskPoints.length >= 6) {
                     const objectState = new core.classes.ObjectState({
                         shapeType: ShapeType.MASK,
