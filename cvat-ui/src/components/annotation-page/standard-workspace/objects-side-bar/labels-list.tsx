@@ -9,7 +9,7 @@ import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
 import { LabelType, ObjectType, ShapeType } from 'cvat-core-wrapper';
-import { CombinedState } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
@@ -23,12 +23,20 @@ import { getCVATStore } from 'cvat-store';
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
 const makeKey = (index: number): string => `SWITCH_LABEL_${index}`;
+const makeKeyShift = (index: number): string => `SWITCH_LABEL_SHIFT_${index}`;
 
 for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
     componentShortcuts[makeKey(index)] = {
         name: 'Switch label',
         description: 'Change label of a selected object or default label of the next created object if no one object is activated',
         sequences: [`ctrl+${index}`],
+        nonActive: true,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    };
+    componentShortcuts[makeKeyShift(index)] = {
+        name: 'Switch label (11-20)',
+        description: 'Change label of a selected object or default label of the next created object (labels 11-20)',
+        sequences: [`ctrl+shift+${index}`],
         nonActive: true,
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     };
@@ -51,29 +59,37 @@ function LabelsListComponent(): JSX.Element {
     const keyToLabelMapping = Object.fromEntries(
         labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID]),
     );
+    const keyToLabelMappingShift = Object.fromEntries(
+        labelIDs.slice(10, 20).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID]),
+    );
 
     useEffect(() => {
         const updatedComponentShortcuts = JSON.parse(JSON.stringify(componentShortcuts));
-        for (const [index, labelID] of Object.entries(keyToLabelMapping)) {
-            if (labelID) {
-                const labelName = labels.find((label: any) => label.id === labelID)?.name;
-                const key = makeKey(+index);
-                updatedComponentShortcuts[key] = {
-                    ...updatedComponentShortcuts[key],
-                    nonActive: false,
-                    name: `Switch label to ${labelName}`,
-                    description: `Changes the label to ${labelName} for the activated
-                        object or for the next drawn object if no objects are activated`,
-                };
+        const mappings: [Record<string, number>, (index: number) => string][] = [
+            [keyToLabelMapping, makeKey],
+            [keyToLabelMappingShift, makeKeyShift],
+        ];
+        for (const [mapping, keyFactory] of mappings) {
+            for (const [index, labelID] of Object.entries(mapping)) {
+                if (labelID) {
+                    const labelName = labels.find((label: any) => label.id === labelID)?.name;
+                    const key = keyFactory(+index);
+                    updatedComponentShortcuts[key] = {
+                        ...updatedComponentShortcuts[key],
+                        nonActive: false,
+                        name: `Switch label to ${labelName}`,
+                        description: `Changes the label to ${labelName} for the activated
+                            object or for the next drawn object if no objects are activated`,
+                    };
+                }
             }
         }
 
         registerComponentShortcuts(updatedComponentShortcuts);
     }, [labels]);
 
-    const handleHelper = (event: KeyboardEvent, index: number): void => {
+    const handleHelper = (event: KeyboardEvent, labelID: number): void => {
         if (event) event.preventDefault();
-        const labelID = keyToLabelMapping[index];
         const label = labels.find((_label: any) => _label.id === labelID)!;
         if (Number.isInteger(labelID) && label) {
             const relevantAppState = getCVATStore().getState();
@@ -82,7 +98,7 @@ function LabelsListComponent(): JSX.Element {
             const { showPrivateAttributes } = relevantAppState.settings.workspace;
 
             // NCP mode: when idle and no annotation is selected, select a label and start drawing
-            if (!showPrivateAttributes && !Number.isInteger(activatedStateID)) {
+            if (!showPrivateAttributes && !Number.isInteger(activatedStateID)){
                 window.dispatchEvent(new CustomEvent('ncp:select-label', { detail: { label } }));
                 return;
             }
@@ -125,7 +141,10 @@ function LabelsListComponent(): JSX.Element {
 
     for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
         handlers[makeKey(index)] = (event: KeyboardEvent) => {
-            handleHelper(event, index);
+            handleHelper(event, keyToLabelMapping[index]);
+        };
+        handlers[makeKeyShift(index)] = (event: KeyboardEvent) => {
+            handleHelper(event, keyToLabelMappingShift[index]);
         };
     }
 
