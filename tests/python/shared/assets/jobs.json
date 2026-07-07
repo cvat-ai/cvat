@@ -2542,7 +2542,7 @@
       "stop_frame": 24,
       "target_storage": null,
       "task_id": 5,
-      "task_name": "task2",
+      "task_name": "task2_video",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/7"
