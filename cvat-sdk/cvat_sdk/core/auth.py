@@ -146,7 +146,7 @@ class AuthStore:
         raw = self._load()["profiles"].get(name)
         return self._to_entry(raw) if raw is not None else None
 
-    def add_profile(self, name: str, entry: ProfileEntry, *, set_default: bool = False) -> None:
+    def put_profile(self, name: str, entry: ProfileEntry, *, set_default: bool = False) -> None:
         doc = self._load_for_update()
         is_first_profile = not doc["profiles"]
         doc["profiles"][name] = {
