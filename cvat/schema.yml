@@ -11149,23 +11149,13 @@ components:
       properties:
         total_frames:
           type: integer
-        frame_count:
-          type: integer
-          description: Deprecated. Use 'validation_frames' instead
         validation_frames:
           type: integer
-        frame_share:
-          type: number
-          format: double
-          description: Deprecated. Use 'validation_frame_share' instead
         validation_frame_share:
           type: number
           format: double
         conflict_count:
           type: integer
-        warning_count:
-          type: integer
-          description: Deprecated. Always 0 for new reports.
         error_count:
           type: integer
         conflicts_by_type:
@@ -11189,7 +11179,6 @@ components:
       - total_frames
       - validation_frame_share
       - validation_frames
-      - warning_count
     QualityReportTarget:
       enum:
       - job

@@ -69,8 +69,8 @@
       "frame": 2,
       "id": 169,
       "report_id": 16,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -123,8 +123,8 @@
       "frame": 3,
       "id": 166,
       "report_id": 14,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -305,7 +305,7 @@
       "frame": 0,
       "id": 155,
       "report_id": 12,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -327,7 +327,7 @@
       "frame": 0,
       "id": 154,
       "report_id": 12,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -349,7 +349,7 @@
       "frame": 0,
       "id": 153,
       "report_id": 12,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -371,7 +371,7 @@
       "frame": 0,
       "id": 152,
       "report_id": 12,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -393,7 +393,7 @@
       "frame": 0,
       "id": 151,
       "report_id": 12,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -415,7 +415,7 @@
       "frame": 0,
       "id": 150,
       "report_id": 12,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -437,7 +437,7 @@
       "frame": 0,
       "id": 149,
       "report_id": 12,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_attributes",
       "attribute_names": []
     },
@@ -453,7 +453,7 @@
       "frame": 0,
       "id": 148,
       "report_id": 12,
-      "severity": "warning",
+      "severity": "error",
       "type": "covered_annotation",
       "attribute_names": []
     },
@@ -475,7 +475,7 @@
       "frame": 0,
       "id": 147,
       "report_id": 12,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_direction",
       "attribute_names": []
     },
@@ -819,8 +819,8 @@
       "frame": 0,
       "id": 127,
       "report_id": 12,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -841,8 +841,8 @@
       "frame": 0,
       "id": 126,
       "report_id": 12,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -863,8 +863,8 @@
       "frame": 0,
       "id": 125,
       "report_id": 12,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -885,8 +885,8 @@
       "frame": 0,
       "id": 124,
       "report_id": 12,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -907,8 +907,8 @@
       "frame": 0,
       "id": 123,
       "report_id": 12,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -929,8 +929,8 @@
       "frame": 0,
       "id": 122,
       "report_id": 12,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -951,8 +951,8 @@
       "frame": 0,
       "id": 121,
       "report_id": 12,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -1005,8 +1005,8 @@
       "frame": 5,
       "id": 118,
       "report_id": 9,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -1123,7 +1123,7 @@
       "frame": 0,
       "id": 111,
       "report_id": 6,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1145,7 +1145,7 @@
       "frame": 0,
       "id": 110,
       "report_id": 6,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1167,7 +1167,7 @@
       "frame": 0,
       "id": 109,
       "report_id": 6,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1189,7 +1189,7 @@
       "frame": 0,
       "id": 108,
       "report_id": 6,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1211,7 +1211,7 @@
       "frame": 0,
       "id": 107,
       "report_id": 6,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1233,7 +1233,7 @@
       "frame": 0,
       "id": 106,
       "report_id": 6,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1255,7 +1255,7 @@
       "frame": 0,
       "id": 105,
       "report_id": 6,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_attributes",
       "attribute_names": []
     },
@@ -1271,7 +1271,7 @@
       "frame": 0,
       "id": 104,
       "report_id": 6,
-      "severity": "warning",
+      "severity": "error",
       "type": "covered_annotation",
       "attribute_names": []
     },
@@ -1293,7 +1293,7 @@
       "frame": 0,
       "id": 103,
       "report_id": 6,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_direction",
       "attribute_names": []
     },
@@ -1621,8 +1621,8 @@
       "frame": 0,
       "id": 84,
       "report_id": 6,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -1643,8 +1643,8 @@
       "frame": 0,
       "id": 83,
       "report_id": 6,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -1665,8 +1665,8 @@
       "frame": 0,
       "id": 82,
       "report_id": 6,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -1687,8 +1687,8 @@
       "frame": 0,
       "id": 81,
       "report_id": 6,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -1709,8 +1709,8 @@
       "frame": 0,
       "id": 80,
       "report_id": 6,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -1731,8 +1731,8 @@
       "frame": 0,
       "id": 79,
       "report_id": 6,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -1753,8 +1753,8 @@
       "frame": 0,
       "id": 78,
       "report_id": 6,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -1871,7 +1871,7 @@
       "frame": 0,
       "id": 71,
       "report_id": 4,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1893,7 +1893,7 @@
       "frame": 0,
       "id": 70,
       "report_id": 4,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1915,7 +1915,7 @@
       "frame": 0,
       "id": 69,
       "report_id": 4,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1937,7 +1937,7 @@
       "frame": 0,
       "id": 68,
       "report_id": 4,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1959,7 +1959,7 @@
       "frame": 0,
       "id": 67,
       "report_id": 4,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -1981,7 +1981,7 @@
       "frame": 0,
       "id": 66,
       "report_id": 4,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -2003,7 +2003,7 @@
       "frame": 0,
       "id": 65,
       "report_id": 4,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_attributes",
       "attribute_names": []
     },
@@ -2019,7 +2019,7 @@
       "frame": 0,
       "id": 64,
       "report_id": 4,
-      "severity": "warning",
+      "severity": "error",
       "type": "covered_annotation",
       "attribute_names": []
     },
@@ -2041,7 +2041,7 @@
       "frame": 0,
       "id": 63,
       "report_id": 4,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_direction",
       "attribute_names": []
     },
@@ -2369,8 +2369,8 @@
       "frame": 0,
       "id": 44,
       "report_id": 4,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -2391,8 +2391,8 @@
       "frame": 0,
       "id": 43,
       "report_id": 4,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -2413,8 +2413,8 @@
       "frame": 0,
       "id": 42,
       "report_id": 4,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -2435,8 +2435,8 @@
       "frame": 0,
       "id": 41,
       "report_id": 4,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -2457,8 +2457,8 @@
       "frame": 0,
       "id": 40,
       "report_id": 4,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -2479,8 +2479,8 @@
       "frame": 0,
       "id": 39,
       "report_id": 4,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -2501,8 +2501,8 @@
       "frame": 0,
       "id": 38,
       "report_id": 4,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -2619,7 +2619,7 @@
       "frame": 0,
       "id": 31,
       "report_id": 2,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -2641,7 +2641,7 @@
       "frame": 0,
       "id": 30,
       "report_id": 2,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -2663,7 +2663,7 @@
       "frame": 0,
       "id": 29,
       "report_id": 2,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -2685,7 +2685,7 @@
       "frame": 0,
       "id": 28,
       "report_id": 2,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -2707,7 +2707,7 @@
       "frame": 0,
       "id": 27,
       "report_id": 2,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -2729,7 +2729,7 @@
       "frame": 0,
       "id": 26,
       "report_id": 2,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_groups",
       "attribute_names": []
     },
@@ -2751,7 +2751,7 @@
       "frame": 0,
       "id": 25,
       "report_id": 2,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_attributes",
       "attribute_names": []
     },
@@ -2767,7 +2767,7 @@
       "frame": 0,
       "id": 24,
       "report_id": 2,
-      "severity": "warning",
+      "severity": "error",
       "type": "covered_annotation",
       "attribute_names": []
     },
@@ -2789,7 +2789,7 @@
       "frame": 0,
       "id": 23,
       "report_id": 2,
-      "severity": "warning",
+      "severity": "error",
       "type": "mismatching_direction",
       "attribute_names": []
     },
@@ -3085,8 +3085,8 @@
       "frame": 0,
       "id": 6,
       "report_id": 2,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -3107,8 +3107,8 @@
       "frame": 0,
       "id": 5,
       "report_id": 2,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -3129,8 +3129,8 @@
       "frame": 0,
       "id": 4,
       "report_id": 2,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -3151,8 +3151,8 @@
       "frame": 0,
       "id": 3,
       "report_id": 2,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -3173,8 +3173,8 @@
       "frame": 0,
       "id": 2,
       "report_id": 2,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     },
     {
@@ -3195,8 +3195,8 @@
       "frame": 0,
       "id": 1,
       "report_id": 2,
-      "severity": "warning",
-      "type": "low_overlap",
+      "severity": "error",
+      "type": "mismatching_label",
       "attribute_names": []
     }
   ]

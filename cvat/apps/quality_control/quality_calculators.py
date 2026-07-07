@@ -55,7 +55,7 @@ _DEFAULT_FETCH_CHUNK_SIZE = 1000
 def _all_enabled_requirements_completed(summary: ComparisonReportSummary) -> bool:
     requirements = summary.requirements
     return bool(
-        summary.frame_count
+        summary.validation_frames
         and requirements
         and requirements.enabled
         and requirements.completed == requirements.enabled
@@ -238,7 +238,7 @@ class TaskQualityCalculator:
         job_stats.all.update(all_job_ids)
         job_stats.excluded.update(all_job_ids - job_reports.keys())
         job_stats.not_checkable.update(
-            jid for jid, r in job_reports.items() if not r.comparison_summary.frame_count
+            jid for jid, r in job_reports.items() if not r.comparison_summary.validation_frames
         )
         job_stats.completed.update(
             jid
@@ -261,7 +261,7 @@ class TaskQualityCalculator:
         task_group_parameters: dict[str, dict] = {}
         for r in job_reports.values():
             task_validated_frames.update(r.comparison_summary.frames)
-            task_validation_frames_count += r.comparison_summary.frame_count
+            task_validation_frames_count += r.comparison_summary.validation_frames
             task_total_frames += r.comparison_summary.total_frames
             task_conflicts.extend(r.conflicts)
 
@@ -318,11 +318,10 @@ class TaskQualityCalculator:
         task_report_data = ComparisonReport(
             parameters=ComparisonReportParameters.from_comparison_parameters(parameters),
             comparison_summary=ComparisonReportSummary(
-                frame_count=task_validation_frames_count,
+                validation_frames=task_validation_frames_count,
                 total_frames=task_total_frames,
                 frames=sorted(task_validated_frames),
                 conflict_count=len(task_conflicts),
-                warning_count=0,
                 error_count=len(task_conflicts),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
                 tasks=None,
@@ -615,7 +614,7 @@ class ProjectQualityCalculator:
                 continue
 
             total_frames += r.comparison_summary.total_frames
-            total_validated_frames += r.comparison_summary.frame_count
+            total_validated_frames += r.comparison_summary.validation_frames
 
             project_conflicts.extend(r.conflicts)
 
@@ -670,10 +669,9 @@ class ProjectQualityCalculator:
             parameters=ComparisonReportParameters.from_comparison_parameters(quality_params),
             comparison_summary=ComparisonReportSummary(
                 total_frames=total_frames,
-                frame_count=total_validated_frames,
+                validation_frames=total_validated_frames,
                 frames=None,  # project reports do not provide this info
                 conflict_count=len(project_conflicts),
-                warning_count=0,
                 error_count=len(project_conflicts),
                 conflicts_by_type=Counter(c.type for c in project_conflicts),
                 tasks=task_stats,

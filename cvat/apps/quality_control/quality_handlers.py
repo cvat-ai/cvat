@@ -375,7 +375,6 @@ def build_requirement_comparison_summary(
 
     return ComparisonReportRequirementComparisonSummary(
         conflict_count=len(conflicts),
-        warning_count=0,
         error_count=len(conflicts),
         conflicts_by_type=Counter(c.type for c in conflicts),
         score=float(score) if score is not None else None,
@@ -1244,7 +1243,6 @@ class DatasetQualityEstimator:
                 frames=intersection_frames,
                 total_frames=self._get_total_frames(),
                 conflict_count=len(conflicts),
-                warning_count=0,
                 error_count=len(conflicts),
                 conflicts_by_type=Counter(c.type for c in conflicts),
                 tasks=None,
