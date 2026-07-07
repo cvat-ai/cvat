@@ -9,7 +9,7 @@ import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
 import { LabelType, ObjectType, ShapeType } from 'cvat-core-wrapper';
-import { ActiveControl, CombinedState } from 'reducers';
+import { CombinedState } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
@@ -98,7 +98,7 @@ function LabelsListComponent(): JSX.Element {
             const { showPrivateAttributes } = relevantAppState.settings.workspace;
 
             // NCP mode: when idle and no annotation is selected, select a label and start drawing
-            if (!showPrivateAttributes && !Number.isInteger(activatedStateID)){
+            if (!showPrivateAttributes && !Number.isInteger(activatedStateID)) {
                 window.dispatchEvent(new CustomEvent('ncp:select-label', { detail: { label } }));
                 return;
             }
