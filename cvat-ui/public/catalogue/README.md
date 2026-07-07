@@ -4,13 +4,17 @@ This directory contains catalogue JSON files for use with catalogue reference at
 
 ## Overview
 
-Catalogue reference attributes allow users to select attribute values from a predefined catalogue via an interactive modal dialog, rather than typing text manually. This is particularly useful for standardized references like road signs, product codes, or any other categorized items.
+Catalogue reference attributes allow users to select attribute values from a
+predefined catalogue via an interactive modal dialog, rather than typing text
+manually. This is particularly useful for standardized references like road
+signs, product codes, or any other categorized items.
 
 ## How It Works
 
 ### 1. Attribute Naming Convention
 
-To enable catalogue reference behavior, name your text attribute with the prefix `catalogue_ref__` followed by the catalogue name:
+To enable catalogue reference behavior, name your text attribute with the
+prefix `catalogue_ref__` followed by the catalogue name:
 
 ```
 catalogue_ref__<catalogue_name>
@@ -136,7 +140,8 @@ The included `road_signs.json` demonstrates a complete catalogue implementation:
 
 ## Icon Handling
 
-For this demo implementation, icons are mapped to Ant Design icons in the modal component. In a production environment, you can:
+For this demo implementation, icons are mapped to Ant Design icons in the modal
+component. In a production environment, you can:
 
 1. Add actual image files to `cvat-ui/public/catalogue/icons/`
 2. Update the modal to load real images instead of using the icon map
@@ -169,10 +174,13 @@ For this demo implementation, icons are mapped to Ant Design icons in the modal 
 ## Technical Details
 
 **Files Modified/Created:**
-- `cvat-ui/src/components/annotation-page/standard-workspace/objects-side-bar/catalogue-reference-modal.tsx` - Modal component
-- `cvat-ui/src/components/annotation-page/standard-workspace/objects-side-bar/catalogue-reference-modal.scss` - Modal styles
-- `cvat-ui/src/components/annotation-page/standard-workspace/objects-side-bar/object-item-attribute.tsx` - Modified to detect and handle catalogue references
+- `cvat-ui/src/components/annotation-page/standard-workspace/objects-side-bar/catalogue-reference-modal.tsx`
+  - Modal component
+- `cvat-ui/src/components/annotation-page/standard-workspace/objects-side-bar/catalogue-reference-modal.scss`
+  - Modal styles
+- `cvat-ui/src/components/annotation-page/standard-workspace/objects-side-bar/object-item-attribute.tsx`
+  - Modified to detect and handle catalogue references
 
 **Attribute Storage:**
-Only the `reference` value is stored as the attribute value, making it compact and efficient for export and API operations.
-
+Only the `reference` value is stored as the attribute value, making it compact
+and efficient for export and API operations.

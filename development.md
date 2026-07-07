@@ -3,7 +3,7 @@
 
 # install and activate
 
-Check : https://docs.cvat.ai/docs/contributing/development-environment/
+Check: <https://docs.cvat.ai/docs/contributing/development-environment/>
 
 ```bash
 cd ~
@@ -23,8 +23,8 @@ code .
 
 # Edit in VS Code and start
 In VS Code:
-* Left sidebar → Run & Debug (▶️ icon)
-* Top dropdown → select:server: debug
+- Left sidebar → Run & Debug (▶️ icon)
+- Top dropdown → select:server: debug
 
 
 # Start Frontend (UI)
@@ -68,7 +68,8 @@ yarn install
 yarn run start
 ```
 
-The dev server will start at http://localhost:3000 with API proxy to http://localhost:7000
+The dev server will start at <http://localhost:3000> with API proxy to
+<http://localhost:7000>
 
 ### Option 2: From project root
 
@@ -225,7 +226,7 @@ Plugins are automatically loaded by webpack if properly configured.
 
 1. **Make changes** to source files in `cvat-ui/src/`
 2. **Save** - Webpack dev server will auto-reload
-3. **Test** in browser at http://localhost:3000
+3. **Test** in browser at <http://localhost:3000>
 4. **Debug** using browser DevTools with source maps
 5. **Lint** your changes: `yarn run lint:fix`
 6. **Type check**: `yarn run type-check`
