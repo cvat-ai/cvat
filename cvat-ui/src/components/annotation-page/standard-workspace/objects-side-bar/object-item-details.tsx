@@ -12,10 +12,11 @@ import Tag from 'antd/lib/tag';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 import { Source } from 'cvat-core-wrapper';
-import ItemAttribute from './object-item-attribute';
 import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
 import { showAttribute } from 'cvat-canvas/src/typescript/shared';
+import { CombinedState } from 'reducers';
+
+import ItemAttribute from './object-item-attribute';
 
 interface Props {
     readonly: boolean;

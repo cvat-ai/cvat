@@ -109,10 +109,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup Regal
-        uses: StyraInc/setup-regal@33a142b1189004e0f14bf42b15972c67eecce776 # v1.0.0
-        with:
-          version: v0.21.3
+      - name: Install Regal
+        run: |
+          curl -L -o regal https://github.com/StyraInc/regal/releases/download/v0.21.3/regal_Linux_x86_64
+          chmod +x regal
+          sudo mv regal /usr/local/bin/regal
 
       - run: regal lint --format=github cvat/apps/*/rules
 
