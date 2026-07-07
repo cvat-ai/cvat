@@ -356,6 +356,18 @@ export default [
     // plugin rules from the following flat entry.
     ...scopedConfig(cypressBaseConfig, cypressTestFiles),
     {
+        // Legacy Cypress files still carry targeted eslint-disable comments for
+        // waiting-related checks. The rule itself is disabled below, so keep
+        // those comments from failing the whole lint job as "unused" noise.
+        files: [
+            ...cypressTestFiles,
+            ...cypressPluginFiles,
+        ],
+        linterOptions: {
+            reportUnusedDisableDirectives: false,
+        },
+    },
+    {
         files: cypressTestFiles,
         plugins: {
             import: importPlugin,
