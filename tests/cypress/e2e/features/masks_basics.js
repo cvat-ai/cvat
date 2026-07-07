@@ -77,6 +77,48 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.goCheckFrameNumber(0);
         });
 
+        function readMaskSvgBox(selector) {
+            return cy.get(selector).should('exist').and('be.visible').then(($el) => {
+                const width = +$el.attr('width');
+                const height = +$el.attr('height');
+                expect(width).to.be.gt(1);
+                expect(height).to.be.gt(1);
+                return { width, height, area: width * height };
+            });
+        }
+
+        function bboxAreaFromPoints(points) {
+            const [left, top, right, bottom] = points.slice(-4);
+            return (right - left + 1) * (bottom - top + 1);
+        }
+
+        function saveJobAnnotations() {
+            cy.intercept('**/api/jobs/*/annotations**').as('saveAnnotations');
+            cy.clickSaveAnnotationView();
+            cy.hideTooltips();
+            cy.wait('@saveAnnotations', { timeout: 25000 });
+        }
+
+        function enableRemoveUnderlyingPixels() {
+            cy.get('.cvat-brush-tools-underlying-pixels').then(($btn) => {
+                if (!$btn.hasClass('cvat-brush-tools-active-tool')) {
+                    cy.wrap($btn).click();
+                }
+            });
+            cy.get('.cvat-brush-tools-underlying-pixels').should('have.class', 'cvat-brush-tools-active-tool');
+        }
+
+        function disableRemoveUnderlyingPixels() {
+            cy.startMaskDrawing();
+            cy.get('.cvat-brush-tools-underlying-pixels').then(($btn) => {
+                if ($btn.hasClass('cvat-brush-tools-active-tool')) {
+                    cy.wrap($btn).click();
+                }
+            });
+            cy.get('.cvat-brush-tools-underlying-pixels').should('not.have.class', 'cvat-brush-tools-active-tool');
+            cy.finishMaskDrawing();
+        }
+
         it('Drawing a couple of masks. Save job, reopen job, masks must exist', () => {
             cy.startMaskDrawing();
             cy.drawMask(drawingActions);
@@ -197,6 +239,94 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-brush-tools-underlying-pixels').click();
             cy.get('.cvat-brush-tools-underlying-pixels').should('not.have.class', 'cvat-brush-tools-active-tool');
             cy.finishMaskDrawing();
+        });
+
+        it('Mask bbox shrinks after remove underlying pixels overlap', () => {
+            const mask1 = [{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400]],
+            }];
+            const mask2 = [{
+                method: 'brush',
+                coordinates: [[450, 250], [525, 325]],
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(mask1);
+            cy.get('.cvat-brush-tools-continue').click();
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+
+            readMaskSvgBox('#cvat_canvas_shape_1').then((before) => {
+                cy.wrap(before).as('bboxBefore');
+
+                cy.drawMask(mask2);
+                enableRemoveUnderlyingPixels();
+                cy.hideTooltips();
+                cy.finishMaskDrawing();
+
+                cy.get('#cvat_canvas_shape_1').should(($el) => {
+                    const afterArea = (+$el.attr('width')) * (+$el.attr('height'));
+                    expect(afterArea).to.be.lessThan(before.area);
+                    const afterW = +$el.attr('width');
+                    const afterH = +$el.attr('height');
+                    expect(afterW < before.width || afterH < before.height).to.be.true;
+                });
+
+                saveJobAnnotations();
+                cy.get('@bboxBefore').then((bboxBefore) => {
+                    cy.task('getAuthHeaders').then((authHeaders) => {
+                        cy.request({
+                            method: 'GET',
+                            url: `/api/jobs/${jobId}/annotations`,
+                            headers: authHeaders,
+                        }).then(({ body }) => {
+                            const masks = body.shapes.filter((s) => s.type === 'mask');
+                            expect(masks).to.have.length(2);
+                            const mask1Shape = masks.sort((a, b) => a.id - b.id)[0];
+                            expect(bboxAreaFromPoints(mask1Shape.points)).to.be.lessThan(bboxBefore.area);
+                        });
+                    });
+                });
+            });
+
+            disableRemoveUnderlyingPixels();
+        });
+
+        it('Mask bbox is restored after undo remove underlying pixels overlap', () => {
+            const mask1 = [{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400]],
+            }];
+            const mask2 = [{
+                method: 'brush',
+                coordinates: [[450, 250], [525, 325]],
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(mask1);
+            cy.get('.cvat-brush-tools-continue').click();
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+
+            readMaskSvgBox('#cvat_canvas_shape_1').then((before) => {
+                cy.drawMask(mask2);
+                enableRemoveUnderlyingPixels();
+                cy.hideTooltips();
+                cy.finishMaskDrawing();
+
+                cy.get('#cvat_canvas_shape_1').should(($el) => {
+                    const afterArea = (+$el.attr('width')) * (+$el.attr('height'));
+                    expect(afterArea).to.be.lessThan(before.area);
+                });
+
+                cy.contains('.cvat-annotation-header-button', 'Undo').click();
+
+                cy.get('#cvat_canvas_shape_1').should(($el) => {
+                    const restoredArea = (+$el.attr('width')) * (+$el.attr('height'));
+                    expect(restoredArea).to.be.at.least(before.area - 1);
+                });
+            });
+
+            disableRemoveUnderlyingPixels();
         });
 
         it('Check brush tools shortcuts', () => {
