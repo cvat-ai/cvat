@@ -96,7 +96,7 @@ export function polygonToMaskPoints(vertices: [number, number][]): number[] {
     // when x lies in [ceil(xLeft), floor(xRight)] for an intersection pair.
     const rle: number[] = [];
     let isFg = false; // current run type; starts with background
-    let run = 0;      // current run length
+    let run = 0; // current run length
 
     for (let row = 0; row < height; row++) {
         const xs = rowXs[row];
@@ -157,6 +157,24 @@ export function polygonToMaskPoints(vertices: [number, number][]): number[] {
 // ─── Shape helpers ────────────────────────────────────────────────────────────
 
 /**
+ * Returns `segments` vertices approximating a circle around `center` with
+ * the given `radius`.
+ */
+export function circleVertices(
+    center: [number, number],
+    radius: number,
+    segments: number = CIRCLE_SEGMENTS,
+): [number, number][] {
+    return Array.from({ length: segments }, (_, i): [number, number] => {
+        const angle = (i / segments) * 2 * Math.PI;
+        return [
+            center[0] + Math.cos(angle) * radius,
+            center[1] + Math.sin(angle) * radius,
+        ];
+    });
+}
+
+/**
  * Returns the four corner vertices of a rectangle (buffer) centred on the
  * segment p1→p2 with perpendicular half-width `buffer`.
  *
@@ -185,22 +203,4 @@ export function lineBufferVertices(
         [p2[0] - nx, p2[1] - ny],
         [p1[0] - nx, p1[1] - ny],
     ];
-}
-
-/**
- * Returns `segments` vertices approximating a circle around `center` with
- * the given `radius`.
- */
-export function circleVertices(
-    center: [number, number],
-    radius: number,
-    segments: number = CIRCLE_SEGMENTS,
-): [number, number][] {
-    return Array.from({ length: segments }, (_, i): [number, number] => {
-        const angle = (i / segments) * 2 * Math.PI;
-        return [
-            center[0] + Math.cos(angle) * radius,
-            center[1] + Math.sin(angle) * radius,
-        ];
-    });
 }

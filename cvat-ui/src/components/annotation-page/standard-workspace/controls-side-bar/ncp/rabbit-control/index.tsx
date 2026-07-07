@@ -29,7 +29,9 @@
  * the popover so the user can confirm and start the annotation.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+    useCallback, useEffect, useRef, useState,
+} from 'react';
 import Icon from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import { Col, Row } from 'antd/lib/grid';

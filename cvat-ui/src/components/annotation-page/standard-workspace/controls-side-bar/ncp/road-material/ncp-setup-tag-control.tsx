@@ -10,7 +10,9 @@
  * from the standard tag control.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+    useCallback, useEffect, useMemo, useState,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from '@ant-design/icons';
 import Button from 'antd/lib/button';
