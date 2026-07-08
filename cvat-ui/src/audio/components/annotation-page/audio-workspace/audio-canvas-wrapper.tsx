@@ -419,6 +419,7 @@ function AudioCanvasWrapper(): JSX.Element {
                     interval={activeInterval}
                     intervalIndex={intervals.indexOf(activeInterval)}
                     labels={labels}
+                    trackDurationSeconds={duration}
                     onChangeLabel={changeLabel}
                     onChangeAttribute={changeAttribute}
                 />
