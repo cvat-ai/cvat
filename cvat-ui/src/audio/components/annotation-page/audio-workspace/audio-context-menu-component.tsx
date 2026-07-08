@@ -43,13 +43,21 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
     const [position, setPosition] = useState({ top, left });
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
+    // closes the color picker if the menu is opened for a different interval
+    // although, normally it's fully remounted and initialized anyway
     useEffect(() => {
         setColorPickerVisible(false);
     }, [interval.clientID]);
 
+    // adjusts the position of the context menu to ensure it is fully visible in the viewport
+    // effectively does this only once per
+    // * interval change
+    // * menu position change (if user right clicks on the same interval again)
+    // Not handling viewport changes
+    // using layout effect so the ref is already available and size can be measured
+    // but before the menu is painted to the screen, so it doesn't flicker
     useLayoutEffect(() => {
         if (!menuRef.current) {
-            setPosition({ top, left });
             return;
         }
 
@@ -61,6 +69,7 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
         });
     }, [top, left, interval.clientID]);
 
+    // closes the context menu on outside click or outside right click
     useEffect(() => {
         const isEventInsideMenu = (target: EventTarget | null): boolean => {
             if (!(target instanceof Node)) return false;
