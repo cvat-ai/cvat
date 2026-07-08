@@ -23,7 +23,7 @@ interface Props {
     resetVisible?: boolean;
     onChange?: (value: string) => void;
     onVisibleChange?: (visible: boolean) => void;
-    onPopupAlign?: (element: HTMLElement) => void;
+    getPopupContainer?: (triggerNode: HTMLElement) => HTMLElement;
     placement?:
     | 'left'
     | 'top'
@@ -41,7 +41,7 @@ interface Props {
 
 function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
     const {
-        children, value, visible, resetVisible, onChange, onVisibleChange, onPopupAlign, placement,
+        children, value, visible, resetVisible, onChange, onVisibleChange, getPopupContainer, placement,
     } = props;
 
     const [colorState, setColorState] = useState(value);
@@ -132,7 +132,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
             trigger='click'
             open={typeof visible === 'boolean' ? visible : pickerVisible}
             onOpenChange={changeVisible}
-            onPopupAlign={onPopupAlign}
+            getPopupContainer={getPopupContainer}
         >
             {children}
         </Popover>

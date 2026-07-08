@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-.cvat-audio-context-menu {
+.cvat-audio-context-menu-wrapper {
     position: fixed;
     z-index: 10;
+}
+
+.cvat-audio-context-menu {
     max-height: 50%;
     overflow-y: auto;
     border-radius: $grid-unit-size;

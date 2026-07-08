@@ -39,7 +39,6 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
     } = props;
 
     const menuRef = useRef<HTMLDivElement>(null);
-    const colorPickerPopoverRef = useRef<HTMLElement | null>(null);
     // track local position adjustments e.g. when the menu is outside of the viewport
     const [position, setPosition] = useState({ top, left });
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
@@ -66,10 +65,7 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
         const isEventInsideMenu = (target: EventTarget | null): boolean => {
             if (!(target instanceof Node)) return false;
 
-            return !!(
-                menuRef.current?.contains(target) ||
-                colorPickerPopoverRef.current?.contains(target)
-            );
+            return !!menuRef.current?.contains(target);
         };
 
         const onMouseDown = (event: MouseEvent): void => {
@@ -97,9 +93,9 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
         callback();
         onCloseContextMenu();
     }, [onCloseContextMenu]);
-    const onColorPickerPopupAlign = useCallback((element: HTMLElement): void => {
-        colorPickerPopoverRef.current = element;
-    }, []);
+    const getColorPickerPopupContainer = useCallback((triggerNode: HTMLElement): HTMLElement => (
+        menuRef.current ?? triggerNode.parentElement ?? window.document.body
+    ), []);
 
     const serverID = interval.serverID ?? undefined;
     const locked = !!interval.lock;
@@ -116,15 +112,17 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
     return ReactDOM.createPortal(
         <div
             ref={menuRef}
-            className='cvat-audio-context-menu'
+            className='cvat-audio-context-menu-wrapper'
             style={{ top: position.top, left: position.left }}
         >
-            <Menu {...menu} />
+            <div className='cvat-audio-context-menu'>
+                <Menu {...menu} />
+            </div>
             <ColorPicker
                 visible={colorPickerVisible}
                 value={interval.color ?? ''}
                 placement='rightTop'
-                onPopupAlign={onColorPickerPopupAlign}
+                getPopupContainer={getColorPickerPopupContainer}
                 onVisibleChange={setColorPickerVisible}
                 onChange={(color: string) => {
                     onChangeIntervalColor(color);
