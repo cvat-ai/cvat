@@ -73,7 +73,8 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
                 onCloseContextMenu();
             }
         };
-        const onContextMenu = (event: MouseEvent): void => {
+
+        const onContextMenuOpen = (event: MouseEvent): void => {
             event.preventDefault();
             if (!isEventInsideMenu(event.target)) {
                 onCloseContextMenu();
@@ -81,11 +82,11 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
         };
 
         window.document.addEventListener('mousedown', onMouseDown);
-        window.document.addEventListener('contextmenu', onContextMenu);
+        window.document.addEventListener('contextmenu', onContextMenuOpen);
 
         return () => {
             window.document.removeEventListener('mousedown', onMouseDown);
-            window.document.removeEventListener('contextmenu', onContextMenu);
+            window.document.removeEventListener('contextmenu', onContextMenuOpen);
         };
     }, [onCloseContextMenu]);
 
