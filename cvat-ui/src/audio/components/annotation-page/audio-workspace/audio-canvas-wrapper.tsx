@@ -131,7 +131,7 @@ function AudioCanvasWrapper(): JSX.Element {
             if (clientID === null) return;
 
             dispatch(audioActions.setAudioActiveInterval(clientID));
-            dispatch(audioActions.updateAudioContextMenu(true, event.clientX, event.clientY, clientID));
+            dispatch(audioActions.updateAudioContextMenu(event.clientX, event.clientY, clientID));
         }, [dispatch]);
     const onUpdateIntervalAttribute = useCallback((clientID: number, attrID: number, value: string): void => {
         dispatch(updateAudioIntervalAsync(clientID, {

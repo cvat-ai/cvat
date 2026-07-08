@@ -37,9 +37,9 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        visible, top, left, clientID,
+        top, left, clientID,
     } = state.audio.player.contextMenu;
-    const interval = visible && clientID !== null ?
+    const interval = clientID !== null ?
         state.audio.player.intervals.find((_interval) => _interval.clientID === clientID) ?? null :
         null;
 
@@ -54,7 +54,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
         onCloseContextMenu(): void {
-            dispatch(audioActions.updateAudioContextMenu(false, 0, 0));
+            dispatch(audioActions.updateAudioContextMenu(0, 0, null));
         },
         onCreateURL(interval: AudioIntervalState): void {
             copyAudioIntervalURL(interval.serverID);

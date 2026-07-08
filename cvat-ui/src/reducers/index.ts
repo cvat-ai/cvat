@@ -33,7 +33,6 @@ export interface AudioState {
         activeIntervalID: number | null;
         hoveredIntervalID: number | null;
         contextMenu: {
-            visible: boolean;
             top: number;
             left: number;
             clientID: number | null;

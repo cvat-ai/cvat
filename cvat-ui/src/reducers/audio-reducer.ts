@@ -21,7 +21,6 @@ const defaultState: AudioState = {
         activeIntervalID: null,
         hoveredIntervalID: null,
         contextMenu: {
-            visible: false,
             top: 0,
             left: 0,
             clientID: null,
@@ -130,7 +129,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
         }
         case AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU: {
             const {
-                visible, left, top, clientID,
+                left, top, clientID,
             } = action.payload;
 
             return {
@@ -138,7 +137,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 player: {
                     ...state.player,
                     contextMenu: {
-                        visible,
                         left,
                         top,
                         clientID,
@@ -239,7 +237,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     hoveredIntervalID,
                     contextMenu: {
                         ...state.player.contextMenu,
-                        visible: state.player.contextMenu.visible && contextMenuClientID !== null,
                         clientID: contextMenuClientID,
                     },
                 },

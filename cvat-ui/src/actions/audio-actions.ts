@@ -57,9 +57,9 @@ export const audioActions = {
     setAudioHoveredInterval: (clientID: number | null) => (
         createAction(AudioActionTypes.SET_AUDIO_HOVERED_INTERVAL, { clientID })
     ),
-    updateAudioContextMenu: (visible: boolean, left: number, top: number, clientID: number | null = null) => (
+    updateAudioContextMenu: (left: number, top: number, clientID: number | null = null) => (
         createAction(AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU, {
-            visible, left, top, clientID,
+            left, top, clientID,
         })
     ),
     loadAudioData: () => (
