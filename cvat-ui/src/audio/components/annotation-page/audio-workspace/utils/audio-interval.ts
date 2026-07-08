@@ -30,7 +30,7 @@ export function intervalDurationSeconds(interval: AudioIntervalState): number {
     return Math.max(0, intervalEndSeconds(interval) - intervalStartSeconds(interval));
 }
 
-export function copyAudioIntervalURL(serverID: number | null | undefined): void {
+export function copyAudioIntervalURL(serverID?: number | null): void {
     if (Number.isInteger(serverID)) {
         const { origin, pathname } = window.location;
         toClipboard(`${origin}${pathname}?type=interval&serverID=${serverID}`);

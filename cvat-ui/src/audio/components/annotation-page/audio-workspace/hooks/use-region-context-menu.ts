@@ -15,12 +15,12 @@ interface UseRegionContextMenuResult {
 }
 
 export function useRegionContextMenu(
-    onContextMenu: (clientID: number | null, event: MouseEvent, region: Region) => void,
+    onContextMenuOpen: (clientID: number | null, event: MouseEvent, region: Region) => void,
 ): UseRegionContextMenuResult {
     const cleanupsRef = useRef(new Map<string, RegionContextMenuCleanup>());
-    const onContextMenuRef = useRef(onContextMenu);
+    const onContextMenuOpenRef = useRef(onContextMenuOpen);
 
-    useEffect(() => { onContextMenuRef.current = onContextMenu; }, [onContextMenu]);
+    useEffect(() => { onContextMenuOpenRef.current = onContextMenuOpen; }, [onContextMenuOpen]);
 
     useEffect(() => () => {
         Array.from(cleanupsRef.current.values()).forEach((cleanup) => cleanup());
@@ -34,15 +34,15 @@ export function useRegionContextMenu(
         const { element } = region;
         if (!element || cleanupsRef.current.has(region.id)) return;
 
-        const onRegionContextMenu = (event: MouseEvent): void => {
+        const onRegionContextMenuOpen = (event: MouseEvent): void => {
             event.preventDefault();
             event.stopPropagation();
-            onContextMenuRef.current(clientIDFromWaveRegionId(region.id), event, region);
+            onContextMenuOpenRef.current(clientIDFromWaveRegionId(region.id), event, region);
         };
 
-        element.addEventListener('contextmenu', onRegionContextMenu);
+        element.addEventListener('contextmenu', onRegionContextMenuOpen);
         cleanupsRef.current.set(region.id, () => {
-            element.removeEventListener('contextmenu', onRegionContextMenu);
+            element.removeEventListener('contextmenu', onRegionContextMenuOpen);
             cleanupsRef.current.delete(region.id);
         });
     }, []);

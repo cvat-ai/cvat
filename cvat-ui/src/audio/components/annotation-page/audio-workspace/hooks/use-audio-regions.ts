@@ -76,7 +76,7 @@ interface Params {
     onUpdateIntervalPosition(clientID: number, start: number, stop: number): void;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
-    onIntervalContextMenu(clientID: number | null, event: MouseEvent, region: Region): void;
+    onIntervalContextMenuOpen(clientID: number | null, event: MouseEvent, region: Region): void;
     onWaveformReady(ready: boolean): void;
     onWavesurferReady(ws: WaveSurfer): void;
 }
@@ -95,14 +95,14 @@ export function useAudioRegions(params: Params): Result {
         labels, activeLabelId, colorBy, opacity, selectedOpacity, loop,
         onSwitchPlay, onSetCurrentTime, onSetDuration,
         onCreateInterval, onUpdateIntervalPosition, onSetActiveInterval, onSetHoveredInterval,
-        onIntervalContextMenu, onWaveformReady, onWavesurferReady,
+        onIntervalContextMenuOpen, onWaveformReady, onWavesurferReady,
     } = params;
 
     const dragSelectionCleanupRef = useRef<DragSelectionCleanup>(null);
     const regionsHandlersInitializedRef = useRef(false);
     const silentRemoveIdsRef = useRef<Set<string>>(new Set());
     const silentUpdateIdsRef = useRef<Set<string>>(new Set());
-    const { attachRegionContextMenu, cleanupRegionContextMenu } = useRegionContextMenu(onIntervalContextMenu);
+    const { attachRegionContextMenu, cleanupRegionContextMenu } = useRegionContextMenu(onIntervalContextMenuOpen);
 
     const intervalSelectionDisabled = (
         activeControl === ActiveControl.AUDIO_REGION_CREATE ||

@@ -126,7 +126,7 @@ function AudioCanvasWrapper(): JSX.Element {
             stop: Math.round(stop * 1000),
         }));
     }, [dispatch]);
-    const onIntervalContextMenu =
+    const onIntervalContextMenuOpen =
         useCallback((clientID: number | null, event: MouseEvent): void => {
             if (clientID === null) return;
 
@@ -298,7 +298,7 @@ function AudioCanvasWrapper(): JSX.Element {
         onUpdateIntervalPosition,
         onSetActiveInterval,
         onSetHoveredInterval,
-        onIntervalContextMenu,
+        onIntervalContextMenuOpen,
         onWaveformReady,
         onWavesurferReady: setWavesurfer,
     });
