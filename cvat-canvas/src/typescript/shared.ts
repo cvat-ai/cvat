@@ -258,6 +258,14 @@ export function showAttribute(
     return (!isPrivateAttribute && !isAutomaticValue) || showPrivateAttributes;
 }
 
+export function showAttribute_with_automatic_in_values(
+    attribute: any,
+    showPrivateAttributes: boolean,
+): boolean {
+    const hasAutomaticValue = (attribute.values || []).includes('automatic');
+    return showPrivateAttributes || !hasAutomaticValue;
+}
+
 export function scalarProduct(a: Vector2D, b: Vector2D): number {
     return a.i * b.i + a.j * b.j;
 }
