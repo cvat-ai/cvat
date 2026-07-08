@@ -24,7 +24,6 @@ from cvat.apps.dataset_manager.bindings import (
     JobData,
     TaskData,
 )
-from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import TmpDirManager, faster_deepcopy
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
@@ -1314,6 +1313,8 @@ def export_job(
     save_images=False,
     temp_dir: str | None = None,
 ):
+    from cvat.apps.dataset_manager.formats.registry import make_exporter
+
     job = JobAnnotation(job_id, prefetch_images=True)
     job.init_from_db(streaming=True)
 
@@ -1371,6 +1372,8 @@ def export_task(
     save_images: bool = False,
     temp_dir: str | None = None,
 ):
+    from cvat.apps.dataset_manager.formats.registry import make_exporter
+
     task = TaskAnnotation(task_id)
     task.init_from_db(streaming=True)
 
@@ -1388,6 +1391,8 @@ def import_task_annotations(
     *,
     import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
 ):
+    from cvat.apps.dataset_manager.formats.registry import make_importer
+
     av_scan_paths(src_file)
     task = TaskAnnotation(task_id, write_only=True)
 
@@ -1413,6 +1418,8 @@ def import_job_annotations(
     *,
     import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
 ):
+    from cvat.apps.dataset_manager.formats.registry import make_importer
+
     av_scan_paths(src_file)
     job = JobAnnotation(job_id, prefetch_images=True)
 

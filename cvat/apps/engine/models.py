@@ -609,7 +609,9 @@ class Data(models.Model):
 
         if self.storage == StorageChoice.LOCAL and self.local_storage_backing_cs:
             return SubdirectoryCloudStorage(
-                db_storage_to_storage_instance(self.local_storage_backing_cs), f"data/{self.id}/raw"
+                # We can trust backing cloud storage, since only an admin can set it.
+                db_storage_to_storage_instance(self.local_storage_backing_cs, is_trusted=True),
+                f"data/{self.id}/raw",
             )
 
         return None

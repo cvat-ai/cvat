@@ -34,6 +34,7 @@ import { getUpdatedLabels } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
+    getAllIntervals,
     importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
 import AnnotationGuide from './guide';
@@ -362,6 +363,15 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.intervals, 'implementation', {
+        value: async function intervalsImplementation(
+            this: JobClass,
+            filters: Parameters<typeof JobClass.prototype.annotations.intervals>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.intervals> {
+            return getAllIntervals(this, filters);
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.search, 'implementation', {
         value: function searchAnnotationsImplementation(
             this: JobClass,
@@ -502,6 +512,16 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             y: Parameters<typeof JobClass.prototype.annotations.select>[2],
         ): ReturnType<typeof JobClass.prototype.annotations.select> {
             return Promise.resolve(getCollection(this).select(objectStates, x, y));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.selectInterval, 'implementation', {
+        value: function selectIntervalAnnotationsImplementation(
+            this: JobClass,
+            intervalStates: Parameters<typeof JobClass.prototype.annotations.selectInterval>[0],
+            position: Parameters<typeof JobClass.prototype.annotations.selectInterval>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.selectInterval> {
+            return Promise.resolve(getCollection(this).selectInterval(intervalStates, position));
         },
     });
 
@@ -1144,6 +1164,15 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.annotations.intervals, 'implementation', {
+        value: async function intervalsImplementation(
+            this: TaskClass,
+            filters: Parameters<typeof TaskClass.prototype.annotations.intervals>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.intervals> {
+            return getAllIntervals(this, filters);
+        },
+    });
+
     Object.defineProperty(Task.prototype.annotations.search, 'implementation', {
         value: function searchAnnotationsImplementation(
             this: TaskClass,
@@ -1282,6 +1311,16 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             y: Parameters<typeof TaskClass.prototype.annotations.select>[2],
         ): ReturnType<typeof TaskClass.prototype.annotations.select> {
             return Promise.resolve(getCollection(this).select(objectStates, x, y));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.selectInterval, 'implementation', {
+        value: function selectIntervalAnnotationsImplementation(
+            this: TaskClass,
+            intervalStates: Parameters<typeof TaskClass.prototype.annotations.selectInterval>[0],
+            position: Parameters<typeof TaskClass.prototype.annotations.selectInterval>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.selectInterval> {
+            return Promise.resolve(getCollection(this).selectInterval(intervalStates, position));
         },
     });
 

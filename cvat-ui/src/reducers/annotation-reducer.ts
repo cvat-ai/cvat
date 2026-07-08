@@ -241,7 +241,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 activeObjectType = job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE;
             }
 
-            if (job.dimension === DimensionType.DIMENSION_2D) {
+            if (job.dimension === DimensionType.DIMENSION_1D) {
+                workspaceSelected = Workspace.AUDIO;
+            } else if (job.dimension === DimensionType.DIMENSION_2D) {
                 if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
                     workspaceSelected = queryParameters.initialWorkspace;
                 }
@@ -253,6 +255,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             if (state.canvas.instance) {
                 state.canvas.instance.destroy();
+            }
+
+            let canvas: Canvas | Canvas3d | null = null;
+            if (job.dimension === DimensionType.DIMENSION_3D) {
+                canvas = new Canvas3d();
+            } else if (job.dimension === DimensionType.DIMENSION_2D) {
+                canvas = new Canvas();
             }
 
             return {
@@ -267,7 +276,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     labels: job.labels,
                     attributes: job.labels
                         .reduce((acc: Record<number, Label['attributes']>, label: Label) => {
-                            acc[label.id] = label.attributes;
+                            acc[label.id!] = label.attributes;
                             return acc;
                         }, {}),
                     groundTruthInfo: {
@@ -308,7 +317,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: job.dimension === DimensionType.DIMENSION_2D ? new Canvas() : new Canvas3d(),
+                    instance: canvas,
                 },
                 colors,
                 workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
@@ -456,18 +465,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS: {
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    saving: {
-                        ...state.annotations.saving,
-                        uploading: false,
-                    },
-                },
-            };
-        }
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
@@ -640,7 +638,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
 
-            const clientIDs = prevStates.map((prevState: ObjectState): number => prevState.clientID);
+            const clientIDs = prevStates.map((prevState: ObjectState): number => prevState.clientID!);
             for (const updatedState of updatedStates) {
                 const index = clientIDs.indexOf(updatedState.clientID);
                 if (index !== -1) {

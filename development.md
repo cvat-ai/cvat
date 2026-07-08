@@ -3,7 +3,7 @@
 
 # install and activate
 
-Check : https://docs.cvat.ai/docs/contributing/development-environment/
+Check: <https://docs.cvat.ai/docs/contributing/development-environment/>
 
 ```bash
 cd ~
@@ -23,8 +23,8 @@ code .
 
 # Edit in VS Code and start
 In VS Code:
-* Left sidebar → Run & Debug (▶️ icon)
-* Top dropdown → select:server: debug
+- Left sidebar → Run & Debug (▶️ icon)
+- Top dropdown → select:server: debug
 
 
 # Start Frontend (UI)
@@ -68,7 +68,8 @@ yarn install
 yarn run start
 ```
 
-The dev server will start at http://localhost:3000 with API proxy to http://localhost:7000
+The dev server will start at <http://localhost:3000> with API proxy to
+<http://localhost:7000>
 
 ### Option 2: From project root
 
@@ -225,7 +226,7 @@ Plugins are automatically loaded by webpack if properly configured.
 
 1. **Make changes** to source files in `cvat-ui/src/`
 2. **Save** - Webpack dev server will auto-reload
-3. **Test** in browser at http://localhost:3000
+3. **Test** in browser at <http://localhost:3000>
 4. **Debug** using browser DevTools with source maps
 5. **Lint** your changes: `yarn run lint:fix`
 6. **Type check**: `yarn run type-check`
@@ -292,4 +293,88 @@ yarn run build:cvat-core
 yarn run build:cvat-canvas
 yarn run build:cvat-canvas3d
 yarn run build:cvat-ui
+```
+
+---
+
+# Container Management
+
+## How OPA Rules Work (Important!)
+
+CVAT uses [Open Policy Agent (OPA)](https://www.openpolicyagent.org/) for access control.
+The Django server (`cvat_server`) bundles all `.rego` files and serves them at `/api/auth/rules`.
+OPA polls this endpoint every 5–15 seconds to update its rules.
+
+The bundle is built by `cvat/apps/iam/utils.py::get_opa_bundle()`, which uses
+`@functools.lru_cache(maxsize=None)` — the bundle is cached in memory **forever** until
+the Django process restarts. This means:
+
+- Copying `.rego` files into the container does **not** automatically refresh OPA.
+- You must restart `cvat_server` so the cache is cleared and the new rules are served.
+
+**Symptom of stale OPA rules:**
+```
+FieldError at /api/projects
+Cannot resolve keyword 'org_filter_proof' into field.
+```
+This happens because the old cached bundle doesn't include `"org_filter_proof"` in filter
+expressions, so the required queryset alias is never added.
+
+## Restart cvat_server (after changing .rego files)
+
+This is the quickest fix — no rebuild needed:
+
+```bash
+docker restart cvat_server
+```
+
+After ~15 seconds OPA will re-poll and pick up the new rules.
+Then re-attach the VS Code debugger (Run & Debug → server: debug).
+
+## Rebuild and Restart All Containers
+
+Do a full rebuild when you change:
+- `Dockerfile` or `Dockerfile.ui`
+- `cvat/requirements/*.txt` (Python dependencies)
+- `package.json` / `yarn.lock` (JS dependencies)
+- After a major upstream merge (`git merge upstream/dev`)
+
+```bash
+cd ~/cvat
+
+# 1. Stop all running services
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
+
+# 2. Rebuild images that have a build: section (cvat_server, cvat_ui, workers)
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+
+# 3. Start everything again
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+To also force-recreate containers that were not rebuilt (e.g. OPA, Redis):
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-recreate
+```
+
+> ⚠️ `down` without `-v` keeps your database volume intact.
+> Add `-v` only if you want to wipe all data and start fresh:
+> `docker-compose -f docker-compose.yml -f docker-compose.dev.yml down -v`
+
+## Apply Database Migrations (after Python model changes)
+
+```bash
+docker exec cvat_server python manage.py migrate
+```
+
+## Rebuild Only cvat_server (faster, skips UI)
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_server \
+  cvat_worker_export cvat_worker_import cvat_worker_quality_reports \
+  cvat_worker_consensus cvat_worker_annotation
+
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --no-deps \
+  cvat_server cvat_worker_export cvat_worker_import cvat_worker_quality_reports \
+  cvat_worker_consensus cvat_worker_annotation
 ```

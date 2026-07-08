@@ -1,4 +1,5 @@
 import io
+import itertools
 import math
 import os
 from collections.abc import Mapping, Sequence
@@ -29,6 +30,12 @@ def read_share_file(path: str) -> io.BytesIO:
     return data
 
 
+# request.node.name + request.fixturename are the same for every parametrization
+# of a class-scoped pytest_cases fixture, so a counter is needed to keep
+# generated task names unique (Task.name has a DB-level uniqueness constraint).
+_task_name_counter = itertools.count()
+
+
 class TestTasksBase:
     _USERNAME = "admin1"
 
@@ -49,7 +56,7 @@ class TestTasksBase:
         **data_kwargs,
     ) -> tuple[ImagesTaskSpec, int]:
         task_params = {
-            "name": f"{request.node.name}[{request.fixturename}]",
+            "name": f"{request.node.name}[{request.fixturename}]-{next(_task_name_counter)}",
             "labels": [{"name": "a"}],
             **({"segment_size": segment_size} if segment_size else {}),
             **({"consensus_replicas": job_replication} if job_replication else {}),
@@ -672,7 +679,7 @@ class TestTasksBase:
         chapters: Sequence[dict] | None = None,
     ) -> tuple[VideoTaskSpec, int]:
         task_params = {
-            "name": f"{request.node.name}[{request.fixturename}]",
+            "name": f"{request.node.name}[{request.fixturename}]-{next(_task_name_counter)}",
             "labels": [{"name": "a"}],
         }
         if segment_size:

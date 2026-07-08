@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from enum import StrEnum
 from pathlib import Path
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
@@ -20,7 +21,6 @@ from cvat.apps.iam import permissions as iam_permissions
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
     PermissionResult,
-    StrEnum,
     get_iam_context,
 )
 
@@ -351,7 +351,7 @@ class AccessTokenPluginPermission(AccessTokenPluginPermissionBase):
 
     def get_opa_auth_payload(self):
         value = self.original_permission.get_opa_auth_payload()
-        value["auth"]["token"] = (
+        value["token"] = (
             {
                 "id": self.access_token.id,
                 "read_only": self.access_token.read_only,

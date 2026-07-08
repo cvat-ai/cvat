@@ -1,0 +1,19 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-objects-appearance-content {
+    .cvat-appearance-color-by-radio-group {
+        display: flex;
+
+        > label {
+            flex: 1 1 0;
+        }
+    }
+
+    .cvat-appearance-opacity-slider,
+    .cvat-appearance-selected-opacity-slider {
+        margin-left: $grid-unit-size;
+        margin-right: $grid-unit-size;
+    }
+}

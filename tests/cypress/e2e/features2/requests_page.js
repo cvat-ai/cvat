@@ -296,6 +296,24 @@ context('Requests page', () => {
         });
 
         it('Import backup creates a request. Project can not be opened.', () => {
+            // The backup contains a project named "projectName" and a task named
+            // "taskName". Task names must be unique, and restoring the backup would
+            // otherwise leave two projects with the same name (making it impossible
+            // to tell them apart by name). So the still-existing originals are
+            // renamed away for the duration of the restore, then renamed back once
+            // the restored (duplicate) project/task have been cleaned up.
+            const temporaryProjectName = `${projectName} (renamed for backup restore test)`;
+            const temporaryTaskName = `${taskName} (renamed for backup restore test)`;
+
+            cy.goToTaskList();
+            cy.openTask(taskName);
+            cy.renameTask(taskName, temporaryTaskName);
+
+            cy.goToProjectsList();
+            cy.openProject(projectName);
+            cy.renameProject(projectName, temporaryProjectName);
+
+            cy.goToProjectsList();
             cy.restoreProject(
                 `${backupArchiveName}.zip`,
             );
@@ -309,6 +327,14 @@ context('Requests page', () => {
             cy.goToProjectsList();
             cy.openProject(projectName);
             cy.deleteProjectViaActions(projectName);
+
+            cy.goToProjectsList();
+            cy.openProject(temporaryProjectName);
+            cy.renameProject(temporaryProjectName, projectName);
+
+            cy.goToTaskList();
+            cy.openTask(temporaryTaskName);
+            cy.renameTask(temporaryTaskName, taskName);
         });
     });
 

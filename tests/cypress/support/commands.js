@@ -103,6 +103,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
             cy.closeNotification('.cvat-notification-notice-load-settings-fail');
         }
     });
+    cy.enableClassicalInterface();
 });
 
 Cypress.Commands.add('prepareUserSession', (nextURL = '/tasks') => {
@@ -333,6 +334,7 @@ Cypress.Commands.add('headlessLogin', ({
                     return cy.wait('@nextPage').then(() => {
                         cy.url().should('include', nextURL);
                         cy.get('.cvat-spinner').should('not.exist');
+                        cy.enableClassicalInterface();
                     }).then(() => users[0]);
                 }
 
@@ -393,6 +395,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobId) => {
             shapes: objects.filter((object) => object.objectType === 'shape').map(convertShape(job)),
             tracks: objects.filter((object) => object.objectType === 'track').map(convertTrack(job)),
             tags: objects.filter((object) => object.objectType === 'tag').map(convertTag(job)),
+            intervals: [],
         }, $win);
 
         await job.annotations.import(data);
@@ -802,6 +805,20 @@ Cypress.Commands.add('closeSettings', () => {
         cy.contains('button', 'Close').click();
     });
     cy.get('.cvat-settings-modal').should('not.be.visible');
+});
+
+// This e2e suite is written against the classical (non-NCP) annotation workspace.
+// The NCP sidebar (default when "Gold (classical interface)" is unchecked) does not
+// expose the standard draw controls the suite relies on, so make sure it's enabled.
+Cypress.Commands.add('enableClassicalInterface', () => {
+    cy.openSettings();
+    cy.contains('.cvat-settings-tabs .ant-tabs-tab', 'Workspace').click();
+    cy.contains('label.ant-checkbox-wrapper', 'Gold (classical interface)').then(($checkbox) => {
+        if (!$checkbox.hasClass('ant-checkbox-wrapper-checked')) {
+            cy.wrap($checkbox).click();
+        }
+    });
+    cy.closeSettings();
 });
 
 Cypress.Commands.add('openProfile', () => {
