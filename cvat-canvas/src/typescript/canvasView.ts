@@ -37,6 +37,7 @@ import {
     clamp, validateUnionResult, processPolygonUnionResult,
     applySnapToShapePoint, isPolygonSelfIntersecting,
     showAttribute,
+    showAttribute_with_automatic_in_values,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -2733,6 +2734,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             } else {
                 const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
+        const attrByID = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr]));
                 // check if there are updates in attributes
                 for (const attrID of Object.keys(state.attributes)) {
                     if (state.attributes[attrID] !== drawnState.attributes[+attrID]) {
@@ -3335,6 +3337,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const withVotes = isConsensus && !options.isSkeletonElement;
 
         const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
+        const attrByID = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr]));
         if (state.shapeType === 'skeleton') {
             const visibleElementIDs = this.getVisibleSkeletonElementIDs(state.clientID);
             state.elements.forEach((element: any) => {
@@ -3417,7 +3420,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (withAttr) {
                     const { showPrivateAttributes } = this.configuration;
                     Object.keys(attributes).forEach((attrID: string, idx: number) => {
-                        if (showAttribute(attrNames[attrID], attributes[attrID], showPrivateAttributes)) {
+                        if (
+                            showAttribute(attrNames[attrID], attributes[attrID], showPrivateAttributes) &&
+                            showAttribute_with_automatic_in_values(attrByID[attrID], showPrivateAttributes)
+                        ) {
                             const values = `${attributes[attrID] === undefinedAttrValue ?
                                 '' : attributes[attrID]}`.split('\n');
                             const parent = block.tspan(`${attrNames[attrID]}: `)
