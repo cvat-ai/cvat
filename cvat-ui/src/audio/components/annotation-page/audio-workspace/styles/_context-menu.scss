@@ -7,15 +7,15 @@
     z-index: 10;
     max-height: 50%;
     overflow-y: auto;
-    border-radius: 8px;
+    border-radius: $grid-unit-size;
     box-shadow: $box-shadow-base;
 
     .ant-menu {
-        padding: 4px;
+        padding: $grid-unit-size * 0.5;
     }
 
     .ant-menu-item {
-        padding: 5px 12px;
+        padding: $grid-unit-size * 0.5 $grid-unit-size * 1.5;
         width: auto;
         line-height: normal;
         margin: 0;
