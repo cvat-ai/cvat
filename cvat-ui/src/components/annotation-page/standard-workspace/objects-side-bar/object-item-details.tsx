@@ -103,9 +103,15 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
     const showPrivateAttributes = useSelector(
         (state: CombinedState) => state.settings.workspace.showPrivateAttributes,
     );
-    const visibleAttributes = attributes.filter(
-        (attribute) => showAttribute(attribute.name, values[attribute.id], showPrivateAttributes),
-    );
+    const visibleAttributes = attributes.filter((attribute) => {
+        if (showPrivateAttributes){
+            return true
+        }
+        if ((attribute.values || []).includes('automatic')) {
+            return false;
+        }
+        return showAttribute(attribute.name, values[attribute.id], showPrivateAttributes);
+    });
 
     const isConsensus = source === Source.CONSENSUS;
     const withScore = isConsensus;
