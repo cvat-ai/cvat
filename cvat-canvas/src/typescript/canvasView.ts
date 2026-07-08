@@ -1172,7 +1172,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             strokeWidth * 3,
             Math.min(controlPointRadius * 1.7, boundingRectWidth / 4, boundingRectHeight / 4),
         );
-        // similar idea but we aim side segment to be a bit logner than corner segment
+        // similar idea but we aim side segment to be a bit longer than corner segment
         const segmentLength = Math.max(
             strokeWidth * 4,
             Math.min(controlPointRadius * 2.2, boundingRectWidth / 3, boundingRectHeight / 3),
