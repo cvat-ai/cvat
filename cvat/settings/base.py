@@ -323,6 +323,7 @@ REDIS_INMEM_SETTINGS = {
     "PASSWORD": redis_inmem_password,
     "REDIS_CLIENT_KWARGS": {
         "socket_timeout": None,
+        # workaround for RQ 2.0: https://github.com/rq/rq/pull/2120
     },
 }
 
