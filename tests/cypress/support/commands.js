@@ -812,8 +812,8 @@ Cypress.Commands.add('openProfile', () => {
 });
 
 Cypress.Commands.add('changeWorkspace', (mode) => {
-    cy.get('.cvat-workspace-selector').click();
-    cy.get('.cvat-workspace-selector-dropdown').within(() => {
+    cy.get('.cvat-workspace-selector').should('exist').and('be.visible').click();
+    cy.get('.cvat-workspace-selector-dropdown').should('exist').and('be.visible').within(() => {
         cy.get(`.ant-select-item-option[title="${mode}"]`).click();
     });
 
