@@ -1,0 +1,9 @@
+services:
+  cvat_server:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.ui_development
+      CVAT_UI_SCHEME: http
+      CVAT_UI_HOST: localhost
+      CVAT_UI_PORT: 3000
+    volumes:
+      - ./cvat/settings/ui_development.py:/home/django/cvat/settings/ui_development.py:ro
