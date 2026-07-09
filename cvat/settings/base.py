@@ -323,8 +323,6 @@ REDIS_INMEM_SETTINGS = {
     "PASSWORD": redis_inmem_password,
     "REDIS_CLIENT_KWARGS": {
         "socket_timeout": None,
-        "socket_connect_timeout": 30,
-        "health_check_interval": 30,
     },
 }
 
