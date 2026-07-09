@@ -60,32 +60,32 @@ which are used by containers for the testing system.
 Run all REST API tests:
 
 ```bash
-pytest ./tests/python
+pytest tests/python
 ```
 
 This command will automatically start all necessary docker containers.
 
-If you want to start/stop these containers without running tests
-use special options for it:
+Use these commands to manage the local test runtime:
 
-```bash
-pytest ./tests/python --start-services
-pytest ./tests/python --stop-services
-```
+| Command | Behavior |
+| --- | --- |
+| `pytest tests/python build` | Rebuild CVAT server and UI images and exit. |
+| `pytest tests/python up` | Start test services, restore runtime state from test assets, and exit. |
+| `pytest tests/python down` | Stop and remove test services and volumes. |
+| `pytest tests/python dumpdb` | Update `tests/python/shared/assets/cvat_db/data.json` from a running stack and exit. |
 
-If you need to rebuild your CVAT images add `--rebuild` option:
-```bash
-pytest ./tests/python --rebuild
-```
+The explicit `--infra=build`, `--infra=up`, `--infra=down`, and `--infra=dumpdb`
+forms are equivalent to the short commands.
 
-If you need to persist data volumes across test sessions add `--keep-data` option
-```bash
-pytest ./tests/python --start-services --keep-data
-```
+The default `pytest tests/python` command starts missing services, restores runtime
+state from test assets, runs tests, and tears down services it started automatically.
+Use `up` when you want to keep the stack running for repeated work and `down` when
+you want to remove it.
 
 If you want to get a code coverage report, use special option for it:
 ```bash
-COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --rebuild --cov --cov-report xml
+pytest tests/python build
+COVERAGE_PROCESS_START=.coveragerc pytest tests/python --cov --cov-report xml
 ```
 
 **Debugging**
@@ -100,7 +100,8 @@ To debug a server deployed with Docker, you need to do the following:
 - Rebuild the images and start the test containers:
 
 ```bash
-CVAT_DEBUG_ENABLED=yes pytest --rebuild --start-services tests/python
+CVAT_DEBUG_ENABLED=yes pytest tests/python build
+CVAT_DEBUG_ENABLED=yes pytest tests/python up
 ```
 
 Now, you can use VS Code tasks to attach to the running server containers.

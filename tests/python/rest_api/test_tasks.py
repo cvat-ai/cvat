@@ -1424,6 +1424,7 @@ class TestWorkWithTask:
     _USERNAME = "admin1"
 
     @pytest.mark.with_external_services
+    @pytest.mark.timeout(60)
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket

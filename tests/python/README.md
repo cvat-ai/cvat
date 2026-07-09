@@ -38,12 +38,20 @@ which are used by containers for the testing system.
 - Run all REST API tests:
 
   ```shell
-  pytest ./tests/python
+  pytest tests/python
   ```
 
   This command will automatically start all necessary docker containers.
   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
   to get more information about tests running.
+
+**Runtime lifecycle commands**
+
+- `pytest tests/python build` rebuilds the CVAT server and UI development images.
+- `pytest tests/python up` starts the managed test stack, restores test state, and exits.
+- `pytest tests/python down` stops the managed test stack and removes its volumes.
+- `pytest tests/python dumpdb` updates `tests/python/shared/assets/cvat_db/data.json`
+  from a running managed test stack without restoring state first.
 
 ## How to upgrade testing assets?
 
@@ -51,9 +59,9 @@ When you have a new use case which cannot be expressed using objects already
 available in the system like comments, users, issues, please use the following
 procedure to add them:
 
-1. Run a clean CVAT instance and restore DB and data volume
+1. Run a clean CVAT instance and restore the test runtime state
    ```console
-   pytest tests/python/ --start-services
+   pytest tests/python up
    ```
 1. Add new objects (e.g. issues, comments, tasks, projects)
 1. Backup DB and data volume using commands below
@@ -82,10 +90,12 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-cd tests/python
-python shared/utils/dump_test_db.py
-docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
+pytest tests/python dumpdb
+docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > tests/python/shared/assets/cvat_db/cvat_data.tar.bz2
 ```
+
+> Note: `dumpdb` uses `--indent 2`. If you dump `data.json` manually without
+> this option or with another value, it can lead to merge problems.
 
 ## How to update *.json files in the assets directory?
 
@@ -93,9 +103,8 @@ If you have updated the test database and want to update the assets/*.json
 files as well, run the appropriate script:
 
 ```
-cd tests/python
-pytest ./ --start-services
-python shared/utils/dump_objects.py
+pytest tests/python up
+python tests/python/shared/utils/dump_objects.py
 ```
 
 ## How to restore DB and data volume?
@@ -103,8 +112,8 @@ python shared/utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-cat shared/assets/cvat_db/data.json | docker exec -i test_cvat_server_1 python manage.py loaddata_sorted
-cat shared/assets/cvat_db/cvat_data.tar.bz2 | docker exec -i test_cvat_server_1 tar --strip 3 -C /home/django/data/ -xj
+cat tests/python/shared/assets/cvat_db/data.json | docker exec -i test_cvat_server_1 python manage.py loaddata_sorted
+cat tests/python/shared/assets/cvat_db/cvat_data.tar.bz2 | docker exec -i test_cvat_server_1 tar --strip 3 -C /home/django/data/ -xj
 ```
 
 ## Assets directory structure
