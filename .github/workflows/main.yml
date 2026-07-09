@@ -164,7 +164,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v8
         with:
-          name: cvat_server
+          name: cvat_server_nonexistent # should fail
           path: /tmp/cvat_server/
 
       - name: Download CVAT server image (retry)
