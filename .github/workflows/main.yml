@@ -160,16 +160,7 @@ jobs:
           python-version: '3.10'
 
       - name: Download CVAT server image
-        id: download
-        continue-on-error: true
         uses: actions/download-artifact@v8
-        with:
-          name: cvat_server
-          path: /tmp/cvat_server/
-
-      - name: Download CVAT server image (retry)
-        if: steps.download.outcome == 'failure'
-        uses: actions/download-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/
