@@ -153,14 +153,10 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
         return instance
 
     def to_representation(self, instance):
-        request = self.context.get("request")
-        if not request:
-            return None
-
         return serializers.Hyperlink(
             reverse(
                 self.view_name,
-                request=request,
+                request=self.context.get("request"),
                 query=build_field_filter_params(self.filter_key, getattr(instance, self.key_field)),
             ),
             instance,
@@ -224,12 +220,8 @@ class LabelsSummarySerializer(serializers.Serializer):
         return reverse("label-list", request=request, query={filter_key: instance.id})
 
     def to_representation(self, instance):
-        request = self.context.get("request")
-        if not request:
-            return None
-
         return {
-            "url": self.get_url(request, instance),
+            "url": self.get_url(self.context.get("request"), instance),
         }
 
 
