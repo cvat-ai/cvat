@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 from cvat_sdk import Client
 from cvat_sdk.core.client import AccessTokenCredentials, Config
@@ -40,3 +42,24 @@ def _fetch_name_from_server(server: str, token: str, *, insecure: bool) -> str:
         client.login(AccessTokenCredentials(token))
         info, _ = client.api_client.auth_api.retrieve_access_tokens_self()
         return info.name
+
+
+def _read_token_file(path: Path) -> tuple[str, str | None, str | None]:
+    """Read a PAT from *path*, returning (token, envelope_server, envelope_name).
+
+    Accepts two file shapes:
+
+    * plain text - the whole file (whitespace-trimmed) is the token.
+    * JSON envelope emitted by the web UI - ``{"version": 1, "server": ...,
+      "name": ..., "token": ...}``; the envelope's ``server`` and ``name``
+      participate in resolution but are overridden by explicit CLI flags.
+    """
+    text = path.read_text(encoding="utf-8")
+    try:
+        doc = json.loads(text)
+    except json.JSONDecodeError:
+        return text.strip(), None, None
+
+    if not isinstance(doc, dict) or "token" not in doc:
+        return text.strip(), None, None
+    return doc["token"], doc.get("server"), doc.get("name")
