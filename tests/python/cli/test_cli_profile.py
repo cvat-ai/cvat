@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 
+import json
+
 import pytest
 from cvat_sdk.core.auth import AuthStore, ProfileEntry
 
@@ -208,6 +210,81 @@ class TestProfileCreate:
             expected_code=1,
         )
         assert AuthStore(path=store_path).get_profile("p") is None
+
+
+class TestProfileCreateFromFile:
+    def test_plain_token_file(self, store_path, tmp_path):
+        f = tmp_path / "pat.txt"
+        f.write_text("  raw-token\n")
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "release-bot",
+            "--file",
+            str(f),
+        )
+        assert AuthStore(path=store_path).get_profile("release-bot").token == "raw-token"
+
+    def test_json_envelope_zero_args(self, store_path, tmp_path):
+        f = tmp_path / "cvat-token.json"
+        f.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "server": "https://app.cvat.ai",
+                    "name": "my-laptop",
+                    "token": "envelope-pat",
+                }
+            )
+        )
+        run_cli(self, "profile", "create", "--file", str(f))
+        entry = AuthStore(path=store_path).get_profile("my-laptop")
+        assert entry.server == "https://app.cvat.ai"
+        assert entry.token == "envelope-pat"
+
+    def test_explicit_name_overrides_envelope(self, store_path, tmp_path):
+        f = tmp_path / "t.json"
+        f.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "server": "https://app.cvat.ai",
+                    "name": "env-name",
+                    "token": "p",
+                }
+            )
+        )
+        run_cli(self, "profile", "create", "explicit", "--file", str(f))
+        store = AuthStore(path=store_path)
+        assert store.get_profile("explicit") is not None
+        assert store.get_profile("env-name") is None
+
+    def test_explicit_server_overrides_envelope(self, store_path, tmp_path):
+        f = tmp_path / "t.json"
+        f.write_text(
+            json.dumps(
+                {
+                    "version": 1,
+                    "server": "https://envelope.example.com",
+                    "name": "n",
+                    "token": "p",
+                }
+            )
+        )
+        run_cli(
+            self,
+            "--server-host",
+            "https://explicit.example.com",
+            "profile",
+            "create",
+            "--file",
+            str(f),
+        )
+        entry = AuthStore(path=store_path).get_profile("n")
+        assert entry.server == "https://explicit.example.com"
 
 
 class TestProfileSelectionE2E(TestCliBase):

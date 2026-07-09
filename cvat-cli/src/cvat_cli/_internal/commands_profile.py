@@ -6,12 +6,35 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import json
+from pathlib import Path
 
 from cvat_sdk.core.auth import DEFAULT_SERVER, AuthStore, ProfileEntry
 
 from .command_base import CommandGroup
 from .common import CriticalError
 from .utils import _fetch_name_from_server, _normalize_server, _now_iso
+
+
+def _read_token_file(path: Path) -> tuple[str, str | None, str | None]:
+    """Read a PAT from *path*, returning (token, envelope_server, envelope_name).
+
+    Accepts two file shapes:
+
+    * plain text - the whole file (whitespace-trimmed) is the token.
+    * JSON envelope emitted by the web UI - ``{"version": 1, "server": ...,
+      "name": ..., "token": ...}``; the envelope's ``server`` and ``name``
+      participate in resolution but are overridden by explicit CLI flags.
+    """
+    text = path.read_text(encoding="utf-8")
+    try:
+        doc = json.loads(text)
+    except json.JSONDecodeError:
+        return text.strip(), None, None
+
+    if not isinstance(doc, dict) or "token" not in doc:
+        return text.strip(), None, None
+    return doc["token"], doc.get("server"), doc.get("name")
 
 COMMANDS = CommandGroup(description="Manage saved CVAT authentication profiles.")
 
@@ -104,23 +127,39 @@ class ProfileCreate:
         parser.add_argument("token", nargs="?", default=None, help="PAT (omit to be prompted)")
         parser.add_argument("--set-default", action="store_true", help="mark as default profile")
         parser.add_argument("--force", action="store_true", help="overwrite an existing profile")
+        parser.add_argument(
+            "--file",
+            type=Path,
+            default=None,
+            help="read the PAT from a file (plain token or JSON envelope)",
+        )
 
     def execute(self, args: argparse.Namespace) -> None:
         store = AuthStore()
 
-        token = args.token if args.token is not None else getpass.getpass("PAT: ")
+        envelope_server = envelope_name = None
+        if args.file is not None:
+            token, envelope_server, envelope_name = _read_token_file(args.file)
+        elif args.token is not None:
+            token = args.token
+        else:
+            token = getpass.getpass("PAT: ")
         if not token:
             raise CriticalError("A non-empty PAT is required.")
 
+        # Server: explicit --server-host > envelope > default_server > built-in.
         if args.server_host:
             server = args.server_host
             if args.server_port:
                 server = f"{server}:{args.server_port}"
+        elif envelope_server:
+            server = envelope_server
         else:
             server = store.get_default_server() or DEFAULT_SERVER
         server = _normalize_server(server)
 
-        name = args.name
+        # Name: explicit <name> > envelope name > server lookup.
+        name = args.name or envelope_name
         if name is None:
             name = _fetch_name_from_server(server, token, insecure=args.insecure)
 
