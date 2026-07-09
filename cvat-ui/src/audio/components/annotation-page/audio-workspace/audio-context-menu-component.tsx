@@ -122,7 +122,7 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
     return ReactDOM.createPortal(
         <div
             ref={menuRef}
-            className='cvat-audio-context-menu-wrapper'
+            className='cvat-audio-context-menu-root'
             style={{ top: position.top, left: position.left }}
         >
             <div className='cvat-audio-context-menu'>
