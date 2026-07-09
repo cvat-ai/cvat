@@ -163,3 +163,9 @@ Personal Access Tokens can also be used for authentication in other CVAT compone
 - in the {{< ilink "/docs/api_sdk/sdk/lowlevel-api#authentication" "low-level" >}} and
   {{< ilink "/docs/api_sdk/sdk/highlevel-api#authentication" "high-level" >}} API of the CVAT SDK
 - in the {{< ilink "/docs/api_sdk/cli#authentication" "CVAT CLI" >}}
+
+To avoid repeatedly retyping a token, the CLI and SDK can also remember it
+locally as a named profile - see
+{{< ilink "/docs/api_sdk/cli#persistent-authentication-profiles" "Persistent authentication (CLI)" >}}
+and
+{{< ilink "/docs/api_sdk/sdk/highlevel-api#persistent-authentication-profiles" "Persistent authentication (SDK)" >}}.
