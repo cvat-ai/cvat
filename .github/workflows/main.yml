@@ -166,6 +166,7 @@ jobs:
         with:
           name: cvat_server_nonexistent # should fail
           path: /tmp/cvat_server/
+        timeout-minutes: 5
 
       - name: Download CVAT server image (retry)
         if: steps.download.outcome == 'failure'
@@ -173,6 +174,7 @@ jobs:
         with:
           name: cvat_server
           path: /tmp/cvat_server/
+        timeout-minutes: 5
 
       - name: Download CVAT UI images
         uses: actions/download-artifact@v8
