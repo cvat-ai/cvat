@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import json
 import os
 import stat
@@ -50,6 +51,7 @@ class AuthStore:
         self._path = (
             Path(config_file_path) if config_file_path is not None else get_auth_store_path()
         )
+        self._doc: dict | None = None
 
     @property
     def path(self) -> Path:
@@ -74,8 +76,12 @@ class AuthStore:
                 )
 
     def _load(self) -> dict:
+        if self._doc is not None:
+            return self._doc
+
         if not self._path.exists():
-            return {"version": _STORE_VERSION, "profiles": {}}
+            self._doc = {"version": _STORE_VERSION, "profiles": {}}
+            return self._doc
 
         self._check_secure_permissions()
 
@@ -93,7 +99,11 @@ class AuthStore:
             )
 
         doc.setdefault("profiles", {})
-        return doc
+        self._doc = doc
+        return self._doc
+
+    def _load_for_update(self) -> dict:
+        return copy.deepcopy(self._load())
 
     def _save(self, doc: dict) -> None:
         directory = self._path.parent
@@ -119,3 +129,73 @@ class AuthStore:
 
         if is_posix():
             os.chmod(self._path, 0o600)
+
+        self._doc = doc
+
+    @staticmethod
+    def _to_entry(raw: dict) -> ProfileEntry:
+        return ProfileEntry(
+            server=raw["server"], token=raw["token"], created_date=raw.get("created_date", "")
+        )
+
+    def list_profiles(self) -> dict[str, ProfileEntry]:
+        # TODO: revisit AuthStore API before it grows further — no in-place updates,
+        # N-writes per N-mutations; consider batch() context manager vs dict+save().
+        # For context see: https://github.com/cvat-ai/cvat/pull/10819
+        doc = self._load()
+        return {name: self._to_entry(raw) for name, raw in doc["profiles"].items()}
+
+    def get_profile(self, name: str) -> ProfileEntry | None:
+        raw = self._load()["profiles"].get(name)
+        return self._to_entry(raw) if raw is not None else None
+
+    def put_profile(self, name: str, entry: ProfileEntry, *, set_default: bool = False) -> None:
+        doc = self._load_for_update()
+        is_first_profile = not doc["profiles"]
+        doc["profiles"][name] = {
+            "server": entry.server,
+            "token": entry.token,
+            "created_date": entry.created_date,
+        }
+        if set_default or is_first_profile:
+            doc["default_profile"] = name
+        self._save(doc)
+
+    def remove_profile(self, name: str) -> None:
+        doc = self._load_for_update()
+        del doc["profiles"][name]  # raises KeyError if absent
+        if doc.get("default_profile") == name:
+            doc.pop("default_profile", None)
+        self._save(doc)
+
+    def get_default_profile(self) -> tuple[str, ProfileEntry] | None:
+        doc = self._load()
+        name = doc.get("default_profile")
+        if name is None or name not in doc["profiles"]:
+            return None
+        return name, self._to_entry(doc["profiles"][name])
+
+    def set_default_profile(self, name: str) -> None:
+        doc = self._load_for_update()
+        if name not in doc["profiles"]:
+            raise KeyError(name)
+        doc["default_profile"] = name
+        self._save(doc)
+
+    def clear_default_profile(self) -> None:
+        doc = self._load_for_update()
+        doc.pop("default_profile", None)
+        self._save(doc)
+
+    def get_default_server(self) -> str | None:
+        return self._load().get("default_server")
+
+    def set_default_server(self, server: str) -> None:
+        doc = self._load_for_update()
+        doc["default_server"] = server
+        self._save(doc)
+
+    def clear_default_server(self) -> None:
+        doc = self._load_for_update()
+        doc.pop("default_server", None)
+        self._save(doc)

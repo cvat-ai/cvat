@@ -321,6 +321,12 @@ REDIS_INMEM_SETTINGS = {
     "PORT": redis_inmem_port,
     "DB": REDIS_INMEM_DATABASES.RQ,
     "PASSWORD": redis_inmem_password,
+    "REDIS_CLIENT_KWARGS": {
+        # Work around an RQ < 2.0 bug where Redis socket timeouts can be too short
+        # for blocking operations such as BLPOP. Fixed upstream in RQ 2.0:
+        # https://github.com/rq/rq/pull/2120
+        "socket_timeout": None,
+    },
 }
 
 RQ_QUEUES = {
