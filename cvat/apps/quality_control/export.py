@@ -123,8 +123,8 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
             job_stats[k] = sorted(job_stats[k])
 
     # Add the percent representation for better human readability
-    serialized_data["comparison_summary"]["frame_share_percent"] = (
-        serialized_data["comparison_summary"]["frame_share"] * 100
+    serialized_data["comparison_summary"]["validation_frame_share_percent"] = (
+        serialized_data["comparison_summary"]["validation_frame_share"] * 100
     )
 
     return BytesIO(dump_json(serialized_data, indent=True, append_newline=True))

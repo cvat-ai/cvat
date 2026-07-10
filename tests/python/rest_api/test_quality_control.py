@@ -1608,9 +1608,9 @@ class TestQualityReportContents(_PermissionTestBase):
         assert 0 < summary["conflict_count"]
         assert all(summary["conflicts_by_type"].values())
         assert summary["conflict_count"] == sum(summary["conflicts_by_type"].values())
-        assert summary["conflict_count"] == summary["warning_count"] + summary["error_count"]
-        assert summary["frame_count"] == gt_job["frame_count"]
-        assert summary["frame_share"] == summary["frame_count"] / task["size"]
+        assert summary["conflict_count"] == summary["error_count"]
+        assert summary["validation_frames"] == gt_job["frame_count"]
+        assert summary["validation_frame_share"] == summary["validation_frames"] / task["size"]
 
     def test_accumulation_annotation_conflicts_multiple_jobs(self, admin_user):
         requirement = self.enable_base_quality_requirement(
@@ -1940,7 +1940,6 @@ class TestQualityReportContents(_PermissionTestBase):
         for summary_field in [
             "conflict_count",
             "error_count",
-            "warning_count",
             "total_frames",
             "validation_frames",
         ]:

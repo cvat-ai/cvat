@@ -138,17 +138,10 @@ class QualityReportTargetSerializer(serializers.ChoiceField):
 
 class QualityReportSummarySerializer(serializers.Serializer):
     total_frames = serializers.IntegerField()
-    frame_count = serializers.IntegerField(
-        required=False, help_text="Deprecated. Use 'validation_frames' instead"
-    )
-    validation_frames = serializers.IntegerField(source="frame_count")
-    frame_share = serializers.FloatField(
-        required=False, help_text="Deprecated. Use 'validation_frame_share' instead"
-    )
-    validation_frame_share = serializers.FloatField(source="frame_share")
+    validation_frames = serializers.IntegerField()
+    validation_frame_share = serializers.FloatField()
 
     conflict_count = serializers.IntegerField()
-    warning_count = serializers.IntegerField(help_text="Deprecated. Always 0 for new reports.")
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
 
@@ -163,8 +156,7 @@ class QualityReportSummarySerializer(serializers.Serializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        # Old reports may miss "tasks" and "jobs", new reports may miss "frame_*" fields
-        for optional_field in ("tasks", "jobs", "requirements", "frame_count", "frame_share"):
+        for optional_field in ("tasks", "jobs", "requirements"):
             if representation.get(optional_field) is None:
                 representation.pop(optional_field, None)
 

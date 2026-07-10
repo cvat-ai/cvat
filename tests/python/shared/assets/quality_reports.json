@@ -15,12 +15,10 @@
         "conflict_count": 10,
         "conflicts_by_type": {
           "extra_annotation": 1,
-          "low_overlap": 2,
-          "missing_annotation": 7
+          "missing_annotation": 7,
+          "mismatching_label": 2
         },
-        "error_count": 8,
-        "frame_count": 6,
-        "frame_share": 0.5,
+        "error_count": 10,
         "jobs": {
           "excluded": 0,
           "included": 3,
@@ -38,8 +36,7 @@
         },
         "total_frames": 12,
         "validation_frame_share": 0.5,
-        "validation_frames": 6,
-        "warning_count": 2
+        "validation_frames": 6
       },
       "target": "project",
       "target_last_updated": "2025-05-05T15:35:00.542000Z",
@@ -60,12 +57,9 @@
           "missing_annotation": 2
         },
         "error_count": 3,
-        "frame_count": 2,
-        "frame_share": 0.6666666666666666,
         "total_frames": 3,
         "validation_frame_share": 0.6666666666666666,
-        "validation_frames": 2,
-        "warning_count": 0
+        "validation_frames": 2
       },
       "target": "job",
       "target_last_updated": "2025-05-05T15:35:00.515000Z",
@@ -82,16 +76,13 @@
       "summary": {
         "conflict_count": 3,
         "conflicts_by_type": {
-          "low_overlap": 1,
-          "missing_annotation": 2
+          "missing_annotation": 2,
+          "mismatching_label": 1
         },
-        "error_count": 2,
-        "frame_count": 2,
-        "frame_share": 0.4,
+        "error_count": 3,
         "total_frames": 5,
         "validation_frame_share": 0.4,
-        "validation_frames": 2,
-        "warning_count": 1
+        "validation_frames": 2
       },
       "target": "job",
       "target_last_updated": "2025-05-05T15:35:00.493000Z",
@@ -109,12 +100,10 @@
         "conflict_count": 6,
         "conflicts_by_type": {
           "extra_annotation": 1,
-          "low_overlap": 1,
-          "missing_annotation": 4
+          "missing_annotation": 4,
+          "mismatching_label": 1
         },
-        "error_count": 5,
-        "frame_count": 4,
-        "frame_share": 0.5,
+        "error_count": 6,
         "jobs": {
           "excluded": 0,
           "included": 2,
@@ -124,8 +113,7 @@
         },
         "total_frames": 8,
         "validation_frame_share": 0.5,
-        "validation_frames": 4,
-        "warning_count": 1
+        "validation_frames": 4
       },
       "target": "task",
       "target_last_updated": "2025-05-05T15:36:34.341000Z",
@@ -142,16 +130,13 @@
       "summary": {
         "conflict_count": 4,
         "conflicts_by_type": {
-          "low_overlap": 1,
-          "missing_annotation": 3
+          "missing_annotation": 3,
+          "mismatching_label": 1
         },
-        "error_count": 3,
-        "frame_count": 2,
-        "frame_share": 0.5,
+        "error_count": 4,
         "total_frames": 4,
         "validation_frame_share": 0.5,
-        "validation_frames": 2,
-        "warning_count": 1
+        "validation_frames": 2
       },
       "target": "job",
       "target_last_updated": "2025-05-05T15:35:00.294000Z",
@@ -168,12 +153,10 @@
       "summary": {
         "conflict_count": 4,
         "conflicts_by_type": {
-          "low_overlap": 1,
-          "missing_annotation": 3
+          "missing_annotation": 3,
+          "mismatching_label": 1
         },
-        "error_count": 3,
-        "frame_count": 2,
-        "frame_share": 0.5,
+        "error_count": 4,
         "jobs": {
           "excluded": 0,
           "included": 1,
@@ -183,8 +166,7 @@
         },
         "total_frames": 4,
         "validation_frame_share": 0.5,
-        "validation_frames": 2,
-        "warning_count": 1
+        "validation_frames": 2
       },
       "target": "task",
       "target_last_updated": "2025-05-05T15:38:46.662000Z",
@@ -203,20 +185,16 @@
         "conflicts_by_type": {
           "covered_annotation": 1,
           "extra_annotation": 11,
-          "low_overlap": 7,
           "mismatching_attributes": 1,
           "mismatching_direction": 1,
           "mismatching_groups": 6,
-          "mismatching_label": 3,
+          "mismatching_label": 10,
           "missing_annotation": 12
         },
-        "error_count": 26,
-        "frame_count": 3,
-        "frame_share": 0.2727272727272727,
+        "error_count": 42,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3,
-        "warning_count": 16
+        "validation_frames": 3
       },
       "target": "job",
       "target_last_updated": "2023-11-24T15:23:30.269000Z",
@@ -235,16 +213,13 @@
         "conflicts_by_type": {
           "covered_annotation": 1,
           "extra_annotation": 11,
-          "low_overlap": 7,
           "mismatching_attributes": 1,
           "mismatching_direction": 1,
           "mismatching_groups": 6,
-          "mismatching_label": 3,
+          "mismatching_label": 10,
           "missing_annotation": 12
         },
-        "error_count": 26,
-        "frame_count": 3,
-        "frame_share": 0.2727272727272727,
+        "error_count": 42,
         "jobs": {
           "excluded": 0,
           "included": 1,
@@ -254,8 +229,7 @@
         },
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3,
-        "warning_count": 16
+        "validation_frames": 3
       },
       "target": "task",
       "target_last_updated": "2023-11-24T15:23:30.045000Z",
@@ -276,12 +250,9 @@
           "missing_annotation": 1
         },
         "error_count": 2,
-        "frame_count": 1,
-        "frame_share": 0.2,
         "total_frames": 5,
         "validation_frame_share": 0.2,
-        "validation_frames": 1,
-        "warning_count": 0
+        "validation_frames": 1
       },
       "target": "job",
       "target_last_updated": "2024-03-21T20:50:39.585000Z",
@@ -298,15 +269,12 @@
       "summary": {
         "conflict_count": 1,
         "conflicts_by_type": {
-          "low_overlap": 1
+          "mismatching_label": 1
         },
-        "error_count": 0,
-        "frame_count": 2,
-        "frame_share": 0.4,
+        "error_count": 1,
         "total_frames": 5,
         "validation_frame_share": 0.4,
-        "validation_frames": 2,
-        "warning_count": 1
+        "validation_frames": 2
       },
       "target": "job",
       "target_last_updated": "2024-03-21T20:50:33.610000Z",
@@ -324,12 +292,9 @@
         "conflict_count": 0,
         "conflicts_by_type": {},
         "error_count": 0,
-        "frame_count": 0,
-        "frame_share": 0.0,
         "total_frames": 0,
         "validation_frame_share": 0.0,
-        "validation_frames": 0,
-        "warning_count": 0
+        "validation_frames": 0
       },
       "target": "job",
       "target_last_updated": "2024-03-21T20:50:27.594000Z",
@@ -347,16 +312,13 @@
         "conflict_count": 3,
         "conflicts_by_type": {
           "extra_annotation": 1,
-          "low_overlap": 1,
-          "missing_annotation": 1
+          "missing_annotation": 1,
+          "mismatching_label": 1
         },
-        "error_count": 2,
-        "frame_count": 3,
-        "frame_share": 0.2727272727272727,
+        "error_count": 3,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3,
-        "warning_count": 1
+        "validation_frames": 3
       },
       "target": "task",
       "target_last_updated": "2024-03-21T20:50:05.947000Z",
@@ -375,20 +337,16 @@
         "conflicts_by_type": {
           "covered_annotation": 1,
           "extra_annotation": 11,
-          "low_overlap": 7,
           "mismatching_attributes": 1,
           "mismatching_direction": 1,
           "mismatching_groups": 6,
-          "mismatching_label": 3,
+          "mismatching_label": 10,
           "missing_annotation": 10
         },
-        "error_count": 24,
-        "frame_count": 3,
-        "frame_share": 0.2727272727272727,
+        "error_count": 40,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3,
-        "warning_count": 16
+        "validation_frames": 3
       },
       "target": "job",
       "target_last_updated": "2023-11-24T15:23:30.269000Z",
@@ -407,20 +365,16 @@
         "conflicts_by_type": {
           "covered_annotation": 1,
           "extra_annotation": 11,
-          "low_overlap": 7,
           "mismatching_attributes": 1,
           "mismatching_direction": 1,
           "mismatching_groups": 6,
-          "mismatching_label": 3,
+          "mismatching_label": 10,
           "missing_annotation": 10
         },
-        "error_count": 24,
-        "frame_count": 3,
-        "frame_share": 0.2727272727272727,
+        "error_count": 40,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3,
-        "warning_count": 16
+        "validation_frames": 3
       },
       "target": "task",
       "target_last_updated": "2023-11-24T15:23:30.045000Z",
@@ -439,20 +393,16 @@
         "conflicts_by_type": {
           "covered_annotation": 1,
           "extra_annotation": 11,
-          "low_overlap": 7,
           "mismatching_attributes": 1,
           "mismatching_direction": 1,
           "mismatching_groups": 6,
-          "mismatching_label": 3,
+          "mismatching_label": 10,
           "missing_annotation": 10
         },
-        "error_count": 24,
-        "frame_count": 3,
-        "frame_share": 0.2727272727272727,
+        "error_count": 40,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3,
-        "warning_count": 16
+        "validation_frames": 3
       },
       "target": "job",
       "target_last_updated": "2023-11-24T15:23:30.269000Z",
@@ -471,20 +421,16 @@
         "conflicts_by_type": {
           "covered_annotation": 1,
           "extra_annotation": 11,
-          "low_overlap": 7,
           "mismatching_attributes": 1,
           "mismatching_direction": 1,
           "mismatching_groups": 6,
-          "mismatching_label": 3,
+          "mismatching_label": 10,
           "missing_annotation": 10
         },
-        "error_count": 24,
-        "frame_count": 3,
-        "frame_share": 0.2727272727272727,
+        "error_count": 40,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3,
-        "warning_count": 16
+        "validation_frames": 3
       },
       "target": "task",
       "target_last_updated": "2023-11-24T15:23:30.045000Z",
@@ -503,20 +449,16 @@
         "conflicts_by_type": {
           "covered_annotation": 1,
           "extra_annotation": 10,
-          "low_overlap": 6,
           "mismatching_attributes": 1,
           "mismatching_direction": 1,
           "mismatching_groups": 6,
-          "mismatching_label": 3,
+          "mismatching_label": 9,
           "missing_annotation": 9
         },
-        "error_count": 22,
-        "frame_count": 3,
-        "frame_share": 0.2727272727272727,
+        "error_count": 37,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3,
-        "warning_count": 15
+        "validation_frames": 3
       },
       "target": "job",
       "target_last_updated": "2023-05-26T16:11:24.294000Z",
@@ -535,20 +477,16 @@
         "conflicts_by_type": {
           "covered_annotation": 1,
           "extra_annotation": 10,
-          "low_overlap": 6,
           "mismatching_attributes": 1,
           "mismatching_direction": 1,
           "mismatching_groups": 6,
-          "mismatching_label": 3,
+          "mismatching_label": 9,
           "missing_annotation": 9
         },
-        "error_count": 22,
-        "frame_count": 3,
-        "frame_share": 0.2727272727272727,
+        "error_count": 37,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3,
-        "warning_count": 15
+        "validation_frames": 3
       },
       "target": "task",
       "target_last_updated": "2023-05-26T16:17:02.635000Z",

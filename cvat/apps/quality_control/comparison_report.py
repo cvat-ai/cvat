@@ -28,21 +28,12 @@ from cvat.apps.quality_control.models import (
 )
 from cvat.apps.quality_control.utils import array_safe_divide
 
-_LEGACY_ANNOTATION_CONFLICT_TYPES = frozenset({"low_overlap"})
-_LEGACY_ANNOTATION_CONFLICT_SEVERITIES = frozenset({"warning"})
 
-
-def _parse_annotation_conflict_type(value: str) -> AnnotationConflictType | str:
-    if value in _LEGACY_ANNOTATION_CONFLICT_TYPES:
-        return value
-
+def _parse_annotation_conflict_type(value: str) -> AnnotationConflictType:
     return AnnotationConflictType(value)
 
 
-def _parse_annotation_conflict_severity(value: str) -> AnnotationConflictSeverity | str:
-    if value in _LEGACY_ANNOTATION_CONFLICT_SEVERITIES:
-        return value
-
+def _parse_annotation_conflict_severity(value: str) -> AnnotationConflictSeverity:
     return AnnotationConflictSeverity(value)
 
 
@@ -184,14 +175,14 @@ class AnnotationId(ReportNode):
 @define(kw_only=True, init=False, slots=False)
 class AnnotationConflict(ReportNode):
     frame_id: int
-    type: AnnotationConflictType | str
+    type: AnnotationConflictType
     annotation_ids: list[AnnotationId]
-    severity: AnnotationConflictSeverity | str = AnnotationConflictSeverity.ERROR
+    severity: AnnotationConflictSeverity = AnnotationConflictSeverity.ERROR
     attribute_names: list[str] = field(factory=list)
 
     @staticmethod
     def default_severity_for_type(
-        conflict_type: AnnotationConflictType | str,
+        conflict_type: AnnotationConflictType,
     ) -> AnnotationConflictSeverity:
         return AnnotationConflictSeverity.ERROR
 
@@ -232,7 +223,7 @@ def annotation_conflict_key(
     conflict: AnnotationConflict,
 ) -> tuple[
     int,
-    AnnotationConflictType | str,
+    AnnotationConflictType,
     tuple[tuple[int, int, AnnotationType, ShapeType | None], ...],
 ]:
     return (
@@ -260,7 +251,7 @@ def deduplicate_annotation_conflicts(
     deduplicated_conflicts: dict[
         tuple[
             int,
-            AnnotationConflictType | str,
+            AnnotationConflictType,
             tuple[tuple[int, int, AnnotationType, ShapeType | None], ...],
         ],
         AnnotationConflict,
@@ -766,7 +757,6 @@ class ComparisonReportSummary(ReportNode):
     total_frames: int
 
     conflict_count: int
-    warning_count: int
     error_count: int
     conflicts_by_type: dict[AnnotationConflictType, int]
 
@@ -775,23 +765,23 @@ class ComparisonReportSummary(ReportNode):
     requirements: ComparisonReportRequirementsSummary | None = None
 
     @property
-    def frame_share(self) -> float:
-        return self.frame_count / (self.total_frames or 1)
+    def validation_frame_share(self) -> float:
+        return self.validation_frames / (self.total_frames or 1)
 
     @property
     def mean_conflict_count(self) -> float:
-        return self.conflict_count / (self.frame_count or 1)
+        return self.conflict_count / (self.validation_frames or 1)
 
     @cached_property
-    def frame_count(self) -> int:
+    def validation_frames(self) -> int:
         if self.frames is None:
             assert False
 
         return len(self.frames)
 
     def __init__(self, **kwargs):
-        if not ("frames" in kwargs or "frame_count" in kwargs):
-            raise AssertionError('"frames" or "frame_count" must be present')
+        if not ("frames" in kwargs or "validation_frames" in kwargs):
+            raise AssertionError('"frames" or "validation_frames" must be present')
 
         super().__init__(**kwargs)
 
@@ -803,26 +793,12 @@ class ComparisonReportSummary(ReportNode):
 
     @classmethod
     def _from_dict_kwargs(cls, d: dict) -> dict[str, Any]:
-        if "total_frames" in d:
-            total_frames = d["total_frames"]
-        else:
-            # backward compatibility - old reports have only frame_count or frames,
-            # but not total_frames. However, we can obtain total_frames from frame_share
-            frame_share = d.get("frame_share", 0)
-            frame_count = d.get("frame_count", len(d.get("frames", [])))
-            total_frames = math.ceil(frame_count / (frame_share or 1))
-
-        requirements = d.get("requirements")
-        if requirements is None:
-            requirements = d.get("targets")
-
         return {
-            "frames": d["frames"] if "frames" in d else None,
-            "total_frames": total_frames,
-            **(dict(frame_count=d["frame_count"]) if "frame_count" in d else {}),
+            "frames": d.get("frames"),
+            "total_frames": d["total_frames"],
+            **(dict(validation_frames=d["validation_frames"]) if "validation_frames" in d else {}),
             "conflict_count": d["conflict_count"],
-            "warning_count": d.get("warning_count", 0),
-            "error_count": d.get("error_count", 0),
+            "error_count": d["error_count"],
             "conflicts_by_type": {
                 _parse_annotation_conflict_type(k): v
                 for k, v in d.get("conflicts_by_type", {}).items()
@@ -830,8 +806,8 @@ class ComparisonReportSummary(ReportNode):
             "tasks": ComparisonReportTaskStats.from_dict(d["tasks"]) if d.get("tasks") else None,
             "jobs": ComparisonReportJobStats.from_dict(d["jobs"]) if d.get("jobs") else None,
             "requirements": (
-                ComparisonReportRequirementsSummary.from_dict(requirements)
-                if requirements is not None
+                ComparisonReportRequirementsSummary.from_dict(d["requirements"])
+                if d.get("requirements") is not None
                 else None
             ),
         }
@@ -844,7 +820,6 @@ class ComparisonReportSummary(ReportNode):
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReportRequirementComparisonSummary(ReportNode):
     conflict_count: int
-    warning_count: int
     error_count: int
     conflicts_by_type: dict[AnnotationConflictType, int]
     score: float | None
@@ -861,8 +836,7 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
     def from_dict(cls, d: dict):
         return cls(
             conflict_count=d["conflict_count"],
-            warning_count=d.get("warning_count", 0),
-            error_count=d.get("error_count", 0),
+            error_count=d["error_count"],
             conflicts_by_type={
                 _parse_annotation_conflict_type(k): v
                 for k, v in d.get("conflicts_by_type", {}).items()
@@ -888,15 +862,11 @@ class ComparisonReportFrameSummary(ReportNode):
         return len(self.conflicts)
 
     @cached_property
-    def warning_count(self) -> int:
-        return 0
-
-    @cached_property
     def error_count(self) -> int:
         return len(self.conflicts)
 
     @cached_property
-    def conflicts_by_type(self) -> dict[AnnotationConflictType | str, int]:
+    def conflicts_by_type(self) -> dict[AnnotationConflictType, int]:
         return Counter(c.type for c in self.conflicts)
 
     def _value_serializer(self, v):

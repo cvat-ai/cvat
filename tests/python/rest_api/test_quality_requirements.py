@@ -1778,7 +1778,6 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert conflicts[0]["severity"] == "error"
         assert conflicts[0]["attribute_names"] == ["color", "size"]
         assert report_data["comparison_summary"]["error_count"] == 1
-        assert report_data["comparison_summary"]["warning_count"] == 0
         assert report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 1
 
     def test_task_report_counts_overlapping_leaf_requirements_independently(self, admin_user):
@@ -2124,8 +2123,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report_level_summary_fields = {
             "frames",
             "total_frames",
-            "frame_count",
-            "frame_share",
+            "validation_frames",
+            "validation_frame_share",
             "mean_conflict_count",
             "tasks",
             "jobs",
@@ -2149,7 +2148,6 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert disabled_group["parameters"]["metric"] == "accuracy"
         assert disabled_group["parameters"]["required_score"] == 1.0
         disabled_summary = disabled_group["comparison_summary"]
-        assert disabled_summary["warning_count"] == 0
         assert disabled_summary["error_count"] == disabled_summary["conflict_count"] == 0
         assert "annotations" not in disabled_summary
         assert disabled_summary["score"] == 0.0
@@ -2161,7 +2159,6 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert disabled_summary["confusion_matrix"] is None
         assert disabled_group["frame_results"] == {}
         report_summary = report_data["comparison_summary"]
-        assert report_summary["warning_count"] == 0
         assert report_summary["error_count"] == report_summary["conflict_count"]
         assert "annotations" not in report_summary
 
