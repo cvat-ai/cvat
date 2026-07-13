@@ -20,7 +20,7 @@ module.exports = {
         'site/**',
         'webpack.config.cjs',
     ],
-    plugins: ['@typescript-eslint', '@stylistic', 'security', 'no-unsanitized', 'import-x'],
+    plugins: ['@typescript-eslint', '@stylistic', 'security', 'no-unsanitized'],
     extends: [
         'eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM',
         'airbnb-base', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
