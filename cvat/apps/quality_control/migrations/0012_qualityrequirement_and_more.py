@@ -1,7 +1,6 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
-
 _BASE_REQUIREMENT_ANNOTATION_TYPES = (
     "tag",
     "rectangle",
