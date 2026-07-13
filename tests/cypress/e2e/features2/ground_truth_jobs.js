@@ -4,8 +4,8 @@
 
 /// <reference types="cypress" />
 
-import { defaultTaskSpec } from '../../support/default-specs';
 import * as allure from 'allure-js-commons';
+import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Ground truth jobs', () => {
     const labelName = 'car';
@@ -556,7 +556,7 @@ context('Ground truth jobs', () => {
             });
             it('Check crashing while navigating through GT job frames', () => {
                 allure.issue('https://github.com/cvat-ai/cvat/pull/9095',
-                    "Can't read props of undefined (reading 'width') in Video GT Job"
+                    "Can't read props of undefined (reading 'width') in Video GT Job",
                 );
                 cy.get('.cvat-canvas-container').should('exist').and('be.visible');
                 cy.get('.ant-notification-notice-error').should('not.exist');
