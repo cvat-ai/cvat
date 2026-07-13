@@ -16,6 +16,7 @@ import tempfile
 import textwrap
 from collections.abc import Callable
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import attrs
 import platformdirs
@@ -31,7 +32,7 @@ from cvat_sdk.core.exceptions import AuthStoreError
 from cvat_sdk.core.utils import is_posix
 
 CVAT_ACCESS_TOKEN_ENV_VAR = "CVAT_ACCESS_TOKEN"  # nosec - a variable name declaration
-DEFAULT_SERVER = "http://localhost:8080"
+DEFAULT_SERVER = "http://localhost"
 
 _APP_NAME = "cvat-sdk"
 _APP_AUTHOR = "CVAT.ai"
@@ -229,16 +230,7 @@ def make_client_from_cli(
             organization=params.organization,
         )
 
-    if explicit_host:
-        url = (
-            params.server_host
-            if params.server_host is not None
-            else store.get_default_server() or DEFAULT_SERVER
-        )
-        if params.server_port:
-            url = f"{url}:{params.server_port}"
-    else:
-        url = store.get_default_server() or DEFAULT_SERVER
+    url = _make_server_url(params, store, explicit_host=explicit_host)
 
     client = Client(
         url=url,
@@ -263,6 +255,29 @@ def _make_client_config(params: ClientAuthParameters, config: Config | None) -> 
         return attrs.evolve(config, verify_ssl=False)
 
     return config
+
+
+def _make_server_url(
+    params: ClientAuthParameters, store: AuthStore, *, explicit_host: bool
+) -> str:
+    if explicit_host:
+        url = (
+            params.server_host
+            if params.server_host is not None
+            else store.get_default_server() or DEFAULT_SERVER
+        ).rstrip("/")
+        if params.server_port:
+            parsed_url = urlsplit(("https://" if "://" not in url else "") + url)
+            if parsed_url.port:
+                raise AuthStoreError(
+                    "The '--server-host' value with a port and '--server-port' cannot "
+                    "be used together. Please specify only one port."
+                )
+
+            url = f"{url}:{params.server_port}"
+        return url
+
+    return store.get_default_server() or DEFAULT_SERVER
 
 
 def _get_profile_or_raise(store: AuthStore, name: str) -> ProfileEntry:
