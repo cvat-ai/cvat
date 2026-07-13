@@ -324,6 +324,7 @@ export default [
         files: sourceFiles,
         plugins: {
             react: fixupPluginRules(reactPlugin),
+            'import-x': importPlugin,
         },
         languageOptions: {
             globals: {
@@ -363,6 +364,7 @@ export default [
             security: securityPlugin,
             'no-unsanitized': noUnsanitizedPlugin,
             'chai-friendly': chaiFriendlyPlugin,
+            'import-x': importPlugin,
         },
         languageOptions: {
             globals: testsNodeAndCypressGlobals,
@@ -391,6 +393,7 @@ export default [
             import: importPlugin,
             security: securityPlugin,
             'no-unsanitized': noUnsanitizedPlugin,
+            'import-x': importPlugin,
         },
         languageOptions: {
             globals: browserAndNodeGlobals,
