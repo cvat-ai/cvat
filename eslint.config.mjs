@@ -214,7 +214,7 @@ const testsGlobalConfig = {
     'func-names': 0, // TODO: remove this, all procedures should be named
     quotes: ['error', 'single', { avoidEscape: true }],
     'no-underscore-dangle': ['error', { allowAfterThis: true }],
-    'import/order': ['error', { groups: ['builtin', 'external', 'internal'] }],
+    'import-x/order': ['error', { groups: ['builtin', 'external', 'internal'] }],
     'function-paren-newline': 0,
 };
 
@@ -333,8 +333,8 @@ export default [
         },
         rules: {
             camelcase: 'off',
-            'import/extensions': 'off',
-            'import/no-unresolved': 'off',
+            'import-x/extensions': 'off',
+            'import-x/no-unresolved': 'off',
             'no-unused-vars': 'off',
             '@typescript-eslint/no-unused-vars': ['error', {
                 argsIgnorePattern: '^_',
@@ -373,8 +373,8 @@ export default [
             ...cypressPlugin.configs.recommended.rules,
             ...securityPlugin.configs['recommended-legacy'].rules,
             ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
-            'import/no-unresolved': 'off',
-            'import/extensions': 'off',
+            'import-x/no-unresolved': 'off',
+            'import-x/extensions': 'off',
             'no-prototype-builtins': 'off',
             'no-underscore-dangle': 'off',
             'cypress/no-unnecessary-waiting': 'off',
@@ -400,8 +400,8 @@ export default [
         rules: {
             ...securityPlugin.configs['recommended-legacy'].rules,
             ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
-            'import/no-unresolved': 'off',
-            'import/extensions': 'off',
+            'import-x/no-unresolved': 'off',
+            'import-x/extensions': 'off',
             'no-prototype-builtins': 'off',
             'no-underscore-dangle': 'off',
         },

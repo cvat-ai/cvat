@@ -23,16 +23,8 @@ module.exports = {
     plugins: ['@typescript-eslint', '@stylistic', 'security', 'no-unsanitized', 'import-x'],
     extends: [
         'eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM',
-        'airbnb-base', 'plugin:import-x/errors', 'plugin:import-x/warnings',
-        'plugin:import-x/typescript', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
+        'airbnb-base', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
     ],
-    settings: {
-        'import/resolver': false,  // disable import resolver
-        'import-x/resolver': {
-            typescript: true,
-            node: true,
-        },
-    },
     rules: {
         // 'header/header': [2, 'line', [{
         //     pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2022 Intel Corporation',
@@ -66,9 +58,6 @@ module.exports = {
         'global-require': 0,
         'arrow-parens': ['error', 'always'],
         'security/detect-object-injection': 0, // the rule is relevant for user input data on the node.js environment
-        'import-x/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
-        'import-x/no-unresolved': 'off',
-        'import-x/prefer-default-export': 0, // works incorrect with interfaces
         'no-useless-assignment': 'off',
         'preserve-caught-error': 'off',
 
