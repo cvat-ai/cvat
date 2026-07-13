@@ -150,7 +150,7 @@ function TaskPageComponent(): JSX.Element {
                         onUpdateTaskMeta={onUpdateTaskMeta}
                         labelsEditorProps={labelsEditorProps}
                     />
-                    <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
+                    <JobListComponent task={taskInstance} taskMeta={taskMeta} onJobUpdate={onJobUpdate} />
                 </Col>
             </Row>
             <ModelRunnerModal />
