@@ -13,7 +13,7 @@ import stylisticPlugin from '@stylistic/eslint-plugin';
 import tseslintPlugin from '@typescript-eslint/eslint-plugin';
 import cypressPlugin from 'eslint-plugin-cypress';
 import globals from 'globals';
-import importPlugin from 'eslint-plugin-import';
+import importPlugin from 'eslint-plugin-import-x';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 import noUnsanitizedPlugin from 'eslint-plugin-no-unsanitized';
 import reactPlugin from 'eslint-plugin-react';
