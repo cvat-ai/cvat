@@ -268,8 +268,8 @@ def _make_server_url(params: ClientAuthParameters, store: AuthStore, *, explicit
             parsed_url = urlsplit(("https://" if "://" not in url else "") + url)
             if parsed_url.port:
                 raise AuthStoreError(
-                    "The '--server-host' value with a port and '--server-port' cannot "
-                    "be used together. Please specify only one port."
+                    "A server URL with a port and '--server-port' cannot be used together. "
+                    "Please specify only one port."
                 )
 
             url = f"{url}:{params.server_port}"

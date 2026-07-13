@@ -247,6 +247,14 @@ def test_make_client_from_cli_rejects_host_with_port_and_server_port(tmp_path):
         )
 
 
+def test_make_client_from_cli_rejects_default_server_with_port_and_server_port(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+    store.set_default_server("http://localhost:8080")
+
+    with pytest.raises(AuthStoreError, match="Please specify only one port"):
+        make_client_from_cli(_ns(server_port=8080), store=store)
+
+
 def test_make_client_from_cli_accepts_typed_parameters_and_config(tmp_path, monkeypatch):
     from cvat_sdk.core import auth as auth_mod
 
