@@ -24,7 +24,7 @@ def test_auth_store_path_matches_platformdirs():
 
 
 def _store(tmp_path) -> AuthStore:
-    return AuthStore(config_file_path=tmp_path / "cvat" / "auth.json")
+    return AuthStore(path=tmp_path / "cvat" / "auth.json")
 
 
 def test_load_returns_empty_doc_when_file_absent(tmp_path):
@@ -54,7 +54,7 @@ def test_load_refuses_world_readable_file(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     os.chmod(path, 0o644)
     with pytest.raises(AuthStoreError, match="permission"):
-        AuthStore(config_file_path=path)._load()
+        AuthStore(path=path)._load()
 
 
 @pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
@@ -64,10 +64,10 @@ def test_load_allows_file_with_secure_base_permissions_and_special_bits(tmp_path
     path = tmp_path / "cvat" / "auth.json"
     # 0o1600 is 0o600 plus the POSIX sticky bit; only the base permission bits matter.
     os.chmod(path, 0o1600)
-    assert AuthStore(config_file_path=path)._load() == {"version": 1, "profiles": {}}
+    assert AuthStore(path=path)._load() == {"version": 1, "profiles": {}}
 
 
-def test_load_rejects_directory_config_file_path(tmp_path):
+def test_load_rejects_directory_path(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     path.mkdir(parents=True)
     if is_posix():
