@@ -257,9 +257,7 @@ def _make_client_config(params: ClientAuthParameters, config: Config | None) -> 
     return config
 
 
-def _make_server_url(
-    params: ClientAuthParameters, store: AuthStore, *, explicit_host: bool
-) -> str:
+def _make_server_url(params: ClientAuthParameters, store: AuthStore, *, explicit_host: bool) -> str:
     if explicit_host:
         url = (
             params.server_host
