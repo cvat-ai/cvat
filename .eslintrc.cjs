@@ -26,11 +26,25 @@ module.exports = {
         'airbnb-base', 'plugin:import-x/errors', 'plugin:import-x/warnings',
         'plugin:import-x/typescript', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
     ],
+    settings: {
+        'import/resolver': false,  // disable import resolver
+        'import-x/resolver': {
+            typescript: true,
+            node: true,
+        },
+    },
     rules: {
         // 'header/header': [2, 'line', [{
         //     pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2022 Intel Corporation',
         //     template: ' Copyright (C) 2022 Intel Corporation'
         // }, '', ' SPDX-License-Identifier: MIT']],
+
+        // disable all import/* rules from airbnb, import-x/* takes over
+        ...Object.fromEntries(
+            Object.keys(require('eslint-plugin-import').rules)
+                .map(rule => [`import/${rule}`, 'off'])
+        ),
+        // ...existing code...
         'no-plusplus': 0,
         'no-continue': 0,
         'no-console': 0,
