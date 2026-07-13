@@ -20,11 +20,11 @@ module.exports = {
         'site/**',
         'webpack.config.cjs',
     ],
-    plugins: ['@typescript-eslint', '@stylistic', 'security', 'no-unsanitized', 'import'],
+    plugins: ['@typescript-eslint', '@stylistic', 'security', 'no-unsanitized', 'import-x'],
     extends: [
         'eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM',
-        'airbnb-base', 'plugin:import/errors', 'plugin:import/warnings',
-        'plugin:import/typescript', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
+        'airbnb-base', 'plugin:import-x/errors', 'plugin:import-x/warnings',
+        'plugin:import-x/typescript', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
     ],
     rules: {
         // 'header/header': [2, 'line', [{
@@ -52,9 +52,9 @@ module.exports = {
         'global-require': 0,
         'arrow-parens': ['error', 'always'],
         'security/detect-object-injection': 0, // the rule is relevant for user input data on the node.js environment
-        'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
-        'import/no-unresolved': 'off',
-        'import/prefer-default-export': 0, // works incorrect with interfaces
+        'import-x/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
+        'import-x/no-unresolved': 'off',
+        'import-x/prefer-default-export': 0, // works incorrect with interfaces
         'no-useless-assignment': 'off',
         'preserve-caught-error': 'off',
 
