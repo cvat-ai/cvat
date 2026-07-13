@@ -16,6 +16,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.70.0'></a>
+## \[2.70.0\] - 2026-07-13
+
+### Added
+
+- Added region of interest support for automatic annotation detector and interactor functions
+  (<https://github.com/cvat-ai/cvat/pull/10794>)
+
+- \[SDK\] `list()` methods on high-level proxy classes now accept filter parameters
+  via a composable `F` field DSL and keyword lookups,
+  which are compiled into the server-side `filter` query parameter automatically
+  (<https://github.com/cvat-ai/cvat/pull/10778>)
+
+- \[SDK\] Persistent authentication support with saved profiles:
+  `make_client_from_profile`, `make_client_from_cli`, and
+  `resolve_server_host` helpers let SDK users save server + credential profiles
+  to disk and instantiate a `Client` from a profile name without re-entering
+  credentials
+  (<https://github.com/cvat-ai/cvat/pull/10824>)
+
+- Added confirmation dialog when leaving annotation guide editor with unsaved changes
+  (<https://github.com/cvat-ai/cvat/pull/10884>)
+
+### Removed
+
+- \[SDK, CLI\] Removed server schema autodetection, previously deprecated
+  in v2.36.0
+  (<https://github.com/cvat-ai/cvat/pull/10673>)
+
+- Removed the unused `PATCH /api/invitations/{key}` Server API operation.
+  (<https://github.com/cvat-ai/cvat/pull/10850>)
+
+### Fixed
+
+- Requests API no longer returns a `null` status when a job's status cannot be
+  read from Redis (e.g. the job expired) (<https://github.com/cvat-ai/cvat/pull/10849>)
+
+- Fix snap to contour crashes when drawing stops (drawCircles of undefined / array of null)
+  (<https://github.com/cvat-ai/cvat/pull/10848>)
+
+- Fixed task creation from images hosted on Azure Blob Storage when
+  at least one image's header doesn't fit into 2047 bytes
+  (<https://github.com/cvat-ai/cvat/pull/10851>)
+
+- Requesting task metadata (`GET /api/tasks/<id>/data/meta`) before any
+  data was uploaded to the task now returns 400 with a clear message.
+  (<https://github.com/cvat-ai/cvat/pull/10855>)
+
+- Client error `Cannot read properties of undefined (reading 'occluded')` while copying masks
+  (<https://github.com/cvat-ai/cvat/pull/10853>)
+
+- \[Server API\] Added missing input validation for the `source` field of annotations
+  in the `/api/tasks/<id>/annotations` and `/api/jobs/<id>/annotations` endpoints.
+  The existing invalid values are returned unmodified in the server responses.
+  (<https://github.com/cvat-ai/cvat/pull/10521>)
+
+- Fixed AI tools tracking when starting tracking from multiple drawn rectangles
+  (<https://github.com/cvat-ai/cvat/pull/10860>)
+
+- Client error thrown
+  when listing lambda functions failed (e.g. network
+  error or timeout) (<https://github.com/cvat-ai/cvat/pull/10857>)
+
+- Fix pagination being reset when refreshing or going "back" to a resources page
+  (<https://github.com/cvat-ai/cvat/pull/10858>)
+
+- Make loading previews on project/job cards clickable to allow opening the resource regardless of the preview state
+  (<https://github.com/cvat-ai/cvat/pull/10859>)
+
+- Prevent requests cards content overflow
+  (<https://github.com/cvat-ai/cvat/pull/10862>)
+
+- Improved performance of annotation responses.
+  (<https://github.com/cvat-ai/cvat/pull/10867>)
+
+- Made duration display consistent across the audio annotation editor. (<https://github.com/cvat-ai/cvat/pull/10871>)
+- Right-clicking an audio interval opens the custom context menu instead of the standard browser context menu. (<https://github.com/cvat-ai/cvat/pull/10871>)
+
 <a id='changelog-2.69.0'></a>
 ## \[2.69.0\] - 2026-06-22
 
