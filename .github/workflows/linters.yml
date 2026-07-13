@@ -135,7 +135,7 @@ jobs:
 
       - uses: ./.github/actions/setup-yarn
         with:
-          node-version: 22.x
+          node-version: 20
           node-modules-path: |
             node_modules
             tests/node_modules
