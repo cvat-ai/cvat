@@ -40,37 +40,11 @@ module.exports = {
         // }, '', ' SPDX-License-Identifier: MIT']],
 
         // disable all import/* rules from airbnb, import-x/* takes over
-        'import/no-unresolved': 'off',
-        'import/named': 'off',
-        'import/default': 'off',
-        'import/namespace': 'off',
-        'import/export': 'off',
-        'import/no-named-as-default': 'off',
-        'import/no-named-as-default-member': 'off',
-        'import/no-duplicates': 'off',
-        'import/first': 'off',
-        'import/no-amd': 'off',
-        'import/no-mutable-exports': 'off',
-        'import/no-commonjs': 'off',
-        'import/no-nodejs-modules': 'off',
-        'import/order': 'off',
-        'import/newline-after-import': 'off',
-        'import/prefer-default-export': 'off',
-        'import/no-restricted-paths': 'off',
-        'import/max-dependencies': 'off',
-        'import/no-absolute-path': 'off',
-        'import/no-dynamic-require': 'off',
-        'import/no-internal-modules': 'off',
-        'import/no-webpack-loader-syntax': 'off',
-        'import/no-self-import': 'off',
-        'import/no-cycle': 'off',
-        'import/no-useless-path-segments': 'off',
-        'import/no-relative-parent-imports': 'off',
-        'import/no-unused-modules': 'off',
-        'import/no-extraneous-dependencies': 'off',
-        'import/extensions': 'off',
-        'import/no-anonymous-default-export': 'off',
-
+        ...Object.fromEntries(
+            Object.keys(require('eslint-plugin-import').rules)
+                .map(rule => [`import/${rule}`, 'off'])
+        ),
+        // ...existing code...
         'no-plusplus': 0,
         'no-continue': 0,
         'no-console': 0,
