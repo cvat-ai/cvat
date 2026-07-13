@@ -6578,7 +6578,7 @@ __metadata:
     eslint-config-airbnb-typescript: "npm:^17.1.0"
     eslint-plugin-chai-friendly: "npm:^1.2.0"
     eslint-plugin-cypress: "npm:^5.1.1"
-    eslint-plugin-import: "npm:^2.32.0"
+    eslint-plugin-import: "npm:2.32.0"
     eslint-plugin-jsx-a11y: "npm:^6.10.2"
     eslint-plugin-no-unsanitized: "npm:^4.1.5"
     eslint-plugin-react: "npm:^7.37.5"
@@ -7755,7 +7755,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-import@npm:^2.32.0":
+"eslint-plugin-import@npm:2.32.0":
   version: 2.32.0
   resolution: "eslint-plugin-import@npm:2.32.0"
   dependencies:
