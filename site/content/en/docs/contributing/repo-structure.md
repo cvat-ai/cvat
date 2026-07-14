@@ -36,7 +36,6 @@ Here is the list of the main directories and files in the repository:
   - `python/` - Tests for server, SDK, CLI and other Python components
 - `utils/` - Additional tools and utility scripts
   - `dataset_manifest/` - Python library and a tool to create dataset manifest files
-  - `dicom_converter/` - Script to convert DICOM data to CVAT-compatible format
 - `docker-compose*.yml` - Docker Compose local deployment configuration
 - `Dockerfile*` - Docker image descriptions
 - `manage.py` - Django utility to manipulate server components
