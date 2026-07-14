@@ -14,22 +14,15 @@ import { EditOutlined } from '@ant-design/icons';
 
 import { AudioIntervalState, Label, Attribute } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
-import { formatTimeShort } from 'audio/utils/format-audio-time';
+import { formatTimeShort, formatMilliseconds } from 'audio/utils/format-audio-time';
 
 interface AudioRegionDetailsProps {
     interval: AudioIntervalState;
     intervalIndex: number;
     labels: Label[];
+    trackDurationSeconds: number;
     onChangeLabel(labelId: number): void;
     onChangeAttribute(attrID: number, value: string): void;
-}
-
-function formatDuration(seconds: number): string {
-    const total = Math.max(0, seconds);
-    if (total < 60) return `${total.toFixed(1)}s`;
-    const mins = Math.floor(total / 60);
-    const secs = Math.floor(total % 60);
-    return `${mins}m ${secs}s`;
 }
 
 function AttributeInput({
@@ -191,6 +184,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
         interval,
         intervalIndex,
         labels,
+        trackDurationSeconds,
         onChangeLabel,
         onChangeAttribute,
     } = props;
@@ -199,9 +193,11 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
         labels.find((l) => l.id === interval.label.id) : null;
 
     const isReadonly = !!interval.lock;
-    const start = interval.start / 1000;
-    const end = (interval.stop ?? interval.start) / 1000;
-    const duration = Math.max(0, end - start);
+    const startMs = interval.start;
+    const endMs = interval.stop ?? (trackDurationSeconds ? trackDurationSeconds * 1000 : interval.start);
+    const durationMs = Math.max(0, endMs - startMs);
+    const startSeconds = startMs / 1000;
+    const endSeconds = endMs / 1000;
 
     const handleChangeAttribute = useCallback((attrID: number, value: string) => {
         onChangeAttribute(attrID, value);
@@ -242,10 +238,10 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
                     </span>
                 )}
                 <span className='cvat-audio-region-details-time-range'>
-                    {`${formatTimeShort(start)} \u2013 ${formatTimeShort(end)}`}
+                    {`${formatTimeShort(startSeconds)} \u2013 ${formatTimeShort(endSeconds)}`}
                 </span>
                 <span className='cvat-audio-region-details-duration'>
-                    {`(${formatDuration(duration)})`}
+                    {`(${formatMilliseconds(durationMs)})`}
                 </span>
             </div>
 

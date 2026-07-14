@@ -210,7 +210,7 @@ export default function ResourceFilterHOC(
                 if (value !== appliedFilter.built) {
                     onApplyFilter(appliedFilter.built);
                 }
-            } else {
+            } else if (value !== null) {
                 onApplyFilter(null);
                 setState(defaultTree);
             }

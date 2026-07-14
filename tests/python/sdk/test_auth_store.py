@@ -11,6 +11,7 @@ import pytest
 from cvat_sdk.core.auth import (
     AuthStore,
     AuthStoreError,
+    ProfileEntry,
     get_auth_store_path,
 )
 from cvat_sdk.core.utils import is_posix
@@ -23,7 +24,7 @@ def test_auth_store_path_matches_platformdirs():
 
 
 def _store(tmp_path) -> AuthStore:
-    return AuthStore(config_file_path=tmp_path / "cvat" / "auth.json")
+    return AuthStore(path=tmp_path / "cvat" / "auth.json")
 
 
 def test_load_returns_empty_doc_when_file_absent(tmp_path):
@@ -53,7 +54,7 @@ def test_load_refuses_world_readable_file(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     os.chmod(path, 0o644)
     with pytest.raises(AuthStoreError, match="permission"):
-        store._load()
+        AuthStore(path=path)._load()
 
 
 @pytest.mark.skipif(not is_posix(), reason="POSIX permission semantics")
@@ -63,10 +64,10 @@ def test_load_allows_file_with_secure_base_permissions_and_special_bits(tmp_path
     path = tmp_path / "cvat" / "auth.json"
     # 0o1600 is 0o600 plus the POSIX sticky bit; only the base permission bits matter.
     os.chmod(path, 0o1600)
-    assert store._load() == {"version": 1, "profiles": {}}
+    assert AuthStore(path=path)._load() == {"version": 1, "profiles": {}}
 
 
-def test_load_rejects_directory_config_file_path(tmp_path):
+def test_load_rejects_directory_path(tmp_path):
     path = tmp_path / "cvat" / "auth.json"
     path.mkdir(parents=True)
     if is_posix():
@@ -96,3 +97,128 @@ def test_load_rejects_corrupt_json(tmp_path):
         os.chmod(path, 0o600)
     with pytest.raises(AuthStoreError):
         _store(tmp_path)._load()
+
+
+def _entry(server="https://app.cvat.ai", token="tok") -> ProfileEntry:
+    return ProfileEntry(server=server, token=token, created_date="2026-01-01T00:00:00+00:00")
+
+
+def test_put_get_list_remove_profile(tmp_path):
+    store = _store(tmp_path)
+    assert store.list_profiles() == {}
+    store.put_profile("mycvat", _entry())
+    assert store.get_profile("mycvat") == _entry()
+    assert set(store.list_profiles()) == {"mycvat"}
+    store.remove_profile("mycvat")
+    assert store.get_profile("mycvat") is None
+
+
+def test_failed_write_does_not_pollute_cached_doc(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    store.put_profile("kept", _entry())
+
+    def fail_save(_doc):
+        raise AuthStoreError("save failed")
+
+    monkeypatch.setattr(store, "_save", fail_save)
+
+    with pytest.raises(AuthStoreError, match="save failed"):
+        store.put_profile("ghost", _entry(token="ghost"))
+
+    assert set(store.list_profiles()) == {"kept"}
+    assert store.get_profile("ghost") is None
+
+
+def test_auth_store_reuses_loaded_doc(tmp_path, monkeypatch):
+    store = _store(tmp_path)
+    store._save(
+        {
+            "version": 1,
+            "profiles": {
+                "mycvat": {
+                    "server": "https://x",
+                    "token": "t",
+                    "created_date": "2026-01-01T00:00:00+00:00",
+                }
+            },
+        }
+    )
+
+    store = _store(tmp_path)
+    read_count = 0
+    original_read_text = Path.read_text
+
+    def read_text(self, *args, **kwargs):
+        nonlocal read_count
+        read_count += 1
+        return original_read_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", read_text)
+
+    assert store.get_profile("mycvat") is not None
+    assert set(store.list_profiles()) == {"mycvat"}
+    assert read_count == 1
+
+
+def test_first_profile_becomes_default_when_requested(tmp_path):
+    store = _store(tmp_path)
+    store.put_profile("mycvat", _entry(), set_default=True)
+    name, entry = store.get_default_profile()
+    assert name == "mycvat"
+    assert entry == _entry()
+
+
+def test_first_profile_becomes_default_even_without_flag(tmp_path):
+    store = _store(tmp_path)
+    store.put_profile("mycvat", _entry())
+    assert store.get_default_profile()[0] == "mycvat"
+
+
+def test_put_profile_after_clear_default_does_not_recreate_default(tmp_path):
+    store = _store(tmp_path)
+    store.put_profile("first", _entry())
+
+    store.clear_default_profile()
+    store.put_profile("second", _entry(token="second"))
+
+    assert store.get_default_profile() is None
+
+
+def test_set_default_profile_requires_existing(tmp_path):
+    store = _store(tmp_path)
+    with pytest.raises(KeyError):
+        store.set_default_profile("nope")
+
+
+def test_removing_default_profile_clears_default(tmp_path):
+    store = _store(tmp_path)
+    store.put_profile("mycvat", _entry(), set_default=True)
+    store.remove_profile("mycvat")
+    assert store.get_default_profile() is None
+
+
+def test_put_profile_after_removing_default_with_profiles_remaining_does_not_recreate_default(
+    tmp_path,
+):
+    store = _store(tmp_path)
+    store.put_profile("first", _entry())
+    store.put_profile("second", _entry(token="second"))
+
+    store.remove_profile("first")
+    store.put_profile("third", _entry(token="third"))
+
+    assert store.get_default_profile() is None
+
+
+def test_default_server_set_get_clear(tmp_path):
+    store = _store(tmp_path)
+    assert store.get_default_server() is None
+    store.set_default_server("https://staging.example.com")
+    assert store.get_default_server() == "https://staging.example.com"
+    store.clear_default_server()
+    assert store.get_default_server() is None
+
+
+def test_remove_unknown_profile_raises(tmp_path):
+    with pytest.raises(KeyError):
+        _store(tmp_path).remove_profile("ghost")

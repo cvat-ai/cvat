@@ -10,8 +10,8 @@ from django.conf import settings
 
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.permissions import JobPermission, ProjectPermission, TaskPermission
-from cvat.apps.engine.view_utils import get_or_404
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, get_iam_context
+from cvat.utils import django_database as db_utils
 
 from .models import AnnotationConflict, QualityReport, QualitySettings
 from .serializers import QualityReportCreateSerializer
@@ -39,7 +39,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
     @classmethod
     def create_scope_view(cls, request, report: int | QualityReport, iam_context=None):
         if isinstance(report, int):
-            report = get_or_404(QualityReport, report)
+            report = db_utils.get_or_404(QualityReport, report)
 
         if not iam_context and request:
             iam_context = get_iam_context(request, report)
@@ -79,10 +79,10 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 assert task_id or project_id
 
                 if task_id is not None:
-                    target = get_or_404(Task, task_id)
+                    target = db_utils.get_or_404(Task, task_id)
                     target_permission_class = TaskPermission
                 elif project_id is not None:
-                    target = get_or_404(Project, project_id)
+                    target = db_utils.get_or_404(Project, project_id)
                     target_permission_class = ProjectPermission
 
                 # The request may have a different org or org unset
@@ -143,13 +143,13 @@ class QualityReportPermission(OpenPolicyAgentPermission):
             elif self.scope == self.Scopes.CREATE and self.task:
                 task = self.task
                 if not isinstance(task, Task):
-                    task = get_or_404(Task, self.task)
+                    task = db_utils.get_or_404(Task, self.task)
 
                 project = task.project
             elif self.scope == self.Scopes.CREATE and self.project:
                 project = self.project
                 if not isinstance(project, Project):
-                    project = get_or_404(Project, self.project)
+                    project = db_utils.get_or_404(Project, self.project)
 
             if project:
                 organization_id = project.organization_id
