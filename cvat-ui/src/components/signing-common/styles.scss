@@ -45,15 +45,17 @@ $social-google-background: #4286f5;
     width: 100%;
 
     .cvat-signing-logo {
+        // react-svg-loader runs SVGO, which strips fill="#000000" as an SVG default
+        // and collapses that group away. So paint the whole lockup white and let the
+        // teal group — which SVGO preserves, as #00B394 is not a default — keep its own fill.
         svg {
             height: $grid-unit-size * 10;
             width: auto;
+            fill: #fff;
         }
 
-        // The traced lockup groups glyphs by colour: black wordmark, teal "AI".
-        // Recolour only the black group for the dark background; leave teal be.
-        svg g[fill='#000000'] {
-            fill: #fff;
+        svg g[fill='#00B394'] {
+            fill: #00B394;
         }
     }
 }
