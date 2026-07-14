@@ -39,7 +39,12 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "sustainlivework_transparent.png"
-TEAL = "#00B394"
+TEAL = "#00B394"  # NOTE: cvat-ui/src/components/signing-common/styles.scss matches this
+# group with the exact, case-sensitive selector g[fill='#00B394']. If this asset is
+# ever regenerated with a different literal spelling (e.g. "#00b394" lowercase, or
+# "rgb(0,179,148)"), that selector silently stops matching and the "AI" mark renders
+# white instead of teal, with no build error. Keep this string exactly "#00B394",
+# uppercase, unless the CSS selector is updated to match.
 BLACK = "#000000"
 
 # Vertical bands of the stacked source lockup, in reading order.

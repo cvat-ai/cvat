@@ -46,15 +46,22 @@ $social-google-background: #4286f5;
 
     .cvat-signing-logo {
         // react-svg-loader runs SVGO, which strips fill="#000000" as an SVG default
-        // and collapses that group away. So paint the whole lockup white and let the
-        // teal group — which SVGO preserves, as #00B394 is not a default — keep its own fill.
+        // and collapses that group away — SVGO preserves the teal group, since
+        // #00B394 is not a default. Paint the leaf <path> elements directly rather
+        // than relying on inheritance from <svg>: a rule on the path itself beats
+        // any presentation `fill` attribute left behind on the path or an ancestor
+        // <g>, so this stays correct even if a future SVGO version stops stripping
+        // fill="#000000".
         svg {
             height: $grid-unit-size * 10;
             width: auto;
+        }
+
+        svg path {
             fill: #fff;
         }
 
-        svg g[fill='#00B394'] {
+        svg g[fill='#00B394'] path {
             fill: #00B394;
         }
     }
