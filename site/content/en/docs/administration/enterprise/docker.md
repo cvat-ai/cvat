@@ -228,7 +228,6 @@ change the `CVAT_HOST` variable in the file (it should be FQDN).
    aws ecr get-login-password --region eu-west-1 --profile CvatEnterpriseCustomer | docker login --username AWS --password-stdin <MUST BE PROVIDED BY CVAT TEAM>
 
    export CVAT_HOST=\<CUSTOM_DOMAIN\>
-   export ACME_EMAIL=support@cvat.ai
    export CVAT_VERSION='v2.41.0'
 
    git fetch origin

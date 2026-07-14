@@ -423,17 +423,6 @@ services:
     #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
 ```
 
-and if you are using `docker-compose.https.yml`, also uncomment these lines
-
-```yml
-services:
-  traefik:
-    command:
-      # Uncomment to get Traefik dashboard
-      # - "--entryPoints.dashboard.address=:8090"
-      # - "--api.dashboard=true"
-```
-
 Note that this "insecure" dashboard is not recommended in production (and if your instance is publicly available);
 if you want to keep the dashboard in production you should read Traefik's
 [documentation](https://doc.traefik.io/traefik/operations/dashboard/) on how to properly secure it.
@@ -526,31 +515,6 @@ for details.
 Please follow
 [this tutorial](https://blog.scaleway.com/smart-data-annotation-for-your-computer-vision-projects-cvat-on-scaleway/)
 to install and set up remote access to CVAT on a Scaleway cloud instance with data in a mounted object storage bucket.
-
-### Deploy secure CVAT instance with HTTPS
-
-Using Traefik, you can automatically obtain a TLS certificate for your domain from Let's Encrypt,
-enabling you to use HTTPS protocol to access your website.
-
-To enable this, first set the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
-(contact email for Let's Encrypt) environment variables:
-
-```shell
-export CVAT_HOST=<YOUR_DOMAIN>
-export ACME_EMAIL=<YOUR_EMAIL>
-```
-
-Then, use the `docker-compose.https.yml` file to override the base `docker-compose.yml` file:
-
-```shell
-docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
-```
-
-{{% alert title="Note" color="primary" %}}
-In the firewall, ports 80 and 443 must be open for inbound connections from any
-{{% /alert %}}
-
-Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
 ### Deploy CVAT with an external database
 
@@ -687,42 +651,6 @@ If you stay in China, for installation you need to override the following source
   ```shell
   curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
   ```
-
-### HTTPS is not working because of a certificate
-
-If you're having trouble with an SSL connection, to find the cause,
-you'll need to get the logs from traefik by running:
-
-```shell
-docker logs traefik
-```
-
-The logs will help you find out the problem.
-
-If the error is related to a firewall, then:
-
-- Open ports 80 and 443 for inbound connections from any.
-- Delete `acme.json`.
-  The location should be something like: `/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json`.
-
-After `acme.json` is removed, stop all cvat docker containers:
-
-```shell
-docker compose -f docker-compose.yml -f docker-compose.https.yml down
-```
-
-Make sure variables set (with your values):
-
-```shell
-export CVAT_HOST=<YOUR_DOMAIN>
-export ACME_EMAIL=<YOUR_EMAIL>
-```
-
-and restart docker:
-
-```shell
-docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
-```
 
 ### CVAT health check failed because of too low free disk space
 

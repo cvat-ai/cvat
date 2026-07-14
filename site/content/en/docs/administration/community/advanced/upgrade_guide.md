@@ -103,11 +103,10 @@ unzip ${CVAT_VERSION}.zip && mv cvat-${CVAT_VERSION:1} cvat
 unset CVAT_VERSION
 cd cvat
 export CVAT_HOST=cvat.example.com
-export ACME_EMAIL=example@example.com
 docker compose pull
 docker compose up -d cvat_db
 docker exec -i cvat_db psql -q -d postgres < ../cvat.db.dump
-docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.https.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
 ## How to upgrade CVAT from v1.7.0 to v2.2.0.
