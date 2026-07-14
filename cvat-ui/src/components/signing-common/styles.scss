@@ -46,12 +46,22 @@ $social-google-background: #4286f5;
 
     .cvat-signing-logo {
         // react-svg-loader runs SVGO, which strips fill="#000000" as an SVG default
-        // and collapses that group away — SVGO preserves the teal group, since
-        // #00B394 is not a default. Paint the leaf <path> elements directly rather
-        // than relying on inheritance from <svg>: a rule on the path itself beats
-        // any presentation `fill` attribute left behind on the path or an ancestor
-        // <g>, so this stays correct even if a future SVGO version stops stripping
-        // fill="#000000".
+        // and collapses a group down into its single child when that group has
+        // exactly one child. Either transform can relocate or drop the raw `fill`
+        // presentation attribute, so matching on the literal colour (e.g. a
+        // g[fill='#00B394'] attribute selector) is brittle: it silently stops
+        // matching the moment the source art changes shape (e.g. the teal mark
+        // becomes a single <path> instead of several), and there is no build
+        // error when that happens — it just renders white.
+        //
+        // Key on a class instead: SVGO 1.x (react-svg-loader's version) preserves
+        // `class` attributes, and tools/branding/trace_logo.py emits the teal group
+        // as <g class="brand-teal" fill="#00B394">. `svg path { fill: #fff }` wins
+        // over any leftover presentation `fill` attribute (a CSS property beats a
+        // presentation attribute), so the teal rule must be re-asserted for both
+        // shapes SVGO may leave behind: the group with the class still wrapping its
+        // children, or (if collapseGroups inlines a single-child group) the class
+        // ending up directly on the <path>.
         svg {
             height: $grid-unit-size * 10;
             width: auto;
@@ -61,7 +71,8 @@ $social-google-background: #4286f5;
             fill: #fff;
         }
 
-        svg g[fill='#00B394'] path {
+        svg .brand-teal,
+        svg .brand-teal path {
             fill: #00B394;
         }
     }

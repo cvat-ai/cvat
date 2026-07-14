@@ -31,6 +31,7 @@ Alpha is otherwise binary in this source (0 or 255) except for a small
 number of straggler opaque-white pixels well outside any glyph, which the
 darkness test also correctly discards as background.
 """
+
 import subprocess
 import tempfile
 from pathlib import Path
@@ -39,13 +40,16 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "sustainlivework_transparent.png"
-TEAL = "#00B394"  # NOTE: cvat-ui/src/components/signing-common/styles.scss matches this
-# group with the exact, case-sensitive selector g[fill='#00B394']. If this asset is
-# ever regenerated with a different literal spelling (e.g. "#00b394" lowercase, or
-# "rgb(0,179,148)"), that selector silently stops matching and the "AI" mark renders
-# white instead of teal, with no build error. Keep this string exactly "#00B394",
-# uppercase, unless the CSS selector is updated to match.
+TEAL = "#00B394"
 BLACK = "#000000"
+TEAL_CLASS = "brand-teal"  # NOTE: cvat-ui/src/components/signing-common/styles.scss
+# matches this group with the class selector `.brand-teal`, not the fill colour --
+# react-svg-loader's SVGO pass is free to rewrite/drop presentation attributes (it
+# already strips fill="#000000" as an SVG default), but SVGO 1.x preserves `class`.
+# The stylesheet's correctness therefore depends on the CLASS name below staying
+# "brand-teal", not on the exact spelling of TEAL above. Keep them in sync if either
+# one changes.
+BLACK_CLASS = "brand-ink"
 
 # Vertical bands of the stacked source lockup, in reading order.
 BANDS = {"sustain": (0, 129), "liv": (181, 314), "work": (369, 502)}
@@ -91,7 +95,7 @@ def trace(mask):
         pbm, svg = Path(tmp) / "m.pbm", Path(tmp) / "m.svg"
         # potrace traces black-on-white, so invert: mask 1 -> black ink.
         Image.eval(mask, lambda v: 0 if v else 1).convert("1").save(pbm)
-        subprocess.run(
+        subprocess.run(  # nosec
             ["potrace", "-s", "-a", "1.0", "-O", "0.2", "-o", str(svg), str(pbm)],
             check=True,
             capture_output=True,
@@ -113,11 +117,11 @@ def flip(h):
     return f"scale({1 / POTRACE_UNIT},{-1 / POTRACE_UNIT}) translate(0,{-h * POTRACE_UNIT})"
 
 
-def group(mask, fill, transform):
+def group(mask, fill, cls, transform):
     paths = "".join(f'<path d="{d}"/>' for d in trace(mask))
     if not paths:
         return ""
-    return f'<g fill="{fill}" transform="{transform}">{paths}</g>'
+    return f'<g class="{cls}" fill="{fill}" transform="{transform}">{paths}</g>'
 
 
 def main():
@@ -131,16 +135,19 @@ def main():
         h = bottom - top
         total_h = max(total_h, h)
         crops = {}
-        for label, mask, fill in (("black", black, BLACK), ("teal", teal, TEAL)):
+        for label, mask, fill, cls in (
+            ("black", black, BLACK, BLACK_CLASS),
+            ("teal", teal, TEAL, TEAL_CLASS),
+        ):
             crop = mask.crop((0, top, img.width, bottom))
             bbox = crop.getbbox()
-            crops[label] = (crop, bbox, fill)
+            crops[label] = (crop, bbox, fill, cls)
         # Left-trim the band by the leftmost ink across BOTH colour masks, so
         # the two masks keep their relative alignment within the word.
-        lefts = [b[0] for _, b, _ in crops.values() if b]
-        rights = [b[2] for _, b, _ in crops.values() if b]
+        lefts = [b[0] for _, b, _, _ in crops.values() if b]
+        rights = [b[2] for _, b, _, _ in crops.values() if b]
         left, right = min(lefts), max(rights)
-        for crop, bbox, fill in crops.values():
+        for crop, bbox, fill, cls in crops.values():
             if not bbox:
                 continue
             band = crop.crop((left, 0, right, h))
@@ -150,9 +157,7 @@ def main():
             # ascender headroom the SustAIn band doesn't need). Top-aligning
             # instead would visibly drop the shorter word below the rest.
             y_off = total_h - h
-            parts.append(
-                group(band, fill, f"translate({x_off},{y_off}) {flip(h)}")
-            )
+            parts.append(group(band, fill, cls, f"translate({x_off},{y_off}) {flip(h)}"))
         x_off += (right - left) + GAP
     width = x_off - GAP
     # NOTE on units: flip() already applies potrace's own *0.1 descale to
@@ -191,8 +196,8 @@ def main():
     stacked = (
         f'<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {img.width} {img.height}">'
-        f'{group(black, BLACK, flip(img.height))}'
-        f'{group(teal, TEAL, flip(img.height))}</svg>'
+        f"{group(black, BLACK, BLACK_CLASS, flip(img.height))}"
+        f"{group(teal, TEAL, TEAL_CLASS, flip(img.height))}</svg>"
     )
     out = ROOT / "cvat-ui/src/assets/sustainlivwork-stacked.svg"
     out.write_text(stacked)
@@ -211,7 +216,7 @@ def main():
     n = canvas.width
     favicon = (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {n} {n}">'
-        f'{group(canvas, TEAL, flip(canvas.height))}</svg>'
+        f"{group(canvas, TEAL, TEAL_CLASS, flip(canvas.height))}</svg>"
     )
     out = ROOT / "cvat-ui/src/assets/favicon.svg"
     out.write_text(favicon)
