@@ -91,7 +91,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private snapToAngleResize: number;
     private draggableShape: SVG.Shape | null;
     private resizableShape: SVG.Shape | null;
-    private skeletonControlPointDecoratorsRefreshRequest: number | null;
+    private skeletonResizerRefreshRequest: number | null;
     private ctrlPressed: boolean;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
@@ -887,7 +887,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.regionSelector.transform(this.geometry);
 
         this.refreshRotationPointView();
-        this.refreshSkeletonControlPointDecorators();
+        this.refreshSkeletonResizer();
     }
 
     private resizeCanvas(): void {
@@ -1110,7 +1110,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         pathElement.dmove(-pathElement.width() / 2, -pathElement.height() / 2);
     }
 
-    private static getSkeletonResizeHandle(point: SVG.Element): string | null {
+    private static getSkeletonResizerHandle(point: SVG.Element): string | null {
         const handles = ['lt', 'rt', 'rb', 'lb', 't', 'r', 'b', 'l'];
         return handles.find((handle: string): boolean => point.hasClass(`svg_select_points_${handle}`)) ?? null;
     }
@@ -1119,12 +1119,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return size / this.geometry.scale;
     }
 
-    private updateSkeletonControlPointDecoratorView(element: Element, hovered: boolean): void {
-        const isOuterStroke = element.classList.contains('cvat_canvas_skeleton_control_point_decorator_outer');
+    private updateSkeletonResizerView(element: Element, hovered: boolean): void {
+        const isOuterStroke = element.classList.contains('cvat_canvas_skeleton_resizer_outer');
         const strokeWidth =
             isOuterStroke && hovered ? consts.POINTS_SELECTED_STROKE_WIDTH : 2 * consts.POINTS_STROKE_WIDTH;
 
-        element.classList.toggle('cvat_canvas_skeleton_control_point_decorator_hovered', hovered);
+        element.classList.toggle('cvat_canvas_skeleton_resizer_hovered', hovered);
         element.setAttribute('stroke-opacity', hovered ? '1' : '0.8');
         element.setAttribute(
             'stroke-width',
@@ -1132,8 +1132,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
     }
 
-    private toggleSkeletonControlPointDecorator(point: SVG.Element, hovered: boolean): void {
-        const handle = CanvasViewImpl.getSkeletonResizeHandle(point);
+    private toggleSkeletonResizer(point: SVG.Element, hovered: boolean): void {
+        const handle = CanvasViewImpl.getSkeletonResizerHandle(point);
         if (!handle) {
             return;
         }
@@ -1143,14 +1143,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
-        for (const decorator of parent.getElementsByClassName(
-            `cvat_canvas_skeleton_control_point_decorator_${handle}`,
+        for (const resizer of parent.getElementsByClassName(
+            `cvat_canvas_skeleton_resizer_${handle}`,
         )) {
-            this.updateSkeletonControlPointDecoratorView(decorator, hovered);
+            this.updateSkeletonResizerView(resizer, hovered);
         }
     }
 
-    private setupSkeletonControlPointViews(container: SVG.Container): void {
+    private setupSkeletonResizer(container: SVG.Container): void {
         const boundingRect = container.children().find((element: SVG.Element): boolean => (
             element.hasClass('svg_select_boundingRect')
         ));
@@ -1165,7 +1165,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const boundingRectWidth = Math.max(boundingRect.width(), controlPointDiameter);
         const boundingRectHeight = Math.max(boundingRect.height(), controlPointDiameter);
         // we don't want it to be smaller than 3x width of the stroke we're using so it's a minimum size
-        // we aim towards 1.7 of the controlPoint (hitbox) but we don't want decorators to cover
+        // we aim towards 1.7 of the controlPoint (hitbox) but we don't want resizers to cover
         // full width or full height so we limit their size with width/3 or height/3
         // so they take up to 2/3 of the size length max
         const cornerLength = Math.max(
@@ -1179,7 +1179,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
         const innerStrokeOffset = this.screenToCanvasSize(2 * consts.POINTS_STROKE_WIDTH);
 
-        const decoratorPath = (handle: string, cx: number, cy: number, inset = 0): string => {
+        const resizerPath = (handle: string, cx: number, cy: number, inset = 0): string => {
             switch (handle) {
                 case 'lt':
                     return `M ${cx + inset} ${cy + cornerLength}
@@ -1214,11 +1214,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         };
 
-        // clean previous decorators
-        for (const decorator of Array.from(
-            container.node.getElementsByClassName('cvat_canvas_skeleton_control_point_decorator'),
+        // clean previous resizers
+        for (const resizer of Array.from(
+            container.node.getElementsByClassName('cvat_canvas_skeleton_resizer'),
         )) {
-            decorator.parentNode?.removeChild(decorator);
+            resizer.parentNode?.removeChild(resizer);
         }
 
         const controlPoints = container.children().filter((point: SVG.Element): boolean => (
@@ -1226,14 +1226,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (point.hasClass('svg_select_points') || point.hasClass('svg_select_points_rot'))
         ));
 
-        // ensure control points attrs and create fresh decorators
+        // ensure control points attrs and create a fresh resizer
         for (const point of controlPoints) {
             const isRotationPoint = point.hasClass('svg_select_points_rot');
             // we keep control points other than the rotation point invisible as hitboxes
-            // and they define decorators positions.
-            // we do not replace them with decorators directly because svg.select manages
+            // and they define resizer positions.
+            // we do not replace them with resizers directly because svg.select manages
             // these controls as circles positioning their center and using radius
-            // passing not round decorators directly causes weird calculations and requires ugly code
+            // passing non-round resizers directly causes weird calculations and requires ugly code
             if (!point.hasClass('cvat_canvas_skeleton_control_point')) {
                 point
                     .addClass('cvat_canvas_skeleton_control_point')
@@ -1255,41 +1255,41 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 continue;
             }
 
-            const handle = CanvasViewImpl.getSkeletonResizeHandle(point);
+            const handle = CanvasViewImpl.getSkeletonResizerHandle(point);
             if (!handle) {
                 continue;
             }
 
             const isHovered = point.hasClass('cvat_canvas_selected_point');
-            const outerPath = decoratorPath(handle, point.cx(), point.cy());
-            const innerPath = decoratorPath(handle, point.cx(), point.cy(), innerStrokeOffset);
-            const outerDecorator = container
+            const outerPath = resizerPath(handle, point.cx(), point.cy());
+            const innerPath = resizerPath(handle, point.cx(), point.cy(), innerStrokeOffset);
+            const outerResizer = container
                 .path(outerPath)
-                .addClass('cvat_canvas_skeleton_control_point_decorator')
-                .addClass('cvat_canvas_skeleton_control_point_decorator_outer')
-                .addClass(`cvat_canvas_skeleton_control_point_decorator_${handle}`)
+                .addClass('cvat_canvas_skeleton_resizer')
+                .addClass('cvat_canvas_skeleton_resizer_outer')
+                .addClass(`cvat_canvas_skeleton_resizer_${handle}`)
                 .attr({
                     fill: 'none',
                     stroke: 'black',
                     'pointer-events': 'none',
                 });
-            const innerDecorator = container
+            const innerResizer = container
                 .path(innerPath)
-                .addClass('cvat_canvas_skeleton_control_point_decorator')
-                .addClass('cvat_canvas_skeleton_control_point_decorator_inner')
-                .addClass(`cvat_canvas_skeleton_control_point_decorator_${handle}`)
+                .addClass('cvat_canvas_skeleton_resizer')
+                .addClass('cvat_canvas_skeleton_resizer_inner')
+                .addClass(`cvat_canvas_skeleton_resizer_${handle}`)
                 .attr({
                     fill: 'none',
                     stroke: 'white',
                     'pointer-events': 'none',
                 });
 
-            this.updateSkeletonControlPointDecoratorView(outerDecorator.node, isHovered);
-            this.updateSkeletonControlPointDecoratorView(innerDecorator.node, isHovered);
+            this.updateSkeletonResizerView(outerResizer.node, isHovered);
+            this.updateSkeletonResizerView(innerResizer.node, isHovered);
         }
     }
 
-    private refreshSkeletonControlPointDecorators(): void {
+    private refreshSkeletonResizer(): void {
         const { clientID } = this.activeElement;
         if (clientID === null || this.drawnStates[clientID]?.shapeType !== 'skeleton') {
             return;
@@ -1304,20 +1304,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
-        this.setupSkeletonControlPointViews(selectContainer);
+        this.setupSkeletonResizer(selectContainer);
     }
 
-    private scheduleSkeletonControlPointDecoratorsRefresh(): void {
-        if (this.skeletonControlPointDecoratorsRefreshRequest !== null) {
+    private scheduleSkeletonResizerRefresh(): void {
+        if (this.skeletonResizerRefreshRequest !== null) {
             return;
         }
 
         // we need to delay the refresh to the next frame during resize as otherwise
         // select handles are not yet updated if handled synchronously
         // also, potentially batches swift resize updates so its not recalculated multiple times per frame
-        this.skeletonControlPointDecoratorsRefreshRequest = window.requestAnimationFrame((): void => {
-            this.skeletonControlPointDecoratorsRefreshRequest = null;
-            this.refreshSkeletonControlPointDecorators();
+        this.skeletonResizerRefreshRequest = window.requestAnimationFrame((): void => {
+            this.skeletonResizerRefreshRequest = null;
+            this.refreshSkeletonResizer();
         });
     }
 
@@ -1435,12 +1435,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const getGeometry = (): Geometry => this.geometry;
             const getController = (): CanvasController => this.controller;
             const getActiveElement = (): ActiveElement => this.activeElement;
-            const toggleSkeletonControlPointDecorator = (point: SVG.Element, hovered: boolean): void => {
+            const toggleSkeletonResizer = (point: SVG.Element, hovered: boolean): void => {
                 if (!isSkeletonRect) {
                     return;
                 }
 
-                this.toggleSkeletonControlPointDecorator(point, hovered);
+                this.toggleSkeletonResizer(point, hovered);
             };
             (shape as any).selectize(value, {
                 deepSelect: true,
@@ -1480,7 +1480,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         circle.on('mousedown', mousedownHandler);
                         circle.on('contextmenu', contextMenuHandler);
                         circle.addClass('cvat_canvas_selected_point');
-                        toggleSkeletonControlPointDecorator(circle, true);
+                        toggleSkeletonResizer(circle, true);
                     });
 
                     circle.on('mouseleave', (): void => {
@@ -1492,7 +1492,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         circle.off('mousedown', mousedownHandler);
                         circle.off('contextmenu', contextMenuHandler);
                         circle.removeClass('cvat_canvas_selected_point');
-                        toggleSkeletonControlPointDecorator(circle, false);
+                        toggleSkeletonResizer(circle, false);
                     });
                     return circle;
                 },
@@ -1507,7 +1507,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (handler && handler.nested) {
             handler.nested.fill(shape.attr('fill'));
             if (value && isSkeletonRect) {
-                this.setupSkeletonControlPointViews(handler.nested);
+                this.setupSkeletonResizer(handler.nested);
             }
         }
 
@@ -1791,7 +1791,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         resized = true;
                         skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
                         setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
-                        this.scheduleSkeletonControlPointDecoratorsRefresh();
+                        this.scheduleSkeletonResizerRefresh();
                     }
                 })
                 .on('resizedone', (): void => {
@@ -2021,7 +2021,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridRect.setAttribute('fill', 'url(#cvat_canvas_grid_pattern)');
 
         // setup skeletons supplementary state
-        this.skeletonControlPointDecoratorsRefreshRequest = null;
+        this.skeletonResizerRefreshRequest = null;
 
         // Setup content
         this.text.setAttribute('id', 'cvat_canvas_text_content');
