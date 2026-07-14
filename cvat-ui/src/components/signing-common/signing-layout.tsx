@@ -10,7 +10,7 @@ import Layout from 'antd/lib/layout';
 import { Col, Row } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import SigningLogo from './signing-logo';
-import SVGSigningBackground from '../../assets/signing-background.svg';
+import SVGSigningBackground from '../../assets/signing-background-light.svg';
 
 interface SignInLayoutComponentProps {
     children: JSX.Element | JSX.Element[];

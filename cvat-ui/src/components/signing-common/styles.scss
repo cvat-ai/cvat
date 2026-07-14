@@ -6,7 +6,7 @@
 
 $heading-font: 'Sora', sans-serif;
 $signing-font: 'Roboto Flex', sans-serif;
-$heading-color: white;
+$heading-color: #111;
 $error-color: #ff4d4f;
 $action-button-color-1: black;
 $action-button-color-2: gray;
@@ -52,11 +52,11 @@ $social-google-background: #4286f5;
         // g[fill='#00B394'] attribute selector) is brittle: it silently stops
         // matching the moment the source art changes shape (e.g. the teal mark
         // becomes a single <path> instead of several), and there is no build
-        // error when that happens — it just renders white.
+        // error when that happens — it just renders the wrong colour.
         //
         // Key on a class instead: SVGO 1.x (react-svg-loader's version) preserves
         // `class` attributes, and tools/branding/trace_logo.py emits the teal group
-        // as <g class="brand-teal" fill="#00B394">. `svg path { fill: #fff }` wins
+        // as <g class="brand-teal" fill="#00B394">. `svg path { fill: #111 }` wins
         // over any leftover presentation `fill` attribute (a CSS property beats a
         // presentation attribute), so the teal rule must be re-asserted for both
         // shapes SVGO may leave behind: the group with the class still wrapping its
@@ -68,7 +68,7 @@ $social-google-background: #4286f5;
         }
 
         svg path {
-            fill: #fff;
+            fill: #111;
         }
 
         svg .brand-teal,
@@ -203,6 +203,7 @@ $social-google-background: #4286f5;
 .cvat-login-form-wrapper {
     border-radius: $border-radius-base;
     background: $background-color-1;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 8%);
     padding: $grid-unit-size * 6;
     height: $grid-unit-size * 87;
 
