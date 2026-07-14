@@ -44,8 +44,17 @@ $social-google-background: #4286f5;
     padding: $grid-unit-size * 2 0 0 0;
     width: 100%;
 
-    .cvat-logo-icon {
-        filter: brightness(0) invert(1);
+    .cvat-signing-logo {
+        svg {
+            height: $grid-unit-size * 10;
+            width: auto;
+        }
+
+        // The traced lockup groups glyphs by colour: black wordmark, teal "AI".
+        // Recolour only the black group for the dark background; leave teal be.
+        svg g[fill='#000000'] {
+            fill: #fff;
+        }
     }
 }
 
