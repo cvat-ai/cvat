@@ -21,6 +21,7 @@ from cvat.apps.engine.models import RequestTarget
 from cvat.apps.engine.rq import BaseRQMeta, define_dependent_job
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job
+from cvat.apps.redis_handler import utils
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 slogger = ServerLogManager(__name__)
@@ -110,11 +111,16 @@ class AbstractRequestManager(metaclass=ABCMeta):
     def _set_default_callback_params(self):
         self.callback_args = None
         self.callback_kwargs = None
-        self.job_on_success_callback = None
-        self.job_on_failure_callback = None
 
     def init_job_callbacks(self) -> None:
-        """Hook to initialize RQ lifecycle callbacks for the job"""
+        self.job_on_success_callback = Callback(
+            utils.send_request_succeeded_signal,
+            timeout=60,
+        )
+        self.job_on_failure_callback = Callback(
+            utils.send_request_failed_signal,
+            timeout=60,
+        )
 
     def validate_request(self) -> Response | None:
         """Hook to run some validations before processing a request"""
