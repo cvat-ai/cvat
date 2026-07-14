@@ -21,13 +21,14 @@ from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
-from cvat.apps.engine.background import AbstractRequestManager
 from cvat.apps.engine.utils import take_by
 from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
 from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresource
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
+
+    from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
 class RQJobMetaField:

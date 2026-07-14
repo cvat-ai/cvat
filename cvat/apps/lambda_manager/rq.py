@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from django.contrib.auth.models import User
@@ -15,7 +16,9 @@ from cvat.apps.engine.rq import (
     MutableRQMetaAttribute,
     RQJobMetaField,
 )
-from cvat.apps.redis_handler.background import AbstractRequestManager
+
+if TYPE_CHECKING:
+    from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
 class LambdaRQMeta(BaseRQMeta):

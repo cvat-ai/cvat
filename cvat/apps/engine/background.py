@@ -22,7 +22,6 @@ from rest_framework import serializers, status
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rq import Callback
 from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
@@ -234,18 +233,6 @@ class BaseResourceExporter(AbstractRequestManager):
 
             self.callback_args = (db_storage, self.callback) + self.callback_args
             self.callback = export_resource_to_cloud_storage
-
-    def init_job_callbacks(self) -> None:
-        from cvat.apps.engine import utils
-
-        self.job_on_success_callback = Callback(
-            utils.send_request_succeeded_signal,
-            timeout=60,
-        )
-        self.job_on_failure_callback = Callback(
-            utils.send_request_failed_signal,
-            timeout=60,
-        )
 
     def build_meta(self, *, request_id):
         return ExportRQMeta.build_for(
