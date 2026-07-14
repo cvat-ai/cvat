@@ -1110,7 +1110,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         pathElement.dmove(-pathElement.width() / 2, -pathElement.height() / 2);
     }
 
-    private getSkeletonResizeHandle(point: SVG.Element): string | null {
+    private static getSkeletonResizeHandle(point: SVG.Element): string | null {
         const handles = ['lt', 'rt', 'rb', 'lb', 't', 'r', 'b', 'l'];
         return handles.find((handle: string): boolean => point.hasClass(`svg_select_points_${handle}`)) ?? null;
     }
@@ -1133,7 +1133,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private toggleSkeletonControlPointDecorator(point: SVG.Element, hovered: boolean): void {
-        const handle = this.getSkeletonResizeHandle(point);
+        const handle = CanvasViewImpl.getSkeletonResizeHandle(point);
         if (!handle) {
             return;
         }
@@ -1255,7 +1255,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 continue;
             }
 
-            const handle = this.getSkeletonResizeHandle(point);
+            const handle = CanvasViewImpl.getSkeletonResizeHandle(point);
             if (!handle) {
                 continue;
             }
