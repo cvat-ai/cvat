@@ -199,6 +199,7 @@ module.exports = (env, argv = {}) => {
             new HtmlWebpackPlugin({
                 template: './src/index.html',
                 inject: 'body',
+                favicon: './src/assets/favicon.svg',
             }),
             new Dotenv({
                 systemvars: true,
