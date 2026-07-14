@@ -29,13 +29,13 @@ jobs:
           ref: ${{ inputs.ref }}
 
       - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
       - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
@@ -255,7 +255,7 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
             node-version: '22.x'
 

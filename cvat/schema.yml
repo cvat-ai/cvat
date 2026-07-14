@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.69.0
+  version: 2.70.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -438,6 +438,10 @@ paths:
   /api/auth/register:
     post:
       operationId: auth_create_register
+      description: |-
+        Registers a new user.
+
+        Accepts the following POST parameters: username, email, password1, password2.
       tags:
       - auth
       requestBody:
@@ -1766,37 +1770,6 @@ paths:
         required: true
       tags:
       - invitations
-      security:
-      - tokenAuth: []
-      - accessTokenAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/InvitationRead'
-          description: ''
-    patch:
-      operationId: invitations_partial_update
-      summary: Update an invitation
-      parameters:
-      - in: path
-        name: key
-        schema:
-          type: string
-        description: A unique value identifying this invitation.
-        required: true
-      tags:
-      - invitations
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedInvitationWriteRequest'
       security:
       - tokenAuth: []
       - accessTokenAuth: []
@@ -8221,6 +8194,13 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/LabelMappingEntryRequest'
           description: Label mapping from the model to the task labels
+        roi:
+          type: array
+          items:
+            type: integer
+          description: Region of interest as [xtl, ytl, xbr, ybr]
+          maxItems: 4
+          minItems: 4
       required:
       - function
       - task
@@ -9843,15 +9823,6 @@ components:
         cloud_storage_id:
           type: integer
           nullable: true
-    PatchedInvitationWriteRequest:
-      type: object
-      properties:
-        role:
-          $ref: '#/components/schemas/RoleEnum'
-        email:
-          type: string
-          format: email
-          minLength: 1
     PatchedIssueWriteRequest:
       type: object
       properties:

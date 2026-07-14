@@ -78,6 +78,15 @@ class TestJobUsecases(TestDatasetExport):
         assert task_job_ids.issubset(j.id for j in jobs)
         assert self.stdout.getvalue() == ""
 
+    def test_can_list_jobs_with_task_filter(self, fxt_new_task: Task):
+        task_job_ids = {j.id for j in fxt_new_task.get_jobs()}
+
+        jobs = self.client.jobs.list(task_id=fxt_new_task.id)
+
+        assert task_job_ids
+        assert {j.id for j in jobs} == task_job_ids
+        assert self.stdout.getvalue() == ""
+
     def test_can_update_job_field_directly(self, fxt_new_task: Task):
         job = self.client.jobs.list()[0]
         assert not job.assignee
