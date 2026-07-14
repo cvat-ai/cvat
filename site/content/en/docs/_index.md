@@ -18,7 +18,7 @@ Projects, tasks, jobs, cloud storages, models.
 {{< /card >}}
 
 {{< card icon="fa-solid fa-user-gear" title="Account Management" url="account_management/" >}}
-Access, roles, organizations, SSO, subscriptions.
+Access, roles, organizations, subscriptions.
 {{< /card >}}
 
 {{< card icon="fa-solid fa-database" title="Dataset Management" url="dataset_management/" >}}
