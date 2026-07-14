@@ -1290,13 +1290,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private refreshSkeletonControlPointDecorators(): void {
-        // there can be only one selection on canvas so we handle first element only
-        const [element] = window.document.getElementsByClassName('cvat_canvas_skeleton_select_wrapper');
-        if (!element) {
+        const { clientID } = this.activeElement;
+        if (clientID === null || this.drawnStates[clientID]?.shapeType !== 'skeleton') {
             return;
         }
 
-        const selectContainer = (element as SVG.LinkedHTMLElement).instance as SVG.Container;
+        const skeleton = this.svgShapes[clientID] as SVG.G;
+        const wrappingRect = skeleton.children().find((child: SVG.Element): boolean => (
+            child.hasClass('cvat_canvas_skeleton_wrapping_rect')
+        ));
+        const selectContainer = wrappingRect?.remember('_selectHandler')?.nested as SVG.Container | undefined;
         if (!selectContainer) {
             return;
         }
@@ -1504,7 +1507,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (handler && handler.nested) {
             handler.nested.fill(shape.attr('fill'));
             if (value && isSkeletonRect) {
-                handler.nested.addClass('cvat_canvas_skeleton_select_wrapper');
                 this.setupSkeletonControlPointViews(handler.nested);
             }
         }
