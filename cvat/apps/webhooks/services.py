@@ -15,7 +15,7 @@ from .models import (
 
 def select_webhooks(
     *,
-    event: str,
+    event_key: str,
     organization_id: int | None,
     project_id: int | None,
     select_for_org: bool = True,
@@ -26,7 +26,7 @@ def select_webhooks(
     if select_for_org and organization_id is not None:
         webhooks = Webhook.objects.filter(
             is_active=True,
-            events__contains=event,
+            events__contains=event_key,
             type=WebhookTypeChoice.ORGANIZATION,
             organization=organization_id,
         )
@@ -35,7 +35,7 @@ def select_webhooks(
     if select_for_project and project_id is not None:
         webhooks = Webhook.objects.filter(
             is_active=True,
-            events__contains=event,
+            events__contains=event_key,
             type=WebhookTypeChoice.PROJECT,
             project=project_id,
         )
