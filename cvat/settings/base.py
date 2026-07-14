@@ -123,6 +123,9 @@ INSTALLED_APPS = [
 SITE_ID = 1
 
 
+DEFAULT_DB_BULK_CREATE_BATCH_SIZE = int(os.getenv("CVAT_DEFAULT_DB_BULK_CREATE_BATCH_SIZE", 5000))
+
+
 def parse_num_proxies(value: str | None) -> int | None:
     if value in (None, ""):
         return None
@@ -318,6 +321,12 @@ REDIS_INMEM_SETTINGS = {
     "PORT": redis_inmem_port,
     "DB": REDIS_INMEM_DATABASES.RQ,
     "PASSWORD": redis_inmem_password,
+    "REDIS_CLIENT_KWARGS": {
+        # Work around an RQ < 2.0 bug where Redis socket timeouts can be too short
+        # for blocking operations such as BLPOP. Fixed upstream in RQ 2.0:
+        # https://github.com/rq/rq/pull/2120
+        "socket_timeout": None,
+    },
 }
 
 RQ_QUEUES = {
@@ -757,6 +766,10 @@ else:
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+
+# configured in seconds.
+CVAT_DB_LOCK_TIMEOUT = int(os.getenv("CVAT_DB_LOCK_TIMEOUT", 10))
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -767,6 +780,7 @@ DATABASES = {
         "PORT": os.getenv("CVAT_POSTGRES_PORT", 5432),
         "OPTIONS": {
             "application_name": os.getenv("CVAT_POSTGRES_APPLICATION_NAME", "cvat"),
+            "options": f"-c lock_timeout={CVAT_DB_LOCK_TIMEOUT * 1000}",
         },
     }
 }

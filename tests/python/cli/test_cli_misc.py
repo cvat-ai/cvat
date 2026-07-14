@@ -20,7 +20,9 @@ from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
+from sdk.util import https_reverse_proxy
+
+from .util import TestCliBase, generate_images, run_cli
 
 
 class TestCliMisc(TestCliBase):
@@ -131,11 +133,11 @@ class TestCliMisc(TestCliBase):
 
         from getpass import getuser as original_getuser
 
-        from cvat_cli._internal.common import default_auth_factory
+        from cvat_sdk.core.auth import default_auth_factory
 
         with (
             mock.patch(
-                "cvat_cli._internal.common.default_auth_factory", wraps=default_auth_factory
+                "cvat_sdk.core.auth.default_auth_factory", wraps=default_auth_factory
             ) as mock_auth_factory,
             mock.patch("getpass.getuser", wraps=original_getuser) as mock_getuser,
             mock.patch("getpass.getpass", return_value=self.password) as mock_getpass,
@@ -149,15 +151,13 @@ class TestCliMisc(TestCliBase):
     def test_can_use_pass_env_variable(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("PASS", self.password)
 
-        from getpass import getuser as original_getpass
-
-        from cvat_cli._internal.common import default_auth_factory
+        from cvat_sdk.core.auth import get_auth_factory
 
         with (
             mock.patch(
-                "cvat_cli._internal.common.default_auth_factory", wraps=default_auth_factory
+                "cvat_sdk.core.auth.get_auth_factory", wraps=get_auth_factory
             ) as mock_auth_factory,
-            mock.patch("getpass.getpass", wraps=original_getpass) as mock_getpass,
+            mock.patch("getpass.getpass") as mock_getpass,
         ):
             self.run_cli(f"--auth={self.user}", "task", "ls", authenticate=False)
 

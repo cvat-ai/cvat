@@ -12,7 +12,7 @@ from django.db.models import functions as db_functions
 from django.utils import timezone
 from rest_framework_api_key.models import AbstractAPIKey, BaseAPIKeyManager
 
-from cvat.apps.engine.model_utils import MaybeUndefined
+from cvat.utils import django_database as db_utils
 
 
 class AccessTokenManager(BaseAPIKeyManager):
@@ -76,7 +76,7 @@ class AccessToken(AbstractAPIKey):
         on_delete=models.CASCADE,
     )
 
-    raw_token: MaybeUndefined[str]
+    raw_token: db_utils.MaybeUndefined[str]
     "Can be specified by the calling serializer to report the generated raw token to the user."
 
     class Meta(AbstractAPIKey.Meta):
