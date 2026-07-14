@@ -7,9 +7,13 @@ description: 'Explains how to manage the display order of annotation objects usi
 
 ## What Are Layers in CVAT?
 
-Layers are used to manage the display order of objects on the canvas. Each object is placed on a separate layer, and the layer's position determines whether the object appears above or below other objects when they overlap.
+Layers are used to manage the display order of objects on the canvas.
+Each object is placed on a separate layer,
+and the layer's position determines whether the object appears above or below other objects when they overlap.
 
-The **Layer Stack** panel allows you to view and change the layer order. This is especially useful when working with overlapping polygons and masks, where you need to adjust the display order of objects without modifying the annotations themselves.
+The **Layer Stack** panel allows you to view and change the layer order.
+This is especially useful when working with overlapping polygons and masks,
+where you need to adjust the display order of objects without modifying the annotations themselves.
 
 ## Layer Stack Panel
 
@@ -49,7 +53,9 @@ The **Layer Stack** panel displays objects according to their actual order based
 
 **Description**
 
-Allows you to change the position of an object or a group of objects in the layer order by dragging them in the **Layer Stack** panel. When moved, the object or group of objects is placed on a new layer created at the selected position.
+Allows you to change the position of an object or a group of objects
+in the layer order by dragging them in the **Layer Stack** panel.
+When moved, the object or group of objects is placed on a new layer created at the selected position.
 
 **Procedure**
 
@@ -81,7 +87,8 @@ Using drag and drop, you can merge two layers by moving all objects from one lay
 
 1. Click and hold the left mouse button on a layer card in the **Layer Stack** panel.
 2. Drag the layer into another layer.
-3. Release the mouse button. All objects from the selected layer will be moved to the target layer, and the original layer will be deleted.
+3. Release the mouse button. All objects from the selected layer will be moved to the target layer,
+   and the original layer will be deleted.
 
 ![Merging layers](/images/merge-layers.gif)
 
@@ -89,7 +96,9 @@ Using drag and drop, you can merge two layers by moving all objects from one lay
 
 #**Description**
 
-Allows you to move an object to the bottommost layer (**Move to Background**) or the topmost layer (**Move to Foreground**). A new layer is automatically created for the object when the command is performed.
+Allows you to move an object to the bottommost layer (**Move to Background**)
+or the topmost layer (**Move to Foreground**).
+A new layer is automatically created for the object when the command is performed.
 
 **Procedure**
 
@@ -102,7 +111,8 @@ Allows you to move an object to the bottommost layer (**Move to Background**) or
 
 **Description**
 
-Allows you to move the selected object one layer forward (**Move to One Layer Forward**) or one layer backward (**Move to One Layer Backward**) in the layer order.
+Allows you to move the selected object one layer forward (**Move to One Layer Forward**)
+or one layer backward (**Move to One Layer Backward**) in the layer order.
 
 **Procedure**
 
@@ -130,7 +140,9 @@ Allows you to move an object to a specified layer.
 
 **Description**
 
-The **Compact layers** function removes gaps in layer numbering while preserving the current layer order. After the command is performed, the layers are renumbered consecutively starting from 0. For example, the sequence 0, 2, 5, 8 is converted to 0, 1, 2, 3.
+The **Compact layers** function removes gaps in layer numbering while preserving the current layer order.
+After the command is performed, the layers are renumbered consecutively starting from 0.
+For example, the sequence 0, 2, 5, 8 is converted to 0, 1, 2, 3.
 
 **When to Use It**
 
@@ -152,9 +164,11 @@ Use **Compact layers** when gaps appear in the layer numbering, for example:
 
 **Description**
 
-Allows you to collapse or expand object cards in the **Layer Stack** panel for all layers at once or for an individual layer.
+Allows you to collapse or expand object cards in the **Layer Stack** panel
+for all layers at once or for an individual layer.
 
-When collapsed, only the layers are displayed in the list, while the cards of the objects they contain are hidden. This does not affect the visibility of objects on the canvas.
+When collapsed, only the layers are displayed in the list, while the cards of the objects they contain are hidden.
+This does not affect the visibility of objects on the canvas.
 
 ![Collapsing and expanding layers](/images/collapse-expand-layers.gif)
 
@@ -162,7 +176,8 @@ When collapsed, only the layers are displayed in the list, while the cards of th
 
 **Description**
 
-Allows you to display the layer number in an object's text description on the canvas. This helps you quickly identify the layer on which an object is located without opening the **Layer Stack** panel.
+Allows you to display the layer number in an object's text description on the canvas.
+This helps you quickly identify the layer on which an object is located without opening the **Layer Stack** panel.
 
 ![Layer number displayed on the canvas](/images/layer-number-on-canvas.png)
 
