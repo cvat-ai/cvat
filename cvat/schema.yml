@@ -8022,6 +8022,13 @@ components:
       - webhook_type
     EventsEnum:
       enum:
+      - completed:calculate:quality
+      - completed:create:task
+      - completed:export:annotations
+      - completed:export:backup
+      - completed:export:dataset
+      - completed:merge:job
+      - completed:merge:task
       - create:comment
       - create:invitation
       - create:issue
@@ -8046,6 +8053,13 @@ components:
       - update:task
       type: string
       description: |-
+        * `completed:calculate:quality` - COMPLETED:CALCULATE:QUALITY
+        * `completed:create:task` - COMPLETED:CREATE:TASK
+        * `completed:export:annotations` - COMPLETED:EXPORT:ANNOTATIONS
+        * `completed:export:backup` - COMPLETED:EXPORT:BACKUP
+        * `completed:export:dataset` - COMPLETED:EXPORT:DATASET
+        * `completed:merge:job` - COMPLETED:MERGE:JOB
+        * `completed:merge:task` - COMPLETED:MERGE:TASK
         * `create:comment` - CREATE:COMMENT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE

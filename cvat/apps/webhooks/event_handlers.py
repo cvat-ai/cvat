@@ -3,70 +3,91 @@
 # SPDX-License-Identifier: MIT
 
 
+import json
+import traceback
 from typing import Any
 
 from django.dispatch import receiver
+from rest_framework.renderers import JSONRenderer
 from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
+from rq.job import JobStatus
 
-from cvat.apps.engine import utils as engine_utils
-from cvat.apps.engine.models import RequestTarget
-from cvat.apps.engine.rq import ExportRequestId, RequestId
-from cvat.apps.engine.signals import request_failed, request_succeeded
-from cvat.apps.events.handlers import organization_id, project_id
-from cvat.apps.webhooks import services, utils
+from cvat.apps.consensus.merging_manager import MergingManager
+from cvat.apps.engine.background import BackupExporter, DatasetExporter, TaskCreator
+from cvat.apps.engine.rq import ExportRQMeta, RequestId, RQMetaWithFailureInfo
+from cvat.apps.quality_control.quality_reports import QualityReportRQJobManager
+from cvat.apps.redis_handler.serializers import RequestSerializer
+from cvat.apps.redis_handler.signals import request_failed, request_succeeded
+from cvat.apps.redis_handler.utils import DetachedJob
+from cvat.apps.webhooks import services
 from cvat.apps.webhooks.dispatch import batch_add_to_queue
+from cvat.apps.webhooks.event_type import event_key
 
 
-@receiver(request_succeeded)
-@receiver(request_failed)
-def request_completed_event_handler(
+@receiver(request_succeeded, sender=DatasetExporter)
+@receiver(request_failed, sender=DatasetExporter)
+@receiver(request_succeeded, sender=BackupExporter)
+@receiver(request_failed, sender=BackupExporter)
+@receiver(request_succeeded, sender=TaskCreator)
+@receiver(request_failed, sender=TaskCreator)
+@receiver(request_succeeded, sender=QualityReportRQJobManager)
+@receiver(request_failed, sender=QualityReportRQJobManager)
+@receiver(request_succeeded, sender=MergingManager)
+@receiver(request_failed, sender=MergingManager)
+def enqueue_request_completion_webhooks(
     sender: Any,
     rq_job: RQJob,
-    status: engine_utils.RequestStatusEnum,
-    message: str | None,
+    status: JobStatus,
+    result: Any | None,
+    exc_type: type[BaseException] | None,
+    exc_value: BaseException | None,
+    exc_traceback: Any | None,
     **kwargs,
 ) -> None:
-    request, _queue = RequestId.parse(rq_job.id, try_legacy_format=True)
+    request_id, _ = RequestId.parse(rq_job.id, try_legacy_format=True)
 
-    match request:
-        case ExportRequestId():
-            try:
-                event_name, webhook_payload = (
-                    utils.get_event_name_and_webhook_payload_from_export_request(
-                        request=request,
-                        status=status,
-                        message=message,
-                    )
-                )
-            # NOTE @sosov: Request completion webhooks are only implemented for
-            # export of dataset / annotations and backup
-            except NotImplementedError:
-                return
-        case _:
-            # NOTE @sosov: Request completion webhooks are only implemented for
-            # export of dataset / annotations and backup
-            return
+    rq_job_meta = ExportRQMeta.for_job(rq_job)
 
-    target_cls = engine_utils.get_request_target_django_model_by_enum(
-        target=RequestTarget(request.target)
-    )
-    target = target_cls.objects.get(id=request.target_id)
+    detached_rq_job = DetachedJob.create_from_job(rq_job)
+    # NOTE @sosov: This handler runs from Django signals emitted in RQ on_success/on_failure
+    # callbacks via send_robust(). At this point RQ has not persisted the terminal
+    # job status yet, so a successful job is still reported as "started". Since
+    # send_robust() prevents receiver exceptions from changing the original job
+    # outcome, the signal status is the terminal status we should expose. Webhook
+    # payloads must match RequestSerializer output returned by GET /api/requests/{rq_id}
+    # after completion, so serialize a detached job instead of mutating the real one.
+    detached_rq_job._status = status
+
+    if status == JobStatus.FINISHED:
+        detached_rq_job._result = result
+
+    if status == JobStatus.FAILED:
+        # NOTE @sosov: RQ invokes failure callbacks before rq_exception_handler stores
+        # formatted_exception that RequestSerializer is using.
+        detached_rq_job_meta = RQMetaWithFailureInfo.for_job(detached_rq_job)
+        detached_rq_job_meta.formatted_exception = "".join(
+            traceback.format_exception_only(exc_type, exc_value)
+        )
+
+    detached_rq_job.parsed_id = request_id
+
+    event_key_ = event_key(action="completed", resource=request_id.type)
 
     webhooks = services.select_webhooks(
-        event=event_name,
-        organization_id=organization_id(target),
-        project_id=project_id(target),
+        event_key=event_key_,
+        organization_id=rq_job_meta.org_id,
+        project_id=rq_job_meta.project_id,
     )
 
-    if not webhooks:
-        return
+    webhook_payload = {
+        "event": event_key_,
+        "request": json.loads(JSONRenderer().render(RequestSerializer(detached_rq_job).data)),
+    }
 
-    batch_add_to_queue(
-        webhooks=webhooks,
-        data=webhook_payload,
-        depends_on=RQDependency(
-            jobs=[rq_job],
-            allow_failure=True,
-        ),
-    )
+    if webhooks:
+        batch_add_to_queue(
+            webhooks=webhooks,
+            data=webhook_payload,
+            depends_on=RQDependency(jobs=[rq_job], allow_failure=True),
+        )

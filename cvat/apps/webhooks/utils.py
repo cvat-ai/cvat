@@ -11,21 +11,77 @@ from typing import TypeVar
 import requests
 from django.db.models import Model
 
-from cvat.apps.engine import utils as engine_utils
-from cvat.apps.engine.models import Comment, Issue, Job, Project, RequestSubresource, Task
-from cvat.apps.engine.rq import ExportRequestId
+from cvat.apps.consensus.rq import ConsensusRequestId
+from cvat.apps.engine.models import (
+    Comment,
+    Issue,
+    Job,
+    Project,
+    RequestAction,
+    RequestSubresource,
+    RequestTarget,
+    Task,
+)
+from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.events.handlers import get_request, get_user
 from cvat.apps.organizations.models import Invitation, Membership, Organization
+from cvat.apps.quality_control.rq import QualityRequestId
+from cvat.apps.webhooks.schemas import EventGroupDTO
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 
-from .event_type import event_name
 from .models import Webhook
 
 _WEBHOOK_TIMEOUT = 10
 _RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
 
 ModelT = TypeVar("ModelT", bound=Model)
+
+REQUEST_COMPLETION_RESOURCES: tuple[tuple[str, EventGroupDTO], ...] = (
+    (
+        ExportRequestId(
+            target=RequestTarget.TASK,
+            target_id=1,
+            subresource=RequestSubresource.ANNOTATIONS,
+        ).type,
+        EventGroupDTO(display_name="Dataset export"),
+    ),
+    (
+        ExportRequestId(
+            target=RequestTarget.TASK,
+            target_id=1,
+            subresource=RequestSubresource.DATASET,
+        ).type,
+        EventGroupDTO(display_name="Dataset export"),
+    ),
+    (
+        ExportRequestId(
+            target=RequestTarget.TASK,
+            target_id=1,
+            subresource=RequestSubresource.BACKUP,
+        ).type,
+        EventGroupDTO(display_name="Backup export"),
+    ),
+    (
+        ImportRequestId(
+            action=RequestAction.CREATE,
+            target=RequestTarget.TASK,
+            target_id=1,
+        ).type,
+        EventGroupDTO(display_name="Task data creation"),
+    ),
+    (
+        ConsensusRequestId(target=RequestTarget.TASK, target_id=1).type,
+        EventGroupDTO(display_name="Consensus merge"),
+    ),
+    (
+        ConsensusRequestId(target=RequestTarget.JOB, target_id=1).type,
+        EventGroupDTO(display_name="Consensus merge"),
+    ),
+    (
+        QualityRequestId(target=RequestTarget.TASK, target_id=1).type,
+        EventGroupDTO(display_name="Quality report creation"),
+    ),
+)
 
 
 def retrieve_instance(model: type[ModelT], pk: int) -> ModelT:
@@ -107,45 +163,13 @@ def retrieve_instance(model: type[ModelT], pk: int) -> ModelT:
 
 
 def get_sender(instance) -> dict:
+    from cvat.apps.events.handlers import get_request, get_user
+
     user = get_user(instance)
     if isinstance(user, dict):
         return user
 
     return BasicUserSerializer(user, context={"request": get_request(instance)}).data
-
-
-def get_event_name_and_webhook_payload_from_export_request(
-    request: ExportRequestId,
-    status: engine_utils.RequestStatusEnum,
-    message: str,
-) -> tuple[str, dict]:
-    match request.subresource:
-        case RequestSubresource.DATASET | RequestSubresource.ANNOTATIONS:
-            _event_name = event_name(action="create", resource="export")
-            subresource_data = {"format": request.format}
-        case RequestSubresource.BACKUP:
-            _event_name = event_name(action="create", resource="backup")
-            # NOTE @sosov: RequestId omits falsey fields, but webhook payloads should
-            # preserve the default regular-backup value as false.
-            subresource_data = {
-                "lightweight": (request.lightweight if request.lightweight is not None else False)
-            }
-        case _:
-            raise NotImplementedError(
-                f"Webhook for subresource {request.subresource} is not implemented"
-            )
-
-    webhook_payload = {
-        "event": _event_name,
-        "status": status.value,
-        "target": request.target,
-        "target_id": request.target_id,
-        "rq_id": request.render(),
-        "message": message,
-        **subresource_data,
-    }
-
-    return _event_name, webhook_payload
 
 
 def perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]:

@@ -106,6 +106,15 @@ def job_id(instance):
         return None
 
 
+def _get_value(obj, key):
+    if obj is not None:
+        if isinstance(obj, dict):
+            return obj.get(key, None)
+        return getattr(obj, key, None)
+
+    return None
+
+
 def get_user(instance=None) -> User | dict | None:
     def _get_user_from_rq_job(rq_job: rq.job.Job) -> dict | None:
         if user := BaseRQMeta.for_job(rq_job).user:
@@ -147,15 +156,6 @@ def get_request(instance=None):
         rq_job = rq.get_current_job()
         if rq_job:
             return _get_request_from_rq_job(rq_job)
-
-    return None
-
-
-def _get_value(obj, key):
-    if obj is not None:
-        if isinstance(obj, dict):
-            return obj.get(key, None)
-        return getattr(obj, key, None)
 
     return None
 

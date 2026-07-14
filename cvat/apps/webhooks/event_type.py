@@ -2,9 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+
 from cvat.apps.webhooks.schemas import EventDTO, EventGroupDTO
 
 from .models import WebhookTypeChoice
+from .utils import REQUEST_COMPLETION_RESOURCES
 
 
 def event_key(action: str, resource: str) -> str:
@@ -21,6 +23,7 @@ class Events:
         ("organization", EventGroupDTO(display_name="Organization")): ["update", "delete"],
         ("invitation", EventGroupDTO(display_name="Invitation")): ["create", "delete"],
         ("membership", EventGroupDTO(display_name="Membership")): ["create", "update", "delete"],
+        **{(resource, group): ["completed"] for resource, group in REQUEST_COMPLETION_RESOURCES},
     }
 
     @classmethod
@@ -63,7 +66,16 @@ class AllEvents:
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
     events: list[EventDTO] = [
-        *Events.select(["task", "job", "label", "issue", "comment"]),
+        *Events.select(
+            [
+                "task",
+                "job",
+                "label",
+                "issue",
+                "comment",
+                *(resource for (resource, _) in REQUEST_COMPLETION_RESOURCES),
+            ]
+        ),
         EventDTO(
             action="update",
             group=EventGroupDTO(display_name="Project"),
