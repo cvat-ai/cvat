@@ -6,6 +6,8 @@
 from typing import Any
 
 from django.dispatch import receiver
+from rq.job import Dependency as RQDependency
+from rq.job import Job as RQJob
 
 from cvat.apps.engine import utils as engine_utils
 from cvat.apps.engine.models import RequestTarget
@@ -20,12 +22,12 @@ from cvat.apps.webhooks.dispatch import batch_add_to_queue
 @receiver(request_failed)
 def request_completed_event_handler(
     sender: Any,
-    request_id: str,
+    rq_job: RQJob,
     status: engine_utils.RequestStatusEnum,
     message: str | None,
     **kwargs,
 ) -> None:
-    request, _queue = RequestId.parse(request_id, try_legacy_format=True)
+    request, _queue = RequestId.parse(rq_job.id, try_legacy_format=True)
 
     match request:
         case ExportRequestId():
@@ -63,4 +65,8 @@ def request_completed_event_handler(
     batch_add_to_queue(
         webhooks=webhooks,
         data=webhook_payload,
+        depends_on=RQDependency(
+            jobs=[rq_job],
+            allow_failure=True,
+        ),
     )
