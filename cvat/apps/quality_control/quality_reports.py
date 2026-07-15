@@ -1079,9 +1079,28 @@ def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=
 
 @define(kw_only=True)
 class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
+    img_h: int = 0
+    img_w: int = 0
+
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
+        a_area = a_bbox[2] * a_bbox[3]
+        b_area = b_bbox[2] * b_bbox[3]
+
+        if a_area == 0 and b_area == 0:
+            # Simple case: singular points / single-point skeletons without bbox
+            # match them in the image space
+            img_h, img_w = self.img_h, self.img_w
+            return oks(
+                a,
+                b,
+                sigma=self.sigma,
+                scale=img_h * img_w,
+                visibility_a=[v == dm.Points.Visibility.visible for v in a.visibility],
+                visibility_b=[v == dm.Points.Visibility.visible for v in b.visibility],
+            )
+
         if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
             return 0
 
@@ -1821,7 +1840,11 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
+        img_h, img_w = item_a.media_as(dm.Image).size
+
+        matcher = KeypointsMatcher(
+            instance_map=instance_map, sigma=self.oks_sigma, img_h=img_h, img_w=img_w
+        )
 
         results = self.match_segments(
             dm.AnnotationType.points,
