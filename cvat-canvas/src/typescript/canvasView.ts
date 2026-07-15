@@ -91,6 +91,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private snapToAngleResize: number;
     private draggableShape: SVG.Shape | null;
     private resizableShape: SVG.Shape | null;
+    private skeletonResizerRefreshRequest: number | null;
     private ctrlPressed: boolean;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
@@ -884,6 +885,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.autoborderHandler.transform(this.geometry);
         this.interactionHandler.transform(this.geometry);
         this.regionSelector.transform(this.geometry);
+
+        this.refreshRotationPointView();
+        this.refreshSkeletonResizer();
     }
 
     private resizeCanvas(): void {
@@ -1106,7 +1110,242 @@ export class CanvasViewImpl implements CanvasView, Listener {
         pathElement.dmove(-pathElement.width() / 2, -pathElement.height() / 2);
     }
 
+    private static getSkeletonResizerHandle(point: SVG.Element): string | null {
+        const handles = ['lt', 'rt', 'rb', 'lb', 't', 'r', 'b', 'l'];
+        return handles.find((handle: string): boolean => point.hasClass(`svg_select_points_${handle}`)) ?? null;
+    }
+
+    private screenToCanvasSize(size: number): number {
+        return size / this.geometry.scale;
+    }
+
+    private updateSkeletonResizerView(element: Element, hovered: boolean): void {
+        const isOuterStroke = element.classList.contains('cvat_canvas_skeleton_resizer_outer');
+        const strokeWidth =
+            isOuterStroke && hovered ? consts.POINTS_SELECTED_STROKE_WIDTH : 2 * consts.POINTS_STROKE_WIDTH;
+
+        element.classList.toggle('cvat_canvas_skeleton_resizer_hovered', hovered);
+        element.setAttribute('stroke-opacity', hovered ? '1' : '0.8');
+        element.setAttribute(
+            'stroke-width',
+            `${this.screenToCanvasSize(strokeWidth)}`,
+        );
+    }
+
+    private toggleSkeletonResizer(point: SVG.Element, hovered: boolean): void {
+        const handle = CanvasViewImpl.getSkeletonResizerHandle(point);
+        if (!handle) {
+            return;
+        }
+
+        const parent = point.node.parentElement;
+        if (!parent) {
+            return;
+        }
+
+        for (const resizer of parent.getElementsByClassName(
+            `cvat_canvas_skeleton_resizer_${handle}`,
+        )) {
+            this.updateSkeletonResizerView(resizer, hovered);
+        }
+    }
+
+    private setupSkeletonResizer(container: SVG.Container): void {
+        const boundingRect = container.children().find((element: SVG.Element): boolean => (
+            element.hasClass('svg_select_boundingRect')
+        ));
+        if (!boundingRect) {
+            return;
+        }
+
+        const strokeWidth = this.screenToCanvasSize(consts.POINTS_STROKE_WIDTH);
+        const controlPointRadius = this.screenToCanvasSize(this.configuration.controlPointsSize);
+        const controlPointDiameter = 2 * controlPointRadius;
+        // For tiny BBs use controlPoint diameter as base for calculations
+        const boundingRectWidth = Math.max(boundingRect.width(), controlPointDiameter);
+        const boundingRectHeight = Math.max(boundingRect.height(), controlPointDiameter);
+        // we don't want it to be smaller than 3x width of the stroke we're using so it's a minimum size
+        // we aim towards 1.7 of the controlPoint (hitbox) but we don't want resizers to cover
+        // full width or full height so we limit their size with width/3 or height/3
+        // so they take up to 2/3 of the size length max
+        const cornerLength = Math.max(
+            strokeWidth * 3,
+            Math.min(controlPointRadius * 1.7, boundingRectWidth / 4, boundingRectHeight / 4),
+        );
+        // similar idea but we aim side segment to be a bit longer than corner segment
+        const segmentLength = Math.max(
+            strokeWidth * 4,
+            Math.min(controlPointRadius * 2.2, boundingRectWidth / 3, boundingRectHeight / 3),
+        );
+        const innerStrokeOffset = this.screenToCanvasSize(2 * consts.POINTS_STROKE_WIDTH);
+
+        const resizerPath = (handle: string, cx: number, cy: number, inset = 0): string => {
+            switch (handle) {
+                case 'lt':
+                    return `M ${cx + inset} ${cy + cornerLength}
+                            L ${cx + inset} ${cy + inset}
+                            L ${cx + cornerLength} ${cy + inset}`;
+                case 'rt':
+                    return `M ${cx - cornerLength} ${cy + inset}
+                            L ${cx - inset} ${cy + inset}
+                            L ${cx - inset} ${cy + cornerLength}`;
+                case 'rb':
+                    return `M ${cx - inset} ${cy - cornerLength}
+                            L ${cx - inset} ${cy - inset}
+                            L ${cx - cornerLength} ${cy - inset}`;
+                case 'lb':
+                    return `M ${cx + cornerLength} ${cy - inset}
+                            L ${cx + inset} ${cy - inset}
+                            L ${cx + inset} ${cy - cornerLength}`;
+                case 't':
+                    return `M ${cx - segmentLength / 2} ${cy + inset}
+                            L ${cx + segmentLength / 2} ${cy + inset}`;
+                case 'b':
+                    return `M ${cx - segmentLength / 2} ${cy - inset}
+                            L ${cx + segmentLength / 2} ${cy - inset}`;
+                case 'r':
+                    return `M ${cx - inset} ${cy - segmentLength / 2}
+                            L ${cx - inset} ${cy + segmentLength / 2}`;
+                case 'l':
+                    return `M ${cx + inset} ${cy - segmentLength / 2}
+                            L ${cx + inset} ${cy + segmentLength / 2}`;
+                default:
+                    return '';
+            }
+        };
+
+        // clean previous resizers
+        for (const resizer of Array.from(
+            container.node.getElementsByClassName('cvat_canvas_skeleton_resizer'),
+        )) {
+            resizer.parentNode?.removeChild(resizer);
+        }
+
+        const controlPoints = container.children().filter((point: SVG.Element): boolean => (
+            point.type === 'circle' &&
+            (point.hasClass('svg_select_points') || point.hasClass('svg_select_points_rot'))
+        ));
+
+        // ensure control points attrs and create a fresh resizer
+        for (const point of controlPoints) {
+            const isRotationPoint = point.hasClass('svg_select_points_rot');
+            // we keep control points other than the rotation point invisible as hitboxes
+            // and they define resizer positions.
+            // we do not replace them with resizers directly because svg.select manages
+            // these controls as circles positioning their center and using radius
+            // passing non-round resizers directly causes weird calculations and requires ugly code
+            if (!point.hasClass('cvat_canvas_skeleton_control_point')) {
+                point
+                    .addClass('cvat_canvas_skeleton_control_point')
+                    .attr({
+                        fill: 'white',
+                        'fill-opacity': isRotationPoint ? 1 : 0,
+                        stroke: 'black',
+                        'stroke-opacity': isRotationPoint ? 1 : 0,
+                        'pointer-events': 'all',
+                    });
+            }
+
+            point.attr({
+                'stroke-width': strokeWidth,
+                r: controlPointRadius,
+            });
+
+            if (isRotationPoint) {
+                continue;
+            }
+
+            const handle = CanvasViewImpl.getSkeletonResizerHandle(point);
+            if (!handle) {
+                continue;
+            }
+
+            const isHovered = point.hasClass('cvat_canvas_selected_point');
+            const outerPath = resizerPath(handle, point.cx(), point.cy());
+            const innerPath = resizerPath(handle, point.cx(), point.cy(), innerStrokeOffset);
+            const outerResizer = container
+                .path(outerPath)
+                .addClass('cvat_canvas_skeleton_resizer')
+                .addClass('cvat_canvas_skeleton_resizer_outer')
+                .addClass(`cvat_canvas_skeleton_resizer_${handle}`)
+                .attr({
+                    fill: 'none',
+                    stroke: 'black',
+                    'pointer-events': 'none',
+                });
+            const innerResizer = container
+                .path(innerPath)
+                .addClass('cvat_canvas_skeleton_resizer')
+                .addClass('cvat_canvas_skeleton_resizer_inner')
+                .addClass(`cvat_canvas_skeleton_resizer_${handle}`)
+                .attr({
+                    fill: 'none',
+                    stroke: 'white',
+                    'pointer-events': 'none',
+                });
+
+            this.updateSkeletonResizerView(outerResizer.node, isHovered);
+            this.updateSkeletonResizerView(innerResizer.node, isHovered);
+        }
+    }
+
+    private refreshSkeletonResizer(): void {
+        const { clientID } = this.activeElement;
+        if (clientID === null || this.drawnStates[clientID]?.shapeType !== 'skeleton') {
+            return;
+        }
+
+        const skeleton = this.svgShapes[clientID] as SVG.G;
+        const wrappingRect = skeleton.children().find((child: SVG.Element): boolean => (
+            child.hasClass('cvat_canvas_skeleton_wrapping_rect')
+        ));
+        const selectContainer = wrappingRect?.remember('_selectHandler')?.nested as SVG.Container | undefined;
+        if (!selectContainer) {
+            return;
+        }
+
+        this.setupSkeletonResizer(selectContainer);
+    }
+
+    private scheduleSkeletonResizerRefresh(): void {
+        if (this.skeletonResizerRefreshRequest !== null) {
+            return;
+        }
+
+        // we need to delay the refresh to the next frame during resize as otherwise
+        // select handles are not yet updated if handled synchronously
+        // also, potentially batches swift resize updates so its not recalculated multiple times per frame
+        this.skeletonResizerRefreshRequest = window.requestAnimationFrame((): void => {
+            this.skeletonResizerRefreshRequest = null;
+            this.refreshSkeletonResizer();
+        });
+    }
+
+    private refreshRotationPointView(): void {
+        // there can be only one selection on canvas so we handle first element only
+        const [rotationPoint] = window.document.getElementsByClassName('svg_select_points_rot');
+        const [topPoint] = window.document.getElementsByClassName('svg_select_points_t');
+        if (!rotationPoint) {
+            return;
+        }
+
+        if (topPoint) {
+            const rotY = +rotationPoint.getAttribute('cy');
+            const topY = +topPoint.getAttribute('cy');
+            const rotationPointOffset = this.screenToCanvasSize(2 * this.configuration.controlPointsSize + 5);
+            (rotationPoint as SVGElement).style.transform =
+                `translate(0px, -${rotY - topY + rotationPointOffset}px)`;
+        }
+
+        if (!rotationPoint.children.length) {
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+            title.textContent = 'Hold Shift to snap angle';
+            rotationPoint.appendChild(title);
+        }
+    }
+
     private selectize(value: boolean, shape: SVG.Element): void {
+        const isSkeletonRect = shape.hasClass('cvat_canvas_skeleton_wrapping_rect');
         const mousedownHandler = (e: MouseEvent): void => {
             if (e.button !== 0) return;
             e.preventDefault();
@@ -1196,6 +1435,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const getGeometry = (): Geometry => this.geometry;
             const getController = (): CanvasController => this.controller;
             const getActiveElement = (): ActiveElement => this.activeElement;
+            const toggleSkeletonResizer = (point: SVG.Element, hovered: boolean): void => {
+                if (!isSkeletonRect) {
+                    return;
+                }
+
+                this.toggleSkeletonResizer(point, hovered);
+            };
             (shape as any).selectize(value, {
                 deepSelect: true,
                 pointSize: (2 * this.configuration.controlPointsSize) / this.geometry.scale,
@@ -1211,6 +1457,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             'fill-opacity': 1,
                             'stroke-width': consts.POINTS_STROKE_WIDTH / getGeometry().scale,
                         });
+
                     circle.on('mouseenter', (e: MouseEvent): void => {
                         const activeElement = getActiveElement();
                         if (activeElement !== null && (e.altKey || e.ctrlKey)) {
@@ -1233,6 +1480,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         circle.on('mousedown', mousedownHandler);
                         circle.on('contextmenu', contextMenuHandler);
                         circle.addClass('cvat_canvas_selected_point');
+                        toggleSkeletonResizer(circle, true);
                     });
 
                     circle.on('mouseleave', (): void => {
@@ -1244,6 +1492,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         circle.off('mousedown', mousedownHandler);
                         circle.off('contextmenu', contextMenuHandler);
                         circle.removeClass('cvat_canvas_selected_point');
+                        toggleSkeletonResizer(circle, false);
                     });
                     return circle;
                 },
@@ -1257,21 +1506,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const handler = shape.remember('_selectHandler');
         if (handler && handler.nested) {
             handler.nested.fill(shape.attr('fill'));
-        }
-
-        const [rotationPoint] = window.document.getElementsByClassName('svg_select_points_rot');
-        const [topPoint] = window.document.getElementsByClassName('svg_select_points_t');
-        if (rotationPoint && !rotationPoint.children.length) {
-            if (topPoint) {
-                const rotY = +(rotationPoint as SVGEllipseElement).getAttribute('cy');
-                const topY = +(topPoint as SVGEllipseElement).getAttribute('cy');
-                (rotationPoint as SVGCircleElement).style.transform = `translate(0px, -${rotY - topY + 20}px)`;
+            if (value && isSkeletonRect) {
+                this.setupSkeletonResizer(handler.nested);
             }
-
-            const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-            title.textContent = 'Hold Shift to snap angle';
-            rotationPoint.appendChild(title);
         }
+
+        this.refreshRotationPointView();
 
         if (value && shape.type === 'image') {
             const [boundingRect] = window.document.getElementsByClassName('svg_select_boundingRect');
@@ -1551,6 +1791,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         resized = true;
                         skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
                         setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
+                        this.scheduleSkeletonResizerRefresh();
                     }
                 })
                 .on('resizedone', (): void => {
@@ -1778,6 +2019,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridRect.setAttribute('width', '100%');
         gridRect.setAttribute('height', '100%');
         gridRect.setAttribute('fill', 'url(#cvat_canvas_grid_pattern)');
+
+        // setup skeletons supplementary state
+        this.skeletonResizerRefreshRequest = null;
 
         // Setup content
         this.text.setAttribute('id', 'cvat_canvas_text_content');
