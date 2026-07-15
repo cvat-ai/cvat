@@ -25,15 +25,18 @@ annotation formats, the API, automatic annotation — refer to the
 Build the images from this source tree and start the stack:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+./serverless.sh up --build
 ```
 
-The first build takes a while. When it finishes, CVAT is on **<http://localhost:8080>**.
+`serverless.sh` is the default launcher for this fork. It runs `docker compose` with the base file,
+the dev overlay (which builds the branded images from source), and the Nuclio serverless overlay that
+powers semi-automatic annotation. The first build takes a while. When it finishes, CVAT is on
+**<http://localhost:8080>**.
 
 Create an administrator:
 
 ```bash
-docker compose exec cvat_server \
+./serverless.sh exec cvat_server \
     python3 /home/django/manage.py createsuperuser
 ```
 
@@ -43,14 +46,19 @@ Stop the stack (add `-v` to also delete the database volume — this destroys al
 annotations):
 
 ```bash
-docker compose down
+./serverless.sh down
 ```
 
 ### Subsequent runs
 
-Once the images are built and tagged locally, the base compose file will use them, so a plain
-`docker compose up -d` is enough to start what you already built. Re-run the `--build` command above
-whenever you change the source.
+Once the images are built and tagged locally, `./serverless.sh up` (no `--build`) starts what you
+already built. Re-run with `--build` whenever you change the source.
+
+To run **without** the AI subsystem — plain CVAT, no Nuclio — skip the launcher:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
 
 ### Ports
 
@@ -58,6 +66,24 @@ The base compose file binds only **8080** (the app) and **8090** (Traefik). The 
 overlay additionally exposes Postgres (5432), Redis (6379, 6666), ClickHouse (8123), OPA (8181),
 Vector (8282) and the worker debug ports (9090–9096). Use the overlay for building; you don't need
 those ports published in production.
+
+## Semi-automatic annotation
+
+`./serverless.sh up` launches CVAT with the [Nuclio](https://nuclio.io/) serverless subsystem
+enabled — the infrastructure CVAT uses for AI-assisted (semi-automatic) annotation such as
+Segment Anything. The server runs with `CVAT_SERVERLESS=1`, so the AI-tools controls appear in the
+annotation UI.
+
+**No models are deployed by default.** The subsystem comes up empty: the AI-tools menu will show an
+empty model list until you deploy a function. This is intentional — model images are large (several
+GB each) and the interactive segmentation models expect a CUDA GPU, so deploying one is a deliberate,
+separate step for when you have suitable hardware. To deploy a model, use CVAT's own tooling
+(`serverless/deploy_gpu.sh` on a CUDA host, or `serverless/deploy_cpu.sh` for slow CPU inference) —
+see the [upstream serverless tutorial](https://docs.cvat.ai/docs/manual/advanced/serverless-tutorial/).
+
+> **Apple Silicon note:** Nuclio's dashboard image is `amd64`-only, so on an ARM Mac it runs under
+> emulation — it starts, just slowly, and Docker may warn about the platform mismatch. On an
+> `amd64` Linux host it runs natively.
 
 ## Deploying on-premises
 
