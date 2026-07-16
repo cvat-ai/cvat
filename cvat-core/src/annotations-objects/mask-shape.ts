@@ -91,9 +91,9 @@ export class MaskShape extends Shape {
         const wrapper = {
             stashedPoints: Object.values(updatedObjects).map((object) => object.points),
             stashedRemoved: Object.values(updatedObjects).map((object) => object.removed),
-            stashedBoxes: Object.values(updatedObjects).map((object) => ({
-                left: object.left, top: object.top, right: object.right, bottom: object.bottom,
-            })),
+            stashedBoxes: Object.values(updatedObjects).map((object) => ([
+                object.left, object.top, object.right, object.bottom,
+            ])),
         };
 
         const { width: frameWidth, height: frameHeight } = this.framesInfo[frame];
@@ -121,17 +121,17 @@ export class MaskShape extends Shape {
         const undo = (): void => {
             const updatedStashedPoints = Object.values(updatedObjects).map((object) => object.points);
             const updatedStashedRemoved = Object.values(updatedObjects).map((object) => object.removed);
-            const updatedStashedBoxes = Object.values(updatedObjects).map((object) => ({
-                left: object.left, top: object.top, right: object.right, bottom: object.bottom,
-            }));
+            const updatedStashedBoxes = Object.values(updatedObjects).map((object) => ([
+                object.left, object.top, object.right, object.bottom,
+            ]));
             for (const [index, object] of Object.values(updatedObjects).entries()) {
                 object.points = wrapper.stashedPoints[index];
                 object.removed = wrapper.stashedRemoved[index];
-                const box = wrapper.stashedBoxes[index];
-                object.left = box.left;
-                object.top = box.top;
-                object.right = box.right;
-                object.bottom = box.bottom;
+                const [left, top, right, bottom] = wrapper.stashedBoxes[index];
+                object.left = left;
+                object.top = top;
+                object.right = right;
+                object.bottom = bottom;
                 object.updated = Date.now();
             }
             wrapper.stashedPoints = updatedStashedPoints;
