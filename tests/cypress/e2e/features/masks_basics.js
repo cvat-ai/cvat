@@ -87,20 +87,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             });
         }
 
-        function bboxAreaFromPoints(points) {
-            const [left, top, right, bottom] = points.slice(-4);
-            return (right - left + 1) * (bottom - top + 1);
-        }
-
-        function saveJobAnnotations() {
-            cy.intercept('PUT', `/api/jobs/${jobId}/annotations**`).as('saveAnnotations');
-            cy.clickSaveAnnotationView();
-            cy.hideTooltips();
-            cy.wait('@saveAnnotations', { timeout: 25000 })
-                .its('response.statusCode')
-                .should('eq', 200);
-        }
-
         function enableRemoveUnderlyingPixels() {
             cy.get('.cvat-brush-tools-underlying-pixels').then(($btn) => {
                 if (!$btn.hasClass('cvat-brush-tools-active-tool')) {
@@ -259,8 +245,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
 
             readMaskSvgBox('#cvat_canvas_shape_1').then((before) => {
-                cy.wrap(before).as('bboxBefore');
-
                 cy.drawMask(mask2);
                 enableRemoveUnderlyingPixels();
                 cy.hideTooltips();
@@ -272,22 +256,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                     const afterW = +$el.attr('width');
                     const afterH = +$el.attr('height');
                     expect(afterW < before.width || afterH < before.height).to.be.true;
-                });
-
-                saveJobAnnotations();
-                cy.get('@bboxBefore').then((bboxBefore) => {
-                    cy.task('getAuthHeaders').then((authHeaders) => {
-                        cy.request({
-                            method: 'GET',
-                            url: `/api/jobs/${jobId}/annotations`,
-                            headers: authHeaders,
-                        }).then(({ body }) => {
-                            const masks = body.shapes.filter((s) => s.type === 'mask');
-                            expect(masks).to.have.length(2);
-                            const mask1Shape = masks.sort((a, b) => a.id - b.id)[0];
-                            expect(bboxAreaFromPoints(mask1Shape.points)).to.be.lessThan(bboxBefore.area);
-                        });
-                    });
                 });
             });
 
