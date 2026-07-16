@@ -461,8 +461,8 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
             expect(response.statusCode).to.eq(201, response.body.username);
             expect(response.body.username).to.eq(userSpecSnake.username);
             expect(response.body.email).to.eq(userSpecSnake.email.toLowerCase());
-            expect(response.body.first_name).to.eq(userSpecSnake.first_name);
-            expect(response.body.last_name).to.eq(userSpecSnake.last_name);
+            expect(response.body.first_name).to.eq(userSpecSnake.first_name || '');
+            expect(response.body.last_name).to.eq(userSpecSnake.last_name || '');
         });
     }).as('registerRequest');
 
