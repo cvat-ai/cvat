@@ -5,6 +5,9 @@ weight: 1
 description: 'Description of CVAT architecture and components'
 aliases:
 - /docs/administration/advanced/cvat-architecture/
+products:
+  - community
+  - enterprise
 ---
 
 This guide is designed to provide a comprehensive overview of the architecture and components

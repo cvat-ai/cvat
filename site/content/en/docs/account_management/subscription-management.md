@@ -5,6 +5,8 @@ weight: 4
 description: 'How to manage your subscription'
 aliases:
   - /docs/enterprise/subscription-management/
+products:
+  - online
 ---
 
 This article provides tips on how to effectively manage your

@@ -38,6 +38,12 @@ When **Personal workspace** is selected, it will be marked with a tick in the me
 
 ## Create new organization
 
+{{% alert title="Note" color="primary" %}}
+On CVAT Online, creating an organization and inviting members requires the
+{{< ilink "/docs/account_management/subscription-management#team-plan" "Team plan" >}}.
+Solo plan users work only in their personal workspace.
+{{% /alert %}}
+
 To create an organization, do the following:
 
 1. Log in to the CVAT.

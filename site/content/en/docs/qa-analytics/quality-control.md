@@ -5,6 +5,9 @@ weight: 1
 description: 'Overview of quality control features'
 aliases:
   - /docs/manual/basics/quality-control/
+products:
+  - online
+  - enterprise
 ---
 
 CVAT has the following features for automated quality control of annotations:
@@ -16,6 +19,14 @@ CVAT has the following features for automated quality control of annotations:
 In this section, we highlight only the key steps in quality estimation.
 Consult the detailed guide on quality estimation in CVAT in the
 {{< ilink "/docs/qa-analytics/auto-qa" "Advanced section" >}}.
+
+{{% alert title="Note" color="primary" %}}
+The walkthrough below uses the Quality control UI.
+Ground Truth and Honeypot jobs themselves can still be created and managed on CVAT Community
+through the API — see the
+{{< ilink "/docs/api_sdk/sdk/reference/apis/jobs-api" "JobsApi" >}} and
+{{< ilink "/docs/api_sdk/sdk/reference/apis/quality-api" "QualityApi" >}} references.
+{{% /alert %}}
 
 ## How to enable quality control
 

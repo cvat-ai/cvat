@@ -30,3 +30,17 @@
     border: none;
     border-top: 1px solid #e3e3e3;
   }
+
+  /* Inline variant, for a badge dropped inside a paragraph, list item,
+     or table cell (see shortcodes/product-badge.html) rather than the
+     whole-page box above. */
+  .product-tag-inline-group {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  .product-tag--inline {
+    margin-left: 4px;
+    margin-right: 0;
+    vertical-align: middle;
+  }

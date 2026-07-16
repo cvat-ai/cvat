@@ -5,6 +5,9 @@ weight: 30
 description: 'Instructions on how to mount an Amazon S3 bucket, Backblaze B2 bucket, Microsoft Azure Blob Storage container or Google Drive as a filesystem.'
 aliases:
 - /docs/administration/advanced/mounting_cloud_storages/
+products:
+  - community
+  - enterprise
 ---
 
 ## Amazon S3 bucket as filesystem

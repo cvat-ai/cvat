@@ -5,6 +5,9 @@ weight: 3
 description: 'Guidelines for assessing annotation quality in CVAT automatically'
 aliases:
   - /docs/manual/advanced/analytics-and-monitoring/auto-qa/
+products:
+  - online
+  - enterprise
 ---
 
 In CVAT, it's possible to evaluate the quality of annotation through the creation
