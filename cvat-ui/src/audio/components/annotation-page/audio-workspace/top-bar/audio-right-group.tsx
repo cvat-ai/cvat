@@ -16,6 +16,7 @@ import { Job, JobStage, JobState } from 'cvat-core-wrapper';
 import { Workspace } from 'reducers';
 
 import MDEditor from '@uiw/react-md-editor';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface Props {
     showStatistics(): void;
@@ -56,6 +57,7 @@ function AudioRightGroup(props: Props): JSX.Element {
                             preview='preview'
                             hideToolbar
                             value={guide.markdown}
+                            previewOptions={{ rehypePlugins: [[rehypeSanitize]] }}
                         />
                     ),
                 });
