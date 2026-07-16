@@ -730,7 +730,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         )
 
         extra_kwargs = {k: {"required": False} for k in fields}
-        extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", False)
+        extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", True)
 
         for field_name, help_text in {
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
@@ -1017,7 +1017,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         write_once_fields = ("task_id", "project_id")
 
         extra_kwargs = {k: {"required": False} for k in fields}
-        extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", False)
+        extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", True)
 
         for field_name, help_text in {
             "inherit": """

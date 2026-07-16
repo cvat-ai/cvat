@@ -25,6 +25,15 @@ from cvat.apps.quality_control.quality_reports import _MemoizingAnnotationConver
 from cvat.apps.quality_control.serializers import QualityRequirementSerializer
 
 
+def test_empty_frames_are_annotated_by_default() -> None:
+    serializer_defaults = {}
+    QualityRequirementSerializer._apply_root_defaults(serializer_defaults)
+
+    assert ComparisonParameters().empty_is_annotated is True
+    assert models.QualityRequirement().empty_is_annotated is True
+    assert serializer_defaults["empty_is_annotated"] is True
+
+
 def _make_mask_item(mask: np.ndarray) -> dm.DatasetItem:
     return dm.DatasetItem(
         id="frame",
@@ -157,3 +166,4 @@ def test_requirement_serializer_update_applies_root_defaults_when_parent_is_clea
     assert requirement.iou_threshold == 0.4
     assert requirement.oks_sigma == 0.09
     assert requirement.compare_groups is True
+    assert requirement.empty_is_annotated is True

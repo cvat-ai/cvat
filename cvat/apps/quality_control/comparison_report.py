@@ -324,7 +324,7 @@ class ComparisonParameters(ReportNode):
     panoptic_comparison: bool = True
     "Use only the visible part of the masks and polygons in comparisons"
 
-    empty_is_annotated: bool = False
+    empty_is_annotated: bool = True
     """
     Consider unannotated (empty) frames virtually annotated as "nothing".
     If disabled, quality metrics, such as accuracy, will be 0 if both GT and DS frames

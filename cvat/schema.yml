@@ -10639,7 +10639,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -11387,7 +11387,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -11568,7 +11568,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -11736,7 +11736,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -11896,7 +11896,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations

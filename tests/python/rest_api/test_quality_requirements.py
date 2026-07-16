@@ -383,6 +383,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert created_requirement["settings_id"] == settings["id"]
         assert created_requirement["name"] == requirement_name
         assert created_requirement["metric"] == "accuracy"
+        assert created_requirement["empty_is_annotated"] is True
 
         retrieved_requirement, response = self._retrieve_requirement(
             admin_user, created_requirement["id"]
@@ -1226,6 +1227,7 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
         assert all(requirement["is_base"] is True for requirement in requirements)
+        assert all(requirement["empty_is_annotated"] is True for requirement in requirements)
         assert all("effective" not in requirement for requirement in requirements)
 
     def test_new_project_gets_disabled_base_requirements_for_all_supported_types(self, admin_user):
@@ -1253,6 +1255,7 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
         assert all(requirement["is_base"] is True for requirement in requirements)
+        assert all(requirement["empty_is_annotated"] is True for requirement in requirements)
 
     def test_new_project_task_inherits_project_quality_settings_by_default(self, admin_user):
         with make_api_client(admin_user) as api_client:
