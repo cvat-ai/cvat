@@ -706,7 +706,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                     </Form.Item>
                 </Col>
                 <Col span={12}>
-                    {renderPercentInput('requiredScore', 'Target metric threshold')}
+                    {renderPercentInput('requiredScore', 'Target metric threshold (%)')}
                 </Col>
                 <Col span={12}>
                     <Form.Item name='enabled' valuePropName='checked'>
