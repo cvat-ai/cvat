@@ -7922,22 +7922,6 @@ components:
       required:
       - scope
       - timestamp
-    EventDTO:
-      type: object
-      properties:
-        action:
-          type: string
-          readOnly: true
-        resource:
-          type: string
-          readOnly: true
-        key:
-          type: string
-          readOnly: true
-        group:
-          allOf:
-          - $ref: '#/components/schemas/EventGroup'
-          readOnly: true
     EventGroup:
       type: object
       properties:
@@ -8016,7 +8000,7 @@ components:
         events:
           type: array
           items:
-            $ref: '#/components/schemas/EventDTO'
+            $ref: '#/components/schemas/WebhooksEvent'
           readOnly: true
       required:
       - webhook_type
@@ -11998,6 +11982,22 @@ components:
       - events
       - target_url
       - type
+    WebhooksEvent:
+      type: object
+      properties:
+        action:
+          type: string
+          readOnly: true
+        resource:
+          type: string
+          readOnly: true
+        key:
+          type: string
+          readOnly: true
+        group:
+          allOf:
+          - $ref: '#/components/schemas/EventGroup'
+          readOnly: true
   securitySchemes:
     accessTokenAuth:
       type: http

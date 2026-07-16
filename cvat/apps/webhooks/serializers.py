@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.db import models
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 from cvat.apps.engine.models import Project
@@ -52,7 +53,8 @@ class EventGroupSerializer(serializers.Serializer):
     display_name = serializers.CharField(read_only=True)
 
 
-class EventDTOSerializer(serializers.Serializer):
+@extend_schema_serializer(component_name="WebhooksEvent")
+class EventSerializer(serializers.Serializer):
     action = serializers.CharField(read_only=True)
     resource = serializers.CharField(read_only=True)
     key = serializers.CharField(read_only=True)
@@ -61,7 +63,7 @@ class EventDTOSerializer(serializers.Serializer):
 
 class EventsSerializer(serializers.Serializer):
     webhook_type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
-    events = EventDTOSerializer(many=True, read_only=True)
+    events = EventSerializer(many=True, read_only=True)
 
 
 class WebhookReadListSerializer(serializers.ListSerializer):
