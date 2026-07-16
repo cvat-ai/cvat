@@ -19,3 +19,7 @@ class BackgroundRequestException(CvatSdkException):
     """
     Exception is raised when a background request fails
     """
+
+
+class AuthStoreError(CvatSdkException):
+    """Raised when auth store operations fail."""

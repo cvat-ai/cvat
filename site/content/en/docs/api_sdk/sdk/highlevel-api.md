@@ -130,9 +130,9 @@ with Client("https://app.cvat.ai", config=config) as client:
 {{% alert title="Note" color="primary" %}}
 Historically, the SDK has allowed the URL scheme (`http:` or `https:`)
 to be omitted, and would attempt to automatically detect the protocol.
-This behavior is deprecated due to being inherently insecure,
-and will be removed in a future version.
-To avoid future breakage, make sure to specify the scheme explicitly.
+This automatic detection has been removed due to being inherently insecure.
+Now, if the scheme is omitted, the SDK assumes `https:`.
+For clarity, it is recommended to always specify the scheme explicitly.
 {{% /alert %}}
 
 When the server is located, its version is checked. If an unsupported version is found,
@@ -266,6 +266,26 @@ tasks = client.tasks.list()
 ```
 
 After calling these functions, we obtain local objects representing their server counterparts.
+The `list()` method accepts the same filtering, search, and ordering query parameters supported
+by the corresponding server endpoint. Simple equality filters can be passed directly:
+
+```python
+completed_project_tasks = client.tasks.list(project_id=123, status="completed")
+demo_projects = client.projects.list(search="demo", sort="-updated_date")
+```
+
+For richer conditions, compose expressions with the `cvat_sdk.core.filters` helpers instead of
+hand-writing JSON Logic:
+
+```python
+from cvat_sdk.core.filters import F
+
+# completed tasks in projects 1, 2, or 3
+tasks = client.tasks.list(filter=(F.status == "completed") & F.project_id.one_of([1, 2, 3]))
+```
+
+See [Filtering lists](#filtering-lists) for the full set of operators, keyword lookups, and
+how multiple conditions are combined.
 
 Object fields can be updated with the `update()` method. Note that the set of fields that can be
 modified can be different from what is available for reading.
@@ -308,3 +328,79 @@ Entity and Repository operations depends on the object type.
 You can learn more about entity members and how model parameters are passed to functions [here](../lowlevel-api).
 
 The implementation for these components is located in `cvat_sdk.core.proxies`.
+
+## Filtering lists
+
+Every Repository `list()` method accepts the same filtering, search, and ordering query
+parameters as the corresponding server endpoint. There are four ways to express a filter,
+from the simplest to the most powerful.
+
+### Simple equality filters
+
+Pass field values directly as keyword arguments. They are sent to the server as-is:
+
+```python
+completed_project_tasks = client.tasks.list(project_id=123, status="completed")
+demo_projects = client.projects.list(search="demo", sort="-updated_date")
+```
+
+### Filter expressions (the `F` object)
+
+For richer conditions, build expressions with the `F` object from `cvat_sdk.core.filters`
+instead of hand-writing JSON Logic. Field expressions combine with `&` (and), `|` (or) and
+`~` (not). Wrap each comparison in parentheses, because Python binds `&`/`|` tighter than
+comparison operators:
+
+```python
+from cvat_sdk.core.filters import F
+
+# completed tasks in projects 1, 2, or 3
+tasks = client.tasks.list(filter=(F.status == "completed") & F.project_id.one_of([1, 2, 3]))
+
+# tasks named like "demo" OR with no assignee
+tasks = client.tasks.list(filter=F.name.contains("demo") | ~F.assignee.is_set())
+```
+
+The available field helpers are:
+
+| Helper | Meaning |
+| --- | --- |
+| `F.field == value` | equals |
+| `F.field != value` | not equals |
+| `F.field < / <= / > / >= value` | ordering comparisons |
+| `F.field.one_of([...])` | value is in the given list |
+| `F.field.contains(substring)` | substring/membership match |
+| `F.field.between(low, high)` | value is within the inclusive range |
+| `F.field.is_set()` | field has a (non-null) value |
+
+Use `F["weird-name"]` (item access) for field names that aren't valid Python identifiers.
+
+### Keyword lookups
+
+For simple AND-only filters you can skip the `F` object and use keyword lookups, where the
+operator is a suffix on the keyword name:
+
+```python
+tasks = client.tasks.list(project_id__in=[1, 2, 3], name__contains="demo", id__gte=10)
+```
+
+The supported suffixes are `__in`, `__contains`, `__lt`, `__lte`, `__gt`, `__gte`, `__ne`,
+`__between`, and `__isset`. Multiple lookups in the same call are combined with `and`.
+
+### Combining and raw forms
+
+Keyword lookups and a `filter=` expression provided in the same call are combined with `and`,
+so you can mix the two styles freely:
+
+```python
+# (name contains "demo") AND (id >= 10)
+tasks = client.tasks.list(filter=F.name.contains("demo"), id__gte=10)
+```
+
+If you already have JSON Logic, the raw form is still accepted — pass either a `dict` or a
+JSON string to `filter=`:
+
+```python
+tasks = client.tasks.list(filter={"==": [{"var": "id"}, 42]})
+tasks = client.tasks.list(filter='{"==": [{"var": "id"}, 42]}')
+```

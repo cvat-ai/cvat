@@ -9,7 +9,6 @@ import os
 import re
 import shutil
 import tempfile
-import traceback
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict, deque
 from collections.abc import Collection, Iterable
@@ -45,11 +44,9 @@ from cvat.apps.dataset_manager.views import (
     EXPORT_CACHE_LOCK_TTL,
     EXPORT_LOCKED_RETRY_INTERVAL,
     LockNotAvailableError,
-    log_exception,
     retry_current_rq_job,
 )
 from cvat.apps.engine import models
-from cvat.apps.engine.backup_signals import BackupStatus, backup_finished
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import DataChoice, StorageChoice, TaskMode
@@ -68,13 +65,9 @@ from cvat.apps.engine.serializers import (
     TaskReadSerializer,
     ValidationParamsSerializer,
 )
-from cvat.apps.engine.task import JobFileMapping
-from cvat.apps.engine.task import create_thread as create_task
-from cvat.apps.engine.utils import (
-    av_scan_paths,
-    parse_exception_message,
-    transaction_with_repeatable_read,
-)
+from cvat.apps.engine.task import JobFileMapping, initialize_task
+from cvat.apps.engine.utils import av_scan_paths
+from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
@@ -804,7 +797,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
             for db_job_id in db_job_ids:
-                with transaction_with_repeatable_read():
+                with db_utils.transaction_with_repeatable_read():
                     annotations = dm.task.get_job_data(db_job_id, streaming=True)
                     assert not isinstance(annotations["shapes"], list)
                     # Django many=True fields can only handle the list type
@@ -944,6 +937,23 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         raise ValueError("Unsupported type of file argument")
 
+    @staticmethod
+    def _fix_annotation_source(annotation: dict[str, Any]) -> None:
+        # Workaround for the DB records that could have been introduced by the UI before
+        # https://github.com/cvat-ai/cvat/issues/8874 was fixed. Backups can contain
+        # invalid "source" field values. This fix only covers the known "Ground truth" value
+        # errors that we know about, so the value validation keeps working for invalid inputs.
+        # We silently replace them with the default value here, as the id-based workaround
+        # in the serializer will miss the 'id' field in annotations from backups.
+        if annotation.get("source") == "Ground truth":
+            annotation["source"] = str(models.SourceType.MANUAL)
+
+        for shape in annotation.get("shapes", []):
+            TaskImporter._fix_annotation_source(shape)
+
+        for element in annotation.get("elements", []):
+            TaskImporter._fix_annotation_source(element)
+
     def _create_annotations(self, db_job, annotations):
         for annotation_type in ("tags", "shapes", "tracks", "intervals"):
             annotations.setdefault(annotation_type, [])
@@ -953,6 +963,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         for annotation_type in ("tags", "shapes", "tracks", "intervals"):
             assert not isinstance(annotations[annotation_type], list)
             annotations[annotation_type] = list(annotations[annotation_type])
+
+            # backward compatibility
+            for annotation in annotations[annotation_type]:
+                self._fix_annotation_source(annotation)
 
         serializer = LabeledDataSerializer(data=annotations)
         serializer.is_valid(raise_exception=True)
@@ -1163,7 +1177,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         db_data.save(update_fields=["storage"])
 
-        create_task(self._db_task.pk, data.copy(), is_backup_restore=True)
+        initialize_task(db_task=self._db_task.pk, data=data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 
@@ -1474,12 +1488,6 @@ def create_backup(
             # output_path includes timestamp of the last update
             if os.path.exists(output_path):
                 extend_export_file_lifetime(output_path)
-                backup_finished.send(
-                    sender=create_backup,
-                    target=db_instance,
-                    lightweight=lightweight,
-                    status=BackupStatus.COMPLETED,
-                )
                 return output_path
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
@@ -1508,25 +1516,7 @@ def create_backup(
             )
         )
         raise
-    except Exception as exc:
-        backup_finished.send(
-            sender=create_backup,
-            target=db_instance,
-            lightweight=lightweight,
-            status=BackupStatus.FAILED,
-            message=parse_exception_message(
-                "".join(traceback.format_exception_only(type(exc), exc))
-            ),
-        )
-        log_exception(logger)
-        raise
 
-    backup_finished.send(
-        sender=create_backup,
-        target=db_instance,
-        lightweight=lightweight,
-        status=BackupStatus.COMPLETED,
-    )
     return output_path
 
 

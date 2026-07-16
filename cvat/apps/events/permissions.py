@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import StrEnum
 from typing import Any
 
 from django.conf import settings
@@ -10,7 +11,7 @@ from rest_framework.exceptions import PermissionDenied
 
 from cvat.apps.engine.permissions import DownloadExportedExtension
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission
 from cvat.utils.http import make_requests_session
 
 

@@ -3,9 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import StrEnum
+
 from django.conf import settings
 
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission
 
 from .models import Membership
 
@@ -98,9 +100,6 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 "list": Scopes.LIST,
                 "create": Scopes.CREATE,
                 "destroy": Scopes.DELETE,
-                "partial_update": (
-                    Scopes.ACCEPT if "accepted" in request.query_params else Scopes.RESEND
-                ),
                 "retrieve": Scopes.VIEW,
                 "accept": Scopes.ACCEPT,
                 "decline": Scopes.DECLINE,
