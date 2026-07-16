@@ -4,7 +4,7 @@
   Replaces `--server-host`/`--server-port`/`--auth` (<https://github.com/cvat-ai/cvat/pull/10845>)
 
 - \[CLI\] New `cvat-cli config default-server` command prints, sets, or clears the default server URL.
-  Used without `--server-host` or `--profile` (<https://github.com/cvat-ai/cvat/pull/10845>)
+  (<https://github.com/cvat-ai/cvat/pull/10845>)
 
 ### Changed
 
