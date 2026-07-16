@@ -35,6 +35,7 @@ type Props = TableProps & {
         memoryKey: string;
         memoryCapacity?: number;
         predefinedQueries?: Record<string, string>;
+        value?: string | null;
     }
     csvExport?: {
         filename: string;
@@ -203,7 +204,7 @@ function CVATTable(props: Props): JSX.Element {
                         <div>
                             { FilteringComponent !== null && (
                                 <FilteringComponent
-                                    value={null}
+                                    value={queryBuilder.value ?? null}
                                     predefinedVisible={visibility.predefined}
                                     builderVisible={visibility.builder}
                                     recentVisible={visibility.recent}
