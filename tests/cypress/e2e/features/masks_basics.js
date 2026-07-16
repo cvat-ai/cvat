@@ -87,26 +87,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             });
         }
 
-        function enableRemoveUnderlyingPixels() {
-            cy.get('.cvat-brush-tools-underlying-pixels').then(($btn) => {
-                if (!$btn.hasClass('cvat-brush-tools-active-tool')) {
-                    cy.wrap($btn).click();
-                }
-            });
-            cy.get('.cvat-brush-tools-underlying-pixels').should('have.class', 'cvat-brush-tools-active-tool');
-        }
-
-        function disableRemoveUnderlyingPixels() {
-            cy.startMaskDrawing();
-            cy.get('.cvat-brush-tools-underlying-pixels').then(($btn) => {
-                if ($btn.hasClass('cvat-brush-tools-active-tool')) {
-                    cy.wrap($btn).click();
-                }
-            });
-            cy.get('.cvat-brush-tools-underlying-pixels').should('not.have.class', 'cvat-brush-tools-active-tool');
-            cy.finishMaskDrawing();
-        }
-
         it('Drawing a couple of masks. Save job, reopen job, masks must exist', () => {
             cy.startMaskDrawing();
             cy.drawMask(drawingActions);
@@ -200,6 +180,9 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             const mask2 = [{
                 method: 'brush',
                 coordinates: [[450, 250], [525, 325]],
+            }, {
+                method: 'underlying-pixels',
+                value: true,
             }];
 
             cy.startMaskDrawing();
@@ -207,8 +190,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-brush-tools-continue').click();
 
             cy.drawMask(mask2);
-            cy.get('.cvat-brush-tools-underlying-pixels').click();
-            cy.get('.cvat-brush-tools-underlying-pixels').should('have.class', 'cvat-brush-tools-active-tool');
             cy.finishMaskDrawing();
 
             cy.get('#cvat-objects-sidebar-state-item-2').within(() => {
@@ -224,8 +205,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             });
 
             cy.startMaskDrawing();
-            cy.get('.cvat-brush-tools-underlying-pixels').click();
-            cy.get('.cvat-brush-tools-underlying-pixels').should('not.have.class', 'cvat-brush-tools-active-tool');
+            cy.drawMask([{ method: 'underlying-pixels', value: false }]);
             cy.finishMaskDrawing();
         });
 
@@ -237,6 +217,9 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             const mask2 = [{
                 method: 'brush',
                 coordinates: [[450, 250], [525, 325]],
+            }, {
+                method: 'underlying-pixels',
+                value: true,
             }];
 
             cy.startMaskDrawing();
@@ -246,7 +229,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
 
             readMaskSvgBox('#cvat_canvas_shape_1').then((before) => {
                 cy.drawMask(mask2);
-                enableRemoveUnderlyingPixels();
                 cy.hideTooltips();
                 cy.finishMaskDrawing();
 
@@ -259,7 +241,9 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 });
             });
 
-            disableRemoveUnderlyingPixels();
+            cy.startMaskDrawing();
+            cy.drawMask([{ method: 'underlying-pixels', value: false }]);
+            cy.finishMaskDrawing();
         });
 
         it('Mask bbox is restored after undo remove underlying pixels overlap', () => {
@@ -270,6 +254,9 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             const mask2 = [{
                 method: 'brush',
                 coordinates: [[450, 250], [525, 325]],
+            }, {
+                method: 'underlying-pixels',
+                value: true,
             }];
 
             cy.startMaskDrawing();
@@ -279,7 +266,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
 
             readMaskSvgBox('#cvat_canvas_shape_1').then((before) => {
                 cy.drawMask(mask2);
-                enableRemoveUnderlyingPixels();
                 cy.hideTooltips();
                 cy.finishMaskDrawing();
 
@@ -296,7 +282,9 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 });
             });
 
-            disableRemoveUnderlyingPixels();
+            cy.startMaskDrawing();
+            cy.drawMask([{ method: 'underlying-pixels', value: false }]);
+            cy.finishMaskDrawing();
         });
 
         it('Check brush tools shortcuts', () => {
@@ -467,8 +455,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             }]];
 
             cy.startMaskDrawing();
-            cy.get('.cvat-brush-tools-underlying-pixels').click();
-            cy.get('.cvat-brush-tools-underlying-pixels').should('have.class', 'cvat-brush-tools-active-tool');
+            cy.drawMask([{ method: 'underlying-pixels', value: true }]);
             cy.finishMaskDrawing();
 
             for (const [index, mask] of masks.entries()) {
