@@ -19,13 +19,13 @@
   {{- range $products -}}
     {{- $p := trim (lower .) " \t\n\r" -}}
     {{- if eq $p "online" -}}
-      <a href="{{ "/docs/products/online/" | relURL }}" class="product-tag product-tag--inline">CVAT Online</a>
+      <a href="{{ "/docs/products/online/" | relURL }}" class="product-tag product-tag-inline">CVAT Online</a>
     {{- else if eq $p "enterprise" -}}
-      <a href="{{ "/docs/products/enterprise/" | relURL }}" class="product-tag product-tag--inline">CVAT Enterprise</a>
+      <a href="{{ "/docs/products/enterprise/" | relURL }}" class="product-tag product-tag-inline">CVAT Enterprise</a>
     {{- else if eq $p "community" -}}
-      <a href="{{ "/docs/products/community/" | relURL }}" class="product-tag product-tag--inline">CVAT Community</a>
+      <a href="{{ "/docs/products/community/" | relURL }}" class="product-tag product-tag-inline">CVAT Community</a>
     {{- else -}}
-      <span class="product-tag product-tag--inline">{{ . }}</span>
+      <span class="product-tag product-tag-inline">{{ . }}</span>
     {{- end -}}
   {{- end -}}
 </span>

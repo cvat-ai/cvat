@@ -15,7 +15,8 @@ CVAT can use models from the following sources:
 - [Pre-installed models](#models).
 - Models integrated from [Hugging Face and Roboflow](#adding-models-from-hugging-face-and-roboflow).
 - {{< ilink "/docs/guides/serverless-tutorial" "Self-hosted models deployed with Nuclio" >}}.
-- {{< ilink "/docs/annotation/auto-annotation/segment-anything-2-tracker" "AI agent functions (SAM2 tracking)" >}} {{< product-badge "online,enterprise" >}}
+- {{< ilink "/docs/annotation/auto-annotation/segment-anything-2-tracker" "AI agent functions (SAM2 tracking)" >}}
+  {{< product-badge "online,enterprise" >}}
 
 The following table describes the available options:
 
