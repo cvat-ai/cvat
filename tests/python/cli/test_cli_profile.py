@@ -16,11 +16,13 @@ def store_path(tmp_path, monkeypatch):
     original_handlers = logger.handlers.copy()
     original_level = logger.level
     logger.handlers.clear()
-    path = tmp_path / "cvat" / "auth.json"
-    monkeypatch.setattr("cvat_sdk.core.auth.get_auth_store_path", lambda: path)
-    yield path
-    logger.handlers[:] = original_handlers
-    logger.setLevel(original_level)
+    try:
+        path = tmp_path / "cvat" / "auth.json"
+        monkeypatch.setattr("cvat_sdk.core.auth.get_auth_store_path", lambda: path)
+        yield path
+    finally:
+        logger.handlers[:] = original_handlers
+        logger.setLevel(original_level)
 
 
 class TestConfigCommands:
