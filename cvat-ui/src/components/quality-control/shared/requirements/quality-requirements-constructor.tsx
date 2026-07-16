@@ -4,7 +4,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    CopyOutlined, DeleteOutlined, EditOutlined, PlusOutlined, QuestionCircleOutlined,
+    CaretDownOutlined, CopyOutlined, DeleteOutlined, EditOutlined, PlusOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
 import { Config } from '@react-awesome-query-builder/antd';
 import Button from 'antd/lib/button';
@@ -410,6 +410,20 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
             pagination={false}
             expandable={{
                 expandedRowKeys,
+                expandIcon: ({ expanded, onExpand, record }) => {
+                    const expandable = !!record.children?.length;
+
+                    return (
+                        <CaretDownOutlined
+                            rotate={expanded ? 0 : -90}
+                            style={{
+                                marginInlineEnd: 8,
+                                visibility: expandable ? 'visible' : 'hidden',
+                            }}
+                            onClick={expandable ? (event) => onExpand(record, event) : undefined}
+                        />
+                    );
+                },
                 onExpandedRowsChange: (keys) => {
                     const nextKeys = [...keys];
                     setExpandedRowKeys(nextKeys);
