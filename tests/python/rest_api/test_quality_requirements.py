@@ -1650,7 +1650,18 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         group_summary = report_data["groups"][requirement_name]["comparison_summary"]
         assert "annotations" not in group_summary
-        assert sum(group_summary["score_components"].values()) == 0
+        assert group_summary["score"] == 1.0
+        assert group_summary["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
+        requirement_summary_item = next(
+            item
+            for item in report_data["comparison_summary"]["requirements"]["items"]
+            if item["name"] == requirement_name
+        )
+        assert requirement_summary_item["score"] == 1.0
         assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_data_applies_attribute_comparison_rules(self, admin_user):
