@@ -327,7 +327,7 @@ class InteractionResultShape:
     """
     A shape that can be returned by an auto-annotation interaction function.
 
-    All attributes have the same meaning as attributes of the same name in the `LabeledShape` model.
+    All class members have the same meaning as members of the same name in the `LabeledShape` model.
 
     Note that at the moment, the CVAT UI ignores all interaction result shapes
     with types other than "mask".
@@ -468,7 +468,7 @@ class TrackableShape:
     """
     A shape that can be tracked by an auto-annotation tracking function.
 
-    All attributes have the same meaning as attributes of the same name in the `LabeledShape` model.
+    All class members have the same meaning as members of the same name in the `LabeledShape` model.
     """
 
     type: str
