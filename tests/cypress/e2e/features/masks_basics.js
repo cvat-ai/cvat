@@ -78,13 +78,20 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
 
         function readMaskSvgBox(selector) {
-            return cy.get(selector).should('exist').and('be.visible').then(($el) => {
-                const width = +$el.attr('width');
-                const height = +$el.attr('height');
-                expect(width).to.be.gt(1);
-                expect(height).to.be.gt(1);
-                return { width, height, area: width * height };
-            });
+            // Wait with retry: mask SVG gets real width/height only after async image.load().
+            // Assertions inside .then() are one-shot and flaky in CI.
+            return cy.get(selector)
+                .should('exist')
+                .and('be.visible')
+                .and(($el) => {
+                    expect(+$el.attr('width')).to.be.gt(1);
+                    expect(+$el.attr('height')).to.be.gt(1);
+                })
+                .then(($el) => {
+                    const width = +$el.attr('width');
+                    const height = +$el.attr('height');
+                    return { width, height, area: width * height };
+                });
         }
 
         it('Drawing a couple of masks. Save job, reopen job, masks must exist', () => {
@@ -188,6 +195,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.startMaskDrawing();
             cy.drawMask(mask1);
             cy.get('.cvat-brush-tools-continue').click();
+            cy.hideTooltips();
 
             cy.drawMask(mask2);
             cy.finishMaskDrawing();
@@ -204,6 +212,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             });
 
+            cy.hideTooltips();
             cy.startMaskDrawing();
             cy.drawMask([{ method: 'underlying-pixels', value: false }]);
             cy.finishMaskDrawing();
@@ -225,7 +234,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.startMaskDrawing();
             cy.drawMask(mask1);
             cy.get('.cvat-brush-tools-continue').click();
-            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+            cy.hideTooltips();
 
             readMaskSvgBox('#cvat_canvas_shape_1').then((before) => {
                 cy.drawMask(mask2);
@@ -233,14 +242,16 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 cy.finishMaskDrawing();
 
                 cy.get('#cvat_canvas_shape_1').should(($el) => {
-                    const afterArea = (+$el.attr('width')) * (+$el.attr('height'));
-                    expect(afterArea).to.be.lessThan(before.area);
                     const afterW = +$el.attr('width');
                     const afterH = +$el.attr('height');
+                    expect(afterW).to.be.gt(1);
+                    expect(afterH).to.be.gt(1);
+                    expect(afterW * afterH).to.be.lessThan(before.area);
                     expect(afterW < before.width || afterH < before.height).to.be.true;
                 });
             });
 
+            cy.hideTooltips();
             cy.startMaskDrawing();
             cy.drawMask([{ method: 'underlying-pixels', value: false }]);
             cy.finishMaskDrawing();
@@ -262,7 +273,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.startMaskDrawing();
             cy.drawMask(mask1);
             cy.get('.cvat-brush-tools-continue').click();
-            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+            cy.hideTooltips();
 
             readMaskSvgBox('#cvat_canvas_shape_1').then((before) => {
                 cy.drawMask(mask2);
@@ -270,18 +281,26 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 cy.finishMaskDrawing();
 
                 cy.get('#cvat_canvas_shape_1').should(($el) => {
-                    const afterArea = (+$el.attr('width')) * (+$el.attr('height'));
-                    expect(afterArea).to.be.lessThan(before.area);
+                    const afterW = +$el.attr('width');
+                    const afterH = +$el.attr('height');
+                    expect(afterW).to.be.gt(1);
+                    expect(afterH).to.be.gt(1);
+                    expect(afterW * afterH).to.be.lessThan(before.area);
                 });
 
+                cy.hideTooltips();
                 cy.contains('.cvat-annotation-header-button', 'Undo').click();
 
                 cy.get('#cvat_canvas_shape_1').should(($el) => {
-                    const restoredArea = (+$el.attr('width')) * (+$el.attr('height'));
-                    expect(restoredArea).to.be.at.least(before.area - 1);
+                    const restoredW = +$el.attr('width');
+                    const restoredH = +$el.attr('height');
+                    expect(restoredW).to.be.gt(1);
+                    expect(restoredH).to.be.gt(1);
+                    expect(restoredW * restoredH).to.be.at.least(before.area - 1);
                 });
             });
 
+            cy.hideTooltips();
             cy.startMaskDrawing();
             cy.drawMask([{ method: 'underlying-pixels', value: false }]);
             cy.finishMaskDrawing();
