@@ -16,6 +16,7 @@
 {{- $raw := .Get 0 -}}
 {{- $products := split $raw "," -}}
 <span class="product-tag-inline-group">
+  <span class="product-tag-inline-label">Available in:</span>
   {{- range $products -}}
     {{- $p := trim (lower .) " \t\n\r" -}}
     {{- if eq $p "online" -}}

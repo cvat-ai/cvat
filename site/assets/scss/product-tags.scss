@@ -35,12 +35,28 @@
      or table cell (see shortcodes/product-badge.html) rather than the
      whole-page box above. */
   .product-tag-inline-group {
-    display: inline;
+    display: block;
+    margin-top: 4px;
     white-space: nowrap;
+  }
+
+  /* When the badge is the only thing in its paragraph -- i.e. placed on
+     its own line right after a section heading, rather than inline in a
+     bullet or table cell -- give it normal block spacing (matching the
+     default paragraph margin) instead of the compact 4px used for the
+     inline cases. */
+  .td-content p > .product-tag-inline-group:only-child {
+    margin: 1rem 0;
   }
 
   .product-tag-inline {
     margin-left: 4px;
     margin-right: 0;
     vertical-align: middle;
+  }
+
+  .product-tag-inline-label {
+    font-size: 0.85rem;
+    color: #555;
+    margin-right: 4px;
   }

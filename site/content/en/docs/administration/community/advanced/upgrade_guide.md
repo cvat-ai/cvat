@@ -7,7 +7,6 @@ aliases:
 - /docs/administration/advanced/upgrade_guide/
 products:
   - community
-  - enterprise
 ---
 
 ## Upgrade guide

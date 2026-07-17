@@ -5,9 +5,6 @@ description: 'CVAT Webhooks: set up and use'
 weight: 80
 aliases:
 - /docs/administration/advanced/webhooks/
-products:
-  - community
-  - enterprise
 ---
 
 Webhooks are user-defined HTTP callbacks that are triggered by specific events.

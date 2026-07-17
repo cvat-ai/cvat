@@ -39,9 +39,11 @@ When **Personal workspace** is selected, it will be marked with a tick in the me
 ## Create new organization
 
 {{% alert title="Note" color="primary" %}}
-On CVAT Online, creating an organization and inviting members requires the
-{{< ilink "/docs/account_management/subscription-management#team-plan" "Team plan" >}}.
-Solo plan users work only in their personal workspace.
+On the Solo plan, you can create a trial organization (up to 2 members), but it
+keeps the Free plan's limitations, since Solo isn't meant for real collaboration.
+The {{< ilink "/docs/account_management/subscription-management#monthly-plans" "Team plan" >}}
+removes these limits. Your personal workspace stays separate either way.
+{{< product-badge "online" >}}
 {{% /alert %}}
 
 To create an organization, do the following:
