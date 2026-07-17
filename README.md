@@ -4,8 +4,7 @@ A self-hosted, rebranded fork of [CVAT](https://github.com/cvat-ai/cvat) (Comput
 Tool), tracking CVAT's `develop` branch.
 
 This fork is meant to be built and hosted on your own premises. It is trimmed down accordingly: no
-DICOM tooling, no SSO/Keycloak documentation, no Let's Encrypt HTTPS overlay, and no CI jobs that
-publish to registries we don't own.
+DICOM tooling, no Let's Encrypt HTTPS overlay, and no CI jobs that publish to registries we don't own.
 
 Everything else is stock CVAT. For how to actually _use_ the annotation tool — tasks, jobs,
 annotation formats, the API, automatic annotation — refer to the
@@ -103,24 +102,10 @@ export CVAT_HOST=annotate.example.com
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
 
-### Authentication
-
-Standard email/password registration and login, provided by `django-allauth`.
-
-SSO (OIDC/SAML) is an **enterprise-only CVAT feature and is not implemented in the open-source
-codebase** — there was never anything to configure here. Its documentation has been removed to avoid
-implying otherwise.
-
 ## Branding
 
-The logo is generated from `sustainlivework_transparent.png` by a checked-in script:
-
-```bash
-brew install potrace      # one-time; or: pip install potracer
-python3 tools/branding/trace_logo.py
-```
-
-It traces the source PNG and writes three assets:
+The branding assets are checked into the tree and used as-is — no build step is required. Three
+assets carry the SustAInLivWork logo:
 
 | Asset | Used for |
 | --- | --- |
@@ -130,14 +115,12 @@ It traces the source PNG and writes three assets:
 
 Brand colours: black `#000000`, teal `#00B394`.
 
-> **If you regenerate the assets:** the script groups paths by colour and tags them
-> `class="brand-ink"` / `class="brand-teal"`. The login page stylesheet
-> (`cvat-ui/src/components/signing-common/styles.scss`) recolours the glyphs by selecting on
-> `.brand-teal`. Keep those class names, or the teal "AI" will silently render the wrong colour with
-> no build error.
-
-To replace the logo entirely, drop in a new source PNG, update `SRC` and the `BANDS` pixel
-coordinates in `tools/branding/trace_logo.py`, and re-run it.
+To replace the logo, edit these SVGs directly, or regenerate them from a new source PNG with the
+checked-in `tools/branding/trace_logo.py` (see the comments in that script for the `SRC` and `BANDS`
+settings). If you regenerate, keep the `class="brand-ink"` / `class="brand-teal"` attributes the
+script emits: the login page stylesheet (`cvat-ui/src/components/signing-common/styles.scss`)
+recolours the glyphs by selecting on `.brand-teal`, and dropping the class silently renders the teal
+"AI" in the wrong colour with no build error.
 
 ## Staying current with upstream CVAT
 
@@ -163,11 +146,9 @@ occasional conflicts in the files we touched: the CI workflows, the docs pages w
 
 | Area | Change |
 | --- | --- |
-| DICOM | `utils/dicom_converter/` removed. It was a standalone offline script, not wired into the server. |
-| SSO / Keycloak | Enterprise-only SSO and social-auth docs removed, along with three orphaned social-provider logo assets. **`django-allauth` is retained** — it powers ordinary email/password login, and removing it would break authentication. |
-| HTTPS | `docker-compose.https.yml` (Traefik + Let's Encrypt ACME) removed; TLS is terminated on-premises. |
 | CI | Jobs requiring credentials this repo doesn't have are removed: Docker Hub publish, S3/Allure reports, Codecov, PyPI, and cvat.ai cross-repo triggers. Build, unit / REST / e2e / Helm tests and linters are all retained. |
 | Branding | SustAInLivWork logo in the app header, on the login page, and as the favicon. Light login page. |
+| Launcher | `serverless.sh` added as the default launcher: `docker compose` with the base file, the dev overlay, and the Nuclio serverless overlay. Upstream leaves you to compose the overlays by hand. |
 
 ## Licence & attribution
 
