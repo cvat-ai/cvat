@@ -5,6 +5,7 @@
 import hashlib
 import hmac
 import json
+from copy import copy
 from http import HTTPStatus
 from typing import TypeVar
 
@@ -207,3 +208,13 @@ def perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]:
         return HTTPStatus.BAD_GATEWAY, str(ex)
     except requests.Timeout as ex:
         return HTTPStatus.GATEWAY_TIMEOUT, str(ex)
+
+
+def recreate_old_instance(instance: ModelT, dirty_fields: dict) -> ModelT:
+    """Return a copy of the instance with dirty fields reverted to their previous values"""
+
+    old_instance = copy(instance)
+    for field, value in dirty_fields.items():
+        setattr(old_instance, field, value["saved"])
+
+    return old_instance

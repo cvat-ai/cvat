@@ -21,7 +21,7 @@ from cvat.apps.redis_handler.serializers import RequestSerializer
 from cvat.apps.redis_handler.signals import request_failed, request_succeeded
 from cvat.apps.redis_handler.utils import DetachedJob
 from cvat.apps.webhooks import services
-from cvat.apps.webhooks.dispatch import batch_add_to_queue
+from cvat.apps.webhooks.dispatch import batch_add_webhooks_to_queue
 from cvat.apps.webhooks.event_type import event_key
 
 
@@ -80,14 +80,21 @@ def enqueue_request_completion_webhooks(
         project_id=rq_job_meta.project_id,
     )
 
-    webhook_payload = {
-        "event": event_key_,
-        "request": json.loads(JSONRenderer().render(RequestSerializer(detached_rq_job).data)),
-    }
+    _request = json.loads(JSONRenderer().render(RequestSerializer(detached_rq_job).data))
+    webhook_payload_pairs = [
+        (
+            webhook,
+            {
+                "event": event_key_,
+                "request": _request,
+                "webhook_id": webhook.id,
+            },
+        )
+        for webhook in webhooks
+    ]
 
     if webhooks:
-        batch_add_to_queue(
-            webhooks=webhooks,
-            data=webhook_payload,
+        batch_add_webhooks_to_queue(
+            webhook_payload_pairs=webhook_payload_pairs,
             depends_on=RQDependency(jobs=[rq_job], allow_failure=True),
         )
