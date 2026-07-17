@@ -1,10 +1,6 @@
 ### Added
 
-- \[Server API\] Added webhook events for asynchronous requests:
-  `completed:export:annotations`, `completed:export:dataset`,
-  `completed:export:backup`, `completed:create:task`, `completed:merge:task`,
-  `completed:merge:job`, and `completed:calculate:quality`. Their payloads include
-  the completed request in the same format as the `/api/requests/{rq_id}` response
+- \[Server API\] Added request-completion webhooks with requests API payloads
   (<https://github.com/cvat-ai/cvat/pull/10897>)
 
 - \[Server API\] Added a `changes` field to update webhook payloads
@@ -12,46 +8,13 @@
 
 ### Changed
 
-- \[Server API\] Webhook event entries returned by `GET /api/webhooks/events`
-  now include the action, resource, group display name, and event key. Webhook
-  retrieve and list responses continue to return subscribed event keys.
-
-  Before:
-
-  ```json
-  {
-    "events": ["create:task"]
-  }
-  ```
-
-  After:
-
-  ```json
-  {
-    "events": [
-      {
-        "action": "create",
-        "resource": "task",
-        "key": "create:task",
-        "group": {
-          "display_name": "Task"
-        }
-      }
-    ]
-  }
-  ```
-
+- \[Server API\] `GET /api/webhooks/events` now returns event metadata objects
   (<https://github.com/cvat-ai/cvat/pull/10897>)
 
 ### Removed
 
-- \[Server API\] Removed the `delete:organization` webhook event because
-  organization-scoped webhook subscriptions are deleted together with their
-  organization and cannot receive the event
+- \[Server API\] Removed the unusable `delete:organization` webhook event
   (<https://github.com/cvat-ai/cvat/pull/10897>)
 
-- \[Server API\] Removed the `create:export` and `create:backup`
-  webhook events. Use `completed:export:annotations` or
-  `completed:export:dataset` instead of `create:export`, and
-  `completed:export:backup` instead of `create:backup`
+- \[Server API\] Removed the legacy `create:export` and `create:backup` events
   (<https://github.com/cvat-ai/cvat/pull/10897>)
