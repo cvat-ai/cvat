@@ -20,7 +20,7 @@ class Events:
         ("job", EventGroupDTO(display_name="Job")): ["create", "update", "delete"],
         ("issue", EventGroupDTO(display_name="Issue")): ["create", "update", "delete"],
         ("comment", EventGroupDTO(display_name="Comment")): ["create", "update", "delete"],
-        ("organization", EventGroupDTO(display_name="Organization")): ["update", "delete"],
+        ("organization", EventGroupDTO(display_name="Organization")): ["update"],
         ("invitation", EventGroupDTO(display_name="Invitation")): ["create", "delete"],
         ("membership", EventGroupDTO(display_name="Membership")): ["create", "update", "delete"],
         **{(resource, group): ["completed"] for resource, group in REQUEST_COMPLETION_RESOURCES},

@@ -8025,7 +8025,6 @@ components:
       - delete:issue
       - delete:job
       - delete:membership
-      - delete:organization
       - delete:project
       - delete:task
       - update:comment
@@ -8056,7 +8055,6 @@ components:
         * `delete:issue` - DELETE:ISSUE
         * `delete:job` - DELETE:JOB
         * `delete:membership` - DELETE:MEMBERSHIP
-        * `delete:organization` - DELETE:ORGANIZATION
         * `delete:project` - DELETE:PROJECT
         * `delete:task` - DELETE:TASK
         * `update:comment` - UPDATE:COMMENT

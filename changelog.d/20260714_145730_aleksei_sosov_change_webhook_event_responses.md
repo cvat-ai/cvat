@@ -7,6 +7,9 @@
   the completed request in the same format as the `/api/requests/{rq_id}` response
   (<https://github.com/cvat-ai/cvat/pull/10897>)
 
+- \[Server API\] Added a `changes` field to update webhook payloads
+  (<https://github.com/cvat-ai/cvat/pull/10897>)
+
 ### Changed
 
 - \[Server API\] Webhook event entries returned by `GET /api/webhooks/events`
@@ -41,6 +44,11 @@
   (<https://github.com/cvat-ai/cvat/pull/10897>)
 
 ### Removed
+
+- \[Server API\] Removed the `delete:organization` webhook event because
+  organization-scoped webhook subscriptions are deleted together with their
+  organization and cannot receive the event
+  (<https://github.com/cvat-ai/cvat/pull/10897>)
 
 - \[Server API\] Removed the `create:export` and `create:backup`
   webhook events. Use `completed:export:annotations` or

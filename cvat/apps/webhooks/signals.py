@@ -2,104 +2,29 @@
 #
 # SPDX-License-Identifier: MIT
 
-from copy import deepcopy
+import json
 from typing import TypeVar
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Model
-from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
+from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
+from rest_framework.renderers import JSONRenderer
 
 from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
 from cvat.apps.events.handlers import (
-    get_instance_diff,
     get_serializer,
 )
 from cvat.apps.events.handlers import organization_id as resolve_organization_id
 from cvat.apps.events.handlers import project_id as resolve_project_id
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.webhooks import utils
+from cvat.apps.webhooks.event_type import EventKeyChoice, event_key
 
-from .dispatch import batch_add_to_queue
-from .event_type import EventKeyChoice, event_key
+from .dispatch import batch_add_webhooks_to_queue
 from .services import select_webhooks
 
 ModelT = TypeVar("ModelT", bound=Model)
-
-
-@receiver(pre_save, sender=Project)
-@receiver(pre_save, sender=Task)
-@receiver(pre_save, sender=Job)
-@receiver(pre_save, sender=Issue)
-@receiver(pre_save, sender=Comment)
-@receiver(pre_save, sender=Organization)
-@receiver(pre_save, sender=Invitation)
-@receiver(pre_save, sender=Membership)
-def pre_save_resource_event(sender: type[ModelT], instance, **kwargs):
-    instance._webhooks_selected_webhooks = []
-    instance._webhooks_old_data = None
-
-    if instance.pk is None:
-        created = True
-    else:
-        try:
-            old_instance = utils.retrieve_instance(model=sender, pk=instance.pk)
-            created = False
-        except ObjectDoesNotExist:
-            created = True
-
-    resource_name = instance.__class__.__name__.lower()
-
-    event_key_ = event_key(action="create" if created else "update", resource=resource_name)
-    if event_key_ not in (a[0] for a in EventKeyChoice.choices()):
-        return
-
-    # consider task and project transfers as deletion in one organization and creation in another
-    if (
-        isinstance(instance, (Project, Task))
-        and not created
-        and old_instance.organization_id != instance.organization_id
-    ):
-        new_org_id = resolve_organization_id(instance)
-        new_project_id = resolve_project_id(instance)
-        old_org_id = resolve_organization_id(old_instance)
-        old_project_id = resolve_project_id(old_instance)
-
-        instance._webhooks_selected_webhooks = {}
-        for event_, filters in {
-            event_key_: {
-                "organization_id": new_org_id,
-                "project_id": new_project_id,
-                "select_for_org": False,
-            },
-            event_key(action="delete", resource=resource_name): {
-                "organization_id": old_org_id,
-                "project_id": old_project_id,
-                "select_for_project": False,
-            },
-            event_key(action="create", resource=resource_name): {
-                "organization_id": new_org_id,
-                "project_id": new_project_id,
-                "select_for_project": False,
-            },
-        }.items():
-            if webhooks := select_webhooks(event_key=event_, **filters):
-                instance._webhooks_selected_webhooks[event_] = webhooks
-    else:
-        instance._webhooks_selected_webhooks = select_webhooks(
-            event_key=event_key_,
-            organization_id=resolve_organization_id(instance),
-            project_id=resolve_project_id(instance),
-        )
-
-    if not instance._webhooks_selected_webhooks:
-        return
-
-    if created:
-        instance._webhooks_old_data = None
-    else:
-        instance._webhooks_old_data = get_serializer(instance=old_instance).data
 
 
 @receiver(post_save, sender=Project)
@@ -115,64 +40,116 @@ def post_save_resource_event(
     instance: ModelT,
     created: bool,
     raw: bool,
+    update_fields: frozenset[str] | None,
     **kwargs,
 ):
     if created and raw:
         return
 
-    selected_webhooks = instance._webhooks_selected_webhooks
-    del instance._webhooks_selected_webhooks
+    resource_name = instance.__class__.__name__.lower()
 
-    if not selected_webhooks:
+    event_key_ = event_key(action="create" if created else "update", resource=resource_name)
+
+    if event_key_ not in (a[0] for a in EventKeyChoice.choices()):
         return
 
-    old_data = instance._webhooks_old_data
-    del instance._webhooks_old_data
+    dirty_fields: dict[str, dict] = {
+        instance._meta.get_field(field).attname: value
+        for field, value in instance.get_dirty_fields(
+            verbose=True,
+            check_relationship=True,
+        ).items()
+    }
 
-    retrieved_instance = utils.retrieve_instance(
-        model=sender,
-        pk=instance.pk,
-    )
+    if update_fields is not None:
+        update_fields = {instance._meta.get_field(field).attname for field in update_fields}
 
-    created = old_data is None
+        dirty_fields = {
+            field: value for field, value in dirty_fields.items() if field in update_fields
+        }
 
-    resource_name = instance.__class__.__name__.lower()
-    event_key_ = event_key(action="create" if created else "update", resource=resource_name)
-    only_one_event_type = not isinstance(selected_webhooks, dict)
+    old_instance = utils.recreate_old_instance(instance=instance, dirty_fields=dirty_fields)
 
-    serializer = get_serializer(instance=retrieved_instance)
+    # consider task and project transfers as deletion in one organization and creation in another
+    if (
+        isinstance(instance, (Project, Task))
+        and not created
+        and resolve_organization_id(old_instance) != resolve_organization_id(instance)
+    ):
+        new_org_id = resolve_organization_id(instance)
+        new_project_id = resolve_project_id(instance)
 
-    data = {
-        resource_name: serializer.data,
+        old_org_id = resolve_organization_id(old_instance)
+        old_project_id = resolve_project_id(old_instance)
+
+        webhooks_per_event_key = {
+            event_key_: select_webhooks(
+                event_key=event_key_,
+                organization_id=new_org_id,
+                project_id=new_project_id,
+                select_for_org=False,
+            ),
+            event_key(action="delete", resource=resource_name): select_webhooks(
+                event_key=event_key(action="delete", resource=resource_name),
+                organization_id=old_org_id,
+                project_id=old_project_id,
+                select_for_project=False,
+            ),
+            event_key(action="create", resource=resource_name): select_webhooks(
+                event_key=event_key(action="create", resource=resource_name),
+                organization_id=new_org_id,
+                project_id=new_project_id,
+                select_for_project=False,
+            ),
+        }
+    else:
+        webhooks_per_event_key = {
+            event_key_: select_webhooks(
+                event_key=event_key_,
+                organization_id=resolve_organization_id(instance),
+                project_id=resolve_project_id(instance),
+            ),
+        }
+
+    if not any(webhooks_per_event_key.values()):
+        return
+
+    retrieved_instance = utils.retrieve_instance(model=sender, pk=instance.pk)
+
+    _webhook_payload = {
+        resource_name: get_serializer(instance=retrieved_instance).data,
         "sender": utils.get_sender(instance=instance),
     }
-    # webhooks batch with only one event type
-    if only_one_event_type:
-        data["event"] = event_key_
-    else:
-        selected_webhooks = {
-            event_: {
-                "webhooks": webhooks_,
-                "event_data": deepcopy(data),
-            }
-            for event_, webhooks_ in selected_webhooks.items()
-        }
-        delete_event_key = event_key(action="delete", resource=resource_name)
-        if delete_event_key in selected_webhooks:
-            assert old_data
-            selected_webhooks[delete_event_key]["event_data"][resource_name] = old_data
 
-    if not created and (diff := get_instance_diff(old_data=old_data, data=serializer.data)):
-        before_update = {attr: value["old_value"] for attr, value in diff.items()}
-        if only_one_event_type:
-            data["before_update"] = before_update
-        else:
-            update_event_key = event_key(action="update", resource=resource_name)
-            if update_event_key in selected_webhooks:
-                selected_webhooks[update_event_key]["event_data"]["before_update"] = before_update
+    if not created:
+        # TODO: backward compatibility, remove in future releases
+        _before_update = {field: value["saved"] for field, value in dirty_fields.items()}
+
+        _changes = {
+            field: {"from": value["saved"], "to": value["current"]}
+            for field, value in dirty_fields.items()
+        }
+        changes_payload_part = {
+            "before_update": json.loads(JSONRenderer().render(_before_update)),
+            "changes": json.loads(JSONRenderer().render(_changes)),
+        }
+
+    webhook_payload_pairs = [
+        (
+            webhook,
+            {
+                "event": event_key,
+                "webhook_id": webhook.id,
+                **_webhook_payload,
+                **(changes_payload_part if event_key.startswith("update") else {}),
+            },
+        )
+        for event_key, webhooks in webhooks_per_event_key.items()
+        for webhook in webhooks
+    ]
 
     transaction.on_commit(
-        lambda: batch_add_to_queue(webhooks=selected_webhooks, data=data),
+        lambda: batch_add_webhooks_to_queue(webhook_payload_pairs=webhook_payload_pairs),
         robust=True,
     )
 
@@ -182,24 +159,18 @@ def post_save_resource_event(
 @receiver(pre_delete, sender=Job)
 @receiver(pre_delete, sender=Issue)
 @receiver(pre_delete, sender=Comment)
-@receiver(pre_delete, sender=Organization)
 @receiver(pre_delete, sender=Invitation)
 @receiver(pre_delete, sender=Membership)
 def pre_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
-    related_webhooks = []
-    if resource_name in ["project", "organization"]:
-        related_webhooks = select_webhooks(
-            event_key=event_key(action="delete", resource=resource_name),
-            organization_id=resolve_organization_id(instance),
-            project_id=resolve_project_id(instance),
-        )
+    event_key_ = event_key(action="delete", resource=resource_name)
+    if event_key_ not in (a[0] for a in EventKeyChoice.choices()):
+        return
 
     retrieved_instance = utils.retrieve_instance(model=sender, pk=instance.pk)
 
-    instance._deleted_object = dict(get_serializer(instance=retrieved_instance).data)
-    instance._related_webhooks = related_webhooks
+    instance._deleted_instance_snapshot = get_serializer(instance=retrieved_instance).data
 
 
 @receiver(post_delete, sender=Project)
@@ -207,7 +178,6 @@ def pre_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
 @receiver(post_delete, sender=Job)
 @receiver(post_delete, sender=Issue)
 @receiver(post_delete, sender=Comment)
-@receiver(post_delete, sender=Organization)
 @receiver(post_delete, sender=Invitation)
 @receiver(post_delete, sender=Membership)
 def post_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
@@ -217,25 +187,31 @@ def post_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs)
     if event_key_ not in (a[0] for a in EventKeyChoice.choices()):
         return
 
-    filtered_webhooks = select_webhooks(
-        event_key=event_key_,
+    deleted_instance_snapshot = instance._deleted_instance_snapshot
+    del instance._deleted_instance_snapshot
+
+    webhooks = select_webhooks(
+        event_key=event_key(action="delete", resource=resource_name),
         organization_id=resolve_organization_id(instance),
         project_id=resolve_project_id(instance),
     )
 
-    data = {
+    if not webhooks:
+        return
+
+    event_key_ = event_key(action="delete", resource=resource_name)
+
+    webhook_payload = {
         "event": event_key_,
-        resource_name: instance._deleted_object,
+        resource_name: deleted_instance_snapshot,
         "sender": utils.get_sender(instance=instance),
     }
 
-    related_webhooks = [
-        webhook
-        for webhook in getattr(instance, "_related_webhooks", [])
-        if webhook.id not in (a.id for a in filtered_webhooks)
+    webhook_payload_pairs = [
+        (webhook, {**webhook_payload, "webhook_id": webhook.id}) for webhook in webhooks
     ]
 
     transaction.on_commit(
-        lambda: batch_add_to_queue(webhooks=filtered_webhooks + related_webhooks, data=data),
+        lambda: batch_add_webhooks_to_queue(webhook_payload_pairs=webhook_payload_pairs),
         robust=True,
     )
