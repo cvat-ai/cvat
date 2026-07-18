@@ -1055,6 +1055,49 @@ class TestImportExportDatasetProject:
                 annotations = json.load(anno_file)
                 assert sorted([a["file_name"] for a in annotations["images"]]) == image_names
 
+    @allure.issue(url="https://github.com/cvat-ai/cvat/issues/8076", name="GH-8076")
+    def test_export_project_with_duplicate_image_names_across_tasks(self, admin_user: str):
+        project_spec = {
+            "name": "Project with duplicate image names",
+            "labels": [{"name": "cat"}],
+        }
+
+        with make_api_client(admin_user) as api_client:
+            project, _ = api_client.projects_api.create(project_spec)
+
+        for task_name in ("task1", "task2"):
+            image_files = generate_image_files(1, filenames=["image.jpg"])
+            task_params = {
+                "name": task_name,
+                "segment_size": 1,
+                "project_id": project.id,
+            }
+            data_params = {
+                "image_quality": 70,
+                "client_files": image_files,
+            }
+            create_task(admin_user, spec=task_params, data=data_params)
+
+        dataset = export_project_dataset(
+            admin_user, save_images=True, id=project.id, format="COCO 1.0"
+        )
+
+        with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
+            subset_path = "images/default"
+            exported_image_names = [
+                f[len(subset_path) + 1 :] for f in zip_file.namelist() if f.startswith(subset_path)
+            ]
+            # both tasks' images must be exported as distinct files: neither should be
+            # silently overwritten by the other because they share the same original name
+            assert len(exported_image_names) == 2
+            assert len(set(exported_image_names)) == 2
+
+            with zip_file.open("annotations/instances_default.json") as anno_file:
+                annotations = json.load(anno_file)
+                annotated_names = [a["file_name"] for a in annotations["images"]]
+                assert len(set(annotated_names)) == 2
+                assert sorted(annotated_names) == sorted(exported_image_names)
+
     @allure.description("Project annotations do not have tags for removed frames")
     @allure.issue(url="https://github.com/cvat-ai/cvat/issues/9918", name="GH-9918")
     def test_export_project_with_removed_frames(
