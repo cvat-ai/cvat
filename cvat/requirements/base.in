@@ -33,7 +33,7 @@ numpy~=2.0
 opencv-python-headless~=4.8
 
 # Partial json reading
-json-stream>=2.0,<3
+json-stream>=2.5.1,<3
 
 # The package is used as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
