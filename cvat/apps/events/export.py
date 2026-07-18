@@ -5,18 +5,18 @@
 import csv
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import clickhouse_connect
 from dateutil import parser
 from django.conf import settings
-from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
 from cvat.apps.dataset_manager.util import ExportCacheManager
 from cvat.apps.dataset_manager.views import log_exception
+from cvat.apps.engine.background import BaseResourceExporter
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import RequestAction
 from cvat.apps.engine.rq import ExportRequestId, RQMetaWithFailureInfo
@@ -25,7 +25,6 @@ from cvat.apps.engine.utils import sendfile
 from cvat.apps.engine.view_utils import deprecate_response
 from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.events.utils import find_minimal_date_for_filter
-from cvat.apps.redis_handler.background import AbstractExporter
 
 slogger = ServerLogManager(__name__)
 
@@ -42,7 +41,7 @@ def _create_csv(query_params: dict, output_filename: str):
             "to": query_params.pop("to"),
         }
 
-        query = "SELECT * FROM events"
+        query = "SELECT * EXCEPT(remote_addr) FROM events"
         conditions = ["source in ('server', 'client')", "scope != 'send:exception'"]
         parameters = {}
 
@@ -70,6 +69,7 @@ def _create_csv(query_params: dict, output_filename: str):
             port=clickhouse_settings["PORT"],
             username=clickhouse_settings["USER"],
             password=clickhouse_settings["PASSWORD"],
+            tz_mode="schema",
         ) as client:
             result = client.query(query, parameters=parameters)
 
@@ -84,7 +84,7 @@ def _create_csv(query_params: dict, output_filename: str):
         raise
 
 
-class EventsExporter(AbstractExporter):
+class EventsExporter(BaseResourceExporter):
 
     def __init__(
         self,

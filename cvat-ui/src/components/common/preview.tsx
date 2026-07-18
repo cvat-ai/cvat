@@ -92,13 +92,14 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
 
     if (!preview || preview?.fetching) {
         return (
-            <div ref={ref} className={loadingClassName || ''} aria-hidden>
+            <div ref={ref} className={loadingClassName || ''} onClick={onClick} aria-hidden>
                 <Spin size='default' />
             </div>
         );
     }
 
-    if (preview.initialized && !preview.preview) {
+    const imgSrc = preview.preview;
+    if (preview.initialized && !imgSrc) {
         return (
             <div className={emptyPreviewClassName || ''} onClick={onClick} aria-hidden>
                 <PictureOutlined />
@@ -110,7 +111,7 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
         <div className={previewWrapperClassName || ''} aria-hidden>
             <img
                 className={previewClassName || ''}
-                src={preview.preview}
+                src={imgSrc}
                 onClick={onClick}
                 alt='Preview image'
                 aria-hidden

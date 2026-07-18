@@ -11,6 +11,10 @@ from collections.abc import Generator, Sequence
 from typing import IO, Any, BinaryIO, Literal, TextIO, overload
 
 
+def is_posix() -> bool:
+    return os.name == "posix"
+
+
 def filter_dict(
     d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
 ) -> dict[str, Any]:

@@ -38,7 +38,7 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
-import { propagateShapes, validateAttributeValue } from './object-utils';
+import { getVisibleSkeletonElements, propagateShapes, validateAttributeValue } from './object-utils';
 import { mask2Rle, rle2Mask } from './rle-utils';
 import User from './user';
 import config from './config';
@@ -339,6 +339,12 @@ function build(): CVATCore {
             set jobMetaDataReloadPeriod(value) {
                 config.jobMetaDataReloadPeriod = value;
             },
+            get previewPlaceholders() {
+                return config.previewPlaceholders;
+            },
+            set previewPlaceholders(value: Record<string, string>) {
+                config.previewPlaceholders = value;
+            },
         },
         enums,
         exceptions: {
@@ -482,6 +488,7 @@ function build(): CVATCore {
             rle2Mask,
             propagateShapes,
             validateAttributeValue,
+            getVisibleSkeletonElements,
         },
         opencv: {
             createOpenCVInterface,

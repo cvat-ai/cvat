@@ -52,7 +52,9 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
     );
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
     menuItems.push(...menuPlugins
-        .map(({ component, weight }): typeof menuItems[0] => [component({
+        .map(({ component, weight }): typeof menuItems[0] => [(
+            component as (pluginProps?: any) => NonNullable<MenuProps['items']>[0]
+        )({
             targetProps: props, targetState: { allModels, selectedIds },
         }), weight]),
     );

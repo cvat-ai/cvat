@@ -6,7 +6,7 @@
 import io
 import itertools
 from collections import OrderedDict, defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Generator, Sequence
 from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
@@ -24,15 +24,14 @@ from cvat.apps.dataset_manager.bindings import (
     JobData,
     TaskData,
 )
-from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import TmpDirManager, faster_deepcopy
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
-from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
 from cvat.apps.engine.plugins import plugin_decorator
-from cvat.apps.engine.utils import av_scan_paths, take_by, transaction_with_repeatable_read
+from cvat.apps.engine.utils import av_scan_paths, take_by
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
+from cvat.utils import django_database as db_utils
 
 dlogger = DatasetLogManager()
 
@@ -51,6 +50,18 @@ class PatchAction(str, Enum):
     CREATE = "create"
     UPDATE = "update"
     DELETE = "delete"
+
+    @classmethod
+    def values(cls):
+        return [item.value for item in cls]
+
+    def __str__(self):
+        return self.value
+
+
+class AnnotationImportMode(str, Enum):
+    REPLACE = "replace"
+    APPEND = "append"
 
     @classmethod
     def values(cls):
@@ -109,6 +120,46 @@ def merge_table_rows(rows, keys_for_merge, field_id):
     return list(merged_rows.values())
 
 
+def _validate_input_annotations(
+    annotations: AnnotationIR | dict, *, db_data: models.Data, dimension: models.DimensionType
+) -> AnnotationIR:
+    if not isinstance(annotations, AnnotationIR):
+        annotations = AnnotationIR(dimension, annotations)
+
+    if annotations.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
+        # Only tags and shapes can be used in tasks with GT pool
+        raise ValidationError(
+            "Tracks are not supported when task validation mode is {}".format(
+                models.ValidationMode.GT_POOL
+            )
+        )
+
+    if annotations.intervals:
+        task_start = db_data.start_frame
+        task_stop = db_data.stop_frame
+        for interval in annotations.intervals:
+            if interval["stop"] is not None and interval["start"] > interval["stop"]:
+                interval_ref = (
+                    f"Interval {interval['id']}" if interval.get("id") is not None else "Interval"
+                )
+                raise ValidationError(
+                    f"{interval_ref} start must be <= stop, got "
+                    f"[{interval['start']}, {interval['stop']}]"
+                )
+
+            if not annotations.is_interval_inside(interval, task_start, task_stop):
+                interval_ref = (
+                    f"Interval {interval['id']}" if interval.get("id") is not None else "Interval"
+                )
+                raise ValidationError(
+                    f"{interval_ref} cannot be outside the task boundaries"
+                    f"[{task_start}, {task_stop}], got "
+                    f"[{interval['start']}, {interval['stop']}]"
+                )
+
+    return annotations
+
+
 class JobAnnotation:
     @classmethod
     def add_prefetch_info(
@@ -116,7 +167,7 @@ class JobAnnotation:
     ) -> QuerySet[models.Job]:
         assert issubclass(queryset.model, models.Job)
 
-        label_qs = add_prefetch_fields(
+        label_qs = db_utils.add_prefetch_fields(
             models.Label.objects.all(),
             [
                 "skeleton",
@@ -165,7 +216,7 @@ class JobAnnotation:
             if lock_job_in_db:
                 queryset = queryset.select_for_update()
 
-            self.db_job: models.Job = get_cached(queryset, pk=int(pk))
+            self.db_job: models.Job = db_utils.get_cached(queryset, pk=int(pk))
         else:
             self.db_job: models.Job = db_job
 
@@ -327,22 +378,22 @@ class JobAnnotation:
                 if elements or parent_track is None:
                     track["elements"] = elements
 
-            db_tracks = bulk_create(models.LabeledTrack, db_tracks)
+            db_tracks = db_utils.bulk_create(models.LabeledTrack, db_tracks)
 
             for db_attr_val in db_track_attr_vals:
                 db_attr_val.track_id = db_tracks[db_attr_val.track_id].id
 
-            bulk_create(models.LabeledTrackAttributeVal, db_track_attr_vals)
+            db_utils.bulk_create(models.LabeledTrackAttributeVal, db_track_attr_vals)
 
             for db_shape in db_shapes:
                 db_shape.track_id = db_tracks[db_shape.track_id].id
 
-            db_shapes = bulk_create(models.TrackedShape, db_shapes)
+            db_shapes = db_utils.bulk_create(models.TrackedShape, db_shapes)
 
             for db_attr_val in db_shape_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(models.TrackedShapeAttributeVal, db_shape_attr_vals)
+            db_utils.bulk_create(models.TrackedShapeAttributeVal, db_shape_attr_vals)
 
             shape_idx = 0
             for track, db_track in zip(tracks, db_tracks):
@@ -384,12 +435,12 @@ class JobAnnotation:
                 if shape_elements or parent_shape is None:
                     shape["elements"] = shape_elements
 
-            db_shapes = bulk_create(models.LabeledShape, db_shapes)
+            db_shapes = db_utils.bulk_create(models.LabeledShape, db_shapes)
 
             for db_attr_val in db_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(models.LabeledShapeAttributeVal, db_attr_vals)
+            db_utils.bulk_create(models.LabeledShapeAttributeVal, db_attr_vals)
 
             for shape, db_shape in zip(shapes, db_shapes):
                 shape["id"] = db_shape.id
@@ -420,17 +471,54 @@ class JobAnnotation:
             db_tags.append(db_tag)
             tag["attributes"] = attributes
 
-        db_tags = bulk_create(models.LabeledImage, db_tags)
+        db_tags = db_utils.bulk_create(models.LabeledImage, db_tags)
 
         for db_attr_val in db_attr_vals:
             db_attr_val.image_id = db_tags[db_attr_val.tag_id].id
 
-        bulk_create(models.LabeledImageAttributeVal, db_attr_vals)
+        db_utils.bulk_create(models.LabeledImageAttributeVal, db_attr_vals)
 
         for tag, db_tag in zip(tags, db_tags):
             tag["id"] = db_tag.id
 
         self.ir_data.tags = tags
+
+    def _save_intervals_to_db(self, intervals: Sequence[dict]):
+        def write_objects(intervals: Sequence[dict]):
+            db_intervals = []
+            db_attr_vals = []
+
+            for interval in intervals:
+                attributes = interval.pop("attributes", [])
+                db_interval = models.LabeledInterval(job=self.db_job, **interval)
+
+                self._validate_label_for_existence(db_interval.label_id)
+
+                for attr in attributes:
+                    db_attr_val = models.LabeledIntervalAttributeVal(
+                        **attr, job_id=self.db_job.id, interval_id=len(db_intervals)
+                    )
+
+                    self._validate_attribute_for_existence(db_attr_val, db_interval.label_id, "all")
+
+                    db_attr_vals.append(db_attr_val)
+
+                db_intervals.append(db_interval)
+                interval["attributes"] = attributes
+
+            db_intervals = db_utils.bulk_create(models.LabeledInterval, db_intervals)
+
+            for db_attr_val in db_attr_vals:
+                db_attr_val.interval_id = db_intervals[db_attr_val.interval_id].id
+
+            db_utils.bulk_create(models.LabeledIntervalAttributeVal, db_attr_vals)
+
+            for interval, db_interval in zip(intervals, db_intervals):
+                interval["id"] = db_interval.id
+
+        write_objects(intervals)
+
+        self.ir_data.intervals = intervals
 
     def _set_updated_date(self):
         db_task = self.db_job.segment.task
@@ -442,13 +530,14 @@ class JobAnnotation:
 
     @staticmethod
     def _data_is_empty(data):
-        return not (data["tags"] or data["shapes"] or data["tracks"])
+        return not (data["tags"] or data["shapes"] or data["tracks"] or data["intervals"])
 
     def _create(self, data):
         self.reset()
         self._save_tags_to_db(data["tags"])
         self._save_shapes_to_db(data["shapes"])
         self._save_tracks_to_db(data["tracks"])
+        self._save_intervals_to_db(data["intervals"])
 
     def create(self, data):
         data = self._validate_input_annotations(data)
@@ -486,20 +575,10 @@ class JobAnnotation:
             self._set_updated_date()
 
     def _validate_input_annotations(self, data: AnnotationIR | dict) -> AnnotationIR:
-        if not isinstance(data, AnnotationIR):
-            data = AnnotationIR(self.db_job.segment.task.dimension, data)
-
-        db_data = self.db_job.segment.task.require_data()
-
-        if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
-            # Only tags and shapes can be used in tasks with GT pool
-            raise ValidationError(
-                "Tracks are not supported when task validation mode is {}".format(
-                    models.ValidationMode.GT_POOL
-                )
-            )
-
-        return data
+        db_task = self.db_job.segment.task
+        return _validate_input_annotations(
+            data, db_data=db_task.require_data(), dimension=db_task.dimension
+        )
 
     def _delete_job_labeledimages(self, ids__UNSAFE: list[int]) -> None:
         # ids__UNSAFE is a list, received from the user
@@ -549,6 +628,19 @@ class JobAnnotation:
         models.LabeledTrackAttributeVal.objects.filter(track_id__in=ids).delete()
         self.db_job.labeledtrack_set.filter(pk__in=ids).delete()
 
+    def _delete_job_intervals(self, ids__UNSAFE: list[int], *, is_subcall: bool = False) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        if is_subcall:
+            ids = ids__UNSAFE
+        else:
+            ids = self.db_job.labeledinterval_set.filter(pk__in=ids__UNSAFE).values_list(
+                "id", flat=True
+            )
+
+        models.LabeledIntervalAttributeVal.objects.filter(interval_id__in=ids).delete()
+        self.db_job.labeledinterval_set.filter(pk__in=ids).delete()
+
     def _delete(self, data=None):
         deleted_data = {}
         if data is None:
@@ -559,6 +651,7 @@ class JobAnnotation:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
             labeledtrack_ids = [track["id"] for track in data["tracks"]]
+            labeledinterval_ids = [interval["id"] for interval in data["intervals"]]
 
             for labeledimage_ids_chunk in take_by(labeledimage_ids, chunk_size=1000):
                 self._delete_job_labeledimages(labeledimage_ids_chunk)
@@ -569,11 +662,15 @@ class JobAnnotation:
             for labeledtrack_ids_chunk in take_by(labeledtrack_ids, chunk_size=1000):
                 self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
+            for labeledinterval_ids_chunk in take_by(labeledinterval_ids, chunk_size=1000):
+                self._delete_job_intervals(labeledinterval_ids_chunk)
+
             deleted_data = {
                 "version": self.ir_data.version,
                 "tags": data["tags"],
                 "shapes": data["shapes"],
                 "tracks": data["tracks"],
+                "intervals": data["intervals"],
             }
 
         self.reset()
@@ -708,45 +805,49 @@ class JobAnnotation:
             self.ir_data.shapes = list(generate_shapes())
 
     def _init_tracks_from_db(self):
-        # NOTE: do not use .prefetch_related() with .values() since it's useless:
-        # https://github.com/cvat-ai/cvat/pull/7748#issuecomment-2063695007
-        db_tracks = (
-            self.db_job.labeledtrack_set.values(
+        db_tracks = [
+            dotdict(row)
+            for row in self.db_job.labeledtrack_set.values(
                 "id",
                 "frame",
                 "label_id",
                 "group",
                 "source",
                 "parent",
-                "shape__type",
-                "shape__occluded",
-                "shape__z_order",
-                "shape__rotation",
-                "shape__points",
-                "shape__id",
-                "shape__frame",
-                "shape__outside",
             )
-            .order_by("id", "shape__frame")
+            .order_by("id")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
-        )
+        ]
 
-        db_tracks = merge_table_rows(
-            rows=db_tracks,
-            keys_for_merge={
-                "shapes": [
-                    "shape__type",
-                    "shape__occluded",
-                    "shape__z_order",
-                    "shape__points",
-                    "shape__rotation",
-                    "shape__id",
-                    "shape__frame",
-                    "shape__outside",
-                ],
-            },
-            field_id="id",
-        )
+        if not db_tracks:
+            self.ir_data.tracks = []
+            return
+
+        tracks_by_id = {db_track.id: db_track for db_track in db_tracks}
+        for db_track in db_tracks:
+            db_track.shapes = []
+
+        for track_ids_chunk in take_by(sorted(tracks_by_id), 1000):
+            db_shapes = (
+                models.TrackedShape.objects.filter(track_id__in=track_ids_chunk)
+                .values(
+                    "track_id",
+                    "type",
+                    "occluded",
+                    "z_order",
+                    "rotation",
+                    "points",
+                    "id",
+                    "frame",
+                    "outside",
+                )
+                .order_by("track_id", "frame")
+                .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
+            )
+
+            for db_shape in db_shapes:
+                track_id = db_shape.pop("track_id")
+                tracks_by_id[track_id].shapes.append(dotdict(db_shape))
 
         labeledtrack_attributes = _receive_attributes_from_db(
             self.db_job.labeledtrackattributeval_set,
@@ -796,6 +897,50 @@ class JobAnnotation:
         serializer = serializers.LabeledTrackSerializerFromDB(list(tracks.values()), many=True)
         self.ir_data.tracks = serializer.data
 
+    def _init_intervals_from_db(self):
+        db_intervals = (
+            dotdict(row)
+            for row in self.db_job.labeledinterval_set.values(
+                "id",
+                "label_id",
+                "start",
+                "stop",
+                "group",
+                "source",
+                "score",
+            )
+            .order_by("start")
+            .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
+        )
+
+        db_attributes = _receive_attributes_from_db(
+            self.db_job.labeledintervalattributeval_set,
+            "interval_id",
+        )
+
+        def serialize(annotations: dict) -> Generator[dict, None, None]:
+            serializer = serializers.LabeledIntervalSerializerFromDB(
+                list(annotations.values()), many=True
+            )
+            yield from serializer.data
+
+            annotations.clear()
+
+        def generate_annotations():
+            annotations = {}
+
+            for db_interval in db_intervals:
+                db_interval.attributes = db_attributes[db_interval.id]
+                self._extend_attributes(
+                    db_interval.attributes, self.db_attributes[db_interval.label_id]["all"].values()
+                )
+
+                annotations[db_interval.id] = db_interval
+
+            yield from serialize(annotations)
+
+        self.ir_data.intervals = list(generate_annotations())
+
     def _init_version_from_db(self):
         self.ir_data.version = 0  # FIXME: should be removed in the future
 
@@ -803,6 +948,7 @@ class JobAnnotation:
         self._init_tags_from_db()
         self._init_shapes_from_db(streaming=streaming)
         self._init_tracks_from_db()
+        self._init_intervals_from_db()
         self._init_version_from_db()
 
     @property
@@ -833,13 +979,26 @@ class JobAnnotation:
         ) as temp_dir:
             exporter(dst_file, temp_dir, job_data, **options)
 
-    def import_annotations(self, src_file, importer, **options):
+    def import_annotations(
+        self,
+        src_file,
+        importer,
+        *,
+        import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
+        **options,
+    ):
         job_data = JobData(
             annotation_ir=AnnotationIR(self.db_job.segment.task.dimension),
             db_job=self.db_job,
             create_callback=self.create,
         )
-        self.delete()
+        import_mode = AnnotationImportMode(import_mode)
+        if import_mode == AnnotationImportMode.REPLACE:
+            self.delete()
+        elif import_mode == AnnotationImportMode.APPEND:
+            pass
+        else:
+            assert False, f"Unknown annotation import mode: {import_mode}"
 
         with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
@@ -884,8 +1043,7 @@ class TaskAnnotation:
         self.ir_data.reset()
 
     def _patch_data(self, data: AnnotationIR | dict, action: PatchAction | None):
-        if not isinstance(data, AnnotationIR):
-            data = AnnotationIR(self.db_task.dimension, data)
+        data = self._validate_input_annotations(data)
 
         if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             self._preprocess_input_annotations_for_gt_pool_task(data, action=action)
@@ -1005,6 +1163,11 @@ class TaskAnnotation:
 
         return data
 
+    def _validate_input_annotations(self, data: AnnotationIR | dict) -> AnnotationIR:
+        return _validate_input_annotations(
+            data, db_data=self.db_task.require_data(), dimension=self.db_task.dimension
+        )
+
     def update(self, data):
         self._patch_data(data, PatchAction.UPDATE)
 
@@ -1059,13 +1222,26 @@ class TaskAnnotation:
         ) as temp_dir:
             exporter(dst_file, temp_dir, task_data, **options)
 
-    def import_annotations(self, src_file, importer, **options):
+    def import_annotations(
+        self,
+        src_file,
+        importer,
+        *,
+        import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
+        **options,
+    ):
         task_data = TaskData(
             annotation_ir=AnnotationIR(self.db_task.dimension),
             db_task=self.db_task,
             create_callback=self.create,
         )
-        self.delete()
+        import_mode = AnnotationImportMode(import_mode)
+        if import_mode == AnnotationImportMode.REPLACE:
+            self.delete()
+        elif import_mode == AnnotationImportMode.APPEND:
+            pass
+        else:
+            assert False, f"Unknown annotation import mode: {import_mode}"
 
         with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
@@ -1131,7 +1307,7 @@ def delete_job_data(pk, *, db_job: models.Job | None = None):
     annotation.delete()
 
 
-@transaction_with_repeatable_read()
+@db_utils.transaction_with_repeatable_read()
 def export_job(
     job_id: int,
     dst_file: str,
@@ -1141,6 +1317,8 @@ def export_job(
     save_images=False,
     temp_dir: str | None = None,
 ):
+    from cvat.apps.dataset_manager.formats.registry import make_exporter
+
     job = JobAnnotation(job_id, prefetch_images=True)
     job.init_from_db(streaming=True)
 
@@ -1188,7 +1366,7 @@ def delete_task_data(pk):
     annotation.delete()
 
 
-@transaction_with_repeatable_read()
+@db_utils.transaction_with_repeatable_read()
 def export_task(
     task_id: int,
     dst_file: str,
@@ -1198,6 +1376,8 @@ def export_task(
     save_images: bool = False,
     temp_dir: str | None = None,
 ):
+    from cvat.apps.dataset_manager.formats.registry import make_exporter
+
     task = TaskAnnotation(task_id)
     task.init_from_db(streaming=True)
 
@@ -1207,26 +1387,54 @@ def export_task(
 
 
 @transaction.atomic
-def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
+def import_task_annotations(
+    src_file,
+    task_id,
+    format_name,
+    conv_mask_to_poly,
+    *,
+    import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
+):
+    from cvat.apps.dataset_manager.formats.registry import make_importer
+
     av_scan_paths(src_file)
     task = TaskAnnotation(task_id, write_only=True)
 
     importer = make_importer(format_name)
     with open(src_file, "rb") as f:
         try:
-            task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+            task.import_annotations(
+                f,
+                importer,
+                conv_mask_to_poly=conv_mask_to_poly,
+                import_mode=import_mode,
+            )
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))
 
 
 @transaction.atomic
-def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
+def import_job_annotations(
+    src_file,
+    job_id,
+    format_name,
+    conv_mask_to_poly,
+    *,
+    import_mode: AnnotationImportMode = AnnotationImportMode.REPLACE,
+):
+    from cvat.apps.dataset_manager.formats.registry import make_importer
+
     av_scan_paths(src_file)
     job = JobAnnotation(job_id, prefetch_images=True)
 
     importer = make_importer(format_name)
     with open(src_file, "rb") as f:
         try:
-            job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+            job.import_annotations(
+                f,
+                importer,
+                conv_mask_to_poly=conv_mask_to_poly,
+                import_mode=import_mode,
+            )
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))

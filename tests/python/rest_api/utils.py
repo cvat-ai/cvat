@@ -36,7 +36,7 @@ def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **k
         ), f"Request should be forbidden, status: {response.status}"
         raise ForbiddenException()
 
-    assert response.status == HTTPStatus.ACCEPTED, f"Status: {response.status}"
+    assert response.status == HTTPStatus.ACCEPTED, (f"Status: {response.status}", response.data)
 
     # define background request ID returned in the server response
     rq_id = json.loads(response.data).get("rq_id")
@@ -54,11 +54,13 @@ def wait_background_request(
     for _ in range(max_retries):
         background_request, response = api_client.requests_api.retrieve(rq_id)
         assert response.status == HTTPStatus.OK
-        if (
-            background_request.status.value
-            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
-        ):
+
+        if background_request.status.value == "finished":
             return background_request, response
+        assert (
+            background_request.status.value != "failed"
+        ), f"Background request failed with message: {background_request.message}"
+
         sleep(interval)
 
     assert False, (

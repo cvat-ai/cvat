@@ -32,11 +32,11 @@ context('Basic markdown pipeline', () => {
             password: 'UfdU21!dds',
         },
     };
-    let projectID = null;
-    let taskID = null;
-    let jobID = null;
-    let guideID = null;
-    let assetID = null;
+    let projectId = null;
+    let taskId = null;
+    let jobId = null;
+    let guideId = null;
+    let assetId = null;
 
     before(() => {
         cy.headlessLogout();
@@ -53,12 +53,12 @@ context('Basic markdown pipeline', () => {
             labels: projectLabels,
             name: projectName,
         }).then((response) => {
-            projectID = response.projectID;
+            projectId = response.projectId;
 
             cy.headlessCreateTask({
                 labels: [],
                 name: taskName,
-                project_id: projectID,
+                project_id: projectId,
                 source_storage: { location: 'local' },
                 target_storage: { location: 'local' },
             }, {
@@ -68,11 +68,11 @@ context('Basic markdown pipeline', () => {
                 use_cache: true,
                 sorting_method: 'lexicographical',
             }).then((taskResponse) => {
-                taskID = taskResponse.taskID;
-                [jobID] = taskResponse.jobIDs;
-                cy.openTaskById(taskID);
+                taskId = taskResponse.taskId;
+                [jobId] = taskResponse.jobIds;
+                cy.openTaskById(taskId);
                 cy.assignTaskToUser(additionalUsers.taskAssignee.username);
-                cy.assignJobToUser(jobID, additionalUsers.jobAssignee.username);
+                cy.assignJobToUser(jobId, additionalUsers.jobAssignee.username);
             });
         });
     });
@@ -89,17 +89,17 @@ context('Basic markdown pipeline', () => {
         });
     });
 
-    describe('Markdown text can be bounded to the project', () => {
+    describe('Markdown text can be bound to the project', () => {
         function openGuide() {
             cy.get('.cvat-md-guide-control-wrapper button').click();
             cy.url().should('to.match', /\/projects\/\d+\/guide/);
             cy.get('.cvat-guide-page-editor-wrapper').should('exist').and('be.visible');
             cy.get('.cvat-spinner-container').should('not.exist').then(() => {
-                if (guideID === null) {
+                if (guideId === null) {
                     cy.intercept('GET', '/api/projects/**').as('getProjects');
                     cy.window().then(async ($win) => {
-                        $win.cvat.projects.get({ id: projectID }).then(([project]) => {
-                            guideID = project.guideId;
+                        $win.cvat.projects.get({ id: projectId }).then(([project]) => {
+                            guideId = project.guideId;
                         });
                     });
                     cy.wait('@getProjects').its('response.statusCode').should('equal', 200);
@@ -107,17 +107,38 @@ context('Basic markdown pipeline', () => {
             });
         }
 
+        function guideTextarea() {
+            return cy.get('.cvat-guide-page-editor-wrapper textarea');
+        }
+
+        function submitButton() {
+            return cy.get('.cvat-guide-page-bottom button');
+        }
+
+        function expectBeforeUnloadBlocked(shouldBlock) {
+            cy.window().then(($win) => {
+                const event = new $win.Event('beforeunload', { cancelable: true });
+                $win.dispatchEvent(event);
+
+                expect(event.defaultPrevented).to.equal(shouldBlock);
+            });
+        }
+
+        function replaceMarkdown(value) {
+            guideTextarea().clear();
+            guideTextarea().type(value);
+        }
+
         function updatePlainText(value) {
-            cy.get('.cvat-guide-page-editor-wrapper textarea').clear();
-            cy.get('.cvat-guide-page-editor-wrapper textarea').type(value);
+            replaceMarkdown(value);
             cy.intercept('PATCH', '/api/guides/**').as('patchGuide');
-            cy.get('.cvat-guide-page-bottom button').should('exist').and('be.visible').and('not.be.disabled').click();
+            submitButton().should('exist').and('be.visible').and('not.be.disabled').click();
             cy.get('.cvat-spinner-container').should('not.exist');
             cy.wait('@patchGuide').its('response.statusCode').should('equal', 200);
         }
 
         function setupGuide(value) {
-            cy.openProjectById(projectID);
+            cy.openProjectById(projectId);
             openGuide();
             updatePlainText(value);
         }
@@ -141,11 +162,79 @@ context('Basic markdown pipeline', () => {
                     return fetch(base64);
                 }).then((res) => res.blob()).then((blob) => (
                     $win.cvat.assets.create(
-                        new $win.File([blob], 'file.jpg', { type: 'image/jpeg' }), guideID,
+                        new $win.File([blob], 'file.jpg', { type: 'image/jpeg' }), guideId,
                     )
                 )).then(({ uuid }) => {
-                    assetID = uuid;
+                    assetId = uuid;
                     setupGuide(`Plain text with a picture\n![image](/api/assets/${uuid})`);
+                });
+            });
+        });
+
+        it('enables submit only when markdown has unsaved changes', () => {
+            cy.openProjectById(projectId);
+            openGuide();
+            guideTextarea().invoke('val').then((value) => {
+                const savedValue = value || '';
+                submitButton().should('be.disabled');
+
+                guideTextarea().type('Unsaved markdown text');
+                submitButton().should('not.be.disabled');
+
+                replaceMarkdown(savedValue);
+                submitButton().should('be.disabled');
+            });
+        });
+
+        it('blocks browser unload only when markdown has unsaved changes', () => {
+            cy.openProjectById(projectId);
+
+            openGuide();
+            guideTextarea().invoke('val').then((value) => {
+                const savedValue = value || '';
+                expectBeforeUnloadBlocked(false);
+
+                guideTextarea().type('Unsaved markdown text');
+                expectBeforeUnloadBlocked(true);
+
+                replaceMarkdown(savedValue);
+                expectBeforeUnloadBlocked(false);
+            });
+        });
+
+        it('blocks route navigation only when markdown has unsaved changes', () => {
+            const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
+
+            cy.openProjectById(projectId);
+            openGuide();
+            guideTextarea().invoke('val').then((value) => {
+                const savedValue = value || '';
+                cy.window().then(($win) => {
+                    cy.stub($win, 'confirm').returns(false).as('confirm');
+                });
+
+                cy.go('back');
+                cy.location('pathname').should('equal', `/projects/${projectId}`);
+                cy.get('@confirm').then((confirm) => {
+                    expect(confirm.callCount).to.equal(0);
+                });
+
+                openGuide();
+                guideTextarea().type('Unsaved markdown text');
+
+                cy.go('back');
+                cy.get('@confirm').then((confirm) => {
+                    expect(confirm.callCount).to.equal(1);
+                    expect(confirm.firstCall.args[0]).to.equal(confirmationMessage);
+                });
+                cy.location('pathname').should('equal', `/projects/${projectId}/guide`);
+                guideTextarea().should('be.visible').and('contain.value', 'Unsaved markdown text');
+
+                updatePlainText(`${savedValue}\nSaved markdown text after route navigation test`);
+                cy.go('back');
+                cy.location('pathname').should('equal', `/projects/${projectId}`);
+                cy.get('@confirm').then((confirm) => {
+                    expect(confirm.callCount).to.equal(1);
                 });
             });
         });
@@ -158,8 +247,8 @@ context('Basic markdown pipeline', () => {
     describe('Staff can see markdown', () => {
         function checkGuideAndAssetAvailableOnAnnotationView() {
             // when open job for the first time, guide is opened automatically
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-            cy.intercept('GET', `/api/assets/${assetID}**`).as('assetGet');
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
+            cy.intercept('GET', `/api/assets/${assetId}**`).as('assetGet');
             cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
             cy.wait('@assetGet');
 
@@ -171,7 +260,7 @@ context('Basic markdown pipeline', () => {
             cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
 
             // when there is a request to open in a link, the guide is opened automatically
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}?openGuide`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}?openGuide`);
             cy.get('.cvat-annotation-header-guide-button').should('not.exist');
             cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
         }
@@ -203,12 +292,12 @@ context('Basic markdown pipeline', () => {
             cy.login(additionalUsers.notAssignee.username, additionalUsers.notAssignee.password);
             cy.request({
                 method: 'GET',
-                url: `/api/guides/${guideID}`,
+                url: `/api/guides/${guideId}`,
                 failOnStatusCode: false,
             }).its('status').should('equal', 403);
             cy.request({
                 method: 'GET',
-                url: `/api/assets/${assetID}`,
+                url: `/api/assets/${assetId}`,
                 failOnStatusCode: false,
             }).its('status').should('equal', 403);
         });

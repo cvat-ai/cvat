@@ -11,7 +11,7 @@ import { CombinedState, RequestsQuery, SelectedResourceType } from 'reducers';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { Request } from 'cvat-core-wrapper';
+import { Request, RQStatus } from 'cvat-core-wrapper';
 import { requestsActions } from 'actions/requests-actions';
 
 import dimensions from 'utils/dimensions';
@@ -43,7 +43,9 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
 
     const requestList = Object.values(requests);
     const requestViews = setUpRequestsList(requestList, page, pageSize);
-    const requestIds = requestViews.map((request) => request.id).filter((id) => !cancelled[id]);
+    const requestIds = requestViews
+        .filter((request) => !(request.id in cancelled) && request.status !== RQStatus.CANCELED)
+        .map((request) => request.id);
     const onSelectAll = useCallback(() => {
         dispatch(selectionActions.selectResources(requestIds, SelectedResourceType.REQUESTS));
     }, [requestIds]);
@@ -60,7 +62,7 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
                     <BulkWrapper currentResourceIds={requestIds} resourceType={SelectedResourceType.REQUESTS}>
                         {(selectProps) => (
                             requestViews.map((request: Request) => {
-                                const isCancelled = request.id in cancelled;
+                                const isCancelled = request.id in cancelled || request.status === RQStatus.CANCELED;
                                 const selectableIndex = isCancelled ? -1 : requestIds.indexOf(request.id);
                                 const canSelect = !isCancelled && selectableIndex !== -1;
 

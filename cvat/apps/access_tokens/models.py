@@ -12,7 +12,7 @@ from django.db.models import functions as db_functions
 from django.utils import timezone
 from rest_framework_api_key.models import AbstractAPIKey, BaseAPIKeyManager
 
-from cvat.apps.engine.model_utils import MaybeUndefined
+from cvat.utils import django_database as db_utils
 
 
 class AccessTokenManager(BaseAPIKeyManager):
@@ -76,7 +76,7 @@ class AccessToken(AbstractAPIKey):
         on_delete=models.CASCADE,
     )
 
-    raw_token: MaybeUndefined[str]
+    raw_token: db_utils.MaybeUndefined[str]
     "Can be specified by the calling serializer to report the generated raw token to the user."
 
     class Meta(AbstractAPIKey.Meta):
@@ -112,13 +112,10 @@ class AccessToken(AbstractAPIKey):
 
         return is_updated
 
-    # Replace function with @property, once it's working
-    # https://code.djangoproject.com/ticket/31558
+    @property
     @admin.display(boolean=True, description="Is stale")
-    def _is_stale(self):
+    def is_stale(self):
         # check comment in get_usable_keys()
         return (
             self.last_used_date or self.created
         ) + settings.ACCESS_TOKEN_STALE_PERIOD < timezone.now()
-
-    is_stale = property(_is_stale)

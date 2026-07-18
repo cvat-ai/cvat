@@ -7,9 +7,11 @@ from typing import Any
 
 import rq
 from crum import get_current_request, get_current_user
+from django.db import DatabaseError
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
-from rest_framework.views import exception_handler
+from rest_framework.response import Response
+from rest_framework.views import exception_handler as drf_exception_handler
 
 from cvat.apps.access_tokens.models import AccessToken
 from cvat.apps.access_tokens.serializers import AccessTokenReadSerializer
@@ -44,10 +46,12 @@ from cvat.apps.organizations.serializers import (
 )
 from cvat.apps.webhooks.models import Webhook
 from cvat.apps.webhooks.serializers import WebhookReadSerializer
+from cvat.utils import django_database as db_utils
+from cvat.utils.http import ResourceIsBusyApiException
 
 from .cache import get_cache
 from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
-from .event import event_scope, record_server_event
+from .event import event_scope, get_remote_addr, record_server_event
 from .utils import compute_working_time_per_ids
 
 
@@ -166,6 +170,9 @@ def request_info(instance=None):
     access_token = getattr(request, "auth", None)
     if isinstance(access_token, AccessToken):
         data["access_token_id"] = access_token.id
+
+    if remote_addr := get_remote_addr(request):
+        data["remote_addr"] = remote_addr
 
     return data
 
@@ -673,12 +680,21 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     return False
 
 
-def handle_viewset_exception(exc, context):
+def exception_handler(exc: Exception, context) -> Response | None:
+    if isinstance(exc, DatabaseError):
+        if db_utils.is_lock_timeout_error(exc):
+            exc = ResourceIsBusyApiException()
+
+    return drf_exception_handler(exc=exc, context=context)
+
+
+def handle_viewset_exception(exc: Exception, context):
     response = exception_handler(exc, context)
 
     IGNORED_EXCEPTION_CLASSES = (NotAuthenticated,)
     if isinstance(exc, IGNORED_EXCEPTION_CLASSES):
         return response
+
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
     # exceptions types, any other will cause a 500 error
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -762,6 +778,35 @@ def handle_cache_item_create(
 ) -> None:
     record_server_event(
         scope=event_scope("create", "cache_item"),
+        request_info=request_info(),
+        user_id=user_id(),
+        user_name=user_name(),
+        user_email=user_email(),
+        payload={
+            "cache_item": {
+                "type": item_type,
+                "target": target,
+                "target_id": target_id,
+                "number": number,
+                "size": size,
+                "quality": quality,
+            },
+            **payload_fields,
+        },
+    )
+
+
+def handle_cache_item_read(
+    item_type: str,
+    target: str | None = None,
+    target_id: int | None = None,
+    size: int = 0,
+    number: int | None = None,
+    quality: int | None = None,
+    **payload_fields,
+) -> None:
+    record_server_event(
+        scope=event_scope("read", "cache_item"),
         request_info=request_info(),
         user_id=user_id(),
         user_name=user_name(),

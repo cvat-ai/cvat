@@ -17,20 +17,19 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine import models
 from cvat.apps.engine.log import DatasetLogManager
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
-from cvat.apps.engine.task import create_thread as create_task
-from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
+from cvat.apps.engine.task import initialize_task
+from cvat.apps.engine.utils import av_scan_paths
+from cvat.utils import django_database as db_utils
 
 from .annotation import AnnotationIR
 from .bindings import CvatDatasetNotFoundError, CvatImportError, ProjectData, load_dataset_data
-from .formats.registry import make_exporter, make_importer
 
 dlogger = DatasetLogManager()
 
 
-@transaction_with_repeatable_read()
+@db_utils.transaction_with_repeatable_read()
 def export_project(
     project_id: int,
     dst_file: str,
@@ -40,6 +39,8 @@ def export_project(
     save_images: bool = False,
     temp_dir: str | None = None,
 ):
+    from .formats.registry import make_exporter
+
     project = ProjectAnnotation(project_id)
     project.init_from_db(streaming=True)
 
@@ -89,7 +90,7 @@ class ProjectAnnotation:
 
         data_serializer = DataSerializer(
             data={
-                "server_files": files["media"],
+                "server_files": list(map(split_name, files["media"])),
                 # TODO: following fields should be replaced with proper input values from request in future
                 "use_cache": False,
                 "use_zip_chunks": True,
@@ -107,9 +108,8 @@ class ProjectAnnotation:
         data["copy_data"] = data_serializer.validated_data["copy_data"]
         data["server_files_path"] = files["data_root"]
         data["stop_frame"] = None
-        data["server_files"] = list(map(split_name, data["server_files"]))
 
-        create_task(db_task, data)
+        initialize_task(db_task=db_task, data=data)
         self.db_tasks = (
             models.Task.objects.filter(project__id=self.db_project.id)
             .exclude(data=None)
@@ -131,7 +131,7 @@ class ProjectAnnotation:
             (label,) = filter(lambda l: l.name == label_name, labels)
             attribute.label = label
         if attributes:
-            bulk_create(models.AttributeSpec, [a[1] for a in attributes])
+            db_utils.bulk_create(models.AttributeSpec, [a[1] for a in attributes])
 
     def _init_task_from_db(self, task_id: int, *, streaming: bool = False) -> None:
         annotation = TaskAnnotation(pk=task_id)
@@ -214,6 +214,8 @@ class ProjectAnnotation:
 
 @transaction.atomic
 def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_poly):
+    from .formats.registry import make_importer
+
     rq_job = rq.get_current_job()
     rq_job_meta = ImportRQMeta.for_job(rq_job)
     rq_job_meta.status = "Dataset import has been started..."

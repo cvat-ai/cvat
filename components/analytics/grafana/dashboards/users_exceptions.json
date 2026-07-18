@@ -1,0 +1,1550 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none",
+          "custom": {
+            "width": 1
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_errors"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "displayName",
+                "value": "Total Errors"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "delta_percent"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "displayName",
+                "value": "Delta vs Prev"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 0,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 200,
+      "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": false
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "queryType": "sql",
+          "rawSql": "WITH\n  [\n    'permissiondenied',\n    'validationerror:',\n    'django.http.response.http404',\n    'you do not have permission to perform this action.',\n    'limitreachedexception:',\n    'throttled',\n    'request failed with status code 429',\n    'matches the given query.',\n    'cloud storage instance was deleted',\n    'cvatdatasetnotfounderror',\n    'authenticationfailed',\n    'no media data found',\n    'authentication credentials were not provided',\n    'rest_framework.exceptions.notacceptable: could not satisfy the request accept header',\n    'rest_framework.exceptions.methodnotallowed',\n    'rest_framework.exceptions.notfound'\n  ] AS raw_excluded_patterns,\nraw AS (\n  SELECT\n    timestamp,\n    source,\n    user_id,\n    lowerUTF8(JSONExtractString(payload, 'message')) AS msg_lower\n  FROM cvat.events\n  PREWHERE scope = 'send:exception'\n    AND source IN (${sources})\n    AND timestamp >= subtractSeconds($__fromTime, dateDiff('second', $__fromTime, $__toTime))\n    AND timestamp <= $__toTime\n  WHERE NOT multiSearchAnyCaseInsensitive(JSONExtractString(payload, 'message'), raw_excluded_patterns)\n), filtered AS (\n  SELECT\n    timestamp,\n    source,\n    user_id,\n    toUInt8(timestamp >= $__fromTime) AS period_id,\n    if(timestamp >= $__fromTime, toStartOfDay(timestamp), toDateTime('1970-01-01 00:00:00', 'Etc/UTC')) AS day,\n    msg_lower\n  FROM raw\n  WHERE length(trim(BOTH ' ' FROM msg_lower)) > 0\n), categorized AS (\n  SELECT\n    period_id,\n    day,\n    source,\n    user_id,\n    multiIf(\n      position(msg_lower, 'network error') > 0, toUInt8(1),\n      position(msg_lower, 'bad gateway') > 0, toUInt8(2),\n      position(msg_lower, 'cvat.apps.webhooks.exceptions.webhookdeliveryerror') > 0, toUInt8(40),\n      multiSearchAny(msg_lower, ['gateway time-out', 'gateway timeout', '504 gateway', 'code 504 received', 'timeout exceeded', 'request aborted', 'the request timed out. the cvat server did not respond in time']), toUInt8(3),\n      position(msg_lower, 'server error') > 0, toUInt8(4),\n      position(msg_lower, 'no available server') > 0, toUInt8(5),\n      multiSearchAny(msg_lower, ['redis.exceptions', 'kvrocks']), toUInt8(6),\n      multiSearchAny(msg_lower, ['django.db.utils.operationalerror', 'database system is']), toUInt8(7),\n      multiSearchAny(msg_lower, ['integrityerror', 'foreign key constraint', 'unique constraint']), toUInt8(8),\n      multiSearchAny(msg_lower, ['rq.timeouts.jobtimeoutexception', 'takes too long chunks']), toUInt8(9),\n      source = 'client' AND multiSearchAny(msg_lower, ['cannot read properties of', 'can''t access property', 'objectstate must be provided correct label, got wrong value undefined', 'cannot set properties of undefined']), toUInt8(10),\n      source = 'client' AND multiSearchAny(msg_lower, ['is not a function', 'is not iterable']), toUInt8(11),\n      source = 'client' AND position(msg_lower, 'setting getter-only property') > 0, toUInt8(12),\n      source = 'client' AND position(msg_lower, 'the start frame is out of the job') > 0, toUInt8(13),\n      source = 'client' AND multiSearchAny(msg_lower, ['canvas', 'webgl', 'createimagebitmap', 'createobjecturl', 'getimagedata']), toUInt8(14),\n      source = 'client' AND multiSearchAny(msg_lower, ['react error', '__reactfiber']), toUInt8(15),\n      source = 'client' AND (startsWith(msg_lower, '**shapes**') OR startsWith(msg_lower, '**labels**')), toUInt8(16),\n      source = 'client' AND multiSearchAny(msg_lower, ['queryselector', 'not a valid selector']), toUInt8(17),\n      source = 'client' AND position(msg_lower, 'session has not been initialized yet. call annotations.get() or annotations.clear({ reload: true }) before') > 0, toUInt8(18),\n      multiSearchAny(msg_lower, ['reached the maximum number of projects', 'cachetoolargedataerror']), toUInt8(19),\n      position(msg_lower, 'decompressionbomberror') > 0, toUInt8(20),\n      multiSearchAny(msg_lower, ['polygon must have at least', 'all the objects must have the same label', 'expected only one visible shape per frame', 'cannot join: not enough valid polygons']), toUInt8(21),\n      multiSearchAny(msg_lower, ['action name must be unique', 'all label names must be unique']), toUInt8(22),\n      position(msg_lower, 'label') > 0 AND position(msg_lower, 'is not registered for this task') > 0, toUInt8(23),\n      (position(msg_lower, 'trying to save an attribute') > 0 AND position(msg_lower, 'invalid value') > 0) OR (position(msg_lower, 'spec_id') > 0 AND position(msg_lower, ' is invalid') > 0), toUInt8(24),\n      multiSearchAny(msg_lower, ['unsupported media type', 'unknown media type', 'file must be file instance']), toUInt8(25),\n      multiSearchAny(msg_lower, ['unexpected type of track', 'skeleton template must be specified', 'tried to set wrong number of points for a skeleton', 'cannot join these polygons: the operation would create a shape with holes, which is not supported by cvat. please select different polygons or use the mask tool.']), toUInt8(21),\n      multiSearchAny(msg_lower, ['oserror: [errno 36]', 'oserror: [errno 22] invalid argument']), toUInt8(26),\n      multiSearchAny(msg_lower, ['datumaro.components.errors', 'annotationexporterror', 'itemexporterror', 'repeateditemerror', 'datumaro.components.contexts.importer._importfail', 'there is no item named ''project.json'' in the archive', 'there is no item named ''task.json'' in the archive', 'no media data found', 'no image found', 'cvat.apps.dataset_manager.bindings.cvatimporterror']), toUInt8(29),\n      position(msg_lower, 'cloudstoragemissingerror') > 0, toUInt8(30),\n      multiSearchAny(msg_lower, ['invalidimageerror', 'unidentifiedimageerror']), toUInt8(31),\n      position(msg_lower, 'runtimeerror: exception occurred during compression of image') > 0, toUInt8(32),\n      position(msg_lower, 'av.error') > 0, toUInt8(33),\n      multiSearchAny(msg_lower, ['filenotfounderror: [errno 2] no such file or directory', 'manifest.jsonl']), toUInt8(34),\n      multiSearchAny(msg_lower, ['not found on the cloud storage', 'resource ali-']), toUInt8(35),\n      position(msg_lower, 'trying to use undefined cloud storage') > 0, toUInt8(36),\n      position(msg_lower, 'already being processed (action=') > 0, toUInt8(37),\n      position(msg_lower, 'duplicate key value violates unique constraint') > 0, toUInt8(38),\n      position(msg_lower, 'locknotownederror') > 0, toUInt8(39),\n      toUInt8(255)\n    ) AS category_id\n  FROM filtered\n), grouped AS (\n  SELECT\n    grouping(period_id) AS g_period,\n    grouping(day) AS g_day,\n    grouping(source) AS g_source,\n    grouping(category_id) AS g_category,\n    period_id,\n    day,\n    source,\n    category_id,\n    count() AS error_count,\n    uniqExactIf(user_id, isNotNull(user_id)) AS unique_users\n  FROM categorized\n  GROUP BY GROUPING SETS (\n    (period_id),\n    (period_id, source),\n    (period_id, category_id),\n    (period_id, source, category_id),\n    (day, category_id)\n  )\n)\nSELECT\n  dataset,\n  period,\n  time,\n  source,\n  category,\n  category_order,\n  error_count,\n  unique_users,\n  if(dataset IN ('category', 'source_category') AND period = 'current', round(error_count * 100.0 / sumIf(error_count, period = 'current') OVER (PARTITION BY dataset), 2), NULL) AS percentage,\n  if(dataset IN ('stats', 'source', 'category', 'source_category'), sumIf(error_count, period = 'previous') OVER (PARTITION BY dataset, source, category), NULL) AS prev_error_count,\n  if(dataset IN ('stats', 'source', 'category', 'source_category'), sumIf(unique_users, period = 'previous') OVER (PARTITION BY dataset, source, category), NULL) AS prev_unique_users,\n  if(dataset IN ('stats', 'source', 'category', 'source_category') AND period = 'current' AND prev_error_count != 0, round((error_count - prev_error_count) * 100.0 / prev_error_count, 2), NULL) AS delta_percent,\n  if(dataset = 'stats' AND period = 'current' AND prev_unique_users != 0, round((unique_users - prev_unique_users) * 100.0 / prev_unique_users, 2), NULL) AS unique_users_delta_percent\nFROM\n(\n  SELECT\n    multiIf(\n      g_period = 0 AND g_day = 1 AND g_source = 1 AND g_category = 1, 'stats',\n      g_period = 0 AND g_day = 1 AND g_source = 0 AND g_category = 1, 'source',\n      g_period = 0 AND g_day = 1 AND g_source = 1 AND g_category = 0, 'category',\n      g_period = 0 AND g_day = 1 AND g_source = 0 AND g_category = 0, 'source_category',\n      g_period = 1 AND g_day = 0 AND g_source = 1 AND g_category = 0, 'day_category',\n      'unknown'\n    ) AS dataset,\n    if(g_period = 0, if(period_id = 1, 'current', 'previous'), '') AS period,\n    day AS time,\n    source,\n    if(g_category = 0, multiIf(\n      category_id = 1, 'Network Error',\n      category_id = 2, '502 Bad Gateway',\n      category_id = 3, '504 Gateway Timeout',\n      category_id = 4, '500 Server Error',\n      category_id = 5, 'No available server / service unavailable',\n      category_id = 6, 'Redis / kvrocks',\n      category_id = 7, 'Postgres / DB (operational)',\n      category_id = 8, 'Postgres / DB (integrity)',\n      category_id = 9, 'Timeouts / background jobs',\n      category_id = 10, 'JS null/undefined access',\n      category_id = 11, 'JS type/method errors',\n      category_id = 12, 'JS read-only property assignment',\n      category_id = 13, 'Client validation / frame bounds',\n      category_id = 14, 'Canvas / WebGL / memory',\n      category_id = 15, 'React / DOM',\n      category_id = 16, 'Debug logging / shapes dump',\n      category_id = 17, 'JS DOM API / Selectors',\n      category_id = 18, 'CVAT-core / Business Logic',\n      category_id = 19, 'Quotas / size limits',\n      category_id = 20, 'Quotas / size limits (image bomb)',\n      category_id = 21, 'Geometry / annotation rules',\n      category_id = 22, 'Uniqueness / names / ids',\n      category_id = 23, 'Labels not registered',\n      category_id = 24, 'Attributes invalid value',\n      category_id = 25, 'Unsupported / invalid input',\n      category_id = 26, 'OS error / file system',\n      category_id = 29, 'Import/Export / Datumaro',\n      category_id = 30, 'Cloud storage / file missing',\n      category_id = 31, 'Invalid image file',\n      category_id = 32, 'Image compression errors',\n      category_id = 33, 'AV / codec errors',\n      category_id = 34, 'File not found / missing file',\n      category_id = 35, 'Cloud storage / file not found',\n      category_id = 36, 'Cloud storage / config error',\n      category_id = 37, 'Concurrent export/import / duplicate request',\n      category_id = 38, 'DB duplicate key',\n      category_id = 39, 'Redis lock / concurrency',\n      category_id = 40, 'Webhook delivery errors',\n      'Other / uncategorized'\n    ), '') AS category,\n    if(g_category = 0, multiIf(\n      category_id = 7, 1,\n      category_id = 10, 2,\n      category_id = 34, 3,\n      category_id = 33, 4,\n      category_id = 30, 5,\n      category_id = 21, 6,\n      category_id = 20, 8,\n      category_id = 31, 9,\n      category_id = 19, 10,\n      category_id = 16, 11,\n      category_id = 8, 12,\n      category_id = 15, 13,\n      category_id = 18, 14,\n      category_id = 3, 15,\n      category_id = 37, 16,\n      category_id = 14, 17,\n      category_id = 13, 18,\n      category_id = 22, 19,\n      category_id = 11, 21,\n      category_id = 1, 22,\n      category_id = 23, 23,\n      category_id = 4, 24,\n      category_id = 255, 25,\n      category_id = 25, 26,\n      category_id = 29, 27,\n      category_id = 2, 28,\n      1000 + category_id\n    ), 0) AS category_order,\n    error_count,\n    unique_users\n  FROM grouped\n  WHERE NOT (g_period = 1 AND g_day = 0 AND day = toDateTime('1970-01-01 00:00:00', 'Etc/UTC'))\n)",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "table",
+      "transparent": true
+    },
+    {
+      "datasource": {
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_errors"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "displayName",
+                "value": "Total Errors"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "delta_percent"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "displayName",
+                "value": "Delta vs Prev"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 200,
+          "refId": "A"
+        }
+      ],
+      "title": "Total Errors",
+      "type": "stat",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "stats"
+                  }
+                }
+              },
+              {
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "source": true,
+              "category": true,
+              "unique_users": true,
+              "percentage": true,
+              "prev_error_count": true,
+              "prev_unique_users": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "error_count": 0,
+              "delta_percent": 1
+            },
+            "renameByName": {
+              "error_count": "total_errors"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "percentage"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show drilldown for ${__data.fields.category}",
+                    "url": "/d/${__dashboard.uid}?${__url_time_range}&${sources:queryparam}&var-category=${__data.fields.category}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 18,
+        "w": 16,
+        "x": 8,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "orientation": "horizontal",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "showLegend": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 200,
+          "refId": "A"
+        }
+      ],
+      "title": "Category Share",
+      "type": "barchart",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "category"
+                  }
+                }
+              },
+              {
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "source": true,
+              "error_count": true,
+              "unique_users": true,
+              "prev_error_count": true,
+              "prev_unique_users": true,
+              "delta_percent": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "category": 0,
+              "percentage": 1
+            },
+            "renameByName": {}
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "percentage",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "unique_users_impacted"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "locale"
+              },
+              {
+                "id": "displayName",
+                "value": "Unique Users"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "delta_percent"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "displayName",
+                "value": "Delta vs Prev"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 7
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 200,
+          "refId": "A"
+        }
+      ],
+      "title": "Unique Users Impacted",
+      "type": "stat",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "stats"
+                  }
+                }
+              },
+              {
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "source": true,
+              "category": true,
+              "error_count": true,
+              "percentage": true,
+              "prev_error_count": true,
+              "prev_unique_users": true,
+              "delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "unique_users": 0,
+              "unique_users_delta_percent": 1
+            },
+            "renameByName": {
+              "unique_users": "unique_users_impacted",
+              "unique_users_delta_percent": "delta_percent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Server vs Client",
+      "type": "barchart",
+      "datasource": {
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "current_count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Current"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "previous_count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Previous"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "showValue": "always",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 200,
+          "refId": "A"
+        }
+      ],
+      "pluginVersion": "9.3.6",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "source"
+                  }
+                }
+              },
+              {
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "category": true,
+              "unique_users": true,
+              "percentage": true,
+              "prev_unique_users": true,
+              "delta_percent": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "source": 0,
+              "error_count": 1,
+              "prev_error_count": 2
+            },
+            "renameByName": {
+              "error_count": "current_count",
+              "prev_error_count": "previous_count"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "displayName": "${__field.labels.metric}"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 200,
+          "refId": "A"
+        }
+      ],
+      "title": "Errors by Day (Stacked by Category)",
+      "type": "timeseries",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "day_category"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "source": true,
+              "unique_users": true,
+              "percentage": true,
+              "prev_error_count": true,
+              "prev_unique_users": true,
+              "delta_percent": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "time": 0,
+              "error_count": 1,
+              "category": 2
+            },
+            "renameByName": {
+              "error_count": "value",
+              "category": "metric"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "metric",
+                "desc": false
+              },
+              {
+                "field": "time",
+                "desc": false
+              }
+            ]
+          }
+        },
+        {
+          "id": "prepareTimeSeries",
+          "options": {
+            "format": "multi"
+          }
+        },
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "^(?:error_count|value) (.*)$",
+            "renamePattern": "$1"
+          }
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "dashboard",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "percentage"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "category"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show drilldown for ${__data.fields.category}",
+                    "url": "/d/${__dashboard.uid}?${__url_time_range}&${sources:queryparam}&var-category=${__data.fields.category}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 5,
+      "options": {
+        "footer": {
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "error_count"
+          }
+        ]
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "dashboard",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 200,
+          "refId": "A"
+        }
+      ],
+      "title": "Category Summary",
+      "type": "table",
+      "transformations": [
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "dataset",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "source_category"
+                  }
+                }
+              },
+              {
+                "fieldName": "period",
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "current"
+                  }
+                }
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "dataset": true,
+              "period": true,
+              "time": true,
+              "unique_users_delta_percent": true,
+              "category_order": true
+            },
+            "indexByName": {
+              "source": 0,
+              "category": 1,
+              "error_count": 2,
+              "percentage": 3,
+              "unique_users": 4,
+              "prev_error_count": 5,
+              "delta_percent": 6,
+              "prev_unique_users": 7
+            },
+            "renameByName": {}
+          }
+        }
+      ]
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      },
+      "id": 201,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "[Show all drilldown categories](/d/${__dashboard.uid}?from=${__from}&to=${__to}&${sources:queryparam}&var-category=__all)",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.1.2",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "id": 6,
+      "options": {
+        "footer": {
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "error_count"
+          }
+        ]
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "queryType": "sql",
+          "rawSql": "WITH\n  [\n    'permissiondenied',\n    'validationerror:',\n    'django.http.response.http404',\n    'you do not have permission to perform this action.',\n    'limitreachedexception:',\n    'throttled',\n    'request failed with status code 429',\n    'matches the given query.',\n    'cloud storage instance was deleted',\n    'cvatdatasetnotfounderror',\n    'authenticationfailed',\n    'no media data found',\n    'authentication credentials were not provided',\n    'rest_framework.exceptions.notacceptable: could not satisfy the request accept header',\n    'rest_framework.exceptions.methodnotallowed',\n    'rest_framework.exceptions.notfound'\n  ] AS raw_excluded_patterns,\nraw AS (\n  SELECT\n    source,\n    user_id,\n    lowerUTF8(JSONExtractString(payload, 'message')) AS msg_lower\n  FROM cvat.events\n  PREWHERE scope = 'send:exception'\n    AND source IN (${sources})\n    AND $__timeFilter(timestamp)\n  WHERE NOT multiSearchAnyCaseInsensitive(JSONExtractString(payload, 'message'), raw_excluded_patterns)\n), filtered AS (\n  SELECT\n    source,\n    user_id,\n    msg_lower\n  FROM raw\n  WHERE length(trim(BOTH ' ' FROM msg_lower)) > 0\n), categorized AS (\n  SELECT\n    source,\n    user_id,\n    msg_lower,\n    multiIf(\n      position(msg_lower, 'network error') > 0, 'Network Error',\n      position(msg_lower, 'bad gateway') > 0, '502 Bad Gateway',\n      position(msg_lower, 'cvat.apps.webhooks.exceptions.webhookdeliveryerror') > 0, 'Webhook delivery errors',\n      position(msg_lower, 'gateway time-out') > 0 OR position(msg_lower, 'gateway timeout') > 0 OR position(msg_lower, '504 gateway') > 0 OR position(msg_lower, 'code 504 received') > 0 OR position(msg_lower, 'timeout exceeded') > 0 OR position(msg_lower, 'request aborted') > 0 OR position(msg_lower, 'the request timed out. the cvat server did not respond in time') > 0, '504 Gateway Timeout',\n      position(msg_lower, 'server error') > 0, '500 Server Error',\n      position(msg_lower, 'no available server') > 0, 'No available server / service unavailable',\n      position(msg_lower, 'redis.exceptions') > 0 OR position(msg_lower, 'kvrocks') > 0, 'Redis / kvrocks',\n      position(msg_lower, 'django.db.utils.operationalerror') > 0 OR position(msg_lower, 'database system is') > 0, 'Postgres / DB (operational)',\n      position(msg_lower, 'integrityerror') > 0 OR position(msg_lower, 'foreign key constraint') > 0 OR position(msg_lower, 'unique constraint') > 0, 'Postgres / DB (integrity)',\n      position(msg_lower, 'rq.timeouts.jobtimeoutexception') > 0 OR position(msg_lower, 'takes too long chunks') > 0, 'Timeouts / background jobs',\n      source = 'client' AND (position(msg_lower, 'cannot read properties of') > 0 OR position(msg_lower, 'can''t access property') > 0 OR position(msg_lower, 'objectstate must be provided correct label, got wrong value undefined') > 0 OR position(msg_lower, 'cannot set properties of undefined') > 0), 'JS null/undefined access',\n      source = 'client' AND (position(msg_lower, 'is not a function') > 0 OR position(msg_lower, 'is not iterable') > 0), 'JS type/method errors',\n      source = 'client' AND position(msg_lower, 'setting getter-only property') > 0, 'JS read-only property assignment',\n      source = 'client' AND position(msg_lower, 'the start frame is out of the job') > 0, 'Client validation / frame bounds',\n      source = 'client' AND (position(msg_lower, 'canvas') > 0 OR position(msg_lower, 'webgl') > 0 OR position(msg_lower, 'createimagebitmap') > 0 OR position(msg_lower, 'createobjecturl') > 0 OR position(msg_lower, 'getimagedata') > 0), 'Canvas / WebGL / memory',\n      source = 'client' AND (position(msg_lower, 'react error') > 0 OR position(msg_lower, '__reactfiber') > 0), 'React / DOM',\n      source = 'client' AND (startsWith(msg_lower, '**shapes**') OR startsWith(msg_lower, '**labels**')), 'Debug logging / shapes dump',\n      source = 'client' AND (position(msg_lower, 'queryselector') > 0 OR position(msg_lower, 'not a valid selector') > 0), 'JS DOM API / Selectors',\n      source = 'client' AND position(msg_lower, 'session has not been initialized yet. call annotations.get() or annotations.clear({ reload: true }) before') > 0, 'CVAT-core / Business Logic',\n      position(msg_lower, 'reached the maximum number of projects') > 0 OR position(msg_lower, 'cachetoolargedataerror') > 0, 'Quotas / size limits',\n      position(msg_lower, 'decompressionbomberror') > 0, 'Quotas / size limits (image bomb)',\n      position(msg_lower, 'polygon must have at least') > 0 OR position(msg_lower, 'all the objects must have the same label') > 0 OR position(msg_lower, 'expected only one visible shape per frame') > 0 OR position(msg_lower, 'cannot join: not enough valid polygons') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'action name must be unique') > 0 OR position(msg_lower, 'all label names must be unique') > 0, 'Uniqueness / names / ids',\n      position(msg_lower, 'label') > 0 AND position(msg_lower, 'is not registered for this task') > 0, 'Labels not registered',\n      (position(msg_lower, 'trying to save an attribute') > 0 AND position(msg_lower, 'invalid value') > 0) OR (position(msg_lower, 'spec_id') > 0 AND position(msg_lower, ' is invalid') > 0), 'Attributes invalid value',\n      position(msg_lower, 'unsupported media type') > 0 OR position(msg_lower, 'unknown media type') > 0 OR position(msg_lower, 'file must be file instance') > 0, 'Unsupported / invalid input',\n      position(msg_lower, 'unexpected type of track') > 0 OR position(msg_lower, 'skeleton template must be specified') > 0 OR position(msg_lower, 'tried to set wrong number of points for a skeleton') > 0 OR position(msg_lower, 'cannot join these polygons: the operation would create a shape with holes, which is not supported by cvat. please select different polygons or use the mask tool.') > 0, 'Geometry / annotation rules',\n      position(msg_lower, 'oserror: [errno 36]') > 0 OR position(msg_lower, 'oserror: [errno 22] invalid argument') > 0, 'OS error / file system',\n      position(msg_lower, 'datumaro.components.errors') > 0 OR position(msg_lower, 'annotationexporterror') > 0 OR position(msg_lower, 'itemexporterror') > 0 OR position(msg_lower, 'repeateditemerror') > 0 OR position(msg_lower, 'datumaro.components.contexts.importer._importfail') > 0 OR position(msg_lower, 'there is no item named ''project.json'' in the archive') > 0 OR position(msg_lower, 'there is no item named ''task.json'' in the archive') > 0 OR position(msg_lower, 'no media data found') > 0 OR position(msg_lower, 'no image found') > 0 OR position(msg_lower, 'cvat.apps.dataset_manager.bindings.cvatimporterror') > 0, 'Import/Export / Datumaro',\n      position(msg_lower, 'cloudstoragemissingerror') > 0, 'Cloud storage / file missing',\n      position(msg_lower, 'invalidimageerror') > 0 OR position(msg_lower, 'unidentifiedimageerror') > 0, 'Invalid image file',\n      position(msg_lower, 'runtimeerror: exception occurred during compression of image') > 0, 'Image compression errors',\n      position(msg_lower, 'av.error') > 0, 'AV / codec errors',\n      position(msg_lower, 'filenotfounderror: [errno 2] no such file or directory') > 0 OR position(msg_lower, 'manifest.jsonl') > 0, 'File not found / missing file',\n      position(msg_lower, 'not found on the cloud storage') > 0 OR position(msg_lower, 'resource ali-') > 0, 'Cloud storage / file not found',\n      position(msg_lower, 'trying to use undefined cloud storage') > 0, 'Cloud storage / config error',\n      position(msg_lower, 'already being processed (action=') > 0, 'Concurrent export/import / duplicate request',\n      position(msg_lower, 'duplicate key value violates unique constraint') > 0, 'DB duplicate key',\n      position(msg_lower, 'locknotownederror') > 0, 'Redis lock / concurrency',\n      'Other / uncategorized'\n    ) AS category\n  FROM filtered\n)\nSELECT\n  category,\n  msg_lower AS error,\n  source,\n  count() AS error_count,\n  uniqExactIf(user_id, isNotNull(user_id)) AS unique_users\nFROM categorized\nWHERE '${category}' = '__all' OR category = '${category}'\nGROUP BY category, msg_lower, source\nORDER BY error_count DESC, category ASC, error ASC, source ASC\nLIMIT 200",
+          "refId": "A"
+        }
+      ],
+      "title": "Category Drilldown (Top Exceptions)",
+      "type": "table"
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "exceptions"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": "",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "definition": "client,server",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Source",
+        "multi": true,
+        "name": "sources",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "client",
+            "value": "client"
+          },
+          {
+            "selected": false,
+            "text": "server",
+            "value": "server"
+          }
+        ],
+        "query": "client,server",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "custom"
+      },
+      {
+        "allValue": "__all",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 2,
+        "includeAll": true,
+        "label": "Category",
+        "multi": false,
+        "name": "category",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "Network Error",
+            "value": "Network Error"
+          },
+          {
+            "selected": false,
+            "text": "JS null/undefined access",
+            "value": "JS null/undefined access"
+          },
+          {
+            "selected": false,
+            "text": "500 Server Error",
+            "value": "500 Server Error"
+          },
+          {
+            "selected": false,
+            "text": "502 Bad Gateway",
+            "value": "502 Bad Gateway"
+          },
+          {
+            "selected": false,
+            "text": "504 Gateway Timeout",
+            "value": "504 Gateway Timeout"
+          },
+          {
+            "selected": false,
+            "text": "Other / uncategorized",
+            "value": "Other / uncategorized"
+          },
+          {
+            "selected": false,
+            "text": "AV / codec errors",
+            "value": "AV / codec errors"
+          },
+          {
+            "selected": false,
+            "text": "Attributes invalid value",
+            "value": "Attributes invalid value"
+          },
+          {
+            "selected": false,
+            "text": "CVAT-core / Business Logic",
+            "value": "CVAT-core / Business Logic"
+          },
+          {
+            "selected": false,
+            "text": "Canvas / WebGL / memory",
+            "value": "Canvas / WebGL / memory"
+          },
+          {
+            "selected": false,
+            "text": "Cloud storage / config error",
+            "value": "Cloud storage / config error"
+          },
+          {
+            "selected": false,
+            "text": "Cloud storage / file missing",
+            "value": "Cloud storage / file missing"
+          },
+          {
+            "selected": false,
+            "text": "Cloud storage / file not found",
+            "value": "Cloud storage / file not found"
+          },
+          {
+            "selected": false,
+            "text": "Concurrent export/import / duplicate request",
+            "value": "Concurrent export/import / duplicate request"
+          },
+          {
+            "selected": false,
+            "text": "DB duplicate key",
+            "value": "DB duplicate key"
+          },
+          {
+            "selected": false,
+            "text": "Debug logging / shapes dump",
+            "value": "Debug logging / shapes dump"
+          },
+          {
+            "selected": false,
+            "text": "File not found / missing file",
+            "value": "File not found / missing file"
+          },
+          {
+            "selected": false,
+            "text": "Geometry / annotation rules",
+            "value": "Geometry / annotation rules"
+          },
+          {
+            "selected": false,
+            "text": "Image compression errors",
+            "value": "Image compression errors"
+          },
+          {
+            "selected": false,
+            "text": "Import/Export / Datumaro",
+            "value": "Import/Export / Datumaro"
+          },
+          {
+            "selected": false,
+            "text": "Invalid image file",
+            "value": "Invalid image file"
+          },
+          {
+            "selected": false,
+            "text": "JS DOM API / Selectors",
+            "value": "JS DOM API / Selectors"
+          },
+          {
+            "selected": false,
+            "text": "JS type/method errors",
+            "value": "JS type/method errors"
+          },
+          {
+            "selected": false,
+            "text": "Labels not registered",
+            "value": "Labels not registered"
+          },
+          {
+            "selected": false,
+            "text": "No available server / service unavailable",
+            "value": "No available server / service unavailable"
+          },
+          {
+            "selected": false,
+            "text": "OS error / file system",
+            "value": "OS error / file system"
+          },
+          {
+            "selected": false,
+            "text": "Postgres / DB (integrity)",
+            "value": "Postgres / DB (integrity)"
+          },
+          {
+            "selected": false,
+            "text": "Postgres / DB (operational)",
+            "value": "Postgres / DB (operational)"
+          },
+          {
+            "selected": false,
+            "text": "Quotas / size limits",
+            "value": "Quotas / size limits"
+          },
+          {
+            "selected": false,
+            "text": "Quotas / size limits (image bomb)",
+            "value": "Quotas / size limits (image bomb)"
+          },
+          {
+            "selected": false,
+            "text": "React / DOM",
+            "value": "React / DOM"
+          },
+          {
+            "selected": false,
+            "text": "Redis / kvrocks",
+            "value": "Redis / kvrocks"
+          },
+          {
+            "selected": false,
+            "text": "Redis lock / concurrency",
+            "value": "Redis lock / concurrency"
+          },
+          {
+            "selected": false,
+            "text": "Timeouts / background jobs",
+            "value": "Timeouts / background jobs"
+          },
+          {
+            "selected": false,
+            "text": "Uniqueness / names / ids",
+            "value": "Uniqueness / names / ids"
+          },
+          {
+            "selected": false,
+            "text": "Unsupported / invalid input",
+            "value": "Unsupported / invalid input"
+          },
+          {
+            "selected": false,
+            "text": "Webhook delivery errors",
+            "value": "Webhook delivery errors"
+          },
+          {
+            "selected": false,
+            "text": "JS read-only property assignment",
+            "value": "JS read-only property assignment"
+          },
+          {
+            "selected": false,
+            "text": "Client validation / frame bounds",
+            "value": "Client validation / frame bounds"
+          }
+        ],
+        "query": "Network Error,JS null/undefined access,500 Server Error,502 Bad Gateway,504 Gateway Timeout,Other / uncategorized,AV / codec errors,Attributes invalid value,CVAT-core / Business Logic,Canvas / WebGL / memory,Cloud storage / config error,Cloud storage / file missing,Cloud storage / file not found,Concurrent export/import / duplicate request,DB duplicate key,Debug logging / shapes dump,File not found / missing file,Geometry / annotation rules,Image compression errors,Import/Export / Datumaro,Invalid image file,JS DOM API / Selectors,JS type/method errors,Labels not registered,No available server / service unavailable,OS error / file system,Postgres / DB (integrity),Postgres / DB (operational),Quotas / size limits,Quotas / size limits (image bomb),React / DOM,Redis / kvrocks,Redis lock / concurrency,Timeouts / background jobs,Uniqueness / names / ids,Unsupported / invalid input,Webhook delivery errors,JS read-only property assignment,Client validation / frame bounds",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "custom",
+        "definition": "Network Error,JS null/undefined access,500 Server Error,502 Bad Gateway,504 Gateway Timeout,Other / uncategorized,AV / codec errors,Attributes invalid value,CVAT-core / Business Logic,Canvas / WebGL / memory,Cloud storage / config error,Cloud storage / file missing,Cloud storage / file not found,Concurrent export/import / duplicate request,DB duplicate key,Debug logging / shapes dump,File not found / missing file,Geometry / annotation rules,Image compression errors,Import/Export / Datumaro,Invalid image file,JS DOM API / Selectors,JS type/method errors,Labels not registered,No available server / service unavailable,OS error / file system,Postgres / DB (integrity),Postgres / DB (operational),Quotas / size limits,Quotas / size limits (image bomb),React / DOM,Redis / kvrocks,Redis lock / concurrency,Timeouts / background jobs,Uniqueness / names / ids,Unsupported / invalid input,Webhook delivery errors,JS read-only property assignment,Client validation / frame bounds"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Users Exceptions",
+  "uid": "user-exceptions",
+  "version": 4,
+  "weekStart": ""
+}

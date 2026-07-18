@@ -343,6 +343,7 @@ export class MasksHandlerImpl implements MasksHandler {
         const updateBlockedToolsDebounced = debounce(this.updateBlockedTools.bind(this), 250);
         return new Proxy(drawnObjects, {
             set(target, property, value) {
+                // eslint-disable-next-line no-param-reassign
                 target[property] = value;
                 updateBlockedToolsDebounced();
                 return true;
@@ -629,7 +630,9 @@ export class MasksHandlerImpl implements MasksHandler {
             this.startTimestamp = Date.now();
         }
 
-        if (!drawData.enabled && this.isDrawing) {
+        if (!drawData.enabled && this.isInsertion) {
+            this.releasePaste();
+        } else if (!drawData.enabled && this.isDrawing) {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();

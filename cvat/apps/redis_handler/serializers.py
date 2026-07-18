@@ -4,14 +4,13 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import timedelta, timezone
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
 import rq.defaults as rq_defaults
 from django.db.models import TextChoices
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rq.job import JobStatus as RQJobStatus
@@ -35,6 +34,15 @@ class RequestStatus(TextChoices):
     FINISHED = "finished"
 
 
+class RequestStatusField(serializers.ChoiceField):
+    def get_attribute(self, instance: CustomRQJob) -> str | None:
+        # Reuse the status loaded when the job was fetched instead of re-reading it from
+        # Redis. A fresh read (get_status(refresh=True)) is racy: the job hash may expire
+        # between fetching the job and serializing it, in which case Redis returns None and
+        # the client receives a null status.
+        return instance.get_status(refresh=False)
+
+
 class RqIdSerializer(serializers.Serializer):
     rq_id = serializers.CharField(help_text="Request id")
 
@@ -53,6 +61,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     task_id = serializers.IntegerField(required=False, allow_null=True)
     job_id = serializers.IntegerField(required=False, allow_null=True)
+    org_id = serializers.IntegerField(required=False, allow_null=True)
     format = serializers.CharField(required=False, allow_null=True)
     function_id = serializers.CharField(required=False, allow_null=True)
     lightweight = serializers.BooleanField(required=False, allow_null=True)
@@ -67,6 +76,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
             "project_id": base_rq_job_meta.project_id,
             "task_id": base_rq_job_meta.task_id,
             "job_id": base_rq_job_meta.job_id,
+            "org_id": base_rq_job_meta.org_id,
         }
         if parsed_request_id.action == RequestAction.AUTOANNOTATE:
             representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
@@ -82,7 +92,7 @@ class RequestSerializer(serializers.Serializer):
     # Marking them as read_only leads to generating type as allOf with one reference to RequestStatus component.
     # The client generated using openapi-generator from such a schema contains wrong type like:
     # status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]
-    status = serializers.ChoiceField(source="get_status", choices=RequestStatus.choices)
+    status = RequestStatusField(choices=RequestStatus.choices)
     message = serializers.SerializerMethodField()
     id = serializers.CharField()
     operation = RequestDataOperationSerializer(source="*")
@@ -138,7 +148,7 @@ class RequestSerializer(serializers.Serializer):
     @extend_schema_field(serializers.CharField(allow_blank=True))
     def get_message(self, rq_job: CustomRQJob) -> str:
         assert self._base_rq_job_meta
-        rq_job_status = rq_job.get_status()
+        rq_job_status = rq_job.get_status(refresh=False)
         message = ""
 
         if RQJobStatus.STARTED == rq_job_status:

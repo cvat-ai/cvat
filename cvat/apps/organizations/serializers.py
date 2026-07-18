@@ -88,6 +88,7 @@ class InvitationReadSerializer(serializers.ModelSerializer):
             "user",
             "organization",
             "expired",
+            "accepted",
             "organization_info",
         ]
         read_only_fields = fields
@@ -137,9 +138,6 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         invitation = Invitation.objects.create(**validated_data, membership=membership)
 
         return invitation
-
-    def update(self, instance, validated_data):
-        return super().update(instance, {})
 
     def save(self, request, **kwargs):
         invitation = super().save(**kwargs)

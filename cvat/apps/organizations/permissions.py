@@ -3,9 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import StrEnum
+
 from django.conf import settings
 
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission
 
 from .models import Membership
 
@@ -57,6 +59,12 @@ class OrganizationPermission(OpenPolicyAgentPermission):
         else:
             return None
 
+    def get_opa_settings_payload(self):
+        return {
+            **super().get_opa_settings_payload(),
+            "organizations_min_role_to_create": settings.ORGANIZATIONS_MIN_ROLE_TO_CREATE,
+        }
+
 
 class InvitationPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
@@ -92,9 +100,6 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 "list": Scopes.LIST,
                 "create": Scopes.CREATE,
                 "destroy": Scopes.DELETE,
-                "partial_update": (
-                    Scopes.ACCEPT if "accepted" in request.query_params else Scopes.RESEND
-                ),
                 "retrieve": Scopes.VIEW,
                 "accept": Scopes.ACCEPT,
                 "decline": Scopes.DECLINE,

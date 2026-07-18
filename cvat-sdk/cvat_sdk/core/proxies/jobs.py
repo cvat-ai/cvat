@@ -49,6 +49,7 @@ class Job(
         filename: StrPath,
         *,
         conv_mask_to_poly: bool | None = None,
+        import_mode: str | None = None,
         status_check_period: int | None = None,
         pbar: ProgressReporter | None = None,
     ):
@@ -63,6 +64,7 @@ class Job(
             filename,
             format_name,
             conv_mask_to_poly=conv_mask_to_poly,
+            import_mode=import_mode,
             url_params={"id": self.id},
             pbar=pbar,
             status_check_period=status_check_period,
@@ -129,7 +131,9 @@ class Job(
 
     def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
-            self._client.api_client.labels_api.list_endpoint, job_id=self.id
+            self._client.api_client.labels_api.list_endpoint,
+            org_id=self.organization,
+            job_id=self.id,
         )
 
     def get_frames_info(self) -> list[models.IFrameMeta]:
@@ -147,7 +151,9 @@ class Job(
         return [
             Issue(self._client, m)
             for m in get_paginated_collection(
-                self._client.api_client.issues_api.list_endpoint, job_id=self.id
+                self._client.api_client.issues_api.list_endpoint,
+                org_id=self.organization,
+                job_id=self.id,
             )
         ]
 
