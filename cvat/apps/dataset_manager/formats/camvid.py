@@ -3,8 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import shutil
+
 from datumaro.components.dataset import StreamDataset
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive
@@ -38,7 +39,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 @importer(name="CamVid", ext="ZIP", version="1.0")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
-    Archive(src_file.name).extractall(temp_dir)
+    shutil.unpack_archive(src_file.name, temp_dir, "zip")
 
     # We do not run detect_dataset before import because the Camvid format
     # has problem with the dataset detection in case of empty annotation file(s)

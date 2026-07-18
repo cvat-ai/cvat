@@ -9,7 +9,7 @@ import logging
 import urllib.parse
 from abc import ABCMeta
 from collections.abc import Generator, Sequence
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from pathlib import Path
 from time import sleep
 from typing import Any, TypeVar
@@ -167,59 +167,17 @@ class Client:
     ALLOWED_SCHEMAS = ("https", "http")
 
     def _validate_and_prepare_url(self, url: str) -> str:
-        url_parts = url.split("://", maxsplit=1)
-        if len(url_parts) == 2:
-            schema, base_url = url_parts
-        else:
-            schema = ""
-            base_url = url
-
-        base_url = base_url.rstrip("/")
-
-        if schema and schema not in self.ALLOWED_SCHEMAS:
-            raise InvalidHostException(
-                f"Invalid url schema '{schema}', expected "
-                f"one of <none>, {', '.join(self.ALLOWED_SCHEMAS)}"
-            )
-
-        if not schema:
-            schema = self._detect_schema(base_url)
-            url = f"{schema}://{base_url}"
-
-        return url
-
-    def _detect_schema(self, base_url: str) -> str:
-        def attempt(schema: str) -> bool:
-            with ApiClient(Configuration(host=f"{schema}://{base_url}")) as api_client:
-                with suppress(urllib3.exceptions.RequestError):
-                    _, response = api_client.server_api.retrieve_about(
-                        _request_timeout=5, _parse_response=False, _check_status=False
+        match url.split("://", maxsplit=1):
+            case [schema, _]:
+                if schema not in self.ALLOWED_SCHEMAS:
+                    raise InvalidHostException(
+                        f"Invalid url schema '{schema}', expected "
+                        f"one of <none>, {', '.join(self.ALLOWED_SCHEMAS)}"
                     )
+            case _:
+                url = "https://" + url
 
-                    if response.status in [200, 401]:
-                        # Server versions prior to 2.3.0 respond with unauthorized
-                        # 2.3.0 allows unauthorized access
-                        return True
-            return False
-
-        if attempt("https"):
-            return "https"
-
-        self.logger.warning(
-            "Failed to connect to the server using HTTPS; will attempt HTTP instead"
-        )
-        self.logger.warning(
-            "This fallback will be removed in a future version of the SDK;"
-            " to avoid breakage, explicitly add 'https://' or 'http://' to the URL"
-        )
-
-        if attempt("http"):
-            return "http"
-
-        raise InvalidHostException(
-            "Failed to detect host schema automatically, please check "
-            "the server url and try to specify 'https://' or 'http://' explicitly"
-        )
+        return url.rstrip("/")
 
     def __enter__(self):
         self.api_client.__enter__()

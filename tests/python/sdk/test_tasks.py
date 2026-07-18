@@ -3,16 +3,19 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
 import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
+from unittest import mock
 
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.rest import RESTClientObject
 from cvat_sdk.core.exceptions import BackgroundRequestException
+from cvat_sdk.core.filters import F
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.proxies.types import Location
 from PIL import Image
@@ -170,7 +173,7 @@ class TestTaskUsecases(TestDatasetExport):
 
         task = self.client.tasks.create(
             {
-                "name": f"test task",
+                "name": "test task",
             }
         )
 
@@ -210,6 +213,72 @@ class TestTaskUsecases(TestDatasetExport):
 
         assert any(t.id == task_id for t in tasks)
         assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_simple_filter(self, fxt_new_task: Task):
+        from cvat_sdk.core.proxies import model_proxy
+
+        task_name = f"test_task_filter_{fxt_new_task.id}"
+        fxt_new_task.update(models.PatchedTaskWriteRequest(name=task_name))
+
+        with mock.patch.object(
+            model_proxy,
+            "get_paginated_collection",
+            wraps=model_proxy.get_paginated_collection,
+        ) as spy:
+            tasks = self.client.tasks.list(name=task_name)
+
+        # a plain field lookup is forwarded as-is and must not be turned into a complex `filter`
+        assert spy.call_args.kwargs["name"] == task_name
+        assert "filter" not in spy.call_args.kwargs
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_json_logic_filter(self, fxt_new_task: Task):
+        tasks = self.client.tasks.list(filter={"==": [{"var": "id"}, fxt_new_task.id]})
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_json_logic_filter_string(self, fxt_new_task: Task):
+        filter_value = json.dumps({"==": [{"var": "id"}, fxt_new_task.id]})
+
+        tasks = self.client.tasks.list(filter=filter_value)
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_dsl_filter(self, fxt_new_task: Task):
+        tasks = self.client.tasks.list(filter=F.id == fxt_new_task.id)
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_keyword_lookup(self, fxt_new_task: Task):
+        tasks = self.client.tasks.list(id__in=[fxt_new_task.id])
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_dsl_filter_matches_raw_filter(self, fxt_new_task: Task):
+        dsl = self.client.tasks.list(filter=F.id == fxt_new_task.id)
+        raw = self.client.tasks.list(filter={"==": [{"var": "id"}, fxt_new_task.id]})
+
+        assert [t.id for t in dsl] == [t.id for t in raw] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_combine_keyword_lookup_and_dsl_filter(self, fxt_new_task: Task):
+        task_name = f"test_combined_filter_{fxt_new_task.id}"
+        fxt_new_task.update(models.PatchedTaskWriteRequest(name=task_name))
+
+        tasks = self.client.tasks.list(id__in=[fxt_new_task.id], filter=F.name == task_name)
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_list_tasks_rejects_unknown_filter_parameter(self):
+        with pytest.raises(exceptions.ApiTypeError):
+            self.client.tasks.list(unknown_filter=True)
 
     def test_can_update_task(self, fxt_new_task: Task):
         fxt_new_task.update(models.PatchedTaskWriteRequest(name="foo"))
@@ -419,7 +488,7 @@ class TestTaskUsecases(TestDatasetExport):
 
         imported_annotations = fxt_new_task.get_jobs()[0].get_annotations()
         assert all(
-            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+            s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes
         )
 
     def _test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):

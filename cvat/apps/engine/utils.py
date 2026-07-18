@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import ast
 import hashlib
 import importlib
@@ -13,11 +15,12 @@ import re
 import stat
 import subprocess
 import sys
+import sysconfig
 import traceback
 import urllib.parse
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
-from contextlib import contextmanager, nullcontext, suppress
+from contextlib import nullcontext, suppress
 from enum import StrEnum, auto
 from itertools import islice
 from multiprocessing import cpu_count
@@ -30,7 +33,6 @@ from av import VideoFrame
 from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import connection, transaction
 from django.db.models import Model
 from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
@@ -42,6 +44,8 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.redis_handler.utils import rq_job_will_be_retried
 
 if TYPE_CHECKING:
+    from _typeshed import StrPath
+
     from cvat.apps.engine.models import RequestTarget
 
 Import = namedtuple("Import", ["module", "name", "alias"])
@@ -520,10 +524,22 @@ def defaultdict_to_regular(d):
     return d
 
 
-@contextmanager
-def transaction_with_repeatable_read():
-    with transaction.atomic():
-        if connection.vendor != "sqlite":
-            connection.cursor().execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
-            connection.cursor().execute("SET TRANSACTION READ ONLY;")
-        yield
+def extract_with_patool(archive_path: StrPath, out_dir: StrPath) -> None:
+    try:
+        subprocess.run(  # nosec: B603
+            [
+                os.path.join(sysconfig.get_path("scripts"), "patool"),
+                "--non-interactive",
+                "extract",
+                f"--outdir={out_dir}",
+                "--",
+                archive_path,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            errors="replace",
+        )
+    except subprocess.CalledProcessError as ex:
+        raise RuntimeError("unable to extract archive:\n" + ex.stderr) from ex

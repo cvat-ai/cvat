@@ -3,8 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import shutil
+
 from datumaro.components.dataset import Dataset
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
@@ -41,7 +42,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 @importer(name="Segmentation mask", ext="ZIP", version="1.1")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
-    Archive(src_file.name).extractall(temp_dir)
+    shutil.unpack_archive(src_file.name, temp_dir, "zip")
 
     detect_dataset(temp_dir, format_name="voc", importer=dm_env.importers.get("voc"))
     dataset = Dataset.import_from(temp_dir, "voc", env=dm_env)
