@@ -17,7 +17,7 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from logging import Logger
-from pathlib import Path, PurePath
+from pathlib import Path
 from typing import Any, ClassVar
 from zipfile import ZipFile, ZipInfo
 
@@ -387,15 +387,14 @@ class _ExporterBase(metaclass=ABCMeta):
         super().__init__(*args, **kwargs)
 
     @staticmethod
+    def _write_file(source_dir, zip_object, file, target_dir):
+        arcname = os.path.normpath(os.path.join(target_dir, os.path.relpath(file, source_dir)))
+        zip_object.write(filename=file, arcname=arcname)
+
+    @staticmethod
     def _write_files(source_dir, zip_object, files, target_dir):
         for filename in files:
-            arcname = os.path.normpath(
-                os.path.join(
-                    target_dir,
-                    os.path.relpath(filename, source_dir),
-                )
-            )
-            zip_object.write(filename=filename, arcname=arcname)
+            _ExporterBase._write_file(source_dir, zip_object, filename, target_dir)
 
     def _write_directory(
         self, source_dir, zip_object, target_dir, recursive=True, exclude_files=None
@@ -532,15 +531,13 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         files_for_local_copy = []
 
-        media_files_to_download: list[PurePath] = []
+        keys_to_download: list[str] = []
         for media_file in self._db_data.related_files.all():
-            media_path = PurePath(media_file.path)
-
-            local_path = os.path.join(data_dir, media_path)
+            local_path = os.path.join(data_dir, media_file.path)
             if os.path.exists(local_path):
                 files_for_local_copy.append(local_path)
             else:
-                media_files_to_download.append(media_path)
+                keys_to_download.append(media_file.path)
 
         frame_ids_to_download = []
         frame_names_to_download = []
@@ -554,19 +551,27 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 frame_ids_to_download.append(media_file.frame)
                 frame_names_to_download.append(media_file.path)
 
-        if media_files_to_download:
+        if keys_to_download:
             storage_client = self._db_data.get_cloud_storage_instance()
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                storage_client.bulk_download_to_dir(
-                    files=media_files_to_download, upload_dir=Path(tmp_dir)
-                )
+            assert storage_client
 
-                self._write_files(
-                    source_dir=tmp_dir,
-                    zip_object=zip_object,
-                    files=[os.path.join(tmp_dir, file) for file in media_files_to_download],
-                    target_dir=target_data_dir,
-                )
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                tmp_dir = Path(tmp_dir)
+                download_dir = tmp_dir / "download"
+                download_dir.mkdir()
+
+                with closing(
+                    storage_client.bulk_download_to_temporary_files(
+                        [(key, join_untrusted_path(download_dir, key)) for key in keys_to_download],
+                        tmp_dir,
+                    )
+                ) as file_iterator:
+                    self._write_files(
+                        source_dir=download_dir,
+                        zip_object=zip_object,
+                        files=file_iterator,
+                        target_dir=target_data_dir,
+                    )
 
         if frame_ids_to_download:
             media_cache = MediaCache()
@@ -575,19 +580,15 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     self._db_task, frame_ids=frame_ids_to_download, decode=False
                 )
             ) as frame_iter:
-                # Avoid closing the frame iter before the files are copied
-                downloaded_paths = []
-                for _ in frame_ids_to_download:
-                    downloaded_paths.append(next(frame_iter)[1])
+                for frame_name, (_, downloaded_path) in zip(frame_names_to_download, frame_iter):
+                    assert downloaded_path.endswith(frame_name)
 
-                tmp_dir = downloaded_paths[0].removesuffix(frame_names_to_download[0])
-
-                self._write_files(
-                    source_dir=tmp_dir,
-                    zip_object=zip_object,
-                    files=downloaded_paths,
-                    target_dir=target_data_dir,
-                )
+                    self._write_file(
+                        source_dir=downloaded_path[: -len(frame_name)],
+                        zip_object=zip_object,
+                        file=downloaded_path,
+                        target_dir=target_data_dir,
+                    )
 
         self._write_files(
             source_dir=data_dir,
