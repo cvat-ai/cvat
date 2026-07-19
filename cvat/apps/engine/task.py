@@ -58,7 +58,11 @@ from utils.dataset_manifest import (
     VideoManifestManager,
     is_manifest,
 )
-from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
+from utils.dataset_manifest.core import (
+    VideoManifestValidator,
+    is_dataset_manifest,
+    is_video_manifest,
+)
 from utils.dataset_manifest.utils import find_related_images
 
 from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_instance
@@ -1067,13 +1071,28 @@ def _create_validation_jobs(
         db_gt_job.make_dirs()
 
 
+def _get_cloud_storage_manifest_files(
+    cloud_storage_manifest: ImageManifestManager | VideoManifestManager,
+) -> list[str]:
+    """
+    Returns the file names described by a cloud storage manifest,
+    relative to the manifest directory.
+
+    A video manifest describes a single video file, an image manifest - a set of images.
+    """
+    if isinstance(cloud_storage_manifest, VideoManifestManager):
+        return [cloud_storage_manifest.video_name]
+
+    return [image.full_name for _, image in cloud_storage_manifest]
+
+
 def _filter_cloud_storage_files(
     cloud_storage: models.CloudStorage,
     data: dict[str, Any],
     *,
     job_file_mapping: JobFileMapping | None,
     cloud_storage_manifest_prefix: str | None,
-    cloud_storage_manifest: ImageManifestManager | None,
+    cloud_storage_manifest: ImageManifestManager | VideoManifestManager | None,
 ) -> None:
     cloud_storage_instance = db_storage_to_storage_instance(cloud_storage)
 
@@ -1087,6 +1106,7 @@ def _filter_cloud_storage_files(
         copy_of_dirs = dirs.copy()
         additional_files = []
         if cloud_storage_manifest:
+            manifest_files = _get_cloud_storage_manifest_files(cloud_storage_manifest)
             for directory in dirs:
                 if cloud_storage_manifest_prefix:
                     # cloud_storage_manifest_prefix is a dirname of manifest,
@@ -1094,15 +1114,9 @@ def _filter_cloud_storage_files(
                     directory = directory[len(cloud_storage_manifest_prefix) + 1 :]
 
                 additional_files.extend(
-                    [
-                        x[1].full_name
-                        for x in filter(
-                            lambda x: x[1].full_name.startswith(directory),
-                            cloud_storage_manifest,
-                        )
-                    ]
+                    [f for f in manifest_files if f.startswith(directory)]
                     if directory
-                    else [x[1].full_name for x in cloud_storage_manifest]
+                    else manifest_files
                 )
 
             if cloud_storage_manifest_prefix:
@@ -1169,14 +1183,11 @@ def _filter_cloud_storage_files(
             if not data["filename_pattern"] == "*":
                 additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
         else:
-            additional_files = (
-                list(cloud_storage_manifest.data)
-                if not cloud_storage_manifest_prefix
-                else [
-                    os.path.join(cloud_storage_manifest_prefix, f)
-                    for f in cloud_storage_manifest.data
+            additional_files = _get_cloud_storage_manifest_files(cloud_storage_manifest)
+            if cloud_storage_manifest_prefix:
+                additional_files = [
+                    os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files
                 ]
-            )
             if not data["filename_pattern"] == "*":
                 additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
 
@@ -1637,13 +1648,19 @@ def initialize_task(
     )
 
     if is_data_in_cloud and not is_backup_restore:
-        cloud_storage_manifest: ImageManifestManager | None = None
+        cloud_storage_manifest: ImageManifestManager | VideoManifestManager | None = None
         cloud_storage_manifest_prefix: str | None = None
         if manifest_file:
-            cloud_storage_manifest = ImageManifestManager(
-                db_data.cloud_storage.get_storage_dirname() / manifest_file,
-                db_data.cloud_storage.get_storage_dirname(),
+            cloud_storage_manifest_path = (
+                db_data.cloud_storage.get_storage_dirname() / manifest_file
             )
+            if is_video_manifest(cloud_storage_manifest_path):
+                cloud_storage_manifest = VideoManifestManager(cloud_storage_manifest_path)
+            else:
+                cloud_storage_manifest = ImageManifestManager(
+                    cloud_storage_manifest_path,
+                    db_data.cloud_storage.get_storage_dirname(),
+                )
             cloud_storage_manifest.set_index()
             cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
 
