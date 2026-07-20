@@ -95,8 +95,9 @@ class ProfileDelete:
 class ProfileCreate:
     needs_client = False
     description = (
-        "Save a self-contained profile bundling a server and a PAT. "
-        "Only an existing PAT can be remembered; this does not create a server-side token."
+        "Save a Personal Access Token (PAT) and the server info into a local profile. "
+        "A PAT must be created on the server manually first. "
+        "Read more: https://docs.cvat.ai/docs/api_sdk/access_tokens/"
     )
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
