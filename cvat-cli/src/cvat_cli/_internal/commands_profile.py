@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+from urllib.parse import urlsplit
 
 from cvat_sdk.core.auth import DEFAULT_SERVER, AuthStore, ProfileEntry
 from cvat_sdk.core.client import AccessTokenCredentials, Client, Config
@@ -119,12 +120,15 @@ class ProfileCreate:
         if not token:
             raise CriticalError("A non-empty PAT is required.")
 
-        if args.server_host:
-            server = args.server_host
-            if args.server_port:
-                server = f"{server}:{args.server_port}"
-        else:
-            server = store.get_default_server() or DEFAULT_SERVER
+        server = (args.server_host or store.get_default_server() or DEFAULT_SERVER).rstrip("/")
+        if args.server_port:
+            parsed_url = urlsplit(("https://" if "://" not in server else "") + server)
+            if parsed_url.port:
+                raise CriticalError(
+                    "A server URL with a port and '--server-port' cannot be used together. "
+                    "Please specify only one port."
+                )
+            server = f"{server}:{args.server_port}"
         server = normalize_server_url(server)
 
         name = args.name
@@ -138,7 +142,7 @@ class ProfileCreate:
         if store.get_profile(name) is not None and not args.force:
             raise CriticalError(f"Profile {name!r} already exists. Pass --force to overwrite.")
 
-        store.add_profile(
+        store.put_profile(
             name,
             ProfileEntry(server=server, token=token, created_date=get_current_time_iso()),
             set_default=args.set_default,

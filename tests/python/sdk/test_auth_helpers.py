@@ -147,7 +147,7 @@ def test_make_client_from_cli_uses_existing_named_profile(tmp_path, monkeypatch)
     from cvat_sdk.core import auth as auth_mod
 
     store = AuthStore(path=tmp_path / "auth.json")
-    store.add_profile(
+    store.put_profile(
         "p",
         ProfileEntry(server=PROFILE_URL, token="pat", created_date="2026-01-01T00:00:00+00:00"),
     )
@@ -169,7 +169,7 @@ def test_make_client_from_cli_zero_flag_uses_default_profile(tmp_path, monkeypat
     from cvat_sdk.core import auth as auth_mod
 
     store = AuthStore(path=tmp_path / "auth.json")
-    store.add_profile(
+    store.put_profile(
         "p",
         ProfileEntry(server=PROFILE_URL, token="dpat", created_date="2026-01-01T00:00:00+00:00"),
         set_default=True,
@@ -187,7 +187,7 @@ def test_make_client_from_cli_applies_client_options_to_named_profile(tmp_path, 
     logger = logging.getLogger("test-auth")
     config = Config(status_check_period=0.1)
     store = AuthStore(path=tmp_path / "auth.json")
-    store.add_profile(
+    store.put_profile(
         "p",
         ProfileEntry(server=PROFILE_URL, token="pat", created_date="2026-01-01T00:00:00+00:00"),
     )
@@ -212,7 +212,7 @@ def test_make_client_from_cli_explicit_host_does_not_borrow_profile_token(tmp_pa
     from cvat_sdk.core import auth as auth_mod
 
     store = AuthStore(path=tmp_path / "auth.json")
-    store.add_profile(
+    store.put_profile(
         "p",
         ProfileEntry(server=PROFILE_URL, token="dpat", created_date="2026-01-01T00:00:00+00:00"),
         set_default=True,
@@ -222,6 +222,37 @@ def test_make_client_from_cli_explicit_host_does_not_borrow_profile_token(tmp_pa
     client = make_client_from_cli(_ns(server_host=EXPLICIT_URL), store=store)
     assert client.url == EXPLICIT_URL
     assert client.logged_in_with.token == "env-tok"
+
+
+def test_make_client_from_cli_appends_port_to_default_server(tmp_path, monkeypatch):
+    from cvat_sdk.core import auth as auth_mod
+
+    store = AuthStore(path=tmp_path / "auth.json")
+    monkeypatch.setattr(auth_mod, "Client", _FakeClient)
+    monkeypatch.setenv(CVAT_ACCESS_TOKEN_ENV_VAR, "env-tok")
+
+    client = make_client_from_cli(_ns(server_port=8080), store=store)
+
+    assert client.url == "http://localhost:8080"
+    assert client.logged_in_with.token == "env-tok"
+
+
+def test_make_client_from_cli_rejects_host_with_port_and_server_port(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+
+    with pytest.raises(AuthStoreError, match="Please specify only one port"):
+        make_client_from_cli(
+            _ns(server_host="http://localhost:8080", server_port=8080),
+            store=store,
+        )
+
+
+def test_make_client_from_cli_rejects_default_server_with_port_and_server_port(tmp_path):
+    store = AuthStore(path=tmp_path / "auth.json")
+    store.set_default_server("http://localhost:8080")
+
+    with pytest.raises(AuthStoreError, match="Please specify only one port"):
+        make_client_from_cli(_ns(server_port=8080), store=store)
 
 
 def test_make_client_from_cli_accepts_typed_parameters_and_config(tmp_path, monkeypatch):

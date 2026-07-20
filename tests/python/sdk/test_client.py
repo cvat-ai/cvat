@@ -16,6 +16,8 @@ from cvat_sdk.exceptions import ApiException
 
 from shared.utils.config import BASE_URL, USER_PASS
 
+from .util import https_reverse_proxy
+
 
 class TestClientUsecases:
     @pytest.fixture(autouse=True)
@@ -99,8 +101,11 @@ class TestClientFactory:
 
     def test_can_add_default_server_schema(self):
         assert normalize_server_url("localhost:8080/") == "https://localhost:8080"
-        client = Client(url="localhost:8080", check_server_version=False)
-        assert client.api_map.host == "https://localhost:8080"
+        with https_reverse_proxy() as proxy_url:
+            with Client(
+                url=proxy_url.removeprefix("https://"), config=Config(verify_ssl=False)
+            ) as client:
+                assert client.api_map.host == proxy_url
 
     def test_can_reject_invalid_server_schema(self):
         host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)

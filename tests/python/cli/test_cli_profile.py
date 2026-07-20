@@ -13,15 +13,20 @@ from .util import TestCliBase, run_cli
 def store_path(tmp_path, monkeypatch):
     from cvat_cli.__main__ import logger
 
+    original_handlers = logger.handlers.copy()
+    original_level = logger.level
     logger.handlers.clear()
-    path = tmp_path / "cvat" / "auth.json"
-    monkeypatch.setattr("cvat_sdk.core.auth.get_auth_store_path", lambda: path)
-    yield path
-    logger.handlers.clear()
+    try:
+        path = tmp_path / "cvat" / "auth.json"
+        monkeypatch.setattr("cvat_sdk.core.auth.get_auth_store_path", lambda: path)
+        yield path
+    finally:
+        logger.handlers[:] = original_handlers
+        logger.setLevel(original_level)
 
 
 def _seed(path, name, server, token, *, default=False):
-    AuthStore(path=path).add_profile(
+    AuthStore(path=path).put_profile(
         name,
         ProfileEntry(server=server, token=token, created_date="2026-01-01T00:00:00+00:00"),
         set_default=default,
@@ -163,6 +168,25 @@ class TestProfileCreate:
         )
         assert AuthStore(path=store_path).get_profile("p").token == "new"
 
+    def test_create_rejects_server_url_with_port_and_server_port(self, store_path):
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai:8080",
+            "--server-port",
+            "8081",
+            "profile",
+            "create",
+            "p",
+            "pat-token",
+            expected_code=1,
+        )
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+    def test_create_appends_server_port_to_default_server(self, store_path):
+        run_cli(self, "--server-port", "8080", "profile", "create", "p", "pat-token")
+        assert AuthStore(path=store_path).get_profile("p").server == "http://localhost:8080"
+
     def test_create_resolves_name_from_server(self, store_path, monkeypatch):
         class _Resp:
             name = "server-side-name"
@@ -220,7 +244,7 @@ class TestProfileSelectionE2E(TestCliBase):
 
     def test_profile_supplies_host_and_credential(self, access_tokens):
         token = next(t for t in access_tokens)["private_key"]
-        AuthStore().add_profile(
+        AuthStore().put_profile(
             "it",
             ProfileEntry(
                 server=f"{self.host}:{self.port}",

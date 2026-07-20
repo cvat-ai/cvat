@@ -146,9 +146,8 @@ class _TrackingFunctionShapeContextImpl(cvataa.TrackingFunctionShapeContext):
     original_shape_type: str
 
 
-class AgentTrackingFunctionDriver(AgentFunctionDriver):
+class AgentTrackingFunctionDriver(AgentFunctionDriver[cvataa.TrackingFunctionSpec]):
     FUNCTION_KIND = "tracker"
-    _function_spec: cvataa.TrackingFunctionSpec
 
     @classmethod
     def init_worker(cls, state_id_generator: TrackingStateIdGenerator) -> None:
@@ -157,6 +156,10 @@ class AgentTrackingFunctionDriver(AgentFunctionDriver):
 
         global _tracking_state_id_generator
         _tracking_state_id_generator = state_id_generator
+
+    @classmethod
+    def get_remote_function_fields(cls, spec: cvataa.TrackingFunctionSpec) -> dict[str, Any]:
+        return {"supported_shape_types": sorted(spec.supported_shape_types)}
 
     def validate_function_compatibility(self, remote_function: dict) -> None:
         remote_supported_shape_types = frozenset(remote_function["supported_shape_types"])
