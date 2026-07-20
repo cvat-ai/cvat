@@ -14,6 +14,10 @@ context('Audio annotation. Save annotations persists across reload.', () => {
         cy.openAudioJob(taskName);
     });
 
+    after(() => {
+        cy.audioClearAnnotationsAndSave();
+    });
+
     describe(`Testing case "${caseId}"`, () => {
         it('Create region, save, reload — region is loaded back', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
