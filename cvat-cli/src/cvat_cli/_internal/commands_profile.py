@@ -109,7 +109,11 @@ class ProfileCreate:
     def execute(self, args: argparse.Namespace) -> None:
         store = AuthStore()
 
-        token = args.token if args.token is not None else getpass.getpass("PAT: ")
+        token = (
+            args.token
+            if args.token is not None
+            else getpass.getpass("Personal Access Token (PAT): ")
+        )
         if not token:
             raise CriticalError("A non-empty PAT is required.")
 
