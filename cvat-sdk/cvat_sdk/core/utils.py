@@ -12,7 +12,6 @@ from typing import IO, Any, BinaryIO, Literal, TextIO, overload
 
 from cvat_sdk.core.exceptions import InvalidHostException
 
-
 ALLOWED_SERVER_SCHEMAS = ("https", "http")
 
 
