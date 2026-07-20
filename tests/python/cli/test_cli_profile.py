@@ -57,9 +57,9 @@ class TestProfileList:
         default_lines = [ln for ln in out.splitlines() if "(default)" in ln]
         assert len(default_lines) == 1 and "mycvat" in default_lines[0]
 
-    def test_list_quiet_prints_names_only(self, store_path, capsys):
+    def test_list_names_only_prints_names_only(self, store_path, capsys):
         _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
-        run_cli(self, "profile", "list", "--quiet")
+        run_cli(self, "profile", "list", "--names-only")
         assert capsys.readouterr().out.strip() == "mycvat"
 
     def test_list_empty_prints_nothing(self, store_path, capsys):
@@ -192,7 +192,7 @@ class TestProfileCreate:
                 return False
 
         monkeypatch.setattr("getpass.getpass", lambda *a, **k: "tok-xyz")
-        monkeypatch.setattr("cvat_cli._internal.utils.Client", _FakeClient)
+        monkeypatch.setattr("cvat_cli._internal.commands_profile.Client", _FakeClient)
         run_cli(self, "--server-host", "https://app.cvat.ai", "profile", "create")
         assert AuthStore(path=store_path).get_profile("server-side-name").token == "tok-xyz"
 

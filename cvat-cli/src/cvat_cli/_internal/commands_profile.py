@@ -8,10 +8,12 @@ import argparse
 import getpass
 
 from cvat_sdk.core.auth import DEFAULT_SERVER, AuthStore, ProfileEntry
+from cvat_sdk.core.client import AccessTokenCredentials, Client, Config
+from cvat_sdk.core.utils import normalize_server_url
 
 from .command_base import CommandGroup
 from .common import CriticalError
-from .utils import _fetch_name_from_server, _normalize_server, _now_iso
+from .utils import fetch_current_access_token_name, get_current_time_iso
 
 COMMANDS = CommandGroup(description="Manage saved CVAT authentication profiles.")
 
@@ -23,7 +25,7 @@ class ProfileList:
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
-            "--quiet", action="store_true", help="print profile names only (one per line)"
+            "--names-only", action="store_true", help="print profile names only (one per line)"
         )
 
     def execute(self, args: argparse.Namespace) -> None:
@@ -33,7 +35,7 @@ class ProfileList:
         default_name = default[0] if default is not None else None
 
         for name in sorted(profiles):
-            if args.quiet:
+            if args.names_only:
                 print(name)
             else:
                 marker = "(default)" if name == default_name else ""
@@ -123,18 +125,22 @@ class ProfileCreate:
                 server = f"{server}:{args.server_port}"
         else:
             server = store.get_default_server() or DEFAULT_SERVER
-        server = _normalize_server(server)
+        server = normalize_server_url(server)
 
         name = args.name
         if name is None:
-            name = _fetch_name_from_server(server, token, insecure=args.insecure)
+            with Client(
+                url=server, config=Config(verify_ssl=not args.insecure), check_server_version=False
+            ) as client:
+                client.login(AccessTokenCredentials(token))
+                name = fetch_current_access_token_name(client)
 
         if store.get_profile(name) is not None and not args.force:
             raise CriticalError(f"Profile {name!r} already exists. Pass --force to overwrite.")
 
         store.add_profile(
             name,
-            ProfileEntry(server=server, token=token, created_date=_now_iso()),
+            ProfileEntry(server=server, token=token, created_date=get_current_time_iso()),
             set_default=args.set_default,
         )
         suffix = " (set as default)" if store.get_default_profile()[0] == name else ""
