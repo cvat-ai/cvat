@@ -68,10 +68,30 @@ def initialize_mappings():
                     )
 
 
+def _patch_rq_result_type_for_templates() -> None:
+    # A workaround for a django-rq admin template crash on Python 3.12.
+    # Fixed in the upstream django-rq 3.x: https://github.com/rq/django-rq/issues/678.
+    # TODO: remove after upgrading to django-rq 3.x
+
+    # With django-rq 2.x and Python 3.12, a job in the ``/django-rq/`` admin
+    # (``job_detail`` view) returns HTTP 500 with::
+    #
+    #     TypeError: EnumType.__call__() missing 1 required positional argument: 'value'
+    #
+    # for any job that has a stored RQ ``Result`` (i.e. any finished/failed job).
+    # The fix follows the recipe from https://code.djangoproject.com/ticket/31154.
+
+    from rq.results import Result
+
+    Result.Type.do_not_call_in_templates = True
+
+
 class RedisHandlerConfig(AppConfig):
     name = "cvat.apps.redis_handler"
 
     def ready(self) -> None:
+        _patch_rq_result_type_for_templates()
+
         from cvat.apps.iam.permissions import load_app_iam_rules
 
         load_app_iam_rules(self)
