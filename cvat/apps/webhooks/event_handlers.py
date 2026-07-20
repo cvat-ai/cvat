@@ -72,7 +72,10 @@ def enqueue_request_completion_webhooks(
 
     detached_rq_job.parsed_id = request_id
 
-    event_key_ = event_key(action="completed", resource=request_id.type)
+    event_key_ = event_key(
+        action="completed",
+        resource=f"request[{request_id.type}]",
+    )
 
     webhooks = services.select_webhooks(
         event_key=event_key_,

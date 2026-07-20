@@ -39,47 +39,55 @@ ModelT = TypeVar("ModelT", bound=Model)
 
 REQUEST_COMPLETION_RESOURCES: tuple[tuple[str, EventGroupDTO], ...] = (
     (
-        ExportRequestId(
-            target=RequestTarget.TASK,
-            target_id=1,
-            subresource=RequestSubresource.ANNOTATIONS,
-        ).type,
+        "request[{}]".format(
+            ExportRequestId(
+                target=RequestTarget.TASK,
+                target_id=1,
+                subresource=RequestSubresource.ANNOTATIONS,
+            ).type
+        ),
         EventGroupDTO(display_name="Dataset export"),
     ),
     (
-        ExportRequestId(
-            target=RequestTarget.TASK,
-            target_id=1,
-            subresource=RequestSubresource.DATASET,
-        ).type,
+        "request[{}]".format(
+            ExportRequestId(
+                target=RequestTarget.TASK,
+                target_id=1,
+                subresource=RequestSubresource.DATASET,
+            ).type
+        ),
         EventGroupDTO(display_name="Dataset export"),
     ),
     (
-        ExportRequestId(
-            target=RequestTarget.TASK,
-            target_id=1,
-            subresource=RequestSubresource.BACKUP,
-        ).type,
+        "request[{}]".format(
+            ExportRequestId(
+                target=RequestTarget.TASK,
+                target_id=1,
+                subresource=RequestSubresource.BACKUP,
+            ).type
+        ),
         EventGroupDTO(display_name="Backup export"),
     ),
     (
-        ImportRequestId(
-            action=RequestAction.CREATE,
-            target=RequestTarget.TASK,
-            target_id=1,
-        ).type,
+        "request[{}]".format(
+            ImportRequestId(
+                action=RequestAction.CREATE,
+                target=RequestTarget.TASK,
+                target_id=1,
+            ).type
+        ),
         EventGroupDTO(display_name="Task data creation"),
     ),
     (
-        ConsensusRequestId(target=RequestTarget.TASK, target_id=1).type,
+        f"request[{ConsensusRequestId(target=RequestTarget.TASK, target_id=1).type}]",
         EventGroupDTO(display_name="Consensus merge"),
     ),
     (
-        ConsensusRequestId(target=RequestTarget.JOB, target_id=1).type,
+        f"request[{ConsensusRequestId(target=RequestTarget.JOB, target_id=1).type}]",
         EventGroupDTO(display_name="Consensus merge"),
     ),
     (
-        QualityRequestId(target=RequestTarget.TASK, target_id=1).type,
+        f"request[{QualityRequestId(target=RequestTarget.TASK, target_id=1).type}]",
         EventGroupDTO(display_name="Quality report creation"),
     ),
 )
