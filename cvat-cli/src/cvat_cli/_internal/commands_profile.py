@@ -87,7 +87,7 @@ class ProfileDelete:
         try:
             store.remove_profile(args.name)
         except KeyError:
-            raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
+            raise CriticalError(f'Unknown profile "{args.name!r}". Run "cvat-cli profile list".')
         print(f'Removed profile "{args.name}".')
 
 
