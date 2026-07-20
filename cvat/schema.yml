@@ -8006,13 +8006,13 @@ components:
       - webhook_type
     EventsEnum:
       enum:
-      - completed:calculate:quality
-      - completed:create:task
-      - completed:export:annotations
-      - completed:export:backup
-      - completed:export:dataset
-      - completed:merge:job
-      - completed:merge:task
+      - completed:request[calculate:quality]
+      - completed:request[create:task]
+      - completed:request[export:annotations]
+      - completed:request[export:backup]
+      - completed:request[export:dataset]
+      - completed:request[merge:job]
+      - completed:request[merge:task]
       - create:comment
       - create:invitation
       - create:issue
@@ -8036,13 +8036,13 @@ components:
       - update:task
       type: string
       description: |-
-        * `completed:calculate:quality` - COMPLETED:CALCULATE:QUALITY
-        * `completed:create:task` - COMPLETED:CREATE:TASK
-        * `completed:export:annotations` - COMPLETED:EXPORT:ANNOTATIONS
-        * `completed:export:backup` - COMPLETED:EXPORT:BACKUP
-        * `completed:export:dataset` - COMPLETED:EXPORT:DATASET
-        * `completed:merge:job` - COMPLETED:MERGE:JOB
-        * `completed:merge:task` - COMPLETED:MERGE:TASK
+        * `completed:request[calculate:quality]` - COMPLETED:REQUEST[CALCULATE:QUALITY]
+        * `completed:request[create:task]` - COMPLETED:REQUEST[CREATE:TASK]
+        * `completed:request[export:annotations]` - COMPLETED:REQUEST[EXPORT:ANNOTATIONS]
+        * `completed:request[export:backup]` - COMPLETED:REQUEST[EXPORT:BACKUP]
+        * `completed:request[export:dataset]` - COMPLETED:REQUEST[EXPORT:DATASET]
+        * `completed:request[merge:job]` - COMPLETED:REQUEST[MERGE:JOB]
+        * `completed:request[merge:task]` - COMPLETED:REQUEST[MERGE:TASK]
         * `create:comment` - CREATE:COMMENT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE

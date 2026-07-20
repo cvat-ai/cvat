@@ -865,7 +865,7 @@ class TestExportCompletedRequestEvent:
     def test_webhook_create_export_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
         webhook_id = create_webhook(
-            events=["completed:export:annotations"],
+            events=["completed:request[export:annotations]"],
             webhook_type="organization",
             org_id=task["organization"],
         )["id"]
@@ -873,7 +873,7 @@ class TestExportCompletedRequestEvent:
         export_task_dataset("admin1", id=task["id"], save_images=False, download_result=False)
 
         _, payload = get_deliveries(webhook_id)
-        assert payload["event"] == "completed:export:annotations"
+        assert payload["event"] == "completed:request[export:annotations]"
         assert payload["request"]["status"] == "finished"
         assert payload["request"]["message"] == ""
         assert payload["request"]["operation"]["target"] == "task"
@@ -887,7 +887,7 @@ class TestBackupCompletedRequestEvent:
     def test_webhook_create_backup_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
         webhook_id = create_webhook(
-            events=["completed:export:backup"],
+            events=["completed:request[export:backup]"],
             webhook_type="organization",
             org_id=task["organization"],
         )["id"]
@@ -895,7 +895,7 @@ class TestBackupCompletedRequestEvent:
         export_task_backup("admin1", id=task["id"], download_result=False)
 
         _, payload = get_deliveries(webhook_id)
-        assert payload["event"] == "completed:export:backup"
+        assert payload["event"] == "completed:request[export:backup]"
         assert payload["request"]["status"] == "finished"
         assert payload["request"]["message"] == ""
         assert payload["request"]["operation"]["target"] == "task"
@@ -909,7 +909,7 @@ class TestTaskCreationCompletedRequestEvent:
     def test_webhook_create_task_with_data(self, organizations: Container) -> None:
         org_id = next(iter(organizations))["id"]
         webhook_id = create_webhook(
-            events=["completed:create:task"],
+            events=["completed:request[create:task]"],
             webhook_type="organization",
             org_id=org_id,
         )["id"]
@@ -926,7 +926,7 @@ class TestTaskCreationCompletedRequestEvent:
         )
 
         _, payload = get_deliveries(webhook_id)
-        assert payload["event"] == "completed:create:task"
+        assert payload["event"] == "completed:request[create:task]"
         assert payload["request"]["status"] == "finished"
         assert payload["request"]["message"] == ""
         assert payload["request"]["operation"]["target"] == "task"
@@ -940,7 +940,7 @@ class TestQualityReportCompletedRequestEvent:
     def test_webhook_create_quality_report_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
         webhook_id = create_webhook(
-            events=["completed:calculate:quality"],
+            events=["completed:request[calculate:quality]"],
             webhook_type="organization",
             org_id=task["organization"],
         )["id"]
@@ -949,7 +949,7 @@ class TestQualityReportCompletedRequestEvent:
         report = create_quality_report(user="admin1", task_id=task["id"])
 
         _, payload = get_deliveries(webhook_id)
-        assert payload["event"] == "completed:calculate:quality"
+        assert payload["event"] == "completed:request[calculate:quality]"
         assert payload["request"]["status"] == "finished"
         assert payload["request"]["message"] == ""
         assert payload["request"]["operation"]["target"] == "task"
@@ -963,7 +963,7 @@ class TestConsensusMergeCompletedRequestEvent:
     def test_webhook_create_consensus_merge_for_task(self, tasks: Container) -> None:
         task = next(t for t in tasks if t["consensus_enabled"] and t["organization"] is not None)
         webhook_id = create_webhook(
-            events=["completed:merge:task"],
+            events=["completed:request[merge:task]"],
             webhook_type="organization",
             org_id=task["organization"],
         )["id"]
@@ -971,7 +971,7 @@ class TestConsensusMergeCompletedRequestEvent:
         create_consensus_merge(user="admin1", task_id=task["id"])
 
         _, payload = get_deliveries(webhook_id)
-        assert payload["event"] == "completed:merge:task"
+        assert payload["event"] == "completed:request[merge:task]"
         assert payload["request"]["status"] == "finished"
         assert payload["request"]["message"] == ""
         assert payload["request"]["operation"]["target"] == "task"

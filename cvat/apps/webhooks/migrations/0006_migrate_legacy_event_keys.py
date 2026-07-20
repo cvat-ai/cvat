@@ -11,16 +11,16 @@ from django.db.models import Q
 
 _FORWARD_REPLACEMENTS = {
     "create:export": (
-        "completed:export:annotations",
-        "completed:export:dataset",
+        "completed:request[export:annotations]",
+        "completed:request[export:dataset]",
     ),
-    "create:backup": ("completed:export:backup",),
+    "create:backup": ("completed:request[export:backup]",),
 }
 
 _BACKWARD_REPLACEMENTS = {
-    "completed:export:annotations": ("create:export",),
-    "completed:export:dataset": ("create:export",),
-    "completed:export:backup": ("create:backup",),
+    "completed:request[export:annotations]": ("create:export",),
+    "completed:request[export:dataset]": ("create:export",),
+    "completed:request[export:backup]": ("create:backup",),
 }
 
 
