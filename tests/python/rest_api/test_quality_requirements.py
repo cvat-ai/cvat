@@ -543,6 +543,53 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert updated_requirement["match_orientation"] is True
         assert updated_requirement["match_groups"] is True
 
+    @pytest.mark.parametrize(
+        "attribute_comparison",
+        [
+            {"unknown": True},
+            {"default": {"unknown": True}},
+            {"rules": [{"spec_id": 1, "enabled": True, "unknown": True}]},
+            {
+                "rules": [
+                    {"spec_id": 1, "enabled": True},
+                    {"spec_id": "1", "enabled": False},
+                ]
+            },
+            {"default": {"comparator": "unsupported"}},
+            {"default": {"threshold": -0.1}},
+            {"rules": [{"spec_id": 1, "enabled": True, "threshold": 1.1}]},
+        ],
+        ids=[
+            "unknown-root-field",
+            "unknown-default-field",
+            "unknown-rule-field",
+            "duplicate-spec-id",
+            "unsupported-comparator",
+            "default-threshold-out-of-range",
+            "rule-threshold-out-of-range",
+        ],
+    )
+    def test_create_requirement_rejects_invalid_attribute_comparison(
+        self,
+        admin_user: str,
+        find_sandbox_task_without_gt: Any,
+        attribute_comparison: dict[str, Any],
+    ) -> None:
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        response_data, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"invalid-attribute-comparison-{task['id']}",
+                settings_id=settings["id"],
+                attribute_comparison=attribute_comparison,
+            ),
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "attribute_comparison" in response_data
+
     def test_attribute_comparison_examples_resolve_effective_state(self, admin_user):
         task_id, settings, attribute_ids = self._create_attribute_comparison_example_task(
             admin_user,

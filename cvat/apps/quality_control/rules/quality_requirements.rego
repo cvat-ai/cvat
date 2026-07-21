@@ -40,19 +40,21 @@ allow if {
     organizations.is_member
 }
 
+q_user_is_maintainer(user) := ["|",
+    {"settings__task__owner_id": user.id},
+    {"settings__task__assignee_id": user.id},
+    {"settings__task__project__owner_id": user.id},
+    {"settings__task__project__assignee_id": user.id},
+    {"settings__project__owner_id": user.id},
+    {"settings__project__assignee_id": user.id},
+]
+
 base_filter := {} if { # Django Q object to filter list of entries
     utils.is_admin
 } else := qobject if {
     utils.is_sandbox
     user := input.auth.user
-    qobject := ["|",
-        {"settings__task__owner_id": user.id},
-        {"settings__task__assignee_id": user.id},
-        {"settings__task__project__owner_id": user.id},
-        {"settings__task__project__assignee_id": user.id},
-        {"settings__project__owner_id": user.id},
-        {"settings__project__assignee_id": user.id},
-    ]
+    qobject := q_user_is_maintainer(user)
 } else := {} if {
     utils.is_organization
     utils.has_perm(utils.USER)
@@ -60,14 +62,7 @@ base_filter := {} if { # Django Q object to filter list of entries
 } else := qobject if {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
-    qobject := ["|",
-        {"settings__task__owner_id": user.id},
-        {"settings__task__assignee_id": user.id},
-        {"settings__task__project__owner_id": user.id},
-        {"settings__task__project__assignee_id": user.id},
-        {"settings__project__owner_id": user.id},
-        {"settings__project__assignee_id": user.id},
-    ]
+    qobject := q_user_is_maintainer(user)
 }
 
 filter := utils.add_organization_filter(base_filter, [

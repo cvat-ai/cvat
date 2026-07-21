@@ -60,7 +60,7 @@ class RequirementFrameResult:
 class MatchingContext:
     frame_id: int
     estimator: DatasetQualityEstimator
-    categories: dm.Categories
+    categories: dm.CategoriesInfo
 
 
 @attrs.define(slots=False)
@@ -646,9 +646,15 @@ class RequirementHandler(ABC):
 
     @abstractmethod
     def match_annotations(
-        self, *, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem
+        self,
+        *,
+        ds_item: dm.DatasetItem,
+        gt_item: dm.DatasetItem,
     ) -> RequirementFrameResult:
-        """Match annotations between dataset and ground truth items. Must be implemented in subclasses."""
+        """Match annotations between dataset and ground truth items.
+
+        Must be implemented in subclasses.
+        """
         raise NotImplementedError("Subclasses must implement match_annotations()")
 
     # row/column index in the confusion matrix corresponding to unmatched annotations

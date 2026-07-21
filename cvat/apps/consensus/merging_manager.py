@@ -24,7 +24,6 @@ from cvat.apps.engine.models import (
     clear_annotations_in_jobs,
 )
 from cvat.apps.profiler import silk_profile
-from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
 from cvat.apps.quality_control.quality_reports import JobDataProvider
 from cvat.apps.redis_handler.background import AbstractRequestManager
@@ -114,7 +113,6 @@ class _TaskMerger:
                 sigma=comparison_parameters.oks_sigma,
                 torso_r=comparison_parameters.line_thickness,
                 included_annotation_types=comparison_parameters.included_annotation_types,
-                ignored_attributes={"track_id", "keyframe", CVAT_ATTRIBUTE_SPEC_IDS_ATTR},
             )
         )
         merged_dataset = merger(*consensus_datasets)

@@ -1,5 +1,12 @@
+from collections.abc import Iterator
+from typing import Any
+
 import django.db.models.deletion
 from django.db import migrations, models
+
+from cvat.apps.engine.utils import take_by
+
+_BATCH_SIZE = 1000
 
 _BASE_REQUIREMENT_ANNOTATION_TYPES = (
     "tag",
@@ -41,35 +48,15 @@ def _ensure_base_quality_requirements(apps, _schema_editor):
     QualitySettings = apps.get_model("quality_control", "QualitySettings")
     QualityRequirement = apps.get_model("quality_control", "QualityRequirement")
 
-    base_names = {
-        _base_requirement_name(annotation_type)
-        for annotation_type in _BASE_REQUIREMENT_ANNOTATION_TYPES
-    }
-
-    for settings_id in QualitySettings.objects.values_list("id", flat=True).iterator():
-        existing_base_names = set(
-            QualityRequirement.objects.filter(
-                settings_id=settings_id,
-                name__in=base_names,
-            ).values_list("name", flat=True)
+    def make_requirements() -> Iterator[Any]:
+        settings_ids = QualitySettings.objects.values_list("id", flat=True).iterator(
+            chunk_size=_BATCH_SIZE
         )
-
-        if existing_base_names:
-            QualityRequirement.objects.filter(
-                settings_id=settings_id,
-                name__in=existing_base_names,
-            ).update(is_base=True)
-
-        requirements_to_create = []
-        for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
-            name = _base_requirement_name(annotation_type)
-            if name in existing_base_names:
-                continue
-
-            requirements_to_create.append(
-                QualityRequirement(
+        for settings_id in settings_ids:
+            for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
+                yield QualityRequirement(
                     settings_id=settings_id,
-                    name=name,
+                    name=_base_requirement_name(annotation_type),
                     is_base=True,
                     sort_order=sort_order,
                     filter="",
@@ -78,9 +65,12 @@ def _ensure_base_quality_requirements(apps, _schema_editor):
                     parent_id=None,
                     **_BASE_REQUIREMENT_DEFAULTS,
                 )
-            )
 
-        QualityRequirement.objects.bulk_create(requirements_to_create)
+    for requirements_batch in take_by(make_requirements(), chunk_size=_BATCH_SIZE):
+        QualityRequirement.objects.bulk_create(
+            requirements_batch,
+            batch_size=_BATCH_SIZE,
+        )
 
 
 class Migration(migrations.Migration):

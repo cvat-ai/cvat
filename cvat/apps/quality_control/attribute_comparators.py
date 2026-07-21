@@ -75,7 +75,7 @@ def get_attribute_comparator(name: str | None = None) -> AttributeComparator:
 
 
 def get_attribute_comparator_names() -> tuple[str, ...]:
-    return tuple(_ATTRIBUTE_COMPARATORS_BY_NAME)
+    return tuple(sorted(_ATTRIBUTE_COMPARATORS_BY_NAME))
 
 
 def format_attribute_comparator_names() -> str:
