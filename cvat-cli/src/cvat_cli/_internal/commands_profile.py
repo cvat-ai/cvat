@@ -66,7 +66,7 @@ class ProfileDefault:
                 store.set_default_profile(args.name)
             except KeyError:
                 raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
-            print(f"Default profile is now '{args.name}'.")
+            print(f"Default profile is now {args.name!r}.")
         else:
             default = store.get_default_profile()
             if default is None:
@@ -91,7 +91,7 @@ class ProfileDelete:
             store.remove_profile(args.name)
         except KeyError:
             raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
-        print(f"Removed profile '{args.name}'.")
+        print(f"Removed profile {args.name!r}.")
 
 
 @COMMANDS.command_class("create")
@@ -148,4 +148,4 @@ class ProfileCreate:
             set_default=args.set_default,
         )
         suffix = " (set as default)" if store.get_default_profile()[0] == name else ""
-        print(f"Saved profile '{name}' for {server}{suffix}.")
+        print(f"Saved profile {name!r} for {server}{suffix}.")
