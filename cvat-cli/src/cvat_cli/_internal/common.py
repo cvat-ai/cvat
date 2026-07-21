@@ -42,7 +42,6 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
         default=logging.INFO,
         help="show debug output",
     )
-    parser.set_defaults(_needs_client=True)
 
 
 def configure_logger(logger: logging.Logger, parsed_args: argparse.Namespace) -> None:

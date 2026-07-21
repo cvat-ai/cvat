@@ -9,7 +9,6 @@ import sys
 
 import urllib3.exceptions
 from cvat_sdk import exceptions
-from cvat_sdk.core.exceptions import AuthStoreError
 
 from ._internal.commands_all import COMMANDS
 from ._internal.common import (
@@ -32,21 +31,10 @@ def main(args: list[str] = None):
 
     configure_logger(logger, parsed_args)
 
-    executor = popattr(parsed_args, "_executor")
-    needs_client = popattr(parsed_args, "_needs_client")
-
     try:
-        if needs_client:
-            with build_client(parsed_args, logger=logger) as client:
-                executor(client, **vars(parsed_args))
-        else:
-            executor(parsed_args)
-    except (
-        exceptions.ApiException,
-        urllib3.exceptions.HTTPError,
-        CriticalError,
-        AuthStoreError,
-    ) as e:
+        with build_client(parsed_args, logger=logger) as client:
+            popattr(parsed_args, "_executor")(client, **vars(parsed_args))
+    except (exceptions.ApiException, urllib3.exceptions.HTTPError, CriticalError) as e:
         logger.critical(e)
         return 1
 

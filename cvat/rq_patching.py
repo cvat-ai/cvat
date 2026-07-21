@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import threading
 import traceback
 from datetime import datetime
 
@@ -12,7 +11,6 @@ from redis.client import Pipeline
 from rq.exceptions import AbandonedJobError, InvalidJobOperation, NoSuchJobError
 from rq.job import Job, JobStatus
 from rq.queue import Queue
-from rq.timeouts import TimerDeathPenalty
 from rq.utils import current_timestamp
 from rq.version import VERSION
 
@@ -50,14 +48,8 @@ def custom_started_job_registry_cleanup(self, timestamp: float | None = None):
                 except NoSuchJobError:
                     continue
 
-                death_penalty_class = self.death_penalty_class
-                # Registry cleanup can be triggered by an ASGI executor thread while listing jobs.
-                # UnixSignalDeathPenalty cannot install a signal handler outside the main thread.
-                if threading.current_thread() is not threading.main_thread():
-                    death_penalty_class = TimerDeathPenalty
-
                 job.execute_failure_callback(
-                    death_penalty_class,
+                    self.death_penalty_class,
                     AbandonedJobError,
                     AbandonedJobError(),
                     traceback.extract_stack(),

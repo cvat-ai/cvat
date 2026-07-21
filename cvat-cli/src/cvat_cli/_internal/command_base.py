@@ -53,10 +53,7 @@ class CommandGroup:
 
         for name, command in self._commands.items():
             subparser = subparsers.add_parser(name, description=command.description)
-            subparser.set_defaults(
-                _executor=command.execute,
-                _needs_client=getattr(command, "needs_client", True),
-            )
+            subparser.set_defaults(_executor=command.execute)
             command.configure_parser(subparser)
 
     def execute(self) -> None:
