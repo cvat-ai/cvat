@@ -19,7 +19,7 @@ from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from .event_type import event_name
 from .models import Webhook
 
-_WEBHOOK_TIMEOUT = 10
+_WEBHOOK_TIMEOUT = (3, 10)
 _RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
 
 
