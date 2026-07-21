@@ -128,6 +128,7 @@ class TestProfileCreate:
             "https://app.cvat.ai",
             "profile",
             "create",
+            "--name",
             "mycvat",
             "pat-token",
             "--set-default",
@@ -141,7 +142,15 @@ class TestProfileCreate:
 
     def test_create_prompts_for_token_without_echo(self, store_path, monkeypatch):
         monkeypatch.setattr("getpass.getpass", lambda *a, **k: "prompted-pat")
-        run_cli(self, "--server-host", "https://app.cvat.ai", "profile", "create", "p")
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "--name",
+            "p",
+        )
         assert AuthStore(path=store_path).get_profile("p").token == "prompted-pat"
 
     def test_create_existing_requires_force(self, store_path):
@@ -152,6 +161,7 @@ class TestProfileCreate:
             "https://app.cvat.ai",
             "profile",
             "create",
+            "--name",
             "p",
             "new",
             expected_code=1,
@@ -162,6 +172,7 @@ class TestProfileCreate:
             "https://app.cvat.ai",
             "profile",
             "create",
+            "--name",
             "p",
             "new",
             "--force",
@@ -177,6 +188,7 @@ class TestProfileCreate:
             "8081",
             "profile",
             "create",
+            "--name",
             "p",
             "pat-token",
             expected_code=1,
@@ -184,7 +196,16 @@ class TestProfileCreate:
         assert AuthStore(path=store_path).get_profile("p") is None
 
     def test_create_appends_server_port_to_default_server(self, store_path):
-        run_cli(self, "--server-port", "8080", "profile", "create", "p", "pat-token")
+        run_cli(
+            self,
+            "--server-port",
+            "8080",
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "pat-token",
+        )
         assert AuthStore(path=store_path).get_profile("p").server == "http://localhost:8080"
 
     def test_create_resolves_name_from_server(self, store_path, monkeypatch):
@@ -228,6 +249,7 @@ class TestProfileCreate:
             "https://app.cvat.ai",
             "profile",
             "create",
+            "--name",
             "p",
             expected_code=1,
         )

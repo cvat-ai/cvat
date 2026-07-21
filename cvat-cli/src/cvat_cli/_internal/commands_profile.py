@@ -66,7 +66,7 @@ class ProfileDefault:
                 store.set_default_profile(args.name)
             except KeyError:
                 raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
-            print(f'Default profile is now "{args.name}".')
+            print(f"Default profile is now '{args.name}'.")
         else:
             default = store.get_default_profile()
             if default is None:
@@ -90,8 +90,8 @@ class ProfileDelete:
         try:
             store.remove_profile(args.name)
         except KeyError:
-            raise CriticalError(f'Unknown profile "{args.name!r}". Run "cvat-cli profile list".')
-        print(f'Removed profile "{args.name}".')
+            raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
+        print(f"Removed profile '{args.name}'.")
 
 
 @COMMANDS.command_class("create")
@@ -104,7 +104,7 @@ class ProfileCreate:
     )
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("name", nargs="?", default=None, help="profile name (unique)")
+        parser.add_argument("--name", default=None, help="profile name (unique)")
         parser.add_argument("token", nargs="?", default=None, help="PAT (omit to be prompted)")
         parser.add_argument("--set-default", action="store_true", help="mark as default profile")
         parser.add_argument("--force", action="store_true", help="overwrite an existing profile")
@@ -148,4 +148,4 @@ class ProfileCreate:
             set_default=args.set_default,
         )
         suffix = " (set as default)" if store.get_default_profile()[0] == name else ""
-        print(f'Saved profile "{name}" for {server}{suffix}.')
+        print(f"Saved profile '{name}' for {server}{suffix}.")
