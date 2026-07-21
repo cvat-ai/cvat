@@ -36,6 +36,7 @@ from .agent_driver import (
     worker_current_function,
 )
 from .agent_driver_detection import AgentDetectionFunctionDriver
+from .agent_driver_interaction import AgentInteractionFunctionDriver
 from .agent_driver_tracking import AgentTrackingFunctionDriver, TrackingStateIdGenerator
 from .common import CriticalError, FunctionLoader
 
@@ -226,6 +227,9 @@ def _parse_event_stream(
 def get_function_driver_class(function_spec: object) -> type[AgentFunctionDriver]:
     if isinstance(function_spec, cvataa.DetectionFunctionSpec):
         return AgentDetectionFunctionDriver
+
+    if isinstance(function_spec, cvataa.InteractionFunctionSpec):
+        return AgentInteractionFunctionDriver
 
     if isinstance(function_spec, cvataa.TrackingFunctionSpec):
         return AgentTrackingFunctionDriver
