@@ -7590,7 +7590,9 @@ components:
       type: object
       properties:
         default:
-          $ref: '#/components/schemas/AttributeComparisonDefault'
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonDefault'
+          nullable: true
         rules:
           type: array
           items:
@@ -7602,12 +7604,16 @@ components:
           type: boolean
           nullable: true
         comparator:
-          $ref: '#/components/schemas/ComparatorEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
         threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
     AttributeComparisonDefaultRequest:
       type: object
       properties:
@@ -7615,17 +7621,23 @@ components:
           type: boolean
           nullable: true
         comparator:
-          $ref: '#/components/schemas/ComparatorEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
         threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
     AttributeComparisonRequest:
       type: object
       properties:
         default:
-          $ref: '#/components/schemas/AttributeComparisonDefaultRequest'
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonDefaultRequest'
+          nullable: true
         rules:
           type: array
           items:
@@ -7639,12 +7651,16 @@ components:
         enabled:
           type: boolean
         comparator:
-          $ref: '#/components/schemas/ComparatorEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
         threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
       required:
       - enabled
       - spec_id
@@ -7657,12 +7673,16 @@ components:
         enabled:
           type: boolean
         comparator:
-          $ref: '#/components/schemas/ComparatorEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
         threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
       required:
       - enabled
       - spec_id
