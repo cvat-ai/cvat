@@ -20,7 +20,15 @@ from cvat.apps.dataset_manager.bindings import CommonData
 from cvat.apps.engine.models import ShapeType
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.annotation_matching import Comparator
-from cvat.apps.quality_control.comparison_report import ComparisonParameters
+from cvat.apps.quality_control.comparison_report import (
+    ComparisonParameters,
+    ComparisonReportAnnotationsSummary,
+)
+from cvat.apps.quality_control.quality_handlers import (
+    build_requirement_comparison_summary,
+    build_requirement_report,
+    build_requirements_summary,
+)
 from cvat.apps.quality_control.quality_reports import _MemoizingAnnotationConverterFactory
 from cvat.apps.quality_control.serializers import QualityRequirementSerializer
 
@@ -32,6 +40,54 @@ def test_empty_frames_are_annotated_by_default() -> None:
     assert ComparisonParameters().empty_is_annotated is True
     assert models.QualityRequirement().empty_is_annotated is True
     assert serializer_defaults["empty_is_annotated"] is True
+
+
+def test_enabled_requirement_with_zero_total_annotations_is_completed() -> None:
+    requirement = models.QualityRequirement(
+        id=1,
+        name="empty-filter-result",
+        enabled=True,
+        target_metric=models.QualityTargetMetricType.ACCURACY,
+        target_metric_threshold=1.0,
+    )
+    group_report = build_requirement_report(requirement=requirement, frame_results={})
+
+    requirements_summary = build_requirements_summary(
+        [requirement],
+        {requirement.name: group_report},
+    )
+
+    assert group_report.comparison_summary.score == 1.0
+    assert group_report.comparison_summary.score_components.valid_count == 0
+    assert requirements_summary.completed == 1
+    assert requirements_summary.items[0].score == 1.0
+
+
+def test_nonempty_requirement_with_zero_valid_annotations_is_not_completed() -> None:
+    requirement = models.QualityRequirement(
+        id=1,
+        name="mismatched-labels",
+        enabled=True,
+        target_metric=models.QualityTargetMetricType.ACCURACY,
+        target_metric_threshold=1.0,
+    )
+    annotations = ComparisonReportAnnotationsSummary(
+        valid_count=0,
+        missing_count=0,
+        extra_count=0,
+        total_count=1,
+        ds_count=1,
+        gt_count=1,
+        confusion_matrix=None,
+    )
+
+    comparison_summary = build_requirement_comparison_summary(
+        requirement=requirement,
+        annotations=annotations,
+        conflicts=[],
+    )
+
+    assert comparison_summary.score == 0.0
 
 
 def _make_mask_item(mask: np.ndarray) -> dm.DatasetItem:

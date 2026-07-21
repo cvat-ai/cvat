@@ -371,7 +371,13 @@ def build_requirement_comparison_summary(
     conflicts: list[AnnotationConflict],
 ) -> ComparisonReportRequirementComparisonSummary:
     metric = _get_requirement_metric(requirement)
-    score = getattr(annotations, metric, None)
+    if (
+        _get_requirement_field(requirement, "enabled", default=True)
+        and annotations.total_count == 0
+    ):
+        score = 1.0
+    else:
+        score = getattr(annotations, metric, None)
 
     return ComparisonReportRequirementComparisonSummary(
         conflict_count=len(conflicts),
