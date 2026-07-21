@@ -65,8 +65,8 @@ class ProfileDefault:
             try:
                 store.set_default_profile(args.name)
             except KeyError:
-                raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
-            print(f"Default profile is now {args.name!r}.")
+                raise CriticalError(f"Unknown profile '{args.name}'. Run 'cvat-cli profile list'.")
+            print(f"Default profile is now '{args.name}'.")
         else:
             default = store.get_default_profile()
             if default is None:
@@ -90,8 +90,8 @@ class ProfileDelete:
         try:
             store.remove_profile(args.name)
         except KeyError:
-            raise CriticalError(f"Unknown profile {args.name!r}. Run 'cvat-cli profile list'.")
-        print(f"Removed profile {args.name!r}.")
+            raise CriticalError(f"Unknown profile '{args.name}'. Run 'cvat-cli profile list'.")
+        print(f"Removed profile '{args.name}'.")
 
 
 @COMMANDS.command_class("create")
@@ -140,7 +140,7 @@ class ProfileCreate:
                 name = fetch_current_access_token_name(client)
 
         if store.get_profile(name) is not None and not args.force:
-            raise CriticalError(f"Profile {name!r} already exists. Pass --force to overwrite.")
+            raise CriticalError(f"Profile '{name}' already exists. Pass --force to overwrite.")
 
         store.put_profile(
             name,
@@ -148,4 +148,4 @@ class ProfileCreate:
             set_default=args.set_default,
         )
         suffix = " (set as default)" if store.get_default_profile()[0] == name else ""
-        print(f"Saved profile {name!r} for {server}{suffix}.")
+        print(f"Saved profile '{name}' for {server}{suffix}.")
