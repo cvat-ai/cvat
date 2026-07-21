@@ -344,7 +344,7 @@ cvat:
 #     storageClassName: default
 #     accessModes:
 #       - ReadWriteOnce
-      size: 200Gi
+      size: 100Gi
       annotations: {}
       volumeAttributesClass:
         create: false
