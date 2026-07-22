@@ -256,6 +256,23 @@ class TestProfileCreate:
         assert AuthStore(path=store_path).get_profile("p") is None
 
 
+class TestProfileSelection:
+    def test_profile_conflicts_with_server_host(self, capsys):
+        run_cli(
+            self,
+            "--profile",
+            "it",
+            "--server-host",
+            "https://example.com",
+            "task",
+            "ls",
+            expected_code=1,
+        )
+        assert "--profile is mutually exclusive with --server-host/--server-port/--auth." in (
+            capsys.readouterr().err
+        )
+
+
 class TestProfileSelectionE2E(TestCliBase):
     @pytest.fixture(autouse=True)
     def _isolate_store(self, tmp_path, monkeypatch):
@@ -276,15 +293,3 @@ class TestProfileSelectionE2E(TestCliBase):
         )
         # No --server-host, no --auth: the profile supplies both.
         run_cli(self, "--profile", "it", "task", "ls")
-
-    def test_profile_conflicts_with_server_host(self):
-        run_cli(
-            self,
-            "--profile",
-            "it",
-            "--server-host",
-            self.host,
-            "task",
-            "ls",
-            expected_code=1,
-        )
