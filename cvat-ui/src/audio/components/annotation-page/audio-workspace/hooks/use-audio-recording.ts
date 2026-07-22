@@ -2,190 +2,149 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { useCallback, useEffect, useRef } from 'react';
-import type WaveSurfer from 'wavesurfer.js';
-import type RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
-import type { Region } from 'wavesurfer.js/dist/plugins/regions';
+import {
+    useCallback, useEffect, useRef,
+} from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
-import { ActiveControl, ColorBy } from 'reducers';
-import { AudioIntervalState, Label, Source } from 'cvat-core-wrapper';
+import { audioActions, createAudioIntervalAsync } from 'actions/audio-actions';
+import { updateActiveControl } from 'actions/annotation-actions';
+import { ActiveControl, CombinedState } from 'reducers';
+import { AudioIntervalState, Source } from 'cvat-core-wrapper';
+import { shallowEqual, ThunkDispatch } from 'utils/redux';
+import { MIN_INTERVAL_DURATION, MIN_RECORDING_DURATION } from 'audio/utils/waveform-geometry';
 
 import { getAudioRegionColor } from '../audio-region-colors';
+import { WaveformPlayback } from './use-waveform-playback';
+import { RegionPreviewHandle, WaveformRegions } from './use-waveform-regions';
 
-const MIN_RECORDING_DURATION = 0.05;
-
-function generatePhantomId(): string {
-    const rand = Math.random().toString(36).slice(2, 8);
-    return `audio-recording-${Date.now()}-${rand}`;
+interface RecordingSession {
+    start: number;
+    labelID: number;
+    preview: RegionPreviewHandle;
 }
 
 interface Params {
-    regionsPluginRef: React.MutableRefObject<RegionsPlugin | null>;
-    wavesurfer: WaveSurfer | null;
-    activeControl: ActiveControl;
-    isPlaying: boolean;
-    intervals: AudioIntervalState[];
-    labels: Label[];
-    activeLabelId: number | null;
-    colorBy: ColorBy;
-    opacity: number;
-    selectedOpacity: number;
-    phantomRegionIdsRef: React.MutableRefObject<Set<string>>;
-    onCreateInterval(start: number, stop: number, labelID: number | null): void;
-    onSetActiveInterval(clientID: number | null): void;
-    onUpdateActiveControl(activeControl: ActiveControl): void;
+    playback: WaveformPlayback;
+    regions: WaveformRegions;
+    ready: boolean;
 }
 
-export function useAudioRecording(params: Params): void {
+export function useAudioRecording({ playback, regions, ready }: Params): void {
+    const dispatch = useDispatch<ThunkDispatch>();
+    const { getCurrentTime, subscribeTimeUpdates } = playback;
+    const { createPreview } = regions;
     const {
-        regionsPluginRef, wavesurfer, activeControl, isPlaying,
-        intervals, labels, activeLabelId, colorBy, opacity, selectedOpacity,
-        phantomRegionIdsRef,
-        onCreateInterval, onSetActiveInterval, onUpdateActiveControl,
-    } = params;
+        activeControl, playing, duration, labels, activeLabelID,
+        colorBy, opacity, selectedOpacity,
+    } = useSelector((state: CombinedState) => ({
+        activeControl: state.annotation.canvas.activeControl,
+        playing: state.audio.player.playing,
+        duration: state.audio.player.duration,
+        labels: state.annotation.job.labels,
+        activeLabelID: state.audio.player.activeLabelId,
+        colorBy: state.settings.shapes.colorBy,
+        opacity: state.settings.shapes.opacity,
+        selectedOpacity: state.settings.shapes.selectedOpacity,
+    }), shallowEqual);
+    const latestRef = useRef({
+        duration, labels, activeLabelID, colorBy, opacity, selectedOpacity,
+    });
+    latestRef.current = {
+        duration, labels, activeLabelID, colorBy, opacity, selectedOpacity,
+    };
+    const sessionRef = useRef<RecordingSession | null>(null);
+    const wasPlayingRef = useRef(playing);
 
-    const recordingIdRef = useRef<string | null>(null);
-    const recordingStartRef = useRef<number>(0);
-    const recordingLabelIdRef = useRef<number | null>(null);
-    const cancelledRef = useRef<boolean>(false);
+    const startSession = useCallback((): void => {
+        if (sessionRef.current) return;
 
-    const labelsRef = useRef(labels);
-    const activeLabelIdRef = useRef(activeLabelId);
-    const colorByRef = useRef(colorBy);
-    const opacityRef = useRef(opacity);
-    const selectedOpacityRef = useRef(selectedOpacity);
-    const onCreateIntervalRef = useRef(onCreateInterval);
-    const onSetActiveIntervalRef = useRef(onSetActiveInterval);
-    const onUpdateActiveControlRef = useRef(onUpdateActiveControl);
+        const { current: latest } = latestRef;
+        const label = latest.labels.find((item) => item.id === latest.activeLabelID);
+        if (!label || label.id === undefined) return;
 
-    useEffect(() => { labelsRef.current = labels; }, [labels]);
-    useEffect(() => { activeLabelIdRef.current = activeLabelId; }, [activeLabelId]);
-    useEffect(() => { colorByRef.current = colorBy; }, [colorBy]);
-    useEffect(() => { opacityRef.current = opacity; }, [opacity]);
-    useEffect(() => { selectedOpacityRef.current = selectedOpacity; }, [selectedOpacity]);
-    useEffect(() => { onCreateIntervalRef.current = onCreateInterval; }, [onCreateInterval]);
-    useEffect(() => { onSetActiveIntervalRef.current = onSetActiveInterval; }, [onSetActiveInterval]);
-    useEffect(() => { onUpdateActiveControlRef.current = onUpdateActiveControl; }, [onUpdateActiveControl]);
-
-    const finalizeRecording = useCallback((): void => {
-        const id = recordingIdRef.current;
-        if (id === null) return;
-
-        const plugin = regionsPluginRef.current;
-        const ws = wavesurfer;
-
-        let endTime = recordingStartRef.current;
-        if (ws) endTime = ws.getCurrentTime();
-
-        const start = recordingStartRef.current;
-        const end = Math.max(start, endTime);
-        const labelId = recordingLabelIdRef.current;
-
-        recordingIdRef.current = null;
-        recordingStartRef.current = 0;
-        recordingLabelIdRef.current = null;
-
-        if (plugin) {
-            const wsRegion = plugin.getRegions().find((region: Region) => region.id === id);
-            if (wsRegion) wsRegion.remove();
-            phantomRegionIdsRef.current.delete(id);
-        }
-
-        if (cancelledRef.current) {
-            cancelledRef.current = false;
-            return;
-        }
-
-        if (end - start < MIN_RECORDING_DURATION) return;
-
-        onSetActiveIntervalRef.current(null);
-        onCreateIntervalRef.current(start, end, labelId);
-    }, [wavesurfer, regionsPluginRef, phantomRegionIdsRef]);
-
-    useEffect(() => {
-        const plugin = regionsPluginRef.current;
-        const ws = wavesurfer;
-        if (!plugin || !ws) return;
-
-        const isRecord = activeControl === ActiveControl.AUDIO_REGION_RECORD;
-        const wasRecording = recordingIdRef.current !== null;
-
-        if (isRecord && !wasRecording) {
-            cancelledRef.current = false;
-            const start = ws.getCurrentTime();
-            const phantomId = generatePhantomId();
-            phantomRegionIdsRef.current.add(phantomId);
-            recordingIdRef.current = phantomId;
-            recordingStartRef.current = start;
-            recordingLabelIdRef.current = activeLabelIdRef.current;
-
-            const label = activeLabelIdRef.current !== null ?
-                labelsRef.current.find((_label) => _label.id === activeLabelIdRef.current) : null;
-            const previewLabel = label ?? labelsRef.current[0];
-            if (!previewLabel) return;
-            const color = getAudioRegionColor(
-                AudioIntervalState.create({
-                    label: previewLabel,
-                    start: Math.round(start * 1000),
-                    stop: Math.round(start * 1000),
-                    source: Source.MANUAL,
-                }),
-                labelsRef.current,
-                colorByRef.current,
-                opacityRef.current,
-                selectedOpacityRef.current,
+        const start = getCurrentTime();
+        const interval = AudioIntervalState.create({
+            label,
+            start: Math.round(start * 1000),
+            stop: Math.round(start * 1000),
+            source: Source.MANUAL,
+        });
+        const initialEnd = Math.min(latest.duration, start + MIN_INTERVAL_DURATION);
+        const preview = createPreview({
+            range: { start, end: Math.max(start, initialEnd) },
+            color: getAudioRegionColor(
+                interval,
+                latest.labels,
+                latest.colorBy,
+                latest.opacity,
+                latest.selectedOpacity,
                 true,
-            );
-            const duration = ws.getDuration() || 0;
-            const initialEnd = duration > 0 ? Math.min(start + 0.001, duration) : start + 0.001;
+            ),
+        });
+        if (!preview) return;
+        sessionRef.current = { start, labelID: label.id, preview };
+    }, []);
 
-            plugin.addRegion({
-                id: phantomId,
-                start,
-                end: initialEnd,
-                color,
-                drag: false,
-                resize: false,
-            });
-        } else if (!isRecord && wasRecording) {
-            finalizeRecording();
+    const updateSession = useCallback((time: number): void => {
+        const { current: session } = sessionRef;
+        if (!session || time <= session.start) return;
+
+        session.preview.updateRange({ start: session.start, end: time });
+    }, []);
+
+    const finishSession = useCallback((): void => {
+        const { current: session } = sessionRef;
+        if (!session) return;
+
+        const end = Math.max(session.start, getCurrentTime());
+        session.preview.remove();
+        sessionRef.current = null;
+        if (end - session.start < MIN_RECORDING_DURATION) return;
+
+        // TODO: is dropping active interval needed here?
+        dispatch(audioActions.setAudioActiveInterval(null));
+        dispatch(createAudioIntervalAsync(session.start, end, session.labelID));
+    }, []);
+
+    const cancelSession = useCallback((): void => {
+        const { current: session } = sessionRef;
+        if (!session) return;
+        session.preview.remove();
+        sessionRef.current = null;
+    }, []);
+
+    // start recording when record mode is selected and finish when mode is changed
+    useEffect(() => {
+        if (!ready) return;
+
+        // effectively only updates when activeControl changes
+        // as ready transitions only once
+        if (activeControl === ActiveControl.AUDIO_REGION_RECORD) {
+            startSession();
+        } else {
+            finishSession();
         }
-    }, [activeControl, wavesurfer, regionsPluginRef, phantomRegionIdsRef, finalizeRecording, intervals]);
+    }, [activeControl, ready]);
 
     useEffect(() => {
-        if (!isPlaying && recordingIdRef.current !== null) {
-            onUpdateActiveControlRef.current(ActiveControl.CURSOR);
+        const wasPlaying = wasPlayingRef.current;
+        wasPlayingRef.current = playing;
+        if (wasPlaying && !playing && activeControl === ActiveControl.AUDIO_REGION_RECORD) {
+            dispatch(updateActiveControl(ActiveControl.CURSOR));
         }
-    }, [isPlaying]);
+    }, [activeControl, playing]);
+
+    // update preview region along with playback time updates
+    useEffect(() => subscribeTimeUpdates(updateSession), []);
 
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent): void => {
-            if (event.key !== 'Escape') return;
-            if (recordingIdRef.current === null) return;
-            cancelledRef.current = true;
+            if (event.key === 'Escape') cancelSession();
         };
         window.addEventListener('keydown', onKeyDown, true);
         return () => window.removeEventListener('keydown', onKeyDown, true);
     }, []);
 
-    useEffect(() => {
-        if (!wavesurfer) return undefined;
-        const onTimeupdate = (): void => {
-            const id = recordingIdRef.current;
-            if (!id) return;
-            const plugin = regionsPluginRef.current;
-            if (!plugin) return;
-            const wsRegion = plugin.getRegions().find((region: Region) => region.id === id);
-            if (!wsRegion) return;
-            const time = wavesurfer.getCurrentTime();
-            const start = recordingStartRef.current;
-            if (time <= start) return;
-            if (Math.abs(time - wsRegion.end) < 0.001) return;
-            wsRegion.setOptions({ start, end: time });
-        };
-        wavesurfer.on('timeupdate', onTimeupdate);
-        return () => {
-            wavesurfer.un('timeupdate', onTimeupdate);
-        };
-    }, [wavesurfer, regionsPluginRef]);
+    useEffect(() => () => cancelSession(), [ready]);
 }
