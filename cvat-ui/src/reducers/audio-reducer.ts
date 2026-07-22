@@ -33,7 +33,6 @@ const defaultState: AudioState = {
         audioLoadRequest: null,
         seekRequest: null,
         playIntervalOnceRequest: null,
-        intervalSelectionRequest: null,
         activeLabelId: null,
     },
 };
@@ -60,7 +59,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AudioActionTypes.PLAY_WHOLE_AUDIO: {
+        case AudioActionTypes.PLAY_FULL_AUDIO: {
             return {
                 ...state,
                 player: {
@@ -194,7 +193,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     audioLoadRequest: action.payload.request,
                     seekRequest: null,
                     playIntervalOnceRequest: null,
-                    intervalSelectionRequest: null,
                     contextMenu: defaultState.player.contextMenu,
                 },
             };
@@ -252,28 +250,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 player: {
                     ...state.player,
                     playIntervalOnceRequest: null,
-                },
-            };
-        }
-        case AudioActionTypes.BEGIN_AUDIO_INTERVAL_SELECTION: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    intervalSelectionRequest: action.payload.request,
-                },
-            };
-        }
-        case AudioActionTypes.COMPLETE_AUDIO_INTERVAL_SELECTION: {
-            if (state.player.intervalSelectionRequest !== action.payload.request) return state;
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    activeIntervalID: action.payload.clientID,
-                    playIntervalOnceRequest: state.player.playIntervalOnceRequest?.intervalID ===
-                        action.payload.clientID ? state.player.playIntervalOnceRequest : null,
-                    intervalSelectionRequest: null,
                 },
             };
         }

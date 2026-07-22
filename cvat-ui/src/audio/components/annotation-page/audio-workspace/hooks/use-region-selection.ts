@@ -9,7 +9,6 @@ import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 import {
     audioActions,
     requestPlayAudioIntervalOnce,
-    selectAudioIntervalAtPositionAsync,
 } from 'actions/audio-actions';
 import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
@@ -49,7 +48,8 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
     intervalsRef.current = intervals;
     const jobRef = useRef(job);
     jobRef.current = job;
-    const hoverTokenRef = useRef(0);
+    const hoverGuardRef = useRef<object | null>(null);
+    const selectionGuardRef = useRef<object | null>(null);
     const lastHoverPointRef = useRef<{ x: number; y: number } | null>(null);
 
     // TODO: rework to use semantic interval selection instead of just event target
@@ -82,7 +82,18 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
             const time = viewport.clientXToTime(event.clientX);
             if (time === null) return directID;
 
-            return dispatch(selectAudioIntervalAtPositionAsync(time * 1000));
+            const guard = {};
+            selectionGuardRef.current = guard;
+            const currentJob = jobRef.current;
+            let clientID: number | null = null;
+            if (currentJob) {
+                const { state } = await currentJob.annotations.selectInterval(intervalsRef.current, time * 1000);
+                clientID = state?.clientID ?? null;
+            }
+            if (selectionGuardRef.current !== guard) return null;
+
+            dispatch(audioActions.setAudioActiveInterval(clientID));
+            return clientID;
         };
         const registerRegionContextMenu = (region: Region): void => {
             if (!isIntervalRegionTarget(region)) return;
@@ -137,6 +148,7 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
         regionsPlugin.on('region-double-clicked', onRegionDoubleClicked);
         regionsPlugin.on('region-removed', onRegionRemoved);
         return () => {
+            selectionGuardRef.current = null;
             regionsPlugin.un('region-created', onRegionCreated);
             regionsPlugin.un('region-clicked', onRegionClicked);
             regionsPlugin.un('region-double-clicked', onRegionDoubleClicked);
@@ -161,8 +173,8 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
             lastHoverPointRef.current = { x: event.clientX, y: event.clientY };
             const time = viewport.clientXToTime(event.clientX);
             if (time === null) return;
-            const token = hoverTokenRef.current + 1;
-            hoverTokenRef.current = token;
+            const guard = {};
+            hoverGuardRef.current = guard;
 
             // semantically select interval instead of just by event target
             // important for overlapping/nested intervals
@@ -170,7 +182,7 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
             if (!currentJob) return;
             currentJob.annotations.selectInterval(intervalsRef.current, time * 1000).then(({ state }) => {
                 const clientID = state?.clientID ?? null;
-                if (hoverTokenRef.current !== token || clientID === latestRef.current.hoveredIntervalID) {
+                if (hoverGuardRef.current !== guard || clientID === latestRef.current.hoveredIntervalID) {
                     return;
                 }
 
@@ -179,7 +191,7 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
         };
         const onMouseLeave = (): void => {
             lastHoverPointRef.current = null;
-            hoverTokenRef.current += 1;
+            hoverGuardRef.current = null;
             if (latestRef.current.hoveredIntervalID !== null) {
                 dispatch(audioActions.setAudioHoveredInterval(null));
             }
@@ -188,6 +200,7 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
         element.addEventListener('mousemove', onMouseMove);
         element.addEventListener('mouseleave', onMouseLeave);
         return () => {
+            hoverGuardRef.current = null;
             element.removeEventListener('mousemove', onMouseMove);
             element.removeEventListener('mouseleave', onMouseLeave);
         };

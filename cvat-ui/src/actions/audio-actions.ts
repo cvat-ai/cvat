@@ -12,7 +12,7 @@ import { clamp } from 'utils/math';
 
 export enum AudioActionTypes {
     SWITCH_AUDIO_PLAY = 'SWITCH_AUDIO_PLAY',
-    PLAY_WHOLE_AUDIO = 'PLAY_WHOLE_AUDIO',
+    PLAY_FULL_AUDIO = 'PLAY_FULL_AUDIO',
     REPORT_AUDIO_CURRENT_TIME = 'REPORT_AUDIO_CURRENT_TIME',
     SEEK_AUDIO = 'SEEK_AUDIO',
     COMPLETE_AUDIO_SEEK = 'COMPLETE_AUDIO_SEEK',
@@ -32,8 +32,6 @@ export enum AudioActionTypes {
     SET_AUDIO_ACTIVE_LABEL = 'SET_AUDIO_ACTIVE_LABEL',
     PLAY_AUDIO_INTERVAL_ONCE = 'PLAY_AUDIO_INTERVAL_ONCE',
     COMPLETE_PLAY_AUDIO_INTERVAL_ONCE = 'COMPLETE_PLAY_AUDIO_INTERVAL_ONCE',
-    BEGIN_AUDIO_INTERVAL_SELECTION = 'BEGIN_AUDIO_INTERVAL_SELECTION',
-    COMPLETE_AUDIO_INTERVAL_SELECTION = 'COMPLETE_AUDIO_INTERVAL_SELECTION',
     AUDIO_UNDO = 'AUDIO_UNDO',
     AUDIO_REDO = 'AUDIO_REDO',
 }
@@ -42,7 +40,7 @@ export const audioActions = {
     switchAudioPlay: (playing: boolean) => (
         createAction(AudioActionTypes.SWITCH_AUDIO_PLAY, { playing })
     ),
-    playWholeAudio: () => createAction(AudioActionTypes.PLAY_WHOLE_AUDIO),
+    playFullAudio: () => createAction(AudioActionTypes.PLAY_FULL_AUDIO),
     reportAudioCurrentTime: (time: number) => (
         createAction(AudioActionTypes.REPORT_AUDIO_CURRENT_TIME, { time })
     ),
@@ -99,12 +97,6 @@ export const audioActions = {
     completePlayAudioIntervalOnce: (request: { intervalID: number }) => (
         createAction(AudioActionTypes.COMPLETE_PLAY_AUDIO_INTERVAL_ONCE, { request })
     ),
-    beginAudioIntervalSelection: (request: object) => (
-        createAction(AudioActionTypes.BEGIN_AUDIO_INTERVAL_SELECTION, { request })
-    ),
-    completeAudioIntervalSelection: (request: object, clientID: number | null) => (
-        createAction(AudioActionTypes.COMPLETE_AUDIO_INTERVAL_SELECTION, { request, clientID })
-    ),
     audioUndo: () => createAction(AudioActionTypes.AUDIO_UNDO),
     audioRedo: () => createAction(AudioActionTypes.AUDIO_REDO),
 };
@@ -119,7 +111,7 @@ export function toggleAudioPlayback(): ThunkAction {
         } else if (playIntervalOnceRequest) {
             dispatch(audioActions.switchAudioPlay(true));
         } else {
-            dispatch(audioActions.playWholeAudio());
+            dispatch(audioActions.playFullAudio());
         }
     };
 }
@@ -211,24 +203,6 @@ export function requestPlayAudioIntervalOnce(clientID: number): ThunkAction {
         if (!interval) return;
 
         dispatch(audioActions.playAudioIntervalOnce({ intervalID: clientID }));
-    };
-}
-
-export function selectAudioIntervalAtPositionAsync(positionMs: number): ThunkAction<Promise<number | null>> {
-    return async (dispatch: ThunkDispatch, getState): Promise<number | null> => {
-        const request = {};
-        dispatch(audioActions.beginAudioIntervalSelection(request));
-        const { instance: job } = getState().annotation.job;
-        const { intervals } = getState().audio.player;
-        let clientID: number | null = null;
-        if (job) {
-            const { state } = await job.annotations.selectInterval(intervals, positionMs);
-            clientID = state?.clientID ?? null;
-        }
-        if (getState().audio.player.intervalSelectionRequest !== request) return null;
-
-        dispatch(audioActions.completeAudioIntervalSelection(request, clientID));
-        return clientID;
     };
 }
 

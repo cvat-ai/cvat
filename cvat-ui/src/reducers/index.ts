@@ -45,7 +45,6 @@ export interface AudioState {
         audioLoadRequest: object | null;
         seekRequest: { time: number } | null;
         playIntervalOnceRequest: { intervalID: number } | null;
-        intervalSelectionRequest: object | null;
     };
 }
 
