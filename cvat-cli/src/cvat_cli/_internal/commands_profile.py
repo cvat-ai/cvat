@@ -115,7 +115,7 @@ class ProfileCreate:
         token = (
             args.token
             if args.token is not None
-            else getpass.getpass("Personal Access Token (PAT): ")
+            else getpass.getpass(f"Personal Access Token (PAT) for '{server}': ")
         )
         if not token:
             raise CriticalError("A non-empty PAT is required.")
