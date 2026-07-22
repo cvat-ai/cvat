@@ -321,6 +321,9 @@ class AttributeComparisonSerializer(_RejectUnknownFieldsSerializer):
     default = AttributeComparisonDefaultSerializer(required=False, allow_null=True)
     rules = AttributeComparisonRuleSerializer(many=True, required=False)
 
+    def to_representation(self, instance: Mapping[str, Any]) -> dict[str, Any]:
+        return dict(instance)
+
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         seen_spec_ids: set[int] = set()
         for index, rule in enumerate(attrs.get("rules", [])):

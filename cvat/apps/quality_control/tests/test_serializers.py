@@ -22,6 +22,14 @@ class TestAttributeComparatorPresentation(unittest.TestCase):
 
 
 class TestAttributeComparisonSerializer(unittest.TestCase):
+    def test_representation_preserves_sparse_settings(self) -> None:
+        settings = {
+            "default": {"enabled": True},
+            "rules": [{"spec_id": 1, "enabled": False}],
+        }
+
+        self.assertEqual(AttributeComparisonSerializer(settings).data, settings)
+
     def test_validates_and_normalizes_partial_settings(self) -> None:
         serializer = AttributeComparisonSerializer(
             data={
