@@ -498,12 +498,12 @@ jobs:
 
       - name: Deploy to minikube
         run: |
-          printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> helm-chart/test.values.yaml
           helm upgrade release-${{ github.run_id }}-${{ github.run_attempt }} --install helm-chart \
             -f helm-chart/cvat.values.yaml \
             -f helm-chart/test.values.yaml \
             --set cvat.backend.tag=${{ env.CVAT_VERSION }} \
-            --set cvat.frontend.tag=${{ env.CVAT_VERSION }}
+            --set cvat.frontend.tag=${{ env.CVAT_VERSION }} \
+            --set "traefik.service.spec.externalIPs[0]=$(minikube ip)"
 
       - name: Update test config
         run: |
