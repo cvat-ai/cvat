@@ -52,6 +52,7 @@ interface StateToProps {
     jobInstance: Job;
     frameNumber: number;
     activated: boolean;
+    multiSelected: boolean;
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
@@ -86,6 +87,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         annotation: {
             annotations: {
                 activatedStateID,
+                selectedStatesID,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { attributes: jobAttributes, instance: jobInstance, labels },
@@ -116,6 +118,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         jobInstance,
         frameNumber,
         activated: activatedStateID === clientID,
+        multiSelected: selectedStatesID.includes(clientID),
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
@@ -573,6 +576,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             objectState,
             attributes,
             activated,
+            multiSelected,
             colorBy,
             normalizedKeyMap,
             keyMap,
@@ -591,6 +595,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     zLayerDragProps={zLayerDragProps}
                     zLayerDragging={zLayerDragging}
                     activated={activated}
+                    multiSelected={multiSelected}
                     objectType={objectState.objectType}
                     shapeType={objectState.shapeType}
                     clientID={objectState.clientID as number}

@@ -17,6 +17,7 @@ import ItemBasics from './object-item-basics';
 interface Props {
     normalizedKeyMap: Record<string, string>;
     activated: boolean;
+    multiSelected: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
     clientID: number;
@@ -57,6 +58,7 @@ interface Props {
 function ObjectItemComponent(props: Props): JSX.Element {
     const {
         activated,
+        multiSelected,
         objectType,
         shapeType,
         clientID,
@@ -99,11 +101,14 @@ function ObjectItemComponent(props: Props): JSX.Element {
             ObjectType.TAG.toUpperCase() :
             `${shapeType.toUpperCase()} ${objectType.toUpperCase()}`;
 
-    const className = !activated ?
+    let className = !activated ?
         `cvat-objects-sidebar-state-item${zLayerDragging ? ' cvat-objects-sidebar-state-item-dragging' : ''}` :
         `cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item${
             zLayerDragging ? ' cvat-objects-sidebar-state-item-dragging' : ''
         }`;
+    if (multiSelected) {
+        className += ' cvat-objects-sidebar-state-item-multi-selected';
+    }
 
     const activateState = useCallback(() => {
         activate();

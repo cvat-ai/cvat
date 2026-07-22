@@ -35,9 +35,11 @@ import {
     resetCanvas,
     updateActiveControl as updateActiveControlAction,
     updateAnnotationsAsync,
+    updateAnnotationsBatchAsync,
     createAnnotationsAsync,
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
+    selectObjects,
     joinAnnotationsAsync,
     sliceAnnotationsAsync,
     splitAnnotationsAsync,
@@ -80,6 +82,7 @@ interface StateToProps {
     activatedStateID: number | null;
     activatedElementID: number | null;
     activatedAttributeID: number | null;
+    selectedStatesID: number[];
     annotations: ObjectState[];
     renderData: RenderData;
     frameData: any;
@@ -134,10 +137,12 @@ interface DispatchToProps {
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateAnnotations(states: ObjectState[]): void;
+    onUpdateAnnotationsBatch(states: ObjectState[]): void;
     onCreateAnnotations(states: ObjectState[], source?: AnnotationSource): void;
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
+    onSelectObjects(selectedStatesID: number[]): void;
     onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
@@ -175,6 +180,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 activatedAttributeID,
+                selectedStatesID,
                 zLayer: { cur: curZLayer },
                 highlightedConflict,
                 renderData,
@@ -227,6 +233,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedStateID,
         activatedElementID,
         activatedAttributeID,
+        selectedStatesID,
         annotations,
         renderData,
         opacity: opacity / 100,
@@ -306,6 +313,28 @@ const componentShortcuts = {
 
 registerComponentShortcuts(componentShortcuts);
 
+// registered so users can rebind the modifier in the regular shortcuts settings,
+// but deliberately not passed to GlobalHotKeys: it is a mouse modifier read by the
+// canvas, not a keyboard-triggered action
+const multiSelectShortcut = {
+    CANVAS_MULTI_SELECT_MODIFIER: {
+        name: 'Multi-selection modifier',
+        description: 'Hold this key and drag with the left mouse button in cursor mode to select ' +
+            'several objects with a selection box (supported: shift, ctrl, alt, meta - other keys are ignored)',
+        sequences: ['shift'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+};
+registerComponentShortcuts(multiSelectShortcut);
+
+function multiSelectModifierFromKeyMap(keyMap: KeyMap): 'shift' | 'ctrl' | 'alt' | 'meta' {
+    const [sequence] = keyMap.CANVAS_MULTI_SELECT_MODIFIER?.sequences ?? [];
+    if (sequence === 'ctrl' || sequence === 'control') return 'ctrl';
+    if (sequence === 'alt' || sequence === 'option') return 'alt';
+    if (sequence === 'meta' || sequence === 'command' || sequence === 'cmd') return 'meta';
+    return 'shift';
+}
+
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onSetupCanvas(): void {
@@ -320,6 +349,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
+        onUpdateAnnotationsBatch(states: ObjectState[]): void {
+            dispatch(updateAnnotationsBatchAsync(states));
+        },
         onCreateAnnotations(
             states: ObjectState[],
             source: AnnotationSource = AnnotationSource.OTHER,
@@ -331,6 +363,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onGroupAnnotations(states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(states));
+        },
+        onSelectObjects(selectedStatesID: number[]): void {
+            dispatch(selectObjects(selectedStatesID));
         },
         onJoinAnnotations(states: ObjectState[], points: number[][]): void {
             dispatch(joinAnnotationsAsync(states, points));
@@ -455,6 +490,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textContent,
             resetZoom,
             focusedObjectPadding,
+            multiSelectModifier: multiSelectModifierFromKeyMap(this.props.keyMap),
         });
 
         this.initialSetup();
@@ -472,6 +508,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             frameAngle,
             annotations,
             activatedStateID,
+            selectedStatesID,
             curZLayer,
             resetZoom,
             smoothImage,
@@ -522,7 +559,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.outlined !== outlined ||
             prevProps.showGroundTruth !== showGroundTruth ||
             prevProps.resetZoom !== resetZoom ||
-            prevProps.focusedObjectPadding !== focusedObjectPadding
+            prevProps.focusedObjectPadding !== focusedObjectPadding ||
+            multiSelectModifierFromKeyMap(prevProps.keyMap) !== multiSelectModifierFromKeyMap(this.props.keyMap)
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
@@ -544,6 +582,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 showConflicts: showGroundTruth,
                 resetZoom,
                 focusedObjectPadding,
+                multiSelectModifier: multiSelectModifierFromKeyMap(this.props.keyMap),
             });
         }
 
@@ -553,6 +592,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.activatedStateID !== null && prevProps.activatedStateID !== activatedStateID) {
             canvasInstance.activate(null);
+        }
+
+        if (prevProps.selectedStatesID !== selectedStatesID) {
+            // reflect the multi-selection (shift + left-mousedown) on the canvas:
+            // drives the persistent selection visual and enables live group drag
+            canvasInstance.setSelectedObjects(selectedStatesID);
         }
 
         if (prevProps.highlightedConflict !== highlightedConflict) {
@@ -654,11 +699,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().removeEventListener('canvas.fit', this.onCanvasImageFitted);
         canvasInstance.html().removeEventListener('canvas.dragshape', this.onCanvasShapeDragged as EventListener);
+        canvasInstance.html().removeEventListener('canvas.groupmoved', this.onCanvasObjectsGroupMoved as EventListener);
         canvasInstance.html().removeEventListener('canvas.resizeshape', this.onCanvasShapeResized as EventListener);
         canvasInstance.html().removeEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().removeEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
+        canvasInstance.html().removeEventListener('canvas.selected', this.onCanvasSelected);
         canvasInstance.html().removeEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
@@ -770,6 +817,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         onGroupAnnotations(states);
     };
 
+    private onCanvasSelected = (event: any): void => {
+        const { onSelectObjects, updateActiveControl } = this.props;
+        const { states } = event.detail;
+        updateActiveControl(ActiveControl.CURSOR);
+        onSelectObjects(states.map((state: ObjectState): number => state.clientID));
+    };
+
     private onCanvasObjectsJoined = (event: any): void => {
         const {
             jobInstance, onJoinAnnotations, updateActiveControl,
@@ -807,7 +861,19 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
-        const { workspace, activatedStateID, onActivateObject } = this.props;
+        const {
+            workspace, activatedStateID, selectedStatesID, onActivateObject, onSelectObjects,
+        } = this.props;
+
+        // a click outside of the selected objects resets the multi-selection
+        // (shift is reserved for making a new selection, a click on a selected shape starts a group drag)
+        if (e.button === 0 && !e.shiftKey && selectedStatesID.length) {
+            const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
+            const clickedClientID = shapeElement ? +(shapeElement.getAttribute('clientID') as string) : null;
+            if (clickedClientID === null || !selectedStatesID.includes(clickedClientID)) {
+                onSelectObjects([]);
+            }
+        }
 
         if ((e.target as HTMLElement).tagName === 'svg' && e.button !== 2) {
             // Native double-click selection can escape from the SVG canvas to nearby UI text.
@@ -836,6 +902,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             EventScope.dragObject,
             { duration, ...(serverID ? { obj_id: serverID } : {}) },
         );
+    };
+
+    private onCanvasObjectsGroupMoved = (
+        e: CustomEvent<{ duration: number; states: { state: ObjectState; points: number[] }[] }>,
+    ): void => {
+        const { onUpdateAnnotationsBatch } = this.props;
+        const { detail: { states } } = e;
+
+        // apply the new geometry and persist the whole selection as one undoable change
+        const updatedStates = states.map((moved): ObjectState => {
+            const { state: objectState } = moved;
+            objectState.points = moved.points;
+            return objectState;
+        });
+        onUpdateAnnotationsBatch(updatedStates);
     };
 
     private onCanvasShapeResized = (e: CustomEvent<{ duration: number; state: ObjectState }>): void => {
@@ -877,14 +958,28 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasCursorMoved = async (event: any): Promise<void> => {
         const {
-            jobInstance, activatedStateID, activatedElementID, workspace, onActivateObject,
+            jobInstance, activatedStateID, activatedElementID, workspace, onActivateObject, selectedStatesID,
         } = this.props;
 
         if (![Workspace.STANDARD, Workspace.REVIEW, Workspace.SINGLE_SHAPE].includes(workspace)) {
             return;
         }
 
-        const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
+        // when shapes overlap, prefer members of the multi-selection under the cursor
+        // so the selection can be grabbed and dragged as a group (e.g. right after paste)
+        let result = null;
+        if (selectedStatesID.length > 1) {
+            const selectedCandidates = event.detail.states
+                .filter((state: ObjectState) => selectedStatesID.includes(state.clientID as number));
+            if (selectedCandidates.length) {
+                result = await jobInstance.annotations.select(selectedCandidates, event.detail.x, event.detail.y);
+            }
+        }
+
+        if (!result || !result.state) {
+            result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
+        }
+
         if (result && result.state) {
             if ([ShapeType.POLYLINE, ShapeType.POINTS].includes(result.state.shapeType)) {
                 if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
@@ -969,10 +1064,23 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasFindObject = async (e: any): Promise<void> => {
-        const { jobInstance } = this.props;
+        const { jobInstance, selectedStatesID } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
-        const result = await jobInstance.annotations.select(e.detail.states, e.detail.x, e.detail.y);
+        // when shapes overlap, prefer members of the multi-selection under the cursor
+        // so the selection can be grabbed and dragged as a group (e.g. right after paste)
+        let result = null;
+        if (selectedStatesID.length > 1) {
+            const selectedCandidates = e.detail.states
+                .filter((state: ObjectState) => selectedStatesID.includes(state.clientID as number));
+            if (selectedCandidates.length) {
+                result = await jobInstance.annotations.select(selectedCandidates, e.detail.x, e.detail.y);
+            }
+        }
+
+        if (!result || !result.state) {
+            result = await jobInstance.annotations.select(e.detail.states, e.detail.x, e.detail.y);
+        }
 
         if (result && result.state) {
             if (['polyline', 'points'].includes(result.state.shapeType)) {
@@ -1133,11 +1241,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().addEventListener('canvas.fit', this.onCanvasImageFitted);
         canvasInstance.html().addEventListener('canvas.dragshape', this.onCanvasShapeDragged as EventListener);
+        canvasInstance.html().addEventListener('canvas.groupmoved', this.onCanvasObjectsGroupMoved as EventListener);
         canvasInstance.html().addEventListener('canvas.resizeshape', this.onCanvasShapeResized as EventListener);
         canvasInstance.html().addEventListener('canvas.clicked', this.onCanvasShapeClicked);
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
+        canvasInstance.html().addEventListener('canvas.selected', this.onCanvasSelected);
         canvasInstance.html().addEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
