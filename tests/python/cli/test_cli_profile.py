@@ -86,17 +86,20 @@ class TestProfileDefault:
         run_cli(self, "profile", "default", "--unset")
         assert AuthStore(path=store_path).get_default_profile() is None
 
-    def test_set_unknown_profile_errors(self, store_path):
+    def test_set_unknown_profile_errors(self, store_path, capsys):
         _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
         run_cli(self, "profile", "default", "ghost", expected_code=1)
+        assert "Unknown profile 'ghost'. Run 'cvat-cli profile list'." in capsys.readouterr().err
         assert AuthStore(path=store_path).get_default_profile()[0] == "mycvat"
 
-    def test_name_and_unset_conflict(self, store_path):
+    def test_name_and_unset_conflict(self, store_path, capsys):
         _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
         run_cli(self, "profile", "default", "mycvat", "--unset", expected_code=1)
+        assert "Cannot combine a profile name with --unset." in capsys.readouterr().err
 
-    def test_print_no_default_errors(self, store_path):
+    def test_print_no_default_errors(self, store_path, capsys):
         run_cli(self, "profile", "default", expected_code=1)
+        assert "No default profile is set." in capsys.readouterr().err
 
 
 class TestProfileDelete:
