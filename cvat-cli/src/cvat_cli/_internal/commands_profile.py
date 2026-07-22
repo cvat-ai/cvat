@@ -140,7 +140,7 @@ class ProfileCreate:
                 name = fetch_current_access_token_name(client)
 
         if store.get_profile(name) is not None and not args.force:
-            raise CriticalError(f"Profile '{name}' already exists. Pass --force to overwrite.")
+            raise CriticalError(f"Profile '{name}' already exists. Pass '--force' to overwrite.")
 
         store.put_profile(
             name,
