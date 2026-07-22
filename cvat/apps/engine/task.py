@@ -1781,6 +1781,21 @@ def initialize_task(
         raise ValidationError("It isn't supported to upload manifest file and use random sorting")
 
     if (
+        not is_backup_restore
+        and manifest_file
+        and not is_data_in_cloud
+        and data["sorting_method"]
+        not in {models.SortingMethod.LEXICOGRAPHICAL, models.SortingMethod.RANDOM}
+    ):
+        # The manifest was created with lexicographical order by default,
+        # but the task uses a different sorting method. Delete the existing
+        # manifest so it gets recreated with the correct sorted order later.
+        manifest_full_path = os.path.join(manifest_root, manifest_file)
+        if os.path.exists(manifest_full_path):
+            os.remove(manifest_full_path)
+        manifest_file = None
+
+    if (
         is_backup_restore
         and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
         and data["sorting_method"] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
