@@ -56,7 +56,7 @@ class ProfileDefault:
         store = AuthStore()
 
         if args.unset and args.name is not None:
-            raise CriticalError("Cannot combine a profile name with --unset.")
+            raise CriticalError("Cannot combine a profile name with '--unset'.")
 
         if args.unset:
             store.clear_default_profile()
