@@ -2259,7 +2259,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             },
             data={
                 "image_quality": 70,
-                "client_files": generate_image_files(1),
+                "client_files": generate_image_files(2),
             },
         )
         failed_task_id, _ = create_task(
@@ -2270,7 +2270,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             },
             data={
                 "image_quality": 70,
-                "client_files": generate_image_files(1),
+                "client_files": generate_image_files(2),
             },
         )
 
@@ -2338,6 +2338,18 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert task_reports_by_task_id[passed_task_id]["summary"]["requirements"]["completed"] == 1
         assert task_reports_by_task_id[failed_task_id]["summary"]["jobs"]["completed"] == 0
         assert task_reports_by_task_id[failed_task_id]["summary"]["requirements"]["completed"] == 0
+
+        project_report_data = self._get_report_data(admin_user, project_report["id"])
+        project_requirement_summary = project_report_data["groups"][requirement_name][
+            "comparison_summary"
+        ]
+        assert project_requirement_summary["confusion_matrix"]["labels"] == ["car", "unmatched"]
+        assert project_requirement_summary["confusion_matrix"]["rows"] == [[1, 0], [1, 0]]
+        assert project_requirement_summary["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 1,
+            "extra_count": 0,
+        }
 
     def test_task_report_confusion_endpoint_returns_zip_archive(
         self, admin_user, find_sandbox_task_without_gt

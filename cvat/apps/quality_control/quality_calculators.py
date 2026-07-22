@@ -620,11 +620,15 @@ class ProjectQualityCalculator:
 
             for group_name, group_report in (r.groups or {}).items():
                 project_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
-                group_total_frames = r.comparison_summary.total_frames
-                group_validated_frames = len(group_report.frame_results or {})
 
-                group_frame_share = group_validated_frames / (group_total_frames or 1)
-                group_weight = 1 / (group_frame_share or 1)
+                # NOTE @grigorii: Currently, project reports aggregate only actually observed
+                # annotations, so every task matrix has weight 1. Keep the extrapolation formula
+                # below for a future project estimation mode.
+                group_weight = 1
+                # group_total_frames = r.comparison_summary.total_frames
+                # group_validated_frames = len(group_report.frame_results or {})
+                # group_frame_share = group_validated_frames / (group_total_frames or 1)
+                # group_weight = 1 / (group_frame_share or 1)
                 group_annotations = ComparisonReportAnnotationsSummary.from_confusion_matrix(
                     group_report.comparison_summary.confusion_matrix
                 )
