@@ -10,7 +10,7 @@ from typing import Any
 from django.conf import settings as django_settings
 from django.db import models as django_models
 from django.db import transaction
-from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 from rest_framework import serializers
 
 from cvat.apps.engine import field_validation
@@ -282,6 +282,7 @@ class _RejectUnknownFieldsSerializer(serializers.Serializer):
         return super().to_internal_value(data)
 
 
+@extend_schema_serializer(component_name="AttributeComparisonDefaultRule")
 class AttributeComparisonDefaultSerializer(_RejectUnknownFieldsSerializer):
     enabled = serializers.BooleanField(required=False, allow_null=True)
     comparator = serializers.ChoiceField(

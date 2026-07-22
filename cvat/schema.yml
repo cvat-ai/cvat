@@ -7591,13 +7591,13 @@ components:
       properties:
         default:
           allOf:
-          - $ref: '#/components/schemas/AttributeComparisonDefault'
+          - $ref: '#/components/schemas/AttributeComparisonDefaultRule'
           nullable: true
         rules:
           type: array
           items:
             $ref: '#/components/schemas/AttributeComparisonRule'
-    AttributeComparisonDefault:
+    AttributeComparisonDefaultRule:
       type: object
       properties:
         enabled:
@@ -7614,7 +7614,7 @@ components:
           maximum: 1
           minimum: 0
           nullable: true
-    AttributeComparisonDefaultRequest:
+    AttributeComparisonDefaultRuleRequest:
       type: object
       properties:
         enabled:
@@ -7636,7 +7636,7 @@ components:
       properties:
         default:
           allOf:
-          - $ref: '#/components/schemas/AttributeComparisonDefaultRequest'
+          - $ref: '#/components/schemas/AttributeComparisonDefaultRuleRequest'
           nullable: true
         rules:
           type: array
