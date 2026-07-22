@@ -14,6 +14,9 @@ interface UseRegionContextMenuResult {
     cleanupRegionContextMenu(regionID: string): void;
 }
 
+/**
+ * Manages context-menu listeners attached to waveform region elements.
+ */
 export function useRegionContextMenu(
     onContextMenuOpen: (clientID: number | null, event: MouseEvent, region: Region) => void,
 ): UseRegionContextMenuResult {

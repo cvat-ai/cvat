@@ -30,6 +30,9 @@ interface Params {
     ready: boolean;
 }
 
+/**
+ * Owns the recording preview lifecycle and persists completed recordings as audio intervals.
+ */
 export function useAudioRecording({ playback, regions, ready }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
     const { getCurrentTime, subscribeTimeUpdates } = playback;

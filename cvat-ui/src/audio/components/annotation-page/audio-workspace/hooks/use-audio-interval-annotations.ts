@@ -16,6 +16,9 @@ interface Params {
     waveform: Omit<AudioWaveform, 'playerBindings'>;
 }
 
+/**
+ * Composes interval-specific waveform behavior
+ */
 export function useAudioIntervalAnnotations({ waveform }: Params): AudioIntervalAnnotations {
     const regions = useWaveformRegions({
         regionRuntime: waveform.regionRuntime,

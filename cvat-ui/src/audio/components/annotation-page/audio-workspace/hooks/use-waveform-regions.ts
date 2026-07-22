@@ -94,6 +94,9 @@ function useRegionPreviewCapability(
     return { createPreview, isPreviewRegion };
 }
 
+/**
+ * Composes region-related functions and exposes temporary preview regions.
+ */
 export function useWaveformRegions({
     regionRuntime, viewport, ready, readyRef, durationRef,
 }: Params): WaveformRegions {

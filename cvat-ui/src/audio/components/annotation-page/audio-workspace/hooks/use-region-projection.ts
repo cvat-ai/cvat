@@ -21,6 +21,9 @@ interface Params {
     ready: boolean;
 }
 
+/**
+ * Projects visible Redux intervals and their appearance into WaveSurfer regions.
+ */
 export function useRegionProjection({ regionRuntime, ready }: Params): void {
     const {
         intervals, activeIntervalID, hoveredIntervalID, labels,

@@ -45,6 +45,9 @@ interface Params {
     viewport: WaveformViewport;
 }
 
+/**
+ * Provides interval navigation keyboard shortcut bindings.
+ */
 export function useIntervalNavigation({ viewport }: Params): IntervalNavigation {
     const dispatch = useDispatch<ThunkDispatch>();
     const { centerTimeRange } = viewport;

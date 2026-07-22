@@ -57,6 +57,9 @@ function installRegionDragBoundsConstraint(region: Region): void {
     /* eslint-enable no-underscore-dangle */
 }
 
+/**
+ * Persists user-created and user-edited waveform regions as audio intervals.
+ */
 export function useRegionEditing({
     regionRuntime, viewport, isPreviewRegion, ready,
 }: Params): void {

@@ -21,6 +21,9 @@ interface Params {
     ready: boolean;
 }
 
+/**
+ * Applies play-once and looping interval policies through the generic playback controller.
+ */
 export function useIntervalPlayback({ regionRuntime, playback, ready }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
     const {

@@ -32,6 +32,9 @@ interface Params {
     ready: boolean;
 }
 
+/**
+ * Resolves waveform region interactions to audio intervals.
+ */
 export function useRegionSelection({ regionRuntime, viewport, ready }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
     const { activeControl, hoveredIntervalID } = useSelector((state: CombinedState) => ({

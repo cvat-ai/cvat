@@ -156,6 +156,9 @@ function useWaveSurferRuntime({
     };
 }
 
+/**
+ * Composes the source-scoped WaveSurfer runtime with generic viewport and playback capabilities.
+ */
 export function useAudioWaveform(params: Params): AudioWaveform {
     const runtime = useWaveSurferRuntime(params);
     const viewport = useWaveformViewport(runtime);
