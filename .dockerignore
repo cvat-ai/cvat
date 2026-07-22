@@ -16,3 +16,4 @@
 /changelog.d
 /cvat-cli
 /profiles
+**/__pycache__
