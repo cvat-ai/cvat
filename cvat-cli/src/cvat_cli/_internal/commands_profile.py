@@ -112,14 +112,6 @@ class ProfileCreate:
     def execute(self, args: argparse.Namespace) -> None:
         store = AuthStore()
 
-        token = (
-            args.token
-            if args.token is not None
-            else getpass.getpass(f"Personal Access Token (PAT) for '{server}': ")
-        )
-        if not token:
-            raise CriticalError("A non-empty PAT is required.")
-
         server = (args.server_host or store.get_default_server() or DEFAULT_SERVER).rstrip("/")
         if args.server_port:
             parsed_url = urlsplit(("https://" if "://" not in server else "") + server)
@@ -130,6 +122,14 @@ class ProfileCreate:
                 )
             server = f"{server}:{args.server_port}"
         server = normalize_server_url(server)
+
+        token = (
+            args.token
+            if args.token is not None
+            else getpass.getpass(f"Personal Access Token (PAT) for '{server}': ")
+        )
+        if not token:
+            raise CriticalError("A non-empty PAT is required.")
 
         name = args.name
         if name is None:

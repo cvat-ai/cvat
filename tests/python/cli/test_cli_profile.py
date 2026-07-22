@@ -95,7 +95,7 @@ class TestProfileDefault:
     def test_name_and_unset_conflict(self, store_path, capsys):
         _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
         run_cli(self, "profile", "default", "mycvat", "--unset", expected_code=1)
-        assert "Cannot combine a profile name with --unset." in capsys.readouterr().err
+        assert "Cannot combine a profile name with '--unset'." in capsys.readouterr().err
 
     def test_print_no_default_errors(self, store_path, capsys):
         run_cli(self, "profile", "default", expected_code=1)
