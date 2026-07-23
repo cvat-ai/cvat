@@ -6,6 +6,7 @@ import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AudioActionTypes } from 'actions/audio-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
+import { limitZoom } from 'audio/utils/waveform-geometry';
 import { ActiveControl, AudioState } from '.';
 
 const defaultState: AudioState = {
@@ -29,6 +30,9 @@ const defaultState: AudioState = {
         audioLoading: false,
         audioError: null,
         waveformReady: false,
+        audioLoadRequest: null,
+        seekRequest: null,
+        playIntervalOnceRequest: null,
         activeLabelId: null,
     },
 };
@@ -55,12 +59,41 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AudioActionTypes.SET_AUDIO_CURRENT_TIME: {
+        case AudioActionTypes.PLAY_FULL_AUDIO: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    playing: true,
+                    playIntervalOnceRequest: null,
+                },
+            };
+        }
+        case AudioActionTypes.REPORT_AUDIO_CURRENT_TIME: {
             return {
                 ...state,
                 player: {
                     ...state.player,
                     currentTime: action.payload.time,
+                },
+            };
+        }
+        case AudioActionTypes.SEEK_AUDIO: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    seekRequest: action.payload.request,
+                },
+            };
+        }
+        case AudioActionTypes.COMPLETE_AUDIO_SEEK: {
+            if (state.player.seekRequest !== action.payload.request) return state;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    seekRequest: null,
                 },
             };
         }
@@ -87,7 +120,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 ...state,
                 player: {
                     ...state.player,
-                    zoom: action.payload.zoom,
+                    zoom: limitZoom(action.payload.zoom),
                 },
             };
         }
@@ -110,11 +143,15 @@ export default function audioReducer(state: AudioState = defaultState, action: A
             };
         }
         case AudioActionTypes.SET_AUDIO_ACTIVE_INTERVAL: {
+            const playIntervalOnceRequest =
+                state.player.playIntervalOnceRequest?.intervalID === action.payload.clientID ?
+                    state.player.playIntervalOnceRequest : null;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     activeIntervalID: action.payload.clientID,
+                    playIntervalOnceRequest,
                 },
             };
         }
@@ -153,37 +190,66 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     audioError: null,
                     waveformReady: false,
                     audioUrl: null,
+                    audioLoadRequest: action.payload.request,
+                    seekRequest: null,
+                    playIntervalOnceRequest: null,
                     contextMenu: defaultState.player.contextMenu,
                 },
             };
         }
         case AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS: {
+            if (state.player.audioLoadRequest !== action.payload.request) return state;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     audioUrl: action.payload.audioUrl,
+                    audioLoadRequest: null,
                     audioLoading: false,
                     audioError: null,
                 },
             };
         }
         case AudioActionTypes.LOAD_AUDIO_DATA_FAILED: {
+            if (state.player.audioLoadRequest !== action.payload.request) return state;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     audioLoading: false,
                     audioError: action.payload.error,
+                    audioLoadRequest: null,
                 },
             };
         }
         case AudioActionTypes.SET_WAVEFORM_READY: {
+            if (state.player.audioUrl !== action.payload.sourceURL) return state;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     waveformReady: action.payload.ready,
+                },
+            };
+        }
+        case AudioActionTypes.PLAY_AUDIO_INTERVAL_ONCE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    activeIntervalID: action.payload.request.intervalID,
+                    playIntervalOnceRequest: action.payload.request,
+                },
+            };
+        }
+        case AudioActionTypes.COMPLETE_PLAY_AUDIO_INTERVAL_ONCE: {
+            // request object used as an identity for the play-once operation, so we can ignore stale requests
+            if (state.player.playIntervalOnceRequest !== action.payload.request) return state;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    playIntervalOnceRequest: null,
                 },
             };
         }
@@ -211,6 +277,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     ...state.player,
                     activeIntervalID: null,
                     hoveredIntervalID: null,
+                    playIntervalOnceRequest: null,
                     contextMenu: defaultState.player.contextMenu,
                 },
             };
@@ -227,6 +294,9 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 (interval) => interval.clientID === state.player.contextMenu.clientID,
             ) ?
                 state.player.contextMenu.clientID : null;
+            const playIntervalOnceRequest = intervals.some(
+                (interval) => interval.clientID === state.player.playIntervalOnceRequest?.intervalID,
+            ) ? state.player.playIntervalOnceRequest : null;
 
             return {
                 ...state,
@@ -239,6 +309,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                         ...state.player.contextMenu,
                         clientID: contextMenuClientID,
                     },
+                    playIntervalOnceRequest,
                 },
             };
         }

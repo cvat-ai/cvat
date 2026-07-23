@@ -10,6 +10,7 @@ import {
     secondLabelName as AUDIO_SECOND_LABEL,
     attrName as AUDIO_ATTR_NAME,
     attrDefaultValue as AUDIO_ATTR_DEFAULT,
+    secondAttrDefaultValue as AUDIO_SECOND_ATTR_DEFAULT,
     audioFile as AUDIO_FILE,
 } from './const_audio';
 import { defaultTaskSpec } from './default-specs';
@@ -28,7 +29,17 @@ Cypress.Commands.add('ensureAudioTask', () => {
             attributes: [{ name: AUDIO_ATTR_NAME, values: AUDIO_ATTR_DEFAULT, type: 'text' }],
             serverFiles: [AUDIO_FILE],
         });
-        taskSpec.labels.push({ name: AUDIO_SECOND_LABEL, attributes: [], type: 'any' });
+        taskSpec.labels.push({
+            name: AUDIO_SECOND_LABEL,
+            attributes: [{
+                name: AUDIO_ATTR_NAME,
+                default_value: AUDIO_SECOND_ATTR_DEFAULT,
+                input_type: 'text',
+                mutable: false,
+                values: [],
+            }],
+            type: 'any',
+        });
 
         cy.intercept('POST', '/api/tasks**').as('createAudioTaskRequest');
         cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ jobIds }) => {
@@ -78,7 +89,8 @@ Cypress.Commands.add('audioActivateCreate', (labelName) => {
     cy.get('.cvat-audio-interval-region-control').click();
     cy.get('.cvat-audio-interval-region-popover-content', { timeout: 5000 }).should('be.visible');
     if (labelName) {
-        cy.get('.cvat-audio-interval-region-popover-content .ant-select').click();
+        // click on the right side as center might be hidden with left-hand control button tooltip
+        cy.get('.cvat-audio-interval-region-popover-content .ant-select').click('right');
         cy.get('.ant-select-dropdown').filter(':visible').contains('.ant-select-item-option', labelName).click();
     }
     cy.get('.cvat-audio-interval-region-popover-content').contains('button', 'Draw').click();
@@ -94,6 +106,17 @@ Cypress.Commands.add('clickRegionOnWaveform', (x) => {
         });
         cy.get('.cvat-audio-waveform-wrapper').realMouseUp({
             position: { x, y: yOffset }, button: 'left',
+        });
+    });
+});
+
+Cypress.Commands.add('doubleClickRegionOnWaveform', (x) => {
+    cy.get('.cvat-audio-waveform-wrapper').first().then(($el) => {
+        const yOffset = $el[0].getBoundingClientRect().height / 2;
+        cy.get('.cvat-audio-waveform-wrapper').realClick({
+            x,
+            y: yOffset,
+            clickCount: 2,
         });
     });
 });
@@ -122,6 +145,14 @@ Cypress.Commands.add('audioCreateRegionViaHotkey', (xStart, xEnd) => {
     cy.get('body').type('n');
     cy.get('.cvat-audio-interval-region-control').should('have.class', 'cvat-active-canvas-control');
     cy.audioDrawRegion(xStart, xEnd);
+});
+
+Cypress.Commands.add('audioChangeSelectedRegionLabel', (labelName) => {
+    cy.get('.cvat-audio-region-label-trigger').click();
+    cy.get('.cvat-audio-region-label-popover').filter(':visible').contains(
+        '.cvat-audio-region-label-option', labelName,
+    ).click();
+    cy.get('.cvat-audio-region-label-trigger').should('contain.text', labelName);
 });
 
 Cypress.Commands.add('audioExtendViaButton', (labelName) => {
@@ -153,9 +184,28 @@ Cypress.Commands.add('audioSliderSetValue', (controlClass, arrowDirection, steps
 });
 
 Cypress.Commands.add('audioSaveAnnotations', () => {
-    cy.intercept('PATCH', '/api/jobs/**/annotations**').as('audioSaveRequest');
     cy.get('.cvat-annotation-header-save-button').click();
+    cy.get('.cvat-annotation-header-save-button').should('contain.text', 'Saving...');
     cy.get('.cvat-annotation-header-save-button').should('contain.text', 'Save');
+});
+
+Cypress.Commands.add('audioClearAnnotations', () => {
+    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
+        if ($list.find('.cvat-audio-region-item').length) {
+            cy.removeAnnotations();
+            cy.get('.cvat-audio-region-item').should('have.length', 0);
+        }
+    });
+});
+
+Cypress.Commands.add('audioClearAnnotationsAndSave', () => {
+    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
+        if ($list.find('.cvat-audio-region-item').length) {
+            cy.removeAnnotations();
+            cy.get('.cvat-audio-region-item').should('have.length', 0);
+            cy.audioSaveAnnotations();
+        }
+    });
 });
 
 Cypress.Commands.add('audioUndo', () => {

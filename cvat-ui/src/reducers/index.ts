@@ -42,6 +42,9 @@ export interface AudioState {
         audioError: string | null;
         waveformReady: boolean;
         activeLabelId: number | null;
+        audioLoadRequest: object | null;
+        seekRequest: { time: number } | null;
+        playIntervalOnceRequest: { intervalID: number } | null;
     };
 }
 

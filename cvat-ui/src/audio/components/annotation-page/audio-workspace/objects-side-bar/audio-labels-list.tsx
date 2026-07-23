@@ -12,7 +12,7 @@ import message from 'antd/lib/message';
 import { CombinedState } from 'reducers';
 import {
     audioActions,
-    updateAudioIntervalAsync,
+    changeAudioIntervalLabelAsync,
     updateAudioIntervalsAsync,
 } from 'actions/audio-actions';
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
@@ -161,14 +161,7 @@ function AudioLabelsList(): JSX.Element {
         const { activeIntervalID } = relevantAppState.audio.player;
 
         if (activeIntervalID !== null) {
-            const defaultAttrs: Record<number, string> = {};
-            label.attributes.forEach((attr: any) => {
-                defaultAttrs[attr.id] = attr.defaultValue;
-            });
-            dispatch(updateAudioIntervalAsync(activeIntervalID, {
-                label,
-                attributes: defaultAttrs,
-            }));
+            dispatch(changeAudioIntervalLabelAsync(activeIntervalID, labelID));
         } else {
             dispatch(audioActions.setAudioActiveLabel(labelID));
             message.destroy();

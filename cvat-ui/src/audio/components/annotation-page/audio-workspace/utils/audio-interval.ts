@@ -4,6 +4,12 @@
 
 import { AudioIntervalState } from 'cvat-core-wrapper';
 import { toClipboard } from 'utils/to-clipboard';
+import { clamp } from 'utils/math';
+
+export interface AudioTimeRange {
+    start: number;
+    end: number;
+}
 
 export function intervalID(interval: AudioIntervalState): number {
     return interval.clientID as number;
@@ -35,4 +41,12 @@ export function copyAudioIntervalURL(serverID?: number | null): void {
         const { origin, pathname } = window.location;
         toClipboard(`${origin}${pathname}?type=interval&serverID=${serverID}`);
     }
+}
+
+export function clampRange(range: AudioTimeRange, duration: number): AudioTimeRange {
+    const start = clamp(range.start, 0, duration);
+    return {
+        start,
+        end: clamp(range.end, start, duration),
+    };
 }

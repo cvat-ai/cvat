@@ -25,6 +25,10 @@ context('Audio annotation. Import transcriptions from a TSV file.', () => {
         cy.openAudioJob(taskName);
     });
 
+    after(() => {
+        cy.audioClearAnnotationsAndSave();
+    });
+
     describe(`Testing case "${caseId}"`, () => {
         it('Upload annotations offers the TSV format, accepts a .tsv file, and imports it', () => {
             cy.removeAnnotations();

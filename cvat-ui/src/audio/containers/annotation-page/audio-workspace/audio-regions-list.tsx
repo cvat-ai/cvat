@@ -11,6 +11,7 @@ import { ActiveControl, ColorBy, CombinedState } from 'reducers';
 import {
     audioActions,
     copyAudioIntervalAsync,
+    requestPlayAudioIntervalOnce,
     removeAudioIntervalAsync,
     updateAudioIntervalAsync,
     updateAudioIntervalsAsync,
@@ -70,8 +71,7 @@ interface StateToProps {
 interface DispatchToProps {
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
-    onSwitchPlay(playing: boolean): void;
-    onSetCurrentTime(time: number): void;
+    onPlayIntervalOnce(clientID: number): void;
     onToggleIntervalLock(clientID: number): void;
     onToggleIntervalHidden(clientID: number): void;
     onToggleIntervalsLock(clientIDs: number[], lock: boolean): void;
@@ -105,11 +105,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSetHoveredInterval(clientID: number | null): void {
             dispatch(audioActions.setAudioHoveredInterval(clientID));
         },
-        onSwitchPlay(playing: boolean): void {
-            dispatch(audioActions.switchAudioPlay(playing));
-        },
-        onSetCurrentTime(time: number): void {
-            dispatch(audioActions.setAudioCurrentTime(time));
+        onPlayIntervalOnce(clientID: number): void {
+            dispatch(requestPlayAudioIntervalOnce(clientID));
         },
         onToggleIntervalLock(clientID: number): void {
             dispatch(updateAudioIntervalAsync(clientID, (interval) => ({ lock: !interval.lock })));
@@ -142,7 +139,7 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
         intervals, filtersActive, activeIntervalID, labels, colorBy,
         activeControl,
         keyMap, normalizedKeyMap,
-        onSetActiveInterval, onSetHoveredInterval, onSwitchPlay, onSetCurrentTime,
+        onSetActiveInterval, onSetHoveredInterval, onPlayIntervalOnce,
         onToggleIntervalLock, onToggleIntervalHidden, onToggleIntervalsLock, onToggleIntervalsHidden,
         onCopyInterval, onDeleteInterval, onChangeIntervalColor,
     } = props;
@@ -197,8 +194,7 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
                 switchHiddenAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_HIDDEN ?? ''}
                 onSetActiveInterval={onSetActiveInterval}
                 onSetHoveredInterval={onSetHoveredInterval}
-                onSwitchPlay={onSwitchPlay}
-                onSetCurrentTime={onSetCurrentTime}
+                onPlayIntervalOnce={onPlayIntervalOnce}
                 onToggleIntervalLock={onToggleIntervalLock}
                 onToggleIntervalHidden={onToggleIntervalHidden}
                 onToggleIntervalsLock={onToggleIntervalsLock}

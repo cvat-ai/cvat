@@ -8,6 +8,7 @@ import { Col, Row } from 'antd/lib/grid';
 import { Workspace } from 'reducers';
 import { Job } from 'cvat-core-wrapper';
 import { KeyMap } from 'utils/mousetrap-react';
+import { AudioSeekIntent } from 'actions/audio-actions';
 
 import AudioLeftGroup from './audio-left-group';
 import AudioPlayerNavigation from './audio-player-navigation';
@@ -23,9 +24,7 @@ interface Props {
     redoShortcut: string;
     keyMap: KeyMap;
     jobInstance: Job;
-    audioCurrentTime: number;
     audioDuration: number;
-    audioZoom: number;
     annotationFilters: object[];
     initialOpenGuide: boolean;
     changeWorkspace(workspace: Workspace): void;
@@ -34,7 +33,7 @@ interface Props {
     onUndoClick(): void;
     onRedoClick(): void;
     onAudioPlayPause(): void;
-    onAudioSeek(time: number): void;
+    onAudioSeek(intent: AudioSeekIntent): void;
 }
 
 export default function AudioTopBarComponent(props: Props): JSX.Element {
@@ -48,9 +47,7 @@ export default function AudioTopBarComponent(props: Props): JSX.Element {
         redoShortcut,
         jobInstance,
         keyMap,
-        audioCurrentTime,
         audioDuration,
-        audioZoom,
         annotationFilters,
         initialOpenGuide,
         showStatistics,
@@ -78,9 +75,7 @@ export default function AudioTopBarComponent(props: Props): JSX.Element {
                 <Row align='middle'>
                     <AudioPlayerNavigation
                         playing={playing}
-                        currentTime={audioCurrentTime}
                         duration={audioDuration}
-                        zoom={audioZoom}
                         workspace={workspace}
                         keyMap={keyMap}
                         onPlayPause={onAudioPlayPause}
