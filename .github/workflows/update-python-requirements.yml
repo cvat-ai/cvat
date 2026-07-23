@@ -22,13 +22,13 @@ jobs:
       startsWith(github.event.pull_request.head.ref, 'dependabot/pip/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
 
@@ -73,7 +73,7 @@ jobs:
       - name: Generate authentication token
         if: steps.changes.outputs.changed == 'true'
         id: gen-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: "${{ secrets.CVAT_BOT_CLIENT_ID }}"
           private-key: "${{ secrets.CVAT_BOT_PRIVATE_KEY }}"

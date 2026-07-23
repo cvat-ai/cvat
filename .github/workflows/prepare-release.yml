@@ -24,7 +24,7 @@ jobs:
       # the pull request, so we have to use an app token.
       - name: Generate authentication token
         id: gen-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: "${{ secrets.CVAT_BOT_CLIENT_ID }}"
           private-key: "${{ secrets.CVAT_BOT_PRIVATE_KEY }}"
@@ -33,7 +33,7 @@ jobs:
         run:
           sudo apt-get install -y pandoc
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Verify that the release is new
         run: |

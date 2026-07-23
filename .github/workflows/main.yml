@@ -30,7 +30,7 @@ jobs:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Verify version consistency
         run: ./dev/update_version.py --verify-current
@@ -39,19 +39,19 @@ jobs:
         run: ./dev/check_changelog_fragments.py
 
       - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
       - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: Create artifact directories
         run: |
@@ -60,7 +60,7 @@ jobs:
           mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           build-args: |
               "COVERAGE_PROCESS_START=.coveragerc"
@@ -77,7 +77,7 @@ jobs:
           yarn run coverage
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
@@ -119,19 +119,19 @@ jobs:
             -c 'python manage.py checkredismigrations'
 
       - name: Upload CVAT server artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cvat_server
           path: /tmp/cvat_server/image.tar
 
       - name: Upload CVAT UI artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/image.tar
 
       - name: Upload CVAT SDK artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
@@ -153,21 +153,21 @@ jobs:
             allow_cache: 'true'
     name: rest_api_testing [${{ matrix.pattern }}, cache-${{ matrix.allow_cache }}]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           # Use the oldest Python release supported by the SDK.
           python-version: '3.10'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -200,7 +200,7 @@ jobs:
 
 
       - name: Uploading code coverage results as an artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{format(
             'coverage_results_rest_api-{0}-cache-{1}',
@@ -234,7 +234,7 @@ jobs:
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{format(
               'rest_api_container_logs-{0}-cache-{1}',
@@ -244,7 +244,7 @@ jobs:
 
       - name: Upload allure results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{format(
               'allure-results-tests-api-{0}-cache-{1}',
@@ -256,10 +256,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cvat_server
           path: /tmp/cvat_server/
@@ -291,7 +291,7 @@ jobs:
             -c 'coverage run -a manage.py test -v 2 cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
 
       - name: Uploading code coverage results as an artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage_results_unit_tests
           path: |
@@ -309,7 +309,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: unit_tests_container_logs
           path: "${{ github.workspace }}/unit_testing"
@@ -326,22 +326,22 @@ jobs:
                 'issues_prs', 'issues_prs2', 'features', 'features2',
                 'audio_workspace']
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
             node-version: '22.x'
             # NOTE: corepack is not bundled after Node 25
             # https://nodejs.org/docs/v22.18.0/api/corepack.html#corepack
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI image
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -409,7 +409,7 @@ jobs:
           mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
 
       - name: Uploading code coverage results as an artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage_results_e2e_${{ matrix.specs }}
           path: |
@@ -424,28 +424,28 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: e2e_container_logs_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
       - name: Uploading cypress videos as an artifact
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cypress_videos_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/videos
 
       - name: Upload Allure results as an artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: allure-results-e2e-${{ matrix.specs }}
           path: tests/allure-results-e2e
@@ -454,15 +454,15 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           # Use the latest stable Python release.
           python-version: '3.14'
 
       - name: Start minikube
-        uses: medyagh/setup-minikube@latest
+        uses: medyagh/setup-minikube@e9e035a86bbc3caea26a450bd4dbf9d0c453682e # v0.0.21
         with:
           cpus: max
           memory: max
@@ -471,13 +471,13 @@ jobs:
         run: kubectl get pods -A
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -489,7 +489,7 @@ jobs:
           docker load --input /tmp/cvat_ui/image.tar
           docker image ls -a
 
-      - uses: azure/setup-helm@v5
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
 
       - name: Update Helm chart dependencies
         working-directory: helm-chart
@@ -550,7 +550,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: helm_rest_api_container_logs
           path: "${{ github.workspace }}/rest_api_testing"
@@ -560,16 +560,16 @@ jobs:
     needs: [rest_api_testing, unit_testing, e2e_testing]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Download CVAT server images
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -580,7 +580,7 @@ jobs:
           docker load --input /tmp/cvat_ui/image.tar
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v4
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -611,21 +611,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit_testing, e2e_testing, rest_api_testing]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Merge coverage artifacts
-        uses: actions/upload-artifact/merge@v7
+        uses: actions/upload-artifact/merge@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage_results
           pattern: coverage_results_*
           delete-merged: true
 
       - name: Downloading coverage results
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: coverage_results
 
       - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
