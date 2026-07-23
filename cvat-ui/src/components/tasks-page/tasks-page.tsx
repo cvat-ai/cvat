@@ -6,8 +6,7 @@
 import './styles.scss';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
-import React, { useEffect, useState, useCallback } from 'react';
-import { useHistory } from 'react-router';
+import React, { useCallback } from 'react';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
@@ -17,7 +16,7 @@ import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { anySearch } from 'utils/any-search';
-import { useResourceQuery } from 'utils/hooks';
+import { useResourceQuery, usePageQuerySync } from 'utils/hooks';
 import { selectionActions } from 'actions/selection-actions';
 
 import TopBar from './top-bar';
@@ -32,41 +31,43 @@ interface Props {
 }
 
 function TasksPageComponent(props: Readonly<Props>): JSX.Element {
-    const {
-        query, fetching, importing, count, bulkFetching,
-    } = props;
+    const { query, fetching, importing, count, bulkFetching } = props;
 
     const dispatch = useDispatch();
-    const history = useHistory();
-    const [isMounted, setIsMounted] = useState(false);
 
-    const { currentTasks, deletedTasks, selectedCount } = useSelector((state: CombinedState) => ({
-        currentTasks: state.tasks.current,
-        deletedTasks: state.tasks.activities.deletes,
-        selectedCount: state.tasks.selected.length,
-    }), shallowEqual);
+    const { currentTasks, deletedTasks, selectedCount } = useSelector(
+        (state: CombinedState) => ({
+            currentTasks: state.tasks.current,
+            deletedTasks: state.tasks.activities.deletes,
+            selectedCount: state.tasks.selected.length,
+        }),
+        shallowEqual,
+    );
 
     const onSelectAll = useCallback(() => {
-        dispatch(selectionActions.selectResources(
-            currentTasks.map((t) => t.id).filter((id) => !deletedTasks[id]),
-            SelectedResourceType.TASKS,
-        ));
+        dispatch(
+            selectionActions.selectResources(
+                currentTasks.map((t) => t.id).filter((id) => !deletedTasks[id]),
+                SelectedResourceType.TASKS,
+            ),
+        );
     }, [currentTasks, deletedTasks]);
 
     const updatedQuery = useResourceQuery<TasksQuery>(query);
 
-    useEffect(() => {
-        dispatch(getTasksAsync({ ...updatedQuery }));
-        setIsMounted(true);
-    }, []);
-
-    useEffect(() => {
-        if (isMounted) {
-            history.replace({
-                search: updateHistoryFromQuery(query),
-            });
-        }
-    }, [query]);
+    const { setQuery } = usePageQuerySync({
+        query,
+        updatedQuery,
+        onFetch: (fetchQuery: TasksQuery) => {
+            dispatch(getTasksAsync({ ...fetchQuery }));
+        },
+        updateHistoryFromQuery,
+        getFilterSortSearch: (q: TasksQuery) => ({
+            filter: q.filter,
+            sort: q.sort,
+            search: q.search,
+        }),
+    });
 
     const isAnySearch = anySearch<TasksQuery>(query);
 
@@ -78,11 +79,11 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
                     <Pagination
                         className='cvat-tasks-pagination'
                         onChange={(page: number, pageSize: number) => {
-                            dispatch(getTasksAsync({
-                                ...query,
+                            setQuery({
+                                ...updatedQuery,
                                 page,
                                 pageSize,
-                            }));
+                            });
                         }}
                         total={count}
                         pageSize={query.pageSize}
@@ -101,42 +102,38 @@ function TasksPageComponent(props: Readonly<Props>): JSX.Element {
         <div className='cvat-tasks-page'>
             <TopBar
                 onApplySearch={(search: string | null) => {
-                    dispatch(
-                        getTasksAsync({
-                            ...query,
-                            search,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...updatedQuery,
+                        search,
+                        page: 1,
+                    });
                 }}
                 onApplyFilter={(filter: string | null) => {
-                    dispatch(
-                        getTasksAsync({
-                            ...query,
-                            filter,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...updatedQuery,
+                        filter,
+                        page: 1,
+                    });
                 }}
                 onApplySorting={(sorting: string | null) => {
-                    dispatch(
-                        getTasksAsync({
-                            ...query,
-                            sort: sorting,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...updatedQuery,
+                        sort: sorting,
+                        page: 1,
+                    });
                 }}
                 query={updatedQuery}
                 importing={importing}
                 selectedCount={selectedCount}
                 onSelectAll={onSelectAll}
             />
-            { fetching && !bulkFetching ? (
+            {fetching && !bulkFetching ? (
                 <div className='cvat-empty-tasks-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>
-            ) : content }
+            ) : (
+                content
+            )}
         </div>
     );
 }
