@@ -5,7 +5,7 @@
 /// <reference types="cypress" />
 
 import {
-    taskName, firstLabelName, secondLabelName, attrName, attrDefaultValue,
+    taskName, firstLabelName, secondLabelName, attrName, attrDefaultValue, secondAttrDefaultValue,
 } from '../../support/const_audio';
 
 context('Audio annotation. Relabeling restores label defaults.', () => {
@@ -35,7 +35,7 @@ context('Audio annotation. Relabeling restores label defaults.', () => {
                 '.cvat-audio-region-label-option', secondLabelName,
             ).click();
             cy.get('.cvat-audio-region-label-trigger').should('contain.text', secondLabelName);
-            cy.get('.cvat-audio-region-details textarea').should('not.exist');
+            cy.get('.cvat-audio-region-details textarea').should('have.value', secondAttrDefaultValue);
 
             cy.get('.cvat-audio-region-label-trigger').click();
             cy.get('.cvat-audio-region-label-popover').filter(':visible').contains(

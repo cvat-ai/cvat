@@ -7,4 +7,5 @@ export const firstLabelName = 'speaker1';
 export const secondLabelName = 'speaker2';
 export const attrName = 'transcription';
 export const attrDefaultValue = '';
+export const secondAttrDefaultValue = 'default transcription for speaker2';
 export const audioFile = 'audio/sample1.mp3';

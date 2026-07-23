@@ -10,6 +10,7 @@ import {
     secondLabelName as AUDIO_SECOND_LABEL,
     attrName as AUDIO_ATTR_NAME,
     attrDefaultValue as AUDIO_ATTR_DEFAULT,
+    secondAttrDefaultValue as AUDIO_SECOND_ATTR_DEFAULT,
     audioFile as AUDIO_FILE,
 } from './const_audio';
 import { defaultTaskSpec } from './default-specs';
@@ -28,7 +29,11 @@ Cypress.Commands.add('ensureAudioTask', () => {
             attributes: [{ name: AUDIO_ATTR_NAME, values: AUDIO_ATTR_DEFAULT, type: 'text' }],
             serverFiles: [AUDIO_FILE],
         });
-        taskSpec.labels.push({ name: AUDIO_SECOND_LABEL, attributes: [], type: 'any' });
+        taskSpec.labels.push({
+            name: AUDIO_SECOND_LABEL,
+            attributes: [{ name: AUDIO_ATTR_NAME, values: AUDIO_SECOND_ATTR_DEFAULT, type: 'text' }],
+            type: 'any',
+        });
 
         cy.intercept('POST', '/api/tasks**').as('createAudioTaskRequest');
         cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ jobIds }) => {
