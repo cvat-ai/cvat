@@ -11,6 +11,7 @@ import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.core.client import AccessTokenCredentials, Config, PasswordCredentials, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
+from cvat_sdk.core.utils import normalize_server_url
 from cvat_sdk.exceptions import ApiException
 
 from shared.utils.config import BASE_URL, USER_PASS
@@ -99,6 +100,7 @@ class TestClientFactory:
             assert client.api_map.host == BASE_URL
 
     def test_can_add_default_server_schema(self):
+        assert normalize_server_url("localhost:8080/") == "https://localhost:8080"
         with https_reverse_proxy() as proxy_url:
             with Client(
                 url=proxy_url.removeprefix("https://"), config=Config(verify_ssl=False)
