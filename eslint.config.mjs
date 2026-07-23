@@ -13,7 +13,7 @@ import stylisticPlugin from '@stylistic/eslint-plugin';
 import tseslintPlugin from '@typescript-eslint/eslint-plugin';
 import cypressPlugin from 'eslint-plugin-cypress';
 import globals from 'globals';
-import importPlugin from 'eslint-plugin-import';
+import importPlugin from 'eslint-plugin-import-x';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 import noUnsanitizedPlugin from 'eslint-plugin-no-unsanitized';
 import reactPlugin from 'eslint-plugin-react';
@@ -214,7 +214,7 @@ const testsGlobalConfig = {
     'func-names': 0, // TODO: remove this, all procedures should be named
     quotes: ['error', 'single', { avoidEscape: true }],
     'no-underscore-dangle': ['error', { allowAfterThis: true }],
-    'import/order': ['error', { groups: ['builtin', 'external', 'internal'] }],
+    'import-x/order': ['error', { groups: ['builtin', 'external', 'internal'] }],
     'function-paren-newline': 0,
 };
 
@@ -324,6 +324,7 @@ export default [
         files: sourceFiles,
         plugins: {
             react: fixupPluginRules(reactPlugin),
+            'import-x': importPlugin,
         },
         languageOptions: {
             globals: {
@@ -333,8 +334,8 @@ export default [
         },
         rules: {
             camelcase: 'off',
-            'import/extensions': 'off',
-            'import/no-unresolved': 'off',
+            'import-x/extensions': 'off',
+            'import-x/no-unresolved': 'off',
             'no-unused-vars': 'off',
             '@typescript-eslint/no-unused-vars': ['error', {
                 argsIgnorePattern: '^_',
@@ -363,6 +364,7 @@ export default [
             security: securityPlugin,
             'no-unsanitized': noUnsanitizedPlugin,
             'chai-friendly': chaiFriendlyPlugin,
+            'import-x': importPlugin,
         },
         languageOptions: {
             globals: testsNodeAndCypressGlobals,
@@ -373,8 +375,8 @@ export default [
             ...cypressPlugin.configs.recommended.rules,
             ...securityPlugin.configs['recommended-legacy'].rules,
             ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
-            'import/no-unresolved': 'off',
-            'import/extensions': 'off',
+            'import-x/no-unresolved': 'off',
+            'import-x/extensions': 'off',
             'no-prototype-builtins': 'off',
             'no-underscore-dangle': 'off',
             'cypress/no-unnecessary-waiting': 'off',
@@ -391,6 +393,7 @@ export default [
             import: importPlugin,
             security: securityPlugin,
             'no-unsanitized': noUnsanitizedPlugin,
+            'import-x': importPlugin,
         },
         languageOptions: {
             globals: browserAndNodeGlobals,
@@ -400,8 +403,8 @@ export default [
         rules: {
             ...securityPlugin.configs['recommended-legacy'].rules,
             ...noUnsanitizedPlugin.configs['recommended-legacy'].rules,
-            'import/no-unresolved': 'off',
-            'import/extensions': 'off',
+            'import-x/no-unresolved': 'off',
+            'import-x/extensions': 'off',
             'no-prototype-builtins': 'off',
             'no-underscore-dangle': 'off',
         },

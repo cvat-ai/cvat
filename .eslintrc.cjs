@@ -20,17 +20,23 @@ module.exports = {
         'site/**',
         'webpack.config.cjs',
     ],
-    plugins: ['@typescript-eslint', '@stylistic', 'security', 'no-unsanitized', 'import'],
+    plugins: ['@typescript-eslint', '@stylistic', 'security', 'no-unsanitized'],
     extends: [
         'eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM',
-        'airbnb-base', 'plugin:import/errors', 'plugin:import/warnings',
-        'plugin:import/typescript', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
+        'airbnb-base', 'plugin:@typescript-eslint/recommended', 'airbnb-typescript/base',
     ],
     rules: {
         // 'header/header': [2, 'line', [{
         //     pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2022 Intel Corporation',
         //     template: ' Copyright (C) 2022 Intel Corporation'
         // }, '', ' SPDX-License-Identifier: MIT']],
+
+        // disable all import/* rules from airbnb, import-x/* takes over
+        ...Object.fromEntries(
+            Object.keys(require('eslint-plugin-import').rules)
+                .map(rule => [`import/${rule}`, 'off'])
+        ),
+        // ...existing code...
         'no-plusplus': 0,
         'no-continue': 0,
         'no-console': 0,
@@ -52,9 +58,6 @@ module.exports = {
         'global-require': 0,
         'arrow-parens': ['error', 'always'],
         'security/detect-object-injection': 0, // the rule is relevant for user input data on the node.js environment
-        'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
-        'import/no-unresolved': 'off',
-        'import/prefer-default-export': 0, // works incorrect with interfaces
         'no-useless-assignment': 'off',
         'preserve-caught-error': 'off',
 
