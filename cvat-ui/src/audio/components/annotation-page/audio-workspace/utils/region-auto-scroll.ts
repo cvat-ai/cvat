@@ -34,8 +34,12 @@ export function attachRegionAutoScroll(
         if (!activeRegion || !isLocked()) return;
         // eslint-disable-next-line no-underscore-dangle
         activeRegion._onUpdate(e.movementX, activeSide, undefined);
-        const boundary = e.movementX < 0 && activeSide !== 'end' ? activeRegion.start : activeRegion.end;
-        ensureTimeVisible(boundary);
+
+        if (e.movementX > 0 && activeSide !== 'start') {
+            ensureTimeVisible(activeRegion.end);
+        } else if (e.movementX < 0 && activeSide !== 'end') {
+            ensureTimeVisible(activeRegion.start);
+        }
         e.stopImmediatePropagation();
     };
 
