@@ -131,6 +131,91 @@ cvat-cli task ls
 
 {{< /tabpane >}}
 
+### Persistent authentication (profiles)
+
+The CLI can remember a server URL and a Personal Access Token (PAT) locally,
+so that everyday commands do not have to repeat `--server-host` / `--auth`
+or leak credentials into shell history. Each remembered _profile_ is
+self-contained: it bundles one server with one PAT.
+
+Profiles are stored as a JSON file with `0600` (owner read/write only) mode
+inside a `0700` directory. The CLI refuses to read or write the file if
+either it or its parent directory is group- or world-accessible. On Windows
+the check is best-effort. The location follows the platform convention:
+
+| Platform | Path |
+| ---------- | ---- |
+| Linux    | `${XDG_CONFIG_HOME:-$HOME/.config}/cvat-sdk/auth.json` |
+| macOS    | `~/Library/Application Support/cvat-sdk/auth.json` |
+| Windows  | `%LOCALAPPDATA%\CVAT.ai\cvat-sdk\auth.json` |
+
+Only a PAT is ever written to disk - never a username or password.
+
+#### Managing profiles
+
+Use `cvat-cli profile` and `cvat-cli config` to create and manage profiles.
+These commands operate on the local file and do not talk to the server
+(except that `profile create` optionally reads the token's _name_ from the
+server when you did not supply one).
+
+```bash
+# Save a profile. Prompted for the token (no echo) if omitted.
+cvat-cli --server-host https://app.cvat.ai profile create --name mycvat --set-default
+
+# Save a profile by pasting the token, and pick a nickname:
+cvat-cli --server-host https://app.cvat.ai profile create --name mycvat "<paste-token-here>"
+
+# Import a plain-text token:
+cvat-cli --server-host https://app.cvat.ai profile create --name mycvat --file ~/Downloads/cvat-token.txt
+
+# A JSON envelope containing the token, server, and profile name needs no extra arguments:
+cvat-cli profile create --file ~/Downloads/cvat-token-my-laptop.json
+
+# Inspect and manage the store:
+cvat-cli profile list                # lists names, servers, and the default marker
+cvat-cli profile list --names-only   # names only, one per line (script-friendly)
+cvat-cli profile default             # print the current default profile
+cvat-cli profile default staging     # make "staging" the default
+cvat-cli profile default --unset     # unset the default
+cvat-cli profile delete staging      # remove the profile (does not revoke the token)
+
+# Set a fallback server used when neither --server-host nor --profile is given:
+cvat-cli config default-server https://app.cvat.ai
+cvat-cli config default-server        # print the current default server
+cvat-cli config default-server --unset
+```
+
+The server-side token is **not** revoked when a profile is deleted; use the
+CVAT UI or API to revoke it.
+
+#### Selecting a profile per command
+
+The global `--profile <name>` flag selects a saved profile for a single
+command. It is **mutually exclusive** with `--server-host`, `--server-port`,
+and `--auth`:
+
+```bash
+cvat-cli --profile mycvat task ls
+cvat-cli --profile staging task create "task 1" --labels labels.json local file.jpg
+```
+
+#### Resolution order (zero-flag command)
+
+When you run `cvat-cli task ls` without `--profile`, `--server-host`, or
+`--auth`, the CLI picks a server _and_ credential together, in this order:
+
+1. `--profile NAME` (must supply both);
+2. otherwise the default profile, if one is set (supplies both);
+3. otherwise the credential falls back to `CVAT_ACCESS_TOKEN` if set,
+   then to a username/password prompt; and the server falls back to the
+   configured `default_server`, then to the built-in default
+   `http://localhost`.
+
+If `--server-host` is passed without `--profile`, the CLI **does not** borrow
+the default profile's PAT: you must supply a credential (`--auth`,
+`CVAT_ACCESS_TOKEN`, or the prompt). This keeps the "one PAT belongs to one
+server" invariant of the store.
+
 ## Examples - tasks
 
 ### Create
@@ -298,7 +383,7 @@ It can auto-annotate using AA functions implemented in one of the following ways
        ...
    ```
 
-1. As a Python module implementing a factory function named `create`.
+2. As a Python module implementing a factory function named `create`.
    This function must return an object implementing the AA function protocol.
    Any parameters specified on the command line using the `-p` option
    will be passed to `create`.

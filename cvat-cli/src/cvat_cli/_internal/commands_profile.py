@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from cvat_sdk.core.auth import DEFAULT_SERVER, AuthStore, ProfileEntry
@@ -14,7 +15,7 @@ from cvat_sdk.core.utils import normalize_server_url
 
 from .command_base import CommandGroup
 from .common import CriticalError
-from .utils import fetch_current_access_token_name, get_current_time_iso
+from .utils import fetch_current_access_token_name, get_current_time_iso, read_token_file
 
 COMMANDS = CommandGroup(description="Manage saved CVAT authentication profiles.")
 
@@ -108,11 +109,34 @@ class ProfileCreate:
         parser.add_argument("token", nargs="?", default=None, help="PAT (omit to be prompted)")
         parser.add_argument("--set-default", action="store_true", help="mark as default profile")
         parser.add_argument("--force", action="store_true", help="overwrite an existing profile")
+        parser.add_argument(
+            "--file",
+            type=Path,
+            default=None,
+            help="read the PAT from a file (plain token or JSON envelope)",
+        )
 
     def execute(self, args: argparse.Namespace) -> None:
         store = AuthStore()
 
-        server = (args.server_host or store.get_default_server() or DEFAULT_SERVER).rstrip("/")
+        envelope_server = envelope_name = None
+        if args.file is not None:
+            if args.token is not None:
+                raise CriticalError("Cannot combine a PAT argument with '--file'.")
+            try:
+                token, envelope_server, envelope_name = read_token_file(args.file)
+            except (OSError, UnicodeError, ValueError) as e:
+                raise CriticalError(f"Cannot read token file '{args.file}': {e}") from e
+        elif args.token is not None:
+            token = args.token
+        else:
+            token = getpass.getpass("Personal Access Token (PAT): ")
+        if not token:
+            raise CriticalError("A non-empty PAT is required.")
+
+        server = (
+            args.server_host or envelope_server or store.get_default_server() or DEFAULT_SERVER
+        ).rstrip("/")
         if args.server_port:
             parsed_url = urlsplit(("https://" if "://" not in server else "") + server)
             if parsed_url.port:
@@ -123,15 +147,7 @@ class ProfileCreate:
             server = f"{server}:{args.server_port}"
         server = normalize_server_url(server)
 
-        token = (
-            args.token
-            if args.token is not None
-            else getpass.getpass(f"Personal Access Token (PAT) for '{server}': ")
-        )
-        if not token:
-            raise CriticalError("A non-empty PAT is required.")
-
-        name = args.name
+        name = args.name or envelope_name
         if name is None:
             with Client(
                 url=server, config=Config(verify_ssl=not args.insecure), check_server_version=False

@@ -198,6 +198,80 @@ with Client("https://app.cvat.ai") as client:
 If the `Client` is used as a context manager (with the `with` keyword), it automatically calls
 `logout()` before exiting.
 
+### Persistent authentication (profiles)
+
+The SDK ships an on-disk store that lets scripts and pipelines reuse a saved
+server URL and Personal Access Token (PAT) without re-entering credentials.
+The store is the same file the CVAT CLI uses
+({{< ilink "/docs/api_sdk/cli#persistent-authentication-profiles" "see the CLI docs" >}}
+for the exact path and permission requirements): profiles created from the
+CLI are visible to the SDK and vice-versa.
+
+#### Building a `Client` from a profile
+
+```python
+from cvat_sdk import AuthStore, make_client_from_profile
+
+_, profile = AuthStore().get_default_profile()
+with make_client_from_profile(profile) as client:
+    ...  # already logged in with the profile's PAT
+```
+
+Or by name:
+
+```python
+from cvat_sdk import AuthStore, make_client_from_profile
+
+profile = AuthStore().get_profile("mycvat")
+with make_client_from_profile(profile) as client:
+    ...
+```
+
+#### Building a `Client` from CLI-style arguments
+
+`make_client_from_cli` applies the same host/credential resolution order as
+`cvat-cli` - useful when writing SDK-based scripts that should honor the same
+`--profile` / `--server-host` / `--auth` / `CVAT_ACCESS_TOKEN` conventions:
+
+```python
+import argparse
+from cvat_sdk import make_client_from_cli
+from cvat_sdk.core.auth import configure_client_auth_arguments
+
+parser = argparse.ArgumentParser()
+configure_client_auth_arguments(parser)   # registers the shared auth flags
+parser.add_argument("--task-id", type=int, required=True)
+args = parser.parse_args()
+
+with make_client_from_cli(args) as client:
+    task = client.tasks.retrieve(args.task_id)
+    print(task.name)
+```
+
+`configure_client_auth_arguments` adds the exact same flag spellings the CLI
+uses (`--profile`, `--server-host`, `--server-port`, `--auth`, `--insecure`,
+`--organization`) so downstream scripts stay drop-in compatible with the CLI's
+authentication conventions.
+
+#### Public API summary
+
+- `cvat_sdk.AuthStore` - reads and writes the on-disk `auth.json`, enforces
+  `0600`/`0700` permissions, provides CRUD for profiles, the default profile,
+  and the default server URL.
+- `cvat_sdk.ProfileEntry` - immutable value class (`server`, `token`,
+  `created_date`) representing one saved profile.
+- `cvat_sdk.get_auth_store_path()` - the path to the store on the current
+  platform.
+- `cvat_sdk.make_client_from_profile(profile, *, logger=None, config=None,
+  check_server_version=False)` - construct and authenticate a `Client` from a
+  `ProfileEntry`.
+- `cvat_sdk.make_client_from_cli(parsed_args, *, logger=None, store=None)` -
+  construct and authenticate a `Client` from an argparse `Namespace`
+  (typically produced by `configure_client_auth_arguments`) using the CLI's
+  full resolution order.
+- `cvat_sdk.core.auth.configure_client_auth_arguments(parser)` - register the
+  shared auth flags on an `argparse.ArgumentParser`.
+
 ### Users and organizations
 
 All `Client` operations rely on the server API and depend on the current user
