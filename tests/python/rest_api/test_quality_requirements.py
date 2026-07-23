@@ -1772,7 +1772,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        conflicts = report_data["frame_results"]["0"]["conflicts"]
+        conflicts = report_data["groups"][requirement_name]["frame_results"]["0"]["conflicts"]
         assert len(conflicts) == 1
         assert conflicts[0]["type"] == "mismatching_attributes"
         assert conflicts[0]["attribute_names"] == ["size"]
@@ -1833,7 +1833,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        conflicts = report_data["frame_results"]["0"]["conflicts"]
+        conflicts = report_data["groups"][requirement_name]["frame_results"]["0"]["conflicts"]
         assert len(conflicts) == 1
         assert conflicts[0]["type"] == "mismatching_attributes"
         assert conflicts[0]["severity"] == "error"
@@ -2166,6 +2166,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             report_data = json.loads(response.data)
 
         assert "groups" in report_data
+        assert "frame_results" not in report_data
         assert enabled_requirement_name in report_data["groups"]
         assert disabled_requirement_name in report_data["groups"]
         assert report_data["parameters"] == {
@@ -2176,7 +2177,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             job_report = api_client.quality_api.list_reports(target="job", parent_id=report["id"])[
                 0
             ].results[0]
-        assert self._get_report_data(admin_user, job_report["id"])["parameters"] == {
+        job_report_data = self._get_report_data(admin_user, job_report["id"])
+        assert "frame_results" not in job_report_data
+        assert job_report_data["parameters"] == {
             "inherited": False,
             "job_filter": updated_settings["job_filter"],
         }

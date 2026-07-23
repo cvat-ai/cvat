@@ -32,7 +32,6 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReport,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameComparisonSummary,
-    ComparisonReportFrameSummary,
     ComparisonReportParameters,
     ComparisonReportRequirementComparisonSummary,
     ComparisonReportRequirementsSummary,
@@ -1191,13 +1190,8 @@ class DatasetQualityEstimator:
 
     def _aggregate_all_results(
         self,
-    ) -> tuple[
-        dict[int, ComparisonReportFrameSummary],
-        list[int],
-        list[AnnotationConflict],
-    ]:
-        all_frame_results: dict[int, ComparisonReportFrameSummary] = {}
-        intersection_frames = []
+    ) -> tuple[list[int], list[AnnotationConflict]]:
+        intersection_frames: set[int] = set()
         conflicts: list[AnnotationConflict] = []
 
         enabled_requirement_names = {
@@ -1211,32 +1205,18 @@ class DatasetQualityEstimator:
                 continue
 
             for frame_id, frame_result in requirement_metrics.items():
-                if frame_id not in all_frame_results:
-                    all_frame_results[frame_id] = ComparisonReportFrameSummary(
-                        conflicts=deepcopy(frame_result.conflicts)
-                    )
-                    intersection_frames.append(frame_id)
-                else:
-                    all_frame_results[frame_id].conflicts = deduplicate_annotation_conflicts(
-                        [*all_frame_results[frame_id].conflicts, *frame_result.conflicts]
-                    )
-
-        for frame_result in all_frame_results.values():
-            conflicts += frame_result.conflicts
-
-        conflicts = deduplicate_annotation_conflicts(conflicts)
+                intersection_frames.add(frame_id)
+                conflicts.extend(frame_result.conflicts)
 
         return (
-            all_frame_results,
-            intersection_frames,
-            conflicts,
+            sorted(intersection_frames),
+            deduplicate_annotation_conflicts(conflicts),
         )
 
     def generate_report(self) -> ComparisonReport:
         self._compare_datasets()
 
         (
-            all_frame_results,
             intersection_frames,
             conflicts,
         ) = self._aggregate_all_results()
@@ -1261,6 +1241,5 @@ class DatasetQualityEstimator:
                 jobs=None,
                 requirements=requirement_stats,
             ),
-            frame_results=all_frame_results,
             groups=group_reports,
         )

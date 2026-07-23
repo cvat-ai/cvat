@@ -951,16 +951,19 @@ class ComparisonReportRequirementSummary(ReportNode):
 class ComparisonReport(ReportNode):
     parameters: ComparisonReportParameters
     comparison_summary: ComparisonReportSummary
-    frame_results: dict[int, ComparisonReportFrameSummary] | None
     groups: dict[str, ComparisonReportRequirementSummary] | None = None
 
     @property
     def conflicts(self) -> list[AnnotationConflict]:
-        if not self.frame_results:
+        if not self.groups:
             return []
 
         return deduplicate_annotation_conflicts(
-            list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
+            list(
+                itertools.chain.from_iterable(
+                    group_report.conflicts for group_report in self.groups.values()
+                )
+            )
         )
 
     @classmethod
@@ -973,23 +976,11 @@ class ComparisonReport(ReportNode):
         return cls(
             parameters=ComparisonReportParameters.from_dict(d["parameters"]),
             comparison_summary=ComparisonReportSummary.from_dict(d["comparison_summary"]),
-            frame_results=(
-                {
-                    int(k): ComparisonReportFrameSummary.from_dict(v)
-                    for k, v in d["frame_results"].items()
-                }
-                if d.get("frame_results") is not None
-                else None
-            ),
             groups=groups,
         )
 
     def to_json(self) -> str:
         d = self.to_dict()
-
-        # String keys are needed for json dumping
-        if d.get("frame_results") is not None:
-            d["frame_results"] = {str(k): v for k, v in d["frame_results"].items()}
 
         if d.get("groups") is not None:
             for group in d["groups"].values():

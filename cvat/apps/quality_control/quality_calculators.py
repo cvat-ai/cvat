@@ -30,7 +30,6 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReport,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameComparisonSummary,
-    ComparisonReportFrameSummary,
     ComparisonReportJobStats,
     ComparisonReportParameters,
     ComparisonReportRequirementSummary,
@@ -256,7 +255,6 @@ class TaskQualityCalculator:
         task_validation_frames_count = 0  # in included and non-checkable jobs
         task_total_frames = 0  # in included and non-checkable jobs
         task_conflicts: list[AnnotationConflict] = []
-        task_frame_results: dict[int, ComparisonReportFrameSummary] = {}
         task_group_frame_results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
         task_group_parameters: dict[str, dict] = {}
         for r in job_reports.values():
@@ -264,18 +262,6 @@ class TaskQualityCalculator:
             task_validation_frames_count += r.comparison_summary.validation_frames
             task_total_frames += r.comparison_summary.total_frames
             task_conflicts.extend(r.conflicts)
-
-            for frame_id, job_frame_result in r.frame_results.items():
-                task_frame_result = task_frame_results.get(frame_id)
-
-                if task_frame_result is None:
-                    task_frame_result = deepcopy(job_frame_result)
-                else:
-                    task_frame_result.conflicts = deduplicate_annotation_conflicts(
-                        [*task_frame_result.conflicts, *job_frame_result.conflicts]
-                    )
-
-                task_frame_results[frame_id] = task_frame_result
 
             for group_name, group_report in (r.groups or {}).items():
                 task_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
@@ -328,7 +314,6 @@ class TaskQualityCalculator:
                 jobs=job_stats,
                 requirements=build_requirements_summary(target_requirements, requirement_groups),
             ),
-            frame_results=task_frame_results,
             groups=requirement_groups,
         )
 
@@ -682,7 +667,6 @@ class ProjectQualityCalculator:
                 jobs=job_stats,
                 requirements=build_requirements_summary(target_requirements, requirement_groups),
             ),
-            frame_results=None,  # this is too detailed for a project report
             groups=requirement_groups,
         )
 

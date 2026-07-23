@@ -682,18 +682,39 @@ class TestGetQualityReportData(_PermissionTestBase):
 
         return response
 
+    @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("target", ["project", "task", "job"])
-    def test_can_get_full_report_data(self, admin_user, target, quality_reports):
-        report = next(
-            r for r in quality_reports if r[self.key_field_for_target[target]] is not None
-        )
-        report_id = report["id"]
+    def test_can_get_full_report_data(
+        self,
+        admin_user,
+        target,
+        tasks,
+        find_sandbox_task_without_gt,
+        find_sandbox_project_without_validation,
+    ):
+        if target == "project":
+            project, _ = find_sandbox_project_without_validation(True)
+            task = next(t for t in tasks if t["project_id"] == project["id"] and t["size"])
+            self.create_gt_job(admin_user, task["id"])
+            report = self.create_quality_report(user=admin_user, project_id=project["id"])
+        else:
+            task, _ = find_sandbox_task_without_gt(True)
+            self.create_gt_job(admin_user, task["id"])
+            report = self.create_quality_report(user=admin_user, task_id=task["id"])
+
+            if target == "job":
+                with make_api_client(admin_user) as api_client:
+                    report = api_client.quality_api.list_reports(
+                        target="job", parent_id=report["id"]
+                    )[0].results[0]
+
+        report_id = report.id if target == "job" else report["id"]
         report_data = json.loads(self._test_get_report_data_200(admin_user, report_id).data)
 
-        for key in ["parameters", "comparison_summary"] + (
-            ["frame_results"] if target != "project" else []
-        ):
+        for key in ["parameters", "comparison_summary"]:
             assert key in report_data.keys(), key
+        assert "frame_results" not in report_data
+        assert isinstance(report_data["groups"], dict)
 
     def test_cannot_get_report_data_as_csv(self, admin_user, quality_reports):
         report_id = next(iter(quality_reports))["id"]
@@ -1624,9 +1645,7 @@ class TestQualityReportContents(_PermissionTestBase):
             assert response.status == HTTPStatus.OK
         report_data = json.loads(response.data)
         assert "annotations" not in report_data["comparison_summary"]
-        for frame_result in report_data["frame_results"].values():
-            assert "annotations" not in frame_result
-            assert "annotation_components" not in frame_result
+        assert "frame_results" not in report_data
 
         group_report = report_data["groups"][requirement["name"]]
         assert "annotations" not in group_report["comparison_summary"]

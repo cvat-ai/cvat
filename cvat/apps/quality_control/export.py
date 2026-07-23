@@ -100,12 +100,6 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
     if db_report.project:
         # project reports should not have per-frame statistics, it's too detailed for this level
         serialized_data["comparison_summary"].pop("frames")
-        serialized_data.pop("frame_results")
-    else:
-        _decorate_frame_results(serialized_data["frame_results"])
-        serialized_data["frame_results"] = _stringify_frame_results(
-            serialized_data["frame_results"]
-        )
 
     for group in (serialized_data.get("groups") or {}).values():
         if group.get("frame_results") is None:
