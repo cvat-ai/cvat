@@ -4,7 +4,7 @@ attrs>=22.1.0
 
 av==16.0.1
 
-azure-storage-blob==12.13.0
+azure-storage-blob==12.30.0
 boto3~=1.37
 clickhouse-connect~=1.3
 datumaro @ https://github.com/cvat-ai/datumaro/archive/6ade96fa82043fc5bccd59a27218892899fe10ce.zip
