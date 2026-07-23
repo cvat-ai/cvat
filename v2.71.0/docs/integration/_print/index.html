@@ -1,0 +1,942 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/v2.71.0/docs/integration/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/v2.71.0/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/v2.71.0/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/v2.71.0/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/v2.71.0/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/v2.71.0/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/v2.71.0/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/v2.71.0/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/v2.71.0/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/v2.71.0/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/v2.71.0/favicons/android-192x192.png" sizes="192x192">
+
+<title>Integrations | CVAT</title>
+<meta name="description" content="This section contains information about the tools that are integrated with CVAT.">
+<meta property="og:title" content="Integrations" />
+<meta property="og:description" content="This section contains information about the tools that are integrated with CVAT." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/v2.71.0/docs/integration/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Integrations">
+<meta itemprop="description" content="This section contains information about the tools that are integrated with CVAT."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Integrations"/>
+<meta name="twitter:description" content="This section contains information about the tools that are integrated with CVAT."/>
+
+
+
+
+<link rel="preload" href="/v2.71.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" as="style">
+<link href="/v2.71.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/v2.71.0/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.71.0/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.71.0/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.71.0/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/v2.71.0/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.71.0/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.71.0</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/../">Latest version</a></li>
+    <li><a class="dropdown-item" href="/../v2.71.0">v2.71.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.70.0">v2.70.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.69.0">v2.69.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.68.0">v2.68.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.67.0">v2.67.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.66.0">v2.66.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/v2.71.0/offline-search-index.56eb34655ee312622166d5b109c14562.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/v2.71.0/docs/integration/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Integrations</h1>
+<div class="lead">This section contains information about the tools that are integrated with CVAT.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-a99b1167c55fd24de247216c50721d4e">FiftyOne</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-68f4e9b4e69c2e266e2aed7ab992acf2">CVAT and Human Protocol</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-e47cc14c404bf50ed0af16a917f5a64a">Migration to CVAT</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>3.1: <a href="#pg-125288e6eec2514acb030441b78aacb3">Migrating data from Azure Machine Learning to CVAT</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-a99b1167c55fd24de247216c50721d4e">1 - FiftyOne</h1>
+    
+	<p><img src="/images/fiftyone_logo.png" alt="FiftyOne Logo"></p>
+<p><a href="https://github.com/voxel51/fiftyone">FiftyOne</a> is an open-source tool for building high-quality datasets
+and computer vision models.
+FiftyOne supercharges your machine learning workflows by enabling you to visualize datasets and interpret
+models faster and more effectively.</p>
+<p>FiftyOne provides an API to create tasks and jobs, upload data, define label schemas,
+and download annotations using CVAT, all programmatically in Python.
+All of the following label types are supported, for both image and video datasets:</p>
+<ul>
+<li>Classifications</li>
+<li>Detections</li>
+<li>Instance segmentations</li>
+<li>Polygons and polylines</li>
+<li>Keypoints</li>
+<li>Scalar fields</li>
+<li>Semantic segmentation</li>
+</ul>
+<p><img src="/images/image264.jpg" alt="FiftyOne user interface with images for annotation and labels"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-68f4e9b4e69c2e266e2aed7ab992acf2">2 - CVAT and Human Protocol</h1>
+    
+	<p>The integration of CVAT with HUMAN Protocol offers a groundbreaking approach to data annotation
+for AI and machine learning projects.</p>
+<p>This collaboration combines CVAT&rsquo;s advanced annotation tools with HUMAN Protocol&rsquo;s
+innovative task distribution and compensation system, creating a seamless,
+efficient workflow for crowdsourcing annotations.</p>
+<p>For more details on how to leverage the features of both platforms
+for your projects, check out these articles:</p>
+<ul>
+<li><a href="https://www.cvat.ai/post/cvat-ai-human-protocol-a-new-dawn-in-visual-data-annotation">CVAT.ai &amp; HUMAN Protocol: A New Dawn in Visual Data Annotation</a></li>
+<li><a href="https://www.cvat.ai/post/crowdsourcing-annotation-cvat-human-protocol">Mastering Image Annotation Crowdsourcing for Computer Vision with CVAT.ai and HUMAN Protocol</a></li>
+<li><a href="https://www.cvat.ai/post/crowdsource-annotations-with-cvat-and-human-protocol">Crowdsourcing Annotation with CVAT and Human Protocol: Real Data Experiment Showed Amazing Results</a></li>
+</ul>
+<br>
+See:
+<ul>
+<li><a href="#basic-terms">Basic terms</a></li>
+<li><a href="#requester-how-to-get-data-annotated">Requester: How to get data annotated?</a></li>
+<li><a href="#annotator-how-to-earn-money">Annotator: How to earn money?</a></li>
+<li><a href="#video-tutorial">Video tutorial</a></li>
+</ul>
+<h2 id="basic-terms">Basic terms</h2>
+<p>In the realm of computer vision and AI, understanding the roles and components within data
+annotation projects is crucial.</p>
+<p>Here&rsquo;s a quick overview of basic terms related to CVAT and Human Protocol
+integration, providing a clear picture of the workflow and participants involved.</p>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Requester</td>
+<td>An individual or organization that needs data annotated for AI models.</td>
+</tr>
+<tr>
+<td>Annotator</td>
+<td>A person who labels data, such as images or videos, for machine learning.</td>
+</tr>
+<tr>
+<td>Dataset</td>
+<td>A collection of data, often images or videos, used for training AI models.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="requester-how-to-get-data-annotated">Requester: How to get data annotated?</h2>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Either you are Requester or Annotator,
+to access this feature, you&rsquo;ll need to <a href="mailto:app@humanprotocol.org">send a request to HUMAN Protocol</a>.
+
+</div>
+
+<p>To register and launch a job on the HUMAN Protocol site, follow these steps:</p>
+<ol>
+<li><a href="https://docs.humanprotocol.org/human-tech-docs/job-launcher/user-guide/signup">Create a Requester account</a>
+on the Human Protocol site.</li>
+<li>Log in to your account and <a href="https://docs.humanprotocol.org/human-tech-docs/job-launcher/user-guide/launch-jobs/fortune">launch a Job</a>.</li>
+</ol>
+<p>The job will appear on the Annotators&rsquo; dashboard and will be
+annotated according to the specified requirements and quality standards.</p>
+<h2 id="annotator-how-to-earn-money">Annotator: How to earn money?</h2>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Either you are Requester or Annotator,
+to access this feature, you&rsquo;ll need to <a href="mailto:app@humanprotocol.org">send a request to HUMAN Protocol</a>.
+
+</div>
+
+<p>To start earning money on the Human Protocol site, follow these simple steps:</p>
+<ol>
+<li><a href="https://app.humanprotocol.org/">Register on the Human Protocol site</a></li>
+<li>Complete KYC process.</li>
+<li>Connect crypto wallet to your account.</li>
+<li>Select job from <strong>Data Labeling Jobs</strong> menu.</li>
+<li>Annotate.</li>
+<li>After annotation is complete, change job status to <strong>Complete</strong>.</li>
+</ol>
+<p>After the job is reviewed and accepted by the Requester,
+the money will be deposited into your account.</p>
+<h2 id="video-tutorial">Video tutorial</h2>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/XHQ25vhx0xE?si=6q2KVLfK2Tg62Xyj" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e47cc14c404bf50ed0af16a917f5a64a">3 - Migration to CVAT</h1>
+    <div class="lead">This section contains guides for migrating datasets and annotations from other platforms to CVAT.</div>
+	
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-125288e6eec2514acb030441b78aacb3">3.1 - Migrating data from Azure Machine Learning to CVAT</h1>
+    <div class="lead">Learn how to migrate datasets and annotations from Azure Machine Learning Data Labeling to CVAT.</div>
+	<p>This guide explains how to migrate datasets and annotations from
+Azure Machine Learning (ML) Data Labeling component to CVAT.</p>
+<p>It covers projects created for Object Identification (Bounding Box) and Instance Segmentation (Polygon) tasks,
+including Azure Blob Storage integration, dataset preparation, annotation export from Azure ML, task creation in CVAT,
+and annotation import.</p>
+<h2 id="migrating-object-identification-bounding-box-and-instance-segmentation-polygon-projects">Migrating Object Identification (Bounding Box) and Instance Segmentation (Polygon) Projects</h2>
+<p>Existing projects created in <strong>Azure ML Data Labeling</strong> can be migrated to CVAT, allowing you to continue working
+with your datasets and annotations on the CVAT platform.</p>
+<p>The migration process for <strong>Object Identification (Bounding Box)</strong> and <strong>Instance Segmentation (Polygon)</strong> projects
+is nearly identical. In this guide, we will use an Object Identification project as an example.</p>
+<h3 id="exporting-annotations-from-azure-ml">Exporting Annotations from Azure ML</h3>
+<ol>
+<li>
+<p>On the <strong>Data Labeling</strong> page in Azure ML, select the project you want to migrate.</p>
+<p><img src="/images/migration-azure/azure-ml-data-labeling-project-list.webp" alt="Azure ML Data Labeling project list"></p>
+</li>
+<li>
+<p>Open the project and click <strong>Export</strong> to begin exporting the annotation data.</p>
+<p><img src="/images/migration-azure/azure-ml-project-export-button.webp" alt="Export button in Azure ML"></p>
+</li>
+<li>
+<p>In the export dialog, select the following options:</p>
+<ul>
+<li><strong>Asset type:</strong> Labeled</li>
+<li><strong>Export format:</strong> COCO file</li>
+<li><strong>Coordinate type:</strong> Absolute</li>
+<li><strong>Export File Name:</strong> Optional</li>
+</ul>
+<blockquote>
+<p>The most important settings are <strong>Export format</strong> and <strong>Coordinate type</strong>. These must be configured correctly
+to ensure that the annotations can be successfully imported into CVAT.</p>
+</blockquote>
+<p><img src="/images/migration-azure/azure-ml-export-dialog-coco-settings.webp" alt="Export dialog settings"></p>
+</li>
+<li>
+<p>Confirm the export by clicking <strong>Submit</strong>.</p>
+<p><img src="/images/migration-azure/azure-ml-export-submit-button.webp" alt="Submit button"></p>
+</li>
+<li>
+<p>Wait until the export process is complete. Once the export file is ready, a notification will appear.
+Download the exported annotation file.</p>
+<p><img src="/images/migration-azure/azure-ml-export-complete-download-link.webp" alt="Export complete notification"></p>
+</li>
+</ol>
+<h3 id="creating-a-task-in-cvat">Creating a Task in CVAT</h3>
+<p>After downloading the annotation file, the next step is to create a task in CVAT. For detailed information about
+task creation, see the
+<a href="https://docs.cvat.ai/docs/workspace/tasks-page/#advanced-configuration">Tasks page documentation</a>.</p>
+<ol>
+<li>
+<p>On the <strong>Tasks</strong> page, click the <strong>+</strong> button in the upper-right corner and select <strong>Create a new task</strong>
+from the menu.</p>
+<p><img src="/images/migration-azure/cvat-tasks-page-create-new-task.webp" alt="Creating a new task in CVAT"></p>
+</li>
+<li>
+<p>A task creation form will open. Specify:</p>
+<ul>
+<li><strong>Task name</strong></li>
+<li><strong>Labels</strong></li>
+</ul>
+<p><img src="/images/migration-azure/cvat-create-task-form-name-and-labels.webp" alt="Task creation form"></p>
+</li>
+</ol>
+<h4 id="adding-labels">Adding Labels</h4>
+<ol>
+<li>
+<p>Click <strong>Add label</strong>.</p>
+</li>
+<li>
+<p>Enter the label name.</p>
+</li>
+<li>
+<p>Click <strong>Continue</strong> to create the label.</p>
+</li>
+<li>
+<p>Repeat the process if additional labels are required.</p>
+</li>
+<li>
+<p>When finished, click <strong>Cancel</strong> to close the dialog.</p>
+<p><img src="/images/migration-azure/cvat-add-label-dialog.webp" alt="Adding labels"></p>
+</li>
+</ol>
+<p>The added labels will appear in the Constructor.</p>
+<p><img src="/images/migration-azure/cvat-labels-constructor-cat-dog.webp" alt="Labels in the Constructor"></p>
+<blockquote>
+<p>If you used categories in Azure ML Data Labeling, as shown below:</p>
+<p><img src="/images/migration-azure/azure-ml-categories-animal-cat-dog.webp" alt="Categories in Azure ML"></p>
+<p>The corresponding labels in CVAT must follow this format:</p>
+<pre tabindex="0"><code>Animal/Cat
+Animal/Dog
+</code></pre><p>The category name comes first, followed by a forward slash (<code>/</code>), then the label name.</p>
+</blockquote>
+<h4 id="adding-the-dataset">Adding the Dataset</h4>
+<p>There are two ways to add a dataset to the task:</p>
+<p><strong>Option 1: Use a dataset stored in Azure Blob Storage</strong></p>
+<p>If the dataset was previously uploaded to Azure ML Data Labeling, you can connect it through the Cloud Storage
+integration described in the <a href="#connecting-azure-blob-storage-to-cvat">Connecting Azure Blob Storage to CVAT</a> section.</p>
+<ol>
+<li>
+<p>Open the <strong>Cloud Storage</strong> tab and click <strong>Select cloud storage</strong>.</p>
+</li>
+<li>
+<p>Choose the storage connection previously added to CVAT.</p>
+<p><img src="/images/migration-azure/cvat-task-select-cloud-storage.webp" alt="Selecting cloud storage"></p>
+</li>
+<li>
+<p>Select the folder containing the images.</p>
+<p><img src="/images/migration-azure/cvat-task-cloud-storage-select-folder.webp" alt="Selecting the image folder"></p>
+</li>
+</ol>
+<p><strong>Option 2: Upload files from your computer</strong></p>
+<p>If the dataset is stored locally, you can upload it directly by either:</p>
+<ul>
+<li>Dragging and dropping the files into the upload area.</li>
+<li>Clicking the upload area and selecting the dataset from your computer.</li>
+</ul>
+<p><img src="/images/migration-azure/cvat-task-upload-files-from-computer.webp" alt="Uploading files from computer"></p>
+<h4 id="advanced-configuration">Advanced Configuration</h4>
+<p>The <strong>Advanced configuration</strong> section allows you to customize additional task settings, including:</p>
+<ul>
+<li>Image quality</li>
+<li>Image sorting methods</li>
+<li>Splitting the task into multiple jobs for parallel annotation</li>
+<li>Creating consensus tasks</li>
+<li>Other advanced options</li>
+</ul>
+<p>For more information, see the <a href="https://docs.cvat.ai/docs/workspace/tasks-page/#advanced-configuration">Advanced configuration
+documentation</a>.</p>
+<p>After selecting or uploading the dataset, click <strong>Submit &amp; Open</strong> to create the task.</p>
+<p><img src="/images/migration-azure/cvat-task-advanced-configuration.webp" alt="Submit &amp; Open button"></p>
+<p><img src="/images/migration-azure/cvat-task-submit-and-open.webp" alt="Task created successfully"></p>
+<h2 id="matching-image-paths-between-cvat-and-the-annotation-file">Matching Image Paths Between CVAT and the Annotation File</h2>
+<p>After the task has been created, you can import the annotation file that was previously exported from Azure ML
+Data Labeling.</p>
+<p>Pay close attention to the image paths stored in the annotation file.</p>
+<p><img src="/images/migration-azure/coco-annotation-file-path-example.webp" alt="Annotation file with image paths"></p>
+<p>For example, if the annotation file contains image paths such as:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#4e9a06">&#34;file_name&#34;</span><span style="color:#a40000">:</span> <span style="color:#4e9a06">&#34;UI/Cats_and_dogs/pexels-kayla-dahl-maclean-2148236042-30239303.jpg&#34;</span>
+</span></span></code></pre></div><p>then the image paths in CVAT must match exactly. For additional details, refer to the
+<a href="#important-manifest-requirements">Important Manifest Requirements</a> section.</p>
+<p>If the task was created by uploading files directly from a local computer, CVAT will typically store image names
+without any folder structure:</p>
+<pre tabindex="0"><code>pexels-kayla-dahl-maclean-2148236042-30239303.jpg
+</code></pre><p>In this case, the annotation file exported from Azure ML Data Labeling will contain image paths that include the
+original folder structure:</p>
+<pre tabindex="0"><code>UI/Cats_and_dogs/pexels-kayla-dahl-maclean-2148236042-30239303.jpg
+</code></pre><p>To successfully import the annotations, modify the annotation file so that the values in the <code>file_name</code> field
+match the image names stored in the task. For example, change:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#4e9a06">&#34;file_name&#34;</span><span style="color:#a40000">:</span> <span style="color:#4e9a06">&#34;UI/Cats_and_dogs/pexels-kayla-dahl-maclean-2148236042-30239303.jpg&#34;</span>
+</span></span></code></pre></div><p>to:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#4e9a06">&#34;file_name&#34;</span><span style="color:#a40000">:</span> <span style="color:#4e9a06">&#34;pexels-kayla-dahl-maclean-2148236042-30239303.jpg&#34;</span>
+</span></span></code></pre></div><p>You can verify the exact image path used by CVAT by opening the task and checking the filename displayed below
+the player.</p>
+<p><img src="/images/migration-azure/cvat-annotation-player-filename-display.webp" alt="Filename displayed below the player"></p>
+<h3 id="importing-the-annotation-file">Importing the Annotation File</h3>
+<p>After reviewing the annotation file and ensuring that the image paths match those used by CVAT, import the file
+into the task.</p>
+<ol>
+<li>
+<p>Open the task and select <strong>Actions &gt; Upload annotations</strong>.</p>
+<p><img src="/images/migration-azure/cvat-task-actions-upload-annotations.webp" alt="Actions menu with Upload annotations"></p>
+</li>
+<li>
+<p>In the dialog that appears, click <strong>Import format</strong> and select <strong>COCO 1.0</strong>.</p>
+<p><img src="/images/migration-azure/cvat-import-annotation-format-coco.webp" alt="Selecting COCO 1.0 import format"></p>
+</li>
+<li>
+<p>Click the upload area and select the annotation file from your computer, or drag and drop it into the upload
+area.</p>
+<p><img src="/images/migration-azure/cvat-import-annotation-upload-area.webp" alt="Upload area for annotation file"></p>
+</li>
+<li>
+<p>Click <strong>OK</strong>.</p>
+</li>
+</ol>
+<p>If the task already contains annotations, CVAT will display a warning asking whether the existing annotations
+should be replaced. Click <strong>Replace annotations</strong>.</p>
+<p><img src="/images/migration-azure/cvat-replace-annotations-warning.webp" alt="Replace annotations warning"></p>
+<p>A notification will confirm that the annotation import process has started.</p>
+<p><img src="/images/migration-azure/cvat-annotation-import-started-notification.webp" alt="Import started notification"></p>
+<h3 id="verifying-the-imported-annotations">Verifying the Imported Annotations</h3>
+<p>Once the import process is complete, a confirmation notification will appear. Click the <strong>Job</strong> link to open the
+annotation job.</p>
+<p><img src="/images/migration-azure/cvat-annotation-import-finished-notification.webp" alt="Import complete notification"></p>
+<p><img src="/images/migration-azure/cvat-task-job-link.webp" alt="Job link"></p>
+<p>The imported annotations should now be visible in the workspace.</p>
+<p><img src="/images/migration-azure/cvat-imported-annotations-workspace.webp" alt="Imported annotations in the workspace"></p>
+<h2 id="connecting-azure-blob-storage-to-cvat">Connecting Azure Blob Storage to CVAT</h2>
+<p>CVAT supports integration with cloud storage providers, including Azure Blob Storage. If your datasets and
+annotations created in Azure ML Data Labeling are stored in cloud storage, there is no need to download them
+locally. Instead, you can connect your storage directly to CVAT and work with your data without transferring
+files to your computer. For more information, see
+<a href="https://docs.cvat.ai/docs/workspace/cloud-storages/">Cloud storages</a>.</p>
+<p>To connect Azure Blob Storage:</p>
+<ol>
+<li>
+<p>Sign in to <strong>app.cvat.ai</strong> and navigate to the <strong>Cloud Storages</strong> page.</p>
+<p><img src="/images/migration-azure/cvat-cloud-storages-menu.webp" alt="Cloud Storages page"></p>
+</li>
+<li>
+<p>Click the <strong>+</strong> button in the upper-right corner to add a new cloud storage connection.</p>
+<p><img src="/images/migration-azure/cvat-cloud-storages-page-add-button.webp" alt="Add cloud storage button"></p>
+</li>
+<li>
+<p>A form for configuring the cloud storage connection will open.</p>
+<p><img src="/images/migration-azure/cvat-create-cloud-storage-form-empty.webp" alt="Cloud storage configuration form"></p>
+<p>Fill in the following fields:</p>
+<ul>
+<li><strong>Display name</strong> (required) — the name displayed in the list of available cloud storages.</li>
+<li><strong>Description</strong> (optional) — a description of the cloud storage.</li>
+<li><strong>Provider</strong> (required) — the cloud storage provider.</li>
+<li><strong>Prefix</strong> (optional) — used to pre-filter content within the storage container.</li>
+<li><strong>Manifest</strong> — a dataset index file listing all images in the container with their exact dimensions.</li>
+</ul>
+</li>
+<li>
+<p>To connect Azure Blob Storage, provide the following information:</p>
+<p><img src="/images/migration-azure/cvat-create-cloud-storage-azure-credentials.webp" alt="Azure Blob Storage fields"></p>
+<ul>
+<li><strong>Container name</strong> — the name of the container that stores your data.</li>
+<li><strong>Authentication type</strong> — one of the following:
+<ul>
+<li>Account name and SAS token</li>
+<li>Anonymous access</li>
+<li>Connection string</li>
+</ul>
+</li>
+</ul>
+<p>You can find the required connection details on the Azure Blob Storage account page.</p>
+<p><img src="/images/migration-azure/azure-portal-storage-account-access-keys.webp" alt="Azure Blob Storage account page"></p>
+</li>
+<li>
+<p>If your dataset was created through Azure ML, you can identify the container name by navigating to
+<strong>Assets &gt; Data</strong>, locating the desired dataset, and clicking the <strong>Datastore</strong> link in the <strong>Data source</strong>
+column.</p>
+<p><img src="/images/migration-azure/azure-ml-assets-data-datastore-link.webp" alt="Assets &gt; Data in Azure ML"></p>
+<p>There, you can find the <strong>Blob container</strong> name.</p>
+<p><img src="/images/migration-azure/azure-ml-datastore-blob-container-name.webp" alt="Blob container name"></p>
+</li>
+</ol>
+<blockquote>
+<p>To ensure that CVAT servers can access the data stored in your Azure Blob Storage, open the Azure Portal
+and navigate to your <strong>Storage Account</strong> settings.</p>
+<p>Go to <strong>Security + networking &gt; Networking</strong> and verify that <strong>Public network access</strong> is set to
+<strong>Enabled from all networks</strong>.</p>
+<p><img src="/images/migration-azure/azure-portal-storage-networking-public-access.webp" alt="Public network access setting"></p>
+</blockquote>
+<h2 id="preparing-the-manifest-file">Preparing the Manifest File</h2>
+<p>Before connecting the storage, you must prepare a manifest file containing image paths, image dimensions,
+and metadata. The manifest file must be placed in the root directory of the container.</p>
+<p><img src="/images/migration-azure/azure-blob-storage-manifest-jsonl-content.webp" alt="Manifest file structure"></p>
+<p>For detailed instructions on creating a manifest file, see the
+<a href="https://docs.cvat.ai/docs/dataset_management/dataset_manifest/">Dataset manifest documentation</a>.</p>
+<p>In the cloud storage configuration form, specify only the manifest file name. In most cases, the default name is:</p>
+<pre tabindex="0"><code>manifest.jsonl
+</code></pre><h3 id="important-manifest-requirements">Important Manifest Requirements</h3>
+<p>To ensure that <strong>app.cvat.ai</strong> successfully recognizes and processes the manifest file, follow these rules
+carefully.</p>
+<h4 id="file-extensions">File Extensions</h4>
+<p>The <code>extension</code> field in the manifest must:</p>
+<ul>
+<li>Include the leading period (<code>.jpg</code>, not <code>jpg</code>).</li>
+<li>Match the file extension in Azure exactly, including letter case.</li>
+</ul>
+<p>Examples:</p>
+<ul>
+<li>If the file is stored as <code>.jpg</code>, the manifest must contain <code>.jpg</code>.</li>
+<li>If the file is stored as <code>.JPG</code>, the manifest must contain <code>.JPG</code>.</li>
+</ul>
+<h4 id="file-names">File Names</h4>
+<p>The <code>name</code> field in the manifest must contain the file name <strong>without the extension</strong>.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#4e9a06">&#34;name&#34;</span><span style="color:#a40000">:</span> <span style="color:#4e9a06">&#34;dataset/image_001&#34;</span>
+</span></span></code></pre></div><h4 id="critical-path-matching-rule-manifest--coco">Critical Path Matching Rule (Manifest + COCO)</h4>
+<p>When annotations are exported from Azure ML in COCO format, image paths are stored relative to the root of
+the container.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#4e9a06">&#34;file_name&#34;</span><span style="color:#a40000">:</span> <span style="color:#4e9a06">&#34;UI/dataset/photo.jpg&#34;</span>
+</span></span></code></pre></div><p>To ensure that image paths in the COCO annotation file match the paths defined in the manifest, use the
+following configuration:</p>
+<p><strong>In the manifest file</strong> — specify the full relative path in the <code>name</code> field:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#4e9a06">&#34;name&#34;</span><span style="color:#a40000">:</span> <span style="color:#4e9a06">&#34;UI/dataset/photo&#34;</span>
+</span></span></code></pre></div><p><strong>In Azure Storage</strong> — upload the completed <code>manifest.jsonl</code> file to the root of the container, alongside
+the dataset folder:</p>
+<pre tabindex="0"><code>Container Root
+├── manifest.jsonl
+└── UI/
+    └── dataset/
+        ├── photo.jpg
+        └── ...
+</code></pre><p><strong>In CVAT</strong> — leave the <strong>Prefix</strong> field empty when creating the Cloud Storage connection.</p>
+<h4 id="manifest-file-format">Manifest File Format</h4>
+<p>The manifest file must use the <code>.jsonl</code> format (JSON Lines). Each line must contain a separate JSON object.</p>
+<p>Example:</p>
+<pre tabindex="0"><code class="language-jsonl" data-lang="jsonl">{&#34;version&#34;:&#34;1.1&#34;}
+{&#34;type&#34;:&#34;images&#34;}
+{&#34;name&#34;:&#34;image1&#34;,&#34;extension&#34;:&#34;.jpg&#34;,&#34;width&#34;:x,&#34;height&#34;:y}
+{&#34;name&#34;:&#34;image2&#34;,&#34;extension&#34;:&#34;.jpg&#34;,&#34;width&#34;:x,&#34;height&#34;:y}
+{&#34;name&#34;:&#34;image3&#34;,&#34;extension&#34;:&#34;.jpg&#34;,&#34;width&#34;:x,&#34;height&#34;:y}
+</code></pre><p><img src="/images/migration-azure/cvat-cloud-storage-add-manifest-button.webp" alt="Manifest file example"></p>
+<p>Once the manifest file has been added and all required fields have been completed, click <strong>Submit</strong>.</p>
+<p><img src="/images/migration-azure/cvat-cloud-storage-manifest-filled-submit.webp" alt="Submit button"></p>
+<p>After the cloud storage has been successfully added, it will appear on the <strong>Cloud Storages</strong> page.</p>
+<p><img src="/images/migration-azure/cvat-cloud-storage-added-available.webp" alt="Cloud storage added"></p>
+<h2 id="summary">Summary</h2>
+<p>The migration workflow from Azure ML Data Labeling to CVAT consists of the following steps:</p>
+<ol>
+<li>Connect Azure Blob Storage to CVAT.</li>
+<li>Prepare and upload a valid manifest file.</li>
+<li>Export annotations from Azure ML in COCO format with the following settings:
+<ul>
+<li>Asset type: <strong>Labeled</strong></li>
+<li>Export format: <strong>COCO file</strong></li>
+<li>Coordinate type: <strong>Absolute</strong></li>
+</ul>
+</li>
+<li>Create a task in CVAT.</li>
+<li>Configure labels to match the Azure ML project structure.</li>
+<li>Add the dataset using either Azure Blob Storage or local file upload.</li>
+<li>Modify the exported COCO annotation file and ensure image paths match the paths used in CVAT.</li>
+<li>Import the annotations using the <strong>COCO 1.0</strong> format.</li>
+<li>Verify that the annotations are displayed correctly in the task.</li>
+</ol>
+<p>Following these steps will allow you to successfully migrate datasets and annotations from Azure ML Data
+Labeling to CVAT while preserving the existing annotation work.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/v2.71.0/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/v2.71.0/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/v2.71.0/js/prism.js'></script>
+<script src='/v2.71.0/js/tabpane-persist.js'></script>
+
+  </body>
+</html>
