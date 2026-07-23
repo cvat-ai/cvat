@@ -64,8 +64,6 @@ for logger in LOGGING["loggers"].values():
     if isinstance(logger, dict) and "level" in logger:
         logger["level"] = "ERROR"
 
-LOGGING["handlers"]["server_file"] = LOGGING["handlers"]["console"]
-
 PASSWORD_HASHERS = ("django.contrib.auth.hashers.MD5PasswordHasher",)
 
 # When you run ./manage.py test, Django looks at the TEST_RUNNER setting to

@@ -561,14 +561,6 @@ LOGGING = {
             "filters": [],
             "formatter": "standard",
         },
-        "server_file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "level": "DEBUG",
-            "filename": LOGS_ROOT / "cvat_server.log",
-            "formatter": "standard",
-            "maxBytes": 1024 * 1024 * 50,  # 50 MB
-            "backupCount": 5,
-        },
         "dataset_handler": {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "DEBUG",
@@ -592,7 +584,7 @@ LOGGING = {
         },
     },
     "root": {
-        "handlers": ["console", "server_file"],
+        "handlers": ["console"],
     },
     "loggers": {
         "cvat": {
