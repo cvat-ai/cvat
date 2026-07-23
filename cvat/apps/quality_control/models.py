@@ -15,6 +15,7 @@ from django.db import models
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
+from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
@@ -24,7 +25,6 @@ class AnnotationConflictType(str, Enum):
     MISSING_ANNOTATION = "missing_annotation"
     EXTRA_ANNOTATION = "extra_annotation"
     MISMATCHING_LABEL = "mismatching_label"
-    LOW_OVERLAP = "low_overlap"
     MISMATCHING_DIRECTION = "mismatching_direction"
     MISMATCHING_ATTRIBUTES = "mismatching_attributes"
     MISMATCHING_GROUPS = "mismatching_groups"
@@ -39,7 +39,6 @@ class AnnotationConflictType(str, Enum):
 
 
 class AnnotationConflictSeverity(str, Enum):
-    WARNING = "warning"
     ERROR = "error"
 
     def __str__(self) -> str:
@@ -152,7 +151,7 @@ class QualityReport(models.Model):
             assert False
 
     def _parse_report_summary(self):
-        from cvat.apps.quality_control.quality_reports import ComparisonReport
+        from cvat.apps.quality_control.comparison_report import ComparisonReport
 
         return ComparisonReport.summary_from_json(self.data)
 
@@ -201,6 +200,7 @@ class AnnotationConflict(models.Model):
     frame = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
+    attribute_names = models.JSONField(default=list, blank=True)
 
     annotation_ids: Sequence[AnnotationId]
 
@@ -258,8 +258,16 @@ class PointSizeBase(str, Enum):
 
 
 class QualitySettings(TimestampedModel):
-    class InvalidParametersError(ValidationError):
-        pass
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="quality_settings_task_or_project",
+                condition=(
+                    models.Q(task_id__isnull=False, project_id__isnull=True)
+                    | models.Q(task_id__isnull=True, project_id__isnull=False)
+                ),
+            )
+        ]
 
     task = models.OneToOneField(
         Task, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
@@ -276,71 +284,9 @@ class QualitySettings(TimestampedModel):
         blank=True,
     )
 
-    iou_threshold = models.FloatField()
-    oks_sigma = models.FloatField()
-    line_thickness = models.FloatField()
-
-    low_overlap_threshold = models.FloatField()
-
-    point_size_base = models.CharField(
-        max_length=32, choices=PointSizeBase.choices(), default=PointSizeBase.GROUP_BBOX_SIZE
-    )
-
-    compare_line_orientation = models.BooleanField()
-    line_orientation_threshold = models.FloatField()
-
-    compare_groups = models.BooleanField()
-    group_match_threshold = models.FloatField()
-
-    check_covered_annotations = models.BooleanField()
-    object_visibility_threshold = models.FloatField()
-
-    panoptic_comparison = models.BooleanField()
-
-    compare_attributes = models.BooleanField()
-
-    empty_is_annotated = models.BooleanField(default=False)
-
-    target_metric = models.CharField(
-        max_length=32,
-        choices=QualityTargetMetricType.choices(),
-        default=QualityTargetMetricType.ACCURACY,
-    )
-
-    target_metric_threshold = models.FloatField(default=0.7)
-
     max_validations_per_job = models.PositiveIntegerField(default=0)
 
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                name="quality_settings_task_or_project",
-                condition=(
-                    models.Q(task_id__isnull=False, project_id__isnull=True)
-                    | models.Q(task_id__isnull=True, project_id__isnull=False)
-                ),
-            )
-        ]
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        defaults = deepcopy(self.get_defaults())
-        for field in self._meta.fields:
-            if field.name in defaults:
-                field.default = defaults[field.name]
-
-        super().__init__(*args, **kwargs)
-
-    @classmethod
-    def get_defaults(cls) -> dict:
-        import cvat.apps.quality_control.quality_reports as qc
-
-        default_settings = qc.DatasetComparator.DEFAULT_SETTINGS.to_dict()
-
-        existing_fields = {f.name for f in cls._meta.fields}
-        return {k: v for k, v in default_settings.items() if k in existing_fields}
-
-    def to_dict(self):
-        return model_to_dict(self)
+    requirements: Sequence[QualityRequirement]
 
     @property
     def organization_id(self):
@@ -353,6 +299,185 @@ class QualitySettings(TimestampedModel):
 
     @classmethod
     def get_job_filter_terms(cls) -> list[str]:
-        from .quality_reports import TaskQualityCalculator
+        from .quality_calculators import TaskQualityCalculator
 
         return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())
+
+    def to_dict(self):
+        return model_to_dict(self)
+
+
+class QualityRequirementAnnotationType(models.TextChoices):
+    TAG = "tag"
+    RECTANGLE = "rectangle"
+    SKELETON = "skeleton"
+    SKELETON_KEYPOINT = "skeleton_keypoint"
+    POINTS = "points"
+    POLYLINE = "polyline"
+    MASK = "mask"
+    POLYGON = "polygon"
+    ELLIPSE = "ellipse"
+
+
+class QualityRequirement(TimestampedModel):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["settings", "name"],
+                name="quality_requirements_unique_per_settings",
+            )
+        ]
+
+    settings = models.ForeignKey(
+        QualitySettings,
+        on_delete=models.CASCADE,
+        related_name="requirements",
+        related_query_name="requirement",
+        null=False,
+        blank=False,
+    )
+
+    name = models.CharField(max_length=250, blank=False)
+
+    is_base = models.BooleanField(default=False)
+
+    sort_order = models.IntegerField(default=0)
+
+    annotation_type = models.CharField(
+        max_length=32,
+        choices=QualityRequirementAnnotationType.choices,
+        null=True,
+        blank=True,
+    )
+
+    target_metric = models.CharField(
+        max_length=32,
+        choices=QualityTargetMetricType.choices(),
+        default=QualityTargetMetricType.ACCURACY,
+        null=True,
+        blank=True,
+    )
+
+    target_metric_threshold = models.FloatField(default=0.7, null=True, blank=True)
+
+    filter = models.TextField(blank=True)
+    enabled = models.BooleanField(default=True)
+
+    parent = models.ForeignKey(
+        "self", on_delete=models.DO_NOTHING, null=True, blank=True, related_name="children"
+    )
+
+    iou_threshold = models.FloatField(null=True, blank=True)
+    oks_sigma = models.FloatField(null=True, blank=True)
+    line_thickness = models.FloatField(null=True, blank=True)
+
+    point_size_base = models.CharField(
+        max_length=32,
+        choices=PointSizeBase.choices(),
+        default=PointSizeBase.GROUP_BBOX_SIZE,
+        null=True,
+        blank=True,
+    )
+
+    compare_line_orientation = models.BooleanField(null=True, blank=True)
+    line_orientation_threshold = models.FloatField(null=True, blank=True)
+
+    compare_groups = models.BooleanField(null=True, blank=True)
+    group_match_threshold = models.FloatField(null=True, blank=True)
+
+    check_covered_annotations = models.BooleanField(null=True, blank=True)
+    object_visibility_threshold = models.FloatField(null=True, blank=True)
+
+    panoptic_comparison = models.BooleanField(null=True, blank=True)
+
+    compare_attributes = models.BooleanField(null=True, blank=True)
+    attribute_comparison = models.JSONField(null=True, blank=True, default=None)
+
+    empty_is_annotated = models.BooleanField(default=True, null=True, blank=True)
+
+    @property
+    def organization_id(self) -> int | None:
+        return self.settings.organization_id
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        defaults = deepcopy(self.get_defaults())
+        for field in self._meta.fields:
+            if field.name in defaults:
+                field.default = defaults[field.name]
+
+        super().__init__(*args, **kwargs)
+
+    @classmethod
+    def get_defaults(cls) -> dict:
+        from cvat.apps.quality_control.comparison_report import ComparisonParameters
+
+        default_settings = ComparisonParameters().to_dict()
+        default_settings["compare_attributes"] = False
+
+        existing_fields = {f.name for f in cls._meta.fields}
+        return {k: v for k, v in default_settings.items() if k in existing_fields}
+
+    def to_dict(self):
+        return model_to_dict(self)
+
+
+_BASE_REQUIREMENT_ANNOTATION_TYPES = (
+    QualityRequirementAnnotationType.TAG,
+    QualityRequirementAnnotationType.RECTANGLE,
+    QualityRequirementAnnotationType.SKELETON,
+    QualityRequirementAnnotationType.SKELETON_KEYPOINT,
+    QualityRequirementAnnotationType.POINTS,
+    QualityRequirementAnnotationType.POLYLINE,
+    QualityRequirementAnnotationType.MASK,
+    QualityRequirementAnnotationType.POLYGON,
+    QualityRequirementAnnotationType.ELLIPSE,
+)
+
+
+def get_base_requirement_name(annotation_type: str) -> str:
+    return f"Base {str(annotation_type).replace('_', ' ')}"
+
+
+def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
+    base_names = {
+        get_base_requirement_name(annotation_type)
+        for annotation_type in _BASE_REQUIREMENT_ANNOTATION_TYPES
+    }
+    existing_base_names = set(
+        quality_settings.requirements.filter(name__in=base_names).values_list("name", flat=True)
+    )
+
+    changed = False
+    if existing_base_names:
+        updated_count = quality_settings.requirements.filter(
+            name__in=existing_base_names,
+            is_base=False,
+        ).update(is_base=True)
+        changed = bool(updated_count)
+
+    requirements_to_create = []
+    for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
+        name = get_base_requirement_name(annotation_type)
+        if name in existing_base_names:
+            continue
+
+        requirements_to_create.append(
+            QualityRequirement(
+                settings=quality_settings,
+                name=name,
+                is_base=True,
+                sort_order=sort_order,
+                annotation_type=annotation_type,
+                enabled=False,
+            )
+        )
+
+    if requirements_to_create:
+        QualityRequirement.objects.bulk_create(requirements_to_create)
+        changed = True
+
+    if changed:
+        db_utils.clear_prefetched_relation_cache(quality_settings, "requirements")
+        quality_settings.touch()
+
+    return changed

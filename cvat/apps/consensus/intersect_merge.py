@@ -12,19 +12,18 @@ from typing import ClassVar, TypeAlias
 import attrs
 import datumaro as dm
 import datumaro.components.merge.intersect_merge
-from datumaro.util import filter_dict
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
-from cvat.apps.quality_control.quality_reports import (
-    ComparisonParameters,
-    DistanceComparator,
-    segment_iou,
-)
+from cvat.apps.dataset_manager.bindings import CVAT_INTERNAL_ATTRIBUTES
+from cvat.apps.quality_control.annotation_matching import DistanceComparator, segment_iou
+from cvat.apps.quality_control.comparison_report import ComparisonParameters
 
 
 @attrs.define(kw_only=True, slots=False)
 class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
+    _DISCARDED_INTERNAL_ATTRIBUTES: ClassVar[set[str]] = {"keyframe", "source", "track_id"}
+
     @attrs.define(kw_only=True, slots=False)
     class Conf:
         pairwise_dist: float = 0.5
@@ -49,8 +48,40 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
     def __call__(self, *datasets):
         return dm.Dataset(super().__call__(*datasets))
 
+    def _get_user_defined_attributes(self) -> set[str]:
+        label_categories = self._categories.get(dm.AnnotationType.label)
+        if not isinstance(label_categories, dm.LabelCategories):
+            return set()
+
+        declared_attributes = set(label_categories.attributes)
+        for label_category in label_categories:
+            declared_attributes.update(label_category.attributes)
+
+        return declared_attributes - CVAT_INTERNAL_ATTRIBUTES - set(self.conf.ignored_attributes)
+
+    def _get_output_attributes(self) -> set[str]:
+        return (
+            self._get_user_defined_attributes()
+            | (CVAT_INTERNAL_ATTRIBUTES - self._DISCARDED_INTERNAL_ATTRIBUTES)
+        ) - set(self.conf.ignored_attributes)
+
     def _find_cluster_attrs(self, cluster, ann):
-        merged_attributes = super()._find_cluster_attrs(cluster, ann)
+        user_defined_attributes = self._get_user_defined_attributes()
+        original_attributes = [s.attributes for s in cluster]
+
+        try:
+            for s in cluster:
+                s.attributes = {
+                    name: value
+                    for name, value in s.attributes.items()
+                    if name in user_defined_attributes
+                }
+
+            merged_attributes = super()._find_cluster_attrs(cluster, ann)
+        finally:
+            for s, attributes in zip(cluster, original_attributes):
+                s.attributes = attributes
+
         merged_attributes["source"] = "consensus"
         return merged_attributes
 
@@ -61,9 +92,21 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         # A workaround for the incorrect implementation of attribute filtering in Datumaro
         # TODO: fix in Datumaro
         merged_annotations = super()._merge_clusters(t, clusters)
+        output_attributes = self._get_output_attributes()
 
         for ann in merged_annotations:
-            ann.attributes = filter_dict(ann.attributes, exclude_keys=self.conf.ignored_attributes)
+            ann.attributes = {
+                name: value for name, value in ann.attributes.items() if name in output_attributes
+            }
+
+            if isinstance(ann, dm.Skeleton):
+                for element in ann.elements:
+                    element.attributes = {
+                        name: value
+                        for name, value in element.attributes.items()
+                        if name in output_attributes
+                    }
+                    element.attributes["source"] = "consensus"
 
         return merged_annotations
 
