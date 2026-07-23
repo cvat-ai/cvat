@@ -145,6 +145,7 @@ export interface SerializedJob {
     bug_tracker: string;
     data_chunk_size: number | null;
     data_compressed_chunk_type: ChunkType
+    data_original_chunk_type?: ChunkType;
     dimension: DimensionType;
     media_type: MediaType;
     id: number;

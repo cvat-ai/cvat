@@ -1256,10 +1256,12 @@ def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
             db_data.compressed_chunk_type = models.DataChoice.AUDIO_MP3
             db_data.original_chunk_type = models.DataChoice.AUDIO_MP3
         case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
-            db_data.compressed_chunk_type = (
-                models.DataChoice.IMAGESET if data["use_zip_chunks"] else models.DataChoice.VIDEO
-            )
-            db_data.original_chunk_type = models.DataChoice.VIDEO
+            # HQ is always original/zip; LQ format controlled by use_zip_chunks
+            db_data.original_chunk_type = models.DataChoice.IMAGESET
+            if data.get('use_zip_chunks'):
+                db_data.compressed_chunk_type = models.DataChoice.IMAGESET
+            else:
+                db_data.compressed_chunk_type = models.DataChoice.VIDEO
         case (models.MediaType.IMAGE | models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION):
             db_data.compressed_chunk_type = models.DataChoice.IMAGESET
             db_data.original_chunk_type = models.DataChoice.IMAGESET

@@ -249,13 +249,14 @@ function buildDuplicatedAPI(prototype): void {
         }),
         frames: Object.freeze({
             value: {
-                async get(frame, isPlaying = false, step = 1) {
+                async get(frame, isPlaying = false, step = 1, dataQuality = false) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.get,
                         frame,
                         isPlaying,
                         step,
+                        dataQuality,
                     );
                     return result;
                 },
@@ -475,7 +476,7 @@ export class Session {
     };
 
     public frames: {
-        get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
+        get: (frame: number, isPlaying?: boolean, step?: number, dataQuality?: boolean) => Promise<FrameData>;
         delete: (frame: number) => Promise<void>;
         restore: (frame: number) => Promise<void>;
         save: () => Promise<FramesMetaData[]>;
@@ -586,6 +587,7 @@ export class Job extends Session {
         dimension?: DimensionType;
         media_type: MediaType;
         data_compressed_chunk_type?: ChunkType;
+        data_original_chunk_type?: ChunkType;
         data_chunk_size?: number;
         bug_tracker: string | null;
         mode?: TaskMode;
@@ -618,6 +620,7 @@ export class Job extends Session {
             dimension: undefined,
             media_type: undefined,
             data_compressed_chunk_type: undefined,
+            data_original_chunk_type: undefined,
             data_chunk_size: undefined,
             bug_tracker: null,
             mode: undefined,
@@ -641,6 +644,8 @@ export class Job extends Session {
         this.#data.media_type = initialData.media_type ?? this.#data.media_type;
         this.#data.data_compressed_chunk_type =
             initialData.data_compressed_chunk_type ?? this.#data.data_compressed_chunk_type;
+        this.#data.data_original_chunk_type =
+            initialData.data_original_chunk_type ?? this.#data.data_original_chunk_type;
         this.#data.data_chunk_size = initialData.data_chunk_size ?? this.#data.data_chunk_size;
         this.#data.mode = initialData.mode ?? this.#data.mode;
         this.#data.created_date = initialData.created_date ?? this.#data.created_date;
@@ -700,6 +705,8 @@ export class Job extends Session {
         this.#data.guide_id = data.guide_id ?? this.#data.guide_id;
         this.#data.updated_date = data.updated_date ?? this.#data.updated_date;
         this.#data.bug_tracker = data.bug_tracker ?? this.#data.bug_tracker;
+        this.#data.data_original_chunk_type =
+            data.data_original_chunk_type ?? this.#data.data_original_chunk_type;
 
         // TODO: labels also may get changed, but it will affect many code within the application
         // so, need to think on this additionally
@@ -771,6 +778,10 @@ export class Job extends Session {
 
     public get dataChunkType(): ChunkType {
         return this.#data.data_compressed_chunk_type;
+    }
+
+    public get dataOriginalChunkType(): ChunkType {
+        return this.#data.data_original_chunk_type ?? this.#data.data_compressed_chunk_type;
     }
 
     public get dataChunkSize(): number {
@@ -874,6 +885,7 @@ export class Task extends Session {
     public readonly imageQuality: number;
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
+    public readonly dataOriginalChunkType: ChunkType;
     public readonly dimension: DimensionType | undefined;
     public readonly mediaType: MediaType | undefined;
     public readonly progress: {
@@ -1022,6 +1034,7 @@ export class Task extends Session {
                     dimension: data.dimension,
                     media_type: data.media_type,
                     data_compressed_chunk_type: data.data_compressed_chunk_type,
+                    data_original_chunk_type: data.data_original_chunk_type,
                     data_chunk_size: data.data_chunk_size,
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
@@ -1160,6 +1173,9 @@ export class Task extends Session {
                 },
                 dataChunkType: {
                     get: () => data.data_compressed_chunk_type,
+                },
+                dataOriginalChunkType: {
+                    get: () => data.data_original_chunk_type ?? data.data_compressed_chunk_type,
                 },
                 dimension: {
                     get: () => data.dimension,

@@ -36,6 +36,8 @@ interface Props {
     onChangeCanvasBackgroundColor(color: string): void;
     onSwitchSmoothImage(enabled: boolean): void;
     onSwitchShowingDeletedFrames(enabled: boolean): void;
+    dataQuality: boolean;
+    onSwitchDataQuality(enabled: boolean): void;
 }
 
 export default function PlayerSettingsComponent(props: Props): JSX.Element {
@@ -54,6 +56,8 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         onSwitchSmoothImage,
         onChangeCanvasBackgroundColor,
         onSwitchShowingDeletedFrames,
+        dataQuality,
+        onSwitchDataQuality,
     } = props;
 
     const plugins = usePlugins((state) => state.plugins.components.settings.player, props);
@@ -242,6 +246,29 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             </Col>
         </Row>
     ), 40]);
+
+    items.push([(
+        <Row key='data-quality' className='cvat-player-setting' justify='start'>
+            <Col span={7}>
+                <Row className='cvat-player-settings-data-quality'>
+                    <Col span={24} className='cvat-player-settings-data-quality-checkbox'>
+                        <Checkbox
+                            className='cvat-text-color'
+                            checked={dataQuality}
+                            onChange={(event: CheckboxChangeEvent): void => {
+                                onSwitchDataQuality(event.target.checked);
+                            }}
+                        >
+                            Prefer original data quality
+                        </Checkbox>
+                    </Col>
+                    <Col span={24}>
+                        <Text type='secondary'> Downloads original images instead of compressed ones </Text>
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
+    ), 50]);
 
     items.push(...plugins.map(({ component: Component, weight }, index: number) => (
         [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]

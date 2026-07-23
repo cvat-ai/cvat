@@ -188,6 +188,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             frame: Parameters<typeof JobClass.prototype.frames.get>[0],
             isPlaying: Parameters<typeof JobClass.prototype.frames.get>[1],
             step: Parameters<typeof JobClass.prototype.frames.get>[2],
+            dataQuality: boolean = false,
         ): ReturnType<typeof JobClass.prototype.frames.get> {
             if (!Number.isInteger(frame) || frame < 0) {
                 throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
@@ -201,6 +202,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 this.id,
                 this.dataChunkSize,
                 this.dataChunkType,
+                this.dataOriginalChunkType,
                 this.mode,
                 frame,
                 this.startFrame,
@@ -208,6 +210,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 step,
                 this.dimension,
                 (chunkIndex, quality) => this.frames.chunk(chunkIndex, quality),
+                dataQuality,
             );
         },
     });
@@ -954,6 +957,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             frame: Parameters<typeof TaskClass.prototype.frames.get>[0],
             isPlaying: Parameters<typeof TaskClass.prototype.frames.get>[1],
             step: Parameters<typeof TaskClass.prototype.frames.get>[2],
+            dataQuality: boolean = false,
         ): ReturnType<typeof TaskClass.prototype.frames.get> {
             if (!Number.isInteger(frame) || frame < 0) {
                 throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
@@ -968,6 +972,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 job.id,
                 this.dataChunkSize,
                 this.dataChunkType,
+                this.dataOriginalChunkType,
                 this.mode,
                 frame,
                 job.startFrame,
@@ -975,6 +980,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 step,
                 this.dimension,
                 (chunkIndex, quality) => job.frames.chunk(chunkIndex, quality),
+                dataQuality,
             );
             return result;
         },
