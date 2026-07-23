@@ -147,7 +147,7 @@ the check is best-effort. The location follows the platform convention:
 | ---------- | ---- |
 | Linux    | `${XDG_CONFIG_HOME:-$HOME/.config}/cvat-sdk/auth.json` |
 | macOS    | `~/Library/Application Support/cvat-sdk/auth.json` |
-| Windows  | `%APPDATA%\CVAT.ai\cvat-sdk\auth.json` |
+| Windows  | `%LOCALAPPDATA%\CVAT.ai\cvat-sdk\auth.json` |
 
 Only a PAT is ever written to disk - never a username or password.
 
