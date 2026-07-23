@@ -45,6 +45,10 @@ jobs:
         run: |
           npm ci
 
+      - name: Sync versions in docs
+        run: |
+          ./site/scripts/sync-versions.sh
+
       - name: Build docs
         run: |
           pip install -r site/requirements.txt
@@ -54,6 +58,14 @@ jobs:
           BASE_URL: https://docs.cvat.ai
           HUGO_ENV: production
           GOOGLE_TAG_ID: G-GVSBK1DNK5
+
+      - name: Preview docs
+        if: github.event_name == 'pull_request' && github.ref != 'refs/heads/develop'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-site
+          path: ./public/docs
+          retention-days: 1
 
       - name: Deploy
         if: github.ref == 'refs/heads/develop'
