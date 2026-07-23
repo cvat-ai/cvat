@@ -101,7 +101,9 @@ def read_video_file(file: BytesIO) -> Generator[Image.Image, None, None]:
             yield frame.to_image()
 
 
-def generate_manifest(path: str) -> None:
+def generate_manifest(path: str, *, source_name: str | None = None) -> None:
+    # by default, the manifest is generated for a directory with images;
+    # pass source_name with a video file name to generate a video manifest
     command = [
         "docker",
         "run",
@@ -116,7 +118,7 @@ def generate_manifest(path: str) -> None:
         "/opt/cvat/utils/dataset_manifest/create.py",
         "--output-dir",
         "/local",
-        "/local",
+        f"/local/{source_name}" if source_name else "/local",
     ]
     try:
         subprocess.check_output(command, stderr=subprocess.PIPE)

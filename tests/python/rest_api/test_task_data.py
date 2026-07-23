@@ -985,6 +985,78 @@ class TestPostTaskData:
             assert expected_error and expected_error in rq_job_details.message
 
     @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [1])
+    @pytest.mark.parametrize(
+        "server_files, filename_pattern",
+        [
+            # a directory can be selected explicitly or sent by the UI
+            # when all the files inside it are selected
+            (["test/video/", "test/video/manifest.jsonl"], None),
+            (["test/video/manifest.jsonl"], "test/video/*"),
+            (["test/video/manifest.jsonl"], "*"),
+            # only a manifest is specified, filename_pattern is set to "*" implicitly
+            (["test/video/manifest.jsonl"], None),
+        ],
+    )
+    def test_create_task_with_video_and_manifest_in_cloud_storage_directory(
+        self,
+        cloud_storage_id: int,
+        server_files: list[str],
+        filename_pattern: str | None,
+        cloud_storages,
+        request,
+    ):
+        # a video manifest must not be parsed as an image manifest
+        # when directories or filename patterns are resolved into files
+        video_frame_count = 30
+        video = generate_video_file(video_frame_count)
+        s3_client = s3.make_client()
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        with TemporaryDirectory() as tmp_dir:
+            with open(osp.join(tmp_dir, video.name), "wb") as f:
+                f.write(video.getvalue())
+
+            generate_manifest(tmp_dir, source_name=video.name)
+
+            for filename in (video.name, "manifest.jsonl"):
+                with open(osp.join(tmp_dir, filename), "rb") as f:
+                    s3_client.create_file(
+                        data=f.read(),
+                        bucket=cloud_storage["resource"],
+                        filename=f"test/video/{filename}",
+                    )
+                request.addfinalizer(
+                    partial(
+                        s3_client.remove_file,
+                        bucket=cloud_storage["resource"],
+                        filename=f"test/video/{filename}",
+                    )
+                )
+
+        task_spec = {
+            "name": "Task with a video and a manifest in a cloud storage directory",
+            "labels": [{"name": "car"}],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": server_files,
+        }
+        if filename_pattern:
+            data_spec["filename_pattern"] = filename_pattern
+
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
+
+        with make_api_client(self._USERNAME) as api_client:
+            task, response = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+            assert task.size == video_frame_count
+            assert task.mode == "interpolation"
+
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize("use_cache", [True, False])
     @pytest.mark.parametrize(
