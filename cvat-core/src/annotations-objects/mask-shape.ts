@@ -91,16 +91,28 @@ export class MaskShape extends Shape {
         const wrapper = {
             stashedPoints: Object.values(updatedObjects).map((object) => object.points),
             stashedRemoved: Object.values(updatedObjects).map((object) => object.removed),
+            stashedBoxes: Object.values(updatedObjects).map((object) => ([
+                object.left, object.top, object.right, object.bottom,
+            ])),
         };
 
+        const { width: frameWidth, height: frameHeight } = this.framesInfo[frame];
         let emptyMaskOccurred = false;
         for (const object of Object.values(updatedObjects)) {
-            const points = mask2Rle(masks[object.clientID]);
-            if (points.length < 2) {
+            const rle = mask2Rle(masks[object.clientID]);
+            if (rle.length < 2) {
                 object.removed = true;
                 emptyMaskOccurred = true;
             } else {
-                object.points = points;
+                const croppedPoints = cropMask([
+                    ...rle, object.left, object.top, object.right, object.bottom,
+                ], frameWidth, frameHeight);
+                const [left, top, right, bottom] = croppedPoints.splice(-4, 4);
+                object.points = croppedPoints;
+                object.left = left;
+                object.top = top;
+                object.right = right;
+                object.bottom = bottom;
                 object.updated = Date.now();
             }
         }
@@ -109,13 +121,22 @@ export class MaskShape extends Shape {
         const undo = (): void => {
             const updatedStashedPoints = Object.values(updatedObjects).map((object) => object.points);
             const updatedStashedRemoved = Object.values(updatedObjects).map((object) => object.removed);
+            const updatedStashedBoxes = Object.values(updatedObjects).map((object) => ([
+                object.left, object.top, object.right, object.bottom,
+            ]));
             for (const [index, object] of Object.values(updatedObjects).entries()) {
                 object.points = wrapper.stashedPoints[index];
                 object.removed = wrapper.stashedRemoved[index];
+                const [left, top, right, bottom] = wrapper.stashedBoxes[index];
+                object.left = left;
+                object.top = top;
+                object.right = right;
+                object.bottom = bottom;
                 object.updated = Date.now();
             }
             wrapper.stashedPoints = updatedStashedPoints;
             wrapper.stashedRemoved = updatedStashedRemoved;
+            wrapper.stashedBoxes = updatedStashedBoxes;
         };
 
         const redo = undo;
