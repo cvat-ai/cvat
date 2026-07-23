@@ -18,4 +18,6 @@ RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/cvat/requi
 
 COPY .coveragerc .
 
+USER 1000:1000
+
 ENTRYPOINT []
