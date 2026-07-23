@@ -518,6 +518,12 @@
     border: 2px solid rgba(0, 0, 0, 66%);
 }
 
+// objects that are part of the canvas multi-selection
+.cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-item-multi-selected {
+    border: 2px dashed #1890ff;
+    box-shadow: 0 0 6px rgba(24, 144, 255, 60%);
+}
+
 .cvat-objects-sidebar-state-item {
     width: 100%;
     background-color: rgba(var(--state-item-background), 1);

@@ -143,6 +143,7 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
+        selectedStatesID: [],
         highlightedConflict: null,
         saving: {
             forceExit: false,
@@ -413,6 +414,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    selectedStatesID: [],
                     highlightedConflict: null,
                     states,
                     renderData: getAnnotationsRenderData(states, state.annotations.filters),
@@ -706,6 +708,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SELECT_OBJECTS: {
+            const { selectedStatesID } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    selectedStatesID,
+                },
+            };
+        }
         case AnnotationActionTypes.REMOVE_OBJECT: {
             const { objectState, force } = action.payload;
             return {
@@ -803,6 +815,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 drawing: {
                     ...state.drawing,
                     activeInitialState: objectState,
+                    // single-shape copy clears any multi-selection clipboard
+                    copiedStates: undefined,
+                },
+            };
+        }
+        case AnnotationActionTypes.COPY_SELECTION: {
+            const { copiedStates } = action.payload;
+
+            return {
+                ...state,
+                drawing: {
+                    ...state.drawing,
+                    copiedStates,
                 },
             };
         }

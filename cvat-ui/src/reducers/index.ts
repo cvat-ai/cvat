@@ -923,6 +923,7 @@ export interface AnnotationState {
         activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
+        copiedStates?: any[];
         activeSimplifyPoly?: boolean;
     };
     editing: EditingState;
@@ -930,6 +931,7 @@ export interface AnnotationState {
         activatedStateID: number | null;
         activatedElementID: number | null;
         activatedAttributeID: number | null;
+        selectedStatesID: number[];
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;

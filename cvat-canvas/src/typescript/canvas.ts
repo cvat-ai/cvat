@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    DrawData, MergeData, SplitData, GroupData,
+    DrawData, MergeData, SplitData, GroupData, SelectData,
     JoinData, SliceData, MasksEditData,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
@@ -41,6 +41,8 @@ interface Canvas {
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
+    selectObjects(selectData: SelectData): void;
+    setSelectedObjects(clientIDs: number[]): void;
 
     fitCanvas(): void;
     bitmap(enable: boolean): void;
@@ -166,6 +168,14 @@ class CanvasImpl implements Canvas {
 
     public select(objectState: any): void {
         this.model.select(objectState);
+    }
+
+    public selectObjects(selectData: SelectData): void {
+        this.model.selectObjects(selectData);
+    }
+
+    public setSelectedObjects(clientIDs: number[]): void {
+        this.model.setSelectedObjects(clientIDs);
     }
 
     public mode(): Mode {

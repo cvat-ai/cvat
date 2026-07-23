@@ -542,6 +542,25 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.updateBatch, 'implementation', {
+        value: function updateBatchAnnotationsImplementation(
+            this: JobClass,
+            objectStates: Parameters<typeof JobClass.prototype.annotations.updateBatch>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.updateBatch> {
+            return Promise.resolve(getCollection(this).updateBatch(objectStates));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.removeBatch, 'implementation', {
+        value: function removeBatchAnnotationsImplementation(
+            this: JobClass,
+            objectStates: Parameters<typeof JobClass.prototype.annotations.removeBatch>[0],
+            force: Parameters<typeof JobClass.prototype.annotations.removeBatch>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.removeBatch> {
+            return Promise.resolve(getCollection(this).removeBatch(objectStates, force ?? false));
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.import, 'implementation', {
         value: function importAnnotationsImplementation(
             this: JobClass,
@@ -1338,6 +1357,25 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             objectStates: Parameters<typeof TaskClass.prototype.annotations.put>[0],
         ): ReturnType<typeof TaskClass.prototype.annotations.put> {
             return Promise.resolve(getCollection(this).put(objectStates));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.updateBatch, 'implementation', {
+        value: function updateBatchAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.updateBatch>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.updateBatch> {
+            return Promise.resolve(getCollection(this).updateBatch(objectStates));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.removeBatch, 'implementation', {
+        value: function removeBatchAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.removeBatch>[0],
+            force: Parameters<typeof TaskClass.prototype.annotations.removeBatch>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.removeBatch> {
+            return Promise.resolve(getCollection(this).removeBatch(objectStates, force ?? false));
         },
     });
 

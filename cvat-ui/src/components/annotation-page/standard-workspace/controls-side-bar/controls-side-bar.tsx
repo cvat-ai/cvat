@@ -51,11 +51,13 @@ interface Props {
     normalizedKeyMap: Record<string, string>;
     labels: Label[];
     frameData: any;
+    hasCopiedSelection: boolean;
 
     updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
     repeatDrawShape(): void;
     pasteShape(): void;
+    pasteSelection(): void;
     resetGroup(): void;
     redrawShape(): void;
 }
@@ -156,9 +158,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         rotateFrame,
         repeatDrawShape,
         pasteShape,
+        pasteSelection,
         resetGroup,
         redrawShape,
         frameData,
+        hasCopiedSelection,
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
@@ -344,7 +348,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
                 event?.preventDefault();
                 canvasInstance.cancel();
-                pasteShape();
+                // paste the whole multi-selection when it is on the clipboard, else a single shape
+                if (hasCopiedSelection) {
+                    pasteSelection();
+                } else {
+                    pasteShape();
+                }
             },
             SWITCH_DRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
                 handleDrawMode(event, 'draw');
