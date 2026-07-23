@@ -30,18 +30,10 @@ context('Audio annotation. Relabeling restores label defaults.', () => {
             cy.get('.cvat-audio-region-details textarea').type('custom value');
             cy.get('.cvat-audio-region-details textarea').should('have.value', 'custom value');
 
-            cy.get('.cvat-audio-region-label-trigger').click();
-            cy.get('.cvat-audio-region-label-popover').filter(':visible').contains(
-                '.cvat-audio-region-label-option', secondLabelName,
-            ).click();
-            cy.get('.cvat-audio-region-label-trigger').should('contain.text', secondLabelName);
+            cy.audioChangeSelectedRegionLabel(secondLabelName);
             cy.get('.cvat-audio-region-details textarea').should('have.value', secondAttrDefaultValue);
 
-            cy.get('.cvat-audio-region-label-trigger').click();
-            cy.get('.cvat-audio-region-label-popover').filter(':visible').contains(
-                '.cvat-audio-region-label-option', firstLabelName,
-            ).click();
-            cy.get('.cvat-audio-region-label-trigger').should('contain.text', firstLabelName);
+            cy.audioChangeSelectedRegionLabel(firstLabelName);
             cy.get('.cvat-audio-region-details textarea').should('have.value', attrDefaultValue);
         });
     });

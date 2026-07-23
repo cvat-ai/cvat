@@ -31,7 +31,13 @@ Cypress.Commands.add('ensureAudioTask', () => {
         });
         taskSpec.labels.push({
             name: AUDIO_SECOND_LABEL,
-            attributes: [{ name: AUDIO_ATTR_NAME, values: AUDIO_SECOND_ATTR_DEFAULT, type: 'text' }],
+            attributes: [{
+                name: AUDIO_ATTR_NAME,
+                default_value: AUDIO_SECOND_ATTR_DEFAULT,
+                input_type: 'text',
+                mutable: false,
+                values: [],
+            }],
             type: 'any',
         });
 
@@ -139,6 +145,14 @@ Cypress.Commands.add('audioCreateRegionViaHotkey', (xStart, xEnd) => {
     cy.get('body').type('n');
     cy.get('.cvat-audio-interval-region-control').should('have.class', 'cvat-active-canvas-control');
     cy.audioDrawRegion(xStart, xEnd);
+});
+
+Cypress.Commands.add('audioChangeSelectedRegionLabel', (labelName) => {
+    cy.get('.cvat-audio-region-label-trigger').click();
+    cy.get('.cvat-audio-region-label-popover').filter(':visible').contains(
+        '.cvat-audio-region-label-option', labelName,
+    ).click();
+    cy.get('.cvat-audio-region-label-trigger').should('contain.text', labelName);
 });
 
 Cypress.Commands.add('audioExtendViaButton', (labelName) => {
