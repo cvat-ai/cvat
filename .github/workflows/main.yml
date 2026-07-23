@@ -155,7 +155,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           # Use the oldest Python release supported by the SDK.
           python-version: '3.10'
@@ -456,7 +456,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           # Use the latest stable Python release.
           python-version: '3.14'
