@@ -173,17 +173,40 @@ def post_save_resource_event(sender, instance, created: bool, raw: bool, **kwarg
 def pre_delete_resource_event(sender, instance, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
+    event_type = event_name(action="delete", resource=resource_name)
+
     related_webhooks = []
     if resource_name in ["project", "organization"]:
         related_webhooks = select_webhooks(
-            event=event_name(action="delete", resource=resource_name),
+            event=event_type,
             organization_id=resolve_organization_id(instance),
             project_id=resolve_project_id(instance),
         )
 
+    # Select the matching webhooks before the instance is deleted, while the
+    # related objects used by the filters still exist in the database.
+    filtered_webhooks = []
+    if event_type in (a[0] for a in EventTypeChoice.choices()):
+        filtered_webhooks = select_webhooks(
+            event=event_type,
+            organization_id=resolve_organization_id(instance),
+            project_id=resolve_project_id(instance),
+        )
+
+    instance._filtered_webhooks = filtered_webhooks
+    instance._related_webhooks = related_webhooks
+
+    # Serializing the instance requires extra DB queries per object and is only
+    # needed to build webhook payloads. Skip it when no webhook subscribes to
+    # the delete event - the common case, and a significant cost in cascade
+    # deletions (each task/job/issue/comment of a deleted parent fires this
+    # signal).
+    if not filtered_webhooks and not related_webhooks:
+        instance._deleted_object = None
+        return
+
     serializer = get_serializer(instance=deepcopy(instance))
     instance._deleted_object = dict(serializer.data)
-    instance._related_webhooks = related_webhooks
 
 
 @receiver(post_delete, sender=Project)
@@ -201,23 +224,23 @@ def post_delete_resource_event(sender, instance, **kwargs):
     if event_type not in (a[0] for a in EventTypeChoice.choices()):
         return
 
-    filtered_webhooks = select_webhooks(
-        event=event_type,
-        organization_id=resolve_organization_id(instance),
-        project_id=resolve_project_id(instance),
-    )
-
-    data = {
-        "event": event_type,
-        resource_name: getattr(instance, "_deleted_object"),
-        "sender": get_sender(instance=instance),
-    }
+    # Selected in pre_delete_resource_event, before the instance was deleted.
+    filtered_webhooks = getattr(instance, "_filtered_webhooks", [])
 
     related_webhooks = [
         webhook
         for webhook in getattr(instance, "_related_webhooks", [])
         if webhook.id not in (a.id for a in filtered_webhooks)
     ]
+
+    if not filtered_webhooks and not related_webhooks:
+        return
+
+    data = {
+        "event": event_type,
+        resource_name: getattr(instance, "_deleted_object"),
+        "sender": get_sender(instance=instance),
+    }
 
     transaction.on_commit(
         lambda: batch_add_to_queue(webhooks=filtered_webhooks + related_webhooks, data=data),
