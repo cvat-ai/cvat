@@ -3,16 +3,17 @@
 # SPDX-License-Identifier: MIT
 
 from django.db import models
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 from cvat.apps.engine.models import Project
 from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
-from .event_type import EventTypeChoice, OrganizationEvents, ProjectEvents
+from .event_type import EventKeyChoice, OrganizationEvents, ProjectEvents
 from .models import Webhook, WebhookContentTypeChoice, WebhookDelivery, WebhookTypeChoice
 
 
-class EventTypeValidator:
+class EventKeysValidator:
     requires_context = True
 
     def get_webhook_type(self, attrs, serializer):
@@ -23,33 +24,46 @@ class EventTypeValidator:
     def __call__(self, attrs, serializer):
         if attrs.get("events") is not None:
             webhook_type = self.get_webhook_type(attrs, serializer)
-            events = set(EventTypesSerializer().to_representation(attrs["events"]))
+            events_keys = set(EventKeysField().to_representation(attrs["events"]))
             if (
                 webhook_type == WebhookTypeChoice.PROJECT
-                and not events.issubset(set(ProjectEvents.events))
+                and not events_keys.issubset({event.key for event in ProjectEvents.events})
             ) or (
                 webhook_type == WebhookTypeChoice.ORGANIZATION
-                and not events.issubset(set(OrganizationEvents.events))
+                and not events_keys.issubset({event.key for event in OrganizationEvents.events})
             ):
                 raise serializers.ValidationError(f"Invalid events list for {webhook_type} webhook")
 
 
-class EventTypesSerializer(serializers.MultipleChoiceField):
+class EventKeysField(serializers.MultipleChoiceField):
     def __init__(self, *args, **kwargs):
-        super().__init__(choices=EventTypeChoice.choices(), *args, **kwargs)
+        super().__init__(choices=EventKeyChoice.choices(), *args, **kwargs)
 
     def to_representation(self, value):
         if isinstance(value, list):
             return sorted(super().to_representation(value))
+
         return sorted(list(super().to_representation(value.split(","))))
 
     def to_internal_value(self, data):
         return ",".join(super().to_internal_value(data))
 
 
+class EventGroupSerializer(serializers.Serializer):
+    display_name = serializers.CharField(read_only=True)
+
+
+@extend_schema_serializer(component_name="WebhooksEvent")
+class EventSerializer(serializers.Serializer):
+    action = serializers.CharField(read_only=True)
+    resource = serializers.CharField(read_only=True)
+    key = serializers.CharField(read_only=True)
+    group = EventGroupSerializer(read_only=True)
+
+
 class EventsSerializer(serializers.Serializer):
     webhook_type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
-    events = EventTypesSerializer()
+    events = EventSerializer(many=True, read_only=True)
 
 
 class WebhookReadListSerializer(serializers.ListSerializer):
@@ -84,7 +98,7 @@ class WebhookReadListSerializer(serializers.ListSerializer):
 class WebhookReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(read_only=True, required=False, allow_null=True)
 
-    events = EventTypesSerializer(read_only=True)
+    events = EventKeysField(read_only=True)
 
     project_id = serializers.IntegerField(required=False, allow_null=True)
     type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
@@ -124,7 +138,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
 
 
 class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    events = EventTypesSerializer(write_only=True)
+    events = EventKeysField(write_only=True)
 
     project_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
@@ -146,7 +160,7 @@ class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "events",
         )
         write_once_fields = ("type", "project_id")
-        validators = [EventTypeValidator()]
+        validators = [EventKeysValidator()]
 
     def create(self, validated_data):
         if (project_id := validated_data.get("project_id")) is not None:

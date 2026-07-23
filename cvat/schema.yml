@@ -7922,6 +7922,12 @@ components:
       required:
       - scope
       - timestamp
+    EventGroup:
+      type: object
+      properties:
+        display_name:
+          type: string
+          readOnly: true
     EventRequest:
       type: object
       properties:
@@ -7994,15 +8000,20 @@ components:
         events:
           type: array
           items:
-            $ref: '#/components/schemas/EventsEnum'
+            $ref: '#/components/schemas/WebhooksEvent'
+          readOnly: true
       required:
-      - events
       - webhook_type
     EventsEnum:
       enum:
-      - create:backup
+      - completed:request[calculate:quality]
+      - completed:request[create:task]
+      - completed:request[export:annotations]
+      - completed:request[export:backup]
+      - completed:request[export:dataset]
+      - completed:request[merge:job]
+      - completed:request[merge:task]
       - create:comment
-      - create:export
       - create:invitation
       - create:issue
       - create:job
@@ -8014,7 +8025,6 @@ components:
       - delete:issue
       - delete:job
       - delete:membership
-      - delete:organization
       - delete:project
       - delete:task
       - update:comment
@@ -8026,9 +8036,14 @@ components:
       - update:task
       type: string
       description: |-
-        * `create:backup` - CREATE:BACKUP
+        * `completed:request[calculate:quality]` - COMPLETED:REQUEST[CALCULATE:QUALITY]
+        * `completed:request[create:task]` - COMPLETED:REQUEST[CREATE:TASK]
+        * `completed:request[export:annotations]` - COMPLETED:REQUEST[EXPORT:ANNOTATIONS]
+        * `completed:request[export:backup]` - COMPLETED:REQUEST[EXPORT:BACKUP]
+        * `completed:request[export:dataset]` - COMPLETED:REQUEST[EXPORT:DATASET]
+        * `completed:request[merge:job]` - COMPLETED:REQUEST[MERGE:JOB]
+        * `completed:request[merge:task]` - COMPLETED:REQUEST[MERGE:TASK]
         * `create:comment` - CREATE:COMMENT
-        * `create:export` - CREATE:EXPORT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
@@ -8040,7 +8055,6 @@ components:
         * `delete:issue` - DELETE:ISSUE
         * `delete:job` - DELETE:JOB
         * `delete:membership` - DELETE:MEMBERSHIP
-        * `delete:organization` - DELETE:ORGANIZATION
         * `delete:project` - DELETE:PROJECT
         * `delete:task` - DELETE:TASK
         * `update:comment` - UPDATE:COMMENT
@@ -11966,6 +11980,22 @@ components:
       - events
       - target_url
       - type
+    WebhooksEvent:
+      type: object
+      properties:
+        action:
+          type: string
+          readOnly: true
+        resource:
+          type: string
+          readOnly: true
+        key:
+          type: string
+          readOnly: true
+        group:
+          allOf:
+          - $ref: '#/components/schemas/EventGroup'
+          readOnly: true
   securitySchemes:
     accessTokenAuth:
       type: http

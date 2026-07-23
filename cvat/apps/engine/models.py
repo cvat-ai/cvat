@@ -16,6 +16,7 @@ from functools import cached_property
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from dirtyfields import DirtyFieldsMixin
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -800,7 +801,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
         ).delete()
 
 
-class Project(TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class Project(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
@@ -915,7 +916,7 @@ class MediaType(TextChoices):
     AUDIO = "audio"
 
 
-class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(
@@ -1289,7 +1290,7 @@ class JobQuerySet(models.QuerySet):
         return self.annotate(child_jobs__count=models.Count("child_job"))
 
 
-class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class Job(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
@@ -1689,7 +1690,7 @@ class Profile(models.Model):
     )
 
 
-class Issue(TimestampedModel, AssignableModel):
+class Issue(DirtyFieldsMixin, TimestampedModel, AssignableModel):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
     job = models.ForeignKey(
@@ -1717,7 +1718,7 @@ class Issue(TimestampedModel, AssignableModel):
         return self.job_id
 
 
-class Comment(TimestampedModel):
+class Comment(DirtyFieldsMixin, TimestampedModel):
     issue = models.ForeignKey(
         Issue, related_name="comments", related_query_name="comment", on_delete=models.CASCADE
     )

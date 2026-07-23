@@ -8,9 +8,11 @@ from typing import Any
 import rq
 from crum import get_current_request, get_current_user
 from django.db import DatabaseError
+from django.db.models import Model
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.views import exception_handler as drf_exception_handler
 
 from cvat.apps.access_tokens.models import AccessToken
@@ -105,6 +107,15 @@ def job_id(instance):
         return None
 
 
+def _get_value(obj, key):
+    if obj is not None:
+        if isinstance(obj, dict):
+            return obj.get(key, None)
+        return getattr(obj, key, None)
+
+    return None
+
+
 def get_user(instance=None) -> User | dict | None:
     def _get_user_from_rq_job(rq_job: rq.job.Job) -> dict | None:
         if user := BaseRQMeta.for_job(rq_job).user:
@@ -146,15 +157,6 @@ def get_request(instance=None):
         rq_job = rq.get_current_job()
         if rq_job:
             return _get_request_from_rq_job(rq_job)
-
-    return None
-
-
-def _get_value(obj, key):
-    if obj is not None:
-        if isinstance(obj, dict):
-            return obj.get(key, None)
-        return getattr(obj, key, None)
 
     return None
 
@@ -275,7 +277,7 @@ def _get_object_name(instance):
     return None
 
 
-SERIALIZERS = [
+SERIALIZERS: list[tuple[type[Model], type[BaseSerializer]]] = [
     (AccessToken, AccessTokenReadSerializer),
     (Organization, OrganizationReadSerializer),
     (Project, ProjectReadSerializer),
@@ -292,15 +294,14 @@ SERIALIZERS = [
 ]
 
 
-def get_serializer(instance):
+def get_serializer(instance: Model) -> BaseSerializer | None:
     context = {"request": get_current_request()}
 
-    serializer = None
     for model, serializer_class in SERIALIZERS:
         if isinstance(instance, model):
-            serializer = serializer_class(instance=instance, context=context)
+            return serializer_class(instance=instance, context=context)
 
-    return serializer
+    return None
 
 
 SERIALIZER_CLEAN_UP_FIELDS = [

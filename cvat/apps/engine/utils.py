@@ -21,7 +21,6 @@ import urllib.parse
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from contextlib import nullcontext, suppress
-from enum import StrEnum, auto
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -41,7 +40,6 @@ from redis.lock import Lock
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.utils import rq_job_will_be_retried
 
 if TYPE_CHECKING:
     from _typeshed import StrPath
@@ -50,11 +48,6 @@ if TYPE_CHECKING:
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 log = logging.getLogger(__name__)
-
-
-class RequestStatusEnum(StrEnum):
-    SUCCEEDED = auto()
-    FAILED = auto()
 
 
 def get_request_target_django_model_by_enum(target: "RequestTarget") -> type[Model]:
@@ -66,45 +59,6 @@ def get_request_target_django_model_by_enum(target: "RequestTarget") -> type[Mod
         RequestTarget.JOB: Job,
     }
     return request_target_to_model[target]
-
-
-def send_request_succeeded_signal(
-    rq_job: RQJob,
-    connection: Any,
-    result: Any,
-) -> None:
-    from cvat.apps.engine import signals
-    from cvat.apps.engine.background import BaseResourceExporter
-
-    _ = signals.request_succeeded.send_robust(
-        sender=BaseResourceExporter,
-        request_id=rq_job.id,
-        status=RequestStatusEnum.SUCCEEDED,
-        message=None,
-    )
-
-
-def send_request_failed_signal(
-    rq_job: RQJob,
-    connection: Any,
-    exc_type: type[BaseException],
-    exc_value: BaseException,
-    exc_traceback: Any,
-) -> None:
-    from cvat.apps.engine import signals
-    from cvat.apps.engine.background import BaseResourceExporter
-
-    if rq_job_will_be_retried(rq_job=rq_job):
-        return
-
-    _ = signals.request_failed.send_robust(
-        sender=BaseResourceExporter,
-        request_id=rq_job.id,
-        status=RequestStatusEnum.FAILED,
-        message=parse_exception_message(
-            "".join(traceback.format_exception_only(exc_type, exc_value))
-        ),
-    )
 
 
 def parse_imports(source_code: str):

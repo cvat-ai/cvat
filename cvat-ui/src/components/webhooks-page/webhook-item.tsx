@@ -11,7 +11,8 @@ import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import { MoreOutlined } from '@ant-design/icons';
 
-import { groupEvents } from 'components/setup-webhook-pages/setup-webhook-content';
+import { getSelectedGroups } from 'components/setup-webhook-pages/setup-webhook-content';
+import { type WebhookEvent } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
@@ -20,6 +21,7 @@ import WebhookActionsMenu from './actions-menu';
 
 export interface WebhookItemProps {
     webhookInstance: any;
+    webhookEvents: WebhookEvent[];
     selected: boolean;
     onClick: (event: React.MouseEvent) => boolean;
 }
@@ -51,7 +53,7 @@ function setUpWebhookStatus(status: number): WebhookStatus {
 function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
     const [pingFetching, setPingFetching] = useState<boolean>(false);
     const {
-        webhookInstance, selected, onClick,
+        webhookInstance, webhookEvents, selected, onClick,
     } = props;
     const {
         id, description, updatedDate, createdDate, owner, targetURL, events,
@@ -69,7 +71,7 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
     const deletes = useSelector((state: CombinedState) => state.webhooks.activities.deletes);
     const deleted = webhookInstance.id in deletes ? deletes[webhookInstance.id] : false;
 
-    const eventsList = groupEvents(events).join(', ');
+    const eventsList = getSelectedGroups(events, webhookEvents).join(', ');
 
     const onPing = useCallback((): void => {
         setPingFetching(true);

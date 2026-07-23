@@ -1556,7 +1556,7 @@ def _create_audio_task_media_descriptors(
 
 def ensure_task_is_initialized(task: models.Task) -> None:
     if not task.media_type:
-        raise ValidationError("This task data has not been initialized yet. Please try again later")
+        raise ValidationError("This task data has not been initialized yet")
 
 
 @transaction.atomic

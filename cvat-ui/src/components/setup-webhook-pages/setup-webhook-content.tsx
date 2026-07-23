@@ -16,7 +16,7 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
 
-import { getCore, Webhook } from 'cvat-core-wrapper';
+import { getCore, Webhook, type WebhookEvent } from 'cvat-core-wrapper';
 import ProjectSearchField from 'components/create-task-page/project-search-field';
 import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
@@ -51,18 +51,37 @@ interface Props {
     defaultProjectId: number | null;
 }
 
-export function groupEvents(events: string[]): string[] {
+export function groupEvents(events: WebhookEvent[]): string[] {
     return Array.from(
-        new Set(events.map((event: string) => event.split(':')[1])),
+        new Set(events.map((event: WebhookEvent) => event.group.display_name)),
     );
 }
 
-function collectEvents(method: EventsMethod, submittedGroups: Record<string, any>, allEvents: string[]): string[] {
-    return method === EventsMethod.SEND_EVERYTHING ? allEvents : (() => {
-        const submittedEvents = Object.entries(submittedGroups).filter(([key, value]) => key.startsWith('event:') && value).map(([key]) => key)
-            .map((event: string) => event.split(':')[1]);
-        return allEvents.filter((event) => submittedEvents.includes(event.split(':')[1]));
-    })();
+export function getSelectedGroups(selectedEventKeys: string[], availableEvents: WebhookEvent[]): string[] {
+    const eventGroups = new Map(
+        availableEvents.map((event: WebhookEvent) => [event.key, event.group.display_name]),
+    );
+    const selectedGroups = new Set<string>();
+
+    selectedEventKeys.forEach((eventKey: string) => {
+        selectedGroups.add(eventGroups.get(eventKey)!);
+    });
+
+    return Array.from(selectedGroups);
+}
+
+function collectEventKeys(
+    method: EventsMethod,
+    selectedGroups: Record<string, boolean>,
+    availableEvents: WebhookEvent[],
+): string[] {
+    if (method === EventsMethod.SEND_EVERYTHING) {
+        return availableEvents.map((event: WebhookEvent) => event.key);
+    }
+
+    return availableEvents
+        .filter((event: WebhookEvent) => selectedGroups[event.group.display_name])
+        .map((event: WebhookEvent) => event.key);
 }
 
 function SetupWebhookContent(props: Props): JSX.Element {
@@ -71,7 +90,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
     const [form] = Form.useForm();
     const [rerender, setRerender] = useState(false);
     const [showDetailedEvents, setShowDetailedEvents] = useState(false);
-    const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+    const [webhookEvents, setWebhookEvents] = useState<WebhookEvent[]>([]);
 
     const organization = useSelector((state: CombinedState) => state.organizations.current);
 
@@ -80,12 +99,12 @@ function SetupWebhookContent(props: Props): JSX.Element {
     useEffect(() => {
         const core = getCore();
         if (webhook) {
-            core.classes.Webhook.availableEvents(webhook.type).then((events: string[]) => {
+            core.classes.Webhook.availableEvents(webhook.type).then((events: WebhookEvent[]) => {
                 setWebhookEvents(events);
             });
         } else {
             core.classes.Webhook.availableEvents(projectId ?
-                WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION).then((events: string[]) => {
+                WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION).then((events: WebhookEvent[]) => {
                 setWebhookEvents(events);
             });
         }
@@ -93,23 +112,20 @@ function SetupWebhookContent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (webhook) {
-            const eventsMethod = groupEvents(webhookEvents).length === groupEvents(webhook.events).length ?
+            const selectedGroups = getSelectedGroups(webhook.events, webhookEvents);
+            const eventsMethod = groupEvents(webhookEvents).length === selectedGroups.length ?
                 EventsMethod.SEND_EVERYTHING : EventsMethod.SELECT_INDIVIDUAL;
             setShowDetailedEvents(eventsMethod === EventsMethod.SELECT_INDIVIDUAL);
-            const data: Record<string, string | boolean> = {
+            const data: Store = {
                 description: webhook.description,
                 targetURL: webhook.targetURL,
                 contentType: webhook.contentType,
                 secret: webhook.secret,
                 enableSSL: webhook.enableSSL,
                 isActive: webhook.isActive,
-                events: webhook.events,
                 eventsMethod,
+                events: Object.fromEntries(selectedGroups.map((group: string) => [group, true])),
             };
-
-            webhook.events.forEach((event: string) => {
-                data[`event:${event.split(':')[1]}`] = true;
-            });
 
             form.setFieldsValue(data);
             setRerender(!rerender);
@@ -130,7 +146,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                 webhook.contentType = values.contentType;
                 webhook.isActive = values.isActive;
                 webhook.enableSSL = values.enableSSL;
-                webhook.events = collectEvents(values.eventsMethod, values, webhookEvents);
+                webhook.events = collectEventKeys(values.eventsMethod, values.events, webhookEvents);
 
                 await dispatch(updateWebhookAsync(webhook));
             } else {
@@ -141,7 +157,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     secret: values.secret,
                     enable_ssl: values.enableSSL,
                     is_active: values.isActive,
-                    events: collectEvents(values.eventsMethod, values, webhookEvents),
+                    events: collectEventKeys(values.eventsMethod, values.events, webhookEvents),
                     organization_id: projectId ? undefined : organization.id,
                     project_id: projectId,
                     type: projectId ? WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION,
@@ -277,10 +293,10 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     {
                         showDetailedEvents && (
                             <Row className='cvat-webhook-detailed-events'>
-                                {groupEvents(webhookEvents).map((event: string, idx: number) => (
-                                    <Col span={8} key={idx}>
+                                {groupEvents(webhookEvents).map((event: string) => (
+                                    <Col span={8} key={event}>
                                         <Form.Item
-                                            name={`event:${event}`}
+                                            name={['events', event]}
                                             valuePropName='checked'
                                         >
                                             <Checkbox>
