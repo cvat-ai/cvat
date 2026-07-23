@@ -7,7 +7,7 @@ import './styles.scss';
 import React, {
     useState, useEffect, useRef, useCallback,
 } from 'react';
-import { useLocation, useParams } from 'react-router';
+import { useHistory, useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
@@ -21,15 +21,65 @@ import GoBackButton from 'components/common/go-back-button';
 import dimensions from 'utils/dimensions';
 
 const core = getCore();
+const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
 
 function AnnotationGuidePage(): JSX.Element {
     const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
+    const history = useHistory();
     const location = useLocation();
     const [value, setValue] = useState('');
     const instanceType = location.pathname.includes('projects') ? 'project' : 'task';
     const id = +useParams<{ id: string }>().id;
     const [guide, setGuide] = useState<AnnotationGuide | null>(null);
     const [fetching, setFetching] = useState(true);
+    // keep value and guide available in ref also so we can read actual
+    // new/old values in callbacks without having dependencies on state
+    const valueRef = useRef(value);
+    const guideRef = useRef<AnnotationGuide | null>(guide);
+
+    const updateValue = useCallback((updatedValue: string): void => {
+        valueRef.current = updatedValue;
+        setValue(updatedValue);
+    }, []);
+
+    const updateGuide = useCallback((updatedGuide: AnnotationGuide): void => {
+        guideRef.current = updatedGuide;
+        setGuide(updatedGuide);
+    }, []);
+
+    // we want this handler not to have dependencies on the state
+    // so we don't have to re-register listeners on every value change
+    const checkForUnsavedChanges = useCallback(
+        (): boolean => !!guideRef.current && valueRef.current !== guideRef.current.markdown, []);
+    const hasUnsavedChanges = guide && value !== guide.markdown;
+
+    // handle standard beforeunload - warn about unsaved changes
+    useEffect(() => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent): string | undefined => {
+            if (!checkForUnsavedChanges()) {
+                return undefined;
+            }
+
+            event.preventDefault();
+            // eslint-disable-next-line no-param-reassign
+            event.returnValue = confirmationMessage;
+            return confirmationMessage;
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [checkForUnsavedChanges]);
+
+    // handle react-router navigation - warn about unsaved changes
+    useEffect(() => history.block((nextLocation) => {
+        if (checkForUnsavedChanges() && nextLocation.pathname !== location.pathname) {
+            return confirmationMessage;
+        }
+
+        return undefined;
+    }), [checkForUnsavedChanges, location, history]);
 
     useEffect(() => {
         const promise = instanceType === 'project' ? core.projects.get({ id }) : core.tasks.get({ id });
@@ -45,8 +95,8 @@ function AnnotationGuidePage(): JSX.Element {
 
                 return existingGuide;
             }).then((guideInstance: AnnotationGuide) => {
-                setValue(guideInstance.markdown);
-                setGuide(guideInstance);
+                updateValue(guideInstance.markdown);
+                updateGuide(guideInstance);
             }).catch((error: unknown) => {
                 notification.error({
                     message: `Could not receive guide for the ${instanceType} ${id}`,
@@ -55,15 +105,22 @@ function AnnotationGuidePage(): JSX.Element {
             }).finally(() => {
                 setFetching(false);
             });
-    }, []);
+    }, [id, instanceType, updateGuide, updateValue]);
 
     const submit = useCallback((updatedValue: string) => {
         if (guide) {
-            guide.markdown = updatedValue;
+            // keep the guide in state unchanged until the server responds with the updated guide
+            // otherwise, if the server responds with an error, the user might lose their changes w/o a warning
+            const updatedGuide = new AnnotationGuide({
+                id: guide.id,
+                task_id: guide.taskId,
+                project_id: guide.projectId,
+                markdown: updatedValue,
+            });
             setFetching(true);
-            guide.save().then((result: AnnotationGuide) => {
-                setValue(result.markdown);
-                setGuide(result);
+            updatedGuide.save().then((result: AnnotationGuide) => {
+                updateValue(result.markdown);
+                updateGuide(result);
                 notification.info({ message: 'Annotation guide was saved successfully' });
             }).catch((error: unknown) => {
                 notification.error({
@@ -74,7 +131,7 @@ function AnnotationGuidePage(): JSX.Element {
                 setFetching(false);
             });
         }
-    }, [guide]);
+    }, [guide, updateGuide, updateValue]);
 
     const handleInsertFiles = useCallback(async (files: FileList): Promise<void> => {
         if (mdEditorRef.current && guide?.id) {
@@ -103,7 +160,7 @@ function AnnotationGuidePage(): JSX.Element {
                 return `${beforeSelection}${selection}${afterSelection}`;
             };
 
-            setValue(computeNewValue());
+            updateValue(computeNewValue());
             setFetching(true);
             try {
                 let file = assetsToAdd.shift();
@@ -111,7 +168,7 @@ function AnnotationGuidePage(): JSX.Element {
                     try {
                         const { uuid } = await core.assets.create(file, guide.id);
                         addedAssets.push([file, uuid]);
-                        setValue(computeNewValue());
+                        updateValue(computeNewValue());
                     } catch (error: any) {
                         notification.error({
                             message: 'Could not create a server asset',
@@ -127,7 +184,7 @@ function AnnotationGuidePage(): JSX.Element {
 
             await submit(computeNewValue());
         }
-    }, [guide, value]);
+    }, [guide, submit, updateValue]);
 
     return (
         <Row
@@ -148,7 +205,7 @@ function AnnotationGuidePage(): JSX.Element {
                         ref={mdEditorRef}
                         value={value}
                         onChange={(val: string | undefined) => {
-                            setValue(val || '');
+                            updateValue(val || '');
                         }}
                         onPaste={(event: React.ClipboardEvent) => {
                             const { clipboardData } = event;
@@ -173,7 +230,7 @@ function AnnotationGuidePage(): JSX.Element {
                 <Space align='end' className='cvat-guide-page-bottom'>
                     <Button
                         type='primary'
-                        disabled={fetching || !guide?.id}
+                        disabled={fetching || !guide?.id || !hasUnsavedChanges}
                         onClick={() => submit(value)}
                     >
                         Submit

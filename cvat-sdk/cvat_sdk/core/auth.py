@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import copy
 import getpass
 import json
 import logging
@@ -15,6 +16,7 @@ import tempfile
 import textwrap
 from collections.abc import Callable
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import attrs
 import platformdirs
@@ -30,7 +32,7 @@ from cvat_sdk.core.exceptions import AuthStoreError
 from cvat_sdk.core.utils import is_posix
 
 CVAT_ACCESS_TOKEN_ENV_VAR = "CVAT_ACCESS_TOKEN"  # nosec - a variable name declaration
-DEFAULT_SERVER = "http://localhost:8080"
+DEFAULT_SERVER = "http://localhost"
 
 _APP_NAME = "cvat-sdk"
 _APP_AUTHOR = "CVAT.ai"
@@ -228,16 +230,7 @@ def make_client_from_cli(
             organization=params.organization,
         )
 
-    if explicit_host:
-        url = (
-            params.server_host
-            if params.server_host is not None
-            else store.get_default_server() or DEFAULT_SERVER
-        )
-        if params.server_port:
-            url = f"{url}:{params.server_port}"
-    else:
-        url = store.get_default_server() or DEFAULT_SERVER
+    url = _make_server_url(params, store, explicit_host=explicit_host)
 
     client = Client(
         url=url,
@@ -262,6 +255,27 @@ def _make_client_config(params: ClientAuthParameters, config: Config | None) -> 
         return attrs.evolve(config, verify_ssl=False)
 
     return config
+
+
+def _make_server_url(params: ClientAuthParameters, store: AuthStore, *, explicit_host: bool) -> str:
+    if explicit_host:
+        url = (
+            params.server_host
+            if params.server_host is not None
+            else store.get_default_server() or DEFAULT_SERVER
+        ).rstrip("/")
+        if params.server_port:
+            parsed_url = urlsplit(("https://" if "://" not in url else "") + url)
+            if parsed_url.port:
+                raise AuthStoreError(
+                    "A server URL with a port and '--server-port' cannot be used together. "
+                    "Please specify only one port."
+                )
+
+            url = f"{url}:{params.server_port}"
+        return url
+
+    return store.get_default_server() or DEFAULT_SERVER
 
 
 def _get_profile_or_raise(store: AuthStore, name: str) -> ProfileEntry:
@@ -346,6 +360,9 @@ class AuthStore:
         self._doc = doc
         return self._doc
 
+    def _load_for_update(self) -> dict:
+        return copy.deepcopy(self._load())
+
     def _save(self, doc: dict) -> None:
         directory = self._path.parent
         directory.mkdir(parents=True, exist_ok=True)
@@ -380,6 +397,9 @@ class AuthStore:
         )
 
     def list_profiles(self) -> dict[str, ProfileEntry]:
+        # TODO: revisit AuthStore API before it grows further — no in-place updates,
+        # N-writes per N-mutations; consider batch() context manager vs dict+save().
+        # For context see: https://github.com/cvat-ai/cvat/pull/10819
         doc = self._load()
         return {name: self._to_entry(raw) for name, raw in doc["profiles"].items()}
 
@@ -387,19 +407,20 @@ class AuthStore:
         raw = self._load()["profiles"].get(name)
         return self._to_entry(raw) if raw is not None else None
 
-    def add_profile(self, name: str, entry: ProfileEntry, *, set_default: bool = False) -> None:
-        doc = self._load()
+    def put_profile(self, name: str, entry: ProfileEntry, *, set_default: bool = False) -> None:
+        doc = self._load_for_update()
+        is_first_profile = not doc["profiles"]
         doc["profiles"][name] = {
             "server": entry.server,
             "token": entry.token,
             "created_date": entry.created_date,
         }
-        if set_default or "default_profile" not in doc:
+        if set_default or is_first_profile:
             doc["default_profile"] = name
         self._save(doc)
 
     def remove_profile(self, name: str) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         del doc["profiles"][name]  # raises KeyError if absent
         if doc.get("default_profile") == name:
             doc.pop("default_profile", None)
@@ -413,14 +434,14 @@ class AuthStore:
         return name, self._to_entry(doc["profiles"][name])
 
     def set_default_profile(self, name: str) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         if name not in doc["profiles"]:
             raise KeyError(name)
         doc["default_profile"] = name
         self._save(doc)
 
     def clear_default_profile(self) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         doc.pop("default_profile", None)
         self._save(doc)
 
@@ -428,11 +449,11 @@ class AuthStore:
         return self._load().get("default_server")
 
     def set_default_server(self, server: str) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         doc["default_server"] = server
         self._save(doc)
 
     def clear_default_server(self) -> None:
-        doc = self._load()
+        doc = self._load_for_update()
         doc.pop("default_server", None)
         self._save(doc)

@@ -15,15 +15,20 @@ from .util import TestCliBase, run_cli
 def store_path(tmp_path, monkeypatch):
     from cvat_cli.__main__ import logger
 
+    original_handlers = logger.handlers.copy()
+    original_level = logger.level
     logger.handlers.clear()
-    path = tmp_path / "cvat" / "auth.json"
-    monkeypatch.setattr("cvat_sdk.core.auth.get_auth_store_path", lambda: path)
-    yield path
-    logger.handlers.clear()
+    try:
+        path = tmp_path / "cvat" / "auth.json"
+        monkeypatch.setattr("cvat_sdk.core.auth.get_auth_store_path", lambda: path)
+        yield path
+    finally:
+        logger.handlers[:] = original_handlers
+        logger.setLevel(original_level)
 
 
 def _seed(path, name, server, token, *, default=False):
-    AuthStore(path=path).add_profile(
+    AuthStore(path=path).put_profile(
         name,
         ProfileEntry(server=server, token=token, created_date="2026-01-01T00:00:00+00:00"),
         set_default=default,
@@ -59,9 +64,9 @@ class TestProfileList:
         default_lines = [ln for ln in out.splitlines() if "(default)" in ln]
         assert len(default_lines) == 1 and "mycvat" in default_lines[0]
 
-    def test_list_quiet_prints_names_only(self, store_path, capsys):
+    def test_list_names_only_prints_names_only(self, store_path, capsys):
         _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
-        run_cli(self, "profile", "list", "--quiet")
+        run_cli(self, "profile", "list", "--names-only")
         assert capsys.readouterr().out.strip() == "mycvat"
 
     def test_list_empty_prints_nothing(self, store_path, capsys):
@@ -83,17 +88,20 @@ class TestProfileDefault:
         run_cli(self, "profile", "default", "--unset")
         assert AuthStore(path=store_path).get_default_profile() is None
 
-    def test_set_unknown_profile_errors(self, store_path):
+    def test_set_unknown_profile_errors(self, store_path, capsys):
         _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
         run_cli(self, "profile", "default", "ghost", expected_code=1)
+        assert "Unknown profile 'ghost'. Run 'cvat-cli profile list'." in capsys.readouterr().err
         assert AuthStore(path=store_path).get_default_profile()[0] == "mycvat"
 
-    def test_name_and_unset_conflict(self, store_path):
+    def test_name_and_unset_conflict(self, store_path, capsys):
         _seed(store_path, "mycvat", "https://app.cvat.ai", "t1", default=True)
         run_cli(self, "profile", "default", "mycvat", "--unset", expected_code=1)
+        assert "Cannot combine a profile name with '--unset'." in capsys.readouterr().err
 
-    def test_print_no_default_errors(self, store_path):
+    def test_print_no_default_errors(self, store_path, capsys):
         run_cli(self, "profile", "default", expected_code=1)
+        assert "No default profile is set." in capsys.readouterr().err
 
 
 class TestProfileDelete:
@@ -125,6 +133,7 @@ class TestProfileCreate:
             "https://app.cvat.ai",
             "profile",
             "create",
+            "--name",
             "mycvat",
             "pat-token",
             "--set-default",
@@ -138,7 +147,15 @@ class TestProfileCreate:
 
     def test_create_prompts_for_token_without_echo(self, store_path, monkeypatch):
         monkeypatch.setattr("getpass.getpass", lambda *a, **k: "prompted-pat")
-        run_cli(self, "--server-host", "https://app.cvat.ai", "profile", "create", "p")
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "--name",
+            "p",
+        )
         assert AuthStore(path=store_path).get_profile("p").token == "prompted-pat"
 
     def test_create_existing_requires_force(self, store_path):
@@ -149,6 +166,7 @@ class TestProfileCreate:
             "https://app.cvat.ai",
             "profile",
             "create",
+            "--name",
             "p",
             "new",
             expected_code=1,
@@ -159,11 +177,41 @@ class TestProfileCreate:
             "https://app.cvat.ai",
             "profile",
             "create",
+            "--name",
             "p",
             "new",
             "--force",
         )
         assert AuthStore(path=store_path).get_profile("p").token == "new"
+
+    def test_create_rejects_server_url_with_port_and_server_port(self, store_path):
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai:8080",
+            "--server-port",
+            "8081",
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "pat-token",
+            expected_code=1,
+        )
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+    def test_create_appends_server_port_to_default_server(self, store_path):
+        run_cli(
+            self,
+            "--server-port",
+            "8080",
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "pat-token",
+        )
+        assert AuthStore(path=store_path).get_profile("p").server == "http://localhost:8080"
 
     def test_create_resolves_name_from_server(self, store_path, monkeypatch):
         class _Resp:
@@ -194,7 +242,7 @@ class TestProfileCreate:
                 return False
 
         monkeypatch.setattr("getpass.getpass", lambda *a, **k: "tok-xyz")
-        monkeypatch.setattr("cvat_cli._internal.utils.Client", _FakeClient)
+        monkeypatch.setattr("cvat_cli._internal.commands_profile.Client", _FakeClient)
         run_cli(self, "--server-host", "https://app.cvat.ai", "profile", "create")
         assert AuthStore(path=store_path).get_profile("server-side-name").token == "tok-xyz"
 
@@ -206,6 +254,7 @@ class TestProfileCreate:
             "https://app.cvat.ai",
             "profile",
             "create",
+            "--name",
             "p",
             expected_code=1,
         )
@@ -222,6 +271,7 @@ class TestProfileCreateFromFile:
             "https://app.cvat.ai",
             "profile",
             "create",
+            "--name",
             "release-bot",
             "--file",
             str(f),
@@ -257,7 +307,7 @@ class TestProfileCreateFromFile:
                 }
             )
         )
-        run_cli(self, "profile", "create", "explicit", "--file", str(f))
+        run_cli(self, "profile", "create", "--name", "explicit", "--file", str(f))
         store = AuthStore(path=store_path)
         assert store.get_profile("explicit") is not None
         assert store.get_profile("env-name") is None
@@ -287,6 +337,23 @@ class TestProfileCreateFromFile:
         assert entry.server == "https://explicit.example.com"
 
 
+class TestProfileSelection:
+    def test_profile_conflicts_with_server_host(self, capsys):
+        run_cli(
+            self,
+            "--profile",
+            "it",
+            "--server-host",
+            "https://example.com",
+            "task",
+            "ls",
+            expected_code=1,
+        )
+        assert "--profile is mutually exclusive with --server-host/--server-port/--auth." in (
+            capsys.readouterr().err
+        )
+
+
 class TestProfileSelectionE2E(TestCliBase):
     @pytest.fixture(autouse=True)
     def _isolate_store(self, tmp_path, monkeypatch):
@@ -297,7 +364,7 @@ class TestProfileSelectionE2E(TestCliBase):
 
     def test_profile_supplies_host_and_credential(self, access_tokens):
         token = next(t for t in access_tokens)["private_key"]
-        AuthStore().add_profile(
+        AuthStore().put_profile(
             "it",
             ProfileEntry(
                 server=f"{self.host}:{self.port}",
@@ -307,15 +374,3 @@ class TestProfileSelectionE2E(TestCliBase):
         )
         # No --server-host, no --auth: the profile supplies both.
         run_cli(self, "--profile", "it", "task", "ls")
-
-    def test_profile_conflicts_with_server_host(self):
-        run_cli(
-            self,
-            "--profile",
-            "it",
-            "--server-host",
-            self.host,
-            "task",
-            "ls",
-            expected_code=1,
-        )

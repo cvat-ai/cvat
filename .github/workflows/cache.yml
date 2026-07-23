@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         id: server-cache-action
         with:
           path: /tmp/cvat_cache_server
@@ -26,7 +26,7 @@ jobs:
             ${{ runner.os }}-build-server-${{ needs.get-sha.outputs.sha }}
             ${{ runner.os }}-build-server-
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         id: ui-cache-action
         with:
           path: /tmp/cvat_cache_ui

@@ -11,7 +11,7 @@ from cvat_sdk.core.auth import AuthStore
 from .command_base import CommandGroup
 from .common import CriticalError
 
-COMMANDS = CommandGroup(description="Manage local (non-auth) CVAT CLI settings.")
+COMMANDS = CommandGroup(description="Manage local CVAT CLI configuration.")
 
 
 @COMMANDS.command_class("default-server")

@@ -19,6 +19,7 @@ export enum AudioActionTypes {
     SET_AUDIO_LOOP = 'SET_AUDIO_LOOP',
     SET_AUDIO_ACTIVE_INTERVAL = 'SET_AUDIO_ACTIVE_INTERVAL',
     SET_AUDIO_HOVERED_INTERVAL = 'SET_AUDIO_HOVERED_INTERVAL',
+    UPDATE_AUDIO_CONTEXT_MENU = 'UPDATE_AUDIO_CONTEXT_MENU',
     LOAD_AUDIO_DATA = 'LOAD_AUDIO_DATA',
     LOAD_AUDIO_DATA_SUCCESS = 'LOAD_AUDIO_DATA_SUCCESS',
     LOAD_AUDIO_DATA_FAILED = 'LOAD_AUDIO_DATA_FAILED',
@@ -55,6 +56,11 @@ export const audioActions = {
     ),
     setAudioHoveredInterval: (clientID: number | null) => (
         createAction(AudioActionTypes.SET_AUDIO_HOVERED_INTERVAL, { clientID })
+    ),
+    updateAudioContextMenu: (left: number, top: number, clientID: number | null = null) => (
+        createAction(AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU, {
+            left, top, clientID,
+        })
     ),
     loadAudioData: () => (
         createAction(AudioActionTypes.LOAD_AUDIO_DATA)

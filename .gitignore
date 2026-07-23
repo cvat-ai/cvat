@@ -32,6 +32,9 @@ yarn-error.log*
 #Ignore Cypress tests temp files
 /tests/cypress/fixtures
 /tests/cypress/screenshots
+/tests/cypress/videos
+/tests/coverage
+/tests/.nyc_output
 .idea/
 
 #Ignore helm-related files
