@@ -2455,6 +2455,13 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                 if hasattr(ann, "label") and ann.label is None:
                     raise CvatImportError("annotation has no label")
 
+                # Skip empty (zero-area) masks. Such masks can be produced on
+                # export or by external tools; importing them yields a
+                # degenerate 1x1 mask (and crashes get_bbox() on older
+                # datumaro). See https://github.com/cvat-ai/cvat/issues/7458
+                if ann.type == dm.AnnotationType.mask and ann.get_area() == 0:
+                    continue
+
                 score = ann.attributes.pop("score", None)
                 if score is None:
                     score = 1
