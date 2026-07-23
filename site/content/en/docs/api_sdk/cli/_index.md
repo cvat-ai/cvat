@@ -160,18 +160,20 @@ server when you did not supply one).
 
 ```bash
 # Save a profile. Prompted for the token (no echo) if omitted.
-cvat-cli --server-host https://app.cvat.ai profile create mycvat --set-default
+cvat-cli --server-host https://app.cvat.ai profile create --name mycvat --set-default
 
 # Save a profile by pasting the token, and pick a nickname:
-cvat-cli --server-host https://app.cvat.ai profile create mycvat "<paste-token-here>"
+cvat-cli --server-host https://app.cvat.ai profile create --name mycvat "<paste-token-here>"
 
-# Import a token from a plain-text file, or from the JSON envelope
-# produced by the web UI's "Download token" button:
+# Import a plain-text token:
+cvat-cli --server-host https://app.cvat.ai profile create --name mycvat --file ~/Downloads/cvat-token.txt
+
+# A JSON envelope containing the token, server, and profile name needs no extra arguments:
 cvat-cli profile create --file ~/Downloads/cvat-token-my-laptop.json
 
 # Inspect and manage the store:
 cvat-cli profile list                # lists names, servers, and the default marker
-cvat-cli profile list --quiet        # names only, one per line (script-friendly)
+cvat-cli profile list --names-only   # names only, one per line (script-friendly)
 cvat-cli profile default             # print the current default profile
 cvat-cli profile default staging     # make "staging" the default
 cvat-cli profile default --unset     # unset the default
@@ -207,19 +209,12 @@ When you run `cvat-cli task ls` without `--profile`, `--server-host`, or
 3. otherwise the credential falls back to `CVAT_ACCESS_TOKEN` if set,
    then to a username/password prompt; and the server falls back to the
    configured `default_server`, then to the built-in default
-   `https://app.cvat.ai`.
+   `http://localhost`.
 
 If `--server-host` is passed without `--profile`, the CLI **does not** borrow
 the default profile's PAT: you must supply a credential (`--auth`,
 `CVAT_ACCESS_TOKEN`, or the prompt). This keeps the "one PAT belongs to one
 server" invariant of the store.
-
-{{% alert title="Behavior change" color="warning" %}}
-Previously, when no `--server-host` was supplied, the CLI defaulted to
-`http://localhost`. The built-in default is now `https://app.cvat.ai`. Only
-zero-flag invocations are affected; every command that passes `--server-host`
-(or uses `--profile` / a default profile) is unchanged.
-{{% /alert %}}
 
 ## Examples - tasks
 

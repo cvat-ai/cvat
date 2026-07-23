@@ -336,6 +336,80 @@ class TestProfileCreateFromFile:
         entry = AuthStore(path=store_path).get_profile("n")
         assert entry.server == "https://explicit.example.com"
 
+    def test_token_argument_conflicts_with_file(self, store_path, tmp_path, capsys):
+        f = tmp_path / "pat.txt"
+        f.write_text("file-token")
+        run_cli(
+            self,
+            "--server-host",
+            "https://app.cvat.ai",
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "argument-token",
+            "--file",
+            str(f),
+            expected_code=1,
+        )
+        assert "Cannot combine a PAT argument with '--file'." in capsys.readouterr().err
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+    def test_rejects_non_file_path(self, store_path, tmp_path, capsys):
+        run_cli(
+            self,
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "--file",
+            str(tmp_path),
+            expected_code=1,
+        )
+        assert "path must be a regular file" in capsys.readouterr().err
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+    def test_rejects_missing_file(self, store_path, tmp_path, capsys):
+        run_cli(
+            self,
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "--file",
+            str(tmp_path / "missing.txt"),
+            expected_code=1,
+        )
+        assert "path must be a regular file" in capsys.readouterr().err
+        assert AuthStore(path=store_path).get_profile("p") is None
+
+    @pytest.mark.parametrize(
+        ("envelope", "error_message"),
+        [
+            ({}, "JSON envelope field 'token' must be a string"),
+            ({"token": 1}, "JSON envelope field 'token' must be a string"),
+            ({"token": "p", "server": 1}, "JSON envelope field 'server' must be a string"),
+            ({"token": "p", "name": ["p"]}, "JSON envelope field 'name' must be a string"),
+        ],
+    )
+    def test_rejects_invalid_json_envelope(
+        self, store_path, tmp_path, capsys, envelope, error_message
+    ):
+        f = tmp_path / "invalid.json"
+        f.write_text(json.dumps(envelope))
+        run_cli(
+            self,
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "--file",
+            str(f),
+            expected_code=1,
+        )
+        assert error_message in capsys.readouterr().err
+        assert AuthStore(path=store_path).get_profile("p") is None
+
 
 class TestProfileSelection:
     def test_profile_conflicts_with_server_host(self, capsys):

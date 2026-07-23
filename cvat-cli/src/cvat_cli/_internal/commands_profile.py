@@ -121,7 +121,12 @@ class ProfileCreate:
 
         envelope_server = envelope_name = None
         if args.file is not None:
-            token, envelope_server, envelope_name = read_token_file(args.file)
+            if args.token is not None:
+                raise CriticalError("Cannot combine a PAT argument with '--file'.")
+            try:
+                token, envelope_server, envelope_name = read_token_file(args.file)
+            except (OSError, UnicodeError, ValueError) as e:
+                raise CriticalError(f"Cannot read token file '{args.file}': {e}") from e
         elif args.token is not None:
             token = args.token
         else:
@@ -129,9 +134,9 @@ class ProfileCreate:
         if not token:
             raise CriticalError("A non-empty PAT is required.")
 
-        server = (args.server_host or envelope_server or store.get_default_server() or DEFAULT_SERVER).rstrip(
-            "/"
-        )
+        server = (
+            args.server_host or envelope_server or store.get_default_server() or DEFAULT_SERVER
+        ).rstrip("/")
         if args.server_port:
             parsed_url = urlsplit(("https://" if "://" not in server else "") + server)
             if parsed_url.port:
