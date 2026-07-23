@@ -135,7 +135,7 @@ cvat-cli task ls
 
 The CLI can remember a server URL and a Personal Access Token (PAT) locally,
 so that everyday commands do not have to repeat `--server-host` / `--auth`
-or leak credentials into shell history. Each remembered *profile* is
+or leak credentials into shell history. Each remembered _profile_ is
 self-contained: it bundles one server with one PAT.
 
 Profiles are stored as a JSON file with `0600` (owner read/write only) mode
@@ -144,7 +144,7 @@ either it or its parent directory is group- or world-accessible. On Windows
 the check is best-effort. The location follows the platform convention:
 
 | Platform | Path |
-|----------|------|
+| ---------- | ---- |
 | Linux    | `${XDG_CONFIG_HOME:-$HOME/.config}/cvat-sdk/auth.json` |
 | macOS    | `~/Library/Application Support/cvat-sdk/auth.json` |
 | Windows  | `%APPDATA%\CVAT.ai\cvat-sdk\auth.json` |
@@ -155,7 +155,7 @@ Only a PAT is ever written to disk - never a username or password.
 
 Use `cvat-cli profile` and `cvat-cli config` to create and manage profiles.
 These commands operate on the local file and do not talk to the server
-(except that `profile create` optionally reads the token's *name* from the
+(except that `profile create` optionally reads the token's _name_ from the
 server when you did not supply one).
 
 ```bash
@@ -202,7 +202,7 @@ cvat-cli --profile staging task create "task 1" --labels labels.json local file.
 #### Resolution order (zero-flag command)
 
 When you run `cvat-cli task ls` without `--profile`, `--server-host`, or
-`--auth`, the CLI picks a server *and* credential together, in this order:
+`--auth`, the CLI picks a server _and_ credential together, in this order:
 
 1. `--profile NAME` (must supply both);
 2. otherwise the default profile, if one is set (supplies both);
@@ -383,7 +383,7 @@ It can auto-annotate using AA functions implemented in one of the following ways
        ...
    ```
 
-1. As a Python module implementing a factory function named `create`.
+2. As a Python module implementing a factory function named `create`.
    This function must return an object implementing the AA function protocol.
    Any parameters specified on the command line using the `-p` option
    will be passed to `create`.
