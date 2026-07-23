@@ -6,6 +6,8 @@ weight: 1
 description: 'A CVAT installation guide for different operating systems.'
 aliases:
 - /docs/administration/basics/installation/
+products:
+  - community
 ---
 
 # Quick installation guide

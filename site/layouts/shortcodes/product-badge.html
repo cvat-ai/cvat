@@ -1,0 +1,32 @@
+{{- /*
+  site/layouts/shortcodes/product-badge.html
+
+  Inline product/plan availability badge, for calling out a single
+  gated feature or section inside an otherwise shared page.
+
+  For whole-page availability, use the `products` front matter field
+  instead (rendered at the top of the page by partials/product-tags.html).
+  Use this shortcode only when a page is mostly shared across products
+  and just one paragraph, list item, or table cell needs a callout.
+
+  Usage:
+    {{< product-badge "online,enterprise" >}}
+    {{< product-badge "enterprise" >}}
+*/ -}}
+{{- $raw := .Get 0 -}}
+{{- $products := split $raw "," -}}
+<span class="product-tag-inline-group">
+  <span class="product-tag-inline-label">Available in:</span>
+  {{- range $products -}}
+    {{- $p := trim (lower .) " \t\n\r" -}}
+    {{- if eq $p "online" -}}
+      <a href="{{ "/docs/products/online/" | relURL }}" class="product-tag product-tag-inline">CVAT Online</a>
+    {{- else if eq $p "enterprise" -}}
+      <a href="{{ "/docs/products/enterprise/" | relURL }}" class="product-tag product-tag-inline">CVAT Enterprise</a>
+    {{- else if eq $p "community" -}}
+      <a href="{{ "/docs/products/community/" | relURL }}" class="product-tag product-tag-inline">CVAT Community</a>
+    {{- else -}}
+      <span class="product-tag product-tag-inline">{{ . }}</span>
+    {{- end -}}
+  {{- end -}}
+</span>
