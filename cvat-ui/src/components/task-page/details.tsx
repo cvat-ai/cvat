@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
+import notification from 'antd/lib/notification';
 
 import {
     User, getCore, Project, Task, FramesMetaData, CloudStorage,
@@ -184,6 +185,16 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                         onSubmit={(labels: any[]): void => {
                             onUpdateTask(taskInstance, {
                                 labels: labels.map((labelData): any => new core.classes.Label(labelData)),
+                            }).then(() => {
+                                notification.success({
+                                    message: 'Labels updated',
+                                    description: 'Labels have been successfully saved',
+                                });
+                            }).catch((error: Error) => {
+                                notification.error({
+                                    message: 'Failed to update labels',
+                                    description: error.message || 'An unknown error occurred while saving labels',
+                                });
                             });
                         }}
                     />
