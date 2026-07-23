@@ -2105,6 +2105,7 @@ def mangle_image_name(name: str, subset: str, names: defaultdict[tuple[str, str]
         image_name = f"{name}_{names[(subset, name)]}"
         if not names[(subset, image_name)]:
             names[(subset, name)] += 1
+            names[(subset, image_name)] += 1
             return osp.extsep.join([image_name, ext])
         else:
             i = 1
@@ -2112,6 +2113,7 @@ def mangle_image_name(name: str, subset: str, names: defaultdict[tuple[str, str]
                 new_image_name = f"{image_name}_{i}"
                 if not names[(subset, new_image_name)]:
                     names[(subset, name)] += 1
+                    names[(subset, new_image_name)] += 1
                     return osp.extsep.join([new_image_name, ext])
                 i += 1
     raise Exception("Cannot mangle image name")
