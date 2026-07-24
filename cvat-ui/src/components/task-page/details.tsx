@@ -67,6 +67,7 @@ interface State {
     name: string;
     subset: string;
     consensusEnabled: boolean;
+    labelsEditorKey: number; // used to force remount on error
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -79,6 +80,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             name: taskInstance.name,
             subset: taskInstance.subset,
             consensusEnabled: taskInstance.consensusEnabled,
+            labelsEditorKey: Date.now(),
         };
     }
 
@@ -175,11 +177,13 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     private renderLabelsEditor(): JSX.Element {
         const { task: taskInstance, onUpdateTask, labelsEditorProps } = this.props;
+        const { labelsEditorKey } = this.state;
 
         return (
             <Row>
                 <Col span={24}>
                     <LabelsEditorComponent
+                        key={labelsEditorKey} // forces remount on error
                         {...labelsEditorProps}
                         labels={taskInstance.labels.map((label) => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
@@ -195,6 +199,8 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                     message: 'Failed to update labels',
                                     description: error.message || 'An unknown error occurred while saving labels',
                                 });
+                                // Force editor to reset to saved state by remounting with fresh props
+                                this.setState({ labelsEditorKey: Date.now() });
                             });
                         }}
                     />
