@@ -5,27 +5,48 @@
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework.filters import BaseFilterBackend
 
+_ORG_PARAM_DESCRIPTION = (
+    "Organization unique slug. "
+    "If omitted, results from all organizations available to the user are returned "
+    "(unfiltered). "
+    'An empty value ("") selects the personal sandbox workspace only. '
+    "A non-empty value selects that organization."
+)
+
+_ORG_ID_PARAM_DESCRIPTION = (
+    "Organization identifier. "
+    "If omitted, results from all organizations available to the user are returned "
+    "(unfiltered). "
+    'An empty value ("") selects the personal sandbox workspace only. '
+    "A positive integer selects that organization."
+)
+
 ORGANIZATION_OPEN_API_PARAMETERS = [
     OpenApiParameter(
         name="org",
         type=str,
         required=False,
         location=OpenApiParameter.QUERY,
-        description="Organization unique slug",
+        description=_ORG_PARAM_DESCRIPTION,
+        allow_blank=True,
     ),
     OpenApiParameter(
         name="org_id",
         type=int,
         required=False,
         location=OpenApiParameter.QUERY,
-        description="Organization identifier",
+        description=_ORG_ID_PARAM_DESCRIPTION,
+        # Empty values are accepted by the API for sandbox, but integer OpenAPI
+        # typing prevents Swagger UI from sending them; use `org=""` instead.
+        allow_blank=False,
     ),
     OpenApiParameter(
         name="X-Organization",
         type=str,
         required=False,
         location=OpenApiParameter.HEADER,
-        description="Organization unique slug",
+        description=_ORG_PARAM_DESCRIPTION,
+        allow_blank=True,
     ),
 ]
 
@@ -53,13 +74,16 @@ class OrganizationFilterBackend(BaseFilterBackend):
             elif parameter.type == str:
                 parameter_type = "string"
 
-            parameters.append(
-                {
-                    "name": parameter.name,
-                    "in": parameter.location,
-                    "description": parameter.description,
-                    "schema": {"type": parameter_type},
-                }
-            )
+            param = {
+                "name": parameter.name,
+                "in": parameter.location,
+                "description": parameter.description,
+                "schema": {"type": parameter_type},
+            }
+            # Allow empty values so Swagger UI can request the sandbox context.
+            if parameter.allow_blank:
+                param["allowEmptyValue"] = True
+
+            parameters.append(param)
 
         return parameters
