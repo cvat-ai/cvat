@@ -466,18 +466,18 @@ class Data(models.Model):
         default_permissions = ()
 
     @property
-    def organization(self):
-        try:
-            return self.tasks.first().organization
-        except AttributeError:
+    def organization(self) -> Organization | None:
+        task = self.tasks.first()
+        if task is None:
             return None
+        return task.organization
 
     @property
-    def organization_id(self):
-        try:
-            return self.tasks.first().organization_id
-        except AttributeError:
+    def organization_id(self) -> int | None:
+        task = self.tasks.first()
+        if task is None:
             return None
+        return task.organization_id
 
     def get_frame_step(self):
         match = re.search(r"step\s*=\s*([1-9]\d*)", self.frame_filter)
