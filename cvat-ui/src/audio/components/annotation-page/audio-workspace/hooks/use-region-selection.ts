@@ -14,7 +14,7 @@ import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
+    intervalToTimeRange, clientIDFromWaveRegionId, selectAudioIntervals,
 } from '../utils/audio-interval';
 import { WaveformRegionRuntime } from './use-audio-waveform';
 import { WaveformViewport } from './use-waveform-viewport';
@@ -41,7 +41,7 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
         activeControl: state.annotation.canvas.activeControl,
         hoveredIntervalID: state.audio.player.hoveredIntervalID,
     }), shallowEqual);
-    const intervals = useSelector((state: CombinedState) => state.audio.player.intervals);
+    const intervals = useSelector(selectAudioIntervals);
     const job = useSelector((state: CombinedState) => state.annotation.job.instance);
     const latestRef = useRef({ activeControl, hoveredIntervalID });
     latestRef.current = {
@@ -69,10 +69,7 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
         const { regionsPlugin } = regionRuntime;
         const intervalRange = (clientID: number): { start: number; end: number } | null => {
             const interval = intervalsRef.current.find((item) => item.clientID === clientID);
-            return interval ? {
-                start: intervalStartSeconds(interval),
-                end: intervalEndSeconds(interval),
-            } : null;
+            return interval ? intervalToTimeRange(interval) : null;
         };
         const selectInterval = async (region: Region, event: MouseEvent): Promise<number | null> => {
             if (!isIntervalRegionTarget(region)) return null;

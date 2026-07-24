@@ -12,7 +12,7 @@ import { INTERVAL_BOUNDARY_EPSILON } from 'audio/utils/waveform-geometry';
 
 import { getAudioRegionColor, getRegionItemColor } from '../audio-region-colors';
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds, waveRegionId,
+    intervalToTimeRange, clientIDFromWaveRegionId, selectAudioIntervals, waveRegionId,
 } from '../utils/audio-interval';
 import { WaveformRegionRuntime } from './use-audio-waveform';
 
@@ -29,7 +29,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
         intervals, activeIntervalID, hoveredIntervalID, labels,
         colorBy, opacity, selectedOpacity, activeControl,
     } = useSelector((state: CombinedState) => ({
-        intervals: state.audio.player.intervals,
+        intervals: selectAudioIntervals(state),
         activeIntervalID: state.audio.player.activeIntervalID,
         hoveredIntervalID: state.audio.player.hoveredIntervalID,
         labels: state.annotation.job.labels,
@@ -79,8 +79,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
             }
 
             regionsByID.set(clientID, region);
-            const start = intervalStartSeconds(interval);
-            const end = intervalEndSeconds(interval);
+            const range = intervalToTimeRange(interval);
             const isActive = isActiveInterval(clientID);
             const canEdit = canEditInterval(interval);
             const options: Parameters<Region['setOptions']>[0] = {
@@ -88,8 +87,8 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
                 drag: canEdit,
                 resize: canEdit,
             };
-            if (Math.abs(region.start - start) >= INTERVAL_BOUNDARY_EPSILON) options.start = start;
-            if (Math.abs(region.end - end) >= INTERVAL_BOUNDARY_EPSILON) options.end = end;
+            if (Math.abs(region.start - range.start) >= INTERVAL_BOUNDARY_EPSILON) options.start = range.start;
+            if (Math.abs(region.end - range.end) >= INTERVAL_BOUNDARY_EPSILON) options.end = range.end;
             region.setOptions(options);
             setRegionStyle(region, interval, isActive);
         });
@@ -102,8 +101,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
             const isActive = isActiveInterval(clientID);
             const region = regionsPlugin.addRegion({
                 id: waveRegionId(interval),
-                start: intervalStartSeconds(interval),
-                end: intervalEndSeconds(interval),
+                ...intervalToTimeRange(interval),
                 color: getColor(interval, isActive),
                 drag: canEdit,
                 resize: canEdit,

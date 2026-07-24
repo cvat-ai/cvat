@@ -11,16 +11,16 @@ import {
 import AudioRegionDetails from 'audio/components/annotation-page/audio-workspace/audio-region-details';
 import { CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
+import { selectAudioIntervals } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
 
 function AudioRegionDetailsWrapper(): JSX.Element | null {
     const dispatch = useDispatch<ThunkDispatch>();
     const {
-        intervals, activeIntervalID, labels, duration,
+        intervals, activeIntervalID, labels,
     } = useSelector((state: CombinedState) => ({
-        intervals: state.audio.player.intervals,
+        intervals: selectAudioIntervals(state),
         activeIntervalID: state.audio.player.activeIntervalID,
         labels: state.annotation.job.labels,
-        duration: state.audio.player.duration,
     }), shallowEqual);
     const interval = activeIntervalID === null ? null :
         intervals.find((item) => item.clientID === activeIntervalID);
@@ -43,7 +43,6 @@ function AudioRegionDetailsWrapper(): JSX.Element | null {
             interval={interval}
             intervalIndex={intervals.indexOf(interval)}
             labels={labels}
-            trackDurationSeconds={duration}
             onChangeLabel={handleChangeLabel}
             onChangeAttribute={handleChangeAttribute}
         />

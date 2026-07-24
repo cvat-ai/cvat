@@ -12,15 +12,15 @@ import Input from 'antd/lib/input';
 import Popover from 'antd/lib/popover';
 import { EditOutlined } from '@ant-design/icons';
 
-import { AudioIntervalState, Label, Attribute } from 'cvat-core-wrapper';
+import { Label, Attribute } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 import { formatTimeShort, formatMilliseconds } from 'audio/utils/format-audio-time';
+import { ClosedAudioInterval, intervalToTimeRange } from './utils/audio-interval';
 
 interface AudioRegionDetailsProps {
-    interval: AudioIntervalState;
+    interval: ClosedAudioInterval;
     intervalIndex: number;
     labels: Label[];
-    trackDurationSeconds: number;
     onChangeLabel(labelId: number): void;
     onChangeAttribute(attrID: number, value: string): void;
 }
@@ -184,7 +184,6 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
         interval,
         intervalIndex,
         labels,
-        trackDurationSeconds,
         onChangeLabel,
         onChangeAttribute,
     } = props;
@@ -193,11 +192,8 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
         labels.find((l) => l.id === interval.label.id) : null;
 
     const isReadonly = !!interval.lock;
-    const startMs = interval.start;
-    const endMs = interval.stop ?? (trackDurationSeconds ? trackDurationSeconds * 1000 : interval.start);
-    const durationMs = Math.max(0, endMs - startMs);
-    const startSeconds = startMs / 1000;
-    const endSeconds = endMs / 1000;
+    const range = intervalToTimeRange(interval);
+    const durationMs = Math.max(0, (range.end - range.start) * 1000);
 
     const handleChangeAttribute = useCallback((attrID: number, value: string) => {
         onChangeAttribute(attrID, value);
@@ -238,7 +234,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
                     </span>
                 )}
                 <span className='cvat-audio-region-details-time-range'>
-                    {`${formatTimeShort(startSeconds)} \u2013 ${formatTimeShort(endSeconds)}`}
+                    {`${formatTimeShort(range.start)} \u2013 ${formatTimeShort(range.end)}`}
                 </span>
                 <span className='cvat-audio-region-details-duration'>
                     {`(${formatMilliseconds(durationMs)})`}

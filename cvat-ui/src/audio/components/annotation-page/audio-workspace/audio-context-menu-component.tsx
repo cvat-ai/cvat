@@ -8,13 +8,13 @@ import React, {
 import ReactDOM from 'react-dom';
 import Menu from 'antd/lib/menu';
 
-import { AudioIntervalState } from 'cvat-core-wrapper';
 import { ColorBy } from 'reducers';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
+import { ClosedAudioInterval } from 'audio/utils/audio-interval';
 import AudioRegionItemMenu from './audio-region-item-menu';
 
 interface Props {
-    interval: AudioIntervalState;
+    interval: ClosedAudioInterval;
     top: number;
     left: number;
     colorBy: ColorBy;

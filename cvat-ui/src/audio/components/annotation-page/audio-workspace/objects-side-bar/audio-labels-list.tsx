@@ -24,6 +24,8 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { useResetShortcutsOnUnmount } from 'utils/hooks';
 import { getCVATStore } from 'cvat-store';
 
+import { selectAudioIntervals } from '../utils/audio-interval';
+
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
 const makeKey = (index: number): string => `SWITCH_LABEL_AUDIO_${index}`;
@@ -49,7 +51,7 @@ function AudioLabelItem(props: AudioLabelItemProps): JSX.Element | null {
     const dispatch = useDispatch<ThunkDispatch>();
     const { label, audioIntervals } = useSelector((state: CombinedState) => ({
         label: state.annotation.job.labels.find((_label: any) => _label.id === labelID),
-        audioIntervals: state.audio.player.intervals,
+        audioIntervals: selectAudioIntervals(state),
     }), shallowEqual);
 
     const {

@@ -6,7 +6,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import AudioRegionsList from 'audio/components/annotation-page/audio-workspace/audio-regions-list';
-import { intervalID } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
+import { ClosedAudioInterval, intervalID, selectAudioIntervals } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
 import { ActiveControl, ColorBy, CombinedState } from 'reducers';
 import {
     audioActions,
@@ -20,7 +20,7 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { AudioIntervalState, Label } from 'cvat-core-wrapper';
+import { Label } from 'cvat-core-wrapper';
 
 const componentShortcuts = {
     AUDIO_SWITCH_ALL_LOCK: {
@@ -58,7 +58,7 @@ const componentShortcuts = {
 registerComponentShortcuts(componentShortcuts);
 
 interface StateToProps {
-    intervals: AudioIntervalState[];
+    intervals: ClosedAudioInterval[];
     filtersActive: boolean;
     activeIntervalID: number | null;
     labels: Label[];
@@ -86,7 +86,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { labels } = state.annotation.job;
     const { filters } = state.annotation.annotations;
     return {
-        intervals: player.intervals,
+        intervals: selectAudioIntervals(state),
         filtersActive: filters.length > 0,
         activeIntervalID: player.activeIntervalID,
         labels,

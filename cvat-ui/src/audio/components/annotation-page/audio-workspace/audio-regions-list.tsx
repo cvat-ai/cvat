@@ -13,7 +13,7 @@ import {
     MoreOutlined,
 } from '@ant-design/icons';
 import { ActiveControl, ColorBy } from 'reducers';
-import { AudioIntervalState, Label } from 'cvat-core-wrapper';
+import { Label } from 'cvat-core-wrapper';
 import { formatTimeShort } from 'audio/utils/format-audio-time';
 import { hexToRgbComponents } from 'audio/utils/hex-color';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
@@ -21,17 +21,14 @@ import { getRegionItemColor } from './audio-region-colors';
 import AudioRegionItemMenu from './audio-region-item-menu';
 import AudioRegionsListHeader, { AudioRegionsOrdering } from './audio-regions-list-header';
 import {
-    copyAudioIntervalURL,
-    intervalDurationSeconds,
-    intervalEndSeconds,
-    intervalID,
-    intervalStartSeconds,
+    intervalToTimeRange, copyAudioIntervalURL, intervalID,
+    ClosedAudioInterval,
 } from './utils/audio-interval';
 
 function sortIntervals(
-    intervals: AudioIntervalState[],
+    intervals: ClosedAudioInterval[],
     ordering: AudioRegionsOrdering,
-): AudioIntervalState[] {
+): ClosedAudioInterval[] {
     const copy = [...intervals];
     switch (ordering) {
         case AudioRegionsOrdering.START_TIME:
@@ -45,7 +42,7 @@ function sortIntervals(
 }
 
 interface ItemProps {
-    interval: AudioIntervalState;
+    interval: ClosedAudioInterval;
     displayIndex: number;
     isActive: boolean;
     itemColor: string;
@@ -71,6 +68,7 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
     } = props;
 
     const id = intervalID(interval);
+    const range = intervalToTimeRange(interval);
     const isHidden = !!interval.hidden;
     const isLocked = !!interval.lock;
     const isCursor = activeControl === ActiveControl.CURSOR;
@@ -134,12 +132,12 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
                     {interval.label.name}
                 </div>
                 <div className='cvat-audio-region-item-time'>
-                    <span>{formatTimeShort(intervalStartSeconds(interval))}</span>
+                    <span>{formatTimeShort(range.start)}</span>
                     <span className='cvat-audio-region-item-separator'>&rarr;</span>
-                    <span>{formatTimeShort(intervalEndSeconds(interval))}</span>
+                    <span>{formatTimeShort(range.end)}</span>
                 </div>
                 <div className='cvat-audio-region-item-duration'>
-                    {formatTimeShort(intervalDurationSeconds(interval))}
+                    {formatTimeShort(range.end - range.start)}
                 </div>
             </div>
             <div className='cvat-audio-region-item-actions'>
@@ -207,7 +205,7 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
 const MemoAudioRegionItem = React.memo(AudioRegionItem);
 
 interface Props {
-    intervals: AudioIntervalState[];
+    intervals: ClosedAudioInterval[];
     filtersActive: boolean;
     activeIntervalID: number | null;
     labels: Label[];
