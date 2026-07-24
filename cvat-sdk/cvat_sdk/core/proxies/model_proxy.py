@@ -16,6 +16,7 @@ from typing_extensions import Self
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.filters import build_filter_param, pop_lookup_conditions
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.types import Location
@@ -136,17 +137,42 @@ class ModelRetrieveMixin(Generic[_EntityT]):
 
 class ModelListMixin(Generic[_EntityT]):
     @overload
-    def list(self: Repo, *, return_json: Literal[False] = False) -> list[_EntityT]: ...
+    def list(
+        self: Repo,
+        *,
+        return_json: Literal[False] = False,
+        **kwargs: Any,
+    ) -> list[_EntityT]: ...
 
     @overload
-    def list(self: Repo, *, return_json: Literal[True] = False) -> list[Any]: ...
+    def list(
+        self: Repo,
+        *,
+        return_json: Literal[True] = False,
+        **kwargs: Any,
+    ) -> list[Any]: ...
 
-    def list(self: Repo, *, return_json: bool = False) -> list[_EntityT | Any]:
+    def list(
+        self: Repo,
+        *,
+        return_json: bool = False,
+        **kwargs: Any,
+    ) -> list[_EntityT | Any]:
         """
-        Retrieves all objects from the server and returns them in basic or JSON format.
+        Retrieves objects from the server and returns them in basic or JSON format.
+
+        Keyword arguments are forwarded as endpoint query parameters, and can be
+        used to specify filters, search, ordering, pagination, or other options
+        supported by the corresponding list endpoint.
         """
 
-        results = get_paginated_collection(endpoint=self.api.list_endpoint, return_json=return_json)
+        filter_param = build_filter_param(kwargs.pop("filter", None), pop_lookup_conditions(kwargs))
+        if filter_param is not None:
+            kwargs["filter"] = filter_param
+
+        results = get_paginated_collection(
+            endpoint=self.api.list_endpoint, return_json=return_json, **kwargs
+        )
 
         if return_json:
             return json.dumps(results)

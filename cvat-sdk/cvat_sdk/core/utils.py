@@ -10,6 +10,29 @@ import os
 from collections.abc import Generator, Sequence
 from typing import IO, Any, BinaryIO, Literal, TextIO, overload
 
+from cvat_sdk.core.exceptions import InvalidHostException
+
+ALLOWED_SERVER_SCHEMAS = ("https", "http")
+
+
+def normalize_server_url(url: str) -> str:
+    """Add the default scheme and remove a trailing slash from a server URL."""
+    match url.split("://", maxsplit=1):
+        case [schema, _]:
+            if schema not in ALLOWED_SERVER_SCHEMAS:
+                raise InvalidHostException(
+                    f"Invalid url schema '{schema}', expected "
+                    f"one of <none>, {', '.join(ALLOWED_SERVER_SCHEMAS)}"
+                )
+        case _:
+            url = "https://" + url
+
+    return url.rstrip("/")
+
+
+def is_posix() -> bool:
+    return os.name == "posix"
+
 
 def filter_dict(
     d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None

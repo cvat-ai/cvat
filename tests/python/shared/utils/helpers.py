@@ -113,7 +113,7 @@ def generate_manifest(path: str) -> None:
         "--entrypoint",
         "python3",
         get_server_image_tag(),
-        "utils/dataset_manifest/create.py",
+        "/opt/cvat/utils/dataset_manifest/create.py",
         "--output-dir",
         "/local",
         "/local",
