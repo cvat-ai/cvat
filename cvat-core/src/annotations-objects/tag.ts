@@ -26,6 +26,7 @@ export class Tag extends ImageObject {
     public toJSON(): SerializedTag {
         const result: SerializedTag = {
             clientID: this.clientID,
+            uuid: this.uuid,
             frame: this.frame,
             label_id: this.label.id,
             source: this.source,

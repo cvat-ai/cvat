@@ -8780,6 +8780,10 @@ components:
         source:
           type: string
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -8809,6 +8813,10 @@ components:
           type: string
           minLength: 1
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -8837,6 +8845,10 @@ components:
         source:
           type: string
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         attributes:
           type: array
           items:
@@ -8877,6 +8889,10 @@ components:
           type: string
           minLength: 1
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         attributes:
           type: array
           items:
@@ -8938,6 +8954,10 @@ components:
         source:
           type: string
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -9000,6 +9020,10 @@ components:
           type: string
           minLength: 1
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -9039,6 +9063,10 @@ components:
         source:
           type: string
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -9077,6 +9105,10 @@ components:
           type: string
           minLength: 1
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -9205,6 +9237,7 @@ components:
           format: date-time
           readOnly: true
         contact:
+          type: object
           readOnly: true
         owner:
           allOf:
@@ -9225,7 +9258,8 @@ components:
           maxLength: 64
         description:
           type: string
-        contact: {}
+        contact:
+          type: object
       required:
       - slug
     PaginatedAccessTokenReadList:
@@ -9967,7 +10001,8 @@ components:
           maxLength: 64
         description:
           type: string
-        contact: {}
+        contact:
+          type: object
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -11108,6 +11143,10 @@ components:
         source:
           type: string
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -11166,6 +11205,10 @@ components:
           type: string
           minLength: 1
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -11201,6 +11244,10 @@ components:
         source:
           type: string
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -11235,6 +11282,10 @@ components:
           type: string
           minLength: 1
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -11858,8 +11909,10 @@ components:
           type: string
           readOnly: true
         request:
+          type: object
           readOnly: true
         response:
+          type: object
           readOnly: true
     WebhookRead:
       type: object

@@ -111,6 +111,7 @@ export class SkeletonShape extends Shape {
         const result: SerializedShape = {
             type: this.shapeType,
             clientID: this.clientID,
+            uuid: this.uuid,
             occluded: elements.every((el) => el.occluded),
             outside: elements.every((el) => el.outside),
             z_order: this.zOrder,

@@ -1,6 +1,6 @@
 ### Fixed
 
-- Prevent duplicate shapes when annotation save fails after the server persists
-  changes by improving proxy-timeout reconciliation in the core saver and
-  reloading annotations from the server on failed saves in the UI
+- Prevent duplicate annotations when a create request succeeds on the server but
+  the client loses the response (e.g. proxy timeout): annotation objects now
+  carry a client-generated `uuid` used as an idempotency key on create
   (<https://github.com/cvat-ai/cvat/issues/10503>)

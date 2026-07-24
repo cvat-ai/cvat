@@ -27,6 +27,7 @@ type CollectionObject = SerializedCollection[keyof SerializedCollection][number]
 const COLLECTION_KEYS = ['shapes', 'tracks', 'tags', 'intervals'] as const;
 const JSON_SERIALIZER_KEYS = [
     'id',
+    'uuid',
     'label_id',
     'group',
     'frame',
