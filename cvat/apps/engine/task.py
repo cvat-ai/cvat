@@ -536,6 +536,60 @@ def _download_data_from_cloud_storage(
     cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
 
 
+def _is_frame_filter_active(
+    *,
+    start_frame: int,
+    stop_frame: int | None,
+    step: int,
+    media_count: int,
+) -> bool:
+    effective_stop = (media_count - 1) if stop_frame is None else min(media_count - 1, stop_frame)
+    return start_frame != 0 or step != 1 or effective_stop != media_count - 1
+
+
+def _filter_server_files_exclude(
+    media_files: Sequence[str],
+    server_files_exclude: Sequence[str] | None,
+) -> list[str]:
+    if not server_files_exclude:
+        return list(media_files)
+
+    exclude_set = set(server_files_exclude)
+    return [
+        f
+        for f in media_files
+        if f not in exclude_set
+        and all(f"{parent}/" not in exclude_set for parent in PurePosixPath(f).parents)
+    ]
+
+
+def _get_sorted_filtered_image_paths(
+    media_files: Sequence[str],
+    *,
+    sorting_method: models.SortingMethod,
+    start_frame: int,
+    stop_frame: int | None,
+    step: int,
+) -> list[str]:
+    if not media_files:
+        return []
+
+    sorted_paths = sort(list(media_files), sorting_method)
+
+    effective_stop = (len(sorted_paths) - 1) if stop_frame is None else min(len(sorted_paths) - 1, stop_frame)
+    step = max(step, 1)
+
+    if not _is_frame_filter_active(
+        start_frame=start_frame,
+        stop_frame=stop_frame,
+        step=step,
+        media_count=len(sorted_paths),
+    ):
+        return sorted_paths
+
+    return [sorted_paths[i] for i in range(start_frame, effective_stop + 1, step)]
+
+
 def _read_dataset_manifest(path: Path, *, create_index: bool = False) -> ImageManifestManager:
     """
     Reads an upload manifest file
@@ -1693,9 +1747,47 @@ def initialize_task(
         ):
             update_status("Downloading input media")
 
+            files_to_download = list(
+                map(PurePosixPath, itertools.chain.from_iterable(media.values()))
+            )
+            if (
+                media["image"]
+                and not is_packed_media
+                and job_file_mapping is None
+                and _is_frame_filter_active(
+                    start_frame=db_data.start_frame,
+                    stop_frame=data["stop_frame"],
+                    step=db_data.get_frame_step(),
+                    media_count=len(media["image"]),
+                )
+            ):
+                # Sorting and frame filtering must be applied once, before download.
+                # Otherwise, the extractor may reference files that were not downloaded
+                # (e.g. with random sorting and static cache).
+                media["image"] = _get_sorted_filtered_image_paths(
+                    _filter_server_files_exclude(
+                        media["image"], data.get("server_files_exclude")
+                    ),
+                    sorting_method=data["sorting_method"],
+                    start_frame=db_data.start_frame,
+                    stop_frame=data["stop_frame"],
+                    step=db_data.get_frame_step(),
+                )
+                is_media_sorted = True
+                db_data.start_frame = 0
+                db_data.frame_filter = ""
+                data["stop_frame"] = None
+
+                non_image_files = list(
+                    itertools.chain.from_iterable(v for k, v in media.items() if k != "image" and v)
+                )
+                files_to_download = list(
+                    map(PurePosixPath, itertools.chain(media["image"], non_image_files))
+                )
+
             _download_data_from_cloud_storage(
                 db_storage=db_data.cloud_storage,
-                files=list(map(PurePosixPath, itertools.chain.from_iterable(media.values()))),
+                files=files_to_download,
                 upload_dir=upload_dir,
             )
 
