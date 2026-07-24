@@ -7,12 +7,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 
 import { MIN_INTERVAL_DURATION, INTERVAL_BOUNDARY_EPSILON } from 'audio/utils/waveform-geometry';
-import { createAudioIntervalAsync, updateAudioIntervalAsync } from 'actions/audio-actions';
+import { createAudioIntervalAsync, updateAudioIntervalTimeRangeAsync } from 'actions/audio-actions';
 import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
+    intervalToTimeRange, clientIDFromWaveRegionId, selectAudioIntervals,
 } from '../utils/audio-interval';
 import { attachRegionAutoScroll } from '../utils/region-auto-scroll';
 import { WaveformRegionRuntime } from './use-audio-waveform';
@@ -66,7 +66,7 @@ export function useRegionEditing({
     const dispatch = useDispatch<ThunkDispatch>();
     const { intervals, activeLabelId, activeControl } = useSelector(
         (state: CombinedState) => ({
-            intervals: state.audio.player.intervals,
+            intervals: selectAudioIntervals(state),
             activeLabelId: state.audio.player.activeLabelId,
             activeControl: state.annotation.canvas.activeControl,
         }),
@@ -105,19 +105,15 @@ export function useRegionEditing({
             if (clientID === null) return;
             const interval = latestRef.current.intervals.find((item) => item.clientID === clientID);
             if (!interval) return;
-            if (
-                Math.abs(intervalStartSeconds(interval) - region.start) < INTERVAL_BOUNDARY_EPSILON &&
-                Math.abs(intervalEndSeconds(interval) - region.end) < INTERVAL_BOUNDARY_EPSILON
-            ) {
+            const prevRange = intervalToTimeRange(interval);
+            if (Math.abs(prevRange.start - region.start) < INTERVAL_BOUNDARY_EPSILON &&
+                Math.abs(prevRange.end - region.end) < INTERVAL_BOUNDARY_EPSILON) {
                 return;
             }
-
-            dispatch(
-                updateAudioIntervalAsync(clientID, {
-                    start: Math.round(region.start * 1000),
-                    stop: Math.round(region.end * 1000),
-                }),
-            );
+            dispatch(updateAudioIntervalTimeRangeAsync(clientID, {
+                start: region.start,
+                end: region.end,
+            }));
         };
 
         regionsPlugin.getRegions().forEach((region) => {

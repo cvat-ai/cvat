@@ -15,6 +15,7 @@ import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { MIN_INTERVAL_DURATION, MIN_RECORDING_DURATION } from 'audio/utils/waveform-geometry';
 
 import { getAudioRegionColor } from '../audio-region-colors';
+import type { ClosedAudioInterval } from '../utils/audio-interval';
 import { WaveformPlayback } from './use-waveform-playback';
 import { RegionPreviewHandle, WaveformRegions } from './use-waveform-regions';
 
@@ -72,7 +73,7 @@ export function useAudioRecording({ playback, regions, ready }: Params): void {
             start: Math.round(start * 1000),
             stop: Math.round(start * 1000),
             source: Source.MANUAL,
-        });
+        }) as ClosedAudioInterval;
         const initialEnd = Math.min(latest.duration, start + MIN_INTERVAL_DURATION);
         const preview = createPreview({
             range: { start, end: Math.max(start, initialEnd) },

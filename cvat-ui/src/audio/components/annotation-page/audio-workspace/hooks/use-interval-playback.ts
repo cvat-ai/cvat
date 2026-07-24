@@ -10,7 +10,7 @@ import { CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
+    intervalToTimeRange, clientIDFromWaveRegionId, selectAudioIntervals,
 } from '../utils/audio-interval';
 import type { WaveformPlayback } from './use-waveform-playback';
 import type { WaveformRegionRuntime } from './use-audio-waveform';
@@ -36,7 +36,7 @@ export function useIntervalPlayback({ regionRuntime, playback, ready }: Params):
         loop: state.audio.player.loop,
         playing: state.audio.player.playing,
         activeIntervalID: state.audio.player.activeIntervalID,
-        intervals: state.audio.player.intervals,
+        intervals: selectAudioIntervals(state),
     }), shallowEqual);
     const latestRef = useRef({
         request, loop, playing, activeIntervalID, intervals,
@@ -74,7 +74,9 @@ export function useIntervalPlayback({ regionRuntime, playback, ready }: Params):
             if (intervalID === null) return;
 
             const interval = latest.intervals.find((item) => item.clientID === intervalID);
-            if (!interval || time < intervalEndSeconds(interval)) return;
+            if (!interval) return;
+            const range = intervalToTimeRange(interval);
+            if (time < range.end) return;
 
             if (latest.request?.intervalID === intervalID) {
                 pause();
@@ -83,7 +85,7 @@ export function useIntervalPlayback({ regionRuntime, playback, ready }: Params):
             }
 
             if (latest.playing && latest.loop && latest.activeIntervalID === intervalID) {
-                seek(intervalStartSeconds(interval));
+                seek(range.start);
             }
         });
     }, [ready]);
