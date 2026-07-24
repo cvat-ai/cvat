@@ -25,7 +25,6 @@ from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.core.exceptions import (
     BackgroundRequestException,
     IncompatibleVersionException,
-    InvalidHostException,
 )
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
@@ -34,6 +33,7 @@ from cvat_sdk.core.proxies.organizations import OrganizationsRepo
 from cvat_sdk.core.proxies.projects import ProjectsRepo
 from cvat_sdk.core.proxies.tasks import TasksRepo
 from cvat_sdk.core.proxies.users import UsersRepo
+from cvat_sdk.core.utils import ALLOWED_SERVER_SCHEMAS, normalize_server_url
 from cvat_sdk.version import VERSION
 
 _DEFAULT_CACHE_DIR = platformdirs.user_cache_path("cvat-sdk", "CVAT.ai")
@@ -112,7 +112,7 @@ class Client:
         self.logger = logger or logging.getLogger(__name__)
         """The root logger"""
 
-        url = self._validate_and_prepare_url(url)
+        url = normalize_server_url(url)
 
         self.config = config or Config()
         """Configuration for this object"""
@@ -164,20 +164,7 @@ class Client:
         finally:
             self.organization_slug = prev_slug
 
-    ALLOWED_SCHEMAS = ("https", "http")
-
-    def _validate_and_prepare_url(self, url: str) -> str:
-        match url.split("://", maxsplit=1):
-            case [schema, _]:
-                if schema not in self.ALLOWED_SCHEMAS:
-                    raise InvalidHostException(
-                        f"Invalid url schema '{schema}', expected "
-                        f"one of <none>, {', '.join(self.ALLOWED_SCHEMAS)}"
-                    )
-            case _:
-                url = "https://" + url
-
-        return url.rstrip("/")
+    ALLOWED_SCHEMAS = ALLOWED_SERVER_SCHEMAS
 
     def __enter__(self):
         self.api_client.__enter__()

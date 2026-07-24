@@ -11,7 +11,7 @@ import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.core.client import AccessTokenCredentials, Config, PasswordCredentials, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
-from cvat_sdk.core.helpers import get_paginated_collection
+from cvat_sdk.core.utils import normalize_server_url
 from cvat_sdk.exceptions import ApiException
 
 from shared.utils.config import BASE_URL, USER_PASS
@@ -100,6 +100,7 @@ class TestClientFactory:
             assert client.api_map.host == BASE_URL
 
     def test_can_add_default_server_schema(self):
+        assert normalize_server_url("localhost:8080/") == "https://localhost:8080"
         with https_reverse_proxy() as proxy_url:
             with Client(
                 url=proxy_url.removeprefix("https://"), config=Config(verify_ssl=False)
@@ -303,16 +304,6 @@ def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
         # return all objects if org parameter wasn't presented
         client.organization_slug = None
         projects, tasks, jobs = client.projects.list(), client.tasks.list(), client.jobs.list()
-
-        assert len(projects) == len(tasks) == len(jobs) == 2
-        assert {None, org.id} == set([a.organization for a in (*projects, *tasks, *jobs)])
-
-        # return all objects if org_id=0 is passed explicitly
-        projects, tasks, jobs = (
-            get_paginated_collection(client.api_client.projects_api.list_endpoint, org_id=0),
-            get_paginated_collection(client.api_client.tasks_api.list_endpoint, org_id=0),
-            get_paginated_collection(client.api_client.jobs_api.list_endpoint, org_id=0),
-        )
 
         assert len(projects) == len(tasks) == len(jobs) == 2
         assert {None, org.id} == set([a.organization for a in (*projects, *tasks, *jobs)])

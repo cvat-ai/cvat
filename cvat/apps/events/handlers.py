@@ -38,6 +38,7 @@ from cvat.apps.engine.serializers import (
     ProjectReadSerializer,
     TaskReadSerializer,
 )
+from cvat.apps.events import utils
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.organizations.serializers import (
     InvitationReadSerializer,
@@ -645,7 +646,10 @@ def handle_function_call(
     )
 
 
-def handle_rq_exception(rq_job, exc_type, exc_value, tb):
+def handle_rq_exception(rq_job: rq.job.Job, exc_type: type[Exception], exc_value: Exception, tb):
+    if utils.should_skip_rq_exception_event_recording(rq_job=rq_job, exc_value=exc_value):
+        return False
+
     rq_job_meta = BaseRQMeta.for_job(rq_job)
     oid = rq_job_meta.org_id
     oslug = rq_job_meta.org_slug
